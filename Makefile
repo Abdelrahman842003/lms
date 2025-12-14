@@ -60,18 +60,19 @@ install: ## تثبيت المشروع لأول مرة
 	docker compose build
 	@echo "▶️  تشغيل الخدمات..."
 	docker compose up -d
-	@echo "⏳ انتظار MySQL..."
-	sleep 10
+	@echo "⏳ انتظار MySQL يكون جاهز..."
+	sleep 15
 	@echo "📥 تثبيت Backend dependencies..."
-	docker compose exec octane composer install
+	docker compose exec octane composer install --no-interaction
 	@echo "🔑 توليد APP_KEY..."
-	docker compose exec octane php artisan key:generate
-	@echo "⚡ تثبيت Octane..."
-	docker compose exec octane php artisan octane:install --server=swoole
+	docker compose exec octane php artisan key:generate --force
 	@echo "📥 تثبيت Frontend dependencies..."
 	docker compose exec frontend npm install
 	@echo "🗄️  تشغيل Migrations..."
 	docker compose exec octane php artisan migrate --force
+	@echo "🎨 تحسين Laravel..."
+	docker compose exec octane php artisan config:cache
+	docker compose exec octane php artisan route:cache
 	@echo "✅ التثبيت اكتمل!"
 	@echo ""
 	@echo "🌐 الوصول للتطبيق:"
