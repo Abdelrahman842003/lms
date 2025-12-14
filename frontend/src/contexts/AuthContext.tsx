@@ -47,6 +47,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(JSON.parse(storedUser));
         // Ensure cookie is set if user exists in localStorage (sync)
         document.cookie = "auth_state=true; path=/; max-age=2592000; SameSite=Lax";
+        
+        // Also restore user_role cookie if possible from localStorage data
+        const storedUserObj = JSON.parse(storedUser);
+        if (storedUserObj.userType) {
+             document.cookie = `user_role=${storedUserObj.userType}; path=/; max-age=2592000; SameSite=Lax`;
+        }
       }
       
       // Load selected teacher
@@ -244,6 +250,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       // Set a cookie for middleware to detect auth state
       document.cookie = "auth_state=true; path=/; max-age=2592000; SameSite=Lax"; // 30 days
+      // Set user role cookie for middleware redirection
+      document.cookie = `user_role=${response.role}; path=/; max-age=2592000; SameSite=Lax`;
     } catch (error) {
       console.error('Login failed:', error);
       throw error;
@@ -321,6 +329,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(null);
       setSelectedTeacher(null);
       localStorage.clear();
+      // Clear cookies
+      document.cookie = "auth_state=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      document.cookie = "user_role=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
     }
   };
 
