@@ -63,6 +63,11 @@ services:
       target: production
     container_name: lms_octane
     restart: unless-stopped
+    volumes:
+      # Firebase credentials - استخدم المسار الآمن على السيرفر
+      # للتطوير/الاختبار: استخدم ./neetaq-54091-firebase-adminsdk-fbsvc-b830b7b75f.json
+      # للإنتاج: استخدم /opt/lms/secrets/neetaq-54091-firebase-adminsdk-fbsvc-b830b7b75f.json
+      - /opt/lms/secrets/neetaq-54091-firebase-adminsdk-fbsvc-b830b7b75f.json:/var/www/backend/storage/firebase-credentials.json:ro
     environment:
       - APP_ENV=production
       - APP_DEBUG=false
@@ -87,6 +92,10 @@ services:
       - SWOOLE_HTTP_MAX_REQUEST=500
       - SWOOLE_HTTP_WATCH=false
       - TELESCOPE_ENABLED=false
+      - GOOGLE_APPLICATION_CREDENTIALS=/var/www/backend/storage/firebase-credentials.json
+      - FIREBASE_PROJECT_ID=neetaq-54091
+      - CLOUDFLARE_API_TOKEN=${CLOUDFLARE_API_TOKEN}
+      - CLOUDFLARE_ZONE_ID=${CLOUDFLARE_ZONE_ID}
     depends_on:
       mysql:
         condition: service_healthy
