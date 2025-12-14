@@ -1,0 +1,64 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Spatie\Permission\Traits\HasRoles;
+use App\Traits\HasDeviceTokens;
+
+class Secretary extends Authenticatable
+{
+    use HasFactory, Notifiable, HasApiTokens, HasUuids, HasRoles, HasDeviceTokens;
+
+    protected $fillable = [
+        'teacher_id',
+        'name',
+        'phone',
+        'username',
+        'password',
+        'permissions',
+        'avatar_key',
+        'is_active',
+    ];
+
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'password' => 'hashed',
+            'permissions' => 'array',
+            'is_active' => 'boolean',
+        ];
+    }
+
+    public function teacher()
+    {
+        return $this->belongsTo(Teacher::class);
+    }
+
+    public function scopeFilter($query, array $filters)
+    {
+        if ($search = $filters['search'] ?? null) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('username', 'like', "%{$search}%");
+            });
+        }
+
+        if (($status = $filters['status'] ?? null) !== null && $status !== '') {
+            if ($status === 'active') {
+                $query->where('is_active', true);
+            } elseif ($status === 'inactive') {
+                $query->where('is_active', false);
+            }
+        }
+    }
+}

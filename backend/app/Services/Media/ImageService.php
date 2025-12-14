@@ -1,0 +1,114 @@
+<?php
+
+namespace App\Services\Media;
+
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver;
+
+class ImageService
+{
+    private ImageManager $imageManager;
+
+    public function __construct()
+    {
+        $this->imageManager = new ImageManager(new Driver());
+    }
+
+    /**
+     * Process and upload image to Cloudflare R2
+     * 
+     * @param UploadedFile $file
+     * @param string $directory
+     * @param string $filename
+     * @return string The file path in R2
+     */
+    public function processAndUpload(UploadedFile $file, string $directory, string $filename): string
+    {
+        // Validate image
+        $this->validateImage($file);
+
+        // Read and process image
+        $image = $this->imageManager->read($file->getRealPath());
+
+        // Resize to 300x300 maintaining aspect ratio
+        $image->cover(300, 300);
+
+        // Convert to WebP with 60% quality
+        $webpImage = $image->toWebp(60);
+
+        // Generate path
+        $path = $directory . '/' . $filename . '.webp';
+
+        // Upload to R2
+        Storage::disk('r2')->put($path, (string) $webpImage);
+
+        return $path;
+    }
+
+    /**
+     * Delete image from R2
+     * 
+     * @param string $path
+     * @return bool
+     */
+    public function delete(string $path): bool
+    {
+        if (Storage::disk('r2')->exists($path)) {
+            return Storage::disk('r2')->delete($path);
+        }
+
+        return true;
+    }
+
+    /**
+     * Get public URL for image
+     * 
+     * @param string $path
+     * @return string
+     */
+    public function getUrl(string $path): string
+    {
+        $baseUrl = env('CLOUDFLARE_R2_PUBLIC_URL');
+        
+        if (!$baseUrl) {
+            return '/' . ltrim($path, '/');
+        }
+
+        return rtrim($baseUrl, '/') . '/' . ltrim($path, '/');
+    }
+
+    /**
+     * Validate uploaded image
+     * 
+     * @param UploadedFile $file
+     * @throws \Exception
+     */
+    private function validateImage(UploadedFile $file): void
+    {
+        // Check if file is an image
+        if (!in_array($file->getMimeType(), ['image/jpeg', 'image/png', 'image/gif', 'image/webp'])) {
+            throw new \Exception('File must be an image (JPEG, PNG, GIF, or WebP)');
+        }
+
+        // Check file size (max 5MB)
+        if ($file->getSize() > 5 * 1024 * 1024) {
+            throw new \Exception('Image size must not exceed 5MB');
+        }
+    }
+
+    /**
+     * Generate unique filename
+     * 
+     * @param string $prefix
+     * @return string
+     */
+    public function generateFilename(string $prefix = ''): string
+    {
+        $timestamp = now()->timestamp;
+        $random = bin2hex(random_bytes(8));
+        
+        return $prefix ? "{$prefix}_{$timestamp}_{$random}" : "{$timestamp}_{$random}";
+    }
+}

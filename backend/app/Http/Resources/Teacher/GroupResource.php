@@ -1,0 +1,23 @@
+<?php
+
+namespace App\Http\Resources\Teacher;
+
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
+
+class GroupResource extends JsonResource
+{
+    public function toArray(Request $request): array
+    {
+        return [
+            'id' => $this->id,
+            'name' => $this->name,
+            'grade_id' => $this->grade_id,
+            'grade_name' => $this->grade ? $this->grade->name : null,
+            'time' => $this->time,
+            'days' => $this->days,
+            'students_count' => $this->enrollments_count,
+            'created_at' => $this->created_at,
+        ];
+    }
+}

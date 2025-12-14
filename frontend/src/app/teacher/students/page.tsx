@@ -1,0 +1,309 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
+import { DataTable } from '@/components/dashboard/DataTable';
+import { DashboardCard } from '@/components/dashboard/DashboardCard';
+import { ConfirmationModal } from '@/components/ui';
+import { useAuth } from '@/contexts/AuthContext';
+import { getTeacherStudents, deleteTeacherStudent } from '@/services/authService';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+
+export default function StudentsPage() {
+  const { user } = useAuth();
+  const router = useRouter();
+  const [students, setStudents] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
+  const [totalItems, setTotalItems] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+
+  // Modal State
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalConfig, setModalConfig] = useState({
+    title: '',
+    message: '',
+    confirmText: '',
+    variant: 'danger' as 'danger' | 'success',
+    onConfirm: () => {},
+  });
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  useEffect(() => {
+    fetchStudents();
+  }, [currentPage, statusFilter, searchQuery]);
+
+  const fetchStudents = async () => {
+    try {
+      setIsLoading(true);
+      const response = await getTeacherStudents(currentPage, 10, searchQuery, statusFilter);
+      // Assuming response structure matches what we saw in secretaryService
+      // If getTeacherStudents returns the 'students' object directly:
+      setStudents(response.data || []);
+      setTotalPages(response.last_page || 1);
+      setTotalItems(response.total || 0);
+    } catch (error) {
+      console.error('Failed to fetch students:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleActivate = (student: any) => {
+    setModalConfig({
+      title: 'تفعيل الاشتراك',
+      message: `هل أنت متأكد من تفعيل اشتراك الطالب "${student.name}" لمدة شهر؟`,
+      confirmText: 'تفعيل',
+      variant: 'success',
+      onConfirm: async () => {
+        try {
+          setIsProcessing(true);
+          const token = localStorage.getItem('token');
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/teacher/students/${student.id}/activate`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+              'Authorization': `Bearer ${token}`,
+            },
+          });
+
+          if (response.ok) {
+            setModalOpen(false);
+            fetchStudents();
+          } else {
+            alert('فشل تفعيل الاشتراك');
+          }
+        } catch (error) {
+          console.error('Failed to activate student:', error);
+          alert('فشل تفعيل الاشتراك');
+        } finally {
+          setIsProcessing(false);
+        }
+      },
+    });
+    setModalOpen(true);
+  };
+
+  const handleDelete = (student: any) => {
+    setModalConfig({
+      title: 'إلغاء ربط الطالب',
+      message: `هل أنت متأكد من إلغاء ربط الطالب "${student.name}"؟ سيتم إزالة الطالب من قائمتك ولكن لن يتم حذفه من النظام.`,
+      confirmText: 'إلغاء الربط',
+      variant: 'danger',
+      onConfirm: async () => {
+        try {
+          setIsProcessing(true);
+          await deleteTeacherStudent(student.id);
+          setModalOpen(false);
+          fetchStudents();
+        } catch (error) {
+          console.error('Failed to delete student:', error);
+          alert('فشل حذف الطالب');
+        } finally {
+          setIsProcessing(false);
+        }
+      },
+    });
+    setModalOpen(true);
+  };
+
+  const handleToggleStatus = (student: any) => {
+    const isDisabling = student.is_active;
+    setModalConfig({
+      title: isDisabling ? 'تعطيل الحساب' : 'تفعيل الحساب',
+      message: `هل أنت متأكد من ${isDisabling ? 'تعطيل' : 'تفعيل'} حساب الطالب "${student.name}"؟`,
+      confirmText: isDisabling ? 'تعطيل' : 'تفعيل',
+      variant: isDisabling ? 'danger' : 'success',
+      onConfirm: async () => {
+        try {
+          setIsProcessing(true);
+          const token = localStorage.getItem('token');
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/teacher/students/${student.id}/toggle-status`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+              'Authorization': `Bearer ${token}`,
+            },
+          });
+
+          if (response.ok) {
+            setModalOpen(false);
+            fetchStudents();
+          } else {
+            alert(`فشل ${isDisabling ? 'تعطيل' : 'تفعيل'} الحساب`);
+          }
+        } catch (error) {
+          console.error('Failed to toggle student status:', error);
+          alert(`فشل ${isDisabling ? 'تعطيل' : 'تفعيل'} الحساب`);
+        } finally {
+          setIsProcessing(false);
+        }
+      },
+    });
+    setModalOpen(true);
+  };
+
+  const columns = [
+    {
+      key: 'name',
+      label: 'الاسم',
+      sortable: true,
+      render: (value: string, row: any) => (
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#4263EB] to-[#3730A3] flex items-center justify-center overflow-hidden shrink-0">
+            {row.avatar ? (
+              <img src={row.avatar} alt={row.name} className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-white font-bold text-[0.9rem]">
+                {value.charAt(0)}
+              </span>
+            )}
+          </div>
+          <div className="flex flex-col">
+            <span className={`font-semibold ${row.is_active ? '' : 'text-gray-light'}`}>
+              {value}
+            </span>
+            <div className="flex items-center gap-2 text-xs">
+              {row.status === 'active' && <span className="text-success">نشط ({row.days_left} يوم)</span>}
+              {row.status === 'grace_period' && <span className="text-warning">فترة سماح ({row.days_left} يوم)</span>}
+              {row.status === 'expired' && <span className="text-danger">منتهي</span>}
+              {row.status === 'inactive' && <span className="text-gray-400">غير مفعل</span>}
+              {!row.is_active && <span className="text-danger ml-1">(معطل يدوياً)</span>}
+            </div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'phone',
+      label: 'رقم الطالب',
+      sortable: true,
+      className: 'd-none-md',
+    },
+    {
+      key: 'grade',
+      label: 'الصف الدراسي',
+      sortable: true,
+      className: 'd-none-lg',
+      render: (value: any) => value?.name || '-',
+    },
+    {
+      key: 'group',
+      label: 'المجموعة',
+      sortable: true,
+      className: 'd-none-md',
+      render: (value: any) => value?.name || '-',
+    },
+    {
+      key: 'attendance_stats',
+      label: 'الحضور (الشهر)',
+      className: 'd-none-lg',
+      render: (stats: any) => (
+        <div className="flex flex-col gap-1">
+          <span>{stats?.present_count || 0} / {stats?.total_lectures || 0}</span>
+          <span className="text-[0.8em] text-gray-light">
+            {stats?.average || 0}%
+          </span>
+        </div>
+      ),
+    },
+  ];
+
+  const actions = [
+    {
+      label: 'تفعيل الاشتراك',
+      icon: 'fas fa-bolt',
+      variant: 'success' as 'success',
+      onClick: (row: any) => handleActivate(row),
+      hidden: (row: any) => row.status === 'active',
+    },
+    {
+      label: 'عرض التفاصيل',
+      icon: 'fas fa-eye',
+      onClick: (row: any) => router.push(`/teacher/students/${row.id}`),
+      hidden: (row: any) => !row.is_active,
+    },
+    {
+      label: 'تعديل',
+      icon: 'fas fa-edit',
+      onClick: (row: any) => router.push(`/teacher/students/${row.id}/edit`),
+      hidden: (row: any) => !row.is_active,
+    },
+    {
+      label: 'إلغاء الربط',
+      icon: 'fas fa-unlink',
+      variant: 'danger' as 'danger',
+      onClick: (row: any) => handleDelete(row),
+    },
+    {
+      label: (row: any) => row.is_active ? 'تعطيل الحساب' : 'تفعيل الحساب',
+      icon: (row: any) => row.is_active ? 'fas fa-ban' : 'fas fa-check-circle',
+      variant: (row: any) => row.is_active ? 'danger' : 'success',
+      onClick: (row: any) => handleToggleStatus(row),
+    },
+  ];
+
+  return (
+    <DashboardLayout
+      role={user?.userType as 'teacher' | 'secretary' || 'teacher'}
+      user={{
+        name: user?.name || 'المدرس',
+        avatar: user?.avatar || '',
+      }}
+    >
+      <DashboardCard
+        title="جدول الطلاب"
+        icon="fas fa-table"
+      >
+        <DataTable
+          columns={columns}
+          data={students}
+          actions={actions}
+          isLoading={isLoading}
+          pagination={true}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          totalItems={totalItems}
+          onSearch={setSearchQuery}
+          headerActions={
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+              <select
+                className="w-full sm:w-auto px-4 h-[42px] rounded-lg border border-white/10 bg-[#1e1e2d] text-white outline-none cursor-pointer min-w-[120px] appearance-none bg-no-repeat bg-[left_12px_center] pl-10 bg-[url('data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20width=%2716%27%20height=%2716%27%20viewBox=%270%200%2024%2024%27%20fill=%27none%27%20stroke=%27white%27%20stroke-width=%272%27%20stroke-linecap=%27round%27%20stroke-linejoin=%27round%27%3E%3Cpath%20d=%27M6%209l6%206%206-6%27/%3E%3C/svg%3E')]"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+              >
+                <option value="">كل الطلاب</option>
+                <option value="active">الطلاب النشطين</option>
+                <option value="inactive">الطلاب المعطلين</option>
+              </select>
+              <Link href="/teacher/students/add" className="btn btn-primary w-full sm:w-auto justify-center">
+                <i className="fas fa-plus"></i>
+                <span>إضافة طالب جديد</span>
+              </Link>
+            </div>
+          }
+          rowClassName={(row) => row.is_active ? '' : 'bg-red-500/5 text-gray-500'}
+        />
+      </DashboardCard>
+
+      
+      <ConfirmationModal
+        isOpen={modalOpen}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        confirmText={modalConfig.confirmText}
+        variant={modalConfig.variant}
+        onConfirm={modalConfig.onConfirm}
+        onCancel={() => setModalOpen(false)}
+        isProcessing={isProcessing}
+      />
+    </DashboardLayout>
+  );
+}

@@ -1,0 +1,186 @@
+<?php
+
+namespace App\Http\Controllers\Teacher;
+
+use App\Http\Controllers\Controller;
+use App\Http\Requests\Teacher\Exam\StoreExamRequest;
+use App\Http\Requests\Teacher\Exam\UpdateExamRequest;
+use App\Models\Exam;
+use App\Services\Teacher\ExamService;
+use App\Http\Resources\Teacher\ExamResource;
+use Illuminate\Support\Facades\Auth;
+
+class ExamController extends Controller
+{
+    protected $examService;
+
+    public function __construct(ExamService $examService)
+    {
+        $this->examService = $examService;
+    }
+
+    public function index(\Illuminate\Http\Request $request)
+    {
+        $perPage = $request->input('per_page', 10);
+        $filters = $request->only(['search', 'date_from', 'date_to']);
+        $exams = $this->examService->getExams(Auth::user(), $perPage, $filters);
+
+        return $this->successResponse(
+            \App\Http\Resources\Teacher\ExamResource::collection($exams)->response()->getData(true)
+        );
+    }
+
+    public function store(StoreExamRequest $request)
+    {
+        try {
+            $exam = $this->examService->createExam(Auth::user(), $request->validated());
+
+            return $this->successResponse([
+                'exam' => $exam
+            ], 'Exam created successfully', 201);
+        } catch (\Exception $e) {
+            return $this->errorResponse('Failed to create exam: ' . $e->getMessage(), 500);
+        }
+    }
+
+    public function show(Exam $exam)
+    {
+        if ($exam->teacher_id !== Auth::id()) {
+            return $this->errorResponse('Unauthorized', 403);
+        }
+
+        return $this->successResponse([
+            'exam' => $exam->load(['questions', 'grade', 'group'])
+        ]);
+    }
+
+    public function update(UpdateExamRequest $request, Exam $exam)
+    {
+        if ($exam->teacher_id !== Auth::id()) {
+            return $this->errorResponse('Unauthorized', 403);
+        }
+
+        try {
+            $exam = $this->examService->updateExam($exam, $request->validated());
+
+            return $this->successResponse([
+                'exam' => $exam
+            ], 'Exam updated successfully');
+        } catch (\Exception $e) {
+            return $this->errorResponse('Failed to update exam: ' . $e->getMessage(), 500);
+        }
+    }
+
+    public function destroy(Exam $exam)
+    {
+        $this->examService->deleteExam($exam);
+        return $this->successResponse(null, 'تم حذف الامتحان بنجاح');
+    }
+
+    public function toggleStatus(Exam $exam)
+    {
+        $isActive = !$exam->is_active;
+        $updateData = ['is_active' => $isActive];
+        
+        if ($isActive) {
+            $updateData['activated_at'] = now();
+            $updateData['ended_at'] = null;
+        }
+
+        $exam->update($updateData);
+
+        if ($isActive) {
+            // Notify students
+            $this->notifyStudents($exam, new \App\Notifications\ExamActivatedNotification($exam));
+        }
+
+        return $this->successResponse(
+            new ExamResource($exam),
+            $isActive ? 'تم تفعيل الامتحان بنجاح وإشعار الطلاب' : 'تم إلغاء تفعيل الامتحان بنجاح'
+        );
+    }
+
+    public function endExam(Exam $exam)
+    {
+        if (!$exam->is_active) {
+            return $this->errorResponse('الامتحان غير مفعل بالفعل', 400);
+        }
+
+        $exam->update([
+            'is_active' => false,
+            'ended_at' => now()
+        ]);
+
+        // Process results for all students
+        $this->processExamResults($exam);
+
+        return $this->successResponse(
+            new ExamResource($exam),
+            'تم إنهاء الامتحان بنجاح واحتساب النتائج'
+        );
+    }
+
+    private function notifyStudents(Exam $exam, $notification)
+    {
+        $query = \App\Models\Student::whereHas('enrollments', function ($q) use ($exam) {
+            $q->where('teacher_id', $exam->teacher_id);
+        });
+
+        if ($exam->grade_id) {
+            $query->whereHas('enrollments', function ($q) use ($exam) {
+                $q->where('grade_id', $exam->grade_id);
+            });
+        }
+
+        if ($exam->group_id) {
+            $query->whereHas('enrollments', function ($q) use ($exam) {
+                $q->where('group_id', $exam->group_id);
+            });
+        }
+
+        $students = $query->get();
+        
+        if ($students->count() > 0) {
+            \Illuminate\Support\Facades\Notification::send($students, $notification);
+        }
+    }
+
+    private function processExamResults(Exam $exam)
+    {
+        // Get all eligible students
+        $query = \App\Models\Student::whereHas('enrollments', function ($q) use ($exam) {
+            $q->where('teacher_id', $exam->teacher_id);
+        });
+
+        if ($exam->grade_id) {
+            $query->whereHas('enrollments', function ($q) use ($exam) {
+                $q->where('grade_id', $exam->grade_id);
+            });
+        }
+
+        $students = $query->get();
+        $examService = app(\App\Services\Student\StudentExamService::class);
+
+        foreach ($students as $student) {
+            $attempt = $exam->attempts()->where('student_id', $student->id)->first();
+
+            if ($attempt) {
+                if ($attempt->status === 'in_progress') {
+                    // Force submit
+                    $examService->terminateExam($attempt, 'time_limit_exceeded');
+                }
+            } else {
+                // Mark as absent
+                \App\Models\ExamResult::create([
+                    'exam_id' => $exam->id,
+                    'student_id' => $student->id,
+                    'score' => 0,
+                    'percentage' => 0,
+                    'status' => 'absent'
+                ]);
+
+                $student->notify(new \App\Notifications\ExamAbsentNotification($exam));
+            }
+        }
+    }
+}

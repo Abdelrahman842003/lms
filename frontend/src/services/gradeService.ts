@@ -1,0 +1,55 @@
+import { fetchApi } from './authService';
+
+export interface Grade {
+  id: string;
+  name: string;
+  groups_count: number;
+  students_count: number;
+  created_at: string;
+}
+
+export interface CreateGradeData {
+  name: string;
+}
+
+export interface UpdateGradeData {
+  name: string;
+}
+
+export const getGrades = async (
+  page = 1, 
+  perPage = 10,
+  filters?: { search?: string }
+): Promise<any> => {
+  const queryParams = new URLSearchParams({
+    page: page.toString(),
+    per_page: perPage.toString(),
+    ...(filters?.search && { search: filters.search }),
+  });
+
+  const data = await fetchApi(`/teacher/grades?${queryParams}`);
+  return data;
+};
+
+export const createGrade = async (data: CreateGradeData): Promise<{ grade: Grade; message: string }> => {
+  const res = await fetchApi('/teacher/grades', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+  return res;
+};
+
+export const updateGrade = async (id: string, data: UpdateGradeData): Promise<{ grade: Grade; message: string }> => {
+  const res = await fetchApi(`/teacher/grades/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+  return res;
+};
+
+export const deleteGrade = async (id: string): Promise<{ message: string }> => {
+  const res = await fetchApi(`/teacher/grades/${id}`, {
+    method: 'DELETE',
+  });
+  return res;
+};
