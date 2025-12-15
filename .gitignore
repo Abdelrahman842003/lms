@@ -3,10 +3,20 @@ dist/
 build/
 .next/
 .env
-.env.local
+.env.*
+!.env.example
+!.env.development
+!.env.production
+
+# Firebase credentials (IMPORTANT: Never commit these!)
+*firebase*.json
+!firebase.example.json
+neetaq-*-firebase-*.jsonocal
 .DS_Store
 coverage/
 .idea/
 .vscode/
 *.log
 vendor/
+*firebase-adminsdk*.json
+backend/storage/firebase/service-account.json

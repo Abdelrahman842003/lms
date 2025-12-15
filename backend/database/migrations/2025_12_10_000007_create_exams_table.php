@@ -14,6 +14,11 @@ return new class extends Migration
             $table->string('title');
             $table->string('subject');
             $table->integer('max_score');
+            $table->integer('actual_question_count')->default(10);
+            $table->integer('time_per_question')->default(60); // in seconds
+            $table->boolean('is_active')->default(false);
+            $table->timestamp('activated_at')->nullable();
+            $table->timestamp('ended_at')->nullable();
             $table->date('date');
             $table->integer('duration'); // Duration in minutes
             $table->foreignUuid('grade_id')->nullable()->constrained('grades')->onDelete('set null');

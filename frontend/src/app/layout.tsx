@@ -9,10 +9,10 @@ import PWAInstallPrompt from '@/components/PWAInstallPrompt'
 import ServiceWorkerRegistration from '@/components/ServiceWorkerRegistration'
 
 export const metadata: Metadata = {
-    title: 'لوحة تحكم المستخدم | User Dashboard',
-    description: 'لوحة تحكم حديثة ومتطورة لمنصة العمل الحر - A modern user dashboard for freelance platform',
-    keywords: 'لوحة تحكم، عمل حر، مشاريع، تطبيقات، أرباح',
-    authors: [{ name: 'Freelance Platform Team' }],
+    title: 'المنصة التعليمية | Educational Platform',
+    description: 'نظام شامل يربط بين الطلاب والمعلمين وأولياء الأمور. إدارة سهلة للمحاضرات، الامتحانات، والواجبات مع تحليلات دقيقة للأداء.',
+    keywords: 'تعليم، منصة تعليمية، طلاب، معلمين، امتحانات، واجبات، تعليم إلكتروني',
+    authors: [{ name: 'Educational Platform Team' }],
     manifest: '/manifest.json',
     icons: {
         icon: '/logo.png',

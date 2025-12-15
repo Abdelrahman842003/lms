@@ -17,7 +17,7 @@ return new class extends Migration
             $table->timestamp('qr_code_expires_at')->nullable();
             $table->dateTime('start_time');
             $table->dateTime('end_time');
-            $table->decimal('price', 8, 2)->nullable();
+            $table->boolean('is_active')->default(false);
             $table->timestamps();
         });
     }
