@@ -177,9 +177,9 @@ function AdminProfile() {
     >
       <div className="max-w-[800px] mx-auto">
         {/* Profile Header Card */}
-        <DashboardCard className="mb-6">
+        <DashboardCard className="mb-4 md:mb-6">
           <div className="text-center py-6">
-            <div className="w-[120px] h-[120px] rounded-full bg-gradient-to-br from-[#4263EB] to-[#3730A3] flex items-center justify-center text-[3rem] font-bold text-white mx-auto mb-6 shadow-[0_10px_30px_rgba(66,99,235,0.3)] overflow-hidden">
+            <div className="w-[80px] h-[80px] md:w-[120px] md:h-[120px] rounded-full bg-gradient-to-br from-[#4263EB] to-[#3730A3] flex items-center justify-center text-[2rem] md:text-[3rem] font-bold text-white mx-auto mb-4 md:mb-6 shadow-[0_10px_30px_rgba(66,99,235,0.3)] overflow-hidden transition-all duration-300">
               {user?.avatar ? (
                 <img
                   src={user.avatar}
@@ -190,7 +190,7 @@ function AdminProfile() {
                 getInitials(user?.name || 'Admin')
               )}
             </div>
-            <h2 className="text-[1.8rem] font-bold text-white mb-2">
+            <h2 className="text-[1.4rem] md:text-[1.8rem] font-bold text-white mb-2 transition-all duration-300">
               {user?.name || 'مدير النظام'}
             </h2>
             <div className="inline-block mt-4 px-4 py-2 bg-[#4263EB]/15 rounded-lg text-primary text-[0.9rem] font-semibold">
@@ -220,7 +220,7 @@ function AdminProfile() {
         <DashboardCard
           title="المعلومات الشخصية"
           icon="fas fa-user"
-          className="mb-6"
+          className="mb-4 md:mb-6"
           action={
             !isEditing ? (
               <button
@@ -408,7 +408,7 @@ function AdminProfile() {
           )}
         </DashboardCard>
         {/* Notification Settings Card */}
-        <div className="mb-6">
+        <div className="mb-4 md:mb-6">
           <NotificationSettings />
         </div>
       </div>

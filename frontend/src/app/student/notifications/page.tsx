@@ -5,10 +5,12 @@ import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { DataTable } from '@/components/dashboard/DataTable';
+import { Select } from '@/components/ui/Select';
 import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { getNotifications, sendNotification, Notification as SentNotification, ReceivedNotification } from '@/services/notificationService';
 import { toast } from 'react-hot-toast';
+import NotificationDetailsModal from '@/components/ui/NotificationDetailsModal';
 
 function StudentNotificationsContent() {
   const { user } = useAuth();
@@ -16,6 +18,8 @@ function StudentNotificationsContent() {
   const [notifications, setNotifications] = useState<SentNotification[]>([]);
   const [receivedNotifications, setReceivedNotifications] = useState<ReceivedNotification[]>([]);
   const [showModal, setShowModal] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [selectedNotification, setSelectedNotification] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
@@ -144,6 +148,11 @@ function StudentNotificationsContent() {
     }
   };
 
+  const handleRowClick = (row: any) => {
+    setSelectedNotification(row);
+    setShowDetailsModal(true);
+  };
+
   const getStats = () => {
     if (filter === 'received') {
       return {
@@ -221,24 +230,68 @@ function StudentNotificationsContent() {
               <span>تواصل مع الدعم</span>
             </button>
             
-            <select
-              className="p-2.5 bg-white/5 border border-white/10 rounded-lg text-white outline-none w-auto min-w-[150px] cursor-pointer"
+            <Select
+              options={[
+                { value: 'received', label: 'الواردة (من المدرس/الإدارة)' },
+                { value: 'sent_to_developer', label: 'المرسلة (للدعم الفني)' }
+              ]}
               value={filter}
-              onChange={(e) => setFilter(e.target.value as 'received' | 'sent_to_developer')}
-            >
-              <option value="received" className="bg-[#1a1f37]">الواردة (من المدرس/الإدارة)</option>
-              <option value="sent_to_developer" className="bg-[#1a1f37]">المرسلة (للدعم الفني)</option>
-            </select>
+              onChange={(value) => setFilter(value as 'received' | 'sent_to_developer')}
+              className="w-auto min-w-[220px]"
+            />
           </div>
         }
       >
-        <DataTable
-          columns={filter === 'received' ? receivedTableColumns : sentTableColumns}
-          data={filteredData}
-          searchable={true}
-          pagination={true}
-          itemsPerPage={10}
-        />
+        <div className="hidden md:block">
+          <DataTable
+            columns={filter === 'received' ? receivedTableColumns : sentTableColumns}
+            data={filteredData}
+            searchable={true}
+            pagination={true}
+            itemsPerPage={10}
+            onRowClick={handleRowClick}
+          />
+        </div>
+
+        <div className="md:hidden flex flex-col gap-4">
+          {filteredData.length > 0 ? (
+            filteredData.map((item, index) => (
+              <div 
+                key={index} 
+                className="p-4 bg-white/5 rounded-xl border border-white/10 cursor-pointer hover:bg-white/10 transition-colors"
+                onClick={() => handleRowClick(item)}
+              >
+                <div className="flex justify-between items-start mb-2">
+                  <h3 className="font-bold text-white text-base">{item.title}</h3>
+                  <span className="text-xs text-gray-400 bg-white/5 px-2 py-1 rounded whitespace-nowrap">
+                    {new Date(item.created_at).toLocaleDateString('ar-EG')}
+                  </span>
+                </div>
+                <p className="text-gray-300 text-sm mb-3 leading-relaxed">{item.message}</p>
+                <div className="flex justify-between items-center text-xs text-gray-400 border-t border-white/5 pt-3 mt-2">
+                  <span className="flex items-center gap-1">
+                    {filter === 'received' ? (
+                      <>
+                        <i className="fas fa-user text-primary"></i>
+                        <span>{(item as any).sender_name}</span>
+                      </>
+                    ) : (
+                      <>
+                        <i className="fas fa-paper-plane text-info"></i>
+                        <span>الدعم الفني</span>
+                      </>
+                    )}
+                  </span>
+                </div>
+              </div>
+            ))
+          ) : (
+             <div className="text-center p-8 text-gray-400 bg-white/5 rounded-xl border border-white/10">
+               <i className="fas fa-inbox text-2xl mb-2 block opacity-50"></i>
+               لا توجد إخطارات
+             </div>
+          )}
+        </div>
       </DashboardCard>
 
       {/* Send Notification Modal */}
@@ -298,6 +351,13 @@ function StudentNotificationsContent() {
           </div>
         </div>
       )}
+
+      {/* Notification Details Modal */}
+      <NotificationDetailsModal
+        isOpen={showDetailsModal}
+        onClose={() => setShowDetailsModal(false)}
+        notification={selectedNotification}
+      />
     </DashboardLayout>
   );
 }

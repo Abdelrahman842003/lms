@@ -118,6 +118,7 @@ export default function StudentDashboard() {
       role="student"
       user={mockUser}
     >
+      <div className="max-w-[1200px] mx-auto">
       {/* Stats Grid */}
       <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-6 mb-8">
         <StatCard
@@ -143,7 +144,7 @@ export default function StudentDashboard() {
       </div>
 
       {/* Content Grid */}
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(400px,1fr))] gap-6">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-6">
         {/* Upcoming Lectures */}
         <DashboardCard
           title="المحاضرات القادمة"
@@ -154,7 +155,7 @@ export default function StudentDashboard() {
             </Link>
           }
         >
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {upcomingLectures.length === 0 ? (
                 <div className="col-span-full text-center text-gray-light p-5">
                   لا توجد محاضرات قادمة
@@ -245,6 +246,7 @@ export default function StudentDashboard() {
         </DashboardCard>
       </div>
 
+      </div>
     </DashboardLayout>
   );
 }

@@ -18,6 +18,7 @@ export const DataTable: React.FC<DataTableProps> = ({
   totalItems,
   headerActions,
   rowClassName,
+  onRowClick,
 }) => {
   const [internalSearchQuery, setInternalSearchQuery] = useState('');
   const searchQuery = onSearch ? undefined : internalSearchQuery;
@@ -171,7 +172,11 @@ export const DataTable: React.FC<DataTableProps> = ({
             ))
           ) : paginatedData.length > 0 ? (
             paginatedData.map((row, rowIndex) => (
-              <tr key={rowIndex} className={rowClassName ? rowClassName(row) : ''}>
+              <tr 
+                key={rowIndex} 
+                className={`${rowClassName ? rowClassName(row) : ''} ${onRowClick ? 'cursor-pointer hover:bg-white/5 transition-colors' : ''}`}
+                onClick={() => onRowClick && onRowClick(row)}
+              >
                 {columns.map((column) => (
                   <td key={column.key} className={column.className || ''}>
                     {column.render

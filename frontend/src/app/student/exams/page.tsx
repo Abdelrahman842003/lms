@@ -75,6 +75,7 @@ export default function StudentExamsPage() {
     >
 
         
+      <div className="flex flex-col gap-8">
         {/* Stats */}
         <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-6 mb-8">
           <StatCard
@@ -106,7 +107,7 @@ export default function StudentExamsPage() {
           title="الامتحانات المتاحة"
           icon="fas fa-pen-alt"
         >
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-5">
             {loading ? (
               [1, 2, 3].map((i) => (
                 <div
@@ -127,22 +128,25 @@ export default function StudentExamsPage() {
               availableExams.map((exam) => (
               <div
                 key={exam.id}
-                className={`p-5 bg-white/5 rounded-xl border border-white/10 ${
+                className={`p-4 md:p-5 bg-white/5 rounded-xl border border-white/10 ${
                   exam.is_completed ? 'border-r-success' : 'border-r-primary'
-                } border-r-4`}
+                } border-r-4 relative overflow-hidden group hover:border-white/20 transition-all`}
               >
-                <div className="flex justify-between items-start mb-3">
+                {/* Decorative background element */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+
+                <div className="flex justify-between items-start mb-3 relative z-10">
                   <h3 className="text-[1.05rem] font-bold text-white">
                     {exam.title}
                   </h3>
-                  <span className={`px-2 py-1 rounded-md text-xs font-medium border ${
+                  <span className={`px-2 py-1 rounded-md text-xs font-bold border ${
                     exam.is_completed ? 'bg-success/10 text-success border-success/20' : 'bg-primary/10 text-primary border-primary/20'
                   }`}>
                     {exam.is_completed ? 'مكتمل' : 'متاح'}
                   </span>
                 </div>
                 
-                <div className="flex flex-col gap-2 mb-4 text-[0.85rem]">
+                <div className="flex flex-col gap-2 mb-4 text-[0.85rem] relative z-10">
                   <div className="flex gap-2 text-light">
                     <i className="fas fa-clock w-4 text-primary"></i>
                     <span>{exam.time_per_question || 60} ثانية لكل سؤال</span>
@@ -166,7 +170,7 @@ export default function StudentExamsPage() {
                 {!exam.is_completed && (
                   exam.is_active ? (
                     <button 
-                      className="btn btn-primary btn-sm w-full"
+                      className="btn btn-primary btn-sm w-full shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all relative z-10"
                       onClick={() => router.push(`/student/exams/${exam.id}/take`)}
                     >
                       <i className="fas fa-play ml-2"></i>
@@ -174,7 +178,7 @@ export default function StudentExamsPage() {
                     </button>
                   ) : (
                     <button 
-                      className="btn btn-secondary btn-sm w-full opacity-70 cursor-not-allowed"
+                      className="btn btn-secondary btn-sm w-full opacity-70 cursor-not-allowed relative z-10"
                       disabled
                     >
                       <i className="fas fa-lock ml-2"></i>
@@ -238,6 +242,7 @@ export default function StudentExamsPage() {
             )}
           </div>
         </DashboardCard>
+      </div>
 
     </DashboardLayout>
   );

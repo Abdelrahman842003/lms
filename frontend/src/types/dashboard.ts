@@ -61,6 +61,7 @@ export interface DataTableProps {
   totalItems?: number;
   headerActions?: React.ReactNode;
   rowClassName?: (row: any) => string;
+  onRowClick?: (row: any) => void;
 }
 
 export interface ChartDataPoint {

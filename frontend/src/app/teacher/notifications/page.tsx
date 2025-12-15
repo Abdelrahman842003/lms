@@ -5,12 +5,14 @@ import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { DataTable } from '@/components/dashboard/DataTable';
+import { Select } from '@/components/ui/Select';
 import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { getGrades, Grade } from '@/services/gradeService';
 import { getGroups, Group } from '@/services/groupService';
 import { getNotifications, sendNotification, Notification as SentNotification, ReceivedNotification } from '@/services/notificationService';
 import { toast } from 'react-hot-toast';
+import NotificationDetailsModal from '@/components/ui/NotificationDetailsModal';
 
 function NotificationsContent() {
   const { user } = useAuth();
@@ -20,6 +22,8 @@ function NotificationsContent() {
   const [grades, setGrades] = useState<Grade[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const [showModal, setShowModal] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [selectedNotification, setSelectedNotification] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
@@ -186,6 +190,11 @@ function NotificationsContent() {
     }
   };
 
+  const handleRowClick = (row: any) => {
+    setSelectedNotification(row);
+    setShowDetailsModal(true);
+  };
+
   const getStats = () => {
     if (filter === 'from_developer') {
       return {
@@ -275,15 +284,16 @@ function NotificationsContent() {
                 </span>
               </button>
             )}
-            <select
-              className="p-2.5 bg-white/5 border border-white/10 rounded-lg text-white outline-none w-auto min-w-[150px] cursor-pointer"
+            <Select
+              options={[
+                { value: 'students', label: 'للطلاب' },
+                { value: 'sent_to_developer', label: 'مرسلة للمطور' },
+                { value: 'from_developer', label: 'من المطور' }
+              ]}
               value={filter}
-              onChange={(e) => setFilter(e.target.value as 'students' | 'sent_to_developer' | 'from_developer')}
-            >
-              <option value="students" className="bg-[#1a1f37]">للطلاب</option>
-              <option value="sent_to_developer" className="bg-[#1a1f37]">مرسلة للمطور</option>
-              <option value="from_developer" className="bg-[#1a1f37]">من المطور</option>
-            </select>
+              onChange={(value) => setFilter(value as 'students' | 'sent_to_developer' | 'from_developer')}
+              className="w-auto min-w-[150px]"
+            />
           </div>
         }
       >
@@ -293,6 +303,7 @@ function NotificationsContent() {
           searchable={true}
           pagination={true}
           itemsPerPage={10}
+          onRowClick={handleRowClick}
         />
       </DashboardCard>
 
@@ -342,56 +353,46 @@ function NotificationsContent() {
                 {formData.recipient_type !== 'admin' && (
                   <div className="space-y-2">
                     <label htmlFor="recipient_type" className="block text-sm font-medium text-gray-300">المستقبلين</label>
-                    <select
-                      id="recipient_type"
-                      className="w-full p-3 bg-[#151521] border border-white/10 rounded-lg text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all cursor-pointer appearance-none"
+                    <Select
+                      options={[
+                        { value: 'all', label: 'جميع الطلاب' },
+                        { value: 'grade', label: 'صف دراسي معين' },
+                        { value: 'group', label: 'مجموعة معينة' }
+                      ]}
                       value={formData.recipient_type}
-                      onChange={(e) => setFormData({...formData, recipient_type: e.target.value, grade_id: '', group_id: ''})}
-                    >
-                      <option value="all" className="bg-[#1a1f37]">جميع الطلاب</option>
-                      <option value="grade" className="bg-[#1a1f37]">صف دراسي معين</option>
-                      <option value="group" className="bg-[#1a1f37]">مجموعة معينة</option>
-                    </select>
+                      onChange={(value) => setFormData({...formData, recipient_type: value, grade_id: '', group_id: ''})}
+                      className="w-full"
+                    />
                   </div>
                 )}
 
                 {formData.recipient_type === 'grade' && (
                   <div className="space-y-2">
                     <label htmlFor="grade_id" className="block text-sm font-medium text-gray-300">اختر الصف</label>
-                    <select
-                      id="grade_id"
-                      className="w-full p-3 bg-[#151521] border border-white/10 rounded-lg text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all cursor-pointer appearance-none"
+                    <Select
+                      options={[
+                        { value: '', label: '-- اختر الصف --' },
+                        ...grades.map(grade => ({ value: grade.id.toString(), label: grade.name }))
+                      ]}
                       value={formData.grade_id}
-                      onChange={(e) => setFormData({...formData, grade_id: e.target.value})}
-                      required
-                    >
-                      <option value="" className="bg-[#1a1f37]">-- اختر الصف --</option>
-                      {grades.map((grade) => (
-                        <option key={grade.id} value={grade.id} className="bg-[#1a1f37]">
-                          {grade.name}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(value) => setFormData({...formData, grade_id: value})}
+                      className="w-full"
+                    />
                   </div>
                 )}
 
                 {formData.recipient_type === 'group' && (
                   <div className="space-y-2">
                     <label htmlFor="group_id" className="block text-sm font-medium text-gray-300">اختر المجموعة</label>
-                    <select
-                      id="group_id"
-                      className="w-full p-3 bg-[#151521] border border-white/10 rounded-lg text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all cursor-pointer appearance-none"
+                    <Select
+                      options={[
+                        { value: '', label: '-- اختر المجموعة --' },
+                        ...groups.map(group => ({ value: group.id.toString(), label: group.name }))
+                      ]}
                       value={formData.group_id}
-                      onChange={(e) => setFormData({...formData, group_id: e.target.value})}
-                      required
-                    >
-                      <option value="" className="bg-[#1a1f37]">-- اختر المجموعة --</option>
-                      {groups.map((group) => (
-                        <option key={group.id} value={group.id} className="bg-[#1a1f37]">
-                          {group.name}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(value) => setFormData({...formData, group_id: value})}
+                      className="w-full"
+                    />
                   </div>
                 )}
               </div>
@@ -423,6 +424,13 @@ function NotificationsContent() {
           </div>
         </div>
       )}
+
+      {/* Notification Details Modal */}
+      <NotificationDetailsModal
+        isOpen={showDetailsModal}
+        onClose={() => setShowDetailsModal(false)}
+        notification={selectedNotification}
+      />
     </DashboardLayout>
   );
 }

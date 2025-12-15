@@ -6,14 +6,18 @@ import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { DataTable } from '@/components/dashboard/DataTable';
+import { Select } from '@/components/ui/Select';
 import { useAuth } from '@/contexts/AuthContext';
 import { getNotifications, sendNotification, Notification as SentNotification } from '@/services/notificationService';
 import { toast } from 'react-hot-toast';
+import NotificationDetailsModal from '@/components/ui/NotificationDetailsModal';
 
 export default function AdminNotificationsPage() {
   const { user } = useAuth();
   const [notifications, setNotifications] = useState<SentNotification[]>([]);
   const [showModal, setShowModal] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [selectedNotification, setSelectedNotification] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
@@ -65,6 +69,11 @@ export default function AdminNotificationsPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleRowClick = (row: any) => {
+    setSelectedNotification(row);
+    setShowDetailsModal(true);
   };
 
   const tableColumns = [
@@ -148,6 +157,7 @@ export default function AdminNotificationsPage() {
           searchable={true}
           pagination={true}
           itemsPerPage={10}
+          onRowClick={handleRowClick}
         />
       </DashboardCard>
 
@@ -191,17 +201,17 @@ export default function AdminNotificationsPage() {
 
                 <div className="mb-4">
                   <label htmlFor="recipient_type" className="block text-gray-light text-sm mb-2 font-medium">المستقبلين</label>
-                  <select
-                    id="recipient_type"
-                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                  <Select
+                    options={[
+                      { value: 'all_users', label: 'جميع المستخدمين' },
+                      { value: 'all_teachers', label: 'جميع المدرسين' },
+                      { value: 'all_students', label: 'جميع الطلاب' },
+                      { value: 'all_secretaries', label: 'جميع السكرتارية' }
+                    ]}
                     value={formData.recipient_type}
-                    onChange={(e) => setFormData({...formData, recipient_type: e.target.value})}
-                  >
-                    <option value="all_users">جميع المستخدمين</option>
-                    <option value="all_teachers">جميع المدرسين</option>
-                    <option value="all_students">جميع الطلاب</option>
-                    <option value="all_secretaries">جميع السكرتارية</option>
-                  </select>
+                    onChange={(value) => setFormData({...formData, recipient_type: value})}
+                    className="w-full"
+                  />
                 </div>
               </div>
               <div className="flex justify-end gap-3 p-6 border-t border-white/10 bg-white/5 rounded-b-xl">
@@ -216,6 +226,13 @@ export default function AdminNotificationsPage() {
           </div>
         </div>
       )}
+
+      {/* Notification Details Modal */}
+      <NotificationDetailsModal
+        isOpen={showDetailsModal}
+        onClose={() => setShowDetailsModal(false)}
+        notification={selectedNotification}
+      />
     </DashboardLayout>
   );
 }

@@ -154,14 +154,14 @@ export default function StudentLecturesPage() {
         {/* Active Lectures Section */}
         {activeLectures.length > 0 && (
           <div className="bg-[#1e1e2d] rounded-xl shadow-lg mb-8 border-2 border-success bg-success/5">
-            <div className="p-6 border-b border-white/10 flex items-center justify-between">
+            <div className="p-4 md:p-6 border-b border-white/10 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <i className="fas fa-broadcast-tower text-success text-xl"></i>
                 <h2 className="text-xl font-bold text-success m-0">محاضرات جارية الآن</h2>
               </div>
             </div>
-            <div className="p-6">
-              <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-5">
+            <div className="p-4 md:p-6">
+              <div className="grid grid-cols-1 md:grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-5">
               {activeLectures.map((lecture) => {
                 const isAttended = attendance.some(a => a.lecture_id === lecture.id && (a.status === 'present' || a.status === 'late'));
                 
@@ -214,7 +214,7 @@ export default function StudentLecturesPage() {
           title="كل المحاضرات"
           icon="fas fa-calendar-alt"
         >
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-5">
             {loading ? (
               [1, 2, 3].map((i) => (
                 <div
