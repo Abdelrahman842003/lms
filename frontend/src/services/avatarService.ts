@@ -1,7 +1,4 @@
-import { getAuthToken } from '@/services/authService';
-
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-const API_URL = BASE_URL.endsWith('/api') ? BASE_URL : `${BASE_URL}/api`;
+import { fetchApi } from '@/services/authService';
 
 export interface AvatarUploadResponse {
   success: boolean;
@@ -27,65 +24,37 @@ export async function uploadAvatar(file: File): Promise<AvatarUploadResponse> {
   const formData = new FormData();
   formData.append('avatar', file);
 
-  const token = getAuthToken();
-
-  const response = await fetch(`${API_URL}/avatar/upload`, {
+  // We pass Content-Type as undefined to let the browser set it with the boundary for FormData
+  // fetchApi logic we just updated will handle this correctly
+  const response = await fetchApi('/avatar/upload', {
     method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Accept': 'application/json',
-    },
     body: formData,
+    headers: {
+      'Content-Type': undefined as any, 
+    },
   });
 
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Failed to upload avatar');
-  }
-
-  return response.json();
+  return response;
 }
 
 /**
  * Delete avatar
  */
 export async function deleteAvatar(): Promise<{ success: boolean; message?: string }> {
-  const token = getAuthToken();
-
-  const response = await fetch(`${API_URL}/avatar`, {
+  const response = await fetchApi('/avatar', {
     method: 'DELETE',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Accept': 'application/json',
-    },
   });
 
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Failed to delete avatar');
-  }
-
-  return response.json();
+  return response;
 }
 
 /**
  * Get avatar URL
  */
 export async function getAvatarUrl(): Promise<AvatarUrlResponse> {
-  const token = getAuthToken();
-
-  const response = await fetch(`${API_URL}/avatar`, {
+  const response = await fetchApi('/avatar', {
     method: 'GET',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Accept': 'application/json',
-    },
   });
 
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Failed to get avatar');
-  }
-
-  return response.json();
+  return response;
 }

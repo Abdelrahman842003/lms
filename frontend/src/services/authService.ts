@@ -162,12 +162,20 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}): Pro
   }
 
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
     'Accept': 'application/json',
     ...(xsrfToken && { 'X-XSRF-TOKEN': xsrfToken }),
     ...(token && { 'Authorization': `Bearer ${token}` }),
     ...(options.headers as Record<string, string>),
   };
+
+  // Set default Content-Type to application/json if not specified
+  // If the caller explicitly sets Content-Type to undefined/null (e.g. for FormData), we shouldn't set it
+  if (!options.headers || !('Content-Type' in options.headers)) {
+    headers['Content-Type'] = 'application/json';
+  } else if (options.headers && 'Content-Type' in options.headers && !options.headers['Content-Type' as keyof HeadersInit]) {
+     // If Content-Type is present but falsy (e.g. null/undefined), delete it so browser sets it (for FormData)
+     delete headers['Content-Type'];
+  }
 
   // Ensure API_BASE_URL does not end with /api or /
   const cleanBaseUrl = API_BASE_URL.replace(/\/api\/?$/, '').replace(/\/$/, '');

@@ -6,8 +6,10 @@ import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { withAdminAuth } from '@/components/auth/withAdminAuth';
 import { useAuth } from '@/contexts/AuthContext';
 import { updateAdminProfile, changeAdminPassword } from '@/services/authService';
-import { Skeleton } from '@/components/ui';
+import { uploadAvatar, deleteAvatar, getAvatarUrl } from '@/services/avatarService';
+import { Skeleton, ImageCropModal, ConfirmationModal } from '@/components/ui';
 import NotificationSettings from '@/components/NotificationSettings';
+import toast from 'react-hot-toast';
 
 function AdminProfile() {
   const { user, updateUser, isLoading } = useAuth();
@@ -17,15 +19,142 @@ function AdminProfile() {
     username: user?.username || '',
   });
 
-  // Update form data when user data is available
+  // Avatar state
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(user?.avatar || null);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  
+  // Crop modal state
+  const [showCropModal, setShowCropModal] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+
+  // Delete confirmation modal state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+  // Update form data and avatar when user data is available
   React.useEffect(() => {
     if (user) {
       setFormData({
         name: user.name || '',
         username: user.username || '',
       });
+      // Sync avatarUrl with user.avatar
+      if (user.avatar) {
+        setAvatarUrl(user.avatar);
+      }
     }
   }, [user]);
+  
+  // Load avatar on mount
+  React.useEffect(() => {
+    loadAvatar();
+  }, []);
+
+  const loadAvatar = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const response = await getAvatarUrl();
+      if (response.success && response.data?.url) {
+        setAvatarUrl(response.data.url);
+        if (updateUser) {
+            updateUser({ avatar: response.data.url });
+        }
+      }
+    } catch (err) {
+      console.log('No avatar found or error loading avatar');
+    }
+  };
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('يرجى اختيار صورة صحيحة');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('حجم الصورة يجب أن لا يتجاوز 5 ميغابايت');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setSelectedImage(reader.result as string);
+      setShowCropModal(true);
+    };
+    reader.readAsDataURL(file);
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleCropComplete = async (croppedBlob: Blob) => {
+    setShowCropModal(false);
+    setSelectedImage(null);
+    setIsUploadingAvatar(true);
+
+    try {
+      const file = new File([croppedBlob], 'avatar.jpg', { type: 'image/jpeg' });
+      
+      const response = await uploadAvatar(file);
+      if (response.success && response.data?.url) {
+        setAvatarUrl(response.data.url);
+        if (updateUser) {
+            updateUser({ avatar: response.data.url });
+        }
+        toast.success('تم تحديث الصورة الشخصية بنجاح');
+      }
+    } catch (err: any) {
+      const message = err.message || 'فشل رفع الصورة';
+      toast.error(message);
+      
+      if (message.includes('انتهت صلاحية الجلسة')) {
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
+      }
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
+
+  const handleCropCancel = () => {
+    setShowCropModal(false);
+    setSelectedImage(null);
+  };
+
+  const handleAvatarDelete = () => {
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    setIsUploadingAvatar(true);
+    try {
+      await deleteAvatar();
+      setAvatarUrl(null);
+      if (updateUser) {
+        updateUser({ avatar: null });
+      }
+      setShowDeleteModal(false);
+      toast.success('تم حذف الصورة الشخصية بنجاح');
+    } catch (err: any) {
+      const message = err.message || 'فشل حذف الصورة';
+      toast.error(message);
+      
+      if (message.includes('انتهت صلاحية الجلسة')) {
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
+      }
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
   
   // Password Change State
   const [passwordData, setPasswordData] = useState({
@@ -36,7 +165,6 @@ function AdminProfile() {
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   
   const [isSaving, setIsSaving] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -54,7 +182,6 @@ function AdminProfile() {
 
   const handleSave = async () => {
     setIsSaving(true);
-    setMessage(null);
 
     try {
       const token = localStorage.getItem('token');
@@ -68,10 +195,10 @@ function AdminProfile() {
         username: response.user.username,
       });
 
-      setMessage({ type: 'success', text: 'تم حفظ التعديلات بنجاح!' });
+      toast.success('تم حفظ التعديلات بنجاح!');
       setIsEditing(false);
     } catch (error: any) {
-      setMessage({ type: 'error', text: error.message || 'فشل حفظ التعديلات. حاول مرة أخرى.' });
+      toast.error(error.message || 'فشل حفظ التعديلات. حاول مرة أخرى.');
     } finally {
       setIsSaving(false);
     }
@@ -79,12 +206,11 @@ function AdminProfile() {
 
   const handleSavePassword = async () => {
     if (passwordData.new_password !== passwordData.new_password_confirmation) {
-      setMessage({ type: 'error', text: 'كلمة المرور الجديدة غير متطابقة' });
+      toast.error('كلمة المرور الجديدة غير متطابقة');
       return;
     }
 
     setIsSaving(true);
-    setMessage(null);
 
     try {
       const token = localStorage.getItem('token');
@@ -92,7 +218,7 @@ function AdminProfile() {
 
       await changeAdminPassword(passwordData);
 
-      setMessage({ type: 'success', text: 'تم تغيير كلمة المرور بنجاح!' });
+      toast.success('تم تغيير كلمة المرور بنجاح!');
       setIsChangingPassword(false);
       setPasswordData({
         current_password: '',
@@ -100,7 +226,7 @@ function AdminProfile() {
         new_password_confirmation: '',
       });
     } catch (error: any) {
-      setMessage({ type: 'error', text: error.message || 'فشل تغيير كلمة المرور' });
+      toast.error(error.message || 'فشل تغيير كلمة المرور');
     } finally {
       setIsSaving(false);
     }
@@ -112,7 +238,6 @@ function AdminProfile() {
       username: user?.username || '',
     });
     setIsEditing(false);
-    setMessage(null);
   };
 
   const handleCancelPassword = () => {
@@ -122,7 +247,6 @@ function AdminProfile() {
       new_password_confirmation: '',
     });
     setIsChangingPassword(false);
-    setMessage(null);
   };
 
   const getInitials = (name: string) => {
@@ -177,19 +301,57 @@ function AdminProfile() {
     >
       <div className="max-w-[800px] mx-auto">
         {/* Profile Header Card */}
-        <DashboardCard className="mb-6">
+        <DashboardCard className="mb-8">
           <div className="text-center py-6">
-            <div className="w-[120px] h-[120px] rounded-full bg-gradient-to-br from-[#4263EB] to-[#3730A3] flex items-center justify-center text-[3rem] font-bold text-white mx-auto mb-6 shadow-[0_10px_30px_rgba(66,99,235,0.3)] overflow-hidden">
-              {user?.avatar ? (
-                <img
-                  src={user.avatar}
-                  alt={user.name}
-                  className="w-full h-full rounded-full object-cover"
-                />
-              ) : (
-                getInitials(user?.name || 'Admin')
-              )}
+            <div className="relative w-[120px] h-[120px] mx-auto mb-6">
+                <div className="w-full h-full rounded-full bg-gradient-to-br from-[#4263EB] to-[#3730A3] flex items-center justify-center text-[3rem] font-bold text-white shadow-[0_10px_30px_rgba(66,99,235,0.3)] overflow-hidden">
+                {avatarUrl ? (
+                    <img
+                    src={avatarUrl}
+                    alt={user?.name}
+                    className="w-full h-full rounded-full object-cover"
+                    />
+                ) : (
+                    getInitials(user?.name || 'Admin')
+                )}
+                </div>
+                {isUploadingAvatar && (
+                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-full">
+                    <div className="w-8 h-8 border-[3px] border-white/30 border-t-white rounded-full animate-spin"></div>
+                  </div>
+                )}
+                
+                {isEditing && (
+                  <div className="absolute -bottom-2 -right-2 flex gap-2">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarChange}
+                      className="hidden"
+                    />
+                    <button 
+                      className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center shadow-lg hover:bg-primary-dark transition-colors"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploadingAvatar}
+                      title="تغيير الصورة"
+                    >
+                      <i className="fas fa-camera text-sm"></i>
+                    </button>
+                    {avatarUrl && (
+                      <button 
+                        className="w-10 h-10 rounded-full bg-red-500 text-white flex items-center justify-center shadow-lg hover:bg-red-600 transition-colors"
+                        onClick={handleAvatarDelete}
+                        disabled={isUploadingAvatar}
+                        title="حذف الصورة"
+                      >
+                        <i className="fas fa-trash text-sm"></i>
+                      </button>
+                    )}
+                  </div>
+                )}
             </div>
+            
             <h2 className="text-[1.8rem] font-bold text-white mb-2">
               {user?.name || 'مدير النظام'}
             </h2>
@@ -200,27 +362,11 @@ function AdminProfile() {
           </div>
         </DashboardCard>
 
-        {/* Message Alert */}
-        {message && (
-          <div
-            className={`p-4 rounded-xl mb-6 flex items-center gap-3 border ${
-              message.type === 'success' 
-                ? 'bg-success/15 border-success/30' 
-                : 'bg-danger/15 border-danger/30'
-            }`}
-          >
-            <i
-              className={`${message.type === 'success' ? 'fas fa-check-circle text-success' : 'fas fa-exclamation-circle text-danger'} text-[1.2rem]`}
-            ></i>
-            <span className="text-white flex-1">{message.text}</span>
-          </div>
-        )}
-
         {/* Profile Form Card */}
         <DashboardCard
           title="المعلومات الشخصية"
           icon="fas fa-user"
-          className="mb-6"
+          className="mb-8"
           action={
             !isEditing ? (
               <button
@@ -274,7 +420,7 @@ function AdminProfile() {
                   name="name"
                   value={formData.name}
                   onChange={handleInputChange}
-                  className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white text-[1rem] focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                  className="form-input w-full"
                 />
               ) : (
                 <div className="p-3 bg-white/3 rounded-lg text-white text-[1rem]">
@@ -294,7 +440,7 @@ function AdminProfile() {
                   name="username"
                   value={formData.username}
                   onChange={handleInputChange}
-                  className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white text-[1rem] focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                  className="form-input w-full"
                 />
               ) : (
                 <div className="p-3 bg-white/3 rounded-lg text-white text-[1rem]">
@@ -373,7 +519,7 @@ function AdminProfile() {
                   name="current_password"
                   value={passwordData.current_password}
                   onChange={handlePasswordChange}
-                  className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white text-[1rem] focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                  className="form-input w-full"
                 />
               </div>
 
@@ -387,7 +533,7 @@ function AdminProfile() {
                   name="new_password"
                   value={passwordData.new_password}
                   onChange={handlePasswordChange}
-                  className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white text-[1rem] focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                  className="form-input w-full"
                 />
               </div>
 
@@ -401,7 +547,7 @@ function AdminProfile() {
                   name="new_password_confirmation"
                   value={passwordData.new_password_confirmation}
                   onChange={handlePasswordChange}
-                  className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white text-[1rem] focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                  className="form-input w-full"
                 />
               </div>
             </div>
@@ -412,6 +558,27 @@ function AdminProfile() {
           <NotificationSettings />
         </div>
       </div>
+
+      {/* Image Crop Modal */}
+      {showCropModal && selectedImage && (
+        <ImageCropModal
+          image={selectedImage}
+          onCropComplete={handleCropComplete}
+          onCancel={handleCropCancel}
+        />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showDeleteModal}
+        title="حذف الصورة الشخصية"
+        message="هل أنت متأكد من رغبتك في حذف الصورة الشخصية؟ لا يمكن التراجع عن هذا الإجراء."
+        confirmText="حذف"
+        cancelText="إلغاء"
+        onConfirm={confirmDelete}
+        onCancel={() => setShowDeleteModal(false)}
+        isProcessing={isUploadingAvatar}
+      />
     </DashboardLayout>
   );
 }

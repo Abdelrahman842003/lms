@@ -56,7 +56,28 @@ export default function RootLayout({
                     <ServiceWorkerRegistration />
                     {children}
                     <PWAInstallPrompt />
-                    <Toaster position="top-center" />
+                    <Toaster 
+                        position="top-center"
+                        toastOptions={{
+                            style: {
+                                background: '#1e1e2d',
+                                color: '#fff',
+                                border: '1px solid rgba(255, 255, 255, 0.1)',
+                            },
+                            success: {
+                                iconTheme: {
+                                    primary: '#00D68F',
+                                    secondary: '#fff',
+                                },
+                            },
+                            error: {
+                                iconTheme: {
+                                    primary: '#FF5B5B',
+                                    secondary: '#fff',
+                                },
+                            },
+                        }}
+                    />
                 </div>
                 </AuthProvider>
             </body>

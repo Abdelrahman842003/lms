@@ -8,10 +8,12 @@ import { uploadAvatar, deleteAvatar, getAvatarUrl } from '@/services/avatarServi
 import { ImageCropModal, ConfirmationModal, Skeleton } from '@/components/ui';
 import { AuthInput } from '@/components/auth/AuthInput';
 
+import toast from 'react-hot-toast';
+
 export default function StudentProfilePage() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, updateUser } = useAuth();
   const [isEditing, setIsEditing] = React.useState(false);
-  const [avatarUrl, setAvatarUrl] = React.useState<string | null>(null);
+  const [avatarUrl, setAvatarUrl] = React.useState<string | null>(user?.avatar || null);
   const [isUploadingAvatar, setIsUploadingAvatar] = React.useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   
@@ -34,7 +36,7 @@ export default function StudentProfilePage() {
     confirmPassword: '',
   });
 
-  // Update form data when user data is available
+  // Update form data and avatar when user data is available
   React.useEffect(() => {
     if (user) {
       setFormData(prev => ({
@@ -45,6 +47,10 @@ export default function StudentProfilePage() {
         parent_phone: user.parent_phone || '-',
         location: user.location || '-',
       }));
+      // Sync avatarUrl with user.avatar
+      if (user.avatar) {
+        setAvatarUrl(user.avatar);
+      }
     }
   }, [user]);
 
@@ -64,6 +70,9 @@ export default function StudentProfilePage() {
       const response = await getAvatarUrl();
       if (response.success && response.data?.url) {
         setAvatarUrl(response.data.url);
+        if (updateUser) {
+            updateUser({ avatar: response.data.url });
+        }
       }
     } catch (err) {
       // Silently handle - it's ok if no avatar exists
@@ -77,12 +86,12 @@ export default function StudentProfilePage() {
 
     // Validate
     if (!file.type.startsWith('image/')) {
-      alert('يرجى اختيار صورة صحيحة');
+      toast.error('يرجى اختيار صورة صحيحة');
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      alert('حجم الصورة يجب أن لا يتجاوز 5 ميغابايت');
+      toast.error('حجم الصورة يجب أن لا يتجاوز 5 ميغابايت');
       return;
     }
 
@@ -112,9 +121,20 @@ export default function StudentProfilePage() {
       const response = await uploadAvatar(file);
       if (response.success && response.data?.url) {
         setAvatarUrl(response.data.url);
+        if (updateUser) {
+            updateUser({ avatar: response.data.url });
+        }
+        toast.success('تم تحديث الصورة الشخصية بنجاح');
       }
     } catch (err: any) {
-      alert(err.message || 'فشل رفع الصورة');
+      const message = err.message || 'فشل رفع الصورة';
+      toast.error(message);
+      
+      if (message.includes('انتهت صلاحية الجلسة')) {
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
+      }
     } finally {
       setIsUploadingAvatar(false);
     }
@@ -134,9 +154,20 @@ export default function StudentProfilePage() {
     try {
       await deleteAvatar();
       setAvatarUrl(null);
+      if (updateUser) {
+        updateUser({ avatar: null });
+      }
       setShowDeleteModal(false);
+      toast.success('تم حذف الصورة الشخصية بنجاح');
     } catch (err: any) {
-      alert(err.message || 'فشل حذف الصورة');
+      const message = err.message || 'فشل حذف الصورة';
+      toast.error(message);
+      
+      if (message.includes('انتهت صلاحية الجلسة')) {
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
+      }
     } finally {
       setIsUploadingAvatar(false);
     }
@@ -229,11 +260,12 @@ export default function StudentProfilePage() {
       role="student"
       user={user || undefined}
     >
-      <div className="max-w-[1200px] mx-auto flex flex-col gap-8">
+      <div className="max-w-[1200px] mx-auto">
         {/* Profile Info Card */}
         <DashboardCard
           title="المعلومات الشخصية"
           icon="fas fa-user"
+          className="mb-8"
           action={
             <button
               className="btn btn-primary"
@@ -314,7 +346,7 @@ export default function StudentProfilePage() {
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     disabled={true}
-                    className="w-full p-3 bg-white/2 border border-white/10 rounded-lg text-white text-[0.95rem] font-tajawal"
+                    className="form-input w-full font-tajawal"
                   />
                 </div>
 
@@ -325,7 +357,7 @@ export default function StudentProfilePage() {
                     value={formData.username}
                     onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                     disabled={true}
-                    className="w-full p-3 bg-white/2 border border-white/10 rounded-lg text-white text-[0.95rem] font-tajawal"
+                    className="form-input w-full font-tajawal"
                   />
                 </div>
 
@@ -336,7 +368,7 @@ export default function StudentProfilePage() {
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     disabled={true}
-                    className="w-full p-3 bg-white/2 border border-white/10 rounded-lg text-white text-[0.95rem] font-tajawal"
+                    className="form-input w-full font-tajawal"
                   />
                 </div>
 
@@ -347,7 +379,7 @@ export default function StudentProfilePage() {
                     value={formData.parent_phone}
                     onChange={(e) => setFormData({ ...formData, parent_phone: e.target.value })}
                     disabled={true}
-                    className="w-full p-3 bg-white/2 border border-white/10 rounded-lg text-white text-[0.95rem] font-tajawal"
+                    className="form-input w-full font-tajawal"
                   />
                 </div>
 
@@ -358,7 +390,7 @@ export default function StudentProfilePage() {
                     value={formData.location}
                     onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                     disabled={!isEditing}
-                    className={`w-full p-3 border border-white/10 rounded-lg text-white text-[0.95rem] font-tajawal ${isEditing ? 'bg-white/5' : 'bg-white/2'}`}
+                    className={`form-input w-full font-tajawal ${!isEditing ? 'opacity-70' : ''}`}
                   />
                 </div>
               </div>
@@ -395,7 +427,7 @@ export default function StudentProfilePage() {
                     value={formData.currentPassword}
                     onChange={(e) => setFormData({ ...formData, currentPassword: e.target.value })}
                     error={errors.currentPassword}
-                    className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white text-[0.95rem] font-tajawal"
+                    className="form-input w-full font-tajawal"
                   />
                 </div>
 
@@ -407,7 +439,7 @@ export default function StudentProfilePage() {
                     value={formData.newPassword}
                     onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
                     error={errors.newPassword}
-                    className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white text-[0.95rem] font-tajawal"
+                    className="form-input w-full font-tajawal"
                   />
                 </div>
 
@@ -419,7 +451,7 @@ export default function StudentProfilePage() {
                     value={formData.confirmPassword}
                     onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                     error={errors.confirmPassword}
-                    className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white text-[0.95rem] font-tajawal"
+                    className="form-input w-full font-tajawal"
                   />
                 </div>
               </div>

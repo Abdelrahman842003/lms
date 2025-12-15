@@ -133,12 +133,7 @@ const getSidebarItems = (role: string): SidebarItem[] => {
         icon: 'fas fa-book-open',
         href: '/teacher/lectures',
       },
-      {
-        id: 'payments',
-        label: 'المدفوعات',
-        icon: 'fas fa-credit-card',
-        href: '/teacher/payments',
-      },
+
       {
         id: 'exams',
         label: 'الامتحانات',
