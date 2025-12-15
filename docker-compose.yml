@@ -113,7 +113,7 @@ services:
       - octane
     networks:
       - lms_network
-    command: php artisan horizon
+    command: sh -c "test -f .env || cp .env.example .env; composer install --no-scripts || true; php artisan horizon"
 
   # Next.js Frontend
   frontend:
