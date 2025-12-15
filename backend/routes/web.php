@@ -15,3 +15,8 @@ Route::get('/test-user', function () {
 });
 
 Route::post('/teachers', [\App\Http\Controllers\Teacher\TeacherController::class, 'store']);
+
+// Sanctum CSRF Cookie Route
+Route::get('/sanctum/csrf-cookie', function () {
+    return response()->json(['message' => 'CSRF cookie set']);
+});
