@@ -131,7 +131,7 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=development
-      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - NEXT_PUBLIC_API_URL=https://neetaq.com
       - WATCHPACK_POLLING=true
     depends_on:
       - octane
