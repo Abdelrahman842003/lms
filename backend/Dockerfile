@@ -1,5 +1,5 @@
 # Multi-stage build للـ Production
-FROM phpswoole/swoole:5.1-php8.2 AS base
+FROM phpswoole/swoole:5.1-php8.3 AS base
 
 # تثبيت dependencies النظام
 RUN apt-get update && apt-get install -y \
