@@ -14,4 +14,4 @@ WORKDIR /var/www/backend
 EXPOSE 8000
 
 # Development: مع --watch للـ hot reload
-CMD ["sh", "-c", "test -f .env || cp .env.example .env; composer update --no-scripts || true; php artisan key:generate --force || true; php artisan octane:start --server=swoole --host=0.0.0.0 --port=8000"]
+CMD ["sh", "-c", "if [ ! -f .env ]; then cp .env.example .env; fi; composer install --no-scripts || true; grep -q '^APP_KEY=base64:' .env || (echo 'APP_KEY=' >> .env && php artisan key:generate --force); php artisan octane:start --server=swoole --host=0.0.0.0 --port=8000"]
