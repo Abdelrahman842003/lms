@@ -15,3 +15,4 @@ Route::get('/test-user', function () {
 });
 
 Route::post('/teachers', [\App\Http\Controllers\Teacher\TeacherController::class, 'store']);
+

@@ -15,6 +15,8 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  // Deduplication: Track received notification IDs to prevent duplicates
+  const receivedIdsRef = useRef<Set<string>>(new Set());
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const prevUnreadCountRef = useRef(0);
@@ -101,19 +103,132 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
       // Initial fetch
       fetchNotifications();
 
-      // Listen for real-time notifications from AuthContext
+      // Get user ID and token for WebSocket
+      const getUserData = () => {
+        try {
+          const storedUser = localStorage.getItem('user');
+          const token = localStorage.getItem('token');
+          if (storedUser && token) {
+            const user = JSON.parse(storedUser);
+            return { userId: user.id, token };
+          }
+        } catch (e) {
+          console.error('Failed to get user data for WebSocket:', e);
+        }
+        return null;
+      };
+
+      const userData = getUserData();
+      console.log('[NotificationDropdown] User data for WebSocket:', userData ? 'found' : 'not found');
+
+      // Setup Reverb WebSocket connection for real-time updates
+      let echoCleanup: (() => void) | null = null;
+
+      if (userData) {
+        import('@/lib/echo').then(({ initializeEcho }) => {
+          try {
+            console.log('[NotificationDropdown] Initializing Echo with token...');
+            const echo = initializeEcho(userData.token);
+            const channelName = `notifications.${role}.${userData.userId}`;
+            
+            console.log('[NotificationDropdown] Subscribing to channel:', channelName);
+            
+            const channel = echo.private(channelName);
+            
+            // First check connection
+            channel.subscribed(() => {
+              console.log('[NotificationDropdown] ✅ Successfully subscribed to:', channelName);
+            });
+            
+            channel.error((error: any) => {
+              console.error('[NotificationDropdown] ❌ Channel error:', error);
+            });
+            
+            // Listen for the event
+            channel.listen('.new.notification', (data: any) => {
+              console.log('[Reverb] 🔔 Real-time notification received:', data);
+              
+              const notificationId = data.notification_id || Date.now().toString();
+              
+              // Deduplication: Skip if already received
+              if (receivedIdsRef.current.has(notificationId)) {
+                console.log('[Reverb] ⚠️ Duplicate notification skipped:', notificationId);
+                return;
+              }
+              receivedIdsRef.current.add(notificationId);
+              
+              // Clean up old IDs after 5 minutes to prevent memory leak
+              setTimeout(() => {
+                receivedIdsRef.current.delete(notificationId);
+              }, 5 * 60 * 1000);
+              
+              const newNotification: AppNotification = {
+                id: notificationId,
+                type: data.type || 'general',
+                data: {
+                  title: data.title,
+                  message: data.message,
+                  sender_name: data.data?.sender_name,
+                  ...data.data
+                },
+                read_at: null,
+                created_at: data.created_at || new Date().toISOString()
+              };
+
+              setNotifications(prev => [newNotification, ...prev]);
+              setUnreadCount(prev => prev + 1);
+              
+              // Play sound
+              try {
+                audioRef.current?.play().catch(e => console.log('Audio play failed:', e));
+              } catch (err) {
+                console.error('Error playing notification sound:', err);
+              }
+              
+              // Show native notification or toast
+              const title = data.title || 'إشعار جديد';
+              const body = data.message || '';
+              
+              if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification(title, {
+                  body: body,
+                  icon: '/logo.png',
+                  dir: 'rtl'
+                });
+              } else {
+                toast.success(title, {
+                  duration: 4000,
+                  position: 'top-left',
+                  style: {
+                    background: '#333',
+                    color: '#fff',
+                    direction: 'rtl',
+                  },
+                  icon: '🔔',
+                });
+              }
+            });
+
+            echoCleanup = () => {
+              console.log('[NotificationDropdown] Leaving channel:', channelName);
+              echo.leave(channelName);
+            };
+          } catch (e) {
+            console.error('[NotificationDropdown] Failed to setup Reverb:', e);
+          }
+        });
+      }
+
+      // Listen for FCM notifications from AuthContext (as fallback)
       const handleNewNotification = (event: Event) => {
         const customEvent = event as CustomEvent;
         const payload = customEvent.detail;
         
-        console.log('NotificationDropdown received real-time event:', payload);
+        console.log('NotificationDropdown received FCM event:', payload);
         
-        // Construct a new notification object from the payload
-        // Note: Payload structure depends on how backend sends it. 
-        // Usually payload.data contains the data we need.
         if (payload && payload.data) {
           const newNotification: AppNotification = {
-            id: (payload.data.id || Date.now()).toString(), // Ensure string ID
+            id: (payload.data.notification_id || payload.data.id || Date.now()).toString(),
             type: payload.data.type || 'general',
             data: {
               title: payload.notification?.title || payload.data.title,
@@ -125,7 +240,16 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
             created_at: new Date().toISOString()
           };
 
-          setNotifications(prev => [newNotification, ...prev]);
+          // Check for duplicate (deduplication)
+          setNotifications(prev => {
+            const exists = prev.some(n => n.id === newNotification.id);
+            if (exists) {
+              console.log('[FCM] Duplicate notification ignored:', newNotification.id);
+              return prev;
+            }
+            return [newNotification, ...prev];
+          });
+          
           setUnreadCount(prev => prev + 1);
           
           // Play sound
@@ -135,7 +259,6 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
             console.error('Error playing notification sound:', err);
           }
         } else {
-            // If payload structure is unclear, just refetch to be safe
             fetchNotifications();
         }
       };
@@ -144,6 +267,9 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
 
       return () => {
         window.removeEventListener('notification:received', handleNewNotification);
+        if (echoCleanup) {
+          echoCleanup();
+        }
       };
     }
   }, [role]);

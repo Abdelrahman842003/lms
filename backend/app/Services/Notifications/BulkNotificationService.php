@@ -2,9 +2,11 @@
 
 namespace App\Services\Notifications;
 
+use App\Events\NewNotificationEvent;
 use App\Jobs\SendBulkNotificationJob;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class BulkNotificationService
 {
@@ -17,6 +19,11 @@ class BulkNotificationService
             $now = now();
             
             foreach ($users as $user) {
+                $notificationId = Str::uuid()->toString();
+                
+                // Determine user type from class name
+                $userType = strtolower(class_basename($user));
+                
                 // Collect tokens for FCM
                 if (method_exists($user, 'deviceTokens')) {
                     $userTokens = $user->deviceTokens->pluck('token')->toArray();
@@ -25,7 +32,7 @@ class BulkNotificationService
 
                 // Prepare data for database insertion
                 $notificationsData[] = [
-                    'id' => \Illuminate\Support\Str::uuid()->toString(),
+                    'id' => $notificationId,
                     'type' => 'App\Notifications\AdminNotification',
                     'notifiable_type' => get_class($user),
                     'notifiable_id' => $user->id,
@@ -39,6 +46,21 @@ class BulkNotificationService
                     'created_at' => $now,
                     'updated_at' => $now,
                 ];
+
+                // Broadcast via Reverb for real-time (online users)
+                try {
+                    broadcast(new NewNotificationEvent(
+                        userId: (string) $user->id,
+                        userType: $userType,
+                        notificationId: $notificationId,
+                        title: $title,
+                        message: $message,
+                        data: $data,
+                        type: 'admin_notification'
+                    ));
+                } catch (\Exception $e) {
+                    Log::error("Reverb broadcast failed for {$userType}:{$user->id}: " . $e->getMessage());
+                }
             }
 
             // Bulk insert into database
@@ -46,7 +68,7 @@ class BulkNotificationService
                 \Illuminate\Support\Facades\DB::table('notifications')->insert($notificationsData);
             }
 
-            // Dispatch FCM Job
+            // Dispatch FCM Job for offline/background users
             if (!empty($tokens)) {
                 foreach (array_chunk($tokens, 500) as $tokenChunk) {
                     SendBulkNotificationJob::dispatch($tokenChunk, $title, $message, $data);
@@ -55,3 +77,4 @@ class BulkNotificationService
         });
     }
 }
+

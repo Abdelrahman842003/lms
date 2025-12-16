@@ -11,6 +11,13 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 // ============================================
+// Broadcasting Authentication Route
+// ============================================
+Route::middleware('auth:sanctum')->post('/broadcasting/auth', 
+    [\App\Http\Controllers\Api\BroadcastAuthController::class, 'authenticate']
+);
+
+// ============================================
 // Admin Authentication Routes (Central DB)
 // ============================================
 Route::prefix('admin')->group(function () {
