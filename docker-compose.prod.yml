@@ -16,6 +16,7 @@ services:
     depends_on:
       - octane
       - frontend
+      - reverb
     networks:
       - lms_network
 
@@ -64,9 +65,6 @@ services:
     container_name: lms_octane
     restart: unless-stopped
     volumes:
-      # Firebase credentials - استخدم المسار الآمن على السيرفر
-      # للتطوير/الاختبار: استخدم ./neetaq-54091-firebase-adminsdk-fbsvc-b830b7b75f.json
-      # للإنتاج: استخدم /opt/lms/secrets/neetaq-54091-firebase-adminsdk-fbsvc-b830b7b75f.json
       - /opt/lms/secrets/neetaq-54091-firebase-adminsdk-fbsvc-b830b7b75f.json:/var/www/backend/storage/firebase-credentials.json:ro
     environment:
       - APP_ENV=production
@@ -84,6 +82,7 @@ services:
       - CACHE_DRIVER=redis
       - QUEUE_CONNECTION=redis
       - SESSION_DRIVER=redis
+      - BROADCAST_CONNECTION=reverb
       - OCTANE_SERVER=swoole
       - SWOOLE_HTTP_HOST=0.0.0.0
       - SWOOLE_HTTP_PORT=8000
@@ -96,6 +95,13 @@ services:
       - FIREBASE_PROJECT_ID=neetaq-54091
       - CLOUDFLARE_API_TOKEN=${CLOUDFLARE_API_TOKEN}
       - CLOUDFLARE_ZONE_ID=${CLOUDFLARE_ZONE_ID}
+      # Reverb Configuration
+      - REVERB_APP_ID=${REVERB_APP_ID}
+      - REVERB_APP_KEY=${REVERB_APP_KEY}
+      - REVERB_APP_SECRET=${REVERB_APP_SECRET}
+      - REVERB_HOST=reverb
+      - REVERB_PORT=8080
+      - REVERB_SCHEME=http
     depends_on:
       mysql:
         condition: service_healthy
@@ -129,6 +135,13 @@ services:
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - QUEUE_CONNECTION=redis
+      - BROADCAST_CONNECTION=reverb
+      - REVERB_HOST=reverb
+      - REVERB_PORT=8080
+      - REVERB_SCHEME=http
+      - REVERB_APP_ID=${REVERB_APP_ID}
+      - REVERB_APP_KEY=${REVERB_APP_KEY}
+      - REVERB_APP_SECRET=${REVERB_APP_SECRET}
     depends_on:
       - mysql
       - redis
@@ -136,6 +149,44 @@ services:
     networks:
       - lms_network
     command: php artisan horizon
+
+  # Laravel Reverb (WebSocket Server)
+  reverb:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: production
+    container_name: lms_reverb
+    restart: unless-stopped
+    environment:
+      - APP_ENV=production
+      - APP_KEY=${APP_KEY}
+      - DB_HOST=mysql
+      - DB_DATABASE=${DB_DATABASE}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - BROADCAST_CONNECTION=reverb
+      - REVERB_APP_ID=${REVERB_APP_ID}
+      - REVERB_APP_KEY=${REVERB_APP_KEY}
+      - REVERB_APP_SECRET=${REVERB_APP_SECRET}
+      - REVERB_HOST=0.0.0.0
+      - REVERB_PORT=8080
+      - REVERB_SCHEME=http
+    depends_on:
+      - mysql
+      - redis
+    networks:
+      - lms_network
+    command: php artisan reverb:start --host=0.0.0.0 --port=8080
+    healthcheck:
+      test: ["CMD", "php", "-r", "exit(fsockopen('localhost', 8080) ? 0 : 1);"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
   # Next.js Frontend
   frontend:
@@ -148,8 +199,13 @@ services:
     environment:
       - NODE_ENV=production
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+      - NEXT_PUBLIC_REVERB_APP_KEY=${REVERB_APP_KEY}
+      - NEXT_PUBLIC_REVERB_HOST=${REVERB_PUBLIC_HOST}
+      - NEXT_PUBLIC_REVERB_PORT=443
+      - NEXT_PUBLIC_REVERB_SCHEME=https
     depends_on:
       - octane
+      - reverb
     networks:
       - lms_network
 
