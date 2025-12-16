@@ -276,7 +276,7 @@ export default function AddStudentPage() {
                 <input
                   type="tel"
                   id="phone"
-                  className={`w-full p-3 bg-white/5 border rounded-lg text-white text-[1rem] focus:ring-1 outline-none transition-all ${
+                  className={`w-full p-3 pl-10 bg-transparent border rounded-lg text-white text-[1rem] focus:ring-1 outline-none transition-all ${
                     formErrors.phone ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-white/10 focus:border-primary focus:ring-primary'
                   }`}
                   value={formData.phone}
@@ -358,7 +358,7 @@ export default function AddStudentPage() {
               <input
                 type="text"
                 id="name"
-                className={`w-full p-3 bg-white/5 border rounded-lg text-white text-[1rem] focus:ring-1 outline-none transition-all ${
+                className={`w-full p-3 bg-transparent border rounded-lg text-white text-[1rem] focus:ring-1 outline-none transition-all ${
                   formErrors.name ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-white/10 focus:border-primary focus:ring-primary'
                 } disabled:opacity-60 disabled:cursor-not-allowed`}
                 value={formData.name}
@@ -376,7 +376,7 @@ export default function AddStudentPage() {
               <input
                 type="tel"
                 id="parent_phone"
-                className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white text-[1rem] focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full p-3 bg-transparent border border-white/10 rounded-lg text-white text-[1rem] focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                 value={formData.parent_phone}
                 onChange={(e) => {
                   const value = e.target.value.replace(/[^0-9]/g, '');
@@ -402,7 +402,7 @@ export default function AddStudentPage() {
               <input
                 type="text"
                 id="username"
-                className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white text-[1rem] outline-none cursor-default opacity-70"
+                className="w-full p-3 bg-transparent border border-white/10 rounded-lg text-white text-[1rem] outline-none cursor-default opacity-70"
                 value={usernamePreview || 'سيتم التوليد تلقائياً'}
                 readOnly
                 disabled
@@ -421,7 +421,7 @@ export default function AddStudentPage() {
               <input
                 type="text"
                 id="password"
-                className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white text-[1rem] outline-none cursor-default opacity-70"
+                className="w-full p-3 bg-transparent border border-white/10 rounded-lg text-white text-[1rem] outline-none cursor-default opacity-70"
                 value={passwordPreview || 'سيتم التوليد تلقائياً'}
                 readOnly
                 disabled
@@ -434,7 +434,7 @@ export default function AddStudentPage() {
               </label>
               <select
                 id="gender"
-                className={`w-full p-3 bg-white/5 border rounded-lg text-white text-[1rem] focus:ring-1 outline-none transition-all ${
+                className={`w-full p-3 bg-transparent border rounded-lg text-white text-[1rem] focus:ring-1 outline-none transition-all ${
                   formErrors.gender ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-white/10 focus:border-primary focus:ring-primary'
                 } disabled:opacity-60 disabled:cursor-not-allowed`}
                 value={formData.gender}
@@ -451,7 +451,7 @@ export default function AddStudentPage() {
               <label htmlFor="education_type" className="block text-gray-light mb-2 text-[0.95rem]">نوع التعليم</label>
               <select
                 id="education_type"
-                className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white text-[1rem] focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full p-3 bg-transparent border border-white/10 rounded-lg text-white text-[1rem] focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                 value={formData.education_type}
                 onChange={(e) => setFormData({ ...formData, education_type: e.target.value })}
                 disabled={isSubmitting || !isPhoneChecked || existingStudentFound}
@@ -466,7 +466,7 @@ export default function AddStudentPage() {
               <label htmlFor="grade_id" className="block text-gray-light mb-2 text-[0.95rem]">الصف الدراسي</label>
               <select
                 id="grade_id"
-                className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white text-[1rem] focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full p-3 bg-transparent border border-white/10 rounded-lg text-white text-[1rem] focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                 value={formData.grade_id}
                 onChange={(e) => setFormData({ ...formData, grade_id: e.target.value, group_id: '' })}
                 disabled={isSubmitting || !isPhoneChecked || (existingStudentFound && !!formData.grade_id)}
@@ -484,7 +484,7 @@ export default function AddStudentPage() {
               <label htmlFor="group_id" className="block text-gray-light mb-2 text-[0.95rem]">المجموعة</label>
               <select
                 id="group_id"
-                className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white text-[1rem] focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full p-3 bg-transparent border border-white/10 rounded-lg text-white text-[1rem] focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                 value={formData.group_id}
                 onChange={(e) => setFormData({ ...formData, group_id: e.target.value })}
                 disabled={isSubmitting || !isPhoneChecked || !formData.grade_id}
@@ -515,7 +515,7 @@ export default function AddStudentPage() {
               <input
                 type="text"
                 id="location"
-                className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white text-[1rem] focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full p-3 bg-transparent border border-white/10 rounded-lg text-white text-[1rem] focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                 value={formData.location}
                 onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                 placeholder="أدخل موقع الطالب"
