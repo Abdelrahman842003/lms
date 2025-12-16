@@ -365,6 +365,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // Setup listener for foreground messages
           onMessageListener().then((payload: any) => {
             console.log('Foreground message received:', payload);
+            
+            // Dispatch custom event for other components (like NotificationDropdown)
+            if (typeof window !== 'undefined') {
+              const event = new CustomEvent('notification:received', { detail: payload });
+              window.dispatchEvent(event);
+            }
+
             const { title, body } = payload.notification;
             
             // Use react-hot-toast for foreground notification

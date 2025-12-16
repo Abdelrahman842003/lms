@@ -76,10 +76,10 @@ const getSidebarItems = (role: string): SidebarItem[] => {
         href: '/admin/notifications',
       },
       {
-        id: 'system',
-        label: 'النظام',
-        icon: 'fas fa-server',
-        href: '/admin/system',
+        id: 'settings',
+        label: 'الإعدادات',
+        icon: 'fas fa-cogs',
+        href: '/admin/settings',
       },
     ];
   }
@@ -133,12 +133,7 @@ const getSidebarItems = (role: string): SidebarItem[] => {
         icon: 'fas fa-book-open',
         href: '/teacher/lectures',
       },
-      {
-        id: 'payments',
-        label: 'المدفوعات',
-        icon: 'fas fa-credit-card',
-        href: '/teacher/payments',
-      },
+
       {
         id: 'exams',
         label: 'الامتحانات',

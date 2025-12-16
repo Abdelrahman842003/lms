@@ -78,6 +78,12 @@ const getNavItems = (role: string): SidebarItem[] => {
           },
         ],
       },
+      {
+        id: 'settings',
+        label: 'الإعدادات',
+        icon: 'fas fa-cogs',
+        href: '/admin/settings',
+      },
     ];
   }
 
@@ -130,12 +136,7 @@ const getNavItems = (role: string): SidebarItem[] => {
         icon: 'fas fa-book-open',
         href: '/teacher/lectures',
       },
-      {
-        id: 'payments',
-        label: 'المدفوعات',
-        icon: 'fas fa-credit-card',
-        href: '/teacher/payments',
-      },
+
       {
         id: 'exams',
         label: 'الامتحانات',

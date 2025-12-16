@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Navbar } from './Navbar';
+import { NotificationPermissionModal } from './NotificationPermissionModal';
 
 
 interface DashboardLayoutProps {
@@ -63,6 +64,9 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           onClick={() => setMobileMenuOpen(false)}
         />
       )}
+
+      {/* Permission Modal */}
+      <NotificationPermissionModal />
     </div>
   );
 };

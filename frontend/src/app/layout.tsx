@@ -8,6 +8,8 @@ import { Toaster } from 'react-hot-toast'
 import PWAInstallPrompt from '@/components/PWAInstallPrompt'
 import ServiceWorkerRegistration from '@/components/ServiceWorkerRegistration'
 
+import MaintenanceGuard from '@/components/providers/MaintenanceGuard'
+
 export const metadata: Metadata = {
     title: 'المنصة التعليمية | Educational Platform',
     description: 'نظام شامل يربط بين الطلاب والمعلمين وأولياء الأمور. إدارة سهلة للمحاضرات، الامتحانات، والواجبات مع تحليلات دقيقة للأداء.',
@@ -52,12 +54,14 @@ export default function RootLayout({
             >
                 <div className="grid-pattern" />
                 <AuthProvider>
+                  <MaintenanceGuard>
                           <div className="max-w-[1200px] mx-auto">
                     <ServiceWorkerRegistration />
                     {children}
                     <PWAInstallPrompt />
                     <Toaster position="top-center" />
                 </div>
+                  </MaintenanceGuard>
                 </AuthProvider>
             </body>
         </html>

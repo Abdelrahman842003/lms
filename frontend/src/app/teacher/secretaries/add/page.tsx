@@ -46,7 +46,11 @@ export default function AddSecretaryPage() {
   const fetchPermissions = async () => {
     try {
       const response = await getTeacherPermissions();
-      const permissionsList = response.data || [];
+      // Safely extract permissions array handling different response structures
+      const permissionsList = Array.isArray(response.data) 
+        ? response.data 
+        : (Array.isArray(response) ? response : []);
+        
       const secretaryPermissions = permissionsList.filter(
         (p: Permission) => p.guard_name === 'secretary'
       );

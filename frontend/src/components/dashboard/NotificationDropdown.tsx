@@ -2,14 +2,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { fetchApi } from '@/services/authService';
-import { Notification } from '@/types/dashboard';
+import { toast } from 'react-hot-toast';
+import { ReceivedNotification as AppNotification } from '@/services/notificationService';
 
 interface NotificationDropdownProps {
   role: string;
 }
 
 export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role }) => {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -21,29 +22,63 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
 
   useEffect(() => {
     audioRef.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3'); // Using a hosted sound for reliability
+    
+    // Request notification permission
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
   }, []);
 
   const fetchNotifications = async () => {
     if (!role) return;
     try {
       const data = await fetchApi(`/${role}/notifications`);
-      let fetchedNotifications: Notification[] = [];
+      let fetchedNotifications: AppNotification[] = [];
       
       // Handle different response structures
       if (data.received_notifications) {
         fetchedNotifications = data.received_notifications;
       } else if (data.notifications) {
-        fetchedNotifications = data.notifications;
+        // If backend returns 'notifications' (sent style), we might need to map them or treat them as received
+        // For now assuming they are compatible or casting
+        fetchedNotifications = data.notifications as unknown as AppNotification[];
       } else if (data.data && data.data.received_notifications) {
         fetchedNotifications = data.data.received_notifications;
       }
 
       const newUnreadCount = (fetchedNotifications || []).filter(n => !n.read_at).length;
       
-      // Play sound if unread count increased, but NOT on first load
+      // Play sound and show notification if unread count increased, but NOT on first load
       if (newUnreadCount > prevUnreadCountRef.current && !isFirstLoadRef.current) {
         try {
           audioRef.current?.play().catch(e => console.log('Audio play failed:', e));
+          
+          const newestNotification = fetchedNotifications[0];
+          if (newestNotification) {
+            const title = newestNotification.data.title || 'إشعار جديد';
+            const body = newestNotification.data.message || '';
+
+            // Try to show native notification first
+            if ('Notification' in window && Notification.permission === 'granted') {
+              new Notification(title, {
+                body: body,
+                icon: '/logo.png',
+                dir: 'rtl'
+              });
+            } else {
+              // Fallback to toast if native notifications are not granted
+              toast.success(title, {
+                duration: 4000,
+                position: 'top-left',
+                style: {
+                  background: '#333',
+                  color: '#fff',
+                  direction: 'rtl',
+                },
+                icon: '🔔',
+              });
+            }
+          }
         } catch (err) {
           console.error('Error playing notification sound:', err);
         }
@@ -63,10 +98,53 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
 
   useEffect(() => {
     if (role) {
+      // Initial fetch
       fetchNotifications();
-      // Poll every 10 seconds
-      const interval = setInterval(fetchNotifications, 10000);
-      return () => clearInterval(interval);
+
+      // Listen for real-time notifications from AuthContext
+      const handleNewNotification = (event: Event) => {
+        const customEvent = event as CustomEvent;
+        const payload = customEvent.detail;
+        
+        console.log('NotificationDropdown received real-time event:', payload);
+        
+        // Construct a new notification object from the payload
+        // Note: Payload structure depends on how backend sends it. 
+        // Usually payload.data contains the data we need.
+        if (payload && payload.data) {
+          const newNotification: AppNotification = {
+            id: (payload.data.id || Date.now()).toString(), // Ensure string ID
+            type: payload.data.type || 'general',
+            data: {
+              title: payload.notification?.title || payload.data.title,
+              message: payload.notification?.body || payload.data.message,
+              sender_name: payload.data.sender_name,
+              ...payload.data
+            },
+            read_at: null,
+            created_at: new Date().toISOString()
+          };
+
+          setNotifications(prev => [newNotification, ...prev]);
+          setUnreadCount(prev => prev + 1);
+          
+          // Play sound
+          try {
+             audioRef.current?.play().catch(e => console.log('Audio play failed:', e));
+          } catch (err) {
+            console.error('Error playing notification sound:', err);
+          }
+        } else {
+            // If payload structure is unclear, just refetch to be safe
+            fetchNotifications();
+        }
+      };
+
+      window.addEventListener('notification:received', handleNewNotification);
+
+      return () => {
+        window.removeEventListener('notification:received', handleNewNotification);
+      };
     }
   }, [role]);
 
@@ -100,7 +178,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
     }
   };
 
-  const handleNotificationClick = (notification: Notification) => {
+  const handleNotificationClick = (notification: AppNotification) => {
     if (!notification.read_at) {
       markAsRead(notification.id);
     }

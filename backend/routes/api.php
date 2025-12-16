@@ -39,6 +39,10 @@ Route::prefix('admin')->group(function () {
         Route::get('/notifications', [\App\Http\Controllers\Admin\NotificationController::class, 'index']);
         Route::post('/notifications', [\App\Http\Controllers\Admin\NotificationController::class, 'store']);
         Route::post('/notifications/{id}/read', [\App\Http\Controllers\Admin\NotificationController::class, 'markAsRead']);
+
+        // Settings
+        Route::get('/settings', [\App\Http\Controllers\Admin\SettingsController::class, 'index']);
+        Route::post('/settings', [\App\Http\Controllers\Admin\SettingsController::class, 'update']);
     });
 });
 
@@ -146,6 +150,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/refresh-token', [\App\Http\Controllers\Api\RefreshTokenController::class, 'refresh']);
     Route::post('/device-tokens', [\App\Http\Controllers\Api\DeviceTokenController::class, 'store']);
 });
+
+// Public Settings
+Route::get('/public-settings', [\App\Http\Controllers\Admin\SettingsController::class, 'getPublicSettings']);
 
 
 

@@ -150,7 +150,7 @@ export default function TeacherDashboard() {
       </div>
 
       {/* Content Grid */}
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Students */}
         <DashboardCard
           title="آخر الطلاب"
@@ -213,7 +213,7 @@ export default function TeacherDashboard() {
       </div>
 
       {/* Quick Actions & Exams Grid */}
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-6 mt-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
         {/* Quick Actions */}
         <DashboardCard
           title="إجراءات سريعة"
