@@ -56,16 +56,19 @@ function AdminDashboard() {
       key: 'students_count',
       label: 'عدد الطلاب',
       sortable: true,
+      className: 'hidden sm:table-cell',
     },
     {
       key: 'secretaries_count',
       label: 'عدد السكرتارية',
       sortable: true,
+      className: 'hidden md:table-cell',
     },
     {
       key: 'revenue',
       label: 'الإيرادات',
       sortable: true,
+      className: 'hidden lg:table-cell',
       render: (value: number) => `$${value?.toLocaleString() || '0'}`,
     },
     {
@@ -82,6 +85,7 @@ function AdminDashboard() {
       key: 'joined',
       label: 'تاريخ الانضمام',
       sortable: true,
+      className: 'hidden xl:table-cell',
     },
   ];
 
@@ -123,7 +127,7 @@ function AdminDashboard() {
       </div>
 
       {/* Content Grid */}
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(400px,1fr))] gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Teachers Overview */}
         <DashboardCard
           title="نظرة عامة على المدرسين"

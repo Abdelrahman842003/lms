@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { DataTable } from '@/components/dashboard/DataTable';
+import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { useAuth } from '@/contexts/AuthContext';
 import { getPermissions, createPermission, updatePermission, deletePermission, Permission } from '@/services/roles';
 
@@ -13,6 +14,7 @@ export default function AdminPermissionsPage() {
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [viewingPermission, setViewingPermission] = useState<Permission | null>(null);
   const [editingPermission, setEditingPermission] = useState<Permission | null>(null);
   const [formData, setFormData] = useState({
     name: ''
@@ -87,16 +89,26 @@ export default function AdminPermissionsPage() {
     {
       key: 'id',
       label: '#',
+      className: 'hidden sm:table-cell',
       render: (_: any, __: any, index: number) => index + 1
     },
     {
       key: 'name',
       label: 'اسم الصلاحية',
       sortable: true,
+      render: (value: string, row: Permission) => (
+        <button 
+          onClick={() => setViewingPermission(row)}
+          className="text-white hover:text-primary transition-colors font-medium text-right"
+        >
+          {value}
+        </button>
+      )
     },
     {
       key: 'created_at',
       label: 'تاريخ الإنشاء',
+      className: 'hidden lg:table-cell',
       render: (date: string) => new Date(date).toLocaleDateString('ar-EG')
     }
   ];
@@ -120,12 +132,10 @@ export default function AdminPermissionsPage() {
       role="admin"
       user={user || undefined}
     >
-      <div className="bg-[#1e1e2d] rounded-xl shadow-lg border border-white/5">
-        <div className="dashboard-card-header" style={{ flexWrap: 'wrap', gap: '16px' }}>
-          <div className="dashboard-card-title">
-            <i className="fas fa-key"></i>
-            <h2>إدارة الصلاحيات</h2>
-          </div>
+      <DashboardCard
+        title="إدارة الصلاحيات"
+        icon="fas fa-key"
+        action={
           <button 
             className="btn btn-primary" 
             onClick={() => {
@@ -137,9 +147,10 @@ export default function AdminPermissionsPage() {
             <i className="fas fa-plus"></i>
             <span>إضافة صلاحية جديدة</span>
           </button>
-        </div>
+        }
+      >
         {isLoading ? (
-          <div className="data-table-wrapper" style={{ overflowX: 'auto' }}>
+          <div className="data-table-wrapper overflow-x-auto">
             <table className="data-table">
               <thead>
                 <tr>
@@ -154,11 +165,11 @@ export default function AdminPermissionsPage() {
                   <tr key={i}>
                     {tableColumns.map((_, index) => (
                       <td key={index}>
-                        <div className="skeleton-item" style={{ width: index === 0 ? '40px' : index === 1 ? '150px' : '100px' }}></div>
+                        <div className={`skeleton-item ${index === 0 ? 'w-10' : 'w-[150px]'}`}></div>
                       </td>
                     ))}
                     <td>
-                      <div className="skeleton-item" style={{ width: '80px' }}></div>
+                      <div className="skeleton-item w-20"></div>
                     </td>
                   </tr>
                 ))}
@@ -176,7 +187,7 @@ export default function AdminPermissionsPage() {
             isLoading={false}
           />
         )}
-      </div>
+      </DashboardCard>
 
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -217,6 +228,37 @@ export default function AdminPermissionsPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* View Permission Details Modal */}
+      {viewingPermission && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-[#1a1f37] p-5 rounded-2xl w-full max-w-lg border border-white/10 shadow-2xl transform transition-all">
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <h2 className="text-xl font-bold text-white mb-1">{viewingPermission.name}</h2>
+                <p className="text-gray-400 text-xs">
+                  تاريخ الإنشاء: {new Date(viewingPermission.created_at).toLocaleDateString('ar-EG')}
+                </p>
+              </div>
+              <button 
+                onClick={() => setViewingPermission(null)}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <i className="fas fa-times text-lg"></i>
+              </button>
+            </div>
+
+            <div className="flex justify-end pt-3 border-t border-white/10">
+              <button
+                className="px-4 py-1.5 rounded-lg bg-white/10 text-white hover:bg-white/20 transition-all text-sm"
+                onClick={() => setViewingPermission(null)}
+              >
+                إغلاق
+              </button>
+            </div>
           </div>
         </div>
       )}

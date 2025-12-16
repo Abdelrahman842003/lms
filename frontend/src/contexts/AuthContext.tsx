@@ -167,6 +167,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(null);
       setSelectedTeacher(null);
       localStorage.clear();
+      
+      // Clear all auth cookies to prevent middleware loops
+      document.cookie = "auth_state=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      document.cookie = "user_role=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      document.cookie = "laravel_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      document.cookie = "XSRF-TOKEN=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      
       window.location.href = '/login';
     };
 
@@ -332,6 +339,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Clear cookies
       document.cookie = "auth_state=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
       document.cookie = "user_role=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      document.cookie = "laravel_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      document.cookie = "XSRF-TOKEN=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
     }
   };
 

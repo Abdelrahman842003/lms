@@ -81,17 +81,30 @@ export default function AdminNotificationsPage() {
       key: 'title',
       label: 'العنوان',
       sortable: true,
+      render: (value: string, row: any) => (
+        <button 
+          onClick={(e) => {
+            e.stopPropagation();
+            handleRowClick(row);
+          }}
+          className="text-white hover:text-primary transition-colors font-medium text-right"
+        >
+          {value}
+        </button>
+      )
     },
     {
       key: 'message',
       label: 'الرسالة',
       sortable: false,
+      className: 'hidden md:table-cell',
       render: (value: string) => value.length > 50 ? value.substring(0, 50) + '...' : value,
     },
     {
       key: 'recipient_type',
       label: 'المستقبلين',
       sortable: true,
+      className: 'hidden sm:table-cell',
       render: (value: string) => {
         const types: {[key: string]: string} = {
           'all_users': 'جميع المستخدمين',
@@ -106,6 +119,7 @@ export default function AdminNotificationsPage() {
       key: 'created_at',
       label: 'تاريخ الإرسال',
       sortable: true,
+      className: 'hidden lg:table-cell',
       render: (value: string) => new Date(value).toLocaleDateString('ar-EG'),
     },
   ];
@@ -163,62 +177,66 @@ export default function AdminNotificationsPage() {
 
       {/* Send Notification Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowModal(false)}>
-          <div className="bg-[#1e1e2d] rounded-xl w-full max-w-[600px] shadow-xl border border-white/10" onClick={(e) => e.stopPropagation()}>
-            <div className="flex justify-between items-center p-6 border-b border-white/10">
-              <h3 className="text-xl font-bold text-white m-0">إرسال إخطار جديد</h3>
-              <button className="text-gray-400 hover:text-white transition-colors bg-transparent border-none cursor-pointer text-xl" onClick={() => setShowModal(false)}>
-                <i className="fas fa-times"></i>
-              </button>
-            </div>
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setShowModal(false)}>
+          <div className="bg-[#1a1f37] p-5 rounded-2xl w-full max-w-md border border-white/10" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-xl text-white mb-4 font-bold">إرسال إخطار جديد</h2>
+            
             <form onSubmit={handleSubmit}>
-              <div className="p-6">
-                <div className="mb-4">
-                  <label htmlFor="title" className="block text-gray-light text-sm mb-2 font-medium">العنوان</label>
-                  <input
-                    type="text"
-                    id="title"
-                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
-                    value={formData.title}
-                    onChange={(e) => setFormData({...formData, title: e.target.value})}
-                    required
-                    placeholder="عنوان الإخطار"
-                  />
-                </div>
-                
-                <div className="mb-4">
-                  <label htmlFor="message" className="block text-gray-light text-sm mb-2 font-medium">الرسالة</label>
-                  <textarea
-                    id="message"
-                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
-                    value={formData.message}
-                    onChange={(e) => setFormData({...formData, message: e.target.value})}
-                    required
-                    rows={4}
-                    placeholder="نص الرسالة..."
-                  />
-                </div>
-
-                <div className="mb-4">
-                  <label htmlFor="recipient_type" className="block text-gray-light text-sm mb-2 font-medium">المستقبلين</label>
-                  <Select
-                    options={[
-                      { value: 'all_users', label: 'جميع المستخدمين' },
-                      { value: 'all_teachers', label: 'جميع المدرسين' },
-                      { value: 'all_students', label: 'جميع الطلاب' },
-                      { value: 'all_secretaries', label: 'جميع السكرتارية' }
-                    ]}
-                    value={formData.recipient_type}
-                    onChange={(value) => setFormData({...formData, recipient_type: value})}
-                    className="w-full"
-                  />
-                </div>
+              <div className="mb-4">
+                <label htmlFor="title" className="block text-gray-300 mb-1.5 text-sm">العنوان</label>
+                <input
+                  type="text"
+                  id="title"
+                  className="w-full p-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-sm"
+                  value={formData.title}
+                  onChange={(e) => setFormData({...formData, title: e.target.value})}
+                  required
+                  placeholder="عنوان الإخطار"
+                />
               </div>
-              <div className="flex justify-end gap-3 p-6 border-t border-white/10 bg-white/5 rounded-b-xl">
-                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)} disabled={isLoading}>
+              
+              <div className="mb-4">
+                <label htmlFor="message" className="block text-gray-300 mb-1.5 text-sm">الرسالة</label>
+                <textarea
+                  id="message"
+                  className="w-full p-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-sm"
+                  value={formData.message}
+                  onChange={(e) => setFormData({...formData, message: e.target.value})}
+                  required
+                  rows={3}
+                  placeholder="نص الرسالة..."
+                />
+              </div>
+
+              <div className="mb-6">
+                <label htmlFor="recipient_type" className="block text-gray-300 mb-1.5 text-sm">المستقبلين</label>
+                <Select
+                  options={[
+                    { value: 'all_users', label: 'جميع المستخدمين' },
+                    { value: 'all_teachers', label: 'جميع المدرسين' },
+                    { value: 'all_students', label: 'جميع الطلاب' },
+                    { value: 'all_secretaries', label: 'جميع السكرتارية' }
+                  ]}
+                  value={formData.recipient_type}
+                  onChange={(value) => setFormData({...formData, recipient_type: value})}
+                  className="w-full text-sm"
+                />
+              </div>
+
+              <div className="flex gap-3 justify-end pt-3 border-t border-white/10">
+                <button
+                  type="button"
+                  className="px-4 py-1.5 rounded-lg border border-white/10 text-gray-300 hover:bg-white/5 transition-all text-sm"
+                  onClick={() => setShowModal(false)}
+                  disabled={isLoading}
+                >
                   إلغاء
                 </button>
-                <button type="submit" className="btn btn-primary" disabled={isLoading}>
+                <button
+                  type="submit"
+                  className="px-4 py-1.5 rounded-lg bg-primary text-white hover:bg-primary/90 transition-all flex items-center gap-2 text-sm"
+                  disabled={isLoading}
+                >
                   {isLoading ? 'جاري الإرسال...' : 'إرسال'}
                 </button>
               </div>

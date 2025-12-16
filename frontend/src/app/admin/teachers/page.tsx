@@ -118,6 +118,7 @@ export default function AdminTeachersPage() {
   const tableColumns = [{
       key: 'id',
       label: '#',
+      className: 'hidden sm:table-cell',
       render: (_: any, __: any, index: number) => {
         return (currentPage - 1) * itemsPerPage + index + 1;
       }
@@ -129,7 +130,12 @@ export default function AdminTeachersPage() {
       render: (value: string, row: any) => (
         <div className="flex items-center gap-3">
           <Avatar name={value} src={row.avatar} size="sm" />
-          <span className="font-medium">{value}</span>
+          <button 
+            onClick={() => router.push(`/admin/teachers/${row.id}`)}
+            className="font-medium text-white hover:text-primary transition-colors text-right"
+          >
+            {value}
+          </button>
         </div>
       ),
     },
@@ -364,59 +370,59 @@ export default function AdminTeachersPage() {
 
       {/* Add Teacher Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[1000]">
-          <div className="bg-[#1a1f37] p-8 rounded-2xl w-full max-w-[500px] border border-white/10">
-            <h2 className="text-white mb-6 text-2xl">إضافة مدرس جديد</h2>
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[1000] p-4">
+          <div className="bg-[#1a1f37] p-5 rounded-2xl w-full max-w-md border border-white/10">
+            <h2 className="text-white mb-4 text-xl font-bold">إضافة مدرس جديد</h2>
             
             {error && (
-              <div className="bg-danger/10 text-danger p-3 rounded-lg mb-4">
+              <div className="bg-danger/10 text-danger p-2.5 rounded-lg mb-4 text-sm">
                 {error}
               </div>
             )}
 
             <form onSubmit={handleSubmit}>
               <div className="mb-4">
-                <label className="block text-gray-light mb-2">الاسم</label>
+                <label className="block text-gray-300 mb-1.5 text-sm">الاسم</label>
                 <input
                   type="text"
                   name="name"
                   value={formData.name}
                   onChange={handleInputChange}
-                  className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                  className="w-full p-2.5 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm"
                   required
                 />
               </div>
 
               <div className="mb-4">
-                <label className="block text-gray-light mb-2">كلمة المرور</label>
+                <label className="block text-gray-300 mb-1.5 text-sm">كلمة المرور</label>
                 <input
                   type="password"
                   name="password"
                   value={formData.password}
                   onChange={handleInputChange}
-                  className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                  className="w-full p-2.5 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm"
                   required
                   minLength={6}
                 />
               </div>
 
               <div className="mb-6">
-                <label className="block text-gray-light mb-2">تأكيد كلمة المرور</label>
+                <label className="block text-gray-300 mb-1.5 text-sm">تأكيد كلمة المرور</label>
                 <input
                   type="password"
                   name="password_confirmation"
                   value={formData.password_confirmation}
                   onChange={handleInputChange}
-                  className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                  className="w-full p-2.5 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm"
                   required
                   minLength={6}
                 />
               </div>
 
-              <div className="flex gap-3 justify-end">
+              <div className="flex gap-3 justify-end pt-3 border-t border-white/10">
                 <button
                   type="button"
-                  className="btn btn-outline"
+                  className="px-4 py-1.5 rounded-lg border border-white/10 text-gray-300 hover:bg-white/5 transition-all text-sm"
                   onClick={() => setIsModalOpen(false)}
                   disabled={submitLoading}
                 >
@@ -424,7 +430,7 @@ export default function AdminTeachersPage() {
                 </button>
                 <button
                   type="submit"
-                  className="btn btn-primary"
+                  className="px-4 py-1.5 rounded-lg bg-primary text-white hover:bg-primary/90 transition-all flex items-center gap-2 text-sm"
                   disabled={submitLoading}
                 >
                   {submitLoading ? 'جاري الإضافة...' : 'إضافة المدرس'}

@@ -15,6 +15,7 @@ export default function AdminRolesPage() {
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [viewingRole, setViewingRole] = useState<Role | null>(null);
   const [editingRole, setEditingRole] = useState<Role | null>(null);
   const [formData, setFormData] = useState({
     name: '',
@@ -110,16 +111,26 @@ export default function AdminRolesPage() {
     {
       key: 'id',
       label: '#',
+      className: 'hidden sm:table-cell',
       render: (_: any, __: any, index: number) => index + 1
     },
     {
       key: 'name',
       label: 'اسم الدور',
       sortable: true,
+      render: (value: string, row: Role) => (
+        <button 
+          onClick={() => setViewingRole(row)}
+          className="text-white hover:text-primary transition-colors font-medium text-right"
+        >
+          {value}
+        </button>
+      )
     },
     {
       key: 'permissions',
       label: 'الصلاحيات',
+      className: 'hidden md:table-cell',
       render: (rolePermissions: Permission[]) => (
         <div className="flex flex-wrap gap-1">
           {rolePermissions.slice(0, 3).map(p => (
@@ -138,6 +149,7 @@ export default function AdminRolesPage() {
     {
       key: 'created_at',
       label: 'تاريخ الإنشاء',
+      className: 'hidden lg:table-cell',
       render: (date: string) => new Date(date).toLocaleDateString('ar-EG')
     }
   ];
@@ -287,6 +299,57 @@ export default function AdminRolesPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* View Role Details Modal */}
+      {viewingRole && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-[#1a1f37] p-5 rounded-2xl w-full max-w-lg border border-white/10 shadow-2xl transform transition-all">
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <h2 className="text-xl font-bold text-white mb-1">{viewingRole.name}</h2>
+                <p className="text-gray-400 text-xs">
+                  تاريخ الإنشاء: {new Date(viewingRole.created_at).toLocaleDateString('ar-EG')}
+                </p>
+              </div>
+              <button 
+                onClick={() => setViewingRole(null)}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <i className="fas fa-times text-lg"></i>
+              </button>
+            </div>
+
+            <div className="mb-4">
+              <h3 className="text-base font-semibold text-white mb-2 flex items-center gap-2">
+                <i className="fas fa-shield-alt text-primary"></i>
+                الصلاحيات الممنوحة
+              </h3>
+              <div className="bg-white/5 rounded-xl p-3 border border-white/5 max-h-[250px] overflow-y-auto">
+                {viewingRole.permissions.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {viewingRole.permissions.map(p => (
+                      <span key={p.id} className="px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-white text-xs">
+                        {p.name}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-400 text-center py-4 text-sm">لا توجد صلاحيات لهذا الدور</p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-3 border-t border-white/10">
+              <button
+                className="px-4 py-1.5 rounded-lg bg-white/10 text-white hover:bg-white/20 transition-all text-sm"
+                onClick={() => setViewingRole(null)}
+              >
+                إغلاق
+              </button>
+            </div>
           </div>
         </div>
       )}

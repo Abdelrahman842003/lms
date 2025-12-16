@@ -51,7 +51,12 @@ export default function TeacherDashboard() {
         // If unauthorized, logout the user and clear storage
         if (error.status === 401 || error.message?.toLowerCase().includes('unauthenticated')) {
           // Clear localStorage and redirect to login
+          // Clear localStorage and redirect to login
           localStorage.clear();
+          document.cookie = "auth_state=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+          document.cookie = "user_role=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+          document.cookie = "laravel_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+          document.cookie = "XSRF-TOKEN=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
           window.location.href = '/login';
         }
       } finally {

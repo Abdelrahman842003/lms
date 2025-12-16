@@ -126,16 +126,38 @@ function StudentsPage() {
     {
       key: 'id',
       label: '#',
+      className: 'hidden sm:table-cell',
       render: (_: any, __: any, index: number) => {
         return (currentPage - 1) * itemsPerPage + index + 1;
       }
     },
-    { key: 'name', label: 'الاسم', sortable: true },
-    { key: 'username', label: 'اسم المستخدم', sortable: true },
+    { 
+      key: 'name', 
+      label: 'الاسم', 
+      sortable: true,
+      render: (value: string, row: any) => (
+        <button 
+          onClick={() => {
+            setSelectedStudent(row);
+            setIsDetailsModalOpen(true);
+          }}
+          className="font-medium text-white hover:text-primary transition-colors text-right"
+        >
+          {value}
+        </button>
+      )
+    },
+    { 
+      key: 'username', 
+      label: 'اسم المستخدم', 
+      sortable: true,
+      className: 'hidden md:table-cell'
+    },
     { 
       key: 'teacher', 
       label: 'المدرس', 
       sortable: true,
+      className: 'hidden lg:table-cell',
       render: (teacher: any) => teacher?.name || '-'
     },
     { 
@@ -148,7 +170,12 @@ function StudentsPage() {
         </span>
       )
     },
-    { key: 'joined', label: 'تاريخ الانضمام', sortable: true },
+    { 
+      key: 'joined', 
+      label: 'تاريخ الانضمام', 
+      sortable: true,
+      className: 'hidden xl:table-cell'
+    },
   ];
 
   const actions = [
@@ -307,22 +334,23 @@ function StudentsPage() {
       </DashboardCard>
 
       {/* Add Student Modal Placeholder */}
+      {/* Add Student Modal Placeholder */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[1000]">
-          <div className="bg-[#1a1f37] p-8 rounded-2xl w-full max-w-[500px] border border-white/10">
-            <h2 className="text-white mb-6 text-2xl">إضافة طالب جديد</h2>
-            <p className="text-gray-light mb-6">نموذج إضافة طالب (قيد التطوير)</p>
-            <div className="flex gap-3 justify-end">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[1000] p-4">
+          <div className="bg-[#1a1f37] p-5 rounded-2xl w-full max-w-md border border-white/10">
+            <h2 className="text-white mb-4 text-xl font-bold">إضافة طالب جديد</h2>
+            <p className="text-gray-400 mb-6 text-sm">نموذج إضافة طالب (قيد التطوير)</p>
+            <div className="flex gap-3 justify-end pt-3 border-t border-white/10">
               <button
                 type="button"
-                className="btn btn-outline"
+                className="px-4 py-1.5 rounded-lg border border-white/10 text-gray-300 hover:bg-white/5 transition-all text-sm"
                 onClick={() => setIsModalOpen(false)}
               >
                 إلغاء
               </button>
               <button
                 type="button"
-                className="btn btn-primary"
+                className="px-4 py-1.5 rounded-lg bg-primary text-white hover:bg-primary/90 transition-all flex items-center gap-2 text-sm"
                 onClick={() => setIsModalOpen(false)}
               >
                 حفظ
@@ -334,44 +362,44 @@ function StudentsPage() {
 
       {/* Student Details Modal */}
       {isDetailsModalOpen && selectedStudent && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[1000]">
-          <div className="bg-[#1a1f37] p-8 rounded-2xl w-full max-w-[600px] border border-white/10 relative">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[1000] p-4">
+          <div className="bg-[#1a1f37] p-5 rounded-2xl w-full max-w-md border border-white/10 relative shadow-2xl">
             <button 
               onClick={() => setIsDetailsModalOpen(false)}
-              className="absolute top-5 left-5 bg-transparent border-none text-gray-light text-xl cursor-pointer hover:text-white transition-colors"
+              className="absolute top-4 left-4 bg-transparent border-none text-gray-400 text-lg cursor-pointer hover:text-white transition-colors"
             >
               <i className="fas fa-times"></i>
             </button>
 
-            <div className="text-center mb-8">
-              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center mx-auto mb-4 text-2xl text-white font-bold">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center mx-auto mb-3 text-xl text-white font-bold shadow-lg">
                 {selectedStudent.name.charAt(0).toUpperCase()}
               </div>
-              <h2 className="text-white mb-2 text-2xl">{selectedStudent.name}</h2>
-              <p className="text-gray-light">تاريخ الانضمام: {selectedStudent.joined}</p>
+              <h2 className="text-white mb-1 text-xl font-bold">{selectedStudent.name}</h2>
+              <p className="text-gray-400 text-xs">تاريخ الانضمام: {selectedStudent.joined}</p>
             </div>
 
-            <div className="grid grid-cols-2 gap-6 mb-8">
-              <div className="bg-white/5 p-5 rounded-xl text-center">
-                <i className="fas fa-chalkboard-teacher text-2xl text-primary mb-3"></i>
-                <h3 className="text-white text-xl mb-1">{selectedStudent.teacher?.name || '-'}</h3>
-                <p className="text-gray-light text-[0.9rem] m-0">المدرس</p>
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className="bg-white/5 p-4 rounded-xl text-center border border-white/5">
+                <i className="fas fa-chalkboard-teacher text-xl text-primary mb-2"></i>
+                <h3 className="text-white text-lg mb-0.5 font-semibold">{selectedStudent.teacher?.name || '-'}</h3>
+                <p className="text-gray-400 text-xs m-0">المدرس</p>
               </div>
-              <div className="bg-white/5 p-5 rounded-xl text-center">
-                <i className="fas fa-id-card text-2xl text-warning mb-3"></i>
-                <h3 className="text-white text-[1.1rem] mb-1 break-all">{selectedStudent.username}</h3>
-                <p className="text-gray-light text-[0.9rem] m-0">اسم المستخدم</p>
+              <div className="bg-white/5 p-4 rounded-xl text-center border border-white/5">
+                <i className="fas fa-id-card text-xl text-warning mb-2"></i>
+                <h3 className="text-white text-lg mb-0.5 font-semibold break-all">{selectedStudent.username}</h3>
+                <p className="text-gray-400 text-xs m-0">اسم المستخدم</p>
               </div>
             </div>
 
-            <div className="flex gap-3 justify-center">
-              <button className="btn btn-primary" onClick={() => handleEditClick(selectedStudent)}>
+            <div className="flex gap-3 justify-center pt-3 border-t border-white/10">
+              <button className="px-4 py-1.5 rounded-lg bg-primary text-white hover:bg-primary/90 transition-all text-sm flex items-center gap-2" onClick={() => handleEditClick(selectedStudent)}>
                 <i className="fas fa-edit"></i>
-                <span>تعديل البيانات</span>
+                <span>تعديل</span>
               </button>
-              <button className="btn btn-outline" onClick={() => console.log('Login as', selectedStudent)}>
+              <button className="px-4 py-1.5 rounded-lg border border-white/10 text-gray-300 hover:bg-white/5 transition-all text-sm flex items-center gap-2" onClick={() => console.log('Login as', selectedStudent)}>
                 <i className="fas fa-sign-in-alt"></i>
-                <span>الدخول للوحة التحكم</span>
+                <span>دخول</span>
               </button>
             </div>
           </div>
@@ -380,60 +408,60 @@ function StudentsPage() {
 
       {/* Edit Student Modal */}
       {isEditModalOpen && selectedStudent && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[1000]">
-          <div className="bg-[#1a1f37] p-8 rounded-2xl w-full max-w-[500px] border border-white/10">
-            <h2 className="text-white mb-6 text-2xl">تعديل بيانات الطالب</h2>
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[1000] p-4">
+          <div className="bg-[#1a1f37] p-5 rounded-2xl w-full max-w-md border border-white/10">
+            <h2 className="text-white mb-4 text-xl font-bold">تعديل بيانات الطالب</h2>
             <form onSubmit={handleUpdateStudent}>
               <div className="mb-4">
-                <label className="block text-gray-light mb-2">الاسم</label>
+                <label className="block text-gray-300 mb-1.5 text-sm">الاسم</label>
                 <input
                   type="text"
                   value={editFormData.name}
                   onChange={(e) => setEditFormData({...editFormData, name: e.target.value})}
-                  className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                  className="w-full p-2.5 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm"
                   required
                 />
               </div>
               <div className="mb-4">
-                <label className="block text-gray-light mb-2">اسم المستخدم</label>
+                <label className="block text-gray-300 mb-1.5 text-sm">اسم المستخدم</label>
                 <input
                   type="text"
                   value={editFormData.username}
                   onChange={(e) => setEditFormData({...editFormData, username: e.target.value})}
-                  className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                  className="w-full p-2.5 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm"
                   required
                 />
               </div>
               <div className="mb-4">
-                <label className="block text-gray-light mb-2">كلمة المرور (اختياري)</label>
+                <label className="block text-gray-300 mb-1.5 text-sm">كلمة المرور (اختياري)</label>
                 <input
                   type="password"
                   value={editFormData.password}
                   onChange={(e) => setEditFormData({...editFormData, password: e.target.value})}
-                  className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                  className="w-full p-2.5 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm"
                   placeholder="اتركه فارغاً إذا لم ترد التغيير"
                 />
               </div>
               <div className="mb-6">
-                <label className="block text-gray-light mb-2">تأكيد كلمة المرور</label>
+                <label className="block text-gray-300 mb-1.5 text-sm">تأكيد كلمة المرور</label>
                 <input
                   type="password"
                   value={editFormData.password_confirmation}
                   onChange={(e) => setEditFormData({...editFormData, password_confirmation: e.target.value})}
-                  className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                  className="w-full p-2.5 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm"
                 />
               </div>
-              <div className="flex gap-3 justify-end">
+              <div className="flex gap-3 justify-end pt-3 border-t border-white/10">
                 <button
                   type="button"
-                  className="btn btn-outline"
+                  className="px-4 py-1.5 rounded-lg border border-white/10 text-gray-300 hover:bg-white/5 transition-all text-sm"
                   onClick={() => setIsEditModalOpen(false)}
                 >
                   إلغاء
                 </button>
                 <button
                   type="submit"
-                  className="btn btn-primary"
+                  className="px-4 py-1.5 rounded-lg bg-primary text-white hover:bg-primary/90 transition-all flex items-center gap-2 text-sm"
                   disabled={isLoading}
                 >
                   {isLoading ? 'جاري الحفظ...' : 'حفظ التغييرات'}

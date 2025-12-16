@@ -41,10 +41,7 @@ export function middleware(request: NextRequest) {
   // Check for Laravel session cookie or token
   // We check for 'laravel_session' or 'XSRF-TOKEN' as indicators of a session.
   // We also check for 'auth_state' which is set by our client-side AuthContext.
-  const hasSession = request.cookies.has('laravel_session') || 
-                     request.cookies.has('XSRF-TOKEN') || 
-                     request.cookies.has('auth_state') || 
-                     request.cookies.has('auth_state');
+  const hasSession = request.cookies.has('auth_state');
   
   // Define protected routes
   const isDashboard = pathname.startsWith('/dashboard');

@@ -348,3 +348,21 @@ select:focus {
         color: black;
     }
 }
+
+/* Global Transparent Inputs */
+input,
+textarea,
+select {
+    background-color: rgba(255, 255, 255, 0.03) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    color: white !important;
+    backdrop-filter: blur(10px);
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+    background-color: rgba(255, 255, 255, 0.08) !important;
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 0 3px rgba(66, 99, 235, 0.1) !important;
+}

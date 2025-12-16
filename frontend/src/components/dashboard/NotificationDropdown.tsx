@@ -267,7 +267,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
             <div style={{ padding: '0.75rem', borderTop: '1px solid var(--glass-border)', textAlign: 'center' }}>
               <Link 
                 href={`/${role}/notifications`}
-                style={{ fontSize: '0.75rem', color: 'var(--primary-light)', textDecoration: 'none' }}
+                style={{ fontSize: '0.85rem', color: '#ffffff', textDecoration: 'none', fontWeight: '600' }}
                 onClick={() => setIsOpen(false)}
               >
                 عرض كل الإخطارات
