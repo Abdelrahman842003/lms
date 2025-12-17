@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Student\MarkAttendanceRequest;
+use App\Services\PointService;
 use Illuminate\Http\Request;
 use App\Models\Lecture;
 use App\Models\Attendance;
@@ -11,6 +12,10 @@ use Carbon\Carbon;
 
 class StudentAttendanceController extends Controller
 {
+    public function __construct(
+        private PointService $pointService
+    ) {}
+
     public function index(Request $request)
     {
         $request->validate([
@@ -60,12 +65,17 @@ class StudentAttendanceController extends Controller
         
         $attendance->update(['status' => 'present']);
 
+        // Award attendance points
+        $pointTransaction = $this->pointService->awardAttendancePoints($student, $lecture);
+
         // Send Notification
         $student->notify(new \App\Notifications\StudentAttendanceNotification($lecture->title, $lecture->teacher->name));
 
         return $this->successResponse([
             'message' => 'Attendance marked successfully',
             'lecture' => $lecture->title,
+            'points_earned' => $pointTransaction?->points ?? 0,
         ]);
     }
 }
+

@@ -99,6 +99,13 @@ Route::middleware('auth:sanctum')->prefix('teacher')->group(function () {
 
     // Roles and Permissions
     Route::apiResource('permissions', \App\Http\Controllers\Teacher\PermissionController::class);
+
+    // Gamification
+    Route::get('/leaderboard', [\App\Http\Controllers\Teacher\GamificationController::class, 'leaderboard']);
+    Route::get('/gamification/settings', [\App\Http\Controllers\Teacher\GamificationController::class, 'settings']);
+    Route::put('/gamification/settings', [\App\Http\Controllers\Teacher\GamificationController::class, 'updateSettings']);
+    Route::post('/gamification/bonus', [\App\Http\Controllers\Teacher\GamificationController::class, 'awardBonus']);
+    Route::get('/students/{student}/points', [\App\Http\Controllers\Teacher\GamificationController::class, 'studentPoints']);
 });
 
 // ============================================
@@ -131,6 +138,18 @@ Route::middleware('auth:sanctum')->prefix('student')->group(function () {
     // Notifications
     Route::get('/notifications', [\App\Http\Controllers\Student\NotificationController::class, 'index']);
     Route::post('/notifications/{id}/read', [\App\Http\Controllers\Student\NotificationController::class, 'markAsRead']);
+
+    // Gamification
+    Route::get('/points', [\App\Http\Controllers\Student\GamificationController::class, 'index']);
+    Route::get('/points/{teacher}', [\App\Http\Controllers\Student\GamificationController::class, 'show']);
+    Route::get('/points/{teacher}/history', [\App\Http\Controllers\Student\GamificationController::class, 'history']);
+    Route::get('/leaderboard/{teacher}', [\App\Http\Controllers\Student\GamificationController::class, 'leaderboard']);
+
+    // Mistakes (Smart Mistakes Notebook)
+    Route::get('/mistakes', [\App\Http\Controllers\Student\MistakesController::class, 'index']);
+    Route::post('/mistakes/{id}/mastered', [\App\Http\Controllers\Student\MistakesController::class, 'markAsMastered']);
+    Route::get('/mistakes/quiz', [\App\Http\Controllers\Student\MistakesController::class, 'quiz']);
+    Route::post('/mistakes/quiz/{failedQuestionId}/answer', [\App\Http\Controllers\Student\MistakesController::class, 'submitQuizAnswer']);
 });
 
 // ============================================

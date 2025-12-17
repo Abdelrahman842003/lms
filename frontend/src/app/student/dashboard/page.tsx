@@ -18,6 +18,12 @@ export default function StudentDashboard() {
   });
   const [upcomingLectures, setUpcomingLectures] = useState<any[]>([]);
   const [recentExams, setRecentExams] = useState<any[]>([]);
+  const [gamificationStats, setGamificationStats] = useState<{
+    total_points: number;
+    weekly_points: number;
+    rank: number;
+    attendance_streak: number;
+  } | null>(null);
 
   useEffect(() => {
     const loadDashboardData = async () => {
@@ -36,6 +42,16 @@ export default function StudentDashboard() {
             }
         } catch (error) {
             console.error('Failed to load dashboard stats:', error);
+        }
+
+        // Load gamification stats
+        try {
+            const pointsResponse = await fetchApi(`/student/points/${selectedTeacher.teacher_id}`);
+            if (pointsResponse.success) {
+                setGamificationStats(pointsResponse.data);
+            }
+        } catch (error) {
+            console.error('Failed to load gamification stats:', error);
         }
       }
 
@@ -141,6 +157,34 @@ export default function StudentDashboard() {
           icon="fas fa-chart-line"
           color="danger"
         />
+        {/* Gamification Points Widget */}
+        {gamificationStats && (
+          <Link href="/student/leaderboard" className="block">
+            <div className="bg-gradient-to-br from-yellow-500/20 to-amber-600/10 rounded-2xl p-5 border border-yellow-500/30 hover:border-yellow-500/50 transition-all card-hover cursor-pointer">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-gray-400 text-sm font-medium">نقاطي 🏆</span>
+                <div className="flex items-center gap-1 text-xs text-gray-400">
+                  <span>#{gamificationStats.rank}</span>
+                  <i className="fas fa-arrow-up text-success"></i>
+                </div>
+              </div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl font-bold text-white">{gamificationStats.total_points}</span>
+                <span className="text-sm text-gray-400">نقطة</span>
+              </div>
+              <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/10">
+                <div className="flex items-center gap-1 text-sm">
+                  <span className="text-success">+{gamificationStats.weekly_points}</span>
+                  <span className="text-gray-500">هذا الأسبوع</span>
+                </div>
+                <div className="flex items-center gap-1 text-sm text-amber-400">
+                  <span>{gamificationStats.attendance_streak}</span>
+                  <span>🔥</span>
+                </div>
+              </div>
+            </div>
+          </Link>
+        )}
       </div>
 
       {/* Content Grid */}

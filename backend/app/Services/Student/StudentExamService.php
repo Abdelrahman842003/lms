@@ -9,10 +9,16 @@ use App\Models\Question;
 use App\Models\Student;
 use App\Models\StudentAnswer;
 use App\Notifications\ExamResultNotification;
+use App\Services\MistakesService;
+use App\Services\PointService;
 use Illuminate\Support\Facades\DB;
 
 class StudentExamService
 {
+    public function __construct(
+        private PointService $pointService,
+        private MistakesService $mistakesService
+    ) {}
     /**
      * Start an exam for a student
      */
@@ -108,6 +114,20 @@ class StudentExamService
             'is_correct' => $isCorrect,
             'answered_at' => now(),
         ]);
+
+        // Track wrong answer for Smart Mistakes Notebook
+        if (!$isCorrect) {
+            try {
+                $this->mistakesService->trackWrongAnswer(
+                    $attempt->student,
+                    $currentQuestion,
+                    $attempt->exam,
+                    $answer
+                );
+            } catch (\Exception $e) {
+                \Log::error('Failed to track wrong answer: ' . $e->getMessage());
+            }
+        }
 
         // Move to next question
         $attempt->current_question_index += 1;
@@ -214,6 +234,14 @@ class StudentExamService
             ]
         );
 
+        // Award gamification points
+        $pointTransaction = null;
+        try {
+            $pointTransaction = $this->pointService->awardExamPoints($attempt->student, $result);
+        } catch (\Exception $e) {
+            \Log::error('Failed to award exam points: ' . $e->getMessage());
+        }
+
         // Calculate progress
         $progress = $this->calculateProgress($attempt->student, $exam);
 
@@ -234,6 +262,7 @@ class StudentExamService
                 'total_questions' => $totalQuestions,
                 'terminated' => $attempt->status === 'terminated',
                 'terminated_reason' => $attempt->terminated_reason,
+                'points_earned' => $pointTransaction?->points ?? 0,
             ],
             'progress' => $progress,
         ];
