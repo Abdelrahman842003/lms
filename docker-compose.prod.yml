@@ -1,5 +1,27 @@
 version: "3.8"
 
+secrets:
+  firebase_credentials:
+    file: ./secrets/firebase_credentials.json
+  firebase_project_id:
+    file: ./secrets/firebase_project_id.txt
+  cloudflare_r2_access_key_id:
+    file: ./secrets/cloudflare_r2_access_key_id.txt
+  cloudflare_r2_secret_access_key:
+    file: ./secrets/cloudflare_r2_secret_access_key.txt
+  cloudflare_r2_bucket:
+    file: ./secrets/cloudflare_r2_bucket.txt
+  cloudflare_r2_endpoint:
+    file: ./secrets/cloudflare_r2_endpoint.txt
+  cloudflare_r2_public_url:
+    file: ./secrets/cloudflare_r2_public_url.txt
+  cloudflare_kv_account_id:
+    file: ./secrets/cloudflare_kv_account_id.txt
+  cloudflare_kv_namespace_id:
+    file: ./secrets/cloudflare_kv_namespace_id.txt
+  cloudflare_kv_api_token:
+    file: ./secrets/cloudflare_kv_api_token.txt
+
 services:
   # Nginx Reverse Proxy
   nginx:
@@ -64,6 +86,17 @@ services:
       target: production
     container_name: lms_octane
     restart: unless-stopped
+    secrets:
+      - firebase_credentials
+      - firebase_project_id
+      - cloudflare_r2_access_key_id
+      - cloudflare_r2_secret_access_key
+      - cloudflare_r2_bucket
+      - cloudflare_r2_endpoint
+      - cloudflare_r2_public_url
+      - cloudflare_kv_account_id
+      - cloudflare_kv_namespace_id
+      - cloudflare_kv_api_token
     volumes:
       - /opt/lms/secrets/neetaq-54091-firebase-adminsdk-fbsvc-b830b7b75f.json:/var/www/backend/storage/firebase-credentials.json:ro
     environment:
@@ -91,10 +124,17 @@ services:
       - SWOOLE_HTTP_MAX_REQUEST=500
       - SWOOLE_HTTP_WATCH=false
       - TELESCOPE_ENABLED=false
-      - GOOGLE_APPLICATION_CREDENTIALS=/var/www/backend/storage/firebase-credentials.json
-      - FIREBASE_PROJECT_ID=neetaq-54091
-      - CLOUDFLARE_API_TOKEN=${CLOUDFLARE_API_TOKEN}
-      - CLOUDFLARE_ZONE_ID=${CLOUDFLARE_ZONE_ID}
+      - GOOGLE_APPLICATION_CREDENTIALS=/run/secrets/firebase_credentials
+      - FIREBASE_CREDENTIALS_FILE=/run/secrets/firebase_credentials
+      - FIREBASE_PROJECT_ID_FILE=/run/secrets/firebase_project_id
+      - CLOUDFLARE_R2_ACCESS_KEY_ID_FILE=/run/secrets/cloudflare_r2_access_key_id
+      - CLOUDFLARE_R2_SECRET_ACCESS_KEY_FILE=/run/secrets/cloudflare_r2_secret_access_key
+      - CLOUDFLARE_R2_BUCKET_FILE=/run/secrets/cloudflare_r2_bucket
+      - CLOUDFLARE_R2_ENDPOINT_FILE=/run/secrets/cloudflare_r2_endpoint
+      - CLOUDFLARE_R2_PUBLIC_URL_FILE=/run/secrets/cloudflare_r2_public_url
+      - CLOUDFLARE_KV_ACCOUNT_ID_FILE=/run/secrets/cloudflare_kv_account_id
+      - CLOUDFLARE_KV_NAMESPACE_ID_FILE=/run/secrets/cloudflare_kv_namespace_id
+      - CLOUDFLARE_KV_API_TOKEN_FILE=/run/secrets/cloudflare_kv_api_token
       # Reverb Configuration
       - REVERB_APP_ID=${REVERB_APP_ID}
       - REVERB_APP_KEY=${REVERB_APP_KEY}
@@ -124,6 +164,17 @@ services:
       target: production
     container_name: lms_horizon
     restart: unless-stopped
+    secrets:
+      - firebase_credentials
+      - firebase_project_id
+      - cloudflare_r2_access_key_id
+      - cloudflare_r2_secret_access_key
+      - cloudflare_r2_bucket
+      - cloudflare_r2_endpoint
+      - cloudflare_r2_public_url
+      - cloudflare_kv_account_id
+      - cloudflare_kv_namespace_id
+      - cloudflare_kv_api_token
     environment:
       - APP_ENV=production
       - APP_KEY=${APP_KEY}

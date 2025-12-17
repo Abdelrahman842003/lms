@@ -15,9 +15,9 @@ class CloudflareKVService
     public function __construct()
     {
         $this->client = new Client();
-        $this->accountId = env('CLOUDFLARE_KV_ACCOUNT_ID');
-        $this->namespaceId = env('CLOUDFLARE_KV_NAMESPACE_ID');
-        $this->apiToken = env('CLOUDFLARE_KV_API_TOKEN');
+        $this->accountId = config('services.cloudflare.kv.account_id');
+        $this->namespaceId = config('services.cloudflare.kv.namespace_id');
+        $this->apiToken = config('services.cloudflare.kv.api_token');
     }
 
     /**

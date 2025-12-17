@@ -35,4 +35,24 @@ return [
         ],
     ],
 
+    'firebase' => [
+        'credentials' => docker_secret('FIREBASE_CREDENTIALS', storage_path('firebase/service-account.json')),
+        'project_id' => docker_secret('FIREBASE_PROJECT_ID'),
+    ],
+
+    'cloudflare' => [
+        'r2' => [
+            'access_key_id' => docker_secret('CLOUDFLARE_R2_ACCESS_KEY_ID'),
+            'secret_access_key' => docker_secret('CLOUDFLARE_R2_SECRET_ACCESS_KEY'),
+            'bucket' => docker_secret('CLOUDFLARE_R2_BUCKET'),
+            'endpoint' => docker_secret('CLOUDFLARE_R2_ENDPOINT'),
+            'public_url' => docker_secret('CLOUDFLARE_R2_PUBLIC_URL'),
+        ],
+        'kv' => [
+            'account_id' => docker_secret('CLOUDFLARE_KV_ACCOUNT_ID'),
+            'namespace_id' => docker_secret('CLOUDFLARE_KV_NAMESPACE_ID'),
+            'api_token' => docker_secret('CLOUDFLARE_KV_API_TOKEN'),
+        ],
+    ],
+
 ];

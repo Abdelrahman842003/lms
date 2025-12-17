@@ -98,3 +98,10 @@ prod-down: ## إيقاف الإنتاج
 
 prod-logs: ## عرض logs الإنتاج
 	docker compose -f docker-compose.prod.yml logs -f
+
+prod: ## تشغيل الإنتاج (توليد الأسرار + تشغيل Docker)
+	@echo "🔐 توليد الأسرار..."
+	@chmod +x setup-secrets.sh
+	@./setup-secrets.sh
+	@echo "🚀 تشغيل Docker..."
+	docker compose -f docker-compose.prod.yml up -d --build
