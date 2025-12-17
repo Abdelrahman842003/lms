@@ -48,18 +48,18 @@ export default function AdminLoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Login form submitted');
+
     setError('');
     setIsLoading(true);
 
     try {
-      console.log('Attempting login with username:', formData.username);
+
       // Import loginAdmin from authService
       const { loginAdmin } = await import('@/services/authService');
-      console.log('loginAdmin function imported');
+
       
       const response = await loginAdmin(formData.username, formData.password);
-      console.log('Login response received:', response);
+
       
       // Store token and user data
       localStorage.setItem('token', response.token);
@@ -73,7 +73,7 @@ export default function AdminLoginPage() {
         createdAt: response.user.created_at || new Date().toISOString(),
         updatedAt: response.user.updated_at || new Date().toISOString(),
       }));
-      console.log('Local storage updated, redirecting to dashboard');
+
       
       // Redirect to admin dashboard
       window.location.href = '/admin/dashboard';

@@ -196,7 +196,7 @@ function StudentsPage() {
       label: 'تعليق الحساب',
       icon: 'fas fa-ban',
       variant: 'danger' as const,
-      onClick: (row: any) => console.log('Suspend', row),
+      onClick: (row: any) => {},  // TODO: Implement suspend student
     },
   ];
 
@@ -397,7 +397,7 @@ function StudentsPage() {
                 <i className="fas fa-edit"></i>
                 <span>تعديل</span>
               </button>
-              <button className="px-4 py-1.5 rounded-lg border border-white/10 text-gray-300 hover:bg-white/5 transition-all text-sm flex items-center gap-2" onClick={() => console.log('Login as', selectedStudent)}>
+              <button className="px-4 py-1.5 rounded-lg border border-white/10 text-gray-300 hover:bg-white/5 transition-all text-sm flex items-center gap-2" onClick={() => {}}>  {/* TODO: Implement login as student */}
                 <i className="fas fa-sign-in-alt"></i>
                 <span>دخول</span>
               </button>

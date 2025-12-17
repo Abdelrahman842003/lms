@@ -30,11 +30,11 @@ export const requestForToken = async () => {
     if (currentToken) {
       return currentToken;
     } else {
-      console.log('No registration token available. Request permission to generate one.');
+      return null;
       return null;
     }
   } catch (err) {
-    console.log('An error occurred while retrieving token. ', err);
+    // Error occurred while retrieving token
     return null;
   }
 };
@@ -57,7 +57,7 @@ export const deleteFcmToken = async () => {
     await deleteToken(messaging);
     return true;
   } catch (err) {
-    console.log('An error occurred while deleting token. ', err);
+    // Error occurred while deleting token
     return false;
   }
 };

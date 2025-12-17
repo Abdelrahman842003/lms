@@ -64,7 +64,7 @@ export default function ExamsPage() {
   const handleDelete = async (id: number) => {
     if (confirm('هل أنت متأكد من حذف هذا الامتحان؟')) {
       // TODO: Implement delete API call
-      console.log('Delete exam', id);
+      // TODO: Implement delete API call
     }
   };
 

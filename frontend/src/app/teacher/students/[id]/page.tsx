@@ -260,7 +260,7 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
                   <div className="flex gap-2">
                     <button 
                       className="btn btn-primary btn-sm flex-1" 
-                      onClick={() => console.log('View Exam', exam)}
+                      onClick={() => router.push(`/teacher/exams/${exam.exam_id}`)}
                     >
                       <i className="fas fa-eye"></i>
                       <span>عرض</span>

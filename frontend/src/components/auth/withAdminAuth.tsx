@@ -25,14 +25,14 @@ export function withAdminAuth<P extends object>(
 
           // If no token or user data, redirect to login
           if (!token || !user) {
-            console.log('No token or user data found, redirecting to login');
+            // No token or user data found, redirecting to login
             window.location.href = '/admin/login';
             return;
           }
 
           // Check if user is admin
           if (userType !== 'admin') {
-            console.log('User is not admin, redirecting to login');
+            // User is not admin, redirecting to login
             window.location.href = '/admin/login';
             return;
           }

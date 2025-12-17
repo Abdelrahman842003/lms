@@ -10,22 +10,16 @@ export function usePWAInstall() {
   const [isInstalled, setIsInstalled] = useState(false);
 
   useEffect(() => {
-    console.log('🔍 PWA Hook: Initializing...');
-    
     const handler = (e: Event) => {
-      console.log('✅ beforeinstallprompt EVENT FIRED!');
       // Prevent the mini-infobar from appearing on mobile
       e.preventDefault();
       // Stash the event so it can be triggered later.
       setDeferredPrompt(e as BeforeInstallPromptEvent);
-      console.log('📦 Deferred prompt saved');
     };
 
     window.addEventListener('beforeinstallprompt', handler);
-    console.log('👂 Listening for beforeinstallprompt...');
 
     const installHandler = () => {
-        console.log('🎉 App installed! (appinstalled event)');
         setIsInstalled(true);
         setDeferredPrompt(null);
     };
@@ -34,14 +28,10 @@ export function usePWAInstall() {
     // For iOS: detect when user returns after adding to home screen
     const visibilityHandler = () => {
         if (document.visibilityState === 'visible') {
-            console.log('👀 Page became visible, checking standalone mode...');
             // Check if running as standalone (installed)
             if (window.matchMedia('(display-mode: standalone)').matches) {
-                console.log('✅ Running in standalone mode - App is installed!');
                 setIsInstalled(true);
                 setDeferredPrompt(null);
-            } else {
-                console.log('❌ NOT in standalone mode');
             }
         }
     };
@@ -49,27 +39,14 @@ export function usePWAInstall() {
 
     // Check if already installed
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-    console.log('🔍 Initial check - Standalone mode:', isStandalone);
     if (isStandalone) {
-      console.log('✅ App is already installed!');
       setIsInstalled(true);
     }
-
-    // Check after 3 seconds if event didn't fire
-    const timeoutId = setTimeout(() => {
-        console.warn('⚠️ beforeinstallprompt did NOT fire after 3 seconds');
-        console.log('Possible reasons:');
-        console.log('1. User dismissed install prompt before');
-        console.log('2. App is already installed');
-        console.log('3. Browser doesn\'t support PWA install');
-        console.log('4. Manifest.json has issues');
-    }, 3000);
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handler);
       window.removeEventListener('appinstalled', installHandler);
       document.removeEventListener('visibilitychange', visibilityHandler);
-      clearTimeout(timeoutId);
     };
   }, []);
 

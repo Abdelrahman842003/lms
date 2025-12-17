@@ -187,18 +187,18 @@ export default function AdminTeachersPage() {
     {
       label: 'الدخول للوحة التحكم',
       icon: 'fas fa-sign-in-alt',
-      onClick: (row: any) => console.log('Login as', row),
+      onClick: (row: any) => {},  // TODO: Implement login as teacher
     },
     {
       label: 'تعديل البيانات',
       icon: 'fas fa-edit',
-      onClick: (row: any) => console.log('Edit', row),
+      onClick: (row: any) => router.push(`/admin/teachers/${row.id}/edit`),
     },
     {
       label: 'تعليق الحساب',
       icon: 'fas fa-ban',
       variant: 'danger' as const,
-      onClick: (row: any) => console.log('Suspend', row),
+      onClick: (row: any) => {},  // TODO: Implement suspend teacher
     },
   ];
 

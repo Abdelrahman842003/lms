@@ -105,7 +105,7 @@ export function getRefreshToken(): string | null {
 async function refreshAccessToken(): Promise<string | null> {
   const refreshToken = getRefreshToken();
   if (!refreshToken) {
-    console.log('No refresh token found');
+    return null;
     return null;
   }
 
@@ -114,7 +114,7 @@ async function refreshAccessToken(): Promise<string | null> {
     const cleanBaseUrl = API_BASE_URL.replace(/\/api\/?$/, '').replace(/\/$/, '');
     const url = `${cleanBaseUrl}/api/refresh-token`;
     
-    console.log('Refreshing token...', url);
+
 
     const response = await fetch(url, {
       method: 'POST',
@@ -135,7 +135,7 @@ async function refreshAccessToken(): Promise<string | null> {
     const newAccessToken = res.data.access_token;
     
     if (newAccessToken) {
-      console.log('Token refreshed successfully');
+
       localStorage.setItem('token', newAccessToken);
       return newAccessToken;
     }
@@ -173,7 +173,7 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}): Pro
   const cleanBaseUrl = API_BASE_URL.replace(/\/api\/?$/, '').replace(/\/$/, '');
   const url = `${cleanBaseUrl}${endpoint.startsWith('/api') ? endpoint : '/api' + endpoint}`;
   
-  console.log('fetchApi Request:', url);
+
   
   let response = await fetch(url, {
     ...options,

@@ -68,15 +68,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const checkAuth = async () => {
       try {
         const userType = localStorage.getItem('userType') as 'teacher' | 'student' | 'secretary' | 'admin' | null;
-        console.log('AuthContext: checkAuth started', { userType });
+
 
         if (userType) {
           // Fetch fresh user data from API in the background
           try {
             // Pass empty string as token since we use cookies now
-            console.log('AuthContext: Calling getCurrentUser');
+
             const response = await getCurrentUser(userType);
-            console.log('AuthContext: getCurrentUser success', response);
+
             
             const userData: User = {
               id: response.user.id,
@@ -148,7 +148,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
         } else if (!user) {
           // No userType and no user - ensure user is null
-          console.log('AuthContext: No userType found, setting user to null');
+
           setUser(null);
           setSelectedTeacher(null);
         }
@@ -163,7 +163,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     // Listen for global unauthorized events
     const handleUnauthorized = () => {
-      console.log('AuthContext: Received auth:unauthorized event, logging out...');
+
       setUser(null);
       setSelectedTeacher(null);
       localStorage.clear();
@@ -358,13 +358,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const token = await requestForToken();
         
         if (token) {
-          console.log('FCM Token retrieved:', token);
+
           const { storeDeviceToken } = await import('@/services/notificationService');
           await storeDeviceToken(token);
           
           // Setup listener for foreground messages
           onMessageListener().then((payload: any) => {
-            console.log('Foreground message received:', payload);
+
             
             // Dispatch custom event for other components (like NotificationDropdown)
             if (typeof window !== 'undefined') {

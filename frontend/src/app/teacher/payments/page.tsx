@@ -19,7 +19,7 @@ export default function PaymentsPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // TODO: Save to backend
-    console.log('Saving bank account:', bankAccount);
+    // TODO: Implement save to backend API
     setIsEditing(false);
   };
 

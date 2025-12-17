@@ -59,7 +59,7 @@ export default function TeacherProfile() {
       }
     } catch (err) {
       // Silently handle - it's ok if no avatar exists
-      console.log('No avatar found or error loading avatar');
+      // No avatar found - silently handle
     }
   };
 
@@ -137,7 +137,7 @@ export default function TeacherProfile() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     // TODO: Implement profile update
-    console.log('Update profile:', formData);
+    // TODO: Implement profile update API call
     setIsEditing(false);
   };
 
@@ -148,7 +148,7 @@ export default function TeacherProfile() {
       return;
     }
     // TODO: Implement password change
-    console.log('Change password');
+    // TODO: Implement password change API call
   };
 
   if (isLoading) {

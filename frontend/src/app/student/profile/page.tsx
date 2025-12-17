@@ -66,7 +66,7 @@ export default function StudentProfilePage() {
       }
     } catch (err) {
       // Silently handle - it's ok if no avatar exists
-      console.log('No avatar found or error loading avatar');
+      // No avatar found - silently handle
     }
   };
 
@@ -144,7 +144,7 @@ export default function StudentProfilePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     // TODO: Implement profile update
-    console.log('Update profile:', formData);
+    // TODO: Implement profile update API call
     setIsEditing(false);
   };
 
@@ -182,7 +182,7 @@ export default function StudentProfilePage() {
     }
 
     // TODO: Implement password change
-    console.log('Change password');
+    // TODO: Implement password change API call
     // Clear errors on success (mock)
     setErrors({});
   };

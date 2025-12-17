@@ -53,7 +53,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
       // Play sound and show notification if unread count increased, but NOT on first load
       if (newUnreadCount > prevUnreadCountRef.current && !isFirstLoadRef.current) {
         try {
-          audioRef.current?.play().catch(e => console.log('Audio play failed:', e));
+          audioRef.current?.play().catch(() => {});
           
           const newestNotification = fetchedNotifications[0];
           if (newestNotification) {
@@ -119,7 +119,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
       };
 
       const userData = getUserData();
-      console.log('[NotificationDropdown] User data for WebSocket:', userData ? 'found' : 'not found');
+
 
       // Setup Reverb WebSocket connection for real-time updates
       let echoCleanup: (() => void) | null = null;
@@ -127,17 +127,17 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
       if (userData) {
         import('@/lib/echo').then(({ initializeEcho }) => {
           try {
-            console.log('[NotificationDropdown] Initializing Echo with token...');
+
             const echo = initializeEcho(userData.token);
             const channelName = `notifications.${role}.${userData.userId}`;
             
-            console.log('[NotificationDropdown] Subscribing to channel:', channelName);
+
             
             const channel = echo.private(channelName);
             
             // First check connection
             channel.subscribed(() => {
-              console.log('[NotificationDropdown] ✅ Successfully subscribed to:', channelName);
+
             });
             
             channel.error((error: any) => {
@@ -146,13 +146,13 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
             
             // Listen for the event
             channel.listen('.new.notification', (data: any) => {
-              console.log('[Reverb] 🔔 Real-time notification received:', data);
+
               
               const notificationId = data.notification_id || Date.now().toString();
               
               // Deduplication: Skip if already received
               if (receivedIdsRef.current.has(notificationId)) {
-                console.log('[Reverb] ⚠️ Duplicate notification skipped:', notificationId);
+                return;
                 return;
               }
               receivedIdsRef.current.add(notificationId);
@@ -180,7 +180,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
               
               // Play sound
               try {
-                audioRef.current?.play().catch(e => console.log('Audio play failed:', e));
+                audioRef.current?.play().catch(() => {});
               } catch (err) {
                 console.error('Error playing notification sound:', err);
               }
@@ -210,7 +210,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
             });
 
             echoCleanup = () => {
-              console.log('[NotificationDropdown] Leaving channel:', channelName);
+
               echo.leave(channelName);
             };
           } catch (e) {
@@ -224,7 +224,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
         const customEvent = event as CustomEvent;
         const payload = customEvent.detail;
         
-        console.log('NotificationDropdown received FCM event:', payload);
+
         
         if (payload && payload.data) {
           const newNotification: AppNotification = {
@@ -244,7 +244,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
           setNotifications(prev => {
             const exists = prev.some(n => n.id === newNotification.id);
             if (exists) {
-              console.log('[FCM] Duplicate notification ignored:', newNotification.id);
+              return prev;
               return prev;
             }
             return [newNotification, ...prev];
@@ -254,7 +254,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
           
           // Play sound
           try {
-             audioRef.current?.play().catch(e => console.log('Audio play failed:', e));
+             audioRef.current?.play().catch(() => {});
           } catch (err) {
             console.error('Error playing notification sound:', err);
           }

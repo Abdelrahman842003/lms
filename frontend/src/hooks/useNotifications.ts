@@ -99,7 +99,6 @@ export function useNotifications({
     (notification: Notification) => {
       // Deduplication check
       if (isProcessed(notification.notification_id)) {
-        console.log('[Notification] Duplicate ignored:', notification.notification_id);
         return;
       }
 
@@ -122,8 +121,8 @@ export function useNotifications({
 
       // Play sound
       if (enableSound && audioRef.current) {
-        audioRef.current.play().catch((err) => {
-          console.log('[Notification] Audio play failed:', err);
+        audioRef.current.play().catch(() => {
+          // Audio play failed - possibly due to autoplay restrictions
         });
       }
 
@@ -136,26 +135,19 @@ export function useNotifications({
   // Initialize WebSocket connection (Reverb)
   useEffect(() => {
     if (!userId || !token) {
-      console.log('[Echo] Missing userId or token, skipping connection');
       return;
     }
 
-    console.log('[Echo] Initializing connection...');
-    
     const echo = initializeEcho(token);
     const channelName = `notifications.${userType}.${userId}`;
-
-    console.log('[Echo] Subscribing to channel:', channelName);
 
     const channel = echo.private(channelName);
 
     channel
       .listen('.new.notification', (data: Notification) => {
-        console.log('[Reverb] Notification received:', data);
         handleNotification(data);
       })
       .subscribed(() => {
-        console.log('[Echo] Successfully subscribed to:', channelName);
         setIsConnected(true);
       })
       .error((error: unknown) => {
@@ -164,7 +156,6 @@ export function useNotifications({
       });
 
     return () => {
-      console.log('[Echo] Leaving channel:', channelName);
       echo.leave(channelName);
       disconnectEcho();
       setIsConnected(false);
@@ -190,7 +181,6 @@ export function useNotifications({
           created_at: new Date().toISOString(),
         };
 
-        console.log('[FCM] Notification received:', fcmNotification);
         handleNotification(fcmNotification);
 
         // Recursively listen for next message
