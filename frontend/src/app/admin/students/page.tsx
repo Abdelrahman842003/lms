@@ -196,7 +196,7 @@ function StudentsPage() {
       label: 'تعليق الحساب',
       icon: 'fas fa-ban',
       variant: 'danger' as const,
-      onClick: (row: any) => {},  // TODO: Implement suspend student
+      onClick: (_row: any) => {},  // TODO: Implement suspend student
     },
   ];
 

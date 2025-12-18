@@ -4,9 +4,11 @@ import '@/styles/components.css'
 import '@/styles/layout.css'
 import '@/styles/pages/login.css'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { OfflineProvider } from '@/contexts/OfflineContext'
 import { Toaster } from 'react-hot-toast'
 import PWAInstallPrompt from '@/components/PWAInstallPrompt'
 import ServiceWorkerRegistration from '@/components/ServiceWorkerRegistration'
+
 
 import MaintenanceGuard from '@/components/providers/MaintenanceGuard'
 
@@ -55,12 +57,14 @@ export default function RootLayout({
                 <div className="grid-pattern" />
                 <AuthProvider>
                   <MaintenanceGuard>
-                          <div className="max-w-[1200px] mx-auto">
-                    <ServiceWorkerRegistration />
-                    {children}
-                    <PWAInstallPrompt />
-                    <Toaster position="top-center" />
-                </div>
+                    <OfflineProvider>
+                      <div className="max-w-[1200px] mx-auto">
+                        <ServiceWorkerRegistration />
+                        {children}
+                        <PWAInstallPrompt />
+                        <Toaster position="top-center" />
+                      </div>
+                    </OfflineProvider>
                   </MaintenanceGuard>
                 </AuthProvider>
             </body>

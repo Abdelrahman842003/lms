@@ -64,7 +64,7 @@
   border-radius: 10px;
   color: white;
   font-size: 0.95rem;
-  font-family: 'Tajawal', sans-serif;
+  font-family: "Tajawal", sans-serif;
   transition: all 0.3s ease;
 }
 
@@ -116,7 +116,7 @@
   color: var(--light);
   cursor: pointer;
   transition: all 0.3s ease;
-  font-family: 'Tajawal', sans-serif;
+  font-family: "Tajawal", sans-serif;
 }
 
 .pagination-btn:hover:not(:disabled) {
@@ -172,7 +172,7 @@
   border-radius: 10px;
   padding: 8px;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
-  z-index: 100;
+  z-index: 1000;
   opacity: 0;
   visibility: hidden;
   transform: translateY(-10px);
@@ -222,7 +222,7 @@
   border-radius: 10px;
   font-size: 0.95rem;
   font-weight: 600;
-  font-family: 'Tajawal', sans-serif;
+  font-family: "Tajawal", sans-serif;
   cursor: pointer;
   transition: all 0.3s ease;
   border: none;
@@ -590,7 +590,7 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #4263EB, #3730A3);
+  background: linear-gradient(135deg, #4263eb, #3730a3);
   display: flex;
   align-items: center;
   justify-content: center;

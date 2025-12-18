@@ -101,7 +101,6 @@ class TeacherDataSeeder extends Seeder
                 'description' => 'Important lecture covering key concepts.',
                 'start_time' => $date->copy()->setHour(10),
                 'end_time' => $date->copy()->setHour(12),
-                'price' => 50,
             ]);
 
             // Add attendance for some students
@@ -125,7 +124,6 @@ class TeacherDataSeeder extends Seeder
                 'description' => 'Future lecture.',
                 'start_time' => $date->copy()->setHour(10),
                 'end_time' => $date->copy()->setHour(12),
-                'price' => 50,
             ]);
         }
 

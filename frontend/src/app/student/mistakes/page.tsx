@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
-import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { useAuth } from '@/contexts/AuthContext';
 import { fetchApi } from '@/services/authService';
 import Link from 'next/link';

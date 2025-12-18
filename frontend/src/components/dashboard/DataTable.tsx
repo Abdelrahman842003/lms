@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { DataTableProps } from '@/types/dashboard';
 
 export const DataTable: React.FC<DataTableProps> = ({
@@ -19,13 +20,24 @@ export const DataTable: React.FC<DataTableProps> = ({
   headerActions,
   rowClassName,
   onRowClick,
+  mobileRenderer,
+  breakpoint = 'xl',
 }) => {
+  const breakpointClasses = {
+    sm: { mobile: 'block sm:hidden', table: '!hidden sm:table' },
+    md: { mobile: 'block md:hidden', table: '!hidden md:table' },
+    lg: { mobile: 'block lg:hidden', table: '!hidden lg:table' },
+    xl: { mobile: 'block xl:hidden', table: '!hidden xl:table' },
+    '2xl': { mobile: 'block 2xl:hidden', table: '!hidden 2xl:table' },
+  };
+  const currentBreakpoint = breakpointClasses[breakpoint] || breakpointClasses.xl;
   const [internalSearchQuery, setInternalSearchQuery] = useState('');
   const searchQuery = onSearch ? undefined : internalSearchQuery;
   const [internalCurrentPage, setInternalCurrentPage] = useState(1);
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [activeDropdown, setActiveDropdown] = useState<number | null>(null);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -134,112 +146,164 @@ export const DataTable: React.FC<DataTableProps> = ({
       )}
 
       {/* Table */}
-      <table className="data-table">
-        <thead>
-          <tr>
-            {columns.map((column) => (
-              <th
-                key={column.key}
-                className={`${column.sortable ? 'sortable' : ''} ${column.className || ''}`}
-                onClick={() => column.sortable && handleSort(column.key)}
-              >
-                {column.label}
-                {column.sortable && sortColumn === column.key && (
-                  <i
-                    className={`fas fa-sort-${sortDirection === 'asc' ? 'up' : 'down'} sort-icon`}
-                  ></i>
-                )}
-              </th>
-            ))}
-            {actions && actions.length > 0 && <th>الإجراءات</th>}
-          </tr>
-        </thead>
-        <tbody>
+      {/* Mobile View */}
+      {mobileRenderer && (
+        <div className={`${currentBreakpoint.mobile} space-y-4`}>
           {isLoading ? (
-            Array.from({ length: 5 }).map((_, index) => (
-              <tr key={index}>
-                {columns.map((column, colIndex) => (
-                  <td key={colIndex} className={column.className || ''}>
-                    <div className="skeleton skeleton-text" style={{ width: '80%', height: '20px' }}></div>
-                  </td>
-                ))}
-                {actions && actions.length > 0 && (
-                  <td>
-                    <div className="skeleton skeleton-circle"></div>
-                  </td>
-                )}
-              </tr>
+            Array.from({ length: 3 }).map((_, index) => (
+              <div key={index} className="bg-white/5 rounded-xl p-4 animate-pulse">
+                <div className="h-6 bg-white/10 rounded w-3/4 mb-3"></div>
+                <div className="space-y-2">
+                  <div className="h-4 bg-white/10 rounded w-1/2"></div>
+                  <div className="h-4 bg-white/10 rounded w-2/3"></div>
+                </div>
+              </div>
             ))
           ) : paginatedData.length > 0 ? (
             paginatedData.map((row, rowIndex) => (
-              <tr 
-                key={rowIndex} 
-                className={`${rowClassName ? rowClassName(row) : ''} ${onRowClick ? 'cursor-pointer hover:bg-white/5 transition-colors' : ''}`}
-                onClick={() => onRowClick && onRowClick(row)}
-              >
-                {columns.map((column) => (
-                  <td key={column.key} className={column.className || ''}>
-                    {column.render
-                      ? column.render(row[column.key], row, rowIndex)
-                      : row[column.key]}
-                  </td>
-                ))}
-                {actions && actions.length > 0 && (
-                  <td>
-                    <div className="actions-dropdown" ref={activeDropdown === rowIndex ? dropdownRef : null}>
-                      <button
-                        className="actions-trigger"
-                        onClick={() =>
-                          setActiveDropdown(
-                            activeDropdown === rowIndex ? null : rowIndex
-                          )
-                        }
-                      >
-                        <i className="fas fa-ellipsis-v"></i>
-                      </button>
-                      <div
-                        className={`actions-menu ${activeDropdown === rowIndex ? 'show' : ''}`}
-                      >
-                        {actions.map((action, actionIndex) => {
-                          if (action.hidden && action.hidden(row)) return null;
-                          
-                          const icon = typeof action.icon === 'function' ? action.icon(row) : action.icon;
-                          const label = typeof action.label === 'function' ? action.label(row) : action.label;
-                          const variant = typeof action.variant === 'function' ? action.variant(row) : action.variant;
-                          
-                          return (
-                            <div
-                              key={actionIndex}
-                              className={`actions-menu-item ${variant === 'danger' ? 'danger' : ''} ${variant === 'warning' ? 'warning' : ''} ${variant === 'success' ? 'success' : ''}`}
-                              onClick={() => handleAction(action, row)}
-                            >
-                              <i className={icon}></i>
-                              <span>{label}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </td>
-                )}
-              </tr>
+              <div key={rowIndex} className="mobile-card-wrapper">
+                {mobileRenderer(row)}
+              </div>
             ))
           ) : (
-            <tr>
-              <td
-                colSpan={columns.length + (actions ? 1 : 0)}
-                className="empty-state-cell"
-              >
-                <div className="empty-state">
-                  <i className="fas fa-inbox"></i>
-                  <h3>لا توجد بيانات</h3>
-                  <p>لم يتم العثور على أي نتائج</p>
-                </div>
-              </td>
-            </tr>
+            <div className="empty-state">
+              <i className="fas fa-inbox"></i>
+              <h3>لا توجد بيانات</h3>
+              <p>لم يتم العثور على أي نتائج</p>
+            </div>
           )}
-        </tbody>
-      </table>
+        </div>
+      )}
+
+      {/* Desktop Table */}
+      <div className="overflow-x-auto">
+        <table className={`data-table ${mobileRenderer ? currentBreakpoint.table : ''}`}>
+          <thead>
+            <tr>
+              {columns.map((column) => (
+                <th
+                  key={column.key}
+                  className={`${column.sortable ? 'sortable' : ''} ${column.className || ''}`}
+                  onClick={() => column.sortable && handleSort(column.key)}
+                >
+                  {column.label}
+                  {column.sortable && sortColumn === column.key && (
+                    <i
+                      className={`fas fa-sort-${sortDirection === 'asc' ? 'up' : 'down'} sort-icon`}
+                    ></i>
+                  )}
+                </th>
+              ))}
+              {actions && actions.length > 0 && <th>الإجراءات</th>}
+            </tr>
+          </thead>
+          <tbody>
+            {isLoading ? (
+              Array.from({ length: 5 }).map((_, index) => (
+                <tr key={index}>
+                  {columns.map((column, colIndex) => (
+                    <td key={colIndex} className={column.className || ''}>
+                      <div className="skeleton skeleton-text" style={{ width: '80%', height: '20px' }}></div>
+                    </td>
+                  ))}
+                  {actions && actions.length > 0 && (
+                    <td>
+                      <div className="skeleton skeleton-circle"></div>
+                    </td>
+                  )}
+                </tr>
+              ))
+            ) : paginatedData.length > 0 ? (
+              paginatedData.map((row, rowIndex) => (
+                <tr 
+                  key={rowIndex} 
+                  className={`${rowClassName ? rowClassName(row) : ''} ${onRowClick ? 'cursor-pointer hover:bg-white/5 transition-colors' : ''}`}
+                  onClick={() => onRowClick && onRowClick(row)}
+                >
+                  {columns.map((column) => (
+                    <td key={column.key} className={column.className || ''}>
+                      {column.render
+                        ? column.render(row[column.key], row, rowIndex)
+                        : row[column.key]}
+                    </td>
+                  ))}
+                  {actions && actions.length > 0 && (
+                    <td>
+                      <div className="actions-dropdown">
+                        <button
+                          className="actions-trigger"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            setDropdownPosition({
+                              top: rect.bottom + window.scrollY + 8,
+                              left: rect.left + window.scrollX,
+                            });
+                            setActiveDropdown(
+                              activeDropdown === rowIndex ? null : rowIndex
+                            )
+                          }}
+                        >
+                          <i className="fas fa-ellipsis-v"></i>
+                        </button>
+                        {activeDropdown === rowIndex && typeof document !== 'undefined' && createPortal(
+                          <div
+                            ref={dropdownRef}
+                            className="actions-menu show"
+                            style={{
+                              position: 'absolute',
+                              top: dropdownPosition.top,
+                              left: dropdownPosition.left,
+                              zIndex: 9999,
+                              minWidth: '180px',
+                            }}
+                          >
+                            {actions.map((action, actionIndex) => {
+                              if (action.hidden && action.hidden(row)) return null;
+                              
+                              const icon = typeof action.icon === 'function' ? action.icon(row) : action.icon;
+                              const label = typeof action.label === 'function' ? action.label(row) : action.label;
+                              const variant = typeof action.variant === 'function' ? action.variant(row) : action.variant;
+                              
+                              return (
+                                <div
+                                  key={actionIndex}
+                                  className={`actions-menu-item ${variant === 'danger' ? 'danger' : ''} ${variant === 'warning' ? 'warning' : ''} ${variant === 'success' ? 'success' : ''}`}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleAction(action, row);
+                                  }}
+                                >
+                                  <i className={icon}></i>
+                                  <span>{label}</span>
+                                </div>
+                              );
+                            })}
+                          </div>,
+                          document.body
+                        )}
+                      </div>
+                    </td>
+                  )}
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td
+                  colSpan={columns.length + (actions ? 1 : 0)}
+                  className="empty-state-cell"
+                >
+                  <div className="empty-state">
+                    <i className="fas fa-inbox"></i>
+                    <h3>لا توجد بيانات</h3>
+                    <p>لم يتم العثور على أي نتائج</p>
+                  </div>
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
 
       {/* Pagination */}
       {pagination && (

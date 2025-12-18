@@ -62,6 +62,8 @@ export interface DataTableProps {
   headerActions?: React.ReactNode;
   rowClassName?: (row: any) => string;
   onRowClick?: (row: any) => void;
+  mobileRenderer?: (row: any) => React.ReactNode;
+  breakpoint?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 }
 
 export interface ChartDataPoint {

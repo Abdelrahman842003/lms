@@ -187,7 +187,7 @@ export default function AdminTeachersPage() {
     {
       label: 'الدخول للوحة التحكم',
       icon: 'fas fa-sign-in-alt',
-      onClick: (row: any) => {},  // TODO: Implement login as teacher
+      onClick: (_row: any) => {},  // TODO: Implement login as teacher
     },
     {
       label: 'تعديل البيانات',
@@ -198,7 +198,7 @@ export default function AdminTeachersPage() {
       label: 'تعليق الحساب',
       icon: 'fas fa-ban',
       variant: 'danger' as const,
-      onClick: (row: any) => {},  // TODO: Implement suspend teacher
+      onClick: (_row: any) => {},  // TODO: Implement suspend teacher
     },
   ];
 

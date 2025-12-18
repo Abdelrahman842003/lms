@@ -20,12 +20,12 @@ class UpdateExamRequest extends FormRequest
             'date' => 'required|date',
             'duration' => 'required|integer|min:1',
             'total_marks' => 'required|integer|min:1',
-            'actual_question_count' => 'required|integer|min:1',
-            'time_per_question' => 'required|integer|min:10|max:600',
-            'questions' => 'required|array|min:1',
-            'questions.*.text' => 'required|string',
-            'questions.*.options' => 'required|array|min:4|max:4',
-            'questions.*.correct_answer' => 'required|string',
+            'actual_question_count' => 'nullable|integer|min:1',
+            'time_per_question' => 'nullable|integer|min:10|max:600',
+            'questions' => 'nullable|array',
+            'questions.*.text' => 'required_with:questions|string',
+            'questions.*.options' => 'required_with:questions|array|min:4|max:4',
+            'questions.*.correct_answer' => 'required_with:questions|string',
         ];
     }
 

@@ -61,7 +61,7 @@ export default function ExamsPage() {
     }
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (_id: number) => {
     if (confirm('هل أنت متأكد من حذف هذا الامتحان؟')) {
       // TODO: Implement delete API call
       // TODO: Implement delete API call
@@ -112,33 +112,39 @@ export default function ExamsPage() {
       key: 'title',
       label: 'عنوان الامتحان',
       sortable: true,
+      className: 'font-bold',
     },
     {
       key: 'subject',
       label: 'المادة',
       sortable: true,
+      className: '!hidden lg:!table-cell',
     },
     {
       key: 'grade',
       label: 'الصف',
       sortable: true,
+      className: '!hidden xl:!table-cell',
       render: (_: any, row: Exam) => row.grade?.name || '-',
     },
     {
       key: 'date',
       label: 'التاريخ',
       sortable: true,
+      className: '!hidden lg:!table-cell',
       render: (value: string) => new Date(value).toLocaleDateString('ar-EG'),
     },
     {
       key: 'duration',
       label: 'المدة (دقيقة)',
       sortable: true,
+      className: '!hidden xl:!table-cell',
     },
     {
       key: 'max_score',
       label: 'الدرجة الكلية',
       sortable: true,
+      className: '!hidden lg:!table-cell',
     },
     {
       key: 'status',
@@ -177,7 +183,7 @@ export default function ExamsPage() {
       icon: 'fas fa-stop-circle',
       onClick: (row: Exam) => handleEndExam(row),
       variant: 'danger' as const,
-      show: (row: Exam) => row.is_active,
+      hidden: (row: Exam) => !row.is_active || !!row.ended_at,
     },
     {
       label: 'تعديل',
@@ -242,6 +248,7 @@ export default function ExamsPage() {
         }
       >
         <DataTable
+          breakpoint="sm"
           columns={tableColumns}
           data={exams}
           actions={tableActions}

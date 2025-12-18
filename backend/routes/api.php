@@ -106,6 +106,22 @@ Route::middleware('auth:sanctum')->prefix('teacher')->group(function () {
     Route::put('/gamification/settings', [\App\Http\Controllers\Teacher\GamificationController::class, 'updateSettings']);
     Route::post('/gamification/bonus', [\App\Http\Controllers\Teacher\GamificationController::class, 'awardBonus']);
     Route::get('/students/{student}/points', [\App\Http\Controllers\Teacher\GamificationController::class, 'studentPoints']);
+
+    // Payment Logs
+    Route::get('payments', [\App\Http\Controllers\Teacher\PaymentLogController::class, 'index']);
+    Route::post('payments', [\App\Http\Controllers\Teacher\PaymentLogController::class, 'store']);
+    Route::post('payments/sync', [\App\Http\Controllers\Teacher\PaymentLogController::class, 'syncBatch']);
+    Route::get('payments/pending', [\App\Http\Controllers\Teacher\PaymentLogController::class, 'pending']);
+    Route::get('payments/statistics', [\App\Http\Controllers\Teacher\PaymentLogController::class, 'statistics']);
+    Route::get('payments/{payment}', [\App\Http\Controllers\Teacher\PaymentLogController::class, 'show']);
+    Route::post('payments/{payment}/cancel', [\App\Http\Controllers\Teacher\PaymentLogController::class, 'cancel']);
+
+    // Sync Errors
+    Route::get('sync-errors', [\App\Http\Controllers\Teacher\SyncErrorController::class, 'index']);
+    Route::get('sync-errors/count', [\App\Http\Controllers\Teacher\SyncErrorController::class, 'unresolvedCount']);
+    Route::get('sync-errors/{error}', [\App\Http\Controllers\Teacher\SyncErrorController::class, 'show']);
+    Route::post('sync-errors/{error}/resolve', [\App\Http\Controllers\Teacher\SyncErrorController::class, 'resolve']);
+    Route::post('sync-errors/bulk-resolve', [\App\Http\Controllers\Teacher\SyncErrorController::class, 'bulkResolve']);
 });
 
 // ============================================
@@ -150,6 +166,11 @@ Route::middleware('auth:sanctum')->prefix('student')->group(function () {
     Route::post('/mistakes/{id}/mastered', [\App\Http\Controllers\Student\MistakesController::class, 'markAsMastered']);
     Route::get('/mistakes/quiz', [\App\Http\Controllers\Student\MistakesController::class, 'quiz']);
     Route::post('/mistakes/quiz/{failedQuestionId}/answer', [\App\Http\Controllers\Student\MistakesController::class, 'submitQuizAnswer']);
+
+    // Payment Confirmation (Rate Limited)
+    Route::post('payments/confirm', [\App\Http\Controllers\Student\PaymentConfirmationController::class, 'confirm']);
+    Route::get('payments/pending', [\App\Http\Controllers\Student\PaymentConfirmationController::class, 'pending']);
+    Route::get('payments/history', [\App\Http\Controllers\Student\PaymentConfirmationController::class, 'history']);
 });
 
 // ============================================

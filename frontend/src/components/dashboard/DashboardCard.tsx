@@ -18,7 +18,7 @@ export const DashboardCard: React.FC<DashboardCardProps> = ({
   noPadding = false
 }) => {
   return (
-    <div className={`bg-[#101426]/15 rounded-2xl border border-white/10 transition-all duration-500 ease-in-out hover:shadow-[0_12px_40px_rgba(0,0,0,0.3)] hover:-translate-y-[1px] hover:backdrop-blur-[20px] hover:border-[#1bc5f8]/50 overflow-hidden ${className}`}>
+    <div className={`bg-[#101426]/15 rounded-2xl border border-white/10 transition-all duration-500 ease-in-out hover:shadow-[0_12px_40px_rgba(0,0,0,0.3)] hover:-translate-y-[1px] hover:backdrop-blur-[20px] hover:border-[#1bc5f8]/50 ${className}`}>
       {(title || action) && (
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 p-[28px] pb-4 border-b border-white/10 mb-6">
           {(title || icon) && (

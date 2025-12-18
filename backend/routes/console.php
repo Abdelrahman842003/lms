@@ -11,3 +11,4 @@ Artisan::command('inspire', function () {
 \Illuminate\Support\Facades\Schedule::command('notifications:clean')->daily();
 \Illuminate\Support\Facades\Schedule::command('lectures:end-expired')->everyMinute();
 \Illuminate\Support\Facades\Schedule::command('exams:end-expired')->everyMinute();
+\Illuminate\Support\Facades\Schedule::command('payments:expire')->daily();

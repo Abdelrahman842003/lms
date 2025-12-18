@@ -88,7 +88,7 @@ export default function ConfirmationModal({
           display: flex;
           align-items: center;
           justify-content: center;
-          z-index: 9999;
+          z-index: 2147483646;
           backdrop-filter: blur(4px);
           animation: fadeIn 0.2s ease-out;
         }
@@ -102,7 +102,7 @@ export default function ConfirmationModal({
           box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
           animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
           position: relative;
-          z-index: 10000;
+          z-index: 2147483647;
         }
 
         .modal-header {
