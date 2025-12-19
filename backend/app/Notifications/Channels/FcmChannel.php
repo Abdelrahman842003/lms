@@ -30,7 +30,9 @@ class FcmChannel
         $body = $data['message'] ?? '';
         $customData = $data; // Send all data as custom data
 
-        $credentialsPath = config('services.firebase.credentials') ?? storage_path('firebase/service-account.json');
+        $credentialsPath = config('services.firebase.credentials') 
+            ?? env('GOOGLE_APPLICATION_CREDENTIALS')
+            ?? storage_path('firebase-credentials.json');
         
         if (!file_exists($credentialsPath)) {
             Log::error("Firebase credentials not found at: " . $credentialsPath);

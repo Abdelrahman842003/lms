@@ -12,11 +12,9 @@ class FcmChannelStrategy implements NotificationChannelInterface
     public function send(Collection $recipients, string $title, string $message, array $data = []): void
     {
         // Get credentials path from config or fallback to storage
-        $credentialsPath = config('services.firebase.credentials');
-        if (!$credentialsPath) {
-             // Fallback to env or default path
-             $credentialsPath = env('FIREBASE_CREDENTIALS', storage_path('firebase/service-account.json'));
-        }
+        $credentialsPath = config('services.firebase.credentials') 
+            ?? env('GOOGLE_APPLICATION_CREDENTIALS')
+            ?? storage_path('firebase-credentials.json');
 
         if (!file_exists($credentialsPath)) {
             Log::error("Firebase credentials not found at: " . $credentialsPath);
@@ -68,7 +66,9 @@ class FcmChannelStrategy implements NotificationChannelInterface
 
     public function sendToTokens(array $tokens, string $title, string $message, array $data = []): void
     {
-        $credentialsPath = config('services.firebase.credentials') ?? storage_path('firebase/service-account.json');
+        $credentialsPath = config('services.firebase.credentials') 
+            ?? env('GOOGLE_APPLICATION_CREDENTIALS')
+            ?? storage_path('firebase-credentials.json');
         
         if (!file_exists($credentialsPath)) {
             Log::error("Firebase credentials not found at: " . $credentialsPath);
