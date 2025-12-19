@@ -22,91 +22,121 @@ use App\Models\StudentPoint;
 use App\Models\PointTransaction;
 use App\Models\FailedQuestion;
 use App\Models\StudentActivityLog;
-use App\Models\Notification;
 use Illuminate\Support\Facades\Hash;
 use Carbon\Carbon;
 
 /**
- * Complete Seeder - يغطي كل جداول المشروع ببيانات تجريبية قليلة
+ * Complete Seeder - Generates full test scenario:
+ * - 3 Teachers
+ * - 10 Students (Egyptian numbers)
+ * - All students enrolled with all teachers
+ * - Full data (lectures, exams, etc.) for all teachers
  */
 class CompleteSeeder extends Seeder
 {
     public function run(): void
     {
-        $this->command->info('🚀 بدء إنشاء البيانات التجريبية...');
+        $this->command->info('🚀 Starting Test Scenario Seeding...');
 
-        // 1. إنشاء المدرس
-        $teacher = $this->createTeacher();
+        // 1. Create Teachers
+        $teachers = $this->createTeachers();
         
-        // 2. إنشاء السكرتارية
-        $this->createSecretaries($teacher);
+        // 2. Create Students
+        $students = $this->createStudents();
+
+        foreach ($teachers as $teacher) {
+            $this->command->info("👨‍🏫 Processing Teacher: {$teacher->name}...");
+
+            // 3. Create Secretaries for this teacher
+            $this->createSecretaries($teacher);
+            
+            // 4. Create Grades and Groups for this teacher
+            $grades = $this->createGrades($teacher);
+            $groups = $this->createGroups($teacher, $grades);
+            
+            // 5. Enroll ALL students with this teacher
+            $this->enrollStudents($teacher, $students, $grades, $groups);
+            
+            // 6. Create Lectures and Attendance
+            $lectures = $this->createLectures($teacher);
+            $this->createAttendance($lectures, $students);
+            
+            // 7. Create Exams with Questions
+            $exams = $this->createExamsWithQuestions($teacher, $grades);
+            
+            // 8. Create Exam Attempts and Results
+            $this->createExamAttempts($exams, $students);
+            
+            // 9. Create Gamification System
+            $this->createGamification($teacher, $students);
+            
+            // 10. Create Payments
+            $this->createPayments($teacher, $students);
+            
+            // 11. Create Failed Questions
+            $this->createFailedQuestions($teacher, $students, $exams);
+        }
         
-        // 3. إنشاء الصفوف والمجموعات
-        $grades = $this->createGrades($teacher);
-        $groups = $this->createGroups($teacher, $grades);
-        
-        // 4. إنشاء الطلاب والتسجيلات
-        $students = $this->createStudentsWithEnrollments($teacher, $grades, $groups);
-        
-        // 5. إنشاء المحاضرات والحضور
-        $lectures = $this->createLectures($teacher);
-        $this->createAttendance($lectures, $students);
-        
-        // 6. إنشاء الامتحانات مع الأسئلة
-        $exams = $this->createExamsWithQuestions($teacher, $grades);
-        
-        // 7. إنشاء محاولات الامتحان والنتائج
-        $this->createExamAttempts($exams, $students);
-        
-        // 8. إنشاء نظام النقاط (Gamification)
-        $this->createGamification($teacher, $students);
-        
-        // 9. إنشاء المدفوعات
-        $this->createPayments($teacher, $students);
-        
-        // 10. إنشاء الأسئلة الخاطئة
-        $this->createFailedQuestions($teacher, $students, $exams);
-        
-        // 11. إنشاء سجل النشاط
+        // 12. Create Activity Logs (Global/Mixed)
         $this->createActivityLogs($students);
 
-        $this->command->info('✅ تم إنشاء كل البيانات بنجاح!');
+        $this->command->info('✅ All data generated successfully!');
         $this->printSummary();
     }
 
-    private function createTeacher(): Teacher
+    private function createTeachers(): array
     {
-        $this->command->info('👨‍🏫 إنشاء المدرس...');
+        $this->command->info('👨‍🏫 Creating 3 Teachers...');
         
-        return Teacher::firstOrCreate(
-            ['username' => 'demo_teacher'],
-            [
-                'name' => 'أحمد محمد',
-                'password' => Hash::make('password'),
-                'phone' => '01012345678',
-            ]
-        );
+        $teachers = [];
+        for ($i = 1; $i <= 3; $i++) {
+            $teachers[] = Teacher::firstOrCreate(
+                ['username' => "teacher$i"],
+                [
+                    'name' => "Teacher $i",
+                    'password' => Hash::make('password'),
+                    'phone' => "0100000000$i",
+                ]
+            );
+        }
+        return $teachers;
+    }
+
+    private function createStudents(): array
+    {
+        $this->command->info('👨‍🎓 Creating 10 Students...');
+        
+        $students = [];
+        for ($i = 1; $i <= 10; $i++) {
+            $pad = str_pad($i, 2, '0', STR_PAD_LEFT);
+            $students[] = Student::firstOrCreate(
+                ['username' => "student$i"],
+                [
+                    'name' => "Student $i",
+                    'password' => Hash::make('password'),
+                    'phone' => "010123456$pad", // Egyptian format
+                    'parent_phone' => "011123456$pad",
+                ]
+            );
+        }
+        return $students;
     }
 
     private function createSecretaries(Teacher $teacher): void
     {
-        $this->command->info('👩‍💼 إنشاء السكرتارية...');
-        
         Secretary::firstOrCreate(
-            ['username' => 'secretary1', 'teacher_id' => $teacher->id],
+            ['username' => "sec_{$teacher->username}", 'teacher_id' => $teacher->id],
             [
-                'name' => 'فاطمة علي',
+                'name' => "Secretary for {$teacher->name}",
                 'password' => Hash::make('password'),
-                'phone' => '01111111111',
+                'phone' => "0120000" . str_pad($teacher->id, 4, '0', STR_PAD_LEFT),
             ]
         );
     }
 
     private function createGrades(Teacher $teacher): array
     {
-        $this->command->info('📚 إنشاء الصفوف...');
-        
-        $gradeNames = ['الصف الأول الثانوي', 'الصف الثاني الثانوي', 'الصف الثالث الثانوي'];
+        $gradeNames = ['1st Secondary', '2nd Secondary', '3rd Secondary'];
         $grades = [];
         
         foreach ($gradeNames as $name) {
@@ -114,54 +144,24 @@ class CompleteSeeder extends Seeder
                 ['name' => $name, 'teacher_id' => $teacher->id]
             );
         }
-        
         return $grades;
     }
 
     private function createGroups(Teacher $teacher, array $grades): array
     {
-        $this->command->info('👥 إنشاء المجموعات...');
-        
         $groups = [];
         foreach ($grades as $grade) {
             $groups[] = Group::firstOrCreate(
-                ['name' => 'مجموعة أ - ' . $grade->name, 'teacher_id' => $teacher->id, 'grade_id' => $grade->id]
-            );
-            $groups[] = Group::firstOrCreate(
-                ['name' => 'مجموعة ب - ' . $grade->name, 'teacher_id' => $teacher->id, 'grade_id' => $grade->id]
+                ['name' => "Group A - {$grade->name}", 'teacher_id' => $teacher->id, 'grade_id' => $grade->id]
             );
         }
-        
         return $groups;
     }
 
-    private function createStudentsWithEnrollments(Teacher $teacher, array $grades, array $groups): array
+    private function enrollStudents(Teacher $teacher, array $students, array $grades, array $groups): void
     {
-        $this->command->info('👨‍🎓 إنشاء الطلاب والتسجيلات...');
-        
-        $studentNames = [
-            'محمد أحمد', 'علي محمود', 'عمر حسن', 'يوسف كريم', 'أحمد فتحي',
-            'مريم سعيد', 'نور الهدى', 'فاطمة محمد', 'سارة أحمد', 'ريم علي'
-        ];
-        
-        $students = [];
-        $i = 0;
-        
-        foreach ($studentNames as $name) {
-            $i++;
-            $student = Student::firstOrCreate(
-                ['username' => 'student' . $i],
-                [
-                    'name' => $name,
-                    'password' => Hash::make('password'),
-                    'phone' => '010' . str_pad($i, 8, '0', STR_PAD_LEFT),
-                    'parent_phone' => '011' . str_pad($i, 8, '0', STR_PAD_LEFT),
-                ]
-            );
-            
-            $students[] = $student;
-            
-            // تسجيل الطالب
+        foreach ($students as $i => $student) {
+            // Distribute students across grades/groups cyclically
             $gradeIndex = $i % count($grades);
             $groupIndex = $i % count($groups);
             
@@ -177,36 +177,32 @@ class CompleteSeeder extends Seeder
                 ]
             );
         }
-        
-        return $students;
     }
 
     private function createLectures(Teacher $teacher): array
     {
-        $this->command->info('📖 إنشاء المحاضرات...');
-        
         $lectures = [];
         
-        // محاضرات سابقة
+        // Past lectures
         for ($i = 1; $i <= 3; $i++) {
             $date = Carbon::now()->subDays($i * 3);
             $lectures[] = Lecture::firstOrCreate(
-                ['title' => "محاضرة $i - الفيزياء", 'teacher_id' => $teacher->id],
+                ['title' => "Lecture $i - Physics", 'teacher_id' => $teacher->id],
                 [
-                    'description' => 'شرح الفصل ' . $i,
+                    'description' => "Chapter $i explanation",
                     'start_time' => $date->copy()->setHour(10),
                     'end_time' => $date->copy()->setHour(12),
                 ]
             );
         }
         
-        // محاضرات قادمة
+        // Upcoming lectures
         for ($i = 1; $i <= 2; $i++) {
             $date = Carbon::now()->addDays($i * 2);
             $lectures[] = Lecture::firstOrCreate(
-                ['title' => "محاضرة قادمة $i", 'teacher_id' => $teacher->id],
+                ['title' => "Upcoming Lecture $i", 'teacher_id' => $teacher->id],
                 [
-                    'description' => 'محاضرة جديدة',
+                    'description' => 'New topic',
                     'start_time' => $date->copy()->setHour(14),
                     'end_time' => $date->copy()->setHour(16),
                 ]
@@ -218,11 +214,9 @@ class CompleteSeeder extends Seeder
 
     private function createAttendance(array $lectures, array $students): void
     {
-        $this->command->info('✅ إنشاء سجلات الحضور...');
-        
         foreach ($lectures as $lecture) {
             foreach ($students as $student) {
-                if (rand(0, 10) > 2) { // 80% حضور
+                if (rand(0, 10) > 2) { // 80% attendance
                     Attendance::firstOrCreate(
                         ['lecture_id' => $lecture->id, 'student_id' => $student->id],
                         ['status' => fake()->randomElement(['present', 'present', 'present', 'late'])]
@@ -234,15 +228,13 @@ class CompleteSeeder extends Seeder
 
     private function createExamsWithQuestions(Teacher $teacher, array $grades): array
     {
-        $this->command->info('📝 إنشاء الامتحانات والأسئلة...');
-        
         $exams = [];
         
         foreach ($grades as $index => $grade) {
             $exam = Exam::firstOrCreate(
-                ['title' => 'اختبار شهري - ' . $grade->name, 'teacher_id' => $teacher->id],
+                ['title' => "Monthly Exam - {$grade->name}", 'teacher_id' => $teacher->id],
                 [
-                    'subject' => 'فيزياء',
+                    'subject' => 'Physics',
                     'max_score' => 50,
                     'duration' => 30,
                     'grade_id' => $grade->id,
@@ -253,13 +245,13 @@ class CompleteSeeder extends Seeder
                 ]
             );
             
-            // إضافة أسئلة
+            // Add questions
             for ($q = 1; $q <= 5; $q++) {
                 Question::firstOrCreate(
-                    ['exam_id' => $exam->id, 'text' => "سؤال $q للامتحان " . ($index + 1) . ": ما هي الإجابة الصحيحة؟"],
+                    ['exam_id' => $exam->id, 'text' => "Question $q for Exam " . ($index + 1)],
                     [
-                        'options' => json_encode(['أ - الخيار الأول', 'ب - الخيار الثاني', 'ج - الخيار الثالث', 'د - الخيار الرابع']),
-                        'correct_answer' => fake()->randomElement(['أ - الخيار الأول', 'ب - الخيار الثاني', 'ج - الخيار الثالث', 'د - الخيار الرابع']),
+                        'options' => json_encode(['Option A', 'Option B', 'Option C', 'Option D']),
+                        'correct_answer' => fake()->randomElement(['Option A', 'Option B', 'Option C', 'Option D']),
                     ]
                 );
             }
@@ -272,14 +264,12 @@ class CompleteSeeder extends Seeder
 
     private function createExamAttempts(array $exams, array $students): void
     {
-        $this->command->info('📊 إنشاء نتائج الامتحانات...');
-        
         foreach ($exams as $exam) {
             $questions = Question::where('exam_id', $exam->id)->get();
             $questionIds = $questions->pluck('id')->toArray();
             
+            // Only first 5 students attempt exams
             foreach (array_slice($students, 0, 5) as $student) {
-                // محاولة امتحان
                 $attempt = ExamAttempt::firstOrCreate(
                     ['exam_id' => $exam->id, 'student_id' => $student->id],
                     [
@@ -291,7 +281,6 @@ class CompleteSeeder extends Seeder
                     ]
                 );
                 
-                // إجابات الأسئلة
                 $correctCount = 0;
                 foreach ($questions as $question) {
                     $isCorrect = rand(0, 1) ? true : false;
@@ -300,14 +289,13 @@ class CompleteSeeder extends Seeder
                     StudentAnswer::firstOrCreate(
                         ['exam_attempt_id' => $attempt->id, 'question_id' => $question->id],
                         [
-                            'answer' => fake()->randomElement(['أ - الخيار الأول', 'ب - الخيار الثاني']),
+                            'answer' => fake()->randomElement(['Option A', 'Option B']),
                             'is_correct' => $isCorrect,
                             'answered_at' => Carbon::now()->subHours(rand(1, 48)),
                         ]
                     );
                 }
                 
-                // نتيجة الامتحان
                 $score = ($correctCount / max(count($questions), 1)) * $exam->max_score;
                 ExamResult::firstOrCreate(
                     ['exam_id' => $exam->id, 'student_id' => $student->id],
@@ -319,9 +307,6 @@ class CompleteSeeder extends Seeder
 
     private function createGamification(Teacher $teacher, array $students): void
     {
-        $this->command->info('🎮 إنشاء نظام النقاط...');
-        
-        // إعدادات النقاط
         GamificationSetting::firstOrCreate(
             ['teacher_id' => $teacher->id],
             [
@@ -338,9 +323,8 @@ class CompleteSeeder extends Seeder
             ]
         );
         
-        // نقاط الطلاب
-        foreach ($students as $index => $student) {
-            $points = StudentPoint::firstOrCreate(
+        foreach ($students as $student) {
+            StudentPoint::firstOrCreate(
                 ['student_id' => $student->id, 'teacher_id' => $teacher->id],
                 [
                     'total_points' => rand(50, 500),
@@ -348,12 +332,11 @@ class CompleteSeeder extends Seeder
                 ]
             );
             
-            // معاملات النقاط
             PointTransaction::firstOrCreate(
                 ['student_id' => $student->id, 'teacher_id' => $teacher->id, 'type' => 'attendance'],
                 [
                     'points' => 10,
-                    'description' => 'حضور محاضرة',
+                    'description' => 'Lecture Attendance',
                 ]
             );
         }
@@ -361,13 +344,9 @@ class CompleteSeeder extends Seeder
 
     private function createPayments(Teacher $teacher, array $students): void
     {
-        $this->command->info('💰 إنشاء المدفوعات...');
-        
-        // دفعات مختلفة الحالات
         $statuses = ['pending', 'confirmed', 'expired'];
         
         foreach (array_slice($students, 0, 3) as $index => $student) {
-            // Get enrollment for this student
             $enrollment = Enrollment::where('student_id', $student->id)
                 ->where('teacher_id', $teacher->id)
                 ->first();
@@ -375,7 +354,7 @@ class CompleteSeeder extends Seeder
             if (!$enrollment) continue;
             
             PaymentLog::firstOrCreate(
-                ['student_id' => $student->id, 'teacher_id' => $teacher->id, 'confirmation_code' => 'TEST-' . strtoupper(substr(md5($index), 0, 4))],
+                ['student_id' => $student->id, 'teacher_id' => $teacher->id, 'confirmation_code' => 'TEST-' . $teacher->id . '-' . $index],
                 [
                     'enrollment_id' => $enrollment->id,
                     'client_side_uuid' => fake()->uuid(),
@@ -393,8 +372,6 @@ class CompleteSeeder extends Seeder
 
     private function createFailedQuestions(Teacher $teacher, array $students, array $exams): void
     {
-        $this->command->info('❌ إنشاء الأسئلة الخاطئة...');
-        
         foreach (array_slice($students, 0, 3) as $student) {
             foreach ($exams as $exam) {
                 $questions = Question::where('exam_id', $exam->id)->take(2)->get();
@@ -405,7 +382,7 @@ class CompleteSeeder extends Seeder
                         [
                             'teacher_id' => $teacher->id,
                             'exam_id' => $exam->id,
-                            'student_answer' => 'أ - الخيار الأول',
+                            'student_answer' => 'Option A',
                             'times_failed' => rand(1, 3),
                             'is_mastered' => rand(0, 1) ? true : false,
                         ]
@@ -417,12 +394,9 @@ class CompleteSeeder extends Seeder
 
     private function createActivityLogs(array $students): void
     {
-        $this->command->info('📋 إنشاء سجل النشاط...');
-        
         $actions = ['enrolled', 'payment', 'status_change'];
         
         foreach (array_slice($students, 0, 5) as $student) {
-            // Get enrollment
             $enrollment = Enrollment::where('student_id', $student->id)->first();
             
             foreach ($actions as $action) {
@@ -441,24 +415,17 @@ class CompleteSeeder extends Seeder
     private function printSummary(): void
     {
         $this->command->info('');
-        $this->command->info('📊 ملخص البيانات المنشأة:');
+        $this->command->info('📊 Seeding Summary:');
         $this->command->info('========================');
-        $this->command->info('👨‍🏫 المدرسين: ' . Teacher::count());
-        $this->command->info('👩‍💼 السكرتارية: ' . Secretary::count());
-        $this->command->info('📚 الصفوف: ' . Grade::count());
-        $this->command->info('👥 المجموعات: ' . Group::count());
-        $this->command->info('👨‍🎓 الطلاب: ' . Student::count());
-        $this->command->info('📝 التسجيلات: ' . Enrollment::count());
-        $this->command->info('📖 المحاضرات: ' . Lecture::count());
-        $this->command->info('✅ الحضور: ' . Attendance::count());
-        $this->command->info('📝 الامتحانات: ' . Exam::count());
-        $this->command->info('❓ الأسئلة: ' . Question::count());
-        $this->command->info('💰 المدفوعات: ' . PaymentLog::count());
+        $this->command->info('👨‍🏫 Teachers: ' . Teacher::count());
+        $this->command->info('👩‍💼 Secretaries: ' . Secretary::count());
+        $this->command->info('👨‍🎓 Students: ' . Student::count());
+        $this->command->info('📝 Enrollments: ' . Enrollment::count());
         $this->command->info('========================');
         $this->command->info('');
-        $this->command->info('🔑 بيانات الدخول:');
-        $this->command->info('   المدرس: demo_teacher / password');
-        $this->command->info('   السكرتير: secretary1 / password');
-        $this->command->info('   الطالب: student1 / password');
+        $this->command->info('🔑 Credentials (Password: password):');
+        $this->command->info('   Admin: admin');
+        $this->command->info('   Teachers: teacher1, teacher2, teacher3');
+        $this->command->info('   Students: student1 (01012345601) ... student10 (01012345610)');
     }
 }

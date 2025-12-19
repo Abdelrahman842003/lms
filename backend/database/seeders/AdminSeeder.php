@@ -21,12 +21,6 @@ class AdminSeeder extends Seeder
             ]
         );
 
-        Admin::firstOrCreate(
-            ['username' => 'johndoe'],
-            [
-                'name' => 'John Doe',
-                'password' => Hash::make('password123'),
-            ]
-        );
+
     }
 }

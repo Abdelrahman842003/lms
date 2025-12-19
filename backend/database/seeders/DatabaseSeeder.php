@@ -35,8 +35,7 @@ class DatabaseSeeder extends Seeder
             RolesAndPermissionsSeeder::class,
             SuperAdminSeeder::class,
             AdminSeeder::class,
-            StudentAndSecretaryPermissionsSeeder::class,
-            TeacherDataSeeder::class,
+            CompleteSeeder::class,
         ]);
     }
 }
