@@ -20,7 +20,7 @@ Route::middleware('auth:sanctum')->post('/broadcasting/auth',
 // ============================================
 // Admin Authentication Routes (Central DB)
 // ============================================
-Route::prefix('admin')->group(function () {
+Route::prefix('admin')->name('admin.')->group(function () {
     Route::post('/login', [AdminAuthController::class, 'login']);
     Route::post('/register', [AdminAuthController::class, 'register']);
     
@@ -59,7 +59,7 @@ Route::prefix('admin')->group(function () {
 Route::post('/register/teacher', [\App\Http\Controllers\Teacher\TeacherController::class, 'register']);
 Route::post('/login/teacher', [TeacherAuthController::class, 'login']);
 
-Route::middleware('auth:sanctum')->prefix('teacher')->group(function () {
+Route::middleware('auth:sanctum')->prefix('teacher')->name('teacher.')->group(function () {
     Route::post('/logout', [TeacherAuthController::class, 'logout']);
     Route::get('/me', [TeacherAuthController::class, 'me']);
     
