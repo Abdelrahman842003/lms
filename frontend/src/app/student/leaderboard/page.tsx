@@ -6,54 +6,97 @@ import { useAuth } from '@/contexts/AuthContext';
 import { fetchApi } from '@/services/authService';
 import Link from 'next/link';
 
-// Custom Confetti Component
+// Custom Confetti Component - Enhanced Celebration
 const Confetti = ({ show }: { show: boolean }) => {
   if (!show) return null;
   
-  const colors = ['#FFD700', '#FFA500', '#FF6347', '#87CEEB', '#98FB98', '#FF69B4', '#00CED1', '#7B68EE'];
-  const confettiPieces = Array.from({ length: 50 }, (_, i) => ({
+  const colors = ['#FFD700', '#FFA500', '#FF6347', '#87CEEB', '#98FB98', '#FF69B4', '#00CED1', '#7B68EE', '#FFE066', '#FF85A2'];
+  const confettiPieces = Array.from({ length: 100 }, (_, i) => ({
     id: i,
     left: Math.random() * 100,
-    delay: Math.random() * 3,
-    duration: 3 + Math.random() * 2,
+    delay: Math.random() * 2,
+    duration: 2 + Math.random() * 3,
     color: colors[Math.floor(Math.random() * colors.length)],
-    size: 8 + Math.random() * 8,
+    size: 6 + Math.random() * 12,
     rotation: Math.random() * 360,
+    type: Math.random() > 0.6 ? 'star' : (Math.random() > 0.5 ? 'circle' : 'square'),
+  }));
+
+  // Sparkles
+  const sparkles = Array.from({ length: 30 }, (_, i) => ({
+    id: i,
+    left: Math.random() * 100,
+    top: Math.random() * 100,
+    delay: Math.random() * 2,
+    size: 4 + Math.random() * 8,
   }));
 
   return (
     <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
+      {/* Confetti pieces */}
       {confettiPieces.map((piece) => (
         <div
           key={piece.id}
-          className="absolute animate-confetti-fall"
+          className="absolute"
           style={{
             left: `${piece.left}%`,
             top: '-20px',
             width: `${piece.size}px`,
             height: `${piece.size}px`,
             backgroundColor: piece.color,
-            borderRadius: Math.random() > 0.5 ? '50%' : '2px',
+            borderRadius: piece.type === 'circle' ? '50%' : piece.type === 'star' ? '2px' : '2px',
             transform: `rotate(${piece.rotation}deg)`,
             animation: `confetti-fall ${piece.duration}s ease-out ${piece.delay}s forwards`,
+            clipPath: piece.type === 'star' ? 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)' : 'none',
           }}
         />
       ))}
+      
+      {/* Sparkles */}
+      {sparkles.map((sparkle) => (
+        <div
+          key={`sparkle-${sparkle.id}`}
+          className="absolute text-yellow-400"
+          style={{
+            left: `${sparkle.left}%`,
+            top: `${sparkle.top}%`,
+            fontSize: `${sparkle.size}px`,
+            animation: `sparkle 1.5s ease-in-out ${sparkle.delay}s infinite`,
+          }}
+        >
+          ✨
+        </div>
+      ))}
+      
       <style jsx>{`
         @keyframes confetti-fall {
           0% {
-            transform: translateY(0) rotate(0deg);
+            transform: translateY(0) rotate(0deg) scale(1);
+            opacity: 1;
+          }
+          50% {
             opacity: 1;
           }
           100% {
-            transform: translateY(100vh) rotate(720deg);
+            transform: translateY(100vh) rotate(720deg) scale(0.5);
             opacity: 0;
+          }
+        }
+        @keyframes sparkle {
+          0%, 100% {
+            opacity: 0;
+            transform: scale(0);
+          }
+          50% {
+            opacity: 1;
+            transform: scale(1);
           }
         }
       `}</style>
     </div>
   );
 };
+
 
 interface LeaderboardEntry {
   rank: number;
@@ -346,7 +389,7 @@ export default function StudentLeaderboardPage() {
             {/* Top 3 Podium Section */}
             {top3.length > 0 && (
               <div className={`mb-12 transition-all duration-700 delay-300 ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-                <h2 className="text-xl md:text-2xl font-bold text-white text-center mb-8 flex items-center justify-center gap-3">
+                <h2 className="text-xl md:text-2xl font-bold text-white text-center mb-16 flex items-center justify-center gap-3">
                   <span className="text-3xl">🏅</span>
                   الأوائل
                   <span className="text-3xl">🏅</span>
@@ -363,12 +406,14 @@ export default function StudentLeaderboardPage() {
                         className={`${config.order} flex flex-col items-center transition-all duration-500 hover:scale-105`}
                         style={{ animationDelay: `${config.position * 100}ms` }}
                       >
-                        {/* Avatar & Crown */}
+                        {/* Badge/Medal Icon - Above Avatar */}
+                        <div className={`text-4xl md:text-5xl ${config.crownColor} drop-shadow-lg mb-3 animate-bounce`}
+                             style={{ animationDelay: `${config.position * 200}ms` }}>
+                          {config.badge}
+                        </div>
+                        
+                        {/* Avatar */}
                         <div className="relative mb-4">
-                          <div className={`text-3xl md:text-4xl absolute -top-6 md:-top-8 left-1/2 -translate-x-1/2 ${config.crownColor} drop-shadow-lg animate-bounce`}
-                               style={{ animationDelay: `${config.position * 200}ms` }}>
-                            {config.badge}
-                          </div>
                           <div className={`w-16 h-16 md:w-24 md:h-24 rounded-full border-4 ${config.borderColor} overflow-hidden shadow-xl ${config.glowColor} shadow-lg bg-white/10 backdrop-blur-sm`}>
                             {entry.student.avatar_key ? (
                               <img 
@@ -412,6 +457,7 @@ export default function StudentLeaderboardPage() {
                 </div>
               </div>
             )}
+
 
             {/* Rest of Leaderboard (Glassmorphic Cards) */}
             {restOfList.length > 0 && (

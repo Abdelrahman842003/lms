@@ -61,7 +61,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 60s
 
   # Redis
   redis:
@@ -87,6 +86,7 @@ services:
       target: production
     container_name: lms_octane
     restart: unless-stopped
+    command: sh -c "php artisan config:clear && php artisan octane:start --server=swoole --host=0.0.0.0 --port=8000 --workers=4 --task-workers=6 --max-requests=500"
     secrets:
       - firebase_credentials
       - firebase_project_id
@@ -99,7 +99,7 @@ services:
       - cloudflare_kv_namespace_id
       - cloudflare_kv_api_token
     volumes:
-      - ./neetaq-54091-firebase-adminsdk-fbsvc-b830b7b75f.json:/var/www/backend/storage/firebase-credentials.json:ro
+      - /opt/lms/secrets/neetaq-54091-firebase-adminsdk-fbsvc-b830b7b75f.json:/var/www/backend/storage/firebase-credentials.json:ro
     environment:
       - APP_ENV=production
       - APP_DEBUG=false
@@ -136,6 +136,12 @@ services:
       - CLOUDFLARE_KV_ACCOUNT_ID_FILE=/run/secrets/cloudflare_kv_account_id
       - CLOUDFLARE_KV_NAMESPACE_ID_FILE=/run/secrets/cloudflare_kv_namespace_id
       - CLOUDFLARE_KV_API_TOKEN_FILE=/run/secrets/cloudflare_kv_api_token
+      # Direct R2 env vars for Laravel filesystems.php
+      - CLOUDFLARE_R2_ACCESS_KEY_ID=${CLOUDFLARE_R2_ACCESS_KEY_ID}
+      - CLOUDFLARE_R2_SECRET_ACCESS_KEY=${CLOUDFLARE_R2_SECRET_ACCESS_KEY}
+      - CLOUDFLARE_R2_BUCKET=${CLOUDFLARE_R2_BUCKET}
+      - CLOUDFLARE_R2_ENDPOINT=${CLOUDFLARE_R2_ENDPOINT}
+      - CLOUDFLARE_R2_PUBLIC_URL=${CLOUDFLARE_R2_PUBLIC_URL}
       # Reverb Configuration
       - REVERB_APP_ID=${REVERB_APP_ID}
       - REVERB_APP_KEY=${REVERB_APP_KEY}
@@ -143,7 +149,7 @@ services:
       - REVERB_HOST=reverb
       - REVERB_PORT=8080
       - REVERB_SCHEME=http
-    command: sh -c "php artisan config:clear && php artisan octane:start --server=swoole --host=0.0.0.0 --port=8000 --workers=4 --task-workers=6 --max-requests=500"
+
     depends_on:
       mysql:
         condition: service_healthy
@@ -180,6 +186,7 @@ services:
     environment:
       - APP_ENV=production
       - APP_KEY=${APP_KEY}
+      - DB_CONNECTION=mysql
       - DB_HOST=mysql
       - DB_DATABASE=${DB_DATABASE}
       - DB_USERNAME=${DB_USERNAME}
@@ -187,6 +194,7 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - CACHE_DRIVER=redis
       - QUEUE_CONNECTION=redis
       - BROADCAST_CONNECTION=reverb
       - REVERB_HOST=reverb
@@ -201,7 +209,7 @@ services:
       - octane
     networks:
       - lms_network
-    command: php artisan horizon
+    command: sh -c "php artisan config:clear && php artisan horizon"
 
   # Laravel Reverb (WebSocket Server)
   reverb:
@@ -214,6 +222,7 @@ services:
     environment:
       - APP_ENV=production
       - APP_KEY=${APP_KEY}
+      - DB_CONNECTION=mysql
       - DB_HOST=mysql
       - DB_DATABASE=${DB_DATABASE}
       - DB_USERNAME=${DB_USERNAME}
@@ -221,6 +230,7 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - CACHE_DRIVER=redis
       - BROADCAST_CONNECTION=reverb
       - REVERB_APP_ID=${REVERB_APP_ID}
       - REVERB_APP_KEY=${REVERB_APP_KEY}
@@ -233,7 +243,7 @@ services:
       - redis
     networks:
       - lms_network
-    command: php artisan reverb:start --host=0.0.0.0 --port=8080
+    command: sh -c "php artisan config:clear && php artisan reverb:start --host=0.0.0.0 --port=8080"
     healthcheck:
       test: ["CMD", "php", "-r", "exit(fsockopen('localhost', 8080) ? 0 : 1);"]
       interval: 30s
@@ -247,6 +257,12 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       target: production
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+        NEXT_PUBLIC_REVERB_APP_KEY: ${REVERB_APP_KEY}
+        NEXT_PUBLIC_REVERB_HOST: ${REVERB_PUBLIC_HOST}
+        NEXT_PUBLIC_REVERB_PORT: 443
+        NEXT_PUBLIC_REVERB_SCHEME: https
     container_name: lms_frontend
     restart: unless-stopped
     environment:
