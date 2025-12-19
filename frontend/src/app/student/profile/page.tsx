@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { uploadAvatar, deleteAvatar, getAvatarUrl } from '@/services/avatarService';
 import { ImageCropModal, ConfirmationModal, Skeleton } from '@/components/ui';
 import { AuthInput } from '@/components/auth/AuthInput';
+import NotificationSettings from '@/components/NotificationSettings';
 
 export default function StudentProfilePage() {
   const { user, isLoading } = useAuth();
@@ -360,6 +361,9 @@ export default function StudentProfilePage() {
             </form>
           </div>
         </DashboardCard>
+
+        {/* Notification Settings Card */}
+        <NotificationSettings />
 
         {/* Change Password Card */}
         <DashboardCard
