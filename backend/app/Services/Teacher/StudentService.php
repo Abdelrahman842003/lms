@@ -96,6 +96,9 @@ class StudentService
                 $teacher->id
             );
 
+            // Initialize gamification points
+            \App\Models\StudentPoint::getOrCreate($student->id, $teacher->id);
+
             return [
                 'student' => $student,
                 'enrollment' => $enrollment,

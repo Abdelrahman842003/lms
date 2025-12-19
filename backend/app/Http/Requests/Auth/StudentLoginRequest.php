@@ -14,15 +14,16 @@ class StudentLoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'identifier' => 'required|string', // phone or username
-            'password' => 'required|string',
+            'phone' => ['required', 'regex:/^01[0125][0-9]{8}$/'],
+            'password' => 'required',
         ];
     }
 
     public function messages(): array
     {
         return [
-            'identifier.required' => 'رقم الهاتف أو اسم المستخدم مطلوب',
+            'phone.required' => 'رقم الهاتف مطلوب',
+            'phone.regex' => 'رقم الهاتف يجب أن يكون رقم مصري صحيح (01xxxxxxxxx)',
             'password.required' => 'كلمة المرور مطلوبة',
         ];
     }

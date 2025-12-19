@@ -149,6 +149,12 @@ const getNavItems = (role: string): SidebarItem[] => {
         icon: 'fas fa-bell',
         href: '/teacher/notifications',
       },
+      {
+        id: 'gamification',
+        label: 'لوحة الشرف',
+        icon: 'fas fa-trophy',
+        href: '/teacher/gamification',
+      },
 
     ];
   }
@@ -156,6 +162,18 @@ const getNavItems = (role: string): SidebarItem[] => {
   // Student
   return [
     ...commonItems,
+    {
+      id: 'leaderboard',
+      label: 'لوحة الشرف',
+      icon: 'fas fa-trophy',
+      href: '/student/leaderboard',
+    },
+    {
+      id: 'mistakes',
+      label: 'أخطائي',
+      icon: 'fas fa-exclamation-circle',
+      href: '/student/mistakes',
+    },
     {
       id: 'lectures',
       label: 'المحاضرات',
@@ -168,7 +186,6 @@ const getNavItems = (role: string): SidebarItem[] => {
       icon: 'fas fa-file-alt',
       href: '/student/exams',
     },
-
     {
       id: 'notifications',
       label: 'الإخطارات والدعم',

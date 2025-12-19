@@ -14,7 +14,7 @@ class SecretaryLoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'username' => 'required',
+            'phone' => ['required', 'regex:/^01[0125][0-9]{8}$/'],
             'password' => 'required',
         ];
     }
@@ -22,7 +22,8 @@ class SecretaryLoginRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'username.required' => 'اسم المستخدم مطلوب',
+            'phone.required' => 'رقم الهاتف مطلوب',
+            'phone.regex' => 'رقم الهاتف يجب أن يكون رقم مصري صحيح (01xxxxxxxxx)',
             'password.required' => 'كلمة المرور مطلوبة',
         ];
     }

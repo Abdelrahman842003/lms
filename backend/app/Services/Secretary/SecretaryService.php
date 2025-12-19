@@ -8,12 +8,12 @@ use Illuminate\Validation\ValidationException;
 
 class SecretaryService
 {
-    public function login(string $username, string $password): array
+    public function login(string $phone, string $password): array|false
     {
-        $secretary = Secretary::where('username', $username)->first();
+        $secretary = Secretary::where('phone', $phone)->first();
 
         if (! $secretary || ! Hash::check($password, $secretary->password)) {
-            throw ValidationException::withMessages(['username' => ['بيانات الدخول غير صحيحة']]);
+            return false;
         }
 
         $token = $secretary->createToken('secretary_token', ['access-api'], now()->addMinutes(60))->plainTextToken;

@@ -152,7 +152,7 @@ async function refreshAccessToken(): Promise<string | null> {
 /**
  * Generic API fetch wrapper
  */
-export async function fetchApi(endpoint: string, options: RequestInit = {}): Promise<any> {
+export async function fetchApi(endpoint: string, options: RequestInit = {}, skipAuthEvent: boolean = false): Promise<any> {
   const xsrfToken = getCookie('XSRF-TOKEN');
   
   // Get token from localStorage only on client side
@@ -181,8 +181,8 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}): Pro
     credentials: 'include', // Important for Sanctum SPA
   });
 
-  // Handle 401 Unauthorized - Attempt Refresh
-  if (response.status === 401) {
+  // Handle 401 Unauthorized - Attempt Refresh (only if not a login request)
+  if (response.status === 401 && !skipAuthEvent) {
     const newToken = await refreshAccessToken();
     
     if (newToken) {
@@ -201,7 +201,8 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}): Pro
       const errorWithStatus = new Error(error.message || 'API request failed') as any;
       errorWithStatus.status = response.status;
       
-      if (response.status === 401) {
+      // Only dispatch auth:unauthorized for non-login 401 errors
+      if (response.status === 401 && !skipAuthEvent) {
         // Dispatch event for AuthContext to handle logout
         if (typeof window !== 'undefined') {
           window.dispatchEvent(new Event('auth:unauthorized'));
@@ -248,7 +249,7 @@ export async function loginAdmin(
   const data = await fetchApi(ENDPOINTS.LOGIN_ADMIN, {
     method: 'POST',
     body: JSON.stringify({ username, password }),
-  });
+  }, true); // skipAuthEvent: true
 
   return {
     token: data.access_token || '', 
@@ -262,28 +263,28 @@ export async function loginAdmin(
  * Login as a teacher
  */
 export async function loginTeacher(
-  username: string,
+  phone: string,
   password: string
 ): Promise<AuthResponse> {
   await csrf();
   return await fetchApi(ENDPOINTS.LOGIN_TEACHER, {
     method: 'POST',
-    body: JSON.stringify({ username, password }),
-  });
+    body: JSON.stringify({ phone, password }),
+  }, true); // skipAuthEvent: true - don't dispatch auth:unauthorized for login
 }
 
 /**
- * Login as a student (with phone/username - no teacher_id required)
+ * Login as a student (with Egyptian phone number)
  */
 export async function loginStudent(
-  identifier: string,
+  phone: string,
   password: string
 ): Promise<AuthResponse> {
   await csrf();
   const data = await fetchApi(ENDPOINTS.LOGIN_STUDENT, {
     method: 'POST',
-    body: JSON.stringify({ identifier, password }),
-  });
+    body: JSON.stringify({ phone, password }),
+  }, true); // skipAuthEvent: true
   return {
     token: data.token,
     refresh_token: data.refresh_token,
@@ -312,14 +313,14 @@ export async function getStudentTeacherDashboard(teacherId: string): Promise<any
  * Login as a secretary
  */
 export async function loginSecretary(
-  username: string,
+  phone: string,
   password: string
 ): Promise<AuthResponse> {
   await csrf();
   return await fetchApi(ENDPOINTS.LOGIN_SECRETARY, {
     method: 'POST',
-    body: JSON.stringify({ username, password }),
-  });
+    body: JSON.stringify({ phone, password }),
+  }, true); // skipAuthEvent: true
 }
 
 /**

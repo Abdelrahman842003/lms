@@ -138,6 +138,60 @@ class PointService
     }
 
     /**
+     * Get weekly leaderboard for a teacher (paginated)
+     */
+    public function getWeeklyLeaderboardPaginated(string $teacherId, int $perPage = 15): \Illuminate\Contracts\Pagination\LengthAwarePaginator
+    {
+        $query = PointTransaction::where('teacher_id', $teacherId)
+            ->where('created_at', '>=', now()->startOfWeek())
+            ->select('student_id', DB::raw('SUM(points) as weekly_points'))
+            ->groupBy('student_id')
+            ->orderByDesc('weekly_points')
+            ->with('student:id,name,avatar_key');
+
+        $paginator = $query->paginate($perPage);
+        
+        $paginator->getCollection()->transform(function ($item, $index) use ($paginator) {
+             $rank = ($paginator->currentPage() - 1) * $paginator->perPage() + $index + 1;
+             
+             return [
+                'rank' => $rank,
+                'student_id' => $item->student_id,
+                'student' => $item->student,
+                'weekly_points' => (int) $item->weekly_points,
+             ];
+        });
+        
+        return $paginator;
+    }
+
+    /**
+     * Get leaderboard for last 3 months
+     */
+    public function getLast3MonthsLeaderboard(string $teacherId, ?int $limit = null): Collection
+    {
+        $settings = GamificationSetting::getOrCreate($teacherId);
+        $limit = $limit ?? $settings->leaderboard_size;
+
+        return PointTransaction::where('teacher_id', $teacherId)
+            ->where('created_at', '>=', now()->subMonths(3))
+            ->select('student_id', DB::raw('SUM(points) as total_points'))
+            ->groupBy('student_id')
+            ->orderByDesc('total_points')
+            ->with('student:id,name,avatar_key')
+            ->limit($limit)
+            ->get()
+            ->map(function ($item, $index) {
+                return [
+                    'rank' => $index + 1,
+                    'student_id' => $item->student_id,
+                    'student' => $item->student,
+                    'total_points' => (int) $item->total_points,
+                ];
+            });
+    }
+
+    /**
      * Get all-time leaderboard for a teacher
      */
     public function getAllTimeLeaderboard(string $teacherId, ?int $limit = null): Collection
@@ -158,6 +212,31 @@ class PointService
                     'total_points' => $item->total_points,
                 ];
             });
+    }
+
+    /**
+     * Get all-time leaderboard for a teacher (paginated)
+     */
+    public function getAllTimeLeaderboardPaginated(string $teacherId, int $perPage = 15): \Illuminate\Contracts\Pagination\LengthAwarePaginator
+    {
+        $query = StudentPoint::where('teacher_id', $teacherId)
+            ->orderByDesc('total_points')
+            ->with('student:id,name,avatar_key');
+            
+        $paginator = $query->paginate($perPage);
+        
+        $paginator->getCollection()->transform(function ($item, $index) use ($paginator) {
+             $rank = ($paginator->currentPage() - 1) * $paginator->perPage() + $index + 1;
+             
+             return [
+                'rank' => $rank,
+                'student_id' => $item->student_id,
+                'student' => $item->student,
+                'total_points' => $item->total_points,
+             ];
+        });
+        
+        return $paginator;
     }
 
     /**

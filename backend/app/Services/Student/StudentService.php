@@ -10,28 +10,15 @@ use Illuminate\Validation\ValidationException;
 class StudentService
 {
     /**
-     * Login student by phone or username (without teacher_id)
+     * Login student by phone
      */
-    public function login(string $identifier, string $password): array
+    public function login(string $phone, string $password): array|false
     {
-        // Search by phone first (primary), then by username
-        $student = Student::where('phone', $identifier)
-            ->orWhere('username', $identifier)
-            ->first();
+        $student = Student::where('phone', $phone)->first();
 
         if (! $student || ! Hash::check($password, $student->password)) {
-            throw ValidationException::withMessages([
-                'identifier' => ['بيانات الدخول غير صحيحة']
-            ]);
+            return false;
         }
-
-        // Check if student has any active enrollments - REMOVED to allow login without active subs
-        // $activeEnrollments = $student->activeEnrollments()->count();
-        // if ($activeEnrollments === 0) {
-        //     throw ValidationException::withMessages([
-        //         'identifier' => ['لا يوجد لديك اشتراكات نشطة حالياً']
-        //     ]);
-        // }
 
         // Get list of enrolled teachers
         $teachers = $this->getEnrolledTeachers($student);

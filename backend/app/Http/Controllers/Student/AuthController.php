@@ -22,7 +22,12 @@ class AuthController extends Controller
      */
     public function login(StudentLoginRequest $request)
     {
-        $data = $this->studentService->login($request->identifier, $request->password);
+        $data = $this->studentService->login($request->phone, $request->password);
+
+
+        if (!$data) {
+            return $this->errorResponse('بيانات الدخول غير صحيحة', 401);
+        }
 
         // Generate Access Token (Short-lived - 60 mins)
         $accessToken = $data['user']->createToken('access_token', ['access-api'], now()->addMinutes(60))->plainTextToken;

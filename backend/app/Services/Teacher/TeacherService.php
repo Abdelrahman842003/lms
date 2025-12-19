@@ -8,14 +8,12 @@ use Illuminate\Validation\ValidationException;
 
 class TeacherService
 {
-    public function login(string $identifier, string $password): array
+    public function login(string $phone, string $password): array|false
     {
-        $teacher = Teacher::where('username', $identifier)
-            ->orWhere('phone', $identifier)
-            ->first();
+        $teacher = Teacher::where('phone', $phone)->first();
 
         if (! $teacher || ! Hash::check($password, $teacher->password)) {
-            throw ValidationException::withMessages(['username' => ['بيانات الدخول غير صحيحة']]);
+            return false;
         }
 
         $token = $teacher->createToken('teacher_token', ['access-api'], now()->addMinutes(60))->plainTextToken;

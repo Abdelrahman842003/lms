@@ -41,27 +41,41 @@ export default function TeacherGamificationPage() {
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<'leaderboard' | 'settings'>('leaderboard');
 
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [debugInfo, setDebugInfo] = useState<any>(null);
+  const [errorInfo, setErrorInfo] = useState<string | null>(null);
+
   useEffect(() => {
-    loadData();
+    loadData(1);
   }, []);
 
-  const loadData = async () => {
+  const loadData = async (pageNum = 1) => {
     try {
       setLoading(true);
       const [leaderboardRes, settingsRes] = await Promise.all([
-        fetchApi('/teacher/leaderboard'),
+        fetchApi(`/teacher/leaderboard?page=${pageNum}`),
         fetchApi('/teacher/gamification/settings'),
       ]);
       
-      if (leaderboardRes.success) {
-        setWeeklyLeaderboard(leaderboardRes.data.weekly || []);
-        setAllTimeLeaderboard(leaderboardRes.data.all_time || []);
+      if (leaderboardRes) {
+        setDebugInfo(leaderboardRes);
+        setWeeklyLeaderboard(leaderboardRes.weekly.data || []);
+        setAllTimeLeaderboard(leaderboardRes.all_time.data || []);
+        
+        const maxPages = Math.max(
+          leaderboardRes.weekly.last_page || 1,
+          leaderboardRes.all_time.last_page || 1
+        );
+        setTotalPages(maxPages);
+        setPage(pageNum);
       }
-      if (settingsRes.success) {
-        setSettings(settingsRes.data);
+      if (settingsRes) {
+        setSettings(settingsRes);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to load gamification data:', error);
+      setErrorInfo(error.message || 'Unknown error');
     } finally {
       setLoading(false);
     }
@@ -74,8 +88,8 @@ export default function TeacherGamificationPage() {
         method: 'PUT',
         body: JSON.stringify(updates),
       });
-      if (response.success) {
-        setSettings(response.data);
+      if (response) {
+        setSettings(response);
       }
     } catch (error) {
       console.error('Failed to update settings:', error);
@@ -98,7 +112,7 @@ export default function TeacherGamificationPage() {
 
   const getRankColor = (rank: number) => {
     if (rank === 1) return 'from-yellow-500/20 to-yellow-600/5 border-yellow-500/30';
-    if (rank === 2) return 'from-gray-400/20 to-gray-500/5 border-gray-400/30';
+    if (rank === 2) return 'from-blue-400/20 to-blue-500/5 border-blue-400/30';
     if (rank === 3) return 'from-amber-600/20 to-amber-700/5 border-amber-600/30';
     return 'from-white/5 to-transparent border-white/10';
   };
@@ -156,56 +170,81 @@ export default function TeacherGamificationPage() {
           <>
             {/* Leaderboard Tab */}
             {activeTab === 'leaderboard' && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Weekly Leaderboard */}
-                <DashboardCard title="أشطر الطلاب هذا الأسبوع" icon="fas fa-calendar-week">
-                  {weeklyLeaderboard.length === 0 ? (
-                    <div className="text-center py-8 text-gray-400">
-                      <i className="fas fa-chart-line text-3xl mb-3 opacity-50"></i>
-                      <p>لا توجد بيانات بعد</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {weeklyLeaderboard.map((entry) => (
-                        <div
-                          key={entry.student_id}
-                          className={`flex items-center justify-between p-3 rounded-xl bg-gradient-to-r ${getRankColor(entry.rank)} border`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <span className="text-xl">{getRankBadge(entry.rank)}</span>
-                            <span className="font-medium text-white">{entry.student.name}</span>
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Weekly Leaderboard */}
+                  <DashboardCard title="أشطر الطلاب هذا الأسبوع" icon="fas fa-calendar-week">
+                    {weeklyLeaderboard.length === 0 ? (
+                      <div className="text-center py-8 text-gray-400">
+                        <i className="fas fa-chart-line text-3xl mb-3 opacity-50"></i>
+                        <p>لا توجد بيانات بعد</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {weeklyLeaderboard.map((entry) => (
+                          <div
+                            key={entry.student_id}
+                            className={`flex items-center justify-between p-3 rounded-xl bg-gradient-to-r ${getRankColor(entry.rank)} border`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <span className="text-xl">{getRankBadge(entry.rank)}</span>
+                              <span className="font-medium text-white">{entry.student.name}</span>
+                            </div>
+                            <div className="text-primary font-bold">{entry.weekly_points} نقطة</div>
                           </div>
-                          <div className="text-primary font-bold">{entry.weekly_points} نقطة</div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </DashboardCard>
+                        ))}
+                      </div>
+                    )}
+                  </DashboardCard>
+  
+                  {/* All Time Leaderboard */}
+                  <DashboardCard title="أشطر الطلاب على الإطلاق" icon="fas fa-infinity">
+                    {allTimeLeaderboard.length === 0 ? (
+                      <div className="text-center py-8 text-gray-400">
+                        <i className="fas fa-chart-line text-3xl mb-3 opacity-50"></i>
+                        <p>لا توجد بيانات بعد</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {allTimeLeaderboard.map((entry) => (
+                          <div
+                            key={entry.student_id}
+                            className={`flex items-center justify-between p-3 rounded-xl bg-gradient-to-r ${getRankColor(entry.rank)} border`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <span className="text-xl">{getRankBadge(entry.rank)}</span>
+                              <span className="font-medium text-white">{entry.student.name}</span>
+                            </div>
+                            <div className="text-secondary font-bold">{entry.total_points} نقطة</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </DashboardCard>
+                </div>
 
-                {/* All Time Leaderboard */}
-                <DashboardCard title="أشطر الطلاب على الإطلاق" icon="fas fa-infinity">
-                  {allTimeLeaderboard.length === 0 ? (
-                    <div className="text-center py-8 text-gray-400">
-                      <i className="fas fa-chart-line text-3xl mb-3 opacity-50"></i>
-                      <p>لا توجد بيانات بعد</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {allTimeLeaderboard.map((entry) => (
-                        <div
-                          key={entry.student_id}
-                          className={`flex items-center justify-between p-3 rounded-xl bg-gradient-to-r ${getRankColor(entry.rank)} border`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <span className="text-xl">{getRankBadge(entry.rank)}</span>
-                            <span className="font-medium text-white">{entry.student.name}</span>
-                          </div>
-                          <div className="text-secondary font-bold">{entry.total_points} نقطة</div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </DashboardCard>
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="flex justify-center gap-2">
+                    <button
+                      disabled={page === 1}
+                      onClick={() => loadData(page - 1)}
+                      className="px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      السابق
+                    </button>
+                    <span className="flex items-center px-4 font-bold text-white bg-white/5 rounded-lg">
+                      {page} / {totalPages}
+                    </span>
+                    <button
+                      disabled={page === totalPages}
+                      onClick={() => loadData(page + 1)}
+                      className="px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      التالي
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 
@@ -301,6 +340,8 @@ export default function TeacherGamificationPage() {
             جاري الحفظ...
           </div>
         )}
+
+
       </div>
     </DashboardLayout>
   );

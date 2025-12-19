@@ -20,7 +20,7 @@ class MistakesController extends Controller
     {
         $request->validate([
             'teacher_id' => 'required|uuid|exists:teachers,id',
-            'include_mastered' => 'sometimes|boolean',
+            // include_mastered is handled by $request->boolean() which accepts any truthy/falsy value
         ]);
 
         $student = $request->user();

@@ -11,7 +11,7 @@ import { AuthInput } from '@/components/auth/AuthInput';
 import { AuthButton } from '@/components/auth/AuthButton';
 
 interface ValidationErrors {
-  username?: string;
+  phone?: string;
   password?: string;
 }
 
@@ -20,14 +20,14 @@ export default function LoginPage() {
   const { login, user, isLoading: authLoading } = useAuth();
   const [userType, setUserType] = useState<'teacher' | 'student' | 'secretary'>('teacher');
   const [formData, setFormData] = useState({
-    username: '',
+    phone: '',
     password: '',
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
-  const [touched, setTouched] = useState<{ username: boolean; password: boolean }>({
-    username: false,
+  const [touched, setTouched] = useState<{ phone: boolean; password: boolean }>({
+    phone: false,
     password: false,
   });
 
@@ -47,35 +47,27 @@ export default function LoginPage() {
 
   // Validation function - Real-time Egyptian phone validation
   const validateField = (name: string, value: string): string | undefined => {
-    if (name === 'username') {
+    if (name === 'phone') {
       if (!value.trim()) {
-        return userType === 'secretary' ? 'اسم المستخدم مطلوب' : 'رقم الهاتف مطلوب';
+        return 'رقم الهاتف مطلوب';
       }
-      // Phone number validation for teacher/student
-      if (userType !== 'secretary') {
-        // Egyptian phone must start with 01
-        if (value.length > 0 && !value.startsWith('0')) {
-          return 'رقم الهاتف يجب أن يبدأ بـ 0';
-        }
-        if (value.length > 1 && !value.startsWith('01')) {
-          return 'رقم الهاتف يجب أن يبدأ بـ 01';
-        }
-        // Check operator code (010, 011, 012, 015)
-        if (value.length > 2 && !/^01[0125]/.test(value)) {
-          return 'كود الشركة غير صحيح (010, 011, 012, 015)';
-        }
-        // Check if complete and valid
-        if (value.length > 0 && value.length < 11) {
-          return `رقم الهاتف غير مكتمل (${value.length}/11 رقم)`;
-        }
-        if (value.length > 11) {
-          return 'رقم الهاتف أكثر من 11 رقم';
-        }
-      } else {
-        // Username validation for secretary
-        if (value.trim().length < 3) {
-          return 'اسم المستخدم يجب أن يكون 3 أحرف على الأقل';
-        }
+      // Egyptian phone must start with 01
+      if (value.length > 0 && !value.startsWith('0')) {
+        return 'رقم الهاتف يجب أن يبدأ بـ 0';
+      }
+      if (value.length > 1 && !value.startsWith('01')) {
+        return 'رقم الهاتف يجب أن يبدأ بـ 01';
+      }
+      // Check operator code (010, 011, 012, 015)
+      if (value.length > 2 && !/^01[0125]/.test(value)) {
+        return 'كود الشركة غير صحيح (010, 011, 012, 015)';
+      }
+      // Check if complete and valid
+      if (value.length > 0 && value.length < 11) {
+        return `رقم الهاتف غير مكتمل (${value.length}/11 رقم)`;
+      }
+      if (value.length > 11) {
+        return 'رقم الهاتف أكثر من 11 رقم';
       }
     }
     
@@ -95,10 +87,10 @@ export default function LoginPage() {
   const validateForm = (): boolean => {
     const errors: ValidationErrors = {};
     
-    const usernameError = validateField('username', formData.username);
+    const phoneError = validateField('phone', formData.phone);
     const passwordError = validateField('password', formData.password);
     
-    if (usernameError) errors.username = usernameError;
+    if (phoneError) errors.phone = phoneError;
     if (passwordError) errors.password = passwordError;
     
     setValidationErrors(errors);
@@ -110,7 +102,7 @@ export default function LoginPage() {
     setError('');
     
     // Mark all fields as touched
-    setTouched({ username: true, password: true });
+    setTouched({ phone: true, password: true });
     
     // Validate before submit
     if (!validateForm()) {
@@ -120,7 +112,7 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      await login(formData.username, formData.password, userType);
+      await login(formData.phone, formData.password, userType);
       
       // Keep loading active - don't set to false, let navigation happen
       if (userType === 'student') {
@@ -151,8 +143,8 @@ export default function LoginPage() {
     const { name, value } = e.target;
     let processedValue = value;
     
-    // For phone field (teacher/student), only allow numbers and max 11 digits
-    if (name === 'username' && userType !== 'secretary') {
+    // For phone field, only allow numbers and max 11 digits
+    if (name === 'phone') {
       processedValue = value.replace(/[^0-9]/g, '').slice(0, 11);
     }
     
@@ -211,7 +203,7 @@ export default function LoginPage() {
   // Reset validation when user type changes
   useEffect(() => {
     setValidationErrors({});
-    setTouched({ username: false, password: false });
+    setTouched({ phone: false, password: false });
     setError('');
   }, [userType]);
 
@@ -241,24 +233,24 @@ export default function LoginPage() {
 
                 <div className="mb-4">
                   <AuthInput
-                    id="username"
-                    name="username"
-                    type={userType !== 'secretary' ? 'tel' : 'text'}
-                    inputMode={userType !== 'secretary' ? 'numeric' : 'text'}
-                    pattern={userType !== 'secretary' ? '[0-9]*' : undefined}
-                    label={userType === 'student' || userType === 'teacher' ? 'رقم الهاتف' : 'اسم المستخدم'}
-                    placeholder={userType === 'student' || userType === 'teacher' ? 'أدخل رقم الهاتف' : 'أدخل اسم المستخدم'}
-                    value={formData.username}
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    label="رقم الهاتف"
+                    placeholder="أدخل رقم الهاتف"
+                    value={formData.phone}
                     onChange={handleInputChange}
                     onBlur={handleBlur}
-                    onKeyDown={userType !== 'secretary' ? handleKeyDown : undefined}
-                    iconClass={userType === 'student' ? 'fas fa-phone' : 'fas fa-user'}
+                    onKeyDown={handleKeyDown}
+                    iconClass="fas fa-phone"
                     required
                   />
-                  {touched.username && validationErrors.username && (
+                  {touched.phone && validationErrors.phone && (
                     <p className="text-danger text-sm mt-1 flex items-center gap-1">
                       <i className="fas fa-exclamation-circle text-xs"></i>
-                      {validationErrors.username}
+                      {validationErrors.phone}
                     </p>
                   )}
                 </div>

@@ -22,9 +22,10 @@ class GamificationController extends Controller
     public function leaderboard(Request $request): JsonResponse
     {
         $teacher = $request->user();
+        $perPage = $request->input('per_page', 15);
         
-        $weeklyLeaderboard = $this->pointService->getWeeklyLeaderboard($teacher->id);
-        $allTimeLeaderboard = $this->pointService->getAllTimeLeaderboard($teacher->id);
+        $weeklyLeaderboard = $this->pointService->getWeeklyLeaderboardPaginated($teacher->id, $perPage);
+        $allTimeLeaderboard = $this->pointService->getAllTimeLeaderboardPaginated($teacher->id, $perPage);
 
         return response()->json([
             'success' => true,

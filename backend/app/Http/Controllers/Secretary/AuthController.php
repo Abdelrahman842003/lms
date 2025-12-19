@@ -19,7 +19,11 @@ class AuthController extends Controller
 
     public function login(SecretaryLoginRequest $request)
     {
-        $data = $this->secretaryService->login($request->username, $request->password);
+        $data = $this->secretaryService->login($request->phone, $request->password);
+
+        if (!$data) {
+            return $this->errorResponse('بيانات الدخول غير صحيحة', 401);
+        }
 
         // Generate Access Token (Short-lived - 30 mins by config)
         $accessToken = $data['user']->createToken('access_token', ['access-api'], now()->addMinutes(60))->plainTextToken;

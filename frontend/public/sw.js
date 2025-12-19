@@ -1,7 +1,7 @@
-// LMS Offline-First Service Worker v2
-const CACHE_NAME = 'lms-cache-v2';
-const STATIC_CACHE = 'lms-static-v2';
-const API_CACHE = 'lms-api-v2';
+// LMS Offline-First Service Worker v3
+const CACHE_NAME = 'lms-cache-v3';
+const STATIC_CACHE = 'lms-static-v3';
+const API_CACHE = 'lms-api-v3';
 
 // Static assets to cache immediately
 const STATIC_ASSETS = [
@@ -76,6 +76,11 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Skip non-http/https requests (like chrome-extension://)
+  if (!url.protocol.startsWith('http')) {
+    return;
+  }
+
   // Static assets: Cache First
   if (isStaticAsset(url)) {
     event.respondWith(cacheFirst(request, STATIC_CACHE));
@@ -100,9 +105,9 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Next.js pages/chunks: Network First with Cache
+  // Next.js pages/chunks: Network First with Cache (so updates are applied)
   if (url.pathname.startsWith('/_next/')) {
-    event.respondWith(cacheFirst(request, STATIC_CACHE));
+    event.respondWith(networkFirst(request));
     return;
   }
 

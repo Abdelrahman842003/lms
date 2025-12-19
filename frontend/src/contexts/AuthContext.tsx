@@ -18,7 +18,7 @@ interface AuthContextType {
   isLoading: boolean;
   selectedTeacher: TeacherInfo | null;
   selectTeacher: (teacher: TeacherInfo) => void;
-  login: (username: string, password: string, userType?: 'teacher' | 'student' | 'secretary' | 'admin') => Promise<void>;
+  login: (phone: string, password: string, userType?: 'teacher' | 'student' | 'secretary' | 'admin') => Promise<void>;
   logout: () => void;
   register: (userData: RegisterData) => Promise<void>;
   updateUser: (userData: Partial<User>) => void;
@@ -184,21 +184,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const login = async (username: string, password: string, userType: 'teacher' | 'student' | 'secretary' | 'admin' = 'teacher') => {
+  const login = async (phone: string, password: string, userType: 'teacher' | 'student' | 'secretary' | 'admin' = 'teacher') => {
     try {
       setIsLoading(true);
       
       // Call appropriate login function based on user type
       let response;
       if (userType === 'teacher') {
-        response = await loginTeacher(username, password);
+        response = await loginTeacher(phone, password);
       } else if (userType === 'student') {
-        // For students, username is actually identifier (phone or username)
-        response = await loginStudent(username, password);
+        response = await loginStudent(phone, password);
       } else if (userType === 'admin') {
-        response = await loginAdmin(username, password);
+        // Admin uses username/email, not phone
+        response = await loginAdmin(phone, password);
       } else {
-        response = await loginSecretary(username, password);
+        response = await loginSecretary(phone, password);
       }
       
       // Create user object from response

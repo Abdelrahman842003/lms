@@ -5,60 +5,53 @@ namespace App\Services\Auth;
 use App\Models\Admin;
 use App\Models\Student;
 use App\Models\Teacher;
-use App\Models\Tenant;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
 class AuthService
 {
-    public function login(string $username, string $password, ?string $domain = null)
+    public function login(string $identifier, string $password)
     {
         $user = null;
-        $tenant = null;
+        $userType = null;
 
-        if ($domain) {
-            // Tenant Context (Teacher/Student)
-            $tenant = Tenant::whereHas('domains', function ($query) use ($domain) {
-                $query->where('domain', $domain);
-            })->first();
+        // Try to find Admin (by username or email)
+        $user = Admin::where('username', $identifier)
+            ->orWhere('email', $identifier)
+            ->first();
+        
+        if ($user) {
+            $userType = 'admin';
+        }
 
-            if (! $tenant) {
-                throw ValidationException::withMessages([
-                    'domain' => ['School/Teacher domain not found.'],
-                ]);
+        // Try to find Teacher (by phone)
+        if (! $user) {
+            $user = Teacher::where('phone', $identifier)->first();
+            
+            if ($user) {
+                $userType = 'teacher';
             }
+        }
 
-            tenancy()->initialize($tenant);
-
-            $user = Teacher::where('username', $username)
-                ->orWhere('email', $username)
-                ->first();
-
-            if (! $user) {
-                $user = Student::where('username', $username)
-                    ->orWhere('email', $username)
-                    ->first();
+        // Try to find Student (by phone)
+        if (! $user) {
+            $user = Student::where('phone', $identifier)->first();
+            
+            if ($user) {
+                $userType = 'student';
             }
-        } else {
-            // Central Context (Admin)
-            $user = Admin::where('username', $username)
-                ->orWhere('email', $username)
-                ->first();
         }
 
         if (! $user || ! Hash::check($password, $user->password)) {
-            throw ValidationException::withMessages([
-                'username' => ['The provided credentials do not match our records.'],
-            ]);
+           return false;
         }
 
-        $tokenName = $domain ? 'tenant_token' : 'admin_token';
-        $token = $user->createToken($tokenName)->plainTextToken;
+        $token = $user->createToken("{$userType}_token")->plainTextToken;
 
         return [
             'user' => $user,
             'token' => $token,
-            'tenant_id' => $tenant ? $tenant->id : null,
+            'user_type' => $userType,
         ];
     }
 }

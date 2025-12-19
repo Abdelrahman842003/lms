@@ -187,6 +187,39 @@ export default function StudentDashboard() {
         )}
       </div>
 
+      {/* Quick Access Section - Added for better navigation */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <Link href="/student/leaderboard" className="block group">
+          <div className="bg-white/5 hover:bg-white/10 border border-white/10 hover:border-primary/50 rounded-2xl p-6 transition-all duration-300 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center text-primary text-xl group-hover:scale-110 transition-transform">
+                <i className="fas fa-trophy"></i>
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white mb-1">لوحة الشرف</h3>
+                <p className="text-sm text-gray-400">نافس زملاءك واجمع النقاط</p>
+              </div>
+            </div>
+            <i className="fas fa-arrow-left text-gray-500 group-hover:text-primary transition-colors"></i>
+          </div>
+        </Link>
+
+        <Link href="/student/mistakes" className="block group">
+          <div className="bg-white/5 hover:bg-white/10 border border-white/10 hover:border-red-500/50 rounded-2xl p-6 transition-all duration-300 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-red-500/20 flex items-center justify-center text-red-500 text-xl group-hover:scale-110 transition-transform">
+                <i className="fas fa-exclamation-circle"></i>
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white mb-1">أخطائي</h3>
+                <p className="text-sm text-gray-400">راجع أخطاءك وتعلم منها</p>
+              </div>
+            </div>
+            <i className="fas fa-arrow-left text-gray-500 group-hover:text-red-500 transition-colors"></i>
+          </div>
+        </Link>
+      </div>
+
       {/* Content Grid */}
       <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-6">
         {/* Upcoming Lectures */}
