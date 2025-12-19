@@ -44,7 +44,7 @@ export default function TeacherGamificationPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  const [errorInfo, setErrorInfo] = useState<string | null>(null);
+
 
   useEffect(() => {
     loadData(1);
@@ -75,7 +75,7 @@ export default function TeacherGamificationPage() {
       }
     } catch (error: any) {
       console.error('Failed to load gamification data:', error);
-      setErrorInfo(error.message || 'Unknown error');
+
     } finally {
       setLoading(false);
     }
