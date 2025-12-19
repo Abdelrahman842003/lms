@@ -43,7 +43,7 @@ export default function TeacherGamificationPage() {
 
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [debugInfo, setDebugInfo] = useState<any>(null);
+
   const [errorInfo, setErrorInfo] = useState<string | null>(null);
 
   useEffect(() => {
@@ -59,7 +59,7 @@ export default function TeacherGamificationPage() {
       ]);
       
       if (leaderboardRes) {
-        setDebugInfo(leaderboardRes);
+
         setWeeklyLeaderboard(leaderboardRes.weekly.data || []);
         setAllTimeLeaderboard(leaderboardRes.all_time.data || []);
         
