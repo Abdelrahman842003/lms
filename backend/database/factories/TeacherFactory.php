@@ -24,7 +24,6 @@ class TeacherFactory extends Factory
     {
         return [
             'name' => fake()->name(),
-            'username' => fake()->unique()->userName(),
             'password' => static::$password ??= Hash::make('password'),
         ];
     }

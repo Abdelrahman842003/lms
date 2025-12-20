@@ -17,12 +17,6 @@ class StoreSecretaryRequest extends FormRequest
         return [
             'name' => 'required|string|max:255',
             'phone' => 'required|string|max:20',
-            'username' => [
-                'required',
-                'string',
-                'max:255',
-                Rule::unique('secretaries'),
-            ],
             'password' => 'required|string|min:6',
             'permissions' => 'array',
             'permissions.*' => 'exists:permissions,name',
@@ -34,7 +28,6 @@ class StoreSecretaryRequest extends FormRequest
         $this->merge([
             'name' => strip_tags($this->input('name')),
             'phone' => strip_tags($this->input('phone')),
-            'username' => strip_tags($this->input('username')),
         ]);
     }
 }

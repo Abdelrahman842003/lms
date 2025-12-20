@@ -354,7 +354,7 @@ class CompleteSeeder extends Seeder
             if (!$enrollment) continue;
             
             PaymentLog::firstOrCreate(
-                ['student_id' => $student->id, 'teacher_id' => $teacher->id, 'confirmation_code' => 'TEST-' . $teacher->id . '-' . $index],
+                ['student_id' => $student->id, 'teacher_id' => $teacher->id, 'confirmation_code' => 'TEST-' . substr($teacher->id, 0, 8) . '-' . $index],
                 [
                     'enrollment_id' => $enrollment->id,
                     'client_side_uuid' => fake()->uuid(),

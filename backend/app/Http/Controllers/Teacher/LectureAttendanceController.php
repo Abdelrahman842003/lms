@@ -65,6 +65,9 @@ class LectureAttendanceController extends Controller
             'status' => 'present', // You might want to use an enum or constant
         ]);
 
+        $student = \App\Models\Student::find($studentId);
+        $student->notify(new \App\Notifications\StudentAttendanceNotification($lecture->title, $request->user()->name));
+
         return $this->successResponse([
             'message' => 'تم تسجيل الحضور بنجاح',
             'status' => 'attended'

@@ -51,7 +51,7 @@ services:
       - ./backend:/var/www/backend
       - /var/www/backend/vendor
       - /var/www/backend/storage
-      - ./neetaq-54091-firebase-adminsdk-fbsvc-b830b7b75f.json:/var/www/backend/storage/firebase-credentials.json:ro
+      - ./secrets/neetaq-54091-firebase-adminsdk-fbsvc-b830b7b75f.json:/var/www/backend/storage/firebase-credentials.json:ro
     ports:
       - "8000:8000"
     environment:
@@ -181,7 +181,7 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=development
-      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - NEXT_PUBLIC_API_URL=http://localhost:8000/api
       - NEXT_PUBLIC_REVERB_APP_KEY=${REVERB_APP_KEY:-y2vqna5uho5zsdz6kdyz}
       - NEXT_PUBLIC_REVERB_HOST=localhost
       - NEXT_PUBLIC_REVERB_PORT=8080

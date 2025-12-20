@@ -23,7 +23,6 @@ export default function EditSecretaryPage() {
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
-    username: '',
     password: '',
     permissions: [] as string[],
   });
@@ -50,7 +49,6 @@ export default function EditSecretaryPage() {
       setFormData({
         name: secretary.name,
         phone: secretary.phone || '',
-        username: secretary.username,
         password: '', // Don't show password
         permissions: secretary.permission_names || [],
       });
@@ -67,7 +65,6 @@ export default function EditSecretaryPage() {
 
     if (!formData.name.trim()) errors.name = 'الاسم مطلوب';
     if (!formData.phone.trim()) errors.phone = 'رقم الهاتف مطلوب';
-    if (!formData.username.trim()) errors.username = 'اسم المستخدم مطلوب';
     if (formData.password && formData.password.length < 6) errors.password = 'كلمة المرور يجب أن تكون 6 أحرف على الأقل';
 
     setFormErrors(errors);
@@ -96,7 +93,6 @@ export default function EditSecretaryPage() {
       await secretaryService.updateSecretary(secretaryId, {
         name: formData.name,
         phone: formData.phone,
-        username: formData.username,
         ...(formData.password && { password: formData.password }),
       });
 
@@ -185,21 +181,7 @@ export default function EditSecretaryPage() {
               {formErrors.phone && <span className="text-red-500 text-sm mt-1 block">{formErrors.phone}</span>}
             </div>
 
-            <div>
-              <label htmlFor="username" className="block text-gray-light mb-2 text-sm">اسم المستخدم <span className="text-red-500">*</span></label>
-              <input
-                type="text"
-                id="username"
-                className={`w-full p-3 bg-white/5 border rounded-lg text-white focus:ring-1 outline-none transition-all ${
-                  formErrors.username ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-white/10 focus:border-primary focus:ring-primary'
-                }`}
-                value={formData.username}
-                onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                placeholder="أدخل اسم المستخدم"
-                disabled={isSubmitting}
-              />
-              {formErrors.username && <span className="text-red-500 text-sm mt-1 block">{formErrors.username}</span>}
-            </div>
+
 
             <div>
               <label htmlFor="password" className="block text-gray-light mb-2 text-sm">كلمة المرور (اتركها فارغة إذا لم ترد التغيير)</label>

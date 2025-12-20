@@ -1,4 +1,7 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+// Clean base URL - remove trailing /api or / to avoid duplication
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000')
+  .replace(/\/api\/?$/, '')
+  .replace(/\/$/, '');
 
 export interface Lecture {
   id: string;
@@ -63,7 +66,14 @@ export const getLectures = async (
   });
 
   if (!response.ok) {
-    throw new Error('Failed to fetch lectures');
+    let errorMessage = 'Failed to fetch lectures';
+    try {
+      const errorData = await response.json();
+      errorMessage = errorData.message || errorMessage;
+    } catch {
+      // If response is not JSON, use default message
+    }
+    throw new Error(errorMessage);
   }
 
   const res: ApiResponse<any> = await response.json();

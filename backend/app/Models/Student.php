@@ -20,7 +20,6 @@ class Student extends Authenticatable
 
     protected $fillable = [
         'name',
-        'username',
         'password',
         'avatar_key',
         'phone',
@@ -105,7 +104,6 @@ class Student extends Authenticatable
         if ($search = $filters['search'] ?? null) {
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('username', 'like', "%{$search}%")
                   ->orWhere('phone', 'like', "%{$search}%")
                   ->orWhere('location', 'like', "%{$search}%");
             });

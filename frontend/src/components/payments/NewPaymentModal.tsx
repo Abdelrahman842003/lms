@@ -78,12 +78,7 @@ export default function NewPaymentModal({ onClose, onSuccess }: Props) {
         notes: notes || undefined,
       });
 
-      if (result.is_offline) {
-        toast.success('تم تسجيل الدفعة محلياً - سيتم رفعها عند الاتصال');
-      } else {
-        toast.success('تم تسجيل الدفعة بنجاح');
-      }
-
+      toast.success('تم تسجيل الدفعة بنجاح');
       onSuccess(result.confirmation_code, parseFloat(amount), selectedStudent.name);
     } catch (error: any) {
       toast.error(error.message || 'فشل في تسجيل الدفعة');

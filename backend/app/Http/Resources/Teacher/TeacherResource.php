@@ -12,7 +12,6 @@ class TeacherResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'username' => $this->username,
             'role' => 'teacher',
             'students_count' => $this->whenCounted('students') ?? 0,
             'secretaries_count' => $this->whenCounted('secretaries') ?? 0,

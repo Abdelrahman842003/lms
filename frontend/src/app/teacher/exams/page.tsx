@@ -21,6 +21,12 @@ interface Exam {
   max_score: number;
   is_active: boolean;
   ended_at?: string | null;
+  attended_students?: Array<{
+    student_id: string;
+    student_name: string;
+    score: number;
+    percentage: number;
+  }>;
 }
 
 export default function ExamsPage() {
@@ -147,6 +153,19 @@ export default function ExamsPage() {
       className: '!hidden lg:!table-cell',
     },
     {
+      key: 'attended_students',
+      label: 'عدد الحضور',
+      className: '!hidden sm:!table-cell',
+      render: (_: any, row: Exam) => {
+        if (!row.ended_at || !row.attended_students || row.attended_students.length === 0) {
+          return <span className="text-gray-400">0</span>;
+        }
+        return (
+          <span className="font-medium text-primary">{row.attended_students.length}</span>
+        );
+      },
+    },
+    {
       key: 'status',
       label: 'الحالة',
       render: (_: any, row: Exam) => {
@@ -171,6 +190,12 @@ export default function ExamsPage() {
       label: 'عرض التفاصيل',
       icon: 'fas fa-eye',
       onClick: (row: Exam) => router.push(`/teacher/exams/${row.id}`),
+    },
+    {
+      label: 'الطلاب الذين حضروا',
+      icon: 'fas fa-users',
+      onClick: (row: Exam) => router.push(`/teacher/exams/${row.id}/results`),
+      variant: 'success' as const,
     },
     {
       label: (row: Exam) => row.is_active ? 'إلغاء التفعيل' : 'تفعيل',

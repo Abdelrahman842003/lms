@@ -19,7 +19,6 @@ class SecretaryFactory extends Factory
     {
         return [
             'name' => fake()->name(),
-            'username' => fake()->unique()->userName(),
             'password' => Hash::make('password'),
             'teacher_id' => \App\Models\Teacher::inRandomOrder()->first()->id ?? \App\Models\Teacher::factory(),
         ];

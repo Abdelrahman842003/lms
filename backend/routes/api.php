@@ -79,9 +79,10 @@ Route::middleware('auth:sanctum')->prefix('teacher')->name('teacher.')->group(fu
     Route::apiResource('grades', \App\Http\Controllers\Teacher\GradeController::class);
     Route::apiResource('groups', \App\Http\Controllers\Teacher\GroupController::class);
     Route::apiResource('lectures', \App\Http\Controllers\Teacher\LectureController::class);
-    Route::apiResource('exams', \App\Http\Controllers\Teacher\ExamController::class);
+    Route::get('exams/{exam}/results', [\App\Http\Controllers\Teacher\ExamController::class, 'results']);
     Route::put('exams/{exam}/toggle-status', [\App\Http\Controllers\Teacher\ExamController::class, 'toggleStatus']);
     Route::put('exams/{exam}/end', [\App\Http\Controllers\Teacher\ExamController::class, 'endExam']);
+    Route::apiResource('exams', \App\Http\Controllers\Teacher\ExamController::class);
     Route::post('/lectures/{lecture}/qr-code', [\App\Http\Controllers\Teacher\LectureAttendanceController::class, 'generateQrCode']);
     Route::post('/lectures/{lecture}/attendance', [\App\Http\Controllers\Teacher\LectureAttendanceController::class, 'recordAttendance']);
     Route::put('/lectures/{lecture}/toggle-active', [\App\Http\Controllers\Teacher\LectureController::class, 'toggleActive']);

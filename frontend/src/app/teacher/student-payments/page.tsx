@@ -5,7 +5,6 @@ import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { useAuth } from '@/contexts/AuthContext';
-import { useOffline } from '@/contexts/OfflineContext';
 import toast from 'react-hot-toast';
 import {
   getPayments,
@@ -18,13 +17,11 @@ import {
 // Components
 import NewPaymentModal from '@/components/payments/NewPaymentModal';
 import PaymentCodeDisplay from '@/components/payments/PaymentCodeDisplay';
-import SyncIndicator from '@/components/payments/SyncIndicator';
 
 type PaymentStatus = 'all' | 'pending' | 'confirmed' | 'expired' | 'cancelled';
 
 export default function StudentPaymentsPage() {
   const { user } = useAuth();
-  const { isOnline, pendingCount } = useOffline();
 
   // State
   const [payments, setPayments] = useState<PaymentLog[]>([]);
@@ -42,8 +39,6 @@ export default function StudentPaymentsPage() {
 
   // Fetch data
   const fetchData = async () => {
-    if (!isOnline) return;
-
     setIsLoading(true);
     try {
       const [paymentsRes, statsRes] = await Promise.all([
@@ -65,7 +60,7 @@ export default function StudentPaymentsPage() {
 
   useEffect(() => {
     fetchData();
-  }, [statusFilter, isOnline]);
+  }, [statusFilter]);
 
   // Handle search
   const handleSearch = (e: React.FormEvent) => {
@@ -120,9 +115,6 @@ export default function StudentPaymentsPage() {
         avatar: user?.avatar || '',
       }}
     >
-      {/* Sync Indicator */}
-      <SyncIndicator />
-
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-white">إدارة مدفوعات الطلاب</h1>
@@ -162,23 +154,6 @@ export default function StudentPaymentsPage() {
           color="primary"
         />
       </div>
-
-      {/* Offline pending indicator */}
-      {pendingCount > 0 && (
-        <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 mb-6">
-          <div className="flex items-center gap-3">
-            <i className="fas fa-cloud-arrow-up text-yellow-400 text-xl"></i>
-            <div>
-              <p className="text-yellow-400 font-medium">
-                {pendingCount} دفعة في انتظار المزامنة
-              </p>
-              <p className="text-yellow-400/70 text-sm">
-                سيتم رفعها تلقائياً عند الاتصال بالإنترنت
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Filters */}
       <DashboardCard title="المدفوعات" icon="fas fa-list">

@@ -9,7 +9,7 @@ class TeacherService
 {
     public function getTeachers(int $perPage = 10, array $filters = []): LengthAwarePaginator
     {
-        return Teacher::select('id', 'name', 'username', 'created_at')
+        return Teacher::select('id', 'name', 'created_at')
             ->withCount(['students', 'secretaries'])
             ->latest()
             ->filter($filters)

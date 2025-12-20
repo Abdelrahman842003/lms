@@ -46,7 +46,7 @@ export default function AddStudentPage() {
 
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
-  // Generate slug preview from name
+  // Generate password preview from name and phone
   const generateSlug = (name: string) => {
     let text = name.trim();
     
@@ -83,7 +83,6 @@ export default function AddStudentPage() {
       .toLowerCase();
   };
 
-  const usernamePreview = generateSlug(formData.name);
   const passwordPreview = formData.phone ? `${generateSlug(formData.name)}${formData.phone}` : generateSlug(formData.name);
 
   useEffect(() => {
@@ -390,24 +389,7 @@ export default function AddStudentPage() {
               />
             </div>
 
-            {/* Auto-generated Username Field (readonly) */}
-            <div>
-              <label htmlFor="username" className="block text-gray-light mb-2 text-[0.95rem] flex justify-between">
-                <span>اسم المستخدم</span>
-                <span className="bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full flex items-center gap-1">
-                  <i className="fas fa-magic"></i>
-                  تلقائي
-                </span>
-              </label>
-              <input
-                type="text"
-                id="username"
-                className="w-full p-3 bg-transparent border border-white/10 rounded-lg text-white text-[1rem] outline-none cursor-default opacity-70"
-                value={usernamePreview || 'سيتم التوليد تلقائياً'}
-                readOnly
-                disabled
-              />
-            </div>
+
 
             {/* Auto-generated Password Field (readonly) */}
             <div>

@@ -32,6 +32,11 @@ export const initializeEcho = (token: string): Echo<"reverb"> => {
 
   const isProduction = process.env.NODE_ENV === "production";
 
+  // Clean base URL - remove trailing /api or / to avoid duplication
+  const baseUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000")
+    .replace(/\/api\/?$/, "")
+    .replace(/\/$/, "");
+
   echoInstance = new Echo({
     broadcaster: "reverb",
     key: process.env.NEXT_PUBLIC_REVERB_APP_KEY,
@@ -41,7 +46,7 @@ export const initializeEcho = (token: string): Echo<"reverb"> => {
     wssPort: isProduction ? 443 : parseInt(process.env.NEXT_PUBLIC_REVERB_PORT || "443"),
     forceTLS: isProduction,
     enabledTransports: ["ws", "wss"],
-    authEndpoint: `${process.env.NEXT_PUBLIC_API_URL}/api/broadcasting/auth`,
+    authEndpoint: `${baseUrl}/api/broadcasting/auth`,
     auth: {
       headers: {
         Authorization: `Bearer ${token}`,

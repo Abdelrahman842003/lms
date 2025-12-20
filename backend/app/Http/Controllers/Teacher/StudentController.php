@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Teacher;
 
 use App\Actions\Teacher\GenerateStudentPassword;
-use App\Actions\Teacher\GenerateStudentUsername;
 use App\Actions\Teacher\ValidateGroupGrade;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Teacher\Student\StoreStudentRequest;
@@ -18,18 +17,15 @@ use Illuminate\Http\Request;
 class StudentController extends Controller
 {
     protected $studentService;
-    protected $generateUsername;
     protected $generatePassword;
     protected $validateGroupGrade;
 
     public function __construct(
         StudentService $studentService,
-        GenerateStudentUsername $generateUsername,
         GenerateStudentPassword $generatePassword,
         ValidateGroupGrade $validateGroupGrade
     ) {
         $this->studentService = $studentService;
-        $this->generateUsername = $generateUsername;
         $this->generatePassword = $generatePassword;
         $this->validateGroupGrade = $validateGroupGrade;
     }
@@ -90,6 +86,8 @@ class StudentController extends Controller
         ]);
     }
 
+
+
     /**
      * Create new student or attach existing
      */
@@ -102,8 +100,7 @@ class StudentController extends Controller
             return $this->errorResponse('المجموعة المختارة لا تنتمي للصف الدراسي المحدد', 422);
         }
 
-        // Generate username for new students
-        $validated['username'] = $this->generateUsername->execute($validated['name'], $teacher);
+        // Generate password for new students
         $validated['password'] = $this->generatePassword->execute($validated['name'], $validated['phone']);
 
         $result = $this->studentService->createStudent($teacher, $validated);

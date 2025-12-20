@@ -19,13 +19,6 @@ class UpdateSecretaryRequest extends FormRequest
         return [
             'name' => 'sometimes|required|string|max:255',
             'phone' => 'sometimes|required|string|max:20',
-            'username' => [
-                'sometimes',
-                'required',
-                'string',
-                'max:255',
-                Rule::unique('secretaries')->ignore($secretary),
-            ],
             'password' => 'nullable|string|min:6',
         ];
     }
@@ -37,9 +30,6 @@ class UpdateSecretaryRequest extends FormRequest
         }
         if ($this->has('phone')) {
             $this->merge(['phone' => strip_tags($this->input('phone'))]);
-        }
-        if ($this->has('username')) {
-            $this->merge(['username' => strip_tags($this->input('username'))]);
         }
     }
 }

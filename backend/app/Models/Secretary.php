@@ -18,7 +18,6 @@ class Secretary extends Authenticatable
         'teacher_id',
         'name',
         'phone',
-        'username',
         'password',
         'permissions',
         'avatar_key',
@@ -47,10 +46,7 @@ class Secretary extends Authenticatable
     public function scopeFilter($query, array $filters)
     {
         if ($search = $filters['search'] ?? null) {
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('username', 'like', "%{$search}%");
-            });
+            $query->where('name', 'like', "%{$search}%");
         }
 
         if (($status = $filters['status'] ?? null) !== null && $status !== '') {

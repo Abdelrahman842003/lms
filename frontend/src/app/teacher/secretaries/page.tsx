@@ -124,11 +124,6 @@ export default function SecretariesPage() {
       ),
     },
     {
-      key: 'username',
-      label: 'اسم المستخدم',
-      sortable: true,
-    },
-    {
       key: 'created_at',
       label: 'تاريخ الإضافة',
       sortable: true,

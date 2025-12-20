@@ -19,7 +19,6 @@ export interface User {
 export interface Teacher {
     id: number
     name: string
-    username: string
     created_at: string
     updated_at: string
 }
@@ -27,7 +26,6 @@ export interface Teacher {
 export interface Student {
     id: number
     name: string
-    username: string
     created_at: string
     updated_at: string
 }

@@ -1,9 +1,4 @@
 import { fetchApi } from './authService';
-import {
-  savePaymentOffline,
-  getAllPayments,
-  getPendingPaymentsCount,
-} from './offlineDb';
 
 // ===================
 // Types
@@ -48,12 +43,11 @@ export interface CreatePaymentData {
 
 export interface CreatePaymentResult {
   confirmation_code: string;
-  is_offline: boolean;
   payment?: PaymentLog;
 }
 
 // ===================
-// API Calls (Online)
+// API Calls
 // ===================
 
 /**
@@ -103,72 +97,26 @@ export async function cancelPayment(paymentId: string): Promise<void> {
   });
 }
 
-// ===================
-// Create Payment (Online/Offline)
-// ===================
-
 /**
- * Create a new payment - works both online and offline
+ * Create a new payment
  */
 export async function createPayment(
   data: CreatePaymentData
 ): Promise<CreatePaymentResult> {
-  // Try online first
-  if (navigator.onLine) {
-    try {
-      const response = await fetchApi('/api/teacher/payments', {
-        method: 'POST',
-        body: JSON.stringify({
-          student_id: data.student_id,
-          amount: data.amount,
-          notes: data.notes,
-          client_side_uuid: crypto.randomUUID(),
-        }),
-      });
-
-      return {
-        confirmation_code: response.data.confirmation_code,
-        is_offline: false,
-        payment: response.data.payment,
-      };
-    } catch (error) {
-      // If network error, fall through to offline
-      if (!(error instanceof Error) || !error.message.includes('Network')) {
-        throw error;
-      }
-    }
-  }
-
-  // Offline mode
-  const confirmationCode = await savePaymentOffline({
-    student_id: data.student_id,
-    student_name: data.student_name,
-    amount: data.amount,
-    notes: data.notes,
+  const response = await fetchApi('/api/teacher/payments', {
+    method: 'POST',
+    body: JSON.stringify({
+      student_id: data.student_id,
+      amount: data.amount,
+      notes: data.notes,
+      client_side_uuid: crypto.randomUUID(),
+    }),
   });
 
   return {
-    confirmation_code: confirmationCode,
-    is_offline: true,
+    confirmation_code: response.data.confirmation_code,
+    payment: response.data.payment,
   };
-}
-
-// ===================
-// Offline Data
-// ===================
-
-/**
- * Get offline payments for display
- */
-export async function getOfflinePayments() {
-  return getAllPayments();
-}
-
-/**
- * Get offline pending count
- */
-export async function getOfflinePendingCount(): Promise<number> {
-  return getPendingPaymentsCount();
 }
 
 // ===================

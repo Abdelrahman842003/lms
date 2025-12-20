@@ -18,7 +18,6 @@ class Teacher extends Authenticatable
 
     protected $fillable = [
         'name',
-        'username',
         'phone',
         'password',
         'avatar_key',
@@ -87,10 +86,7 @@ class Teacher extends Authenticatable
     public function scopeFilter($query, array $filters)
     {
         if ($search = $filters['search'] ?? null) {
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('username', 'like', "%{$search}%");
-            });
+            $query->where('name', 'like', "%{$search}%");
         }
 
         if ($dateFrom = $filters['date_from'] ?? null) {

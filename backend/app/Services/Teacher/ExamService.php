@@ -12,7 +12,7 @@ class ExamService
     public function getExams(Teacher $teacher, int $perPage = 10, array $filters = [])
     {
         return Exam::where('teacher_id', $teacher->id)
-            ->with(['grade', 'group'])
+            ->with(['grade', 'group', 'results.student'])
             ->orderBy('is_active', 'desc')
             ->latest()
             ->filter($filters)

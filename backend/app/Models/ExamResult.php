@@ -34,4 +34,6 @@ class ExamResult extends Model
     {
         return $this->belongsTo(ExamAttempt::class, 'attempt_id');
     }
+
+    // Removed problematic relationship - using direct query in Resource instead
 }

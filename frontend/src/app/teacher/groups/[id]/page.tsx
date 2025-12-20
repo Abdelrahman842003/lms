@@ -37,7 +37,6 @@ export default function GroupDetailsPage() {
 
   const tableColumns = [
     { key: 'name', label: 'اسم الطالب', sortable: true },
-    { key: 'username', label: 'اسم المستخدم', sortable: true },
     { key: 'phone', label: 'رقم الهاتف', sortable: true },
     { key: 'parent_phone', label: 'رقم ولي الأمر', sortable: true },
   ];

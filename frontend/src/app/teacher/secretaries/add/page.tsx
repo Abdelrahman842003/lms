@@ -19,7 +19,6 @@ export default function AddSecretaryPage() {
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
-    username: '',
     password: '',
     permissions: [] as string[],
   });
@@ -28,16 +27,14 @@ export default function AddSecretaryPage() {
     fetchPermissions();
   }, []);
 
-  // Auto-generate credentials when name or phone changes
+  // Auto-generate password when name and phone are provided
   useEffect(() => {
-    if (formData.name) {
+    if (formData.name && formData.phone) {
       const nameSlug = formData.name.trim().toLowerCase().replace(/\s+/g, '-');
-      const generatedUsername = nameSlug;
-      const generatedPassword = formData.phone ? `${generatedUsername}${formData.phone}` : '';
+      const generatedPassword = `${nameSlug}${formData.phone}`;
       
       setFormData(prev => ({
         ...prev,
-        username: generatedUsername,
         password: generatedPassword
       }));
     }
@@ -65,7 +62,6 @@ export default function AddSecretaryPage() {
 
     if (!formData.name.trim()) errors.name = 'الاسم مطلوب';
     if (!formData.phone.trim()) errors.phone = 'رقم الهاتف مطلوب';
-    if (!formData.username.trim()) errors.username = 'اسم المستخدم مطلوب';
     if (!formData.password || formData.password.length < 6) errors.password = 'كلمة المرور مطلوبة (6 أحرف على الأقل)';
 
     setFormErrors(errors);
@@ -162,17 +158,7 @@ export default function AddSecretaryPage() {
               {formErrors.phone && <span className="text-red-500 text-sm mt-1 block">{formErrors.phone}</span>}
             </div>
 
-            <div>
-              <label htmlFor="username" className="block text-gray-light mb-2 text-sm">اسم المستخدم (تلقائي)</label>
-              <input
-                type="text"
-                id="username"
-                className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white/50 cursor-not-allowed"
-                value={formData.username}
-                readOnly
-                disabled
-              />
-            </div>
+
 
             <div>
               <label htmlFor="password" className="block text-gray-light mb-2 text-sm">كلمة المرور (تلقائي)</label>

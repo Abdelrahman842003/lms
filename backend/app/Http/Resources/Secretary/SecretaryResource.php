@@ -14,7 +14,6 @@ class SecretaryResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'username' => $this->username,
             'role' => 'secretary',
             'permissions' => $this->permissions,
             'teacher' => new TeacherResource($this->whenLoaded('teacher')),

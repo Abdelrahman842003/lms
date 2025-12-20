@@ -4,20 +4,14 @@ import '@/styles/components.css'
 import '@/styles/layout.css'
 import '@/styles/pages/login.css'
 import { AuthProvider } from '@/contexts/AuthContext'
-import { OfflineProvider } from '@/contexts/OfflineContext'
 import { Toaster } from 'react-hot-toast'
-import PWAInstallPrompt from '@/components/PWAInstallPrompt'
-import ServiceWorkerRegistration from '@/components/ServiceWorkerRegistration'
-
-
-import MaintenanceGuard from '@/components/providers/MaintenanceGuard'
+import ServiceWorkerCleanup from '@/components/ServiceWorkerCleanup'
 
 export const metadata: Metadata = {
     title: 'المنصة التعليمية | Educational Platform',
     description: 'نظام شامل يربط بين الطلاب والمعلمين وأولياء الأمور. إدارة سهلة للمحاضرات، الامتحانات، والواجبات مع تحليلات دقيقة للأداء.',
     keywords: 'تعليم، منصة تعليمية، طلاب، معلمين، امتحانات، واجبات، تعليم إلكتروني',
     authors: [{ name: 'Educational Platform Team' }],
-    manifest: '/manifest.json',
     icons: {
         icon: '/logo.png',
         apple: '/logo.png',
@@ -56,16 +50,11 @@ export default function RootLayout({
             >
                 <div className="grid-pattern" />
                 <AuthProvider>
-                  <MaintenanceGuard>
-                    <OfflineProvider>
-                      <div className="max-w-[1200px] mx-auto">
-                        <ServiceWorkerRegistration />
-                        {children}
-                        <PWAInstallPrompt />
-                        <Toaster position="top-center" />
-                      </div>
-                    </OfflineProvider>
-                  </MaintenanceGuard>
+                  <ServiceWorkerCleanup />
+                  <div className="max-w-[1200px] mx-auto">
+                    {children}
+                    <Toaster position="top-center" />
+                  </div>
                 </AuthProvider>
             </body>
         </html>

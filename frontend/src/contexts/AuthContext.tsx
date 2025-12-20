@@ -26,7 +26,6 @@ interface AuthContextType {
 }
 
 interface RegisterData {
-  username: string;
   password: string;
   name: string;
   userType: 'teacher' | 'student' | 'secretary' | 'admin';
@@ -81,7 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const userData: User = {
               id: response.user.id,
               name: response.user.name,
-              username: response.user.username,
+              ...(response.user.username && { username: response.user.username }),
               userType: response.role,
               createdAt: response.user.created_at || new Date().toISOString(),
               updatedAt: response.user.updated_at || new Date().toISOString(),
@@ -205,7 +204,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userData: User = {
         id: response.user.id,
         name: response.user.name,
-        username: response.user.username,
+        ...(response.user.username && { username: response.user.username }),
         userType: response.role,
         createdAt: response.user.created_at || new Date().toISOString(),
         updatedAt: response.user.updated_at || new Date().toISOString(),
@@ -287,7 +286,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const mockUser: User = {
         id: '1',
         name: userData.name,
-        username: userData.username,
         userType: userData.userType,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),

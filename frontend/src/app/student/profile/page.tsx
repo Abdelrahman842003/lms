@@ -25,7 +25,6 @@ export default function StudentProfilePage() {
   const [errors, setErrors] = React.useState<Record<string, string>>({});
   const [formData, setFormData] = React.useState({
     name: user?.name || '-',
-    username: user?.username || '-',
     phone: user?.phone || '-',
     parent_phone: user?.parent_phone || '-',
     location: user?.location || '-',
@@ -40,7 +39,6 @@ export default function StudentProfilePage() {
       setFormData(prev => ({
         ...prev,
         name: user.name || '-',
-        username: user.username || '-',
         phone: user.phone || '-',
         parent_phone: user.parent_phone || '-',
         location: user.location || '-',
@@ -298,17 +296,7 @@ export default function StudentProfilePage() {
                   />
                 </div>
 
-                <div>
-                  <AuthInput
-                    id="username"
-                    label="اسم المستخدم"
-                    value={formData.username}
-                    onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                    disabled={true}
-                    isLoading={isLoading}
-                    className="w-full p-3 bg-white/2 border border-white/10 rounded-lg text-white text-[0.95rem] font-tajawal !text-center"
-                  />
-                </div>
+
 
                 <div>
                   <AuthInput

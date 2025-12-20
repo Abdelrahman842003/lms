@@ -4,7 +4,6 @@ export interface Secretary {
   id: string;
   name: string;
   phone: string;
-  username: string;
   avatar?: string;
   permissions?: string[];
   is_active?: boolean;
@@ -14,7 +13,6 @@ export interface Secretary {
 export interface CreateSecretaryData {
   name: string;
   phone: string;
-  username: string;
   password: string;
   permissions?: string[];
 }
@@ -22,7 +20,6 @@ export interface CreateSecretaryData {
 export interface UpdateSecretaryData {
   name?: string;
   phone?: string;
-  username?: string;
   password?: string;
 }
 

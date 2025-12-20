@@ -4,40 +4,42 @@
 # 🚀 LMS Docker Deployment - One Command Setup
 # ===========================================
 
-help: ## عرض المساعدة
+# ===========================================
+# 🎯 Install - Unified Installation Command
+# ===========================================
+install: ## Install the project (interactive environment selection)
 	@echo ""
-	@echo "📦 LMS Docker Deployment"
-	@echo "========================"
+	@echo "🎯 LMS Installation Wizard"
+	@echo "=========================="
 	@echo ""
-	@echo "🔹 make dev        - تشغيل بيئة التطوير (أمر واحد يعمل كل شيء)"
-	@echo "🔹 make prod       - تشغيل بيئة الإنتاج (أمر واحد يعمل كل شيء)"
+	@echo "Choose environment type:"
+	@echo "  1) local      - Local development environment"
+	@echo "  2) production - Production environment"
 	@echo ""
-	@echo "🔹 make status     - عرض حالة الخدمات"
-	@echo "🔹 make logs       - عرض logs كل الخدمات"
-	@echo "🔹 make down       - إيقاف كل الخدمات"
-	@echo "🔹 make restart    - إعادة تشغيل"
-	@echo "🔹 make clean      - حذف كل شيء وإعادة البناء"
-	@echo ""
-	@echo "🔹 make shell      - دخول Backend container"
-	@echo "🔹 make migrate    - تشغيل migrations جديدة"
-	@echo ""
+	@read -p "Your choice (1 or 2): " choice; \
+	if [ "$$choice" = "1" ] || [ "$$choice" = "local" ]; then \
+		$(MAKE) _install-local; \
+	elif [ "$$choice" = "2" ] || [ "$$choice" = "production" ]; then \
+		read -p "Enter domain (e.g., example.com): " domain; \
+		$(MAKE) _install-production DOMAIN=$$domain; \
+	else \
+		echo "❌ Invalid choice!"; \
+		exit 1; \
+	fi
 
-# ===========================================
-# 🔧 Development - أمر واحد للتطوير
-# ===========================================
-dev: ## تشغيل بيئة التطوير كاملة بأمر واحد
+_install-local: ## Install development environment
 	@echo ""
-	@echo "🚀 بدء تشغيل بيئة التطوير..."
-	@echo "================================"
+	@echo "🚀 Starting local development environment installation..."
+	@echo "======================================="
 	@echo ""
 	@# Step 1: Setup .env
 	@if [ ! -f .env ]; then \
-		echo "📄 إنشاء ملف .env من .env.development..."; \
+		echo "📄 Creating .env file from .env.development..."; \
 		cp .env.development .env; \
 	fi
 	@# Generate APP_KEY if not set
 	@if ! grep -q "^APP_KEY=base64:" .env 2>/dev/null; then \
-		echo "🔑 توليد APP_KEY..."; \
+		echo "🔑 Generating APP_KEY..."; \
 		APP_KEY=$$(openssl rand -base64 32); \
 		if grep -q "^APP_KEY=" .env; then \
 			sed -i "s|^APP_KEY=.*|APP_KEY=base64:$$APP_KEY|" .env; \
@@ -46,32 +48,32 @@ dev: ## تشغيل بيئة التطوير كاملة بأمر واحد
 		fi; \
 	fi
 	@# Step 2: Build and start
-	@echo "🏗️  بناء وتشغيل Docker containers..."
-	@docker compose build --quiet
+	@echo "🏗️  Building and starting Docker containers..."
+	@docker compose build
 	@docker compose up -d
 	@# Step 3: Wait for MySQL
-	@echo "⏳ انتظار MySQL..."
+	@echo "⏳ Waiting for MySQL..."
 	@sleep 15
 	@while ! docker compose exec -T mysql mysqladmin ping -h localhost --silent 2>/dev/null; do \
 		echo "   MySQL still starting..."; \
 		sleep 5; \
 	done
-	@echo "   ✅ MySQL جاهز"
+	@echo "   ✅ MySQL is ready"
 	@# Step 4: Backend setup
-	@echo "📦 تثبيت Backend dependencies..."
+	@echo "📦 Installing Backend dependencies..."
 	@docker compose exec -T octane composer clear-cache 2>/dev/null || true
-	@docker compose exec -T octane composer install --no-interaction --prefer-dist || docker compose exec -T octane composer install --no-interaction
+	@docker compose exec -T -e COMPOSER_MEMORY_LIMIT=-1 octane composer install --no-dev --no-interaction --prefer-dist || docker compose exec -T -e COMPOSER_MEMORY_LIMIT=-1 octane composer install --no-dev --no-interaction
 	@# Step 5: Migrations
-	@echo "🗄️  تشغيل Migrations..."
+	@echo "🗄️  Running Migrations..."
 	@docker compose exec -T octane php artisan migrate --force
 	@# Step 6: Laravel optimizations
-	@echo "⚡ تحسين Laravel..."
+	@echo "⚡ Optimizing Laravel..."
 	@docker compose exec -T octane php artisan config:cache 2>/dev/null || true
 	@docker compose exec -T octane php artisan route:cache 2>/dev/null || true
 	@# Done
 	@echo ""
 	@echo "============================================"
-	@echo "✅ تم التشغيل بنجاح!"
+	@echo "✅ Development environment installed successfully!"
 	@echo "============================================"
 	@echo ""
 	@echo "🌐 Frontend:  http://localhost:3000"
@@ -81,26 +83,31 @@ dev: ## تشغيل بيئة التطوير كاملة بأمر واحد
 	@docker compose ps --format "table {{.Name}}\t{{.Status}}\t{{.Ports}}"
 	@echo ""
 
-# ===========================================
-# 🏭 Production - أمر واحد للإنتاج
-# ===========================================
-prod: ## تشغيل بيئة الإنتاج كاملة بأمر واحد
+_install-production: ## Install production environment (requires DOMAIN)
 	@echo ""
-	@echo "🚀 بدء تشغيل بيئة الإنتاج..."
+	@echo "🛑 Stopping any running development containers..."
+	@$(MAKE) down > /dev/null 2>&1 || true
+	@echo "🚀 Starting production environment installation..."
+	@echo "Domain: $(DOMAIN)"
 	@echo "================================"
 	@echo ""
-	@# Step 1: Check .env.production exists
+	@# Check required files
 	@if [ ! -f .env.production ]; then \
 		echo "❌ Error: .env.production not found!"; \
-		echo "   Please create .env.production with production settings."; \
 		exit 1; \
 	fi
-	@# Copy to .env
-	@echo "📄 نسخ .env.production..."
+	@# Step 1: Copy and update .env
+	@echo "📄 Setting up .env file..."
 	@cp .env.production .env
+	@# Update domain in .env
+	@if [ -n "$(DOMAIN)" ]; then \
+		sed -i "s|APP_URL=.*|APP_URL=https://$(DOMAIN)|" .env; \
+		sed -i "s|NEXT_PUBLIC_API_URL=.*|NEXT_PUBLIC_API_URL=https://$(DOMAIN)|" .env; \
+		echo "✅ Domain updated: $(DOMAIN)"; \
+	fi
 	@# Step 2: Generate APP_KEY if not set
 	@if ! grep -q "^APP_KEY=base64:" .env 2>/dev/null; then \
-		echo "🔑 توليد APP_KEY..."; \
+		echo "🔑 Generating APP_KEY..."; \
 		APP_KEY=$$(openssl rand -base64 32); \
 		if grep -q "^APP_KEY=" .env; then \
 			sed -i "s|^APP_KEY=.*|APP_KEY=base64:$$APP_KEY|" .env; \
@@ -108,30 +115,60 @@ prod: ## تشغيل بيئة الإنتاج كاملة بأمر واحد
 			echo "APP_KEY=base64:$$APP_KEY" >> .env; \
 		fi; \
 	fi
-	@# Step 3: Setup secrets
-	@echo "🔐 توليد Docker Secrets..."
-	@chmod +x setup-secrets.sh
-	@./setup-secrets.sh
-	@# Step 4: Build and start production
-	@echo "🏗️  بناء وتشغيل Production containers..."
-	@docker compose -f docker-compose.prod.yml build --quiet
+	@# Step 3: Generate secure passwords if placeholders
+	@echo "🔐 Generating secure passwords..."
+	@if grep -q "CHANGE_THIS" .env; then \
+		DB_PASS=$$(openssl rand -base64 24 | tr -dc 'a-zA-Z0-9' | head -c 24); \
+		ROOT_PASS=$$(openssl rand -base64 24 | tr -dc 'a-zA-Z0-9' | head -c 24); \
+		REDIS_PASS=$$(openssl rand -base64 24 | tr -dc 'a-zA-Z0-9' | head -c 24); \
+		sed -i "s|CHANGE_THIS_DB_PASSWORD|$$DB_PASS|g" .env; \
+		sed -i "s|CHANGE_THIS_ROOT_PASSWORD|$$ROOT_PASS|g" .env; \
+		sed -i "s|CHANGE_THIS_REDIS_PASSWORD|$$REDIS_PASS|g" .env; \
+		echo "   ✅ Passwords generated"; \
+	fi
+	@# Step 4: Generate Reverb keys
+	@echo "📡 Generating Reverb keys..."
+	@if ! grep -q "^REVERB_APP_ID=" .env; then \
+		REVERB_ID=$$(openssl rand -hex 8); \
+		REVERB_KEY=$$(openssl rand -hex 16); \
+		REVERB_SECRET=$$(openssl rand -hex 32); \
+		echo "REVERB_APP_ID=$$REVERB_ID" >> .env; \
+		echo "REVERB_APP_KEY=$$REVERB_KEY" >> .env; \
+		echo "REVERB_APP_SECRET=$$REVERB_SECRET" >> .env; \
+		echo "REVERB_PUBLIC_HOST=$(DOMAIN)" >> .env; \
+	fi
+	@# Step 5: Setup secrets
+	@echo "🔐 Setting up Docker Secrets..."
+	@chmod +x setup-secrets.sh 2>/dev/null || true
+	@./setup-secrets.sh 2>/dev/null || true
+	@# Step 5.5: Setup SSL for Nginx
+	@echo "🔒 Checking SSL certificates..."
+	@mkdir -p nginx/ssl
+	@if [ ! -f nginx/ssl/fullchain.pem ] || [ ! -f nginx/ssl/privkey.pem ]; then \
+		echo "⚠️  SSL certificates not found, generating self-signed certificates..."; \
+		openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+			-keyout nginx/ssl/privkey.pem \
+			-out nginx/ssl/fullchain.pem \
+			-subj "/C=US/ST=State/L=City/O=LMS/OU=IT/CN=$(DOMAIN)"; \
+		echo "   ✅ Self-signed SSL certificates generated for $(DOMAIN)"; \
+	fi
+	@# Step 6: Build and start production
+	@echo "🏗️  Building and starting production containers..."
+	@docker compose -f docker-compose.prod.yml build
 	@docker compose -f docker-compose.prod.yml up -d
-	@# Step 5: Wait for MySQL
-	@echo "⏳ انتظار MySQL..."
+	@# Step 7: Wait for MySQL
+	@echo "⏳ Waiting for MySQL..."
 	@sleep 20
 	@while ! docker compose -f docker-compose.prod.yml exec -T mysql mysqladmin ping -h localhost --silent 2>/dev/null; do \
 		echo "   MySQL still starting..."; \
 		sleep 5; \
 	done
-	@echo "   ✅ MySQL جاهز"
-	@# Step 6: Backend setup
-	@echo "📦 تثبيت Backend dependencies..."
-	@docker compose -f docker-compose.prod.yml exec -T octane composer install --no-dev --no-interaction --optimize-autoloader
-	@# Step 7: Migrations
-	@echo "🗄️  تشغيل Migrations..."
+	@echo "   ✅ MySQL is ready"
+	@# Step 8: Migrations
+	@echo "🗄️  Running Migrations..."
 	@docker compose -f docker-compose.prod.yml exec -T octane php artisan migrate --force
-	@# Step 8: Production optimizations
-	@echo "⚡ تحسين Laravel للإنتاج..."
+	@# Step 9: Production optimizations
+	@echo "⚡ Optimizing Laravel for production..."
 	@docker compose -f docker-compose.prod.yml exec -T octane php artisan config:cache
 	@docker compose -f docker-compose.prod.yml exec -T octane php artisan route:cache
 	@docker compose -f docker-compose.prod.yml exec -T octane php artisan view:cache
@@ -139,69 +176,26 @@ prod: ## تشغيل بيئة الإنتاج كاملة بأمر واحد
 	@# Done
 	@echo ""
 	@echo "============================================"
-	@echo "✅ Production تم التشغيل بنجاح!"
+	@echo "✅ Production environment installed successfully!"
 	@echo "============================================"
+	@echo ""
+	@echo "🌐 Website: https://$(DOMAIN)"
 	@echo ""
 	@docker compose -f docker-compose.prod.yml ps --format "table {{.Name}}\t{{.Status}}\t{{.Ports}}"
 	@echo ""
 
-# ===========================================
-# 🛠️ Utility Commands
-# ===========================================
-
-status: ## عرض حالة الخدمات
-	@docker compose ps --format "table {{.Name}}\t{{.Status}}\t{{.Ports}}"
-
-logs: ## عرض logs كل الخدمات
-	@docker compose logs -f
-
-logs-backend: ## عرض logs Backend فقط
-	@docker compose logs -f octane
-
-logs-frontend: ## عرض logs Frontend فقط
-	@docker compose logs -f frontend
-
-down: ## إيقاف كل الخدمات
-	@docker compose down
-	@echo "✅ تم إيقاف كل الخدمات"
-
-restart: ## إعادة تشغيل الخدمات
-	@docker compose restart
-	@echo "✅ تم إعادة التشغيل"
-
-shell: ## دخول Backend container
-	@docker compose exec octane sh
-
-shell-mysql: ## دخول MySQL
-	@docker compose exec mysql mysql -u lms_user -p
-
-migrate: ## تشغيل migrations جديدة
-	@docker compose exec octane php artisan migrate --force
-	@echo "✅ تم تشغيل Migrations"
-
-fresh: ## إعادة بناء قاعدة البيانات (⚠️ يحذف كل البيانات)
-	@echo "⚠️  Warning: سيتم حذف كل البيانات!"
-	@read -p "متأكد؟ (y/N) " confirm && [ "$$confirm" = "y" ] || exit 1
-	@docker compose exec octane php artisan migrate:fresh --seed --force
-	@echo "✅ تم إعادة بناء قاعدة البيانات"
-
-clean: ## حذف كل شيء وإعادة البناء
-	@echo "🧹 تنظيف كل شيء..."
-	@docker compose down -v --remove-orphans
-	@rm -rf backend/vendor 2>/dev/null || true
-	@rm -rf frontend/node_modules 2>/dev/null || true
-	@rm -rf frontend/.next 2>/dev/null || true
-	@echo "✅ تم التنظيف"
-
-# ===========================================
-# 🔄 Production Maintenance
-# ===========================================
-
-prod-down: ## إيقاف Production
-	@docker compose -f docker-compose.prod.yml down
-
-prod-logs: ## عرض logs Production
-	@docker compose -f docker-compose.prod.yml logs -f
-
-prod-restart: ## إعادة تشغيل Production
-	@docker compose -f docker-compose.prod.yml restart
+help: ## Display help information
+	@echo ""
+	@echo "📦 LMS Docker Deployment"
+	@echo "========================"
+	@echo ""
+	@echo "🎯 make install    - Install project (interactive environment selection)"
+	@echo ""
+	@echo "🔹 make dev        - Run development environment (one command setup)"
+	@echo "🔹 make prod       - Run production environment (one command setup)"
+	@echo ""
+	@echo "🔹 make status     - Show service status"
+	@echo "🔹 make logs       - Show logs for all services"
+	@echo "🔹 make down       - Stop all services"
+	@echo "🔹 make restart    - Restart services"
+	@echo "🔹 make clean      - Clean all resources and

@@ -38,7 +38,6 @@ class SecretaryController extends Controller
         $secretary = $teacher->secretaries()->create([
             'name' => $validated['name'],
             'phone' => $validated['phone'],
-            'username' => $validated['username'],
             'password' => Hash::make($validated['password']),
         ]);
 
@@ -74,7 +73,6 @@ class SecretaryController extends Controller
         $data = [
             'name' => $validated['name'] ?? $secretary->name,
             'phone' => $validated['phone'] ?? $secretary->phone,
-            'username' => $validated['username'] ?? $secretary->username,
         ];
 
         if (!empty($validated['password'])) {

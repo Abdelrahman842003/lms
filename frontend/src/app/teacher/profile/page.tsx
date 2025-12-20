@@ -23,7 +23,6 @@ export default function TeacherProfile() {
   
   const [formData, setFormData] = React.useState({
     name: user?.name || '',
-    username: user?.username || '',
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
@@ -35,7 +34,6 @@ export default function TeacherProfile() {
       setFormData(prev => ({
         ...prev,
         name: user.name || '',
-        username: user.username || '',
       }));
     }
   }, [user]);
@@ -282,18 +280,7 @@ export default function TeacherProfile() {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-gray-light text-sm mb-2 font-semibold">
-                    اسم المستخدم
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.username}
-                    onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                    disabled={!isEditing}
-                    className={`w-full px-4 py-3 border border-white/10 rounded-lg text-white text-[0.95rem] font-tajawal ${isEditing ? 'bg-white/5' : 'bg-white/2'}`}
-                  />
-                </div>
+
               </div>
 
               {isEditing && (

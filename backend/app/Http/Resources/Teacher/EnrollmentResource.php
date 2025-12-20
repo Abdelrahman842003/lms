@@ -36,7 +36,6 @@ class EnrollmentResource extends JsonResource
             'id' => $student->id,
             'name' => $student->name,
             'avatar' => $student->avatar_key ? env('CLOUDFLARE_R2_PUBLIC_URL') . '/' . $student->avatar_key : null,
-            'username' => $student->username,
             'phone' => $student->phone,
             'parent_phone' => $student->parent_phone,
             'gender' => $student->gender,

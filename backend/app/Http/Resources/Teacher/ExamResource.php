@@ -29,6 +29,20 @@ class ExamResource extends JsonResource
             'questions_count' => $this->questions_count ?? $this->questions()->count(),
             'activated_at' => $this->activated_at,
             'ended_at' => $this->ended_at,
+            'attended_students' => $this->when($this->ended_at !== null, function () {
+                return $this->results()
+                    ->with('student')
+                    ->whereNotNull('attempt_id')
+                    ->get()
+                    ->map(function ($result) {
+                        return [
+                            'student_id' => $result->student_id,
+                            'student_name' => $result->student->name,
+                            'score' => $result->score,
+                            'percentage' => $result->percentage,
+                        ];
+                    });
+            }),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

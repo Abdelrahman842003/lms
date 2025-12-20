@@ -12,7 +12,6 @@ class UserResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'username' => $this->username,
             'email' => $this->email,
             'role' => $this->when($this->resource instanceof \App\Models\Admin, 'admin', 
                       $this->when($this->resource instanceof \App\Models\Teacher, 'teacher', 

@@ -4,11 +4,12 @@ namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use App\Notifications\Channels\FcmChannel;
 
-class StudentAttendanceNotification extends Notification
+class StudentAttendanceNotification extends Notification implements ShouldBroadcast
 {
     use Queueable;
 
@@ -31,7 +32,7 @@ class StudentAttendanceNotification extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['database', FcmChannel::class];
+        return ['database', FcmChannel::class, 'broadcast'];
     }
 
     /**
@@ -48,5 +49,27 @@ class StudentAttendanceNotification extends Notification
             'type' => 'attendance',
             'lecture_title' => $this->lectureTitle,
         ];
+    }
+
+    /**
+     * Get the broadcastable representation of the notification.
+     */
+    public function toBroadcast(object $notifiable): \Illuminate\Notifications\Messages\BroadcastMessage
+    {
+        return new \Illuminate\Notifications\Messages\BroadcastMessage([
+            'title' => 'تم تسجيل الحضور بنجاح',
+            'message' => "تم تسجيل حضورك في محاضرة: {$this->lectureTitle}",
+            'sender_name' => $this->teacherName,
+            'type' => 'attendance',
+            'lecture_title' => $this->lectureTitle,
+        ]);
+    }
+
+    /**
+     * Get the type of the notification being broadcast.
+     */
+    public function broadcastType(): string
+    {
+        return 'attendance';
     }
 }

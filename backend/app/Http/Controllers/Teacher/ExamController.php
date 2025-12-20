@@ -8,6 +8,7 @@ use App\Http\Requests\Teacher\Exam\UpdateExamRequest;
 use App\Models\Exam;
 use App\Services\Teacher\ExamService;
 use App\Http\Resources\Teacher\ExamResource;
+use App\Http\Resources\Teacher\ExamResultDetailResource;
 use Illuminate\Support\Facades\Auth;
 
 class ExamController extends Controller
@@ -17,6 +18,37 @@ class ExamController extends Controller
     public function __construct(ExamService $examService)
     {
         $this->examService = $examService;
+    }
+
+    public function results(Exam $exam)
+    {
+        try {
+            if ($exam->teacher_id !== Auth::id()) {
+                return $this->errorResponse('Unauthorized', 403);
+            }
+
+            // فقط الطلاب الذين حضروا (لديهم attempt_id)
+            $results = $exam->results()
+                ->whereNotNull('attempt_id')
+                ->with(['student'])
+                ->get();
+
+            return $this->successResponse([
+                'exam' => [
+                    'id' => $exam->id,
+                    'title' => $exam->title,
+                    'subject' => $exam->subject,
+                    'max_score' => $exam->max_score,
+                    'date' => $exam->date,
+                    'duration' => $exam->duration,
+                ],
+                'results' => ExamResultDetailResource::collection($results)
+            ]);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Error fetching exam results: ' . $e->getMessage());
+            \Illuminate\Support\Facades\Log::error($e->getTraceAsString());
+            return $this->errorResponse('An error occurred while fetching results', 500);
+        }
     }
 
     public function index(\Illuminate\Http\Request $request)
