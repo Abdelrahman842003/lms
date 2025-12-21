@@ -59,6 +59,12 @@ const getNavItems = (role: string): SidebarItem[] => {
         href: '/admin/notifications',
       },
       {
+        id: 'reports',
+        label: 'التقارير',
+        icon: 'fas fa-chart-bar',
+        href: '/admin/reports',
+      },
+      {
         id: 'users',
         label: 'الصلاحيات',
         icon: 'fas fa-users',

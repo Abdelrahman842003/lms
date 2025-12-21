@@ -103,8 +103,17 @@ export default function AdminTeachersPage() {
       // Set stats
       if (statsRes) {
         setTotalStudents(statsRes.students_count || 0);
-        // Calculate revenue with fallback
-        const calculatedRevenue = statsRes.total_revenue || (statsRes.students_count * (statsRes.price_per_student || 0));
+        
+        // Calculate total revenue by summing each teacher's revenue
+        // This ensures accurate calculation: sum of (each teacher's students × price)
+        const sumOfTeacherRevenues = teachersRes.data.reduce((sum: number, teacher: any) => {
+          return sum + (teacher.revenue || 0);
+        }, 0);
+        
+        // Use sum of teacher revenues if available, otherwise fall back to API stats
+        const calculatedRevenue = sumOfTeacherRevenues > 0 
+          ? sumOfTeacherRevenues 
+          : (statsRes.total_revenue || (statsRes.students_count * (statsRes.price_per_student || 0)));
         setTotalRevenue(calculatedRevenue);
       }
 

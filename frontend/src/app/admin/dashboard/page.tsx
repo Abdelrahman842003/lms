@@ -35,8 +35,26 @@ function AdminDashboard() {
           getDashboardStats()
         ]);
         
-        setTeachers(teachersRes.data || []);
-        setStats(statsRes);
+        const teachersList = teachersRes.data || [];
+        setTeachers(teachersList);
+        
+        // Calculate total revenue by summing each teacher's revenue
+        // This ensures: sum of (each teacher's students × price)
+        const sumOfTeacherRevenues = teachersList.reduce((sum: number, teacher: any) => {
+          return sum + (teacher.revenue || 0);
+        }, 0);
+        
+        // Calculate sum of all students across teachers
+        const totalStudentsAcrossTeachers = teachersList.reduce((sum: number, teacher: any) => {
+          return sum + (teacher.students_count || 0);
+        }, 0);
+        
+        setStats({
+          ...statsRes,
+          total_revenue: sumOfTeacherRevenues > 0 ? sumOfTeacherRevenues : statsRes.total_revenue,
+          active_enrollments_count: totalStudentsAcrossTeachers > 0 ? totalStudentsAcrossTeachers : statsRes.active_enrollments_count,
+        });
+        
         // If there's an API for system activity, fetch it here. Otherwise, leave it empty.
         setSystemActivity([]); 
       } catch (error) {
@@ -131,7 +149,7 @@ function AdminDashboard() {
           trend={{ value: 15, label: 'مقارنة بالشهر الماضي', isPositive: true }}
         >
           <div className="text-xs text-gray-400 mt-2">
-            {stats.students_count} طالب (الكل) × {stats.price_per_student || 0} ج.م
+            {stats.active_enrollments_count} اشتراك × {stats.price_per_student || 0} ج.م
           </div>
         </StatCard>
       </div>

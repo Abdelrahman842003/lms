@@ -893,3 +893,113 @@ export async function sendNotification(data: any): Promise<any> {
     body: JSON.stringify(data),
   });
 }
+
+// ============================================
+// Reports API Functions
+// ============================================
+
+export interface ReportParams {
+  start_date: string;
+  end_date: string;
+}
+
+/**
+ * Get list of teachers for report selection
+ */
+export async function getReportTeachers(): Promise<any[]> {
+  return await fetchApi('/admin/reports/teachers');
+}
+
+/**
+ * Get teacher report data (JSON)
+ */
+export async function getTeacherReport(teacherId: string, params: ReportParams): Promise<any> {
+  const queryParams = new URLSearchParams({
+    start_date: params.start_date,
+    end_date: params.end_date,
+  });
+  return await fetchApi(`/admin/reports/teacher/${teacherId}?${queryParams}`);
+}
+
+/**
+ * Get admin overview report (JSON)
+ */
+export async function getAdminReport(params: ReportParams): Promise<any> {
+  const queryParams = new URLSearchParams({
+    start_date: params.start_date,
+    end_date: params.end_date,
+  });
+  return await fetchApi(`/admin/reports/admin?${queryParams}`);
+}
+
+/**
+ * Download teacher report as PDF
+ */
+export async function downloadTeacherReportPdf(teacherId: string, params: ReportParams): Promise<void> {
+  const token = getAuthToken();
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+  const cleanBaseUrl = API_BASE.replace(/\/api\/?$/, '').replace(/\/$/, '');
+  
+  const queryParams = new URLSearchParams({
+    start_date: params.start_date,
+    end_date: params.end_date,
+  });
+  
+  const response = await fetch(`${cleanBaseUrl}/api/admin/reports/teacher/${teacherId}/pdf?${queryParams}`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Accept': 'application/pdf',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to download PDF');
+  }
+
+  const blob = await response.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `teacher-report-${teacherId}-${params.start_date}-to-${params.end_date}.pdf`;
+  document.body.appendChild(a);
+  a.click();
+  window.URL.revokeObjectURL(url);
+  a.remove();
+}
+
+/**
+ * Download admin report as PDF
+ */
+export async function downloadAdminReportPdf(params: ReportParams): Promise<void> {
+  const token = getAuthToken();
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+  const cleanBaseUrl = API_BASE.replace(/\/api\/?$/, '').replace(/\/$/, '');
+  
+  const queryParams = new URLSearchParams({
+    start_date: params.start_date,
+    end_date: params.end_date,
+  });
+  
+  const response = await fetch(`${cleanBaseUrl}/api/admin/reports/admin/pdf?${queryParams}`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Accept': 'application/pdf',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to download PDF');
+  }
+
+  const blob = await response.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `admin-report-${params.start_date}-to-${params.end_date}.pdf`;
+  document.body.appendChild(a);
+  a.click();
+  window.URL.revokeObjectURL(url);
+  a.remove();
+}

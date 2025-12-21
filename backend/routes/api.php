@@ -54,6 +54,13 @@ Route::prefix('admin')->name('admin.')->group(function () {
         // Settings
         Route::get('/settings', [\App\Http\Controllers\Admin\SettingsController::class, 'index']);
         Route::post('/settings', [\App\Http\Controllers\Admin\SettingsController::class, 'update']);
+
+        // Reports
+        Route::get('/reports/teachers', [\App\Http\Controllers\Admin\ReportController::class, 'teachersList']);
+        Route::get('/reports/teacher/{teacher}', [\App\Http\Controllers\Admin\ReportController::class, 'teacherReport']);
+        Route::get('/reports/teacher/{teacher}/pdf', [\App\Http\Controllers\Admin\ReportController::class, 'teacherReportPdf']);
+        Route::get('/reports/admin', [\App\Http\Controllers\Admin\ReportController::class, 'adminReport']);
+        Route::get('/reports/admin/pdf', [\App\Http\Controllers\Admin\ReportController::class, 'adminReportPdf']);
     });
 });
 

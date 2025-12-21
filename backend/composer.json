@@ -10,6 +10,7 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
+        "barryvdh/laravel-dompdf": "*",
         "guzzlehttp/guzzle": "^7.8",
         "laravel/framework": "^12.0",
         "laravel/horizon": "^5.40",
@@ -18,6 +19,7 @@
         "laravel/sanctum": "^4.2",
         "laravel/telescope": "^5.16",
         "laravel/tinker": "^2.10.1",
+        "mpdf/mpdf": "^8.2",
         "predis/predis": "^3.3",
         "spatie/laravel-permission": "^6.23"
     },
