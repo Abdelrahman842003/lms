@@ -7,10 +7,250 @@ import { DataTable } from '@/components/dashboard/DataTable';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { useAuth } from '@/contexts/AuthContext';
-import { getTeachers, createTeacher, updateTeacher, toggleTeacherStatus, loginAsTeacher, getDashboardStats } from '@/services/authService';
+import { getTeachers, createTeacher, updateTeacher, toggleTeacherStatus, loginAsTeacher, getDashboardStats, updateTeacherSubscription, getTeacherSubscription } from '@/services/authService';
 import { toast } from 'react-hot-toast';
 
 import { Avatar } from '@/components/ui';
+
+// Subscription Modal Component
+
+const SubscriptionModal = ({ 
+  isOpen, 
+  onClose, 
+  teacher, 
+  onSuccess 
+}: { 
+  isOpen: boolean; 
+  onClose: () => void; 
+  teacher: any; 
+  onSuccess: () => void; 
+}) => {
+  const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7)); // YYYY-MM
+  const [subscriptionData, setSubscriptionData] = useState<any>(null);
+  const [paymentAmount, setPaymentAmount] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(false);
+  const [fetchError, setFetchError] = useState('');
+
+  useEffect(() => {
+    if (teacher && isOpen) {
+      fetchSubscription();
+    }
+  }, [teacher, selectedMonth, isOpen]);
+
+  const fetchSubscription = async () => {
+    setFetching(true);
+    setFetchError('');
+    try {
+      const response = await getTeacherSubscription(teacher.id, selectedMonth);
+      setSubscriptionData(response);
+      setPaymentAmount(0);
+    } catch (error: any) {
+      console.error('Failed to fetch subscription', error);
+      setFetchError(error.message || 'فشل جلب البيانات. تأكد من تشغيل الترحيل (Migration) لقاعدة البيانات.');
+      if (!error.message) {
+          toast.error('فشل جلب بيانات الاشتراك');
+      }
+    } finally {
+      setFetching(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await updateTeacherSubscription(teacher.id, {
+        month: selectedMonth,
+        payment_amount: paymentAmount
+      });
+      toast.success('تم تحديث بيانات الاشتراك بنجاح');
+      await fetchSubscription(); // Refresh data
+      onSuccess();
+    } catch (error) {
+      console.error('Failed to update subscription', error);
+      toast.error('فشل تحديث بيانات الاشتراك');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!isOpen || !teacher) return null;
+
+  const amountDue = subscriptionData?.amount_due || 0;
+  const amountPaid = subscriptionData?.amount_paid || 0;
+  const remaining = amountDue - amountPaid - paymentAmount;
+  const isPaid = subscriptionData?.status === 'paid';
+
+  return (
+    <div 
+      className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[1000] p-4"
+      onClick={onClose}
+    >
+      <div 
+        className="bg-[#1a1f37] p-6 rounded-2xl w-full max-w-md border border-white/10"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h2 className="text-white mb-6 text-xl font-bold flex items-center gap-3">
+          <i className="fas fa-money-bill-wave text-success"></i>
+          <span>دفع اشتراك المدرس</span>
+        </h2>
+
+        <div className="mb-6">
+          <label className="block text-gray-300 mb-2 text-sm">اختر الشهر</label>
+          <input
+            type="month"
+            value={selectedMonth}
+            onChange={(e) => setSelectedMonth(e.target.value)}
+            className="w-full p-2.5 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm"
+          />
+        </div>
+
+        {fetching ? (
+          <div className="text-center py-8 text-gray-400">جاري التحميل...</div>
+        ) : fetchError ? (
+          <div className="text-center py-8">
+            <div className="text-danger mb-2">
+              <i className="fas fa-exclamation-circle text-2xl"></i>
+            </div>
+            <p className="text-danger text-sm">{fetchError}</p>
+            <button 
+              onClick={fetchSubscription}
+              className="mt-4 px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-sm text-white transition-colors"
+            >
+              إعادة المحاولة
+            </button>
+          </div>
+        ) : (
+          <>
+            <div className="bg-white/5 rounded-xl p-4 mb-6 border border-white/10">
+              <div className="flex items-center gap-3 mb-4 pb-4 border-b border-white/10">
+                <Avatar name={teacher.name} src={teacher.avatar} size="md" />
+                <div>
+                  <h3 className="text-white font-bold">{teacher.name}</h3>
+                  <p className="text-gray-400 text-sm">{teacher.phone}</p>
+                </div>
+              </div>
+              
+              {/* Check if month is before teacher joined */}
+              {(() => {
+                const selectedDate = new Date(selectedMonth + '-01');
+                const teacherDate = new Date(teacher.created_at);
+                const teacherMonthStart = new Date(teacherDate.getFullYear(), teacherDate.getMonth(), 1);
+                
+                if (selectedDate < teacherMonthStart) {
+                  return (
+                    <div className="mt-4 p-3 bg-warning/10 border border-warning/20 rounded-lg text-center">
+                      <p className="text-warning text-sm font-bold">
+                        <i className="fas fa-info-circle ml-2"></i>
+                        المدرس لم يكن مشتركا في هذا الشهر
+                      </p>
+                    </div>
+                  );
+                }
+                
+                return (
+                  <>
+                    <div className="grid grid-cols-2 gap-4 text-sm mb-3">
+                      <div>
+                        <span className="block text-gray-400 mb-1">عدد الطلاب (في هذا الشهر)</span>
+                        <span className="text-white font-bold">{subscriptionData?.student_count || 0}</span>
+                      </div>
+                      <div>
+                        <span className="block text-gray-400 mb-1">المبلغ المستحق</span>
+                        <span className="text-primary font-bold">${amountDue}</span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 text-sm pt-3 border-t border-white/10">
+                      <div>
+                        <span className="block text-gray-400 mb-1">المبلغ المدفوع</span>
+                        <span className="text-success font-bold text-lg">${amountPaid}</span>
+                      </div>
+                      <div>
+                        <span className="block text-gray-400 mb-1">المبلغ المتبقي</span>
+                        <span className={`font-bold text-lg ${remaining > 0 ? 'text-danger' : 'text-success'}`}>
+                          ${Math.max(0, remaining)}
+                        </span>
+                      </div>
+                    </div>
+                  </>
+                );
+              })()}
+              
+              <div className="mt-3 pt-3 border-t border-white/10 text-center">
+                <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                  isPaid ? 'bg-success/20 text-success' : 
+                  subscriptionData?.status === 'partial' ? 'bg-warning/20 text-warning' : 
+                  'bg-danger/20 text-danger'
+                }`}>
+                  {isPaid ? 'تم الدفع بالكامل' : 
+                   subscriptionData?.status === 'partial' ? 'مدفوع جزئياً' : 
+                   'غير مدفوع'}
+                </span>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Payment Form - Only show if subscribed */}
+        {(() => {
+            const selectedDate = new Date(selectedMonth + '-01');
+            const teacherDate = new Date(teacher.created_at);
+            const teacherMonthStart = new Date(teacherDate.getFullYear(), teacherDate.getMonth(), 1);
+            
+            if (selectedDate >= teacherMonthStart && !fetching && !fetchError && !isPaid) {
+              return (
+                <form onSubmit={handleSubmit} className="mt-6 pt-6 border-t border-white/10">
+                  <div className="mb-4">
+                    <label className="block text-gray-300 mb-2 text-sm">مبلغ الدفع الحالي</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max={amountDue - amountPaid}
+                      value={paymentAmount}
+                      onChange={(e) => setPaymentAmount(Number(e.target.value))}
+                      className="w-full p-2.5 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm"
+                    />
+                  </div>
+
+                  <div className="flex justify-end gap-3">
+                    <button
+                      type="button"
+                      className="px-4 py-1.5 rounded-lg border border-white/10 text-gray-300 hover:bg-white/5 transition-all text-sm"
+                      onClick={onClose}
+                    >
+                      إلغاء
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-1.5 rounded-lg bg-success text-white hover:bg-success/90 transition-all flex items-center gap-2 text-sm"
+                      disabled={loading || paymentAmount <= 0}
+                    >
+                      {loading ? 'جاري الحفظ...' : 'حفظ الدفع'}
+                    </button>
+                  </div>
+                </form>
+              );
+            }
+            return null;
+        })()}
+            
+        {isPaid && (
+          <div className="flex justify-end pt-3 border-t border-white/10 mt-4">
+            <button
+              type="button"
+              className="px-4 py-1.5 rounded-lg border border-white/10 text-gray-300 hover:bg-white/5 transition-all text-sm"
+              onClick={onClose}
+            >
+              إغلاق
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 
 export default function AdminTeachersPage() {
   const { user } = useAuth();
@@ -18,6 +258,8 @@ export default function AdminTeachersPage() {
   const [teachers, setTeachers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
+  const [selectedTeacher, setSelectedTeacher] = useState<any>(null);
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
     teacherId: string | null;
@@ -152,6 +394,11 @@ export default function AdminTeachersPage() {
     setIsModalOpen(true);
   };
 
+  const openSubscriptionModal = (teacher: any) => {
+    setSelectedTeacher(teacher);
+    setIsSubscriptionModalOpen(true);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitLoading(true);
@@ -264,6 +511,12 @@ export default function AdminTeachersPage() {
   ];
 
   const tableActions = [
+    {
+      label: 'دفع الاشتراك',
+      icon: 'fas fa-money-bill-wave',
+      variant: 'success' as const,
+      onClick: (row: any) => openSubscriptionModal(row),
+    },
     {
       label: 'عرض التفاصيل',
       icon: 'fas fa-eye',
@@ -563,6 +816,17 @@ export default function AdminTeachersPage() {
           </div>
         </div>
       )}
+
+      {/* Subscription Modal */}
+      <SubscriptionModal
+        isOpen={isSubscriptionModalOpen}
+        onClose={() => {
+          setIsSubscriptionModalOpen(false);
+          setSelectedTeacher(null);
+        }}
+        teacher={selectedTeacher}
+        onSuccess={() => fetchTeachers(currentPage)}
+      />
 
       {/* Confirmation Modal */}
       {confirmModal.isOpen && (

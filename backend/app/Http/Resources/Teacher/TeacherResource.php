@@ -29,6 +29,8 @@ class TeacherResource extends JsonResource
             'is_suspended' => (bool) $this->is_suspended,
             'joined' => $this->created_at->format('Y-m-d'),
             'created_at' => $this->created_at->toIso8601String(),
+            'subscription_fee' => (float) $this->subscription_fee,
+            'paid_amount' => (float) $this->paid_amount,
             'avatar' => $this->avatar_key ? app(\App\Services\Media\ImageService::class)->getUrl($this->avatar_key) : null,
         ];
     }

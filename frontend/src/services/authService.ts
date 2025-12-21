@@ -464,6 +464,27 @@ export async function loginAsTeacher(id: string): Promise<any> {
 }
 
 /**
+ * Update teacher subscription (Admin only)
+ */
+export async function updateTeacherSubscription(id: string, data: any): Promise<any> {
+  const res = await fetchApi(`/admin/teachers/${id}/subscription`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+  return res;
+}
+
+/**
+ * Get teacher subscription for a month (Admin only)
+ */
+export async function getTeacherSubscription(id: string, month: string): Promise<any> {
+  const res = await fetchApi(`/admin/teachers/${id}/subscription?month=${month}`, {
+    method: 'GET',
+  });
+  return res;
+}
+
+/**
  * Get all students (Admin only)
  */
 export async function getStudents(

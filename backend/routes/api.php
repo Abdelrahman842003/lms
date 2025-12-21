@@ -35,6 +35,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/teachers/{teacher}', [\App\Http\Controllers\Teacher\TeacherController::class, 'show']);
         Route::get('/teachers/{teacher}', [\App\Http\Controllers\Teacher\TeacherController::class, 'show']);
         Route::post('/teachers/{teacher}/login', [\App\Http\Controllers\Admin\TeacherController::class, 'loginAsTeacher']);
+        Route::get('/teachers/{teacher}/subscription', [\App\Http\Controllers\Admin\TeacherController::class, 'getSubscription']);
+        Route::post('/teachers/{teacher}/subscription', [\App\Http\Controllers\Admin\TeacherController::class, 'updateSubscription']);
         Route::put('/teachers/{teacher}/toggle-status', [\App\Http\Controllers\Admin\TeacherController::class, 'toggleStatus']);
         Route::get('/students', [AdminAuthController::class, 'getStudents']);
         Route::put('/students/{student}', [AdminAuthController::class, 'updateStudent']);

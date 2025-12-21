@@ -52,4 +52,34 @@ class TeacherController extends Controller
             'role' => 'teacher'
         ], 'تم تسجيل الدخول بنجاح');
     }
+
+    public function updateSubscription(Request $request, $id)
+    {
+        $request->validate([
+            'month' => 'required|date_format:Y-m',
+            'payment_amount' => 'nullable|numeric|min:0',
+        ]);
+
+        $teacher = $this->teacherService->paySubscription(
+            $id, 
+            $request->month . '-01', 
+            $request->payment_amount ?? 0
+        );
+
+        return $this->successResponse(
+            $teacher, // Returns the subscription object
+            'تم تحديث بيانات الاشتراك بنجاح'
+        );
+    }
+
+    public function getSubscription(Request $request, $id)
+    {
+        $request->validate([
+            'month' => 'required|date_format:Y-m',
+        ]);
+
+        $subscription = $this->teacherService->getSubscriptionForMonth($id, $request->month . '-01');
+
+        return $this->successResponse($subscription);
+    }
 }

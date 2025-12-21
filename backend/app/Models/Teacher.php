@@ -22,6 +22,8 @@ class Teacher extends Authenticatable
         'password',
         'avatar_key',
         'is_suspended',
+        'subscription_fee',
+        'paid_amount',
     ];
 
     protected $hidden = [
@@ -98,5 +100,9 @@ class Teacher extends Authenticatable
         if ($dateTo = $filters['date_to'] ?? null) {
             $query->whereDate('created_at', '<=', $dateTo);
         }
+    }
+    public function subscriptions()
+    {
+        return $this->hasMany(TeacherSubscription::class);
     }
 }
