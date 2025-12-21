@@ -45,53 +45,53 @@ async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise
 }
 
 export const getRoles = async () => {
-  return fetchApi<Role[]>('/api/admin/roles');
+  return fetchApi<Role[]>('/admin/roles');
 };
 
 export const createRole = async (data: { name: string; permissions?: string[] }) => {
-  return fetchApi<Role>('/api/admin/roles', {
+  return fetchApi<Role>('/admin/roles', {
     method: 'POST',
     body: JSON.stringify(data),
   });
 };
 
 export const updateRole = async (id: number, data: { name: string; permissions?: string[] }) => {
-  return fetchApi<Role>(`/api/admin/roles/${id}`, {
+  return fetchApi<Role>(`/admin/roles/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   });
 };
 
 export const deleteRole = async (id: number) => {
-  return fetchApi<void>(`/api/admin/roles/${id}`, {
+  return fetchApi<void>(`/admin/roles/${id}`, {
     method: 'DELETE',
   });
 };
 
 export const getPermissions = async () => {
-  return fetchApi<Permission[]>('/api/admin/permissions');
+  return fetchApi<Permission[]>('/admin/permissions');
 };
 
 export const getTeacherPermissions = async () => {
-  return fetchApi<Permission[]>('/api/teacher/permissions');
+  return fetchApi<Permission[]>('/teacher/permissions');
 };
 
 export const createPermission = async (data: { name: string }) => {
-  return fetchApi<Permission>('/api/admin/permissions', {
+  return fetchApi<Permission>('/admin/permissions', {
     method: 'POST',
     body: JSON.stringify(data),
   });
 };
 
 export const updatePermission = async (id: number, data: { name: string }) => {
-  return fetchApi<Permission>(`/api/admin/permissions/${id}`, {
+  return fetchApi<Permission>(`/admin/permissions/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   });
 };
 
 export const deletePermission = async (id: number) => {
-  return fetchApi<void>(`/api/admin/permissions/${id}`, {
+  return fetchApi<void>(`/admin/permissions/${id}`, {
     method: 'DELETE',
   });
 };

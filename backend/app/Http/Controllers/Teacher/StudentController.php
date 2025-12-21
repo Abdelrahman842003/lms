@@ -261,6 +261,23 @@ class StudentController extends Controller
     }
 
     /**
+     * Get activation details
+     */
+    public function activationDetails(Request $request, string $id)
+    {
+        $teacher = $request->user();
+        
+        $enrollment = Enrollment::with(['student', 'grade', 'group'])
+            ->where('teacher_id', $teacher->id)
+            ->where('student_id', $id)
+            ->firstOrFail();
+
+        $details = $this->studentService->getActivationDetails($enrollment);
+
+        return $this->successResponse($details);
+    }
+
+    /**
      * Activate student subscription (1 month)
      */
     public function activate(Request $request, string $id)
@@ -271,20 +288,11 @@ class StudentController extends Controller
             ->where('student_id', $id)
             ->firstOrFail();
 
-        $startDate = now();
-        $endDate = now()->addDays(30);
+        $result = $this->studentService->activate($enrollment, $request->all());
 
-        $this->studentService->updateEnrollment($enrollment, [
-            'is_active' => true,
-            'subscription_start' => $startDate,
-            'subscription_end' => $endDate,
-        ]);
-
-        return $this->successResponse([
-            'message' => 'تم تفعيل اشتراك الطالب لمدة شهر بنجاح',
-            'subscription_end' => $endDate->format('Y-m-d'),
-            'status' => 'active',
-            'days_left' => 30
-        ]);
+        return $this->successResponse(array_merge(
+            ['message' => 'تم تفعيل اشتراك الطالب لمدة شهر بنجاح'],
+            $result
+        ));
     }
 }

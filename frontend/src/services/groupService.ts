@@ -7,6 +7,8 @@ export interface Group {
   grade_name: string | null;
   time: string | null;
   days: string | null;
+  type: 'general' | 'private';
+  price: number | null;
   students_count: number;
   created_at: string;
 }
@@ -16,6 +18,8 @@ export interface CreateGroupData {
   grade_id?: string | null;
   time?: string | null;
   days?: string | null;
+  type?: 'general' | 'private';
+  price?: number;
 }
 
 export interface UpdateGroupData {
@@ -23,6 +27,8 @@ export interface UpdateGroupData {
   grade_id?: string | null;
   time?: string | null;
   days?: string | null;
+  type?: 'general' | 'private';
+  price?: number;
 }
 
 export const getGroups = async (

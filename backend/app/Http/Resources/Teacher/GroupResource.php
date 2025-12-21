@@ -16,6 +16,8 @@ class GroupResource extends JsonResource
             'grade_name' => $this->grade ? $this->grade->name : null,
             'time' => $this->time,
             'days' => $this->days,
+            'type' => $this->type,
+            'price' => $this->price,
             'students_count' => $this->enrollments_count,
             'created_at' => $this->created_at,
         ];

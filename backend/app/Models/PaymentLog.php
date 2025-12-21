@@ -27,7 +27,9 @@ class PaymentLog extends Model
         'expires_at',
         'ip_address',
         'device_info',
+        'device_info',
         'notes',
+        'meta',
     ];
 
     protected function casts(): array
@@ -36,6 +38,7 @@ class PaymentLog extends Model
             'amount' => 'decimal:2',
             'confirmed_at' => 'datetime',
             'expires_at' => 'datetime',
+            'meta' => 'array',
         ];
     }
 

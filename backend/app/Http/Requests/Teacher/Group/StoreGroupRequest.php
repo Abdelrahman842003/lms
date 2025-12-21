@@ -14,9 +14,12 @@ class StoreGroupRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'name' => 'required|string|max:255',
             'grade_id' => 'nullable|exists:grades,id',
             'time' => 'nullable|string|max:255',
             'days' => 'nullable|string|max:255',
+            'type' => 'required|in:general,private',
+            'price' => 'nullable|numeric|min:0',
         ];
     }
 }

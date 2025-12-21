@@ -6,7 +6,7 @@ import { DataTable } from '@/components/dashboard/DataTable';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { ConfirmationModal } from '@/components/ui';
 import { useAuth } from '@/contexts/AuthContext';
-import { getTeacherStudents, deleteTeacherStudent } from '@/services/authService';
+import { getTeacherStudents, deleteTeacherStudent, activateTeacherStudent, toggleTeacherStudentStatus, getStudentActivationDetails } from '@/services/authService';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -26,10 +26,11 @@ export default function StudentsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalConfig, setModalConfig] = useState({
     title: '',
-    message: '',
+    message: '' as React.ReactNode,
     confirmText: '',
     variant: 'danger' as 'danger' | 'success',
     onConfirm: () => {},
+    showCancel: true,
   });
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -53,40 +54,116 @@ export default function StudentsPage() {
     }
   };
 
-  const handleActivate = (student: any) => {
-    setModalConfig({
-      title: 'تفعيل الاشتراك',
-      message: `هل أنت متأكد من تفعيل اشتراك الطالب "${student.name}" لمدة شهر؟`,
-      confirmText: 'تفعيل',
-      variant: 'success',
-      onConfirm: async () => {
-        try {
-          setIsProcessing(true);
-          const token = localStorage.getItem('token');
-          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/teacher/students/${student.id}/activate`, {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-              'Authorization': `Bearer ${token}`,
-            },
-          });
+  const handleActivate = async (student: any) => {
+    try {
+      setIsProcessing(true);
+      const details = await getStudentActivationDetails(student.id);
+      setIsProcessing(false);
 
-          if (response.ok) {
-            setModalOpen(false);
-            fetchStudents();
-          } else {
-            alert('فشل تفعيل الاشتراك');
-          }
-        } catch (error) {
-          console.error('Failed to activate student:', error);
-          alert('فشل تفعيل الاشتراك');
-        } finally {
-          setIsProcessing(false);
+      // Helper component for the modal content to manage state
+      const ActivationContent = ({ details, onConfirm }: { details: any, onConfirm: (source: string, price: number) => void }) => {
+        const options = details.pricing_options || [];
+        const [selectedOption, setSelectedOption] = useState(options.find((o: any) => o.is_default) || options[0] || null);
+
+        if (!selectedOption) {
+           return <div className="text-red-500">خطأ في تحميل تفاصيل الدفع. يرجى المحاولة مرة أخرى.</div>;
         }
-      },
-    });
-    setModalOpen(true);
+
+        return (
+          <div className="space-y-4">
+            <p className="text-gray-300">هل أنت متأكد من تفعيل اشتراك الطالب <span className="text-white font-bold">{details.student_name}</span> لمدة شهر؟</p>
+            
+            <div className="bg-white/5 p-4 rounded-lg border border-white/10 space-y-3">
+              <div className="space-y-2">
+                <label className="text-sm text-gray-400 block mb-2">اختر نظام الدفع:</label>
+                {details.pricing_options.map((option: any) => (
+                  <label 
+                    key={option.key}
+                    className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all ${
+                      selectedOption.key === option.key 
+                        ? 'bg-primary/10 border-primary' 
+                        : 'bg-transparent border-white/10 hover:bg-white/5'
+                    }`}
+                    onClick={() => setSelectedOption(option)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                        selectedOption.key === option.key ? 'border-primary' : 'border-gray-500'
+                      }`}>
+                        {selectedOption.key === option.key && <div className="w-2 h-2 rounded-full bg-primary"></div>}
+                      </div>
+                      <span className={selectedOption.key === option.key ? 'text-white' : 'text-gray-400'}>
+                        {option.label}
+                      </span>
+                    </div>
+                    <span className="font-mono text-white">{option.base_price} ج.م</span>
+                  </label>
+                ))}
+              </div>
+
+              <div className="pt-3 border-t border-white/10 space-y-2 text-sm">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-400">سعر الاشتراك:</span>
+                  <span className="text-white font-mono">{selectedOption.base_price} ج.م</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-400">رسوم المنصة:</span>
+                  <span className="text-white font-mono">{details.platform_fee} ج.م</span>
+                </div>
+                <div className="border-t border-white/10 pt-2 mt-2 flex justify-between items-center font-bold text-lg">
+                  <span className="text-primary">الإجمالي المطلوب:</span>
+                  <span className="text-primary font-mono">{selectedOption.total_price} ج.م</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 mt-6">
+              <button 
+                className="btn btn-outline"
+                onClick={() => setModalOpen(false)}
+              >
+                إلغاء
+              </button>
+              <button 
+                className="btn btn-success"
+                onClick={() => onConfirm(selectedOption.key, selectedOption.total_price)}
+              >
+                تأكيد وتفعيل
+              </button>
+            </div>
+          </div>
+        );
+      };
+
+      setModalConfig({
+        title: 'تفعيل الاشتراك',
+        message: <ActivationContent 
+          details={details} 
+          onConfirm={async (source, price) => {
+            try {
+              setIsProcessing(true);
+              await activateTeacherStudent(student.id, price, source);
+              setModalOpen(false);
+              fetchStudents();
+            } catch (error) {
+              console.error('Failed to activate student:', error);
+              alert('فشل تفعيل الاشتراك');
+            } finally {
+              setIsProcessing(false);
+            }
+          }} 
+        />,
+        confirmText: '', // Handled inside component
+        variant: 'success',
+        onConfirm: () => {}, // Handled inside component
+        showCancel: false // Handled inside component
+      });
+      setModalOpen(true);
+    } catch (error) {
+      console.error('Failed to get activation details:', error);
+      alert('فشل جلب تفاصيل الاشتراك');
+      setIsProcessing(false);
+    }
   };
 
   const handleDelete = (student: any) => {
@@ -122,22 +199,9 @@ export default function StudentsPage() {
       onConfirm: async () => {
         try {
           setIsProcessing(true);
-          const token = localStorage.getItem('token');
-          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/teacher/students/${student.id}/toggle-status`, {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-              'Authorization': `Bearer ${token}`,
-            },
-          });
-
-          if (response.ok) {
-            setModalOpen(false);
-            fetchStudents();
-          } else {
-            alert(`فشل ${isDisabling ? 'تعطيل' : 'تفعيل'} الحساب`);
-          }
+          await toggleTeacherStudentStatus(student.id);
+          setModalOpen(false);
+          fetchStudents();
         } catch (error) {
           console.error('Failed to toggle student status:', error);
           alert(`فشل ${isDisabling ? 'تعطيل' : 'تفعيل'} الحساب`);
@@ -303,6 +367,7 @@ export default function StudentsPage() {
         onConfirm={modalConfig.onConfirm}
         onCancel={() => setModalOpen(false)}
         isProcessing={isProcessing}
+        showCancel={modalConfig.showCancel}
       />
     </DashboardLayout>
   );

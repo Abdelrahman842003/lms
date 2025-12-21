@@ -31,6 +31,8 @@ export default function GroupsPage() {
     grade_id: null,
     time: '',
     days: '',
+    type: 'general',
+    price: 0,
   });
 
   // Stats
@@ -76,7 +78,7 @@ export default function GroupsPage() {
 
   const handleAddClick = () => {
     setIsEditing(false);
-    setFormData({ name: '', grade_id: null, time: '', days: '' });
+    setFormData({ name: '', grade_id: null, time: '', days: '', type: 'general', price: 0 });
     setShowModal(true);
   };
 
@@ -88,6 +90,8 @@ export default function GroupsPage() {
       grade_id: group.grade_id,
       time: group.time || '',
       days: group.days || '',
+      type: group.type || 'general',
+      price: group.price || 0,
     });
     setShowModal(true);
   };
@@ -142,6 +146,18 @@ export default function GroupsPage() {
       label: 'الصف الدراسي',
       sortable: true,
       render: (value: string | null) => value || '-',
+    },
+    {
+      key: 'type',
+      label: 'النوع',
+      sortable: true,
+      render: (value: string) => value === 'private' ? 'خاصة' : 'عامة',
+    },
+    {
+      key: 'price',
+      label: 'السعر',
+      sortable: true,
+      render: (value: number | null, row: Group) => row.type === 'private' ? `${value} ج.م` : '-',
     },
     {
       key: 'created_at',
@@ -284,6 +300,32 @@ export default function GroupsPage() {
                     placeholder="مثال: 4:00 عصراً"
                   />
                 </div>
+                <div>
+                  <label htmlFor="type" className="block text-gray-light mb-2 text-sm">نوع المجموعة</label>
+                  <select
+                    id="type"
+                    className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                    value={formData.type}
+                    onChange={(e) => setFormData({ ...formData, type: e.target.value as 'general' | 'private' })}
+                  >
+                    <option value="general" className="bg-[#1a1f37]">عامة (سعر الصف)</option>
+                    <option value="private" className="bg-[#1a1f37]">خاصة (سعر مخصص)</option>
+                  </select>
+                </div>
+                {formData.type === 'private' && (
+                  <div>
+                    <label htmlFor="price" className="block text-gray-light mb-2 text-sm">سعر الاشتراك الشهري</label>
+                    <input
+                      type="number"
+                      id="price"
+                      className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                      value={formData.price}
+                      onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
+                      min="0"
+                      placeholder="0"
+                    />
+                  </div>
+                )}
                 <div>
                   <label htmlFor="days" className="block text-gray-light mb-2 text-sm">الأيام (اختياري)</label>
                   <input

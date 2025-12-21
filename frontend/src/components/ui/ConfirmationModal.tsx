@@ -6,7 +6,7 @@ import { createPortal } from 'react-dom';
 interface ConfirmationModalProps {
   isOpen: boolean;
   title: string;
-  message: string;
+  message: React.ReactNode;
   confirmText?: string;
   cancelText?: string;
   onConfirm: () => void;
@@ -47,9 +47,10 @@ export default function ConfirmationModal({
         </div>
         
         <div className="modal-body">
-          <p>{message}</p>
+          <div>{message}</div>
         </div>
 
+        {(showCancel || confirmText) && (
         <div className="modal-footer">
           {showCancel && (
             <button 
@@ -60,21 +61,24 @@ export default function ConfirmationModal({
               {cancelText}
             </button>
           )}
-          <button 
-            className={`btn btn-${variant}`} 
-            onClick={onConfirm}
-            disabled={isProcessing}
-          >
-            {isProcessing ? (
-              <>
-                <i className="fas fa-spinner fa-spin"></i>
-                <span>جاري التنفيذ...</span>
-              </>
-            ) : (
-              confirmText
-            )}
-          </button>
+          {confirmText && (
+            <button 
+              className={`btn btn-${variant}`} 
+              onClick={onConfirm}
+              disabled={isProcessing}
+            >
+              {isProcessing ? (
+                <>
+                  <i className="fas fa-spinner fa-spin"></i>
+                  <span>جاري التنفيذ...</span>
+                </>
+              ) : (
+                confirmText
+              )}
+            </button>
+          )}
         </div>
+        )}
       </div>
 
       <style jsx>{`

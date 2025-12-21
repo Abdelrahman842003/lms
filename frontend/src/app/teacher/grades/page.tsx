@@ -25,6 +25,7 @@ export default function GradesPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<CreateGradeData>({
     name: '',
+    price: 0,
   });
 
   // Stats
@@ -57,7 +58,7 @@ export default function GradesPage() {
 
   const handleAddClick = () => {
     setIsEditing(false);
-    setFormData({ name: '' });
+    setFormData({ name: '', price: 0 });
     setShowModal(true);
   };
 
@@ -66,6 +67,7 @@ export default function GradesPage() {
     setSelectedGrade(grade);
     setFormData({
       name: grade.name,
+      price: grade.price || 0,
     });
     setShowModal(true);
   };
@@ -114,6 +116,12 @@ export default function GradesPage() {
       key: 'name',
       label: 'الصف الدراسي',
       sortable: true,
+    },
+    {
+      key: 'price',
+      label: 'سعر الاشتراك',
+      sortable: true,
+      render: (value: number) => `${value} ج.م`,
     },
     {
       key: 'groups_count',
@@ -236,6 +244,19 @@ export default function GradesPage() {
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     required
                     placeholder="مثال: الصف الأول الثانوي"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label htmlFor="price" className="block text-sm font-medium text-gray-300">سعر الاشتراك الشهري</label>
+                  <input
+                    type="number"
+                    id="price"
+                    className="w-full p-3 bg-[#151521] border border-white/10 rounded-lg text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                    value={formData.price}
+                    onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
+                    min="0"
+                    required
+                    placeholder="0"
                   />
                 </div>
               </div>

@@ -235,9 +235,23 @@ export const DataTable: React.FC<DataTableProps> = ({
                           onClick={(e) => {
                             e.stopPropagation();
                             const rect = e.currentTarget.getBoundingClientRect();
+                            const menuWidth = 180; // min-width
+                            const screenWidth = window.innerWidth;
+                            
+                            // Check if menu would go off-screen to the right
+                            let left = rect.left;
+                            if (left + menuWidth > screenWidth - 20) {
+                              left = rect.right - menuWidth;
+                            }
+                            
+                            // Ensure it doesn't go off-screen to the left
+                            if (left < 20) {
+                              left = 20;
+                            }
+
                             setDropdownPosition({
-                              top: rect.bottom + window.scrollY + 8,
-                              left: rect.left + window.scrollX,
+                              top: rect.bottom + 8,
+                              left: left,
                             });
                             setActiveDropdown(
                               activeDropdown === rowIndex ? null : rowIndex
@@ -251,7 +265,7 @@ export const DataTable: React.FC<DataTableProps> = ({
                             ref={dropdownRef}
                             className="actions-menu show"
                             style={{
-                              position: 'absolute',
+                              position: 'fixed',
                               top: dropdownPosition.top,
                               left: dropdownPosition.left,
                               zIndex: 9999,

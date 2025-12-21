@@ -270,6 +270,125 @@ class StudentService
     }
 
     /**
+     * Get activation details (price breakdown)
+     */
+    /**
+     * Get activation details (price breakdown)
+     */
+    public function getActivationDetails(Enrollment $enrollment): array
+    {
+        $platformFee = (float) \App\Models\Setting::getValue('platform_fee', 15);
+        
+        $options = [];
+        
+        // Option 1: Grade Price (Always available if grade exists)
+        if ($enrollment->grade) {
+            $gradePrice = (float) $enrollment->grade->price;
+            $options[] = [
+                'key' => 'grade',
+                'label' => 'سعر الصف الدراسي',
+                'base_price' => $gradePrice,
+                'total_price' => $gradePrice + $platformFee,
+                'is_default' => true
+            ];
+        }
+
+        // Option 2: Group Price (Only if private group with price)
+        if ($enrollment->group && $enrollment->group->type === 'private' && $enrollment->group->price !== null) {
+            $groupPrice = (float) $enrollment->group->price;
+            $options[] = [
+                'key' => 'private_group',
+                'label' => 'سعر المجموعة الخاصة',
+                'base_price' => $groupPrice,
+                'total_price' => $groupPrice + $platformFee,
+                'is_default' => false
+            ];
+        }
+
+        // If no options (shouldn't happen normally), default to 0
+        if (empty($options)) {
+            $options[] = [
+                'key' => 'default',
+                'label' => 'سعر افتراضي',
+                'base_price' => 0,
+                'total_price' => $platformFee,
+                'is_default' => true
+            ];
+        }
+
+        return [
+            'student_name' => $enrollment->student->name,
+            'grade_name' => $enrollment->grade?->name,
+            'group_name' => $enrollment->group?->name,
+            'platform_fee' => $platformFee,
+            'pricing_options' => $options
+        ];
+    }
+
+    /**
+     * Activate student subscription
+     */
+    public function activate(Enrollment $enrollment, array $data = []): array
+    {
+        return DB::transaction(function () use ($enrollment, $data) {
+            $startDate = now();
+            $endDate = now()->addDays(30);
+            
+            // Get details to validate price
+            $details = $this->getActivationDetails($enrollment);
+            $options = collect($details['pricing_options']);
+            
+            // Determine selected option
+            $selectedKey = $data['pricing_source'] ?? 'grade';
+            $selectedOption = $options->firstWhere('key', $selectedKey) ?? $options->first();
+            
+            $expectedAmount = $selectedOption['total_price'];
+            $paidAmount = $data['paid_amount'] ?? $expectedAmount;
+
+            $enrollment->update([
+                'is_active' => true,
+                'subscription_start' => $startDate,
+                'subscription_end' => $endDate,
+            ]);
+
+            // Log payment if amount > 0
+            if ($paidAmount > 0) {
+                \App\Models\PaymentLog::create([
+                    'client_side_uuid' => \Illuminate\Support\Str::uuid(),
+                    'enrollment_id' => $enrollment->id,
+                    'teacher_id' => $enrollment->teacher_id,
+                    'student_id' => $enrollment->student_id,
+                    'amount' => $paidAmount,
+                    'status' => 'confirmed',
+                    'confirmed_at' => now(),
+                    'received_by_id' => auth()->id(),
+                    'received_by_type' => 'teacher',
+                    'notes' => 'Subscription activation',
+                    'meta' => [
+                        'base_price' => $selectedOption['base_price'],
+                        'platform_fee' => $details['platform_fee'],
+                        'source' => $selectedOption['key'],
+                        'type' => 'subscription'
+                    ]
+                ]);
+            }
+
+            StudentActivityLog::log(
+                $enrollment->student_id,
+                StudentActivityLog::ACTION_STATUS_CHANGE,
+                $enrollment->id,
+                ['is_active' => true, 'subscription_end' => $endDate]
+            );
+
+            return [
+                'subscription_end' => $endDate->format('Y-m-d'),
+                'days_left' => 30,
+                'status' => 'active'
+            ];
+        });
+    }
+
+    /**
      * Generate slug from Arabic name
      */
     private function generateSlug(string $name): string

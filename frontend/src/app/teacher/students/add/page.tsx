@@ -203,9 +203,10 @@ export default function AddStudentPage() {
         errors.group_id = 'المجموعة مطلوبة';
       }
 
-      if (!formData.location.trim()) {
-        errors.location = 'الموقع مطلوب';
-      }
+      // Location is optional
+      // if (!formData.location.trim()) {
+      //   errors.location = 'الموقع مطلوب';
+      // }
     }
     
     if (alreadyEnrolled) {
@@ -581,13 +582,16 @@ export default function AddStudentPage() {
               <input
                 type="text"
                 id="location"
-                className="w-full p-3 bg-transparent border border-white/10 rounded-lg text-white text-[1rem] focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                className={`w-full p-3 bg-transparent border rounded-lg text-white text-[1rem] focus:ring-1 outline-none transition-all ${
+                  formErrors.location ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-white/10 focus:border-primary focus:ring-primary'
+                } disabled:opacity-60 disabled:cursor-not-allowed`}
                 value={formData.location}
                 onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                 placeholder="أدخل موقع الطالب"
                 disabled={isSubmitting || !isPhoneChecked || existingStudentFound}
                 readOnly={existingStudentFound}
               />
+              {formErrors.location && <span className="text-red-500 text-sm mt-1 block">{formErrors.location}</span>}
               <span className="text-gray-light text-sm mt-1 block flex items-center gap-1">
                 <i className="fas fa-map-marker-alt"></i>
                 مكان إقامة الطالب

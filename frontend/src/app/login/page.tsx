@@ -136,7 +136,8 @@ export default function LoginPage() {
       } else if (err.status === 429) {
         setError('تم تجاوز عدد المحاولات المسموحة. حاول مرة أخرى بعد قليل.');
       } else {
-        setError('فشل تسجيل الدخول. يرجى المحاولة مرة أخرى.');
+        // Show the actual error message if available, otherwise generic
+        setError(err.message || 'فشل تسجيل الدخول. يرجى المحاولة مرة أخرى.');
       }
     }
   };

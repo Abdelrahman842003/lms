@@ -12,7 +12,7 @@ class PermissionController extends Controller
     public function index()
     {
         $permissions = Permission::whereIn('guard_name', ['student', 'secretary'])->get();
-        return $this->successResponse(['data' => $permissions]);
+        return $this->successResponse($permissions);
     }
 
     public function store(StorePermissionRequest $request)

@@ -182,6 +182,21 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}, skip
     credentials: 'include', // Important for Sanctum SPA
   });
 
+  // Handle 419 CSRF Token Mismatch - Retry once
+  if (response.status === 419) {
+    await csrf(); // Refresh the cookie
+    const newXsrfToken = getCookie('XSRF-TOKEN');
+    
+    if (newXsrfToken) {
+      headers['X-XSRF-TOKEN'] = newXsrfToken;
+      response = await fetch(url, {
+        ...options,
+        headers,
+        credentials: 'include',
+      });
+    }
+  }
+
   // Handle 401 Unauthorized - Attempt Refresh (only if not a login request)
   if (response.status === 401 && !skipAuthEvent) {
     const newToken = await refreshAccessToken();
@@ -198,7 +213,17 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}, skip
   }
 
     if (!response.ok) {
-      const error: ApiError = await response.json();
+      let error: any;
+      try {
+        error = await response.json();
+      } catch (e) {
+        // If JSON parse fails, try to get text
+        const text = await response.text();
+        error = { message: text || `API Error: ${response.status}` };
+      }
+
+      console.error('API Error:', response.status, error);
+
       const errorWithStatus = new Error(error.message || 'API request failed') as any;
       errorWithStatus.status = response.status;
       errorWithStatus.errors = error.errors;
@@ -615,6 +640,35 @@ export async function getTeacherStudentDetails(id: string): Promise<any> {
 export async function deleteTeacherStudent(id: string): Promise<any> {
   return await fetchApi(`/teacher/students/${id}`, {
     method: 'DELETE',
+  });
+}
+
+/**
+ * Activate student subscription for teacher
+ */
+export async function activateTeacherStudent(id: string, paidAmount?: number, pricingSource?: string): Promise<any> {
+  return await fetchApi(`/teacher/students/${id}/activate`, {
+    method: 'PUT',
+    body: JSON.stringify({ 
+      paid_amount: paidAmount,
+      pricing_source: pricingSource 
+    }),
+  });
+}
+
+/**
+ * Get student activation details
+ */
+export async function getStudentActivationDetails(id: string): Promise<any> {
+  return await fetchApi(`/teacher/students/${id}/activation-details`);
+}
+
+/**
+ * Toggle student status for teacher
+ */
+export async function toggleTeacherStudentStatus(id: string): Promise<any> {
+  return await fetchApi(`/teacher/students/${id}/toggle-status`, {
+    method: 'PUT',
   });
 }
 

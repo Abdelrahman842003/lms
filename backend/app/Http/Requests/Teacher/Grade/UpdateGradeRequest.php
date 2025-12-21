@@ -15,6 +15,7 @@ class UpdateGradeRequest extends FormRequest
     {
         return [
             'name' => 'required|string|max:255',
+            'price' => 'nullable|numeric|min:0',
         ];
     }
 }

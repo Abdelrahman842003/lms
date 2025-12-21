@@ -130,8 +130,8 @@ export default function EditStudentPage() {
         parent_phone: formData.parent_phone || null,
         gender: formData.gender,
         education_type: formData.education_type || null,
-        grade_id: formData.grade_id ? parseInt(formData.grade_id) : null,
-        group_id: formData.group_id ? parseInt(formData.group_id) : null,
+        grade_id: formData.grade_id || null,
+        group_id: formData.group_id || null,
         location: formData.location || null,
       };
 

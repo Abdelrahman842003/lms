@@ -86,6 +86,7 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureTeacherNotSuspende
     Route::get('students/search-phone', [\App\Http\Controllers\Teacher\StudentController::class, 'searchByPhone']);
     Route::put('students/{student}/permissions', [\App\Http\Controllers\Teacher\StudentController::class, 'updatePermissions']);
     Route::put('students/{student}/toggle-status', [\App\Http\Controllers\Teacher\StudentController::class, 'toggleStatus']);
+    Route::get('students/{student}/activation-details', [\App\Http\Controllers\Teacher\StudentController::class, 'activationDetails']);
     Route::put('students/{student}/activate', [\App\Http\Controllers\Teacher\StudentController::class, 'activate']);
     Route::apiResource('students', \App\Http\Controllers\Teacher\StudentController::class);
     

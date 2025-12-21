@@ -18,6 +18,8 @@ class Group extends Model
         'teacher_id',
         'time',
         'days',
+        'type',
+        'price',
     ];
 
     public function teacher()

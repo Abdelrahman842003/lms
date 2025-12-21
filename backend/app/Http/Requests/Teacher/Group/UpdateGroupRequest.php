@@ -18,6 +18,8 @@ class UpdateGroupRequest extends FormRequest
             'grade_id' => 'nullable|exists:grades,id',
             'time' => 'nullable|string|max:255',
             'days' => 'nullable|string|max:255',
+            'type' => 'nullable|in:general,private',
+            'price' => 'nullable|numeric|min:0',
         ];
     }
 }

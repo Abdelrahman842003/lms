@@ -5,15 +5,18 @@ export interface Grade {
   name: string;
   groups_count: number;
   students_count: number;
+  price: number;
   created_at: string;
 }
 
 export interface CreateGradeData {
   name: string;
+  price: number;
 }
 
 export interface UpdateGradeData {
   name: string;
+  price?: number;
 }
 
 export const getGrades = async (

@@ -14,15 +14,14 @@ class TeacherResource extends JsonResource
             'name' => $this->name,
             'phone' => $this->phone,
             'role' => 'teacher',
-            'students_count' => $this->whenCounted('students') ?? 0,
-            'secretaries_count' => $this->whenCounted('secretaries') ?? 0,
+            'students_count' => $this->resource->students_count ?? 0,
+            'secretaries_count' => $this->resource->secretaries_count ?? 0,
             'students' => $this->whenLoaded('students'),
             'secretaries' => $this->whenLoaded('secretaries'),
             'revenue' => (function() {
-                $count = $this->whenCounted('students') ?? 0;
+                $count = $this->resource->students_count ?? 0;
                 $setting = \App\Models\Setting::where('key', 'pricePerStudent')->value('value');
                 $price = is_numeric($setting) ? (float) $setting : 0;
-                \Illuminate\Support\Facades\Log::info("Teacher {$this->id} Revenue Calc: Count={$count}, Price={$price}, Total=" . ($count * $price));
                 return $count * $price;
             })(),
             'status' => $this->is_suspended ? 'معلق' : 'نشط',
