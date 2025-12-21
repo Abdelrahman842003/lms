@@ -17,6 +17,8 @@ function AdminDashboard() {
     students_count: 0,
     secretaries_count: 0,
     total_revenue: 0,
+    active_enrollments_count: 0,
+    price_per_student: 0,
   });
   const [systemActivity, setSystemActivity] = React.useState<any[]>([]);
 
@@ -69,7 +71,11 @@ function AdminDashboard() {
       label: 'الإيرادات',
       sortable: true,
       className: 'hidden lg:table-cell',
-      render: (value: number) => `$${value?.toLocaleString() || '0'}`,
+      render: (value: number, item: any) => {
+        // Fallback calculation if backend returns 0 (due to potential caching/resource issues)
+        const revenue = value || (item.students_count * (stats.price_per_student || 0));
+        return `$${revenue?.toLocaleString() || '0'}`;
+      },
     },
     {
       key: 'status',
@@ -123,7 +129,11 @@ function AdminDashboard() {
           icon="fas fa-wallet"
           color="success"
           trend={{ value: 15, label: 'مقارنة بالشهر الماضي', isPositive: true }}
-        />
+        >
+          <div className="text-xs text-gray-400 mt-2">
+            {stats.students_count} طالب (الكل) × {stats.price_per_student || 0} ج.م
+          </div>
+        </StatCard>
       </div>
 
       {/* Content Grid */}

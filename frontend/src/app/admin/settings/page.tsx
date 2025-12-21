@@ -19,6 +19,7 @@ function SettingsPage() {
     siteName: 'نطاق',
     siteDescription: 'منصة تعليمية متكاملة',
     maintenanceMode: false,
+    pricePerStudent: '0',
   });
 
 
@@ -34,6 +35,7 @@ function SettingsPage() {
         if (data.siteName) setGeneralSettings(prev => ({ ...prev, siteName: data.siteName }));
         if (data.siteDescription) setGeneralSettings(prev => ({ ...prev, siteDescription: data.siteDescription }));
         if (data.maintenanceMode) setGeneralSettings(prev => ({ ...prev, maintenanceMode: data.maintenanceMode === 'true' }));
+        if (data.pricePerStudent) setGeneralSettings(prev => ({ ...prev, pricePerStudent: data.pricePerStudent }));
 
 
       } catch (error) {
@@ -56,6 +58,7 @@ function SettingsPage() {
       { key: 'siteName', value: generalSettings.siteName, group: 'general' },
       { key: 'siteDescription', value: generalSettings.siteDescription, group: 'general' },
       { key: 'maintenanceMode', value: String(generalSettings.maintenanceMode), group: 'general' },
+      { key: 'pricePerStudent', value: generalSettings.pricePerStudent, group: 'general' },
     ];
 
     try {
@@ -136,6 +139,26 @@ function SettingsPage() {
                       onChange={(e) => setGeneralSettings({...generalSettings, siteDescription: e.target.value})}
                       className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
                     />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                  <div>
+                    <label className="block text-gray-300 mb-2 text-sm">سعر الطالب للمدرس (شهرياً)</label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={generalSettings.pricePerStudent}
+                        onChange={(e) => setGeneralSettings({...generalSettings, pricePerStudent: e.target.value})}
+                        className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all pl-10"
+                      />
+                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                        ج.م
+                      </div>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">يستخدم هذا السعر لحساب الإيرادات المتوقعة من كل طالب</p>
                   </div>
                 </div>
 

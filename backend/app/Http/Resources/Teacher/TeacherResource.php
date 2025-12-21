@@ -18,7 +18,13 @@ class TeacherResource extends JsonResource
             'secretaries_count' => $this->whenCounted('secretaries') ?? 0,
             'students' => $this->whenLoaded('students'),
             'secretaries' => $this->whenLoaded('secretaries'),
-            'revenue' => 0, // Placeholder
+            'revenue' => (function() {
+                $count = $this->whenCounted('students') ?? 0;
+                $setting = \App\Models\Setting::where('key', 'pricePerStudent')->value('value');
+                $price = is_numeric($setting) ? (float) $setting : 0;
+                \Illuminate\Support\Facades\Log::info("Teacher {$this->id} Revenue Calc: Count={$count}, Price={$price}, Total=" . ($count * $price));
+                return $count * $price;
+            })(),
             'status' => $this->is_suspended ? 'معلق' : 'نشط',
             'is_suspended' => (bool) $this->is_suspended,
             'joined' => $this->created_at->format('Y-m-d'),

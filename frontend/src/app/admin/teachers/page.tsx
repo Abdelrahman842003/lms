@@ -7,7 +7,7 @@ import { DataTable } from '@/components/dashboard/DataTable';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { useAuth } from '@/contexts/AuthContext';
-import { getTeachers, createTeacher, updateTeacher, toggleTeacherStatus, loginAsTeacher } from '@/services/authService';
+import { getTeachers, createTeacher, updateTeacher, toggleTeacherStatus, loginAsTeacher, getDashboardStats } from '@/services/authService';
 import { toast } from 'react-hot-toast';
 
 import { Avatar } from '@/components/ui';
@@ -51,6 +51,8 @@ export default function AdminTeachersPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
+  const [totalRevenue, setTotalRevenue] = useState(0);
+  const [totalStudents, setTotalStudents] = useState(0);
   const itemsPerPage = 10;
 
   const filterRef = useRef<HTMLDivElement>(null);
@@ -86,14 +88,28 @@ export default function AdminTeachersPage() {
         date_from: filters.dateFrom || undefined,
         date_to: filters.dateTo || undefined
       };
-      const response = await getTeachers(page, itemsPerPage, activeFilters);
-      console.log('Fetched teachers:', response.data);
-      setTeachers(response.data);
-      setTotalPages(response.meta.last_page);
-      setTotalItems(response.meta.total);
-      setCurrentPage(response.meta.current_page);
+      
+      const [teachersRes, statsRes] = await Promise.all([
+        getTeachers(page, itemsPerPage, activeFilters),
+        getDashboardStats()
+      ]);
+
+      console.log('Fetched teachers:', teachersRes.data);
+      setTeachers(teachersRes.data);
+      setTotalPages(teachersRes.meta.last_page);
+      setTotalItems(teachersRes.meta.total);
+      setCurrentPage(teachersRes.meta.current_page);
+
+      // Set stats
+      if (statsRes) {
+        setTotalStudents(statsRes.students_count || 0);
+        // Calculate revenue with fallback
+        const calculatedRevenue = statsRes.total_revenue || (statsRes.students_count * (statsRes.price_per_student || 0));
+        setTotalRevenue(calculatedRevenue);
+      }
+
     } catch (error) {
-      console.error('Failed to fetch teachers', error);
+      console.error('Failed to fetch data', error);
     } finally {
       setIsLoading(false);
     }
@@ -314,7 +330,7 @@ export default function AdminTeachersPage() {
 
         <StatCard
           title="إجمالي الطلاب"
-          value={0}
+          value={totalStudents}
           icon="fas fa-users"
           color="warning"
           variant="centered"
@@ -322,7 +338,7 @@ export default function AdminTeachersPage() {
 
         <StatCard
           title="إجمالي الإيرادات"
-          value={0}
+          value={totalRevenue}
           icon="fas fa-dollar-sign"
           color="danger"
           prefix="$"
@@ -340,10 +356,7 @@ export default function AdminTeachersPage() {
               <i className="fas fa-plus"></i>
               <span>إضافة مدرس جديد</span>
             </button>
-            <button className="btn btn-sm btn-outline">
-              <i className="fas fa-download"></i>
-              <span>تصدير Excel</span>
-            </button>
+
             <div className="relative" ref={filterRef}>
               <button 
                 className={`btn btn-sm ${showFilter ? 'btn-primary' : 'btn-outline'}`}

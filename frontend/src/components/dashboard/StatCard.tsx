@@ -50,6 +50,7 @@ interface StatCardProps {
   prefix?: string;
   suffix?: string;
   variant?: 'default' | 'centered';
+  children?: React.ReactNode;
 }
 
 export const StatCard: React.FC<StatCardProps> = ({
@@ -61,6 +62,7 @@ export const StatCard: React.FC<StatCardProps> = ({
   prefix = '',
   suffix = '',
   variant = 'default',
+  children,
 }) => {
   const colorMap: Record<string, { bg: string; text: string }> = {
     primary: { bg: 'bg-primary/10', text: 'text-primary' },
@@ -115,6 +117,7 @@ export const StatCard: React.FC<StatCardProps> = ({
           <span className="text-gray-500">{trend.label}</span>
         </div>
       )}
+      {children}
     </div>
   );
 };
