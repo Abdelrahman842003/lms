@@ -100,6 +100,15 @@ class TeacherService
             }
             
             $subscription->save();
+
+            \App\Models\PaymentLog::create([
+                'teacher_id' => $teacherId,
+                'amount' => $amount,
+                'status' => 'confirmed',
+                'confirmed_at' => now(),
+                'client_side_uuid' => \Illuminate\Support\Str::uuid(),
+                'notes' => "Subscription payment for month {$month}"
+            ]);
         }
 
         return $subscription;

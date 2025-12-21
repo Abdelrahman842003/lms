@@ -220,6 +220,16 @@ function ReportsPage() {
         </span>
       ),
     },
+    {
+      key: 'paid',
+      label: 'المدفوع',
+      sortable: true,
+      render: (value: number) => (
+        <span className="text-success font-semibold">
+          {(value || 0).toLocaleString()} ج.م
+        </span>
+      ),
+    },
   ];
 
   return (

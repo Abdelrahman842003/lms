@@ -110,7 +110,7 @@ class ReportService
         $totalRevenue = $activeEnrollments * $pricePerStudent;
 
         // Teachers breakdown
-        $teachersBreakdown = $this->getTeachersBreakdown($pricePerStudent);
+        $teachersBreakdown = $this->getTeachersBreakdown($pricePerStudent, $startDate, $endDate);
 
         // Monthly breakdown
         $monthlyData = $this->getMonthlyBreakdown(null, $startDate, $endDate, 'admin');
@@ -145,9 +145,9 @@ class ReportService
     /**
      * Get teachers breakdown for admin report
      */
-    private function getTeachersBreakdown(float $pricePerStudent): array
+    private function getTeachersBreakdown(float $pricePerStudent, Carbon $startDate, Carbon $endDate): array
     {
-        return Teacher::all()->map(function ($teacher) use ($pricePerStudent) {
+        return Teacher::all()->map(function ($teacher) use ($pricePerStudent, $startDate, $endDate) {
             $enrollments = Enrollment::where('teacher_id', $teacher->id);
             $totalStudents = (clone $enrollments)->count();
             $activeStudents = (clone $enrollments)->where('is_active', true)->count();
@@ -161,6 +161,10 @@ class ReportService
                 'active_students' => $activeStudents,
                 'secretaries' => $secretariesCount,
                 'revenue' => $activeStudents * $pricePerStudent,
+                'paid' => PaymentLog::where('teacher_id', $teacher->id)
+                    ->where('status', 'confirmed')
+                    ->whereBetween('confirmed_at', [$startDate, $endDate])
+                    ->sum('amount'),
                 'joined' => $teacher->created_at->format('Y-m-d'),
             ];
         })->toArray();
