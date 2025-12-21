@@ -7,7 +7,8 @@ import { DataTable } from '@/components/dashboard/DataTable';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { useAuth } from '@/contexts/AuthContext';
-import { getTeachers, createTeacher } from '@/services/authService';
+import { getTeachers, createTeacher, updateTeacher, toggleTeacherStatus, loginAsTeacher } from '@/services/authService';
+import { toast } from 'react-hot-toast';
 
 import { Avatar } from '@/components/ui';
 
@@ -17,8 +18,21 @@ export default function AdminTeachersPage() {
   const [teachers, setTeachers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    teacherId: string | null;
+    teacherName: string;
+    isSuspended: boolean;
+  }>({
+    isOpen: false,
+    teacherId: null,
+    teacherName: '',
+    isSuspended: false
+  });
+  const [editingTeacher, setEditingTeacher] = useState<any>(null);
   const [formData, setFormData] = useState({
     name: '',
+    phone: '',
     password: '',
     password_confirmation: '',
   });
@@ -73,6 +87,7 @@ export default function AdminTeachersPage() {
         date_to: filters.dateTo || undefined
       };
       const response = await getTeachers(page, itemsPerPage, activeFilters);
+      console.log('Fetched teachers:', response.data);
       setTeachers(response.data);
       setTotalPages(response.meta.last_page);
       setTotalItems(response.meta.total);
@@ -93,6 +108,25 @@ export default function AdminTeachersPage() {
     setError('');
   };
 
+  const openAddModal = () => {
+    setEditingTeacher(null);
+    setFormData({ name: '', phone: '', password: '', password_confirmation: '' });
+    setError('');
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = (teacher: any) => {
+    setEditingTeacher(teacher);
+    setFormData({
+      name: teacher.name,
+      phone: teacher.phone || '',
+      password: '',
+      password_confirmation: '',
+    });
+    setError('');
+    setIsModalOpen(true);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitLoading(true);
@@ -105,14 +139,42 @@ export default function AdminTeachersPage() {
     }
 
     try {
-      await createTeacher(formData);
-      await fetchTeachers();
+      if (editingTeacher) {
+        await updateTeacher(editingTeacher.id, formData);
+      } else {
+        await createTeacher(formData);
+      }
+      await fetchTeachers(currentPage);
       setIsModalOpen(false);
-      setFormData({ name: '', password: '', password_confirmation: '' });
+      setFormData({ name: '', phone: '', password: '', password_confirmation: '' });
+      setEditingTeacher(null);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'فشل إضافة المدرس');
+      setError(err.response?.data?.message || (editingTeacher ? 'فشل تحديث بيانات المدرس' : 'فشل إضافة المدرس'));
     } finally {
       setSubmitLoading(false);
+    }
+  };
+
+  const handleToggleStatus = (teacher: any) => {
+    setConfirmModal({
+      isOpen: true,
+      teacherId: teacher.id,
+      teacherName: teacher.name,
+      isSuspended: teacher.is_suspended
+    });
+  };
+
+  const confirmToggleStatus = async () => {
+    if (!confirmModal.teacherId) return;
+
+    try {
+      await toggleTeacherStatus(confirmModal.teacherId);
+      toast.success(`تم ${confirmModal.isSuspended ? 'تفعيل' : 'تعليق'} حساب المدرس بنجاح`);
+      await fetchTeachers(currentPage);
+      setConfirmModal(prev => ({ ...prev, isOpen: false }));
+    } catch (error) {
+      console.error('Failed to toggle teacher status', error);
+      toast.error('فشل تغيير حالة المدرس');
     }
   };
   const tableColumns = [{
@@ -168,9 +230,9 @@ export default function AdminTeachersPage() {
       key: 'status',
       label: 'الحالة',
       sortable: true,
-      render: (value: string) => (
-        <span className={value === 'نشط' ? 'badge badge-success' : 'badge badge-danger'}>
-          {value}
+      render: (_: string, row: any) => (
+        <span className={!row.is_suspended ? 'badge badge-success' : 'badge badge-danger'}>
+          {!row.is_suspended ? 'نشط' : 'معلق'}
         </span>
       ),
     },
@@ -187,18 +249,41 @@ export default function AdminTeachersPage() {
     {
       label: 'الدخول للوحة التحكم',
       icon: 'fas fa-sign-in-alt',
-      onClick: (_row: any) => {},  // TODO: Implement login as teacher
+      onClick: async (row: any) => {
+        try {
+          const response = await loginAsTeacher(row.id);
+          
+          // Clear admin session
+          localStorage.clear();
+          
+          // Set teacher session
+          localStorage.setItem('token', response.token);
+          localStorage.setItem('user', JSON.stringify(response.user));
+          localStorage.setItem('userType', 'teacher');
+          
+          // Set cookies
+          document.cookie = "auth_state=true; path=/; max-age=2592000; SameSite=Lax";
+          document.cookie = "user_role=teacher; path=/; max-age=2592000; SameSite=Lax";
+          
+          // Force reload to apply new auth state
+          window.location.href = '/teacher/dashboard';
+          
+        } catch (error) {
+          console.error('Failed to login as teacher', error);
+          toast.error('فشل الدخول لحساب المدرس');
+        }
+      },
     },
     {
       label: 'تعديل البيانات',
       icon: 'fas fa-edit',
-      onClick: (row: any) => router.push(`/admin/teachers/${row.id}/edit`),
+      onClick: (row: any) => openEditModal(row),
     },
     {
-      label: 'تعليق الحساب',
-      icon: 'fas fa-ban',
-      variant: 'danger' as const,
-      onClick: (_row: any) => {},  // TODO: Implement suspend teacher
+      label: (row: any) => row.is_suspended ? 'تفعيل الحساب' : 'تعليق الحساب',
+      icon: (row: any) => row.is_suspended ? 'fas fa-check-circle' : 'fas fa-ban',
+      variant: (row: any) => row.is_suspended ? 'success' : 'danger',
+      onClick: (row: any) => handleToggleStatus(row),
     },
   ];
 
@@ -251,7 +336,7 @@ export default function AdminTeachersPage() {
         icon="fas fa-table"
         action={
           <div className="flex gap-3 flex-wrap">
-            <button className="btn btn-primary" onClick={() => setIsModalOpen(true)}>
+            <button className="btn btn-primary" onClick={openAddModal}>
               <i className="fas fa-plus"></i>
               <span>إضافة مدرس جديد</span>
             </button>
@@ -368,11 +453,13 @@ export default function AdminTeachersPage() {
         )}
       </DashboardCard>
 
-      {/* Add Teacher Modal */}
+      {/* Add/Edit Teacher Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[1000] p-4">
           <div className="bg-[#1a1f37] p-5 rounded-2xl w-full max-w-md border border-white/10">
-            <h2 className="text-white mb-4 text-xl font-bold">إضافة مدرس جديد</h2>
+            <h2 className="text-white mb-4 text-xl font-bold">
+              {editingTeacher ? 'تعديل بيانات المدرس' : 'إضافة مدرس جديد'}
+            </h2>
             
             {error && (
               <div className="bg-danger/10 text-danger p-2.5 rounded-lg mb-4 text-sm">
@@ -394,14 +481,28 @@ export default function AdminTeachersPage() {
               </div>
 
               <div className="mb-4">
-                <label className="block text-gray-300 mb-1.5 text-sm">كلمة المرور</label>
+                <label className="block text-gray-300 mb-1.5 text-sm">رقم الهاتف</label>
+                <input
+                  type="text"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleInputChange}
+                  className="w-full p-2.5 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm"
+                  required
+                />
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-gray-300 mb-1.5 text-sm">
+                  {editingTeacher ? 'كلمة المرور (اتركها فارغة إذا لم ترد التغيير)' : 'كلمة المرور'}
+                </label>
                 <input
                   type="password"
                   name="password"
                   value={formData.password}
                   onChange={handleInputChange}
                   className="w-full p-2.5 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm"
-                  required
+                  required={!editingTeacher}
                   minLength={6}
                 />
               </div>
@@ -414,7 +515,7 @@ export default function AdminTeachersPage() {
                   value={formData.password_confirmation}
                   onChange={handleInputChange}
                   className="w-full p-2.5 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm"
-                  required
+                  required={!editingTeacher}
                   minLength={6}
                 />
               </div>
@@ -433,10 +534,44 @@ export default function AdminTeachersPage() {
                   className="px-4 py-1.5 rounded-lg bg-primary text-white hover:bg-primary/90 transition-all flex items-center gap-2 text-sm"
                   disabled={submitLoading}
                 >
-                  {submitLoading ? 'جاري الإضافة...' : 'إضافة المدرس'}
+                  {submitLoading ? 'جاري الحفظ...' : (editingTeacher ? 'حفظ التغييرات' : 'إضافة المدرس')}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Modal */}
+      {confirmModal.isOpen && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[1000] p-4">
+          <div className="bg-[#1a1f37] p-6 rounded-2xl w-full max-w-sm border border-white/10 text-center">
+            <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${confirmModal.isSuspended ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'}`}>
+              <i className={`fas ${confirmModal.isSuspended ? 'fa-check' : 'fa-ban'} text-3xl`}></i>
+            </div>
+            
+            <h3 className="text-white text-xl font-bold mb-2">
+              {confirmModal.isSuspended ? 'تفعيل حساب المدرس' : 'تعليق حساب المدرس'}
+            </h3>
+            
+            <p className="text-gray-400 mb-6">
+              هل أنت متأكد من {confirmModal.isSuspended ? 'تفعيل' : 'تعليق'} حساب المدرس <span className="text-white font-bold">{confirmModal.teacherName}</span>؟
+            </p>
+
+            <div className="flex gap-3 justify-center">
+              <button
+                className="px-6 py-2 rounded-lg border border-white/10 text-gray-300 hover:bg-white/5 transition-all"
+                onClick={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+              >
+                إلغاء
+              </button>
+              <button
+                className={`px-6 py-2 rounded-lg text-white transition-all ${confirmModal.isSuspended ? 'bg-success hover:bg-success/90' : 'bg-danger hover:bg-danger/90'}`}
+                onClick={confirmToggleStatus}
+              >
+                تأكيد
+              </button>
+            </div>
           </div>
         </div>
       )}

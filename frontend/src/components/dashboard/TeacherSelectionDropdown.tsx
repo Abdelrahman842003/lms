@@ -38,6 +38,19 @@ export const TeacherSelectionDropdown: React.FC = () => {
 
   const handleTeacherSelect = (teacher: any) => {
     // Check Status
+    if (teacher.is_suspended) {
+      setModalConfig({
+        title: 'حساب معلق',
+        message: 'عذراً، هذا المدرس معلق حالياً ولا يمكن الوصول لبياناته. يرجى التواصل مع الإدارة.',
+        confirmText: 'حسناً',
+        variant: 'danger',
+        showCancel: false,
+        onConfirm: () => setModalOpen(false),
+      });
+      setModalOpen(true);
+      return;
+    }
+
     if (teacher.status === 'expired') {
       setModalConfig({
         title: 'اشتراك منتهي',

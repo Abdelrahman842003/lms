@@ -31,7 +31,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/change-password', [AdminAuthController::class, 'changePassword']);
         Route::get('/teachers', [AdminAuthController::class, 'getTeachers']);
         Route::post('/teachers', [\App\Http\Controllers\Teacher\TeacherController::class, 'store']);
+        Route::put('/teachers/{teacher}', [\App\Http\Controllers\Teacher\TeacherController::class, 'update']);
         Route::get('/teachers/{teacher}', [\App\Http\Controllers\Teacher\TeacherController::class, 'show']);
+        Route::get('/teachers/{teacher}', [\App\Http\Controllers\Teacher\TeacherController::class, 'show']);
+        Route::post('/teachers/{teacher}/login', [\App\Http\Controllers\Admin\TeacherController::class, 'loginAsTeacher']);
+        Route::put('/teachers/{teacher}/toggle-status', [\App\Http\Controllers\Admin\TeacherController::class, 'toggleStatus']);
         Route::get('/students', [AdminAuthController::class, 'getStudents']);
         Route::put('/students/{student}', [AdminAuthController::class, 'updateStudent']);
         Route::put('/exams/{exam}/toggle-status', [ExamController::class, 'toggleStatus']);
@@ -59,7 +63,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
 Route::post('/register/teacher', [\App\Http\Controllers\Teacher\TeacherController::class, 'register']);
 Route::post('/login/teacher', [TeacherAuthController::class, 'login']);
 
-Route::middleware('auth:sanctum')->prefix('teacher')->name('teacher.')->group(function () {
+Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureTeacherNotSuspended::class])->prefix('teacher')->name('teacher.')->group(function () {
     Route::post('/logout', [TeacherAuthController::class, 'logout']);
     Route::get('/me', [TeacherAuthController::class, 'me']);
     
@@ -130,7 +134,7 @@ Route::middleware('auth:sanctum')->prefix('teacher')->name('teacher.')->group(fu
 // ============================================
 Route::post('/login/student', [StudentAuthController::class, 'login']);
 
-Route::middleware('auth:sanctum')->prefix('student')->group(function () {
+Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureTeacherNotSuspendedForStudent::class])->prefix('student')->group(function () {
     Route::post('/logout', [StudentAuthController::class, 'logout']);
     Route::get('/me', [StudentAuthController::class, 'me']);
     Route::post('/attend', [\App\Http\Controllers\Student\StudentAttendanceController::class, 'markAttendance']);
@@ -179,7 +183,7 @@ Route::middleware('auth:sanctum')->prefix('student')->group(function () {
 // ============================================
 Route::post('/login/secretary', [SecretaryAuthController::class, 'login']);
 
-Route::middleware('auth:sanctum')->prefix('secretary')->group(function () {
+Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureSecretaryTeacherNotSuspended::class])->prefix('secretary')->group(function () {
     Route::post('/logout', [SecretaryAuthController::class, 'logout']);
     Route::get('/me', [SecretaryAuthController::class, 'me']);
 

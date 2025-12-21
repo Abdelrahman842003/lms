@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Teacher;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Teacher\StoreTeacherRequest;
+use App\Http\Requests\Teacher\UpdateTeacherRequest;
 use App\Http\Resources\Teacher\TeacherResource;
+use App\Models\Teacher;
 use App\Services\Teacher\TeacherService;
 use Illuminate\Http\Request;
 
@@ -40,5 +42,14 @@ class TeacherController extends Controller
         return $this->successResponse([
             'teacher' => new TeacherResource($teacher)
         ], 'Teacher details retrieved successfully');
+    }
+
+    public function update(UpdateTeacherRequest $request, Teacher $teacher)
+    {
+        $teacher = $this->teacherService->updateTeacher($teacher, $request->validated());
+
+        return $this->successResponse([
+            'teacher' => new TeacherResource($teacher)
+        ], 'تم تحديث بيانات المدرس بنجاح');
     }
 }

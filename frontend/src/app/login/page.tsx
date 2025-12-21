@@ -130,7 +130,9 @@ export default function LoginPage() {
       if (err.status === 401) {
         setError('بيانات الدخول غير صحيحة. تأكد من رقم الهاتف وكلمة المرور.');
       } else if (err.status === 422) {
-        setError('البيانات المدخلة غير صحيحة.');
+        // Check if there's a specific message for phone (suspension) or general errors
+        const specificError = err.errors?.phone?.[0] || err.message;
+        setError(specificError || 'البيانات المدخلة غير صحيحة.');
       } else if (err.status === 429) {
         setError('تم تجاوز عدد المحاولات المسموحة. حاول مرة أخرى بعد قليل.');
       } else {

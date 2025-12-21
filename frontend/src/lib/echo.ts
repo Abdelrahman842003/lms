@@ -27,7 +27,8 @@ export const initializeEcho = (token: string): Echo<"reverb"> => {
   window.Pusher = Pusher;
 
   if (process.env.NODE_ENV === "development") {
-    Pusher.logToConsole = true;
+    // Disable Pusher logging to avoid 403 errors spamming the console when suspended
+    Pusher.logToConsole = false;
   }
 
   const isProduction = process.env.NODE_ENV === "production";

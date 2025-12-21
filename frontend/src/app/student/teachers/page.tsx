@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { TeacherInfo } from '@/services/authService';
@@ -34,6 +35,11 @@ export default function StudentTeachersPage() {
   }, [user, authLoading, router]);
 
   const handleSelectTeacher = (teacherId: string) => {
+    const teacher = teachers.find(t => t.teacher_id === teacherId);
+    if (teacher?.is_suspended) {
+      toast.error(`ممنوع الدخول علي المدرس ${teacher.teacher_name} في الوقت الحالي`);
+      return;
+    }
     setSelectedTeacher(teacherId);
     // Store selected teacher in localStorage
     localStorage.setItem('selectedTeacherId', teacherId);
@@ -75,7 +81,12 @@ export default function StudentTeachersPage() {
             {teachers.map((teacher) => (
               <div
                 key={teacher.teacher_id}
-                className={`group bg-white/3 border border-white/8 rounded-2xl p-6 cursor-pointer transition-all duration-300 flex flex-col items-center text-center relative hover:-translate-y-1 hover:border-primary hover:shadow-[0_10px_40px_rgba(66,99,235,0.2)] ${selectedTeacher === teacher.teacher_id ? 'border-primary bg-primary/10' : ''}`}
+                className={`group bg-white/3 border border-white/8 rounded-2xl p-6 transition-all duration-300 flex flex-col items-center text-center relative 
+                  ${teacher.is_suspended 
+                    ? 'opacity-60 cursor-not-allowed grayscale' 
+                    : 'cursor-pointer hover:-translate-y-1 hover:border-primary hover:shadow-[0_10px_40px_rgba(66,99,235,0.2)]'
+                  } 
+                  ${selectedTeacher === teacher.teacher_id ? 'border-primary bg-primary/10' : ''}`}
                 onClick={() => handleSelectTeacher(teacher.teacher_id)}
               >
                 <div className="w-20 h-20 rounded-full overflow-hidden mb-4 border-[3px] border-white/10">
@@ -87,6 +98,11 @@ export default function StudentTeachersPage() {
                     </div>
                   )}
                 </div>
+                {teacher.is_suspended && (
+                  <div className="absolute top-4 right-4 text-red-500 bg-white/10 p-2 rounded-full">
+                    <i className="fas fa-ban"></i>
+                  </div>
+                )}
                 <div className="mb-4">
                   <h3 className="text-white text-xl mb-2">{teacher.teacher_name}</h3>
                   {teacher.grade_name && (

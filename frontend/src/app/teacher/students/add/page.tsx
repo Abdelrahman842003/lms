@@ -28,14 +28,16 @@ export default function AddStudentPage() {
   const [groups, setGroups] = useState<Group[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCheckingPhone, setIsCheckingPhone] = useState(false);
-  const [isPhoneChecked, setIsPhoneChecked] = useState(false); // New state
+  const [isPhoneChecked, setIsPhoneChecked] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [existingStudentFound, setExistingStudentFound] = useState(false);
   const [alreadyEnrolled, setAlreadyEnrolled] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
+    password: '',
     parent_phone: '',
     gender: 'male',
     education_type: '',
@@ -46,44 +48,32 @@ export default function AddStudentPage() {
 
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
-  // Generate password preview from name and phone
-  const generateSlug = (name: string) => {
-    let text = name.trim();
+  // Calculate password strength
+  const getPasswordStrength = (password: string): { level: 'weak' | 'medium' | 'strong'; text: string; color: string } => {
+    if (!password) return { level: 'weak', text: '', color: '' };
     
-    // Specific replacements for common names/prefixes
-    const replacements: Record<string, string> = {
-      'عبدال': 'abdel',
-      'عبد ال': 'abdel',
-      'عيد': 'eid',
-      'الله': 'allah',
-      'ال': 'el',
-    };
-
-    Object.keys(replacements).forEach(key => {
-      text = text.replace(new RegExp(key, 'g'), replacements[key]);
-    });
+    let strength = 0;
     
-    const arabicChars = [
-      'ا', 'أ', 'إ', 'آ', 'ب', 'ت', 'ث', 'ج', 'ح', 'خ', 'د', 'ذ', 'ر', 'ز', 'س', 'ش', 'ص', 'ض', 'ط', 'ظ', 'ع', 'غ', 'ف', 'ق', 'ك', 'ل', 'م', 'ن', 'ه', 'و', 'ي', 'ى', 'ة',
-      '٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'
-    ];
+    // Length check
+    if (password.length >= 6) strength++;
+    if (password.length >= 8) strength++;
     
-    const englishChars = [
-      'a', 'a', 'e', 'a', 'b', 't', 'th', 'j', 'h', 'kh', 'd', 'th', 'r', 'z', 's', 'sh', 's', 'd', 't', 'z', 'a', 'gh', 'f', 'q', 'k', 'l', 'm', 'n', 'h', 'w', 'i', 'a', 'a',
-      '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'
-    ];
-
-    for (let i = 0; i < arabicChars.length; i++) {
-      text = text.replace(new RegExp(arabicChars[i], 'g'), englishChars[i]);
-    }
-
-    return text
-      .replace(/[^a-zA-Z0-9\s]/g, '') // Remove non-alphanumeric chars
-      .replace(/\s+/g, '_')           // Replace spaces with underscores
-      .toLowerCase();
+    // Contains number
+    if (/\d/.test(password)) strength++;
+    
+    // Contains letter
+    if (/[a-zA-Zء-ي]/.test(password)) strength++;
+    
+    // Contains special character or mixed case
+    if (/[!@#$%^&*(),.?":{}|<>]/.test(password) || /[A-Z]/.test(password)) strength++;
+    
+    if (strength <= 2) return { level: 'weak', text: 'ضعيفة', color: 'text-red-500' };
+    if (strength <= 3) return { level: 'medium', text: 'متوسطة', color: 'text-yellow-500' };
+    return { level: 'strong', text: 'قوية', color: 'text-green-500' };
   };
 
-  const passwordPreview = formData.phone ? `${generateSlug(formData.name)}${formData.phone}` : generateSlug(formData.name);
+  const passwordStrength = getPasswordStrength(formData.password);
+  const isPasswordWeak = Boolean(!existingStudentFound && formData.password && passwordStrength.level === 'weak');
 
   useEffect(() => {
     fetchGradesAndGroups();
@@ -180,8 +170,42 @@ export default function AddStudentPage() {
       errors.phone = 'رقم الهاتف يجب أن يكون رقم مصري صحيح';
     }
 
+    // Password is required only for new students
+    if (!existingStudentFound && !formData.password.trim()) {
+      errors.password = 'كلمة المرور مطلوبة';
+    } else if (!existingStudentFound && formData.password.length < 6) {
+      errors.password = 'كلمة المرور يجب أن تكون 6 أحرف على الأقل';
+    } else if (!existingStudentFound && passwordStrength.level === 'weak') {
+      errors.password = 'كلمة المرور ضعيفة جداً - أضف أرقام وأحرف';
+    }
+
     if (!formData.gender) {
       errors.gender = 'النوع مطلوب';
+    }
+
+    // Additional fields required for new students
+    if (!existingStudentFound) {
+      if (!formData.parent_phone.trim()) {
+        errors.parent_phone = 'رقم ولي الأمر مطلوب';
+      } else if (!/^01[0125][0-9]{8}$/.test(formData.parent_phone)) {
+        errors.parent_phone = 'رقم ولي الأمر يجب أن يكون رقم مصري صحيح';
+      }
+
+      if (!formData.education_type) {
+        errors.education_type = 'نوع التعليم مطلوب';
+      }
+
+      if (!formData.grade_id) {
+        errors.grade_id = 'الصف الدراسي مطلوب';
+      }
+
+      if (!formData.group_id) {
+        errors.group_id = 'المجموعة مطلوبة';
+      }
+
+      if (!formData.location.trim()) {
+        errors.location = 'الموقع مطلوب';
+      }
     }
     
     if (alreadyEnrolled) {
@@ -204,17 +228,26 @@ export default function AddStudentPage() {
     setSuccessMessage('');
 
     try {
-      const submitData: any = {
+      const submitData: Record<string, any> = {
         name: formData.name,
         phone: formData.phone,
-        parent_phone: formData.parent_phone || null,
         gender: formData.gender,
-        education_type: formData.education_type || null,
-        grade_id: formData.grade_id || null,
-        group_id: formData.group_id || null,
-        location: formData.location || null,
       };
+      
+      // Add password only for new students
+      if (!existingStudentFound && formData.password) {
+        submitData.password = formData.password;
+      }
+      
+      // Only add optional fields if they have values
+      if (formData.parent_phone) submitData.parent_phone = formData.parent_phone;
+      if (formData.education_type) submitData.education_type = formData.education_type;
+      if (formData.grade_id) submitData.grade_id = formData.grade_id;
+      if (formData.group_id) submitData.group_id = formData.group_id;
+      if (formData.location) submitData.location = formData.location;
 
+      console.log('Submitting student data:', submitData);
+      
       await createTeacherStudent(submitData);
       setSuccessMessage('تم إضافة الطالب بنجاح!');
       
@@ -224,7 +257,10 @@ export default function AddStudentPage() {
       }, 1500);
     } catch (error: any) {
       console.error('Failed to create student:', error);
-      setFormErrors({ submit: error.message || 'حدث خطأ أثناء إضافة الطالب' });
+      console.error('Error status:', error.status);
+      console.error('Error message:', error.message);
+      const errorMessage = error.message || 'حدث خطأ أثناء إضافة الطالب';
+      setFormErrors({ submit: errorMessage });
     } finally {
       setIsSubmitting(false);
     }
@@ -371,44 +407,90 @@ export default function AddStudentPage() {
             </div>
 
             <div>
-              <label htmlFor="parent_phone" className="block text-gray-light mb-2 text-[0.95rem]">رقم هاتف ولي الأمر</label>
+              <label htmlFor="parent_phone" className="block text-gray-light mb-2 text-[0.95rem]">
+                رقم هاتف ولي الأمر {!existingStudentFound && <span className="text-red-500">*</span>}
+              </label>
               <input
-                type="tel"
+                type="text"
                 id="parent_phone"
-                className="w-full p-3 bg-transparent border border-white/10 rounded-lg text-white text-[1rem] focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                className={`w-full p-3 bg-transparent border rounded-lg text-white text-[1rem] focus:ring-1 outline-none transition-all ${
+                  formErrors.parent_phone ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-white/10 focus:border-primary focus:ring-primary'
+                } disabled:opacity-60 disabled:cursor-not-allowed`}
                 value={formData.parent_phone}
                 onChange={(e) => {
                   const value = e.target.value.replace(/[^0-9]/g, '');
                   setFormData({ ...formData, parent_phone: value });
                 }}
-                placeholder="أدخل رقم هاتف ولي الأمر (أرقام فقط)"
-                pattern="[0-9]*"
-                inputMode="numeric"
+                placeholder="01020313432"
                 disabled={isSubmitting || !isPhoneChecked || existingStudentFound}
                 readOnly={existingStudentFound}
               />
+              {formErrors.parent_phone && <span className="text-red-500 text-sm mt-1 block">{formErrors.parent_phone}</span>}
             </div>
 
 
 
-            {/* Auto-generated Password Field (readonly) */}
-            <div>
-              <label htmlFor="password" className="block text-gray-light mb-2 text-[0.95rem] flex justify-between">
-                <span>كلمة المرور</span>
-                <span className="bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full flex items-center gap-1">
-                  <i className="fas fa-magic"></i>
-                  تلقائي
-                </span>
-              </label>
-              <input
-                type="text"
-                id="password"
-                className="w-full p-3 bg-transparent border border-white/10 rounded-lg text-white text-[1rem] outline-none cursor-default opacity-70"
-                value={passwordPreview || 'سيتم التوليد تلقائياً'}
-                readOnly
-                disabled
-              />
-            </div>
+            {/* Password Field - Only show for new students */}
+            {!existingStudentFound && (
+              <div>
+                <label htmlFor="password" className="block text-gray-light mb-2 text-[0.95rem]">
+                  كلمة المرور <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    id="password"
+                    className={`w-full p-3 pe-12 bg-transparent border rounded-lg text-white text-[1rem] focus:ring-1 outline-none transition-all ${
+                      formErrors.password ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-white/10 focus:border-primary focus:ring-primary'
+                    } disabled:opacity-60 disabled:cursor-not-allowed`}
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    placeholder="أدخل كلمة المرور للطالب"
+                    disabled={isSubmitting || !isPhoneChecked}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-light hover:text-white transition-colors"
+                    tabIndex={-1}
+                  >
+                    <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'} text-lg`}></i>
+                  </button>
+                </div>
+                
+                {/* Password Strength Indicator */}
+                {formData.password && (
+                  <div className="mt-2">
+                    <div className="flex gap-1 mb-1">
+                      <div className={`h-1 flex-1 rounded ${passwordStrength.level === 'weak' ? 'bg-red-500' : passwordStrength.level === 'medium' ? 'bg-yellow-500' : 'bg-green-500'}`}></div>
+                      <div className={`h-1 flex-1 rounded ${passwordStrength.level === 'medium' || passwordStrength.level === 'strong' ? (passwordStrength.level === 'medium' ? 'bg-yellow-500' : 'bg-green-500') : 'bg-white/10'}`}></div>
+                      <div className={`h-1 flex-1 rounded ${passwordStrength.level === 'strong' ? 'bg-green-500' : 'bg-white/10'}`}></div>
+                    </div>
+                    <span className={`text-sm ${passwordStrength.color}`}>
+                      كلمة المرور: {passwordStrength.text}
+                    </span>
+                  </div>
+                )}
+                
+                {formErrors.password && <span className="text-red-500 text-sm mt-1 block">{formErrors.password}</span>}
+                
+                {/* Password Requirements */}
+                <div className="text-gray-light text-xs mt-2 space-y-1">
+                  <p className={formData.password.length >= 6 ? 'text-green-500' : ''}>
+                    <i className={`fas ${formData.password.length >= 6 ? 'fa-check' : 'fa-circle'} me-1 text-[0.5rem]`}></i>
+                    6 أحرف على الأقل
+                  </p>
+                  <p className={/\d/.test(formData.password) ? 'text-green-500' : ''}>
+                    <i className={`fas ${/\d/.test(formData.password) ? 'fa-check' : 'fa-circle'} me-1 text-[0.5rem]`}></i>
+                    تحتوي على أرقام
+                  </p>
+                  <p className={/[a-zA-Z\u0621-\u064a]/.test(formData.password) ? 'text-green-500' : ''}>
+                    <i className={`fas ${/[a-zA-Z\u0621-\u064a]/.test(formData.password) ? 'fa-check' : 'fa-circle'} me-1 text-[0.5rem]`}></i>
+                    تحتوي على أحرف
+                  </p>
+                </div>
+              </div>
+            )}
 
             <div>
               <label htmlFor="gender" className="block text-gray-light mb-2 text-[0.95rem]">
@@ -430,7 +512,9 @@ export default function AddStudentPage() {
             </div>
 
             <div>
-              <label htmlFor="education_type" className="block text-gray-light mb-2 text-[0.95rem]">نوع التعليم</label>
+              <label htmlFor="education_type" className="block text-gray-light mb-2 text-[0.95rem]">
+                نوع التعليم {!existingStudentFound && <span className="text-red-500">*</span>}
+              </label>
               <select
                 id="education_type"
                 className="w-full p-3 bg-transparent border border-white/10 rounded-lg text-white text-[1rem] focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all disabled:opacity-60 disabled:cursor-not-allowed"
@@ -524,7 +608,7 @@ export default function AddStudentPage() {
             <button
               type="submit"
               className="btn btn-primary"
-              disabled={isSubmitting || alreadyEnrolled || !isPhoneChecked}
+              disabled={isSubmitting || alreadyEnrolled || !isPhoneChecked || isPasswordWeak}
             >
               {isSubmitting ? (
                 <>

@@ -305,21 +305,4 @@ class StudentService
 
         return strtolower(preg_replace('/[^a-zA-Z0-9]+/', '_', $text));
     }
-
-    /**
-     * Generate unique username by checking database
-     */
-    private function generateUniqueUsername(string $baseUsername): string
-    {
-        $username = $baseUsername;
-        $counter = 1;
-        
-        // Check if username exists
-        while (Student::where('username', $username)->exists()) {
-            $username = $baseUsername . '_' . $counter;
-            $counter++;
-        }
-        
-        return $username;
-    }
 }

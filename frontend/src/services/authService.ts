@@ -44,6 +44,7 @@ export interface TeacherInfo {
   enrolled_at: string;
   status?: 'active' | 'grace_period' | 'expired' | 'inactive';
   days_left?: number;
+  is_suspended?: boolean;
 }
 
 export interface AdminAuthResponse {
@@ -200,9 +201,10 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}, skip
       const error: ApiError = await response.json();
       const errorWithStatus = new Error(error.message || 'API request failed') as any;
       errorWithStatus.status = response.status;
+      errorWithStatus.errors = error.errors;
       
-      // Only dispatch auth:unauthorized for non-login 401 errors
-      if (response.status === 401 && !skipAuthEvent) {
+      // Only dispatch auth:unauthorized for non-login 401 errors or 403 (Forbidden/Suspended)
+      if ((response.status === 401 || response.status === 403) && !skipAuthEvent) {
         // Dispatch event for AuthContext to handle logout
         if (typeof window !== 'undefined') {
           window.dispatchEvent(new Event('auth:unauthorized'));
@@ -423,11 +425,42 @@ export async function createTeacher(data: any): Promise<any> {
 }
 
 /**
+ * Update teacher (Admin only)
+ */
+export async function updateTeacher(id: string, data: any): Promise<any> {
+  const res = await fetchApi(`/admin/teachers/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+  return res.teacher;
+}
+
+/**
  * Get teacher details (Admin only)
  */
 export async function getTeacherDetails(id: string): Promise<any> {
   const res = await fetchApi(`/admin/teachers/${id}`);
   return res.teacher;
+}
+
+/**
+ * Toggle teacher status (suspend/activate)
+ */
+export async function toggleTeacherStatus(id: string): Promise<any> {
+  const res = await fetchApi(`/admin/teachers/${id}/toggle-status`, {
+    method: 'PUT',
+  });
+  return res.teacher;
+}
+
+/**
+ * Login as a teacher (Admin only)
+ */
+export async function loginAsTeacher(id: string): Promise<any> {
+  const res = await fetchApi(`/admin/teachers/${id}/login`, {
+    method: 'POST',
+  });
+  return res;
 }
 
 /**

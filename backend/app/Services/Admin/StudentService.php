@@ -10,7 +10,7 @@ class StudentService
 {
     public function getStudents(int $perPage = 10, array $filters = []): LengthAwarePaginator
     {
-        return Student::with('teacher:id,name,username,created_at')
+        return Student::with('teacher:id,name,created_at')
             ->latest()
             ->filter($filters)
             ->paginate($perPage);
@@ -20,7 +20,6 @@ class StudentService
     {
         $updateData = [
             'name' => $data['name'],
-            'username' => $data['username'],
         ];
 
         if (isset($data['password']) && !empty($data['password'])) {

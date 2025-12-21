@@ -3,8 +3,9 @@
 namespace App\Http\Requests\Teacher;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
-class StoreTeacherRequest extends FormRequest
+class UpdateTeacherRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -15,8 +16,8 @@ class StoreTeacherRequest extends FormRequest
     {
         return [
             'name' => 'required|string',
-            'phone' => 'required|string|unique:teachers,phone',
-            'password' => 'required|confirmed|min:6',
+            'phone' => ['required', 'string', Rule::unique('teachers', 'phone')->ignore($this->teacher)],
+            'password' => 'nullable|confirmed|min:6',
         ];
     }
 
@@ -27,7 +28,6 @@ class StoreTeacherRequest extends FormRequest
             'name.string' => 'الاسم يجب أن يكون نصاً',
             'phone.required' => 'رقم الهاتف مطلوب',
             'phone.unique' => 'رقم الهاتف مستخدم من قبل',
-            'password.required' => 'كلمة المرور مطلوبة',
             'password.confirmed' => 'تأكيد كلمة المرور غير متطابق',
             'password.min' => 'كلمة المرور يجب أن تكون 6 أحرف على الأقل',
         ];

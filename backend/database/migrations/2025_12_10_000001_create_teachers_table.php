@@ -11,13 +11,13 @@ return new class extends Migration
         Schema::create('teachers', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('name');
-            $table->string('username')->unique();
-            $table->string('phone')->nullable()->unique();
+            $table->string('phone')->unique();
             $table->string('password');
+            $table->boolean('is_suspended')->default(false);
             $table->rememberToken();
             $table->timestamps();
 
-            $table->index('username');
+            $table->index('phone');
             $table->index('id');
         });
     }

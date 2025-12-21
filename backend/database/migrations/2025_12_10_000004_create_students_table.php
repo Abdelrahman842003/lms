@@ -11,18 +11,19 @@ return new class extends Migration
         Schema::create('students', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('name');
-            $table->string('username')->unique();
             $table->string('password');
             $table->rememberToken();
             
             // Optional/Profile fields
             $table->string('location')->nullable();
-            $table->string('phone')->nullable();
+            $table->string('phone')->nullable()->unique();
             $table->string('parent_phone')->nullable();
             $table->enum('gender', ['male', 'female'])->default('male');
             $table->enum('education_type', ['general', 'azhar'])->nullable();
             
             $table->timestamps();
+            
+            $table->index('phone');
         });
     }
 

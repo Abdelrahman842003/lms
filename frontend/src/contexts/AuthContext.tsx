@@ -11,6 +11,7 @@ import {
   TeacherInfo 
 } from '@/services/authService';
 import { User } from '@/types';
+import toast from 'react-hot-toast';
 
 interface AuthContextType {
   user: User | null;
@@ -101,17 +102,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               const currentSelected = localStorage.getItem('selectedTeacher');
               let bestTeacher = null;
 
-              // Smart selection: Prioritize Active > Grace Period > None
-              const activeTeacher = response.teachers.find((t: any) => t.status === 'active');
-              const graceTeacher = response.teachers.find((t: any) => t.status === 'grace_period');
+              // Smart selection: Prioritize Active > Grace Period > None (Filter out suspended)
+              const activeTeacher = response.teachers.find((t: any) => t.status === 'active' && !t.is_suspended);
+              const graceTeacher = response.teachers.find((t: any) => t.status === 'grace_period' && !t.is_suspended);
               bestTeacher = activeTeacher || graceTeacher || null;
 
               if (currentSelected) {
                 const parsedCurrent = JSON.parse(currentSelected);
                 const updatedCurrent = response.teachers.find((t: any) => t.teacher_id === parsedCurrent.teacher_id);
                 
-                // If current is still valid (active/grace), keep it. Otherwise switch to best.
-                if (updatedCurrent && (updatedCurrent.status === 'active' || updatedCurrent.status === 'grace_period')) {
+                // If current is still valid (active/grace AND NOT SUSPENDED), keep it. Otherwise switch to best.
+                if (updatedCurrent && (updatedCurrent.status === 'active' || updatedCurrent.status === 'grace_period') && !updatedCurrent.is_suspended) {
                     setSelectedTeacher(updatedCurrent);
                     localStorage.setItem('selectedTeacher', JSON.stringify(updatedCurrent));
                 } else {
@@ -139,6 +140,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             // If unauthorized (401) or unauthenticated, clear auth
             if (apiError.status === 401 || apiError.message?.toLowerCase().includes('unauthenticated')) {
               console.error('AuthContext: User unauthenticated (401), clearing session. Error details:', apiError);
+              setUser(null);
+              setSelectedTeacher(null);
+              localStorage.clear();
+            } else if (apiError.status === 403) {
+              toast.error('عفواً، تم تعليق حسابك. يرجى التواصل مع الإدارة.');
               setUser(null);
               setSelectedTeacher(null);
               localStorage.clear();
@@ -238,9 +244,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (userType === 'student' && response.teachers && response.teachers.length > 0) {
         localStorage.setItem('studentTeachers', JSON.stringify(response.teachers));
         
-        // Smart selection: Prioritize Active > Grace Period > None
-        const activeTeacher = response.teachers.find((t: any) => t.status === 'active');
-        const graceTeacher = response.teachers.find((t: any) => t.status === 'grace_period');
+        // Smart selection: Prioritize Active > Grace Period > None (Filter out suspended)
+        const activeTeacher = response.teachers.find((t: any) => t.status === 'active' && !t.is_suspended);
+        const graceTeacher = response.teachers.find((t: any) => t.status === 'grace_period' && !t.is_suspended);
         
         const bestTeacher = activeTeacher || graceTeacher || null;
 

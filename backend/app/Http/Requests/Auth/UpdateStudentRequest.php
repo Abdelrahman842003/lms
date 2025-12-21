@@ -26,15 +26,6 @@ class UpdateStudentRequest extends FormRequest
 
         return [
             'name' => ['required', 'string', 'max:255'],
-            'username' => [
-                'required',
-                'string',
-                'max:255',
-                // Unique username per teacher, ignoring the current student
-                Rule::unique('students')->where(function ($query) {
-                    return $query->where('teacher_id', $this->student->teacher_id);
-                })->ignore($this->student->id),
-            ],
             'password' => ['nullable', 'confirmed', 'min:6'],
         ];
     }

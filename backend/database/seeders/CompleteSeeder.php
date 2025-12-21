@@ -91,11 +91,10 @@ class CompleteSeeder extends Seeder
         $teachers = [];
         for ($i = 1; $i <= 3; $i++) {
             $teachers[] = Teacher::firstOrCreate(
-                ['username' => "teacher$i"],
+                ['phone' => "0100000000$i"],
                 [
                     'name' => "Teacher $i",
                     'password' => Hash::make('password'),
-                    'phone' => "0100000000$i",
                 ]
             );
         }
@@ -110,11 +109,10 @@ class CompleteSeeder extends Seeder
         for ($i = 1; $i <= 10; $i++) {
             $pad = str_pad($i, 2, '0', STR_PAD_LEFT);
             $students[] = Student::firstOrCreate(
-                ['username' => "student$i"],
+                ['phone' => "010123456$pad"],
                 [
                     'name' => "Student $i",
                     'password' => Hash::make('password'),
-                    'phone' => "010123456$pad", // Egyptian format
                     'parent_phone' => "011123456$pad",
                 ]
             );
@@ -124,12 +122,13 @@ class CompleteSeeder extends Seeder
 
     private function createSecretaries(Teacher $teacher): void
     {
+        static $secCounter = 1;
+        $secPhone = "012" . str_pad($secCounter++, 8, '0', STR_PAD_LEFT);
         Secretary::firstOrCreate(
-            ['username' => "sec_{$teacher->username}", 'teacher_id' => $teacher->id],
+            ['phone' => $secPhone, 'teacher_id' => $teacher->id],
             [
                 'name' => "Secretary for {$teacher->name}",
                 'password' => Hash::make('password'),
-                'phone' => "0120000" . str_pad($teacher->id, 4, '0', STR_PAD_LEFT),
             ]
         );
     }

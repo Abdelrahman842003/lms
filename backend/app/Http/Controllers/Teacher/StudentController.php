@@ -72,7 +72,6 @@ class StudentController extends Controller
                     'parent_phone' => $student->parent_phone,
                     'gender' => $student->gender,
                     'education_type' => $student->education_type,
-                    'grade_id' => $student->grade_id,
                     'location' => $student->location,
                 ],
                 'already_enrolled' => $enrollment !== null,
@@ -93,30 +92,39 @@ class StudentController extends Controller
      */
     public function store(StoreStudentRequest $request)
     {
-        $teacher = $request->user();
-        $validated = $request->validated();
+        try {
+            $teacher = $request->user();
+            $validated = $request->validated();
 
-        if (!$this->validateGroupGrade->execute($validated['group_id'] ?? null, $validated['grade_id'] ?? null)) {
-            return $this->errorResponse('المجموعة المختارة لا تنتمي للصف الدراسي المحدد', 422);
+            if (!$this->validateGroupGrade->execute($validated['group_id'] ?? null, $validated['grade_id'] ?? null)) {
+                return $this->errorResponse('المجموعة المختارة لا تنتمي للصف الدراسي المحدد', 422);
+            }
+
+            // Password is now provided by the frontend for new students
+            // For existing students, password is not required/used
+            
+            $result = $this->studentService->createStudent($teacher, $validated);
+
+            $message = $result['is_new_student'] 
+                ? 'تم إضافة الطالب بنجاح'
+                : ($result['was_already_enrolled'] 
+                    ? 'هذا الطالب مسجل بالفعل'
+                    : 'تم ربط الطالب الموجود بصفك بنجاح');
+
+            return $this->successResponse([
+                'enrollment' => new EnrollmentResource($result['enrollment']),
+                'is_new_student' => $result['is_new_student'],
+                'was_already_enrolled' => $result['was_already_enrolled'],
+                'message' => $message
+            ], 201);
+        } catch (\Exception $e) {
+            \Log::error('Student creation failed: ' . $e->getMessage(), [
+                'line' => $e->getLine(),
+                'file' => $e->getFile(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return $this->errorResponse('فشل إضافة الطالب: ' . $e->getMessage(), 500);
         }
-
-        // Generate password for new students
-        $validated['password'] = $this->generatePassword->execute($validated['name'], $validated['phone']);
-
-        $result = $this->studentService->createStudent($teacher, $validated);
-
-        $message = $result['is_new_student'] 
-            ? 'تم إضافة الطالب بنجاح'
-            : ($result['was_already_enrolled'] 
-                ? 'هذا الطالب مسجل بالفعل'
-                : 'تم ربط الطالب الموجود بصفك بنجاح');
-
-        return $this->successResponse([
-            'enrollment' => new EnrollmentResource($result['enrollment']),
-            'is_new_student' => $result['is_new_student'],
-            'was_already_enrolled' => $result['was_already_enrolled'],
-            'message' => $message
-        ], 201);
     }
 
     /**

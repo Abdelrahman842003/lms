@@ -19,15 +19,6 @@ class UpdateStudentRequest extends FormRequest
 
         return [
             'name' => 'sometimes|required|string|max:255',
-            'username' => [
-                'sometimes',
-                'required',
-                'string',
-                'max:255',
-                Rule::unique('students')->where(function ($query) use ($teacher) {
-                    return $query->where('teacher_id', $teacher->id);
-                })->ignore($student),
-            ],
             'password' => 'nullable|string|min:6',
             'grade_id' => 'nullable|exists:grades,id',
             'group_id' => 'nullable|exists:groups,id',

@@ -29,4 +29,27 @@ class TeacherController extends Controller
             TeacherResource::collection($teachers)->response()->getData(true)
         );
     }
+    public function toggleStatus($id)
+    {
+        $teacher = $this->teacherService->toggleStatus($id);
+        
+        return $this->successResponse(
+            new TeacherResource($teacher),
+            'تم تغيير حالة المدرس بنجاح'
+        );
+    }
+
+    public function loginAsTeacher($id)
+    {
+        $teacher = \App\Models\Teacher::findOrFail($id);
+        
+        // Create token for the teacher
+        $token = $teacher->createToken('teacher_token', ['access-api'], now()->addMinutes(60))->plainTextToken;
+        
+        return $this->successResponse([
+            'token' => $token,
+            'user' => new TeacherResource($teacher),
+            'role' => 'teacher'
+        ], 'تم تسجيل الدخول بنجاح');
+    }
 }

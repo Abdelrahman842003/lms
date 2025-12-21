@@ -141,6 +141,11 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
             });
             
             channel.error((error: any) => {
+              // Suppress 403 errors (unauthorized/suspended)
+              if (error?.status === 403 || error?.error?.data?.code === 403) {
+                console.warn('[NotificationDropdown] Channel auth failed (403). User might be suspended or logged out.');
+                return;
+              }
               console.error('[NotificationDropdown] ❌ Channel error:', error);
             });
             

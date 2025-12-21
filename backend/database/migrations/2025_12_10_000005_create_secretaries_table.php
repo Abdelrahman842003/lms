@@ -12,14 +12,13 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->foreignUuid('teacher_id')->constrained('teachers')->cascadeOnDelete();
             $table->string('name');
-            $table->string('username')->unique();
-            $table->string('phone')->nullable();
+            $table->string('phone')->nullable()->unique();
             $table->string('password');
             $table->boolean('is_active')->default(true);
             $table->json('permissions')->nullable();
             $table->timestamps();
 
-            $table->index('username');
+            $table->index('phone');
             $table->index('teacher_id');
         });
     }

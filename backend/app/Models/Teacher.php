@@ -21,6 +21,7 @@ class Teacher extends Authenticatable
         'phone',
         'password',
         'avatar_key',
+        'is_suspended',
     ];
 
     protected $hidden = [
@@ -32,6 +33,7 @@ class Teacher extends Authenticatable
     {
         return [
             'password' => 'hashed',
+            'is_suspended' => 'boolean',
         ];
     }
 

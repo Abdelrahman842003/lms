@@ -16,6 +16,12 @@ class TeacherService
             return false;
         }
 
+        if ($teacher->is_suspended) {
+            throw ValidationException::withMessages([
+                'phone' => ['عفواً، تم تعليق حسابك. يرجى التواصل مع الإدارة.'],
+            ]);
+        }
+
         $token = $teacher->createToken('teacher_token', ['access-api'], now()->addMinutes(60))->plainTextToken;
 
         return [
@@ -26,26 +32,29 @@ class TeacherService
 
     public function createTeacher(array $data): Teacher
     {
-        // Generate username from name as slug
-        $baseUsername = \Illuminate\Support\Str::slug($data['name'], '_');
-        if (empty($baseUsername)) {
-             $baseUsername = 'teacher';
-        }
-        $username = $baseUsername;
-        $counter = 1;
-        
-        // Ensure unique username
-        while (Teacher::where('username', $username)->exists()) {
-            $username = $baseUsername . '_' . $counter;
-            $counter++;
-        }
-
         return Teacher::create([
             'name' => $data['name'],
-            'username' => $username,
+            'phone' => $data['phone'],
             'password' => Hash::make($data['password']),
         ]);
     }
+
+    public function updateTeacher(Teacher $teacher, array $data): Teacher
+    {
+        $updateData = [
+            'name' => $data['name'],
+            'phone' => $data['phone'],
+        ];
+
+        if (isset($data['password']) && $data['password']) {
+            $updateData['password'] = Hash::make($data['password']);
+        }
+
+        $teacher->update($updateData);
+
+        return $teacher;
+    }
+
     public function getTeacherDetails(string $id): Teacher
     {
         return Teacher::with(['students', 'secretaries'])
