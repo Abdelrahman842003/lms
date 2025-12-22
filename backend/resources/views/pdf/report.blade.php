@@ -342,7 +342,37 @@
                     </table>
                 </div>
 
+                <!-- Teacher Profits -->
+                <div class="section">
+                    <div class="section-title">ارباح المدرس</div>
+
+                    <table class="stats-grid">
+                        <tr>
+                            <td class="stat-card" style="width: 33%;">
+                                <div class="stat-value" style="color: #166534;">
+                                    {{ number_format($report['summary']['confirmed_payments'] ?? 0, 2) }} <span
+                                        style="font-size: 12pt;">ج.م</span>
+                                </div>
+                                <div class="stat-label">صافي الارباح</div>
+                            </td>
+                            <td class="stat-card" style="width: 33%;">
+                                <div class="stat-value">
+                                    {{ $report['summary']['paying_students_count'] ?? 0 }}
+                                </div>
+                                <div class="stat-label">طلاب دفعوا</div>
+                            </td>
+                            <td class="stat-card" style="width: 33%;">
+                                <div class="stat-value">
+                                    {{ $report['summary']['not_paying_students_count'] ?? 0 }}
+                                </div>
+                                <div class="stat-label">طلاب لم يدفعوا</div>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+
                 <!-- Monthly Subscription Breakdown -->
+
                 @if (isset($report['subscription_breakdown']) && count($report['subscription_breakdown']) > 0)
                     <div class="section">
                         <div class="section-title">تفاصيل الاشتراكات الشهرية</div>
@@ -388,7 +418,54 @@
                     </div>
                 @endif
 
+                <!-- Student Account Breakdown -->
+                @if (isset($report['student_account_breakdown']) && count($report['student_account_breakdown']) > 0)
+                    <div class="section">
+                        <div class="section-title">تفاصيل حساب الطلاب</div>
+
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>الشهر</th>
+                                    <th>عدد الطلاب</th>
+                                    <th>المستحق</th>
+                                    <th>المدفوع</th>
+                                    <th>المتبقي</th>
+                                    <th>الحالة</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($report['student_account_breakdown'] as $month)
+                                            <tr>
+                                                <td style="font-weight: 600;">{{ $month['month_name'] }}</td>
+                                                <td>{{ $month['student_count'] }}</td>
+                                                <td style="color: #1e3a5f; font-weight: bold;">
+                                                    {{ number_format($month['amount_due'], 2) }} ج.م
+                                                </td>
+                                                <td style="color: #166534; font-weight: bold;">
+                                                    {{ number_format($month['amount_paid'], 2) }} ج.م
+                                                </td>
+                                                <td style="color: #991b1b; font-weight: bold;">
+                                                    {{ number_format($month['amount_remaining'], 2) }} ج.م
+                                                </td>
+                                                <td>
+                                                    <span class="badge {{ $month['status'] === 'paid'
+                                    ? 'badge-success'
+                                    : ($month['status'] === 'partial'
+                                        ? 'badge-warning'
+                                        : 'badge-danger') }}">
+                                                        {{ $month['status_label'] }}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @endif
+
             @else
+
                 <!-- Admin Report Stats -->
                 <div class="section">
                     <div class="section-title">ملخص النظام</div>
