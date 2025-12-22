@@ -29,6 +29,7 @@ return new class extends Migration
             $table->ipAddress('ip_address')->nullable(); // Security: confirmation IP
             $table->string('device_info')->nullable(); // Security: confirmation device
             $table->text('notes')->nullable();
+            $table->json('meta')->nullable();
             $table->timestamps();
 
             // Indexes for performance

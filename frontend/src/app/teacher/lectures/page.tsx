@@ -305,7 +305,7 @@ export default function TeacherLecturesPage() {
       {isLoading ? (
         <div className="lectures-grid grid grid-cols-[repeat(auto-fill,minmax(350px,1fr))] gap-6 max-md:grid-cols-1">
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="bg-[#1e1e2d] rounded-xl shadow-lg border border-white/5 h-[280px] flex flex-col gap-4">
+            <div key={i} className="rounded-xl shadow-lg border border-white/5 h-[280px] flex flex-col gap-4">
               <div className="flex justify-between items-start">
                 <div className="skeleton-item w-[60%] h-6"></div>
                 <div className="skeleton-item w-[20%] h-6 rounded-xl"></div>

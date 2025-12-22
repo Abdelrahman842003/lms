@@ -12,6 +12,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->string('name');
             $table->string('password');
+            $table->string('avatar_key')->nullable();
             $table->rememberToken();
             
             // Optional/Profile fields

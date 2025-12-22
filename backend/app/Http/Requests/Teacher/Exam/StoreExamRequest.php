@@ -29,6 +29,32 @@ class StoreExamRequest extends FormRequest
         ];
     }
 
+    public function messages(): array
+    {
+        return [
+            'title.required' => 'عنوان الامتحان مطلوب',
+            'subject.required' => 'المادة مطلوبة',
+            'grade_id.required' => 'الصف الدراسي مطلوب',
+            'grade_id.exists' => 'الصف الدراسي غير موجود',
+            'date.required' => 'تاريخ الامتحان مطلوب',
+            'date.date' => 'تاريخ الامتحان غير صحيح',
+            'duration.required' => 'مدة الامتحان مطلوبة',
+            'duration.min' => 'مدة الامتحان يجب أن تكون دقيقة واحدة على الأقل',
+            'total_marks.required' => 'الدرجة الكلية مطلوبة',
+            'total_marks.min' => 'الدرجة الكلية يجب أن تكون 1 على الأقل',
+            'actual_question_count.required' => 'عدد الأسئلة الفعلية مطلوب',
+            'actual_question_count.min' => 'عدد الأسئلة يجب أن يكون 1 على الأقل',
+            'time_per_question.required' => 'مدة كل سؤال مطلوبة',
+            'time_per_question.min' => 'مدة السؤال يجب أن تكون 10 ثوانٍ على الأقل',
+            'time_per_question.max' => 'مدة السؤال يجب ألا تتجاوز 10 دقائق',
+            'questions.required' => 'الأسئلة مطلوبة',
+            'questions.min' => 'يجب إضافة سؤال واحد على الأقل',
+            'questions.*.text.required' => 'نص السؤال مطلوب',
+            'questions.*.options.required' => 'خيارات السؤال مطلوبة',
+            'questions.*.correct_answer.required' => 'الإجابة الصحيحة مطلوبة',
+        ];
+    }
+
     public function prepareForValidation()
     {
         $this->merge([
