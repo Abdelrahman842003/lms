@@ -8,6 +8,7 @@ use App\Models\Secretary;
 use App\Models\Enrollment;
 use App\Models\PaymentLog;
 use App\Models\Setting;
+use App\Models\TeacherSubscription;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
@@ -45,11 +46,19 @@ class ReportService
             ->where('expires_at', '>', now())
             ->sum('amount');
 
-        // Calculated revenue based on active students
-        $calculatedRevenue = $activeStudents * $pricePerStudent;
+        // Calculated revenue based on total enrolled students
+        $calculatedRevenue = $totalStudents * $pricePerStudent;
 
         // Monthly breakdown
         $monthlyData = $this->getMonthlyBreakdown($teacher->id, $startDate, $endDate, 'teacher');
+
+        // Monthly subscription breakdown
+        $subscriptionData = $this->getMonthlySubscriptions($teacher, $startDate, $endDate, $pricePerStudent);
+
+        // Calculate totals from subscriptions
+        $totalDue = array_sum(array_column($subscriptionData, 'amount_due'));
+        $totalPaid = array_sum(array_column($subscriptionData, 'amount_paid'));
+        $totalRemaining = $totalDue - $totalPaid;
 
         return [
             'teacher' => [
@@ -73,11 +82,93 @@ class ReportService
                 'pending_payments' => (float) $pendingPayments,
                 'calculated_revenue' => $calculatedRevenue,
                 'price_per_student' => $pricePerStudent,
+                'total_due' => $totalDue,
+                'total_paid' => $totalPaid,
+                'total_remaining' => $totalRemaining,
             ],
             'monthly_breakdown' => $monthlyData,
+            'subscription_breakdown' => $subscriptionData,
             'generated_at' => now()->format('Y-m-d H:i:s'),
         ];
     }
+
+    /**
+     * Get monthly subscription details for teacher
+     */
+    private function getMonthlySubscriptions(Teacher $teacher, Carbon $startDate, Carbon $endDate, float $pricePerStudent): array
+    {
+        $months = [];
+        $currentMonth = $startDate->copy()->startOfMonth();
+        $lastMonth = $endDate->copy()->startOfMonth();
+        
+        while ($currentMonth <= $lastMonth) {
+            $monthDate = $currentMonth->format('Y-m-d');
+            $monthEnd = $currentMonth->copy()->endOfMonth();
+            
+            // Get or create subscription for this month
+            $subscription = TeacherSubscription::firstOrCreate(
+                [
+                    'teacher_id' => $teacher->id,
+                    'month' => $monthDate,
+                ],
+                [
+                    'student_count' => $teacher->students()
+                        ->wherePivot('created_at', '<=', $monthEnd)
+                        ->count(),
+                    'amount_due' => $teacher->students()
+                        ->wherePivot('created_at', '<=', $monthEnd)
+                        ->count() * $pricePerStudent,
+                    'amount_paid' => 0,
+                    'status' => 'pending'
+                ]
+            );
+
+            // Refresh calculation for pending subscriptions
+            if ($subscription->status === 'pending') {
+                $studentCount = $teacher->students()
+                    ->wherePivot('created_at', '<=', $monthEnd)
+                    ->count();
+                $amountDue = $studentCount * $pricePerStudent;
+                
+                if ($subscription->student_count !== $studentCount || $subscription->amount_due != $amountDue) {
+                    $subscription->student_count = $studentCount;
+                    $subscription->amount_due = $amountDue;
+                    $subscription->save();
+                }
+            }
+
+            $amountRemaining = $subscription->amount_due - $subscription->amount_paid;
+
+            $months[] = [
+                'month' => $currentMonth->format('Y-m'),
+                'month_name' => $this->getArabicMonthName($currentMonth->month) . ' ' . $currentMonth->year,
+                'student_count' => $subscription->student_count,
+                'amount_due' => (float) $subscription->amount_due,
+                'amount_paid' => (float) $subscription->amount_paid,
+                'amount_remaining' => (float) max(0, $amountRemaining),
+                'status' => $subscription->status,
+                'status_label' => $this->getStatusLabel($subscription->status),
+            ];
+
+            $currentMonth->addMonth();
+        }
+        
+        return $months;
+    }
+
+    /**
+     * Get Arabic status label
+     */
+    private function getStatusLabel(string $status): string
+    {
+        return match($status) {
+            'paid' => 'مدفوع',
+            'partial' => 'مدفوع جزئياً',
+            'pending' => 'غير مدفوع',
+            default => $status,
+        };
+    }
+
 
     /**
      * Get admin overview report

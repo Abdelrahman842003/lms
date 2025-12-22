@@ -161,6 +161,12 @@ const getNavItems = (role: string): SidebarItem[] => {
         icon: 'fas fa-trophy',
         href: '/teacher/gamification',
       },
+      {
+        id: 'reports',
+        label: 'التقارير',
+        icon: 'fas fa-chart-bar',
+        href: '/teacher/reports',
+      },
 
     ];
   }

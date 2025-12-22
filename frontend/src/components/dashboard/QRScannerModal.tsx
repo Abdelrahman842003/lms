@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Html5QrcodeScanner } from 'html5-qrcode';
+import { Html5Qrcode } from 'html5-qrcode';
 
 interface QRScannerModalProps {
   isOpen: boolean;
@@ -10,42 +10,60 @@ interface QRScannerModalProps {
 }
 
 const QRScannerModal: React.FC<QRScannerModalProps> = ({ isOpen, onClose, onScanSuccess, lectureTitle, instructions }) => {
-  const scannerRef = useRef<Html5QrcodeScanner | null>(null);
+  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const isScanningRef = useRef<boolean>(false);
 
   useEffect(() => {
-    if (isOpen && !scannerRef.current) {
-      // Small delay to ensure DOM is ready
-      const timer = setTimeout(() => {
-        const scanner = new Html5QrcodeScanner(
-          "reader",
-          { 
-            fps: 10, 
-            qrbox: { width: 250, height: 250 },
-            aspectRatio: 1.0
-          },
-          /* verbose= */ false
-        );
-        
-        scanner.render(
-          (decodedText) => {
-            scanner.clear();
-            onScanSuccess(decodedText);
-          },
-          () => {
-            // parse error, ignore it.
-          }
-        );
-        
-        scannerRef.current = scanner;
-      }, 100);
+    let mounted = true;
 
-      return () => clearTimeout(timer);
-    }
+    const startScanner = async () => {
+      if (isOpen && !scannerRef.current && mounted) {
+        try {
+          // Small delay to ensure DOM is ready
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+          if (!mounted) return;
+
+          const scanner = new Html5Qrcode("reader");
+          scannerRef.current = scanner;
+
+          await scanner.start(
+            { facingMode: "environment" }, // Prefer back camera
+            {
+              fps: 10,
+              qrbox: { width: 250, height: 250 },
+              aspectRatio: 1.0
+            },
+            (decodedText) => {
+              if (mounted) {
+                onScanSuccess(decodedText);
+                // Optional: Stop scanning after success if desired, but usually we keep it open or let parent close
+              }
+            },
+            () => {
+              // parse error, ignore it.
+            }
+          );
+          
+          isScanningRef.current = true;
+        } catch (err) {
+          console.error("Error starting scanner:", err);
+        }
+      }
+    };
+
+    startScanner();
 
     return () => {
-      if (scannerRef.current) {
-        scannerRef.current.clear().catch(console.error);
-        scannerRef.current = null;
+      mounted = false;
+      if (scannerRef.current && isScanningRef.current) {
+        scannerRef.current.stop().then(() => {
+          scannerRef.current?.clear();
+          scannerRef.current = null;
+          isScanningRef.current = false;
+        }).catch(err => {
+          console.error("Failed to stop scanner", err);
+        });
       }
     };
   }, [isOpen, onScanSuccess]);
@@ -63,7 +81,7 @@ const QRScannerModal: React.FC<QRScannerModalProps> = ({ isOpen, onClose, onScan
             </button>
           </div>
           
-          <div className="bg-black rounded-lg overflow-hidden mb-4 relative min-h-[300px]">
+          <div className="bg-black rounded-lg overflow-hidden mb-4 relative min-h-[300px] flex items-center justify-center">
             <div id="reader" className="w-full h-full"></div>
           </div>
 

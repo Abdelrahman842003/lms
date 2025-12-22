@@ -137,6 +137,10 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureTeacherNotSuspende
     Route::get('sync-errors/{error}', [\App\Http\Controllers\Teacher\SyncErrorController::class, 'show']);
     Route::post('sync-errors/{error}/resolve', [\App\Http\Controllers\Teacher\SyncErrorController::class, 'resolve']);
     Route::post('sync-errors/bulk-resolve', [\App\Http\Controllers\Teacher\SyncErrorController::class, 'bulkResolve']);
+
+    // Reports
+    Route::get('reports/my-report', [\App\Http\Controllers\Teacher\TeacherReportController::class, 'myReport']);
+    Route::get('reports/my-report/pdf', [\App\Http\Controllers\Teacher\TeacherReportController::class, 'myReportPdf']);
 });
 
 // ============================================

@@ -311,34 +311,82 @@
                     </table>
                 </div>
 
-                <!-- Financial Summary -->
+                <!-- Subscription Summary -->
                 <div class="section">
-                    <div class="section-title">الملخص المالي</div>
+                    <div class="section-title">ملخص الاشتراكات</div>
 
-                    <table class="financial-table">
+                    <table class="stats-grid">
                         <tr>
-                            <td class="label">المدفوعات المؤكدة</td>
-                            <td class="value money">{{ number_format($report['summary']['confirmed_payments'], 2) }} ج.م
+                            <td class="stat-card" style="width: 33%;">
+                                <div class="stat-value" style="color: #1e3a5f;">
+                                    {{ number_format($report['summary']['total_due'] ?? 0, 2) }} <span
+                                        style="font-size: 12pt;">ج.م</span>
+                                </div>
+                                <div class="stat-label">إجمالي المستحقات</div>
                             </td>
-                        </tr>
-                        <tr>
-                            <td class="label">المدفوعات المعلقة</td>
-                            <td class="value money-pending">{{ number_format($report['summary']['pending_payments'], 2) }}
-                                ج.م</td>
-                        </tr>
-                        <tr class="total">
-                            <td class="label">
-                                الإيرادات المحسوبة
-                                <span style="color: #94a3b8; font-size: 9pt;">
-                                    ({{ $report['summary']['active_students'] }} طالب ×
-                                    {{ $report['summary']['price_per_student'] }} ج.م)
-                                </span>
+                            <td class="stat-card" style="width: 33%;">
+                                <div class="stat-value" style="color: #166534;">
+                                    {{ number_format($report['summary']['total_paid'] ?? 0, 2) }} <span
+                                        style="font-size: 12pt;">ج.م</span>
+                                </div>
+                                <div class="stat-label">إجمالي المدفوع</div>
                             </td>
-                            <td class="value money">{{ number_format($report['summary']['calculated_revenue'], 2) }} ج.م
+                            <td class="stat-card" style="width: 33%;">
+                                <div class="stat-value" style="color: #991b1b;">
+                                    {{ number_format($report['summary']['total_remaining'] ?? 0, 2) }} <span
+                                        style="font-size: 12pt;">ج.م</span>
+                                </div>
+                                <div class="stat-label">إجمالي المتبقي</div>
                             </td>
                         </tr>
                     </table>
                 </div>
+
+                <!-- Monthly Subscription Breakdown -->
+                @if (isset($report['subscription_breakdown']) && count($report['subscription_breakdown']) > 0)
+                    <div class="section">
+                        <div class="section-title">تفاصيل الاشتراكات الشهرية</div>
+
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>الشهر</th>
+                                    <th>عدد الطلاب</th>
+                                    <th>المستحق</th>
+                                    <th>المدفوع</th>
+                                    <th>المتبقي</th>
+                                    <th>الحالة</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($report['subscription_breakdown'] as $month)
+                                            <tr>
+                                                <td style="font-weight: 600;">{{ $month['month_name'] }}</td>
+                                                <td>{{ $month['student_count'] }}</td>
+                                                <td style="color: #1e3a5f; font-weight: bold;">
+                                                    {{ number_format($month['amount_due'], 2) }} ج.م
+                                                </td>
+                                                <td style="color: #166534; font-weight: bold;">
+                                                    {{ number_format($month['amount_paid'], 2) }} ج.م
+                                                </td>
+                                                <td style="color: #991b1b; font-weight: bold;">
+                                                    {{ number_format($month['amount_remaining'], 2) }} ج.م
+                                                </td>
+                                                <td>
+                                                    <span class="badge {{ $month['status'] === 'paid'
+                                    ? 'badge-success'
+                                    : ($month['status'] === 'partial'
+                                        ? 'badge-warning'
+                                        : 'badge-danger') }}">
+                                                        {{ $month['status_label'] }}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @endif
 
             @else
                 <!-- Admin Report Stats -->

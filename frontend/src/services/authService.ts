@@ -1078,3 +1078,54 @@ export async function downloadAdminReportPdf(params: ReportParams): Promise<void
   window.URL.revokeObjectURL(url);
   a.remove();
 }
+
+// ============================================
+// Teacher Reports API Functions (for teacher dashboard)
+// ============================================
+
+/**
+ * Get report for the authenticated teacher
+ */
+export async function getMyTeacherReport(params: ReportParams): Promise<any> {
+  const queryParams = new URLSearchParams({
+    start_date: params.start_date,
+    end_date: params.end_date,
+  });
+  return await fetchApi(`/teacher/reports/my-report?${queryParams}`);
+}
+
+/**
+ * Download teacher's own report as PDF
+ */
+export async function downloadMyTeacherReportPdf(params: ReportParams): Promise<void> {
+  const token = getAuthToken();
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+  const cleanBaseUrl = API_BASE.replace(/\/api\/?$/, '').replace(/\/$/, '');
+  
+  const queryParams = new URLSearchParams({
+    start_date: params.start_date,
+    end_date: params.end_date,
+  });
+  
+  const response = await fetch(`${cleanBaseUrl}/api/teacher/reports/my-report/pdf?${queryParams}`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Accept': 'application/pdf',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to download PDF');
+  }
+
+  const blob = await response.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `my-report-${params.start_date}-to-${params.end_date}.pdf`;
+  document.body.appendChild(a);
+  a.click();
+  window.URL.revokeObjectURL(url);
+  a.remove();
+}
