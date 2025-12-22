@@ -8,6 +8,8 @@ use App\Models\Question;
 use App\Models\Student;
 use Illuminate\Support\Collection;
 
+use Illuminate\Support\Facades\Log;
+
 class MistakesService
 {
     /**
@@ -52,20 +54,29 @@ class MistakesService
     /**
      * Get student's mistakes for a teacher
      */
-    public function getMistakes(string $studentId, string $teacherId, bool $includesMastered = false): Collection
+    public function getMistakes(string $studentId, string $teacherId): Collection
     {
+        Log::info('MistakesService::getMistakes query start', [
+            'student_id' => $studentId,
+            'teacher_id' => $teacherId,
+        ]);
+
         $query = FailedQuestion::where('student_id', $studentId)
             ->where('teacher_id', $teacherId)
             ->with(['question', 'exam:id,title,subject']);
 
-        if (!$includesMastered) {
-            $query->unmastered();
-        }
+        // Always unmastered now
+        $query->unmastered();
 
-        return $query->orderByDesc('times_failed')
+        $results = $query->orderByDesc('times_failed')
             ->orderByDesc('created_at')
-            ->get()
-            ->map(function ($item) {
+            ->get();
+
+        Log::info('MistakesService::getMistakes query result', [
+            'count' => $results->count()
+        ]);
+
+        return $results->map(function ($item) {
                 return [
                     'id' => $item->id,
                     'question' => [
@@ -121,64 +132,6 @@ class MistakesService
             'pending' => $pending,
             'mastery_rate' => $total > 0 ? round(($mastered / $total) * 100, 1) : 0,
             'by_exam' => $byExam,
-        ];
-    }
-
-    /**
-     * Get review quiz questions
-     */
-    public function getReviewQuiz(string $studentId, string $teacherId, int $limit = 10): array
-    {
-        $questions = FailedQuestion::where('student_id', $studentId)
-            ->where('teacher_id', $teacherId)
-            ->unmastered()
-            ->with('question')
-            ->orderByDesc('times_failed')
-            ->limit($limit)
-            ->get();
-
-        if ($questions->isEmpty()) {
-            return [
-                'questions' => [],
-                'total' => 0,
-                'message' => 'ما عندكش أخطاء للمراجعة! 🎉',
-            ];
-        }
-
-        return [
-            'questions' => $questions->map(function ($item) {
-                $options = $item->question->options;
-                shuffle($options);
-                return [
-                    'failed_question_id' => $item->id,
-                    'question_id' => $item->question->id,
-                    'text' => $item->question->text,
-                    'options' => $options,
-                    'times_failed' => $item->times_failed,
-                ];
-            }),
-            'total' => $questions->count(),
-        ];
-    }
-
-    /**
-     * Check answer in review quiz and update mastery
-     */
-    public function checkReviewAnswer(string $failedQuestionId, string $answer): array
-    {
-        $failedQuestion = FailedQuestion::with('question')->findOrFail($failedQuestionId);
-        $isCorrect = $failedQuestion->question->correct_answer === $answer;
-
-        if ($isCorrect) {
-            $failedQuestion->markAsMastered();
-        } else {
-            $failedQuestion->incrementFailed($answer);
-        }
-
-        return [
-            'is_correct' => $isCorrect,
-            'correct_answer' => $failedQuestion->question->correct_answer,
-            'is_mastered' => $isCorrect,
         ];
     }
 

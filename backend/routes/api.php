@@ -183,8 +183,6 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureTeacherNotSuspende
     // Mistakes (Smart Mistakes Notebook)
     Route::get('/mistakes', [\App\Http\Controllers\Student\MistakesController::class, 'index']);
     Route::post('/mistakes/{id}/mastered', [\App\Http\Controllers\Student\MistakesController::class, 'markAsMastered']);
-    Route::get('/mistakes/quiz', [\App\Http\Controllers\Student\MistakesController::class, 'quiz']);
-    Route::post('/mistakes/quiz/{failedQuestionId}/answer', [\App\Http\Controllers\Student\MistakesController::class, 'submitQuizAnswer']);
 
     // Payment Confirmation (Rate Limited)
     Route::post('payments/confirm', [\App\Http\Controllers\Student\PaymentConfirmationController::class, 'confirm']);

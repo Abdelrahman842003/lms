@@ -27,27 +27,47 @@ const QRScannerModal: React.FC<QRScannerModalProps> = ({ isOpen, onClose, onScan
           const scanner = new Html5Qrcode("reader");
           scannerRef.current = scanner;
 
-          await scanner.start(
-            { facingMode: "environment" }, // Prefer back camera
-            {
-              fps: 10,
-              qrbox: { width: 250, height: 250 },
-              aspectRatio: 1.0
-            },
-            (decodedText) => {
-              if (mounted) {
-                onScanSuccess(decodedText);
-                // Optional: Stop scanning after success if desired, but usually we keep it open or let parent close
-              }
-            },
-            () => {
-              // parse error, ignore it.
+          const config = {
+            fps: 10,
+            qrbox: { width: 250, height: 250 },
+            aspectRatio: 1.0
+          };
+
+          const onSuccess = (decodedText: string) => {
+            if (mounted) {
+              onScanSuccess(decodedText);
             }
-          );
-          
-          isScanningRef.current = true;
+          };
+
+          try {
+            // Attempt 1: Back Camera (Environment)
+            await scanner.start({ facingMode: "environment" }, config, onSuccess, () => {});
+            isScanningRef.current = true;
+          } catch (err) {
+            console.warn("Environment camera failed, trying user camera...", err);
+            try {
+              // Attempt 2: User Camera (Front/Webcam)
+              await scanner.start({ facingMode: "user" }, config, onSuccess, () => {});
+              isScanningRef.current = true;
+            } catch (err2) {
+              console.warn("User camera failed, trying fallback...", err2);
+              try {
+                // Attempt 3: First available camera ID
+                const devices = await Html5Qrcode.getCameras();
+                if (devices && devices.length > 0) {
+                  await scanner.start(devices[0].id, config, onSuccess, () => {});
+                  isScanningRef.current = true;
+                } else {
+                  throw new Error("No cameras found");
+                }
+              } catch (err3) {
+                console.error("All camera attempts failed:", err3);
+                // Could show a toast here if needed
+              }
+            }
+          }
         } catch (err) {
-          console.error("Error starting scanner:", err);
+          console.error("Critical error starting scanner:", err);
         }
       }
     };
@@ -95,6 +115,8 @@ const QRScannerModal: React.FC<QRScannerModalProps> = ({ isOpen, onClose, onScan
           >
             إلغاء
           </button>
+
+
         </div>
       </div>
     </div>

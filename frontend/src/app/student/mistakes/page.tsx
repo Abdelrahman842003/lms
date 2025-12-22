@@ -40,12 +40,12 @@ export default function MistakesPage() {
   const [mistakes, setMistakes] = useState<Mistake[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showMastered, setShowMastered] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadMistakes();
-  }, [selectedTeacher, showMastered]);
+  }, [selectedTeacher]);
 
   const loadMistakes = async () => {
     if (!selectedTeacher) {
@@ -55,15 +55,34 @@ export default function MistakesPage() {
 
     try {
       setLoading(true);
+      setError(null);
+      console.log('Fetching mistakes for teacher:', selectedTeacher.teacher_id);
+      
       const response = await fetchApi(
-        `/student/mistakes?teacher_id=${selectedTeacher.teacher_id}&include_mastered=${showMastered}`
+        `/student/mistakes?teacher_id=${selectedTeacher.teacher_id}`
       );
-      if (response.success) {
-        setMistakes(response.data.mistakes || []);
-        setStats(response.data.stats || null);
+      
+      console.log('Mistakes response:', response);
+
+      // fetchApi returns res.data, so response IS the data object
+      if (response && (response.mistakes || Array.isArray(response.mistakes))) {
+        setMistakes(response.mistakes || []);
+        setStats(response.stats || null);
+      } else {
+        console.error('Invalid response format:', response);
+        
+        if (response && response.success === false) {
+             setError('حدث خطأ أثناء تحميل البيانات');
+        } else if (!response || Object.keys(response).length === 0) {
+             console.error('Empty or null response received');
+             setError('لم يتم استلام بيانات من الخادم');
+        } else {
+             setError('تنسيق بيانات غير صالح');
+        }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to load mistakes:', error);
+      setError(error.message || 'حدث خطأ غير متوقع');
     } finally {
       setLoading(false);
     }
@@ -74,7 +93,8 @@ export default function MistakesPage() {
       const response = await fetchApi(`/student/mistakes/${id}/mastered`, {
         method: 'POST',
       });
-      if (response.success) {
+      
+      if (response && response.success) {
         setMistakes(prev => prev.filter(m => m.id !== id));
         if (stats) {
           setStats({
@@ -83,6 +103,8 @@ export default function MistakesPage() {
             pending: stats.pending - 1,
           });
         }
+      } else {
+        console.error('Failed to mark as mastered, invalid response:', response);
       }
     } catch (error) {
       console.error('Failed to mark as mastered:', error);
@@ -107,13 +129,7 @@ export default function MistakesPage() {
             <p className="text-gray-400">راجع أخطاءك وقواها قبل الامتحان 💪</p>
           </div>
           <div className="flex gap-3">
-            <Link
-              href={`/student/mistakes/quiz?teacher_id=${selectedTeacher?.teacher_id}`}
-              className="btn btn-primary flex items-center gap-2"
-            >
-              <i className="fas fa-play-circle"></i>
-              كويز مراجعة
-            </Link>
+
             <Link href="/student/dashboard" className="btn btn-outline">
               <i className="fas fa-arrow-right ml-2"></i>
               العودة
@@ -143,18 +159,7 @@ export default function MistakesPage() {
           </div>
         )}
 
-        {/* Filter Toggle */}
-        <div className="flex items-center gap-4 mb-6">
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={showMastered}
-              onChange={(e) => setShowMastered(e.target.checked)}
-              className="w-4 h-4 rounded"
-            />
-            <span className="text-gray-400">عرض الأخطاء المُتقَنة</span>
-          </label>
-        </div>
+
 
         {loading ? (
           <div className="text-center py-16">
@@ -166,11 +171,23 @@ export default function MistakesPage() {
             <i className="fas fa-user-graduate text-4xl text-gray-500 mb-4"></i>
             <p className="text-gray-400">اختر مدرس لعرض أخطاءك</p>
           </div>
+        ) : error ? (
+          <div className="text-center py-16 bg-red-500/10 rounded-2xl border border-red-500/30">
+            <i className="fas fa-exclamation-circle text-4xl text-red-500 mb-4"></i>
+            <h3 className="text-xl font-bold text-white mb-2">عفواً</h3>
+            <p className="text-gray-400">{error}</p>
+            <button 
+              onClick={loadMistakes}
+              className="mt-4 px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
+            >
+              إعادة المحاولة
+            </button>
+          </div>
         ) : mistakes.length === 0 ? (
           <div className="text-center py-16 bg-gradient-to-br from-success/10 to-success/5 rounded-2xl border border-success/30">
             <div className="text-6xl mb-4">🎉</div>
             <h3 className="text-xl font-bold text-white mb-2">
-              {showMastered ? 'لا توجد أخطاء' : 'أحسنت! ما عندكش أخطاء للمراجعة'}
+              أحسنت! ما عندكش أخطاء للمراجعة
             </h3>
             <p className="text-gray-400">استمر في التفوق!</p>
           </div>

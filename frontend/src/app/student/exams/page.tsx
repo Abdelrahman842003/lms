@@ -229,9 +229,7 @@ export default function StudentExamsPage() {
                       {exam.student_score}/{exam.max_score}
                     </span>
                   </div>
-                  <button className="btn btn-sm btn-outline">
-                    عرض الإجابات
-                  </button>
+
                 </div>
               </div>
             ))}
