@@ -22,7 +22,7 @@ class PointService
     public function awardAttendancePoints(Student $student, Lecture $lecture): ?PointTransaction
     {
         $teacherId = $lecture->teacher_id;
-        $settings = GamificationSetting::getOrCreate($teacherId);
+        $settings = \App\Services\Infrastructure\CacheService::getGamificationSettings($teacherId, fn() => GamificationSetting::getOrCreate($teacherId));
 
         if (!$settings->is_enabled) {
             return null;
@@ -67,7 +67,7 @@ class PointService
     {
         $exam = $result->exam;
         $teacherId = $exam->teacher_id;
-        $settings = GamificationSetting::getOrCreate($teacherId);
+        $settings = \App\Services\Infrastructure\CacheService::getGamificationSettings($teacherId, fn() => GamificationSetting::getOrCreate($teacherId));
 
         if (!$settings->is_enabled) {
             return null;
@@ -116,25 +116,27 @@ class PointService
      */
     public function getWeeklyLeaderboard(string $teacherId, ?int $limit = null): Collection
     {
-        $settings = GamificationSetting::getOrCreate($teacherId);
-        $limit = $limit ?? $settings->leaderboard_size;
+        return \App\Services\Infrastructure\CacheService::getWeeklyLeaderboard($teacherId, function () use ($teacherId, $limit) {
+            $settings = \App\Services\Infrastructure\CacheService::getGamificationSettings($teacherId, fn() => GamificationSetting::getOrCreate($teacherId));
+            $limit = $limit ?? $settings->leaderboard_size;
 
-        return PointTransaction::where('teacher_id', $teacherId)
-            ->where('created_at', '>=', now()->startOfWeek())
-            ->select('student_id', DB::raw('SUM(points) as weekly_points'))
-            ->groupBy('student_id')
-            ->orderByDesc('weekly_points')
-            ->with('student:id,name,avatar_key')
-            ->limit($limit)
-            ->get()
-            ->map(function ($item, $index) {
-                return [
-                    'rank' => $index + 1,
-                    'student_id' => $item->student_id,
-                    'student' => $item->student,
-                    'weekly_points' => (int) $item->weekly_points,
-                ];
-            });
+            return PointTransaction::where('teacher_id', $teacherId)
+                ->where('created_at', '>=', now()->startOfWeek())
+                ->select('student_id', DB::raw('SUM(points) as weekly_points'))
+                ->groupBy('student_id')
+                ->orderByDesc('weekly_points')
+                ->with('student:id,name,avatar_key')
+                ->limit($limit)
+                ->get()
+                ->map(function ($item, $index) {
+                    return [
+                        'rank' => $index + 1,
+                        'student_id' => $item->student_id,
+                        'student' => $item->student,
+                        'weekly_points' => (int) $item->weekly_points,
+                    ];
+                });
+        });
     }
 
     /**
@@ -152,7 +154,7 @@ class PointService
         $paginator = $query->paginate($perPage);
         
         $paginator->getCollection()->transform(function ($item, $index) use ($paginator) {
-             $rank = ($paginator->currentPage() - 1) * $paginator->perPage() + $index + 1;
+             $rank = HelperService::calculatePaginationRank($index, $paginator);
              
              return [
                 'rank' => $rank,
@@ -168,9 +170,10 @@ class PointService
     /**
      * Get leaderboard for last 3 months
      */
+
     public function getLast3MonthsLeaderboard(string $teacherId, ?int $limit = null): Collection
     {
-        $settings = GamificationSetting::getOrCreate($teacherId);
+        $settings = \App\Services\Infrastructure\CacheService::getGamificationSettings($teacherId, fn() => GamificationSetting::getOrCreate($teacherId));
         $limit = $limit ?? $settings->leaderboard_size;
 
         return PointTransaction::where('teacher_id', $teacherId)
@@ -196,22 +199,24 @@ class PointService
      */
     public function getAllTimeLeaderboard(string $teacherId, ?int $limit = null): Collection
     {
-        $settings = GamificationSetting::getOrCreate($teacherId);
-        $limit = $limit ?? $settings->leaderboard_size;
+        return \App\Services\Infrastructure\CacheService::getAllTimeLeaderboard($teacherId, function () use ($teacherId, $limit) {
+            $settings = \App\Services\Infrastructure\CacheService::getGamificationSettings($teacherId, fn() => GamificationSetting::getOrCreate($teacherId));
+            $limit = $limit ?? $settings->leaderboard_size;
 
-        return StudentPoint::where('teacher_id', $teacherId)
-            ->orderByDesc('total_points')
-            ->with('student:id,name,avatar_key')
-            ->limit($limit)
-            ->get()
-            ->map(function ($item, $index) {
-                return [
-                    'rank' => $index + 1,
-                    'student_id' => $item->student_id,
-                    'student' => $item->student,
-                    'total_points' => $item->total_points,
-                ];
-            });
+            return StudentPoint::where('teacher_id', $teacherId)
+                ->orderByDesc('total_points')
+                ->with('student:id,name,avatar_key')
+                ->limit($limit)
+                ->get()
+                ->map(function ($item, $index) {
+                    return [
+                        'rank' => $index + 1,
+                        'student_id' => $item->student_id,
+                        'student' => $item->student,
+                        'total_points' => $item->total_points,
+                    ];
+                });
+        });
     }
 
     /**
@@ -226,7 +231,7 @@ class PointService
         $paginator = $query->paginate($perPage);
         
         $paginator->getCollection()->transform(function ($item, $index) use ($paginator) {
-             $rank = ($paginator->currentPage() - 1) * $paginator->perPage() + $index + 1;
+             $rank = HelperService::calculatePaginationRank($index, $paginator);
              
              return [
                 'rank' => $rank,

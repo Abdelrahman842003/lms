@@ -10,7 +10,14 @@ class Setting extends Model
 
     public static function getValue($key, $default = null)
     {
-        $setting = self::where('key', $key)->first();
-        return $setting ? $setting->value : $default;
+        return \App\Services\Infrastructure\CacheService::getSetting($key, function () use ($key, $default) {
+            return self::where('key', $key)->value('value') ?? $default;
+        });
+    }
+
+    protected static function booted()
+    {
+        static::saved(fn($setting) => \App\Services\Infrastructure\CacheService::forgetSetting($setting->key));
+        static::deleted(fn($setting) => \App\Services\Infrastructure\CacheService::forgetSetting($setting->key));
     }
 }

@@ -100,39 +100,41 @@ class MistakesService
      */
     public function getStats(string $studentId, string $teacherId): array
     {
-        $total = FailedQuestion::where('student_id', $studentId)
-            ->where('teacher_id', $teacherId)
-            ->count();
+        return \App\Services\Infrastructure\CacheService::getMistakesStats($studentId, $teacherId, function () use ($studentId, $teacherId) {
+            $total = FailedQuestion::where('student_id', $studentId)
+                ->where('teacher_id', $teacherId)
+                ->count();
 
-        $mastered = FailedQuestion::where('student_id', $studentId)
-            ->where('teacher_id', $teacherId)
-            ->where('is_mastered', true)
-            ->count();
+            $mastered = FailedQuestion::where('student_id', $studentId)
+                ->where('teacher_id', $teacherId)
+                ->where('is_mastered', true)
+                ->count();
 
-        $pending = $total - $mastered;
+            $pending = $total - $mastered;
 
-        // Get most failed exams/subjects
-        $byExam = FailedQuestion::where('student_id', $studentId)
-            ->where('teacher_id', $teacherId)
-            ->unmastered()
-            ->with('exam:id,title,subject')
-            ->get()
-            ->groupBy('exam_id')
-            ->map(fn($items) => [
-                'exam' => $items->first()->exam,
-                'count' => $items->count(),
-            ])
-            ->sortByDesc('count')
-            ->take(5)
-            ->values();
+            // Get most failed exams/subjects
+            $byExam = FailedQuestion::where('student_id', $studentId)
+                ->where('teacher_id', $teacherId)
+                ->unmastered()
+                ->with('exam:id,title,subject')
+                ->get()
+                ->groupBy('exam_id')
+                ->map(fn($items) => [
+                    'exam' => $items->first()->exam,
+                    'count' => $items->count(),
+                ])
+                ->sortByDesc('count')
+                ->take(5)
+                ->values();
 
-        return [
-            'total_mistakes' => $total,
-            'mastered' => $mastered,
-            'pending' => $pending,
-            'mastery_rate' => $total > 0 ? round(($mastered / $total) * 100, 1) : 0,
-            'by_exam' => $byExam,
-        ];
+            return [
+                'total_mistakes' => $total,
+                'mastered' => $mastered,
+                'pending' => $pending,
+                'mastery_rate' => $total > 0 ? round(($mastered / $total) * 100, 1) : 0,
+                'by_exam' => $byExam,
+            ];
+        });
     }
 
     /**

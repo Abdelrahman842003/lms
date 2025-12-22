@@ -126,8 +126,8 @@ class TeacherService
         }
 
         $count = $query->count();
-        $setting = \App\Models\Setting::where('key', 'pricePerStudent')->value('value');
-        $price = is_numeric($setting) ? (float) $setting : 0;
+        $count = $query->count();
+        $price = \App\Services\HelperService::getPricePerStudent();
         
         return $count * $price;
     }

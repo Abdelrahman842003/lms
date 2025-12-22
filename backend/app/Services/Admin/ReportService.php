@@ -19,7 +19,7 @@ class ReportService
      */
     public function getTeacherReport(Teacher $teacher, Carbon $startDate, Carbon $endDate): array
     {
-        $pricePerStudent = $this->getPricePerStudent();
+        $pricePerStudent = \App\Services\HelperService::getPricePerStudent();
 
         // Students data
         $enrollmentsQuery = Enrollment::where('teacher_id', $teacher->id);
@@ -151,13 +151,13 @@ class ReportService
 
             $months[] = [
                 'month' => $currentMonth->format('Y-m'),
-                'month_name' => $this->getArabicMonthName($currentMonth->month) . ' ' . $currentMonth->year,
+                'month_name' => \App\Services\HelperService::getArabicMonthName($currentMonth->month) . ' ' . $currentMonth->year,
                 'student_count' => $subscription->student_count,
                 'amount_due' => (float) $subscription->amount_due,
                 'amount_paid' => (float) $subscription->amount_paid,
                 'amount_remaining' => (float) max(0, $amountRemaining),
                 'status' => $subscription->status,
-                'status_label' => $this->getStatusLabel($subscription->status),
+                'status_label' => \App\Services\HelperService::getStatusLabel($subscription->status),
             ];
 
             $currentMonth->addMonth();
@@ -230,13 +230,13 @@ class ReportService
 
             $months[] = [
                 'month' => $currentMonth->format('Y-m'),
-                'month_name' => $this->getArabicMonthName($currentMonth->month) . ' ' . $currentMonth->year,
+                'month_name' => \App\Services\HelperService::getArabicMonthName($currentMonth->month) . ' ' . $currentMonth->year,
                 'student_count' => $studentCount,
                 'amount_due' => (float) $amountDue,
                 'amount_paid' => (float) $amountPaid,
                 'amount_remaining' => (float) max(0, $amountRemaining),
                 'status' => $status,
-                'status_label' => $this->getStatusLabel($status),
+                'status_label' => \App\Services\HelperService::getStatusLabel($status),
             ];
 
             $currentMonth->addMonth();
@@ -300,14 +300,14 @@ class ReportService
 
                 $details[] = [
                     'month' => $currentMonth->format('Y-m'),
-                    'month_name' => $this->getArabicMonthName($currentMonth->month) . ' ' . $currentMonth->year,
+                    'month_name' => \App\Services\HelperService::getArabicMonthName($currentMonth->month) . ' ' . $currentMonth->year,
                     'student_name' => $enrollment->student->name,
                     'student_phone' => $enrollment->student->phone,
                     'amount_due' => (float) $price,
                     'amount_paid' => (float) $amountPaid,
                     'amount_remaining' => (float) max(0, $amountRemaining),
                     'status' => $status,
-                    'status_label' => $this->getStatusLabel($status),
+                    'status_label' => \App\Services\HelperService::getStatusLabel($status),
                 ];
             }
 
@@ -336,7 +336,7 @@ class ReportService
      */
     public function getAdminReport(Carbon $startDate, Carbon $endDate): array
     {
-        $pricePerStudent = $this->getPricePerStudent();
+        $pricePerStudent = \App\Services\HelperService::getPricePerStudent();
 
         // Overall counts
         $totalTeachers = Teacher::count();
@@ -459,7 +459,7 @@ class ReportService
             
             $months[] = [
                 'month' => $currentMonth->format('Y-m'),
-                'month_name' => $this->getArabicMonthName($currentMonth->month) . ' ' . $currentMonth->year,
+                'month_name' => \App\Services\HelperService::getArabicMonthName($currentMonth->month) . ' ' . $currentMonth->year,
                 'new_enrollments' => $newEnrollments,
                 'confirmed_payments' => (float) $payments,
             ];
@@ -470,35 +470,4 @@ class ReportService
         return $months;
     }
 
-    /**
-     * Get Arabic month name
-     */
-    private function getArabicMonthName(int $month): string
-    {
-        $months = [
-            1 => 'يناير',
-            2 => 'فبراير',
-            3 => 'مارس',
-            4 => 'أبريل',
-            5 => 'مايو',
-            6 => 'يونيو',
-            7 => 'يوليو',
-            8 => 'أغسطس',
-            9 => 'سبتمبر',
-            10 => 'أكتوبر',
-            11 => 'نوفمبر',
-            12 => 'ديسمبر',
-        ];
-        
-        return $months[$month] ?? '';
-    }
-
-    /**
-     * Get price per student from settings
-     */
-    private function getPricePerStudent(): float
-    {
-        $value = Setting::where('key', 'pricePerStudent')->value('value');
-        return is_numeric($value) ? (float) $value : 0;
-    }
 }

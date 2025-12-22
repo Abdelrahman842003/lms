@@ -12,43 +12,109 @@ class CacheService
     public const TTL_LONG = 3600;      // 1 hour
     public const TTL_DAY = 86400;      // 24 hours
 
-    // ==================== Teacher Cache ====================
+    // ==================== Settings Cache ====================
+
+    public static function getSetting(string $key, callable $callback): mixed
+    {
+        // Use tags for settings to allow flushing all settings
+        return Cache::tags(['settings'])->rememberForever("setting:{$key}", $callback);
+    }
+
+    public static function forgetSetting(string $key): void
+    {
+        Cache::tags(['settings'])->forget("setting:{$key}");
+    }
+
+    public static function forgetAllSettings(): void
+    {
+        Cache::tags(['settings'])->flush();
+    }
+
+    // ==================== Gamification Cache ====================
+
+    public static function getGamificationSettings(string|int $teacherId, callable $callback): mixed
+    {
+        return Cache::tags(['teacher_' . $teacherId, 'settings'])->remember(
+            "teacher:{$teacherId}:gamification_settings",
+            self::TTL_MEDIUM,
+            $callback
+        );
+    }
+
+    public static function forgetGamificationSettings(string|int $teacherId): void
+    {
+        Cache::forget("teacher:{$teacherId}:gamification_settings");
+    }
+
+    // ==================== Leaderboard Cache ====================
+
+    public static function getWeeklyLeaderboard(string|int $teacherId, callable $callback): mixed
+    {
+        return Cache::tags(['teacher_' . $teacherId, 'leaderboard'])->remember(
+            "teacher:{$teacherId}:leaderboard:weekly",
+            self::TTL_SHORT, // 5 minutes
+            $callback
+        );
+    }
+
+    public static function getAllTimeLeaderboard(string|int $teacherId, callable $callback): mixed
+    {
+        return Cache::tags(['teacher_' . $teacherId, 'leaderboard'])->remember(
+            "teacher:{$teacherId}:leaderboard:all_time",
+            self::TTL_SHORT, // 5 minutes
+            $callback
+        );
+    }
+
+    public static function forgetLeaderboards(string|int $teacherId): void
+    {
+        Cache::forget("teacher:{$teacherId}:leaderboard:weekly");
+        Cache::forget("teacher:{$teacherId}:leaderboard:all_time");
+    }
+
+    // ==================== Teacher Cache (General) ====================
     
     public static function getTeacherDashboardStats(string|int $teacherId, callable $callback): array
     {
-        return Cache::remember(
+        return Cache::tags(['teacher_' . $teacherId])->remember(
             "teacher:{$teacherId}:dashboard:stats",
             self::TTL_SHORT,
             $callback
         );
     }
 
-    public static function forgetTeacherDashboard(string|int $teacherId): void
-    {
-        Cache::forget("teacher:{$teacherId}:dashboard:stats");
-    }
-
     public static function getTeacherGrades(string|int $teacherId, callable $callback): mixed
     {
-        return Cache::remember(
+        return Cache::tags(['teacher_' . $teacherId])->remember(
             "teacher:{$teacherId}:grades",
             self::TTL_MEDIUM,
             $callback
         );
     }
 
-    public static function forgetTeacherGrades(string|int $teacherId): void
-    {
-        Cache::forget("teacher:{$teacherId}:grades");
-    }
-
     public static function getTeacherGroups(string|int $teacherId, callable $callback): mixed
     {
-        return Cache::remember(
+        return Cache::tags(['teacher_' . $teacherId])->remember(
             "teacher:{$teacherId}:groups",
             self::TTL_MEDIUM,
             $callback
         );
+    }
+
+    public static function forgetTeacherCache(string|int $teacherId): void
+    {
+        Cache::tags(['teacher_' . $teacherId])->flush();
+    }
+
+    // Kept for backward compatibility
+    public static function forgetTeacherDashboard(string|int $teacherId): void
+    {
+        Cache::forget("teacher:{$teacherId}:dashboard:stats");
+    }
+
+    public static function forgetTeacherGrades(string|int $teacherId): void
+    {
+        Cache::forget("teacher:{$teacherId}:grades");
     }
 
     public static function forgetTeacherGroups(string|int $teacherId): void
@@ -94,12 +160,26 @@ class CacheService
         }
     }
 
+    // ==================== Mistakes Cache ====================
+
+    public static function getMistakesStats(string|int $studentId, string|int $teacherId, callable $callback): mixed
+    {
+        return Cache::tags(['student_' . $studentId, 'teacher_' . $teacherId])->remember(
+            "student:{$studentId}:teacher:{$teacherId}:mistakes_stats",
+            self::TTL_SHORT,
+            $callback
+        );
+    }
+
+    public static function forgetMistakesStats(string|int $studentId, string|int $teacherId): void
+    {
+        Cache::tags(['student_' . $studentId, 'teacher_' . $teacherId])->flush();
+    }
+
     // ==================== Bulk Invalidation ====================
 
     public static function forgetAllTeacherCache(string|int $teacherId): void
     {
-        self::forgetTeacherDashboard($teacherId);
-        self::forgetTeacherGrades($teacherId);
-        self::forgetTeacherGroups($teacherId);
+        self::forgetTeacherCache($teacherId);
     }
 }
