@@ -27,6 +27,62 @@ export default function GradesPage() {
     name: '',
     price: 0,
   });
+  const [validationErrors, setValidationErrors] = useState<{
+    name?: string;
+    price?: string;
+  }>({});
+  const [touched, setTouched] = useState<{
+    name: boolean;
+    price: boolean;
+  }>({
+    name: false,
+    price: false,
+  });
+
+  // Real-time validation
+  const validateField = (name: string, value: string | number): string | undefined => {
+    if (name === 'name') {
+      const strVal = String(value);
+      if (!strVal.trim()) return 'اسم الصف مطلوب';
+      if (strVal.length < 2) return `الاسم قصير (${strVal.length}/2 أحرف)`;
+    }
+    
+    if (name === 'price') {
+      const numVal = Number(value);
+      if (isNaN(numVal) || numVal < 0) return 'السعر يجب أن يكون رقماً موجباً';
+    }
+    
+    return undefined;
+  };
+
+  const validateForm = (): boolean => {
+    const errors: typeof validationErrors = {};
+    
+    const nameError = validateField('name', formData.name);
+    const priceError = validateField('price', formData.price);
+    
+    if (nameError) errors.name = nameError;
+    if (priceError) errors.price = priceError;
+    
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleInputChange = (name: string, value: string | number) => {
+    setFormData({ ...formData, [name]: value });
+    const error = validateField(name, value);
+    setValidationErrors(prev => ({ ...prev, [name]: error }));
+    if (String(value).length > 0) {
+      setTouched(prev => ({ ...prev, [name]: true }));
+    }
+  };
+
+  const handleBlur = (name: string) => {
+    setTouched(prev => ({ ...prev, [name]: true }));
+    const value = formData[name as keyof typeof formData];
+    const error = validateField(name, value);
+    setValidationErrors(prev => ({ ...prev, [name]: error }));
+  };
 
   // Stats
   const totalGrades = totalItems;
@@ -79,6 +135,12 @@ export default function GradesPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setTouched({ name: true, price: true });
+    
+    if (!validateForm()) {
+      return;
+    }
+    
     setIsSubmitting(true);
 
     try {
@@ -88,6 +150,8 @@ export default function GradesPage() {
         await createGrade(formData);
       }
       setShowModal(false);
+      setTouched({ name: false, price: false });
+      setValidationErrors({});
       fetchGrades(currentPage);
     } catch (error) {
       console.error('Failed to save grade:', error);
@@ -239,25 +303,47 @@ export default function GradesPage() {
                   <input
                     type="text"
                     id="name"
-                    className="w-full p-3 bg-[#151521] border border-white/10 rounded-lg text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                    className={`w-full p-3 bg-[#151521] border rounded-lg text-white focus:ring-1 outline-none transition-all ${
+                      touched.name && validationErrors.name 
+                        ? 'border-danger focus:border-danger focus:ring-danger' 
+                        : 'border-white/10 focus:border-primary focus:ring-primary'
+                    }`}
                     value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    onChange={(e) => handleInputChange('name', e.target.value)}
+                    onBlur={() => handleBlur('name')}
                     required
                     placeholder="مثال: الصف الأول الثانوي"
                   />
+                  {touched.name && validationErrors.name && (
+                    <p className="text-danger text-xs mt-1 flex items-center gap-1">
+                      <i className="fas fa-exclamation-circle"></i>
+                      {validationErrors.name}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <label htmlFor="price" className="block text-sm font-medium text-gray-300">سعر الاشتراك الشهري</label>
                   <input
                     type="number"
                     id="price"
-                    className="w-full p-3 bg-[#151521] border border-white/10 rounded-lg text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                    className={`w-full p-3 bg-[#151521] border rounded-lg text-white focus:ring-1 outline-none transition-all ${
+                      touched.price && validationErrors.price 
+                        ? 'border-danger focus:border-danger focus:ring-danger' 
+                        : 'border-white/10 focus:border-primary focus:ring-primary'
+                    }`}
                     value={formData.price}
-                    onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
+                    onChange={(e) => handleInputChange('price', Number(e.target.value))}
+                    onBlur={() => handleBlur('price')}
                     min="0"
                     required
                     placeholder="0"
                   />
+                  {touched.price && validationErrors.price && (
+                    <p className="text-danger text-xs mt-1 flex items-center gap-1">
+                      <i className="fas fa-exclamation-circle"></i>
+                      {validationErrors.price}
+                    </p>
+                  )}
                 </div>
               </div>
               <div className="flex items-center justify-end gap-3 p-6 border-t border-white/10 bg-black/20 rounded-b-xl">

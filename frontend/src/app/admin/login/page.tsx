@@ -18,6 +18,11 @@ export default function AdminLoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [validationErrors, setValidationErrors] = useState<{ username?: string; password?: string }>({});
+  const [touched, setTouched] = useState<{ username: boolean; password: boolean }>({
+    username: false,
+    password: false,
+  });
 
   // Check if admin is already logged in
   useEffect(() => {
@@ -46,10 +51,55 @@ export default function AdminLoginPage() {
     return null;
   }
 
+  // Real-time validation function
+  const validateField = (name: string, value: string): string | undefined => {
+    if (name === 'username') {
+      if (!value.trim()) {
+        return 'اسم المستخدم مطلوب';
+      }
+      if (value.length < 3) {
+        return `اسم المستخدم قصير (${value.length}/3 أحرف)`;
+      }
+    }
+    
+    if (name === 'password') {
+      if (!value) {
+        return 'كلمة المرور مطلوبة';
+      }
+      if (value.length < 6) {
+        return `كلمة المرور قصيرة (${value.length}/6 أحرف)`;
+      }
+    }
+    
+    return undefined;
+  };
+
+  // Validate all fields
+  const validateForm = (): boolean => {
+    const errors: { username?: string; password?: string } = {};
+    
+    const usernameError = validateField('username', formData.username);
+    const passwordError = validateField('password', formData.password);
+    
+    if (usernameError) errors.username = usernameError;
+    if (passwordError) errors.password = passwordError;
+    
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     setError('');
+    
+    // Mark all fields as touched
+    setTouched({ username: true, password: true });
+    
+    // Validate before submit
+    if (!validateForm()) {
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -86,10 +136,38 @@ export default function AdminLoginPage() {
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: value,
     });
+    
+    // Clear general error when user types
+    if (error) setError('');
+    
+    // Real-time validation
+    const fieldError = validateField(name, value);
+    setValidationErrors(prev => ({
+      ...prev,
+      [name]: fieldError,
+    }));
+    
+    // Mark as touched when user starts typing
+    if (value.length > 0) {
+      setTouched(prev => ({ ...prev, [name]: true }));
+    }
+  };
+
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setTouched(prev => ({ ...prev, [name]: true }));
+    
+    const fieldError = validateField(name, value);
+    setValidationErrors(prev => ({
+      ...prev,
+      [name]: fieldError,
+    }));
   };
 
   return (
@@ -110,28 +188,46 @@ export default function AdminLoginPage() {
                   </div>
                 )}
 
-                <AuthInput
-                  id="username"
-                  name="username"
-                  label="اسم المستخدم"
-                  placeholder="أدخل اسم المستخدم"
-                  value={formData.username}
-                  onChange={handleInputChange}
-                  iconClass="fas fa-user"
-                  required
-                />
+                <div className="mb-4">
+                  <AuthInput
+                    id="username"
+                    name="username"
+                    label="اسم المستخدم"
+                    placeholder="أدخل اسم المستخدم"
+                    value={formData.username}
+                    onChange={handleInputChange}
+                    onBlur={handleBlur}
+                    iconClass="fas fa-user"
+                    required
+                  />
+                  {touched.username && validationErrors.username && (
+                    <p className="text-danger text-sm mt-1 flex items-center gap-1">
+                      <i className="fas fa-exclamation-circle text-xs"></i>
+                      {validationErrors.username}
+                    </p>
+                  )}
+                </div>
 
-                <AuthInput
-                  id="password"
-                  name="password"
-                  type="password"
-                  label="كلمة المرور"
-                  placeholder="أدخل كلمة المرور"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  iconClass="fas fa-lock"
-                  required
-                />
+                <div className="mb-4">
+                  <AuthInput
+                    id="password"
+                    name="password"
+                    type="password"
+                    label="كلمة المرور"
+                    placeholder="أدخل كلمة المرور"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    onBlur={handleBlur}
+                    iconClass="fas fa-lock"
+                    required
+                  />
+                  {touched.password && validationErrors.password && (
+                    <p className="text-danger text-sm mt-1 flex items-center gap-1">
+                      <i className="fas fa-exclamation-circle text-xs"></i>
+                      {validationErrors.password}
+                    </p>
+                  )}
+                </div>
 
                 <div className="flex justify-between items-center -mt-[5px]">
                   <label className="flex items-center gap-2 cursor-pointer text-[0.9rem] text-[#E9ECEF]">

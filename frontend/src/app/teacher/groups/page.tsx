@@ -34,6 +34,68 @@ export default function GroupsPage() {
     type: 'general',
     price: 0,
   });
+  const [validationErrors, setValidationErrors] = useState<{
+    name?: string;
+    price?: string;
+  }>({});
+  const [touched, setTouched] = useState<{
+    name: boolean;
+    price: boolean;
+  }>({
+    name: false,
+    price: false,
+  });
+
+  // Real-time validation
+  const validateField = (name: string, value: string | number): string | undefined => {
+    if (name === 'name') {
+      const strVal = String(value);
+      if (!strVal.trim()) return 'اسم المجموعة مطلوب';
+      if (strVal.length < 2) return `الاسم قصير (${strVal.length}/2 أحرف)`;
+    }
+    
+    if (name === 'price' && formData.type === 'private') {
+      const numVal = Number(value);
+      if (isNaN(numVal) || numVal < 0) return 'السعر يجب أن يكون رقماً موجباً';
+    }
+    
+    return undefined;
+  };
+
+  const validateForm = (): boolean => {
+    const errors: typeof validationErrors = {};
+    
+    const nameError = validateField('name', formData.name);
+    const priceError = formData.type === 'private' && formData.price !== undefined 
+      ? validateField('price', formData.price) 
+      : undefined;
+    
+    if (nameError) errors.name = nameError;
+    if (priceError) errors.price = priceError;
+    
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleInputChange = (name: string, value: string | number | null) => {
+    setFormData({ ...formData, [name]: value });
+    if (typeof value === 'string' || typeof value === 'number') {
+      const error = validateField(name, value);
+      setValidationErrors(prev => ({ ...prev, [name]: error }));
+      if (String(value).length > 0) {
+        setTouched(prev => ({ ...prev, [name]: true }));
+      }
+    }
+  };
+
+  const handleBlur = (name: string) => {
+    setTouched(prev => ({ ...prev, [name]: true }));
+    const value = formData[name as keyof typeof formData];
+    if (typeof value === 'string' || typeof value === 'number') {
+      const error = validateField(name, value);
+      setValidationErrors(prev => ({ ...prev, [name]: error }));
+    }
+  };
 
   // Stats
   const totalGroups = totalItems;
@@ -103,6 +165,12 @@ export default function GroupsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setTouched({ name: true, price: true });
+    
+    if (!validateForm()) {
+      return;
+    }
+    
     setIsSubmitting(true);
 
     try {
@@ -112,6 +180,8 @@ export default function GroupsPage() {
         await createGroup(formData);
       }
       setShowModal(false);
+      setTouched({ name: false, price: false });
+      setValidationErrors({});
       fetchGroups(currentPage);
     } catch (error) {
       console.error('Failed to save group:', error);
@@ -267,11 +337,22 @@ export default function GroupsPage() {
                   <input
                     type="text"
                     id="name"
-                    className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                    className={`w-full p-3 bg-white/5 border rounded-lg text-white focus:ring-1 outline-none transition-all ${
+                      touched.name && validationErrors.name 
+                        ? 'border-danger focus:border-danger focus:ring-danger' 
+                        : 'border-white/10 focus:border-primary focus:ring-primary'
+                    }`}
                     value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    onChange={(e) => handleInputChange('name', e.target.value)}
+                    onBlur={() => handleBlur('name')}
                     required
                   />
+                  {touched.name && validationErrors.name && (
+                    <p className="text-danger text-xs mt-1 flex items-center gap-1">
+                      <i className="fas fa-exclamation-circle"></i>
+                      {validationErrors.name}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label htmlFor="grade_id" className="block text-gray-light mb-2 text-sm">الصف الدراسي (اختياري)</label>
@@ -318,12 +399,23 @@ export default function GroupsPage() {
                     <input
                       type="number"
                       id="price"
-                      className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                      className={`w-full p-3 bg-white/5 border rounded-lg text-white focus:ring-1 outline-none transition-all ${
+                        touched.price && validationErrors.price 
+                          ? 'border-danger focus:border-danger focus:ring-danger' 
+                          : 'border-white/10 focus:border-primary focus:ring-primary'
+                      }`}
                       value={formData.price}
-                      onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
+                      onChange={(e) => handleInputChange('price', Number(e.target.value))}
+                      onBlur={() => handleBlur('price')}
                       min="0"
                       placeholder="0"
                     />
+                    {touched.price && validationErrors.price && (
+                      <p className="text-danger text-xs mt-1 flex items-center gap-1">
+                        <i className="fas fa-exclamation-circle"></i>
+                        {validationErrors.price}
+                      </p>
+                    )}
                   </div>
                 )}
                 <div>

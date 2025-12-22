@@ -280,6 +280,23 @@ export default function AdminTeachersPage() {
   });
   const [submitLoading, setSubmitLoading] = useState(false);
   const [error, setError] = useState('');
+  const [validationErrors, setValidationErrors] = useState<{
+    name?: string;
+    phone?: string;
+    password?: string;
+    password_confirmation?: string;
+  }>({});
+  const [touched, setTouched] = useState<{
+    name: boolean;
+    phone: boolean;
+    password: boolean;
+    password_confirmation: boolean;
+  }>({
+    name: false,
+    phone: false,
+    password: false,
+    password_confirmation: false,
+  });
   const [showFilter, setShowFilter] = useState(false);
   const [filters, setFilters] = useState({
     status: 'all',
@@ -298,6 +315,51 @@ export default function AdminTeachersPage() {
   const itemsPerPage = 10;
 
   const filterRef = useRef<HTMLDivElement>(null);
+
+  // Real-time validation function
+  const validateField = (name: string, value: string): string | undefined => {
+    if (name === 'name') {
+      if (!value.trim()) return 'الاسم مطلوب';
+      if (value.length < 3) return `الاسم قصير (${value.length}/3 أحرف)`;
+    }
+    
+    if (name === 'phone') {
+      if (!value.trim()) return 'رقم الهاتف مطلوب';
+      if (value.length > 0 && !value.startsWith('01')) return 'يجب أن يبدأ بـ 01';
+      if (value.length > 2 && !/^01[0125]/.test(value)) return 'كود الشركة غير صحيح (010, 011, 012, 015)';
+      if (value.length > 0 && value.length < 11) return `رقم غير مكتمل (${value.length}/11)`;
+      if (value.length > 11) return 'رقم الهاتف أكثر من 11 رقم';
+    }
+    
+    if (name === 'password') {
+      if (!editingTeacher && !value) return 'كلمة المرور مطلوبة';
+      if (value && value.length < 6) return `كلمة المرور قصيرة (${value.length}/6 أحرف)`;
+    }
+    
+    if (name === 'password_confirmation') {
+      if (formData.password && value !== formData.password) return 'كلمة المرور غير متطابقة';
+    }
+    
+    return undefined;
+  };
+
+  // Validate all fields
+  const validateForm = (): boolean => {
+    const errors: typeof validationErrors = {};
+    
+    const nameError = validateField('name', formData.name);
+    const phoneError = validateField('phone', formData.phone);
+    const passwordError = validateField('password', formData.password);
+    const confirmError = validateField('password_confirmation', formData.password_confirmation);
+    
+    if (nameError) errors.name = nameError;
+    if (phoneError) errors.phone = phoneError;
+    if (passwordError) errors.password = passwordError;
+    if (confirmError) errors.password_confirmation = confirmError;
+    
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -371,8 +433,32 @@ export default function AdminTeachersPage() {
   }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    let processedValue = value;
+    
+    // For phone field, only allow numbers
+    if (name === 'phone') {
+      processedValue = value.replace(/[^0-9]/g, '').slice(0, 11);
+    }
+    
+    setFormData({ ...formData, [name]: processedValue });
     setError('');
+    
+    // Real-time validation
+    const fieldError = validateField(name, processedValue);
+    setValidationErrors(prev => ({ ...prev, [name]: fieldError }));
+    
+    // Mark as touched
+    if (processedValue.length > 0) {
+      setTouched(prev => ({ ...prev, [name]: true }));
+    }
+  };
+
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setTouched(prev => ({ ...prev, [name]: true }));
+    const fieldError = validateField(name, value);
+    setValidationErrors(prev => ({ ...prev, [name]: fieldError }));
   };
 
   const openAddModal = () => {
@@ -401,14 +487,17 @@ export default function AdminTeachersPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitLoading(true);
     setError('');
-
-    if (formData.password !== formData.password_confirmation) {
-      setError('كلمة المرور غير متطابقة');
-      setSubmitLoading(false);
+    
+    // Mark all fields as touched
+    setTouched({ name: true, phone: true, password: true, password_confirmation: true });
+    
+    // Validate before submit
+    if (!validateForm()) {
       return;
     }
+
+    setSubmitLoading(true);
 
     try {
       if (editingTeacher) {
@@ -750,9 +839,20 @@ export default function AdminTeachersPage() {
                   name="name"
                   value={formData.name}
                   onChange={handleInputChange}
-                  className="w-full p-2.5 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm"
+                  onBlur={handleBlur}
+                  className={`w-full p-2.5 bg-white/5 border rounded-lg text-white outline-none focus:ring-1 transition-all text-sm ${
+                    touched.name && validationErrors.name 
+                      ? 'border-danger focus:border-danger focus:ring-danger' 
+                      : 'border-white/10 focus:border-primary focus:ring-primary'
+                  }`}
                   required
                 />
+                {touched.name && validationErrors.name && (
+                  <p className="text-danger text-xs mt-1 flex items-center gap-1">
+                    <i className="fas fa-exclamation-circle"></i>
+                    {validationErrors.name}
+                  </p>
+                )}
               </div>
 
               <div className="mb-4">
@@ -762,9 +862,22 @@ export default function AdminTeachersPage() {
                   name="phone"
                   value={formData.phone}
                   onChange={handleInputChange}
-                  className="w-full p-2.5 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm"
+                  onBlur={handleBlur}
+                  className={`w-full p-2.5 bg-white/5 border rounded-lg text-white outline-none focus:ring-1 transition-all text-sm ${
+                    touched.phone && validationErrors.phone 
+                      ? 'border-danger focus:border-danger focus:ring-danger' 
+                      : 'border-white/10 focus:border-primary focus:ring-primary'
+                  }`}
+                  placeholder="01xxxxxxxxx"
+                  inputMode="numeric"
                   required
                 />
+                {touched.phone && validationErrors.phone && (
+                  <p className="text-danger text-xs mt-1 flex items-center gap-1">
+                    <i className="fas fa-exclamation-circle"></i>
+                    {validationErrors.phone}
+                  </p>
+                )}
               </div>
 
               <div className="mb-4">
@@ -776,10 +889,21 @@ export default function AdminTeachersPage() {
                   name="password"
                   value={formData.password}
                   onChange={handleInputChange}
-                  className="w-full p-2.5 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm"
+                  onBlur={handleBlur}
+                  className={`w-full p-2.5 bg-white/5 border rounded-lg text-white outline-none focus:ring-1 transition-all text-sm ${
+                    touched.password && validationErrors.password 
+                      ? 'border-danger focus:border-danger focus:ring-danger' 
+                      : 'border-white/10 focus:border-primary focus:ring-primary'
+                  }`}
                   required={!editingTeacher}
                   minLength={6}
                 />
+                {touched.password && validationErrors.password && (
+                  <p className="text-danger text-xs mt-1 flex items-center gap-1">
+                    <i className="fas fa-exclamation-circle"></i>
+                    {validationErrors.password}
+                  </p>
+                )}
               </div>
 
               <div className="mb-6">
@@ -789,10 +913,21 @@ export default function AdminTeachersPage() {
                   name="password_confirmation"
                   value={formData.password_confirmation}
                   onChange={handleInputChange}
-                  className="w-full p-2.5 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm"
+                  onBlur={handleBlur}
+                  className={`w-full p-2.5 bg-white/5 border rounded-lg text-white outline-none focus:ring-1 transition-all text-sm ${
+                    touched.password_confirmation && validationErrors.password_confirmation 
+                      ? 'border-danger focus:border-danger focus:ring-danger' 
+                      : 'border-white/10 focus:border-primary focus:ring-primary'
+                  }`}
                   required={!editingTeacher}
                   minLength={6}
                 />
+                {touched.password_confirmation && validationErrors.password_confirmation && (
+                  <p className="text-danger text-xs mt-1 flex items-center gap-1">
+                    <i className="fas fa-exclamation-circle"></i>
+                    {validationErrors.password_confirmation}
+                  </p>
+                )}
               </div>
 
               <div className="flex gap-3 justify-end pt-3 border-t border-white/10">

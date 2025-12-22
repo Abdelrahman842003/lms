@@ -14,8 +14,8 @@ class AdminLoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'username' => 'required',
-            'password' => 'required',
+            'username' => 'required|string|min:3',
+            'password' => 'required|string|min:6',
         ];
     }
 
@@ -23,7 +23,9 @@ class AdminLoginRequest extends FormRequest
     {
         return [
             'username.required' => 'اسم المستخدم مطلوب',
+            'username.min' => 'اسم المستخدم يجب أن يكون 3 أحرف على الأقل',
             'password.required' => 'كلمة المرور مطلوبة',
+            'password.min' => 'كلمة المرور يجب أن تكون 6 أحرف على الأقل',
         ];
     }
 }

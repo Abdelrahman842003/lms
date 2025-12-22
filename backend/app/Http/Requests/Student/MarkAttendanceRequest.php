@@ -14,7 +14,15 @@ class MarkAttendanceRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'token' => 'required|string',
+            'token' => 'required|string|min:5',
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'token.required' => 'كود الحضور مطلوب',
+            'token.min' => 'كود الحضور غير صحيح',
         ];
     }
 
