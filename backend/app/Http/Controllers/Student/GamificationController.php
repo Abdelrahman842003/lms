@@ -104,7 +104,7 @@ class GamificationController extends Controller
         $limit = 5;
 
         $weeklyLeaderboard = $this->pointService->getWeeklyLeaderboard($teacherId, $limit);
-        $last3MonthsLeaderboard = $this->pointService->getLast3MonthsLeaderboard($teacherId, $limit);
+        $allTimeLeaderboard = $this->pointService->getAllTimeLeaderboard($teacherId, $limit);
         
         // Get student's own stats
         $myStats = $this->pointService->getStudentStats($student->id, $teacherId);
@@ -113,7 +113,7 @@ class GamificationController extends Controller
             'success' => true,
             'data' => [
                 'weekly' => $weeklyLeaderboard,
-                'last_3_months' => $last3MonthsLeaderboard,
+                'all_time' => $allTimeLeaderboard,
                 'my_stats' => $myStats,
             ],
         ]);

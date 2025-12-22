@@ -6,7 +6,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { uploadAvatar, deleteAvatar, getAvatarUrl } from '@/services/avatarService';
 import { ImageCropModal, ConfirmationModal, Skeleton } from '@/components/ui';
 import { AuthInput } from '@/components/auth/AuthInput';
-import NotificationSettings from '@/components/NotificationSettings';
+
+import QRCode from 'react-qr-code';
 
 export default function StudentProfilePage() {
   const { user, isLoading } = useAuth();
@@ -184,6 +185,34 @@ export default function StudentProfilePage() {
     // TODO: Implement password change API call
     // Clear errors on success (mock)
     setErrors({});
+    setErrors({});
+  };
+
+  const downloadQRCode = () => {
+    const svg = document.getElementById("student-qr-code");
+    if (!svg) return;
+
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    const img = new Image();
+    
+    img.onload = () => {
+      canvas.width = img.width;
+      canvas.height = img.height;
+      if (ctx) {
+        ctx.fillStyle = "white";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0);
+        const pngFile = canvas.toDataURL("image/png");
+        const downloadLink = document.createElement("a");
+        downloadLink.download = `student-qr-${user?.id}.png`;
+        downloadLink.href = pngFile;
+        downloadLink.click();
+      }
+    };
+
+    img.src = "data:image/svg+xml;base64," + btoa(svgData);
   };
 
   return (
@@ -348,10 +377,39 @@ export default function StudentProfilePage() {
               )}
             </form>
           </div>
+
         </DashboardCard>
 
-        {/* Notification Settings Card */}
-        <NotificationSettings />
+        {/* QR Code Card */}
+        <DashboardCard
+          title="رمز الحضور"
+          icon="fas fa-qrcode"
+          action={
+            <button
+              className="btn btn-primary"
+              onClick={downloadQRCode}
+            >
+              <i className="fas fa-download"></i>
+              <span>تحميل الرمز</span>
+            </button>
+          }
+        >
+          <div className="py-8 flex flex-col items-center justify-center gap-6">
+            <div className="p-4 bg-white rounded-xl shadow-sm">
+              <QRCode
+                id="student-qr-code"
+                value={`student:${user?.id || ''}`}
+                size={200}
+                level="H"
+              />
+            </div>
+            <p className="text-gray-light text-center max-w-md">
+              هذا الرمز خاص بك. يمكنك استخدامه لتسجيل الحضور عند المحاضر في حال عدم توفر الإنترنت.
+            </p>
+          </div>
+        </DashboardCard>
+
+
 
         {/* Change Password Card */}
         <DashboardCard

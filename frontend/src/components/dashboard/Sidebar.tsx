@@ -105,6 +105,12 @@ const getSidebarItems = (role: string): SidebarItem[] => {
             icon: 'fas fa-user-tie',
             href: '/teacher/secretaries',
           },
+          {
+            id: 'subscriptions',
+            label: 'اشتراكات الطلاب',
+            icon: 'fas fa-file-invoice-dollar',
+            href: '/teacher/subscriptions',
+          },
         ],
       },
       {

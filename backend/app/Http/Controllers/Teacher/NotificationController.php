@@ -48,6 +48,8 @@ class NotificationController extends Controller
             $validated['group_id'] ?? null
         );
 
+
+
         if ($recipients->isEmpty()) {
             return $this->errorResponse('No recipients found', 404);
         }

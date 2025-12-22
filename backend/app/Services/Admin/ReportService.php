@@ -46,6 +46,13 @@ class ReportService
             ->where('expires_at', '>', now())
             ->sum('amount');
 
+        // Paying students count (unique students who paid in this period)
+        $payingStudentsCount = PaymentLog::where('teacher_id', $teacher->id)
+            ->where('status', 'confirmed')
+            ->whereBetween('confirmed_at', [$startDate, $endDate])
+            ->distinct('student_id')
+            ->count('student_id');
+
         // Calculated revenue based on total enrolled students
         $calculatedRevenue = $totalStudents * $pricePerStudent;
 
@@ -85,9 +92,12 @@ class ReportService
                 'total_due' => $totalDue,
                 'total_paid' => $totalPaid,
                 'total_remaining' => $totalRemaining,
+                'paying_students_count' => $payingStudentsCount,
+                'not_paying_students_count' => $totalStudents - $payingStudentsCount,
             ],
             'monthly_breakdown' => $monthlyData,
             'subscription_breakdown' => $subscriptionData,
+            'student_account_breakdown' => $this->getStudentAccountBreakdown($teacher, $startDate, $endDate),
             'generated_at' => now()->format('Y-m-d H:i:s'),
         ];
     }
@@ -154,6 +164,157 @@ class ReportService
         }
         
         return $months;
+    }
+
+    /**
+     * Get monthly student account breakdown (Expected vs Actual from students)
+     */
+    private function getStudentAccountBreakdown(Teacher $teacher, Carbon $startDate, Carbon $endDate): array
+    {
+        $months = [];
+        $currentMonth = $startDate->copy()->startOfMonth();
+        $lastMonth = $endDate->copy()->startOfMonth();
+        
+        while ($currentMonth <= $lastMonth) {
+            $monthStart = $currentMonth->copy()->startOfMonth();
+            $monthEnd = $currentMonth->copy()->endOfMonth();
+            
+            // Adjust to actual date range for payments
+            $queryStart = $monthStart->lt($startDate) ? $startDate->copy()->startOfDay() : $monthStart;
+            $queryEnd = $monthEnd->gt($endDate) ? $endDate->copy()->endOfDay() : $monthEnd->endOfDay();
+
+            // 1. Calculate Amount Due (Expected Revenue)
+            // Logic: Sum of (Group Price OR Grade Price) for all active students in this month
+            // We consider an enrollment active for this month if it was created before month end
+            // and (not deleted OR deleted after month start)
+            
+            $enrollments = Enrollment::where('teacher_id', $teacher->id)
+                ->where('created_at', '<=', $monthEnd)
+                ->where(function($q) use ($monthStart) {
+                    $q->whereNull('deleted_at')
+                      ->orWhere('deleted_at', '>=', $monthStart);
+                })
+                ->with(['group', 'grade'])
+                ->get();
+
+            $amountDue = 0;
+            $studentCount = 0;
+
+            foreach ($enrollments as $enrollment) {
+                $price = 0;
+                if ($enrollment->group && $enrollment->group->price) {
+                    $price = $enrollment->group->price;
+                } elseif ($enrollment->grade && $enrollment->grade->price) {
+                    $price = $enrollment->grade->price;
+                }
+                
+                $amountDue += $price;
+                $studentCount++;
+            }
+
+            // 2. Calculate Amount Paid (Actual Revenue)
+            $amountPaid = PaymentLog::where('teacher_id', $teacher->id)
+                ->where('status', 'confirmed')
+                ->whereBetween('confirmed_at', [$queryStart, $queryEnd])
+                ->sum('amount');
+
+            $amountRemaining = $amountDue - $amountPaid;
+
+            // Determine status
+            $status = 'pending';
+            if ($amountRemaining <= 0 && $amountPaid > 0) {
+                $status = 'paid';
+            } elseif ($amountPaid > 0) {
+                $status = 'partial';
+            }
+
+            $months[] = [
+                'month' => $currentMonth->format('Y-m'),
+                'month_name' => $this->getArabicMonthName($currentMonth->month) . ' ' . $currentMonth->year,
+                'student_count' => $studentCount,
+                'amount_due' => (float) $amountDue,
+                'amount_paid' => (float) $amountPaid,
+                'amount_remaining' => (float) max(0, $amountRemaining),
+                'status' => $status,
+                'status_label' => $this->getStatusLabel($status),
+            ];
+
+            $currentMonth->addMonth();
+        }
+        
+        return $months;
+    }
+
+
+    /**
+     * Get detailed monthly subscription status for each student
+     */
+    public function getStudentMonthlySubscriptionDetails(Teacher $teacher, Carbon $startDate, Carbon $endDate): array
+    {
+        $details = [];
+        $currentMonth = $startDate->copy()->startOfMonth();
+        $lastMonth = $endDate->copy()->startOfMonth();
+        
+        while ($currentMonth <= $lastMonth) {
+            $monthStart = $currentMonth->copy()->startOfMonth();
+            $monthEnd = $currentMonth->copy()->endOfMonth();
+            
+            // Adjust to actual date range for payments
+            $queryStart = $monthStart->lt($startDate) ? $startDate->copy()->startOfDay() : $monthStart;
+            $queryEnd = $monthEnd->gt($endDate) ? $endDate->copy()->endOfDay() : $monthEnd->endOfDay();
+
+            // Get active enrollments for this month
+            $enrollments = \App\Models\Enrollment::where('teacher_id', $teacher->id)
+                ->where('created_at', '<=', $monthEnd)
+                ->where(function($q) use ($monthStart) {
+                    $q->whereNull('deleted_at')
+                      ->orWhere('deleted_at', '>=', $monthStart);
+                })
+                ->with(['student', 'group', 'grade'])
+                ->get();
+
+            foreach ($enrollments as $enrollment) {
+                if (!$enrollment->student) continue;
+
+                $price = 0;
+                if ($enrollment->group && $enrollment->group->price) {
+                    $price = $enrollment->group->price;
+                } elseif ($enrollment->grade && $enrollment->grade->price) {
+                    $price = $enrollment->grade->price;
+                }
+
+                $amountPaid = \App\Models\PaymentLog::where('teacher_id', $teacher->id)
+                    ->where('student_id', $enrollment->student_id)
+                    ->where('status', 'confirmed')
+                    ->whereBetween('confirmed_at', [$queryStart, $queryEnd])
+                    ->sum('amount');
+
+                $amountRemaining = $price - $amountPaid;
+
+                $status = 'pending';
+                if ($amountRemaining <= 0 && $amountPaid > 0) {
+                    $status = 'paid';
+                } elseif ($amountPaid > 0) {
+                    $status = 'partial';
+                }
+
+                $details[] = [
+                    'month' => $currentMonth->format('Y-m'),
+                    'month_name' => $this->getArabicMonthName($currentMonth->month) . ' ' . $currentMonth->year,
+                    'student_name' => $enrollment->student->name,
+                    'student_phone' => $enrollment->student->phone,
+                    'amount_due' => (float) $price,
+                    'amount_paid' => (float) $amountPaid,
+                    'amount_remaining' => (float) max(0, $amountRemaining),
+                    'status' => $status,
+                    'status_label' => $this->getStatusLabel($status),
+                ];
+            }
+
+            $currentMonth->addMonth();
+        }
+        
+        return $details;
     }
 
     /**

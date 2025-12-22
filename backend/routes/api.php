@@ -141,6 +141,7 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureTeacherNotSuspende
     // Reports
     Route::get('reports/my-report', [\App\Http\Controllers\Teacher\TeacherReportController::class, 'myReport']);
     Route::get('reports/my-report/pdf', [\App\Http\Controllers\Teacher\TeacherReportController::class, 'myReportPdf']);
+    Route::get('reports/student-subscriptions', [\App\Http\Controllers\Teacher\TeacherReportController::class, 'studentSubscriptions']);
 });
 
 // ============================================
@@ -172,6 +173,7 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureTeacherNotSuspende
     
     // Notifications
     Route::get('/notifications', [\App\Http\Controllers\Student\NotificationController::class, 'index']);
+    Route::post('/notifications', [\App\Http\Controllers\Student\NotificationController::class, 'store']);
     Route::post('/notifications/{id}/read', [\App\Http\Controllers\Student\NotificationController::class, 'markAsRead']);
 
     // Gamification

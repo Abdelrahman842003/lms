@@ -14,6 +14,7 @@ class SentNotification extends Model
     protected $fillable = [
         'teacher_id',
         'admin_id',
+        'student_id',
         'title',
         'message',
         'recipient_type',
@@ -23,5 +24,10 @@ class SentNotification extends Model
     public function teacher()
     {
         return $this->belongsTo(Teacher::class);
+    }
+
+    public function student()
+    {
+        return $this->belongsTo(Student::class);
     }
 }

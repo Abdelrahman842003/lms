@@ -257,10 +257,20 @@ class PointService
             ->where('created_at', '>=', now()->startOfWeek())
             ->sum('points');
 
+        // Calculate weekly rank
+        $weeklyRank = PointTransaction::where('teacher_id', $teacherId)
+            ->where('created_at', '>=', now()->startOfWeek())
+            ->select('student_id', DB::raw('SUM(points) as weekly_points'))
+            ->groupBy('student_id')
+            ->having('weekly_points', '>', $weeklyPoints)
+            ->get()
+            ->count() + 1;
+
         return [
             'total_points' => $studentPoints->total_points,
             'weekly_points' => (int) $weeklyPoints,
             'rank' => $rank,
+            'weekly_rank' => $weeklyRank,
             'attendance_streak' => $studentPoints->attendance_streak,
         ];
     }

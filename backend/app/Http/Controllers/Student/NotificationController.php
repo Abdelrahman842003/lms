@@ -14,12 +14,17 @@ class NotificationController extends Controller
     {
         $student = Auth::user();
         
-        $notifications = $student->notifications()
+        $receivedNotifications = $student->notifications()
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $sentNotifications = $student->sentNotifications()
             ->orderBy('created_at', 'desc')
             ->get();
 
         return $this->successResponse([
-            'notifications' => $notifications
+            'received_notifications' => $receivedNotifications,
+            'notifications' => $sentNotifications // Frontend expects 'notifications' to be sent ones in one view, but let's check frontend logic
         ]);
     }
 
@@ -33,5 +38,26 @@ class NotificationController extends Controller
         }
 
         return $this->successResponse(null, 'Notification marked as read');
+    }
+
+    public function store(\Illuminate\Http\Request $request)
+    {
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'message' => 'required|string',
+            'recipient_type' => 'required|in:admin',
+        ]);
+
+        $student = Auth::user();
+
+        $notification = \App\Models\SentNotification::create([
+            'student_id' => $student->id,
+            'title' => $request->title,
+            'message' => $request->message,
+            'recipient_type' => $request->recipient_type,
+            'recipient_count' => 1, // Only sent to admin/support
+        ]);
+
+        return $this->successResponse($notification, 'Notification sent successfully');
     }
 }

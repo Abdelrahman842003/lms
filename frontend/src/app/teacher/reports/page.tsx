@@ -11,7 +11,7 @@ import {
   ReportParams,
 } from '@/services/authService';
 
-type PeriodPreset = 'last_month' | 'last_3_months' | 'last_6_months' | 'last_year' | 'custom';
+type PeriodPreset = 'today' | 'last_month' | 'last_3_months' | 'last_6_months' | 'last_year' | 'custom';
 
 export default function TeacherReportsPage() {
 
@@ -38,6 +38,9 @@ export default function TeacherReportsPage() {
     };
 
     switch (periodPreset) {
+      case 'today':
+        startDate = today;
+        break;
       case 'last_month':
         // Current month only (from 1st of current month to today)
         startDate = new Date(today.getFullYear(), today.getMonth(), 1);
@@ -114,6 +117,7 @@ export default function TeacherReportsPage() {
   };
 
   const periodPresets = [
+    { value: 'today', label: 'اليوم' },
     { value: 'last_month', label: 'الشهر الحالي' },
     { value: 'last_3_months', label: 'آخر 3 شهور' },
     { value: 'last_6_months', label: 'آخر 6 شهور' },
@@ -282,6 +286,30 @@ export default function TeacherReportsPage() {
               </DashboardCard>
             )}
 
+            {/* Teacher Profits */}
+            <DashboardCard title="ارباح المدرس" icon="fas fa-hand-holding-dollar" className="mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-4 bg-success/10 rounded-xl border border-success/30">
+                  <div className="text-2xl font-bold text-success mb-1">
+                    {report.summary.confirmed_payments?.toLocaleString() || 0} ج.م
+                  </div>
+                  <div className="text-gray-400 text-sm">صافي الارباح</div>
+                </div>
+                <div className="p-4 bg-white/5 rounded-xl border border-white/10">
+                  <div className="text-2xl font-bold text-white mb-1">
+                    {report.summary.paying_students_count || 0}
+                  </div>
+                  <div className="text-gray-400 text-sm">طلاب دفعوا</div>
+                </div>
+                <div className="p-4 bg-white/5 rounded-xl border border-white/10">
+                  <div className="text-2xl font-bold text-white mb-1">
+                    {report.summary.not_paying_students_count || 0}
+                  </div>
+                  <div className="text-gray-400 text-sm">طلاب لم يدفعوا</div>
+                </div>
+              </div>
+            </DashboardCard>
+
             {/* Subscription Summary */}
             <DashboardCard title="ملخص الاشتراكات" icon="fas fa-coins" className="mb-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -308,7 +336,7 @@ export default function TeacherReportsPage() {
 
             {/* Monthly Subscription Breakdown */}
             {report.subscription_breakdown?.length > 0 && (
-              <DashboardCard title="تفاصيل الاشتراكات الشهرية" icon="fas fa-calendar-alt" className="mb-6">
+              <DashboardCard title="تفاصيل الاشتراكات الشهرية للمنصه" icon="fas fa-calendar-alt" className="mb-6">
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
@@ -351,6 +379,53 @@ export default function TeacherReportsPage() {
                 </div>
               </DashboardCard>
             )}
+
+            {/* Student Account Breakdown */}
+            {report.student_account_breakdown?.length > 0 && (
+              <DashboardCard title="تفاصيل حساب الطلاب" icon="fas fa-file-invoice-dollar" className="mb-6">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-white/10">
+                        <th className="text-right py-3 px-4 text-gray-400 font-medium">الشهر</th>
+                        <th className="text-right py-3 px-4 text-gray-400 font-medium">عدد الطلاب</th>
+                        <th className="text-right py-3 px-4 text-gray-400 font-medium">المستحق</th>
+                        <th className="text-right py-3 px-4 text-gray-400 font-medium">المدفوع</th>
+                        <th className="text-right py-3 px-4 text-gray-400 font-medium">المتبقي</th>
+                        <th className="text-right py-3 px-4 text-gray-400 font-medium">الحالة</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {report.student_account_breakdown.map((month: any, index: number) => (
+                        <tr key={month.month} className={index < report.student_account_breakdown.length - 1 ? 'border-b border-white/5' : ''}>
+                          <td className="py-3 px-4 text-white font-medium">{month.month_name}</td>
+                          <td className="py-3 px-4 text-white">{month.student_count}</td>
+                          <td className="py-3 px-4 text-primary font-semibold">
+                            {month.amount_due?.toLocaleString()} ج.م
+                          </td>
+                          <td className="py-3 px-4 text-success font-semibold">
+                            {month.amount_paid?.toLocaleString()} ج.م
+                          </td>
+                          <td className="py-3 px-4 text-danger font-semibold">
+                            {month.amount_remaining?.toLocaleString()} ج.م
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className={`badge ${
+                              month.status === 'paid' ? 'badge-success' : 
+                              month.status === 'partial' ? 'badge-warning' : 
+                              'badge-danger'
+                            }`}>
+                              {month.status_label}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </DashboardCard>
+            )}
+
 
             {/* Report Footer */}
             <div className="text-center text-gray-500 text-sm mt-6">

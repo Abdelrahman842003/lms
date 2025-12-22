@@ -31,7 +31,13 @@ export interface ReceivedNotification {
 
 export const getNotifications = async () => {
   const userType = localStorage.getItem('userType');
-  const endpoint = userType === 'admin' ? '/admin/notifications' : '/teacher/notifications';
+  let endpoint = '/teacher/notifications';
+
+  if (userType === 'admin') {
+    endpoint = '/admin/notifications';
+  } else if (userType === 'student') {
+    endpoint = '/student/notifications';
+  }
   
   const data = await fetchApi(endpoint);
   return data as { notifications: Notification[], received_notifications: ReceivedNotification[] };
@@ -39,7 +45,13 @@ export const getNotifications = async () => {
 
 export const sendNotification = async (data: SendNotificationData) => {
   const userType = localStorage.getItem('userType');
-  const endpoint = userType === 'admin' ? '/admin/notifications' : '/teacher/notifications';
+  let endpoint = '/teacher/notifications';
+  
+  if (userType === 'admin') {
+    endpoint = '/admin/notifications';
+  } else if (userType === 'student') {
+    endpoint = '/student/notifications';
+  }
 
   return await fetchApi(endpoint, {
     method: 'POST',

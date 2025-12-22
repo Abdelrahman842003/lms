@@ -112,6 +112,7 @@ interface LeaderboardEntry {
 
 interface MyStats {
   rank: number;
+  weekly_rank: number;
   total_points: number;
   weekly_points: number;
   attendance_streak: number;
@@ -126,10 +127,10 @@ export default function StudentLeaderboardPage() {
 
   // State for data
   const [weeklyLeaderboard, setWeeklyLeaderboard] = useState<LeaderboardEntry[]>([]);
-  const [last3MonthsLeaderboard, setLast3MonthsLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [allTimeLeaderboard, setAllTimeLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [myStats, setMyStats] = useState<MyStats | null>(null);
   const [selectedTeacher, setSelectedTeacher] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<'weekly' | 'last3Months'>('weekly');
+  const [activeTab, setActiveTab] = useState<'weekly' | 'allTime'>('weekly');
 
   // Mock user for layout
   const mockUser = {
@@ -170,18 +171,18 @@ export default function StudentLeaderboardPage() {
         
         if (data) {
           const weekly = data.weekly || data.data?.weekly || [];
-          const last3Months = data.last_3_months || data.data?.last_3_months || [];
+          const allTime = data.all_time || data.data?.all_time || [];
           const stats = data.my_stats || data.data?.my_stats || null;
 
           setWeeklyLeaderboard(weekly);
-          setLast3MonthsLeaderboard(last3Months);
+          setAllTimeLeaderboard(allTime);
           setMyStats(stats);
           setError(null);
           
           // Trigger celebration after data loads
           setTimeout(() => {
             setShowContent(true);
-            if (weekly.length > 0 || last3Months.length > 0) {
+            if (weekly.length > 0 || allTime.length > 0) {
               triggerCelebration();
             }
           }, 300);
@@ -203,7 +204,7 @@ export default function StudentLeaderboardPage() {
     loadLeaderboard();
   }, [selectedTeacher]);
 
-  const currentLeaderboard = activeTab === 'weekly' ? weeklyLeaderboard : last3MonthsLeaderboard;
+  const currentLeaderboard = activeTab === 'weekly' ? weeklyLeaderboard : allTimeLeaderboard;
   const top3 = currentLeaderboard.slice(0, 3);
   const restOfList = currentLeaderboard.slice(3);
 
@@ -269,7 +270,7 @@ export default function StudentLeaderboardPage() {
               لوحة الشرف
             </h1>
             <p className="text-gray-400 text-lg">
-              {activeTab === 'weekly' ? 'أشطر الطلاب هذا الأسبوع 🔥' : 'أشطر الطلاب آخر 3 شهور 🌟'}
+              {activeTab === 'weekly' ? 'أشطر الطلاب هذا الأسبوع 🔥' : 'أشطر الطلاب على الإطلاق 🌟'}
             </p>
           </div>
           <Link 
@@ -296,15 +297,15 @@ export default function StudentLeaderboardPage() {
               هذا الأسبوع
             </button>
             <button
-              onClick={() => setActiveTab('last3Months')}
+              onClick={() => setActiveTab('allTime')}
               className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center gap-2 ${
-                activeTab === 'last3Months' 
+                activeTab === 'allTime' 
                   ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg shadow-purple-500/30' 
                   : 'text-gray-400 hover:text-white hover:bg-white/10'
               }`}
             >
-              <i className="fas fa-calendar-alt" />
-              آخر 3 شهور
+              <i className="fas fa-trophy" />
+              أشطر الطلاب على الإطلاق
             </button>
           </div>
         </div>
@@ -345,7 +346,7 @@ export default function StudentLeaderboardPage() {
                     <div className="flex items-center gap-5">
                       <div className="relative">
                         <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-gradient-to-br from-primary to-purple-500 flex items-center justify-center text-3xl md:text-4xl font-bold text-white shadow-lg shadow-primary/30">
-                          #{myStats.rank}
+                          #{activeTab === 'weekly' ? myStats.weekly_rank : myStats.rank}
                         </div>
                         <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center text-lg shadow-lg">
                           ⭐

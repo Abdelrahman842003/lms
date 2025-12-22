@@ -54,6 +54,13 @@ class Student extends Authenticatable
             ->withTimestamps();
     }
 
+    public function groups()
+    {
+        return $this->belongsToMany(Group::class, 'enrollments')
+            ->withPivot(['teacher_id', 'grade_id', 'balance', 'is_active', 'subscription_start', 'subscription_end', 'teacher_notes'])
+            ->withTimestamps();
+    }
+
     public function activeEnrollments()
     {
         return $this->enrollments()->where('is_active', true);
@@ -114,5 +121,10 @@ class Student extends Authenticatable
     public static function findByPhone(string $phone): ?self
     {
         return self::where('phone', $phone)->first();
+    }
+
+    public function sentNotifications()
+    {
+        return $this->hasMany(SentNotification::class);
     }
 }
