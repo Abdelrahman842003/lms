@@ -186,18 +186,19 @@ services:
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile.prod
     container_name: lms_frontend
     restart: unless-stopped
     working_dir: /app
     volumes:
-      - ./frontend:/app
-      - /app/node_modules
-      - /app/.next
+      - ./frontend/public:/app/public
+      # - ./frontend:/app # Disable volume mount for code in production to use built assets
+      # - /app/node_modules
+      # - /app/.next
     ports:
       - "3000:3000"
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
       - NEXT_PUBLIC_API_URL=/api
       - NEXT_PUBLIC_REVERB_APP_KEY=${REVERB_APP_KEY:-y2vqna5uho5zsdz6kdyz}
       - NEXT_PUBLIC_REVERB_HOST=neetaq.com
