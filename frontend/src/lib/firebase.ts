@@ -34,7 +34,7 @@ export const requestForToken = async () => {
       return null;
     }
   } catch (err) {
-    // Error occurred while retrieving token
+    console.error('[Firebase] Error retrieving token:', err);
     return null;
   }
 };
