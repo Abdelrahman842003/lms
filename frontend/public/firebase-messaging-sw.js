@@ -5,7 +5,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyDuWnTpPZDolIt20XyB0h9ylWzDCs0H_b4",
   authDomain: "neetaq-54091.firebaseapp.com",
   projectId: "neetaq-54091",
-  storageBucket: "neetaq-54091.appspot.com",
+  storageBucket: "neetaq-54091.firebasestorage.app",
   messagingSenderId: "962831721396",
   appId: "1:962831721396:web:99b9ffc5296043dd2b88e1",
   measurementId: "G-BQP5416BDV"
