@@ -65,7 +65,7 @@ class StudentController extends Controller
             ->whereYear('created_at', now()->year)
             ->count();
 
-        return response()->json([
+        return $this->successResponse([
             'total_students' => $totalStudents,
             'active_students' => $activeStudents,
             'suspended_accounts' => 0,
