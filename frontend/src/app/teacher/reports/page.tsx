@@ -311,7 +311,8 @@ export default function TeacherReportsPage() {
             </DashboardCard>
 
             {/* Subscription Summary */}
-            <DashboardCard title="ملخص الاشتراكات" icon="fas fa-coins" className="mb-6">
+            {/* Subscription Summary removed as per request */}
+            {/* <DashboardCard title="ملخص الاشتراكات" icon="fas fa-coins" className="mb-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="p-4 bg-primary/10 rounded-xl border border-primary/30">
                   <div className="text-2xl font-bold text-primary mb-1">
@@ -332,7 +333,7 @@ export default function TeacherReportsPage() {
                   <div className="text-gray-400 text-sm">إجمالي المتبقي</div>
                 </div>
               </div>
-            </DashboardCard>
+            </DashboardCard> */}
 
             {/* Monthly Subscription Breakdown */}
             {report.subscription_breakdown?.length > 0 && (
