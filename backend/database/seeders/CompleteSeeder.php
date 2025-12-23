@@ -58,7 +58,7 @@ class CompleteSeeder extends Seeder
             $this->enrollStudents($teacher, $students, $grades, $groups);
             
             // 6. Create Lectures and Attendance
-            $lectures = $this->createLectures($teacher);
+            $lectures = $this->createLectures($teacher, $grades);
             $this->createAttendance($lectures, $students);
             
             // 7. Create Exams with Questions
@@ -178,7 +178,7 @@ class CompleteSeeder extends Seeder
         }
     }
 
-    private function createLectures(Teacher $teacher): array
+    private function createLectures(Teacher $teacher, array $grades): array
     {
         $lectures = [];
         
@@ -189,6 +189,7 @@ class CompleteSeeder extends Seeder
                 ['title' => "Lecture $i - Physics", 'teacher_id' => $teacher->id],
                 [
                     'description' => "Chapter $i explanation",
+                    'grade_id' => $grades[array_rand($grades)]->id,
                     'start_time' => $date->copy()->setHour(10),
                     'end_time' => $date->copy()->setHour(12),
                 ]
@@ -202,6 +203,7 @@ class CompleteSeeder extends Seeder
                 ['title' => "Upcoming Lecture $i", 'teacher_id' => $teacher->id],
                 [
                     'description' => 'New topic',
+                    'grade_id' => $grades[array_rand($grades)]->id,
                     'start_time' => $date->copy()->setHour(14),
                     'end_time' => $date->copy()->setHour(16),
                 ]
