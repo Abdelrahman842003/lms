@@ -233,7 +233,7 @@ export default function MistakesPage() {
                     <div className="pt-4 space-y-3">
                       {/* Options */}
                       <div className="space-y-2">
-                        {mistake.question.options.map((option, idx) => {
+                        {mistake.question?.options?.map((option, idx) => {
                           const isCorrect = option === mistake.question.correct_answer;
                           const isStudentAnswer = option === mistake.student_answer;
                           return (
