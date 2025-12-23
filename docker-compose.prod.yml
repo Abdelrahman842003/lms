@@ -99,7 +99,7 @@ services:
       - cloudflare_kv_namespace_id
       - cloudflare_kv_api_token
     volumes:
-      - ./secrets/neetaq-54091-firebase-adminsdk-fbsvc-b830b7b75f.json:/var/www/backend/storage/firebase-credentials.json:ro
+      - ./secrets/firebase_credentials.json:/var/www/backend/storage/firebase-credentials.json:ro
     environment:
       - APP_ENV=production
       - APP_DEBUG=false
