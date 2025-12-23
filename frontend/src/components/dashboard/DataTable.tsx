@@ -238,15 +238,20 @@ export const DataTable: React.FC<DataTableProps> = ({
                             const menuWidth = 180; // min-width
                             const screenWidth = window.innerWidth;
                             
-                            // Check if menu would go off-screen to the right
-                            let left = rect.left;
-                            if (left + menuWidth > screenWidth - 20) {
-                              left = rect.right - menuWidth;
-                            }
-                            
-                            // Ensure it doesn't go off-screen to the left
+                            // RTL Alignment: Align menu's right edge with button's right edge
+                            // In RTL, 'left' is actually the distance from the left edge of the screen
+                            // We want the menu to start at (button.right - menuWidth)
+                            let left = rect.right - menuWidth;
+
+                            // If it goes off-screen to the left (e.g., button is near left edge)
+                            // Shift it to the right
                             if (left < 20) {
-                              left = 20;
+                                left = rect.left; // Align left edge with button's left edge
+                            }
+
+                            // If it still goes off-screen to the right (unlikely in RTL but possible)
+                            if (left + menuWidth > screenWidth - 20) {
+                                left = screenWidth - menuWidth - 20;
                             }
 
                             setDropdownPosition({
