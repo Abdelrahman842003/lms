@@ -65,6 +65,7 @@ class FcmChannel
                         'notification' => [
                             'title' => $title,
                             'body' => $body,
+                            'icon' => 'https://neetaq.com/logo.png',
                         ],
                         'data' => array_map(function($value) {
                             return is_array($value) ? json_encode($value) : (string) $value;
