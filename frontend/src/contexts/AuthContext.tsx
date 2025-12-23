@@ -358,17 +358,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const enableNotifications = async () => {
       try {
+        console.log('[FCM] Starting notification enablement...');
         const { requestForToken, onMessageListener } = await import('@/lib/firebase');
+        console.log('[FCM] Firebase modules loaded');
+        
         const token = await requestForToken();
+        console.log('[FCM] Token received:', token ? 'YES' : 'NO');
         
         if (token) {
-
+          console.log('[FCM] Storing token to backend...');
           const { storeDeviceToken } = await import('@/services/notificationService');
           await storeDeviceToken(token);
+          console.log('[FCM] Token stored successfully');
           
           // Setup listener for foreground messages
           onMessageListener().then((payload: any) => {
-
+            console.log('[FCM] Foreground message received:', payload);
             
             // Dispatch custom event for other components (like NotificationDropdown)
             if (typeof window !== 'undefined') {
@@ -396,9 +401,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               });
             });
           });
+        } else {
+          console.log('[FCM] No token received - user may have denied permission');
         }
       } catch (error) {
-        console.error('FCM enable failed:', error);
+        console.error('[FCM] Enable failed:', error);
       }
     };
 
