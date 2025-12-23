@@ -38,9 +38,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/teachers/{teacher}/subscription', [\App\Http\Controllers\Admin\TeacherController::class, 'getSubscription']);
         Route::post('/teachers/{teacher}/subscription', [\App\Http\Controllers\Admin\TeacherController::class, 'updateSubscription']);
         Route::put('/teachers/{teacher}/toggle-status', [\App\Http\Controllers\Admin\TeacherController::class, 'toggleStatus']);
-        Route::get('/students', [\\App\\Http\\Controllers\\Admin\\StudentController::class, 'index']);
-        Route::post('/students', [\\App\\Http\\Controllers\\Admin\\StudentController::class, 'store']);
-        Route::put('/students/{student}', [\\App\\Http\\Controllers\\Admin\\StudentController::class, 'update']);
+        Route::get('/students', [\App\Http\Controllers\Admin\StudentController::class, 'index']);
+        Route::post('/students', [\App\Http\Controllers\Admin\StudentController::class, 'store']);
+        Route::put('/students/{student}', [\App\Http\Controllers\Admin\StudentController::class, 'update']);
         Route::put('/exams/{exam}/toggle-status', [ExamController::class, 'toggleStatus']);
         Route::put('/exams/{exam}/end', [ExamController::class, 'endExam']);
         Route::get('/dashboard/stats', [AdminAuthController::class, 'dashboardStats']);
