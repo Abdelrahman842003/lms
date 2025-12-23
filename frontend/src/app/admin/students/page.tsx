@@ -331,7 +331,7 @@ function StudentsPage() {
               </button>
               
               {showFilter && (
-                <div className="absolute top-full left-0 mt-2 bg-[#1a1f37] border border-white/10 rounded-xl p-5 z-[100] w-[320px] shadow-[0_10px_25px_rgba(0,0,0,0.5)] backdrop-blur-md">
+                <div className="absolute top-full right-0 mt-2 bg-[#1a1f37] border border-white/10 rounded-xl p-5 z-[100] w-[320px] shadow-[0_10px_25px_rgba(0,0,0,0.5)] backdrop-blur-md">
                   <div className="mb-4">
                     <label className="block text-gray-light mb-2 text-[0.9rem]">الحالة</label>
                     <select 
