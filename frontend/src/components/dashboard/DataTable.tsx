@@ -254,8 +254,19 @@ export const DataTable: React.FC<DataTableProps> = ({
                                 left = screenWidth - menuWidth - 20;
                             }
 
+                            // Vertical Positioning
+                            const menuHeight = actions.length * 40 + 20; // approximate height (40px per item + padding)
+                            const screenHeight = window.innerHeight;
+                            let top = rect.bottom + 8;
+
+                            // Check if there is space below
+                            if (top + menuHeight > screenHeight - 20) {
+                                // Not enough space below, open upwards
+                                top = rect.top - menuHeight - 8;
+                            }
+
                             setDropdownPosition({
-                              top: rect.bottom + 8,
+                              top: top,
                               left: left,
                             });
                             setActiveDropdown(
