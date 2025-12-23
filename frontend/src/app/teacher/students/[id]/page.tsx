@@ -257,7 +257,8 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
                     </div>
                   </div>
 
-                  <div className="flex gap-2">
+                  {/* Buttons removed as per request */}
+                  {/* <div className="flex gap-2">
                     <button 
                       className="btn btn-primary btn-sm flex-1" 
                       onClick={() => router.push(`/teacher/exams/${exam.exam_id}`)}
@@ -269,7 +270,7 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
                       <i className="fas fa-file-alt"></i>
                       <span>تقرير</span>
                     </button>
-                  </div>
+                  </div> */}
                 </div>
               </DashboardCard>
             ))}
