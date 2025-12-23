@@ -12,6 +12,7 @@ class Lecture extends Model
 
     protected $fillable = [
         'teacher_id',
+        'grade_id',
         'title',
         'description',
         'start_time',
@@ -31,6 +32,11 @@ class Lecture extends Model
     public function teacher()
     {
         return $this->belongsTo(Teacher::class);
+    }
+
+    public function grade()
+    {
+        return $this->belongsTo(Grade::class);
     }
 
     public function attendances()

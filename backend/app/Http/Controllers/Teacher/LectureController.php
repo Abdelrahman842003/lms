@@ -37,6 +37,7 @@ class LectureController extends Controller
             $validated = $request->validate([
                 'title' => 'required|string|max:255',
                 'description' => 'nullable|string',
+                'grade_id' => 'required|exists:grades,id',
                 'date' => 'required|date',
             ]);
 
@@ -45,6 +46,7 @@ class LectureController extends Controller
             $lecture = $this->lectureService->createLecture($request->user(), [
                 'title' => $validated['title'],
                 'description' => $validated['description'],
+                'grade_id' => $request->input('grade_id'),
                 'start_time' => $date->copy()->startOfDay(),
                 'end_time' => $date->copy()->addHours(24),
                 'is_active' => false,

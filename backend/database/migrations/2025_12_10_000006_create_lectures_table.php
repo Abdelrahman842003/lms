@@ -11,6 +11,7 @@ return new class extends Migration
         Schema::create('lectures', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('teacher_id')->constrained('teachers')->onDelete('cascade');
+            $table->foreignUuid('grade_id')->constrained('grades')->cascadeOnDelete();
             $table->string('title');
             $table->text('description')->nullable();
             $table->string('qr_code')->nullable()->unique();

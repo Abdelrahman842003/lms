@@ -14,9 +14,23 @@ class StudentLectureController extends Controller
             'teacher_id' => 'required|exists:teachers,id',
         ]);
 
+        $student = $request->user();
+        
+        // Get student's enrollments for this teacher to find their grades
+        $enrollments = $student->enrollments()
+            ->where('teacher_id', $request->teacher_id)
+            ->where('is_active', true)
+            ->get();
+            
+        $gradeIds = $enrollments->pluck('grade_id')->filter()->unique()->values();
+
         $lectures = Lecture::where('teacher_id', $request->teacher_id)
-            ->with(['attendances' => function ($q) use ($request) {
-                $q->where('student_id', $request->user()->id);
+            ->where(function($query) use ($gradeIds) {
+                $query->whereIn('grade_id', $gradeIds)
+                      ->orWhereNull('grade_id');
+            })
+            ->with(['attendances' => function ($q) use ($student) {
+                $q->where('student_id', $student->id);
             }])
             ->latest()
             ->paginate(10);

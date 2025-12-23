@@ -16,6 +16,7 @@ import {
   toggleLectureActive,
   endLecture
 } from '@/services/lectureService';
+import { getGrades } from '@/services/gradeService';
 import QRCodeModal from '@/components/dashboard/QRCodeModal';
 import QRScannerModal from '@/components/dashboard/QRScannerModal';
 import toast from 'react-hot-toast';
@@ -37,8 +38,22 @@ export default function TeacherLecturesPage() {
   const [formData, setFormData] = useState<CreateLectureData & { date: string }>({
     title: '',
     description: '',
+    grade_id: '',
     date: '',
   });
+  const [grades, setGrades] = useState<any[]>([]);
+  
+  useEffect(() => {
+    const fetchGrades = async () => {
+      try {
+        const response = await getGrades(1, 100); // Fetch all grades
+        setGrades(response.data);
+      } catch (error) {
+        console.error('Failed to fetch grades:', error);
+      }
+    };
+    fetchGrades();
+  }, []);
   
   // QR Code State
   const [showQRModal, setShowQRModal] = useState(false);
@@ -88,6 +103,7 @@ export default function TeacherLecturesPage() {
     setFormData({
       title: '',
       description: '',
+      grade_id: '',
       date: '',
     });
     setShowModal(true);
@@ -102,6 +118,7 @@ export default function TeacherLecturesPage() {
     setFormData({
       title: lecture.title,
       description: lecture.description || '',
+      grade_id: lecture.grade_id || '',
       date: lecture.start_time.split(' ')[0], // Extract YYYY-MM-DD
     });
     setShowModal(true);
@@ -486,6 +503,23 @@ export default function TeacherLecturesPage() {
                     required
                     placeholder="مثال: مراجعة الفصل الأول"
                   />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="grade">الصف الدراسي</label>
+                  <select
+                    id="grade"
+                    className="form-input"
+                    value={formData.grade_id || ''}
+                    onChange={(e) => setFormData({ ...formData, grade_id: e.target.value })}
+                    required
+                  >
+                    <option value="">اختر الصف</option>
+                    {grades.map((grade) => (
+                      <option key={grade.id} value={grade.id}>
+                        {grade.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div className="form-group">
                   <label htmlFor="description">الوصف (اختياري)</label>
