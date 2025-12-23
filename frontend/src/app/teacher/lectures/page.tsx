@@ -187,8 +187,13 @@ export default function TeacherLecturesPage() {
     if (!selectedLectureForScan) return;
 
     try {
-      // Assuming decodedText is the student ID
-      await recordAttendance(selectedLectureForScan.id, decodedText);
+      // Parse student ID from QR code (format: "student:UUID")
+      let studentId = decodedText;
+      if (decodedText.startsWith('student:')) {
+        studentId = decodedText.replace('student:', '');
+      }
+
+      await recordAttendance(selectedLectureForScan.id, studentId);
       toast.success('تم تسجيل الحضور بنجاح');
       // Optional: Close modal or keep open for continuous scanning
       // setShowScannerModal(false); 
