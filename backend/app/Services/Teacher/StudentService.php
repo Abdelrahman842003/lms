@@ -277,7 +277,7 @@ class StudentService
      */
     public function getActivationDetails(Enrollment $enrollment): array
     {
-        $platformFee = (float) \App\Models\Setting::getValue('platform_fee', 15);
+        $platformFee = (float) \App\Models\Setting::getValue('pricePerStudent', 15);
         
         $options = [];
         
