@@ -47,6 +47,17 @@ class Student extends Authenticatable
         return $this->hasMany(Enrollment::class);
     }
 
+    /**
+     * Primary teacher relationship (direct foreign key)
+     */
+    public function teacher()
+    {
+        return $this->belongsTo(Teacher::class, 'teacher_id');
+    }
+
+    /**
+     * All enrolled teachers (many-to-many through enrollments)
+     */
     public function teachers()
     {
         return $this->belongsToMany(Teacher::class, 'enrollments')
