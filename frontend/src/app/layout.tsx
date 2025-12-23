@@ -6,6 +6,7 @@ import '@/styles/pages/login.css'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { Toaster } from 'react-hot-toast'
 import ServiceWorkerCleanup from '@/components/ServiceWorkerCleanup'
+import InstallPrompt from '@/components/InstallPrompt'
 
 export const metadata: Metadata = {
     title: 'المنصة التعليمية | Educational Platform',
@@ -43,6 +44,7 @@ export default function RootLayout({
                     referrerPolicy="no-referrer"
                 />
                 
+                <link rel="manifest" href="/manifest.json" />
             </head>
             <body
                 className="max-w-[2000px] mx-auto"
@@ -51,6 +53,7 @@ export default function RootLayout({
                 <div className="grid-pattern" />
                 <AuthProvider>
                   <ServiceWorkerCleanup />
+                  <InstallPrompt />
                   <div className="max-w-[1200px] mx-auto">
                     {children}
                     <Toaster position="top-center" />
