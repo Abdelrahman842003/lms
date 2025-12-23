@@ -181,9 +181,9 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=development
-      - NEXT_PUBLIC_API_URL=http://75.119.130.3/api
+      - NEXT_PUBLIC_API_URL=/api
       - NEXT_PUBLIC_REVERB_APP_KEY=${REVERB_APP_KEY:-y2vqna5uho5zsdz6kdyz}
-      - NEXT_PUBLIC_REVERB_HOST=75.119.130.3
+      - NEXT_PUBLIC_REVERB_HOST=neetaq.com
       - NEXT_PUBLIC_REVERB_PORT=8080
       - NEXT_PUBLIC_REVERB_SCHEME=http
       - NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyDuWnTpPZDolIt20XyB0h9ylWzDCs0H_b4
