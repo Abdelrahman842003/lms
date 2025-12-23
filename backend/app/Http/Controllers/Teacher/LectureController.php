@@ -33,26 +33,31 @@ class LectureController extends Controller
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'date' => 'required|date',
-        ]);
+        try {
+            $validated = $request->validate([
+                'title' => 'required|string|max:255',
+                'description' => 'nullable|string',
+                'date' => 'required|date',
+            ]);
 
-        $date = \Carbon\Carbon::parse($validated['date']);
-        
-        $lecture = $this->lectureService->createLecture($request->user(), [
-            'title' => $validated['title'],
-            'description' => $validated['description'],
-            'start_time' => $date->copy()->startOfDay(),
-            'end_time' => $date->copy()->addHours(24),
-            'is_active' => false,
-        ]);
+            $date = \Carbon\Carbon::parse($validated['date']);
+            
+            $lecture = $this->lectureService->createLecture($request->user(), [
+                'title' => $validated['title'],
+                'description' => $validated['description'],
+                'start_time' => $date->copy()->startOfDay(),
+                'end_time' => $date->copy()->addHours(24),
+                'is_active' => false,
+            ]);
 
-        return $this->successResponse([
-            'lecture' => new LectureResource($lecture),
-            'message' => 'تم إضافة المحاضرة بنجاح'
-        ], 201);
+            return $this->successResponse([
+                'lecture' => new LectureResource($lecture),
+                'message' => 'تم إضافة المحاضرة بنجاح'
+            ], 201);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Lecture creation failed: ' . $e->getMessage());
+            return $this->errorResponse($e->getMessage(), 500);
+        }
     }
 
     public function update(UpdateLectureRequest $request, Lecture $lecture)

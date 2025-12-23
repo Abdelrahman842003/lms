@@ -93,7 +93,8 @@ export const createLecture = async (data: CreateLectureData): Promise<Lecture> =
   });
 
   if (!response.ok) {
-    throw new Error('Failed to create lecture');
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || 'Failed to create lecture');
   }
 
   const res: ApiResponse<{ lecture: Lecture }> = await response.json();
