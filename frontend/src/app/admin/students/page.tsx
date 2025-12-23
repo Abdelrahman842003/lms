@@ -7,7 +7,7 @@ import { withAdminAuth } from '@/components/auth/withAdminAuth';
 import { DataTable } from '@/components/dashboard/DataTable';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
-import { getStudents, updateStudent } from '@/services/authService';
+import { getStudents, updateStudent, createStudent, getTeachers } from '@/services/authService';
 
 // ... existing imports
 
@@ -23,8 +23,17 @@ function StudentsPage() {
     name: '',
     username: '',
     password: '',
-    password_confirmation: ''
+    password_confirmation: '',
+    teacher_id: ''
   });
+  const [newStudentForm, setNewStudentForm] = useState({
+    name: '',
+    username: '',
+    password: '',
+    password_confirmation: '',
+    teacher_id: ''
+  });
+  const [teachers, setTeachers] = useState<any[]>([]);
   
   // Filter State
   const [showFilter, setShowFilter] = useState(false);
@@ -90,7 +99,17 @@ function StudentsPage() {
 
   useEffect(() => {
     fetchStudents();
+    fetchTeachers();
   }, []);
+
+  const fetchTeachers = async () => {
+    try {
+      const response = await getTeachers(1, 1000); // Get all teachers
+      setTeachers(response.data || []);
+    } catch (error) {
+      console.error('Failed to fetch teachers', error);
+    }
+  };
 
   const handleEditClick = (student: any) => {
     setSelectedStudent(student);
@@ -98,7 +117,8 @@ function StudentsPage() {
       name: student.name,
       username: student.username,
       password: '',
-      password_confirmation: ''
+      password_confirmation: '',
+      teacher_id: student.teacher?.id || ''
     });
     setIsEditModalOpen(true);
     setIsDetailsModalOpen(false); // Close details if open
@@ -117,6 +137,30 @@ function StudentsPage() {
     } catch (error: any) {
       console.error('Failed to update student', error);
       alert(error.message || 'فشل تحديث البيانات');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCreateStudent = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      setIsLoading(true);
+      await createStudent(newStudentForm);
+      setIsModalOpen(false);
+      setNewStudentForm({
+        name: '',
+        username: '',
+        password: '',
+        password_confirmation: '',
+        teacher_id: ''
+      });
+      fetchStudents(1); // Refresh data and go to first page
+      alert('تم إضافة الطالب بنجاح');
+    } catch (error: any) {
+      console.error('Failed to create student', error);
+      alert(error.message || 'فشل إضافة الطالب');
     } finally {
       setIsLoading(false);
     }
@@ -333,29 +377,84 @@ function StudentsPage() {
         />
       </DashboardCard>
 
-      {/* Add Student Modal Placeholder */}
-      {/* Add Student Modal Placeholder */}
+      {/* Add Student Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[1000] p-4">
           <div className="bg-[#1a1f37] p-5 rounded-2xl w-full max-w-md border border-white/10">
             <h2 className="text-white mb-4 text-xl font-bold">إضافة طالب جديد</h2>
-            <p className="text-gray-400 mb-6 text-sm">نموذج إضافة طالب (قيد التطوير)</p>
-            <div className="flex gap-3 justify-end pt-3 border-t border-white/10">
-              <button
-                type="button"
-                className="px-4 py-1.5 rounded-lg border border-white/10 text-gray-300 hover:bg-white/5 transition-all text-sm"
-                onClick={() => setIsModalOpen(false)}
-              >
-                إلغاء
-              </button>
-              <button
-                type="button"
-                className="px-4 py-1.5 rounded-lg bg-primary text-white hover:bg-primary/90 transition-all flex items-center gap-2 text-sm"
-                onClick={() => setIsModalOpen(false)}
-              >
-                حفظ
-              </button>
-            </div>
+            <form onSubmit={handleCreateStudent}>
+              <div className="mb-4">
+                <label className="block text-gray-300 mb-1.5 text-sm">الاسم</label>
+                <input
+                  type="text"
+                  value={newStudentForm.name}
+                  onChange={(e) => setNewStudentForm({...newStudentForm, name: e.target.value})}
+                  className="w-full p-2.5 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm"
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-gray-300 mb-1.5 text-sm">اسم المستخدم</label>
+                <input
+                  type="text"
+                  value={newStudentForm.username}
+                  onChange={(e) => setNewStudentForm({...newStudentForm, username: e.target.value})}
+                  className="w-full p-2.5 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm"
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-gray-300 mb-1.5 text-sm">المدرس</label>
+                <select
+                  value={newStudentForm.teacher_id}
+                  onChange={(e) => setNewStudentForm({...newStudentForm, teacher_id: e.target.value})}
+                  className="w-full p-2.5 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm"
+                >
+                  <option value="" className="bg-[#1a1f37]">اختر مدرس (اختياري)</option>
+                  {teachers.map((teacher) => (
+                    <option key={teacher.id} value={teacher.id} className="bg-[#1a1f37]">
+                      {teacher.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="mb-4">
+                <label className="block text-gray-300 mb-1.5 text-sm">كلمة المرور</label>
+                <input
+                  type="password"
+                  value={newStudentForm.password}
+                  onChange={(e) => setNewStudentForm({...newStudentForm, password: e.target.value})}
+                  className="w-full p-2.5 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm"
+                  required
+                />
+              </div>
+              <div className="mb-6">
+                <label className="block text-gray-300 mb-1.5 text-sm">تأكيد كلمة المرور</label>
+                <input
+                  type="password"
+                  value={newStudentForm.password_confirmation}
+                  onChange={(e) => setNewStudentForm({...newStudentForm, password_confirmation: e.target.value})}
+                  className="w-full p-2.5 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm"
+                  required
+                />
+              </div>
+              <div className="flex gap-3 justify-end pt-3 border-t border-white/10">
+                <button
+                  type="button"
+                  className="px-4 py-1.5 rounded-lg border border-white/10 text-gray-300 hover:bg-white/5 transition-all text-sm"
+                  onClick={() => setIsModalOpen(false)}
+                >
+                  إلغاء
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-1.5 rounded-lg bg-primary text-white hover:bg-primary/90 transition-all flex items-center gap-2 text-sm"
+                  disabled={isLoading}
+                >
+                  {isLoading ? 'جاري الحفظ...' : 'حفظ'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
@@ -431,6 +530,21 @@ function StudentsPage() {
                   className="w-full p-2.5 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm"
                   required
                 />
+              </div>
+              <div className="mb-4">
+                <label className="block text-gray-300 mb-1.5 text-sm">المدرس</label>
+                <select
+                  value={editFormData.teacher_id}
+                  onChange={(e) => setEditFormData({...editFormData, teacher_id: e.target.value})}
+                  className="w-full p-2.5 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm"
+                >
+                  <option value="" className="bg-[#1a1f37]">بدون مدرس</option>
+                  {teachers.map((teacher) => (
+                    <option key={teacher.id} value={teacher.id} className="bg-[#1a1f37]">
+                      {teacher.name}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="mb-4">
                 <label className="block text-gray-300 mb-1.5 text-sm">كلمة المرور (اختياري)</label>

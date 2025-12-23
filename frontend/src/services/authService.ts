@@ -547,6 +547,17 @@ export async function updateStudent(id: string, data: any): Promise<any> {
 }
 
 /**
+ * Create a new student (Admin only)
+ */
+export async function createStudent(data: any): Promise<any> {
+  const res = await fetchApi('/admin/students', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+  return res.student;
+}
+
+/**
  * Get dashboard stats (Admin only)
  */
 export async function getDashboardStats(): Promise<any> {
