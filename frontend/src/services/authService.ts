@@ -564,6 +564,10 @@ export async function getDashboardStats(): Promise<any> {
   return await fetchApi('/admin/dashboard/stats');
 }
 
+export async function getStudentStatistics(): Promise<any> {
+  return await fetchApi('/admin/students/statistics');
+}
+
 /**
  * Get teacher dashboard stats
  */

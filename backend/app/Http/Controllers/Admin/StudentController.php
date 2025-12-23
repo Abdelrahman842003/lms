@@ -56,4 +56,20 @@ class StudentController extends Controller
             'student' => new StudentResource($updatedStudent)
         ], 'تم تحديث بيانات الطالب بنجاح');
     }
+
+    public function statistics()
+    {
+        $totalStudents = \App\Models\Student::count();
+        $activeStudents = \App\Models\Student::count(); // Assuming all are active for now
+        $joinedThisMonth = \App\Models\Student::whereMonth('created_at', now()->month)
+            ->whereYear('created_at', now()->year)
+            ->count();
+
+        return response()->json([
+            'total_students' => $totalStudents,
+            'active_students' => $activeStudents,
+            'suspended_accounts' => 0,
+            'joined_this_month' => $joinedThisMonth,
+        ]);
+    }
 }

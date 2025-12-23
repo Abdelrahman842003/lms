@@ -111,6 +111,28 @@ function StudentsPage() {
     }
   };
 
+  const [stats, setStats] = useState({
+    total_students: 0,
+    active_students: 0,
+    suspended_accounts: 0,
+    joined_this_month: 0
+  });
+
+  const fetchStats = async () => {
+    try {
+      const data = await import('@/services/authService').then(m => m.getStudentStatistics());
+      setStats(data);
+    } catch (error) {
+      console.error('Failed to fetch stats', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchStudents();
+    fetchTeachers();
+    fetchStats();
+  }, []);
+
   const handleEditClick = (student: any) => {
     setSelectedStudent(student);
     setEditFormData({
@@ -253,7 +275,7 @@ function StudentsPage() {
       <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-6 mb-8">
         <StatCard
           title="إجمالي الطلاب"
-          value={totalItems}
+          value={stats.total_students}
           icon="fas fa-user-graduate"
           color="primary"
           variant="centered"
@@ -261,7 +283,7 @@ function StudentsPage() {
 
         <StatCard
           title="طلاب نشطين"
-          value={totalItems}
+          value={stats.active_students}
           icon="fas fa-user-check"
           color="success"
           variant="centered"
@@ -269,7 +291,7 @@ function StudentsPage() {
 
         <StatCard
           title="حسابات معلقة"
-          value={0}
+          value={stats.suspended_accounts}
           icon="fas fa-user-slash"
           color="danger"
           variant="centered"
@@ -277,7 +299,7 @@ function StudentsPage() {
 
         <StatCard
           title="انضموا هذا الشهر"
-          value={0}
+          value={stats.joined_this_month}
           icon="fas fa-user-plus"
           color="warning"
           variant="centered"
@@ -486,9 +508,9 @@ function StudentsPage() {
                 <p className="text-gray-400 text-xs m-0">المدرس</p>
               </div>
               <div className="bg-white/5 p-4 rounded-xl text-center border border-white/5">
-                <i className="fas fa-id-card text-xl text-warning mb-2"></i>
+                <i className="fas fa-phone text-xl text-warning mb-2"></i>
                 <h3 className="text-white text-lg mb-0.5 font-semibold break-all">{selectedStudent.username}</h3>
-                <p className="text-gray-400 text-xs m-0">اسم المستخدم</p>
+                <p className="text-gray-400 text-xs m-0">رقم الهاتف</p>
               </div>
             </div>
 
