@@ -21,14 +21,14 @@ function StudentsPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editFormData, setEditFormData] = useState({
     name: '',
-    username: '',
+    phone: '',
     password: '',
     password_confirmation: '',
     teacher_id: ''
   });
   const [newStudentForm, setNewStudentForm] = useState({
     name: '',
-    username: '',
+    phone: '',
     password: '',
     password_confirmation: '',
     teacher_id: ''
@@ -115,7 +115,7 @@ function StudentsPage() {
     setSelectedStudent(student);
     setEditFormData({
       name: student.name,
-      username: student.username,
+      phone: student.phone,
       password: '',
       password_confirmation: '',
       teacher_id: student.teacher?.id || ''
@@ -151,7 +151,7 @@ function StudentsPage() {
       setIsModalOpen(false);
       setNewStudentForm({
         name: '',
-        username: '',
+        phone: '',
         password: '',
         password_confirmation: '',
         teacher_id: ''
@@ -192,8 +192,8 @@ function StudentsPage() {
       )
     },
     { 
-      key: 'username', 
-      label: 'اسم المستخدم', 
+      key: 'phone', 
+      label: 'رقم الهاتف', 
       sortable: true,
       className: 'hidden md:table-cell'
     },
@@ -394,12 +394,13 @@ function StudentsPage() {
                 />
               </div>
               <div className="mb-4">
-                <label className="block text-gray-300 mb-1.5 text-sm">اسم المستخدم</label>
+                <label className="block text-gray-300 mb-1.5 text-sm">رقم الهاتف</label>
                 <input
-                  type="text"
-                  value={newStudentForm.username}
-                  onChange={(e) => setNewStudentForm({...newStudentForm, username: e.target.value})}
+                  type="tel"
+                  value={newStudentForm.phone}
+                  onChange={(e) => setNewStudentForm({...newStudentForm, phone: e.target.value})}
                   className="w-full p-2.5 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm"
+                  placeholder="01xxxxxxxxx"
                   required
                 />
               </div>
@@ -522,12 +523,13 @@ function StudentsPage() {
                 />
               </div>
               <div className="mb-4">
-                <label className="block text-gray-300 mb-1.5 text-sm">اسم المستخدم</label>
+                <label className="block text-gray-300 mb-1.5 text-sm">رقم الهاتف</label>
                 <input
-                  type="text"
-                  value={editFormData.username}
-                  onChange={(e) => setEditFormData({...editFormData, username: e.target.value})}
+                  type="tel"
+                  value={editFormData.phone}
+                  onChange={(e) => setEditFormData({...editFormData, phone: e.target.value})}
                   className="w-full p-2.5 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm"
+                  placeholder="01xxxxxxxxx"
                   required
                 />
               </div>
