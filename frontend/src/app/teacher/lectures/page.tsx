@@ -183,9 +183,12 @@ export default function TeacherLecturesPage() {
     setShowScannerModal(true);
   };
 
-  const handleScanSuccess = async (decodedText: string) => {
-    if (!selectedLectureForScan) return;
+  const [isScanningProcessing, setIsScanningProcessing] = useState(false);
 
+  const handleScanSuccess = async (decodedText: string) => {
+    if (!selectedLectureForScan || isScanningProcessing) return;
+
+    setIsScanningProcessing(true);
     try {
       // Parse student ID from QR code (format: "student:UUID")
       let studentId = decodedText;
@@ -195,11 +198,16 @@ export default function TeacherLecturesPage() {
 
       await recordAttendance(selectedLectureForScan.id, studentId);
       toast.success('تم تسجيل الحضور بنجاح');
-      // Optional: Close modal or keep open for continuous scanning
-      // setShowScannerModal(false); 
+      setShowScannerModal(false); 
     } catch (error: any) {
       console.error('Failed to record attendance:', error);
+      // Don't close modal on error, just show toast
       toast.error(error.message || 'فشل تسجيل الحضور');
+      
+      // Add a small delay before allowing next scan to prevent spamming
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    } finally {
+      setIsScanningProcessing(false);
     }
   };
 
