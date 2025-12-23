@@ -32,6 +32,22 @@ class StudentController extends Controller
         );
     }
 
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'phone' => 'required|string|unique:students,phone',
+            'password' => 'required|string|min:6|confirmed',
+            'teacher_id' => 'nullable|exists:teachers,id',
+        ]);
+
+        $student = $this->studentService->createStudent($validated);
+        
+        return $this->successResponse([
+            'student' => new StudentResource($student)
+        ], 'تم إضافة الطالب بنجاح', 201);
+    }
+
     public function update(UpdateStudentRequest $request, Student $student)
     {
         $updatedStudent = $this->studentService->updateStudent($student, $request->validated());

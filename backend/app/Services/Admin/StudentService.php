@@ -16,11 +16,36 @@ class StudentService
             ->paginate($perPage);
     }
 
+    public function createStudent(array $data): Student
+    {
+        $studentData = [
+            'name' => $data['name'],
+            'phone' => $data['phone'],
+            'password' => Hash::make($data['password']),
+        ];
+
+        if (isset($data['teacher_id']) && !empty($data['teacher_id'])) {
+            $studentData['teacher_id'] = $data['teacher_id'];
+        }
+
+        $student = Student::create($studentData);
+
+        return $student->fresh(['teacher']);
+    }
+
     public function updateStudent(Student $student, array $data): Student
     {
         $updateData = [
             'name' => $data['name'],
         ];
+
+        if (isset($data['phone']) && !empty($data['phone'])) {
+            $updateData['phone'] = $data['phone'];
+        }
+
+        if (isset($data['teacher_id'])) {
+            $updateData['teacher_id'] = $data['teacher_id'];
+        }
 
         if (isset($data['password']) && !empty($data['password'])) {
             $updateData['password'] = Hash::make($data['password']);
