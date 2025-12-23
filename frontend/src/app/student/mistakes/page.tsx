@@ -218,8 +218,8 @@ export default function MistakesPage() {
                       )}
                     </div>
                     <div className="flex-1">
-                      <p className="text-white font-medium line-clamp-1">{mistake.question.text}</p>
-                      <p className="text-sm text-gray-500">{mistake.exam.title}</p>
+                      <p className="text-white font-medium line-clamp-1">{mistake.question?.text || 'سؤال غير متاح'}</p>
+                      <p className="text-sm text-gray-500">{mistake.exam?.title}</p>
                     </div>
                   </div>
                   <i className={`fas fa-chevron-down text-gray-400 transition-transform ${
@@ -233,30 +233,36 @@ export default function MistakesPage() {
                     <div className="pt-4 space-y-3">
                       {/* Options */}
                       <div className="space-y-2">
-                        {mistake.question?.options?.map((option, idx) => {
-                          const isCorrect = option === mistake.question.correct_answer;
-                          const isStudentAnswer = option === mistake.student_answer;
-                          return (
-                            <div
-                              key={idx}
-                              className={`p-3 rounded-lg border ${
-                                isCorrect
-                                  ? 'bg-success/10 border-success/30 text-success'
-                                  : isStudentAnswer
-                                  ? 'bg-danger/10 border-danger/30 text-danger'
-                                  : 'bg-white/5 border-white/10 text-gray-400'
-                              }`}
-                            >
-                              <div className="flex items-center gap-2">
-                                {isCorrect && <i className="fas fa-check-circle"></i>}
-                                {isStudentAnswer && !isCorrect && <i className="fas fa-times-circle"></i>}
-                                <span>{option}</span>
-                                {isCorrect && <span className="text-xs mr-auto">(الإجابة الصحيحة)</span>}
-                                {isStudentAnswer && !isCorrect && <span className="text-xs mr-auto">(إجابتك)</span>}
+                        {Array.isArray(mistake.question?.options) && mistake.question.options.length > 0 ? (
+                          mistake.question.options.map((option, idx) => {
+                            const isCorrect = option === mistake.question?.correct_answer;
+                            const isStudentAnswer = option === mistake.student_answer;
+                            return (
+                              <div
+                                key={idx}
+                                className={`p-3 rounded-lg border ${
+                                  isCorrect
+                                    ? 'bg-success/10 border-success/30 text-success'
+                                    : isStudentAnswer
+                                    ? 'bg-danger/10 border-danger/30 text-danger'
+                                    : 'bg-white/5 border-white/10 text-gray-400'
+                                }`}
+                              >
+                                <div className="flex items-center gap-2">
+                                  {isCorrect && <i className="fas fa-check-circle"></i>}
+                                  {isStudentAnswer && !isCorrect && <i className="fas fa-times-circle"></i>}
+                                  <span>{option}</span>
+                                  {isCorrect && <span className="text-xs mr-auto">(الإجابة الصحيحة)</span>}
+                                  {isStudentAnswer && !isCorrect && <span className="text-xs mr-auto">(إجابتك)</span>}
+                                </div>
                               </div>
-                            </div>
-                          );
-                        })}
+                            );
+                          })
+                        ) : (
+                          <div className="text-center py-4 text-gray-500">
+                            لا توجد خيارات متاحة لهذا السؤال
+                          </div>
+                        )}
                       </div>
 
                       {/* Actions */}
