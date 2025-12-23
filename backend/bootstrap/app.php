@@ -25,6 +25,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'api/teacher/lectures/*/qr-code',
             'api/teacher/lectures/*/toggle-active',
             'api/broadcasting/auth',
+            'api/teacher/lectures',
         ]);
     })
 
