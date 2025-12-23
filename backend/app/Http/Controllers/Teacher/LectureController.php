@@ -108,6 +108,29 @@ class LectureController extends Controller
             'is_active' => !$lecture->is_active
         ]);
 
+        if ($lecture->is_active) {
+            try {
+                // Get active students enrolled in this grade
+                $students = $lecture->teacher->students()
+                    ->wherePivot('grade_id', $lecture->grade_id)
+                    ->wherePivot('is_active', true)
+                    ->get();
+
+                if ($students->count() > 0) {
+                    \Illuminate\Support\Facades\Notification::send(
+                        $students, 
+                        new \App\Notifications\LectureActivatedNotification(
+                            $lecture->title, 
+                            $lecture->teacher->name, 
+                            $lecture->id
+                        )
+                    );
+                }
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Failed to send lecture activation notification: ' . $e->getMessage());
+            }
+        }
+
         return $this->successResponse([
             'message' => $lecture->is_active ? 'تم تفعيل المحاضرة' : 'تم إلغاء تفعيل المحاضرة',
             'is_active' => $lecture->is_active

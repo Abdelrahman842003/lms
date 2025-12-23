@@ -38,8 +38,11 @@ class ProcessLectureEnd implements ShouldQueue
             return;
         }
 
-        $activeStudents = $teacher->activeStudents;
-        \Illuminate\Support\Facades\Log::info("Found " . $activeStudents->count() . " active students for teacher {$teacher->id}");
+        $activeStudents = $teacher->activeStudents()
+            ->wherePivot('grade_id', $this->lecture->grade_id)
+            ->get();
+            
+        \Illuminate\Support\Facades\Log::info("Found " . $activeStudents->count() . " active students for teacher {$teacher->id} in grade {$this->lecture->grade_id}");
 
         foreach ($activeStudents as $student) {
             // Check if student already has an attendance record for this lecture
