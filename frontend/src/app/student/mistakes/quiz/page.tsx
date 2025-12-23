@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { fetchApi } from '@/services/authService';
@@ -17,7 +17,7 @@ interface QuizQuestion {
   times_failed: number;
 }
 
-export default function MistakesQuizPage() {
+function QuizContent() {
   const { user } = useAuth();
   const searchParams = useSearchParams();
   const teacherId = searchParams.get('teacher_id');
@@ -282,5 +282,18 @@ export default function MistakesQuizPage() {
         )}
       </div>
     </DashboardLayout>
+  );
+}
+
+export default function MistakesQuizPage() {
+  return (
+    <Suspense fallback={
+      <div className="text-center py-16">
+        <i className="fas fa-spinner fa-spin text-4xl text-primary"></i>
+        <p className="text-gray-400 mt-4">جاري تحميل الكويز...</p>
+      </div>
+    }>
+      <QuizContent />
+    </Suspense>
   );
 }
