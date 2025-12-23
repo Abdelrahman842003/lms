@@ -113,6 +113,7 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - CACHE_STORE=redis
       - CACHE_DRIVER=redis
       - QUEUE_CONNECTION=redis
       - SESSION_DRIVER=redis
@@ -223,6 +224,7 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - CACHE_STORE=redis
       - CACHE_DRIVER=redis
       - BROADCAST_CONNECTION=reverb
       - REVERB_APP_ID=${REVERB_APP_ID}
