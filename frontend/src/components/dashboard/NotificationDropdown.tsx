@@ -23,7 +23,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
   const isFirstLoadRef = useRef(true);
 
   useEffect(() => {
-    audioRef.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3'); // Using a hosted sound for reliability
+    audioRef.current = new Audio('/sounds/notification.mp3');
     
     // Request notification permission
     if ('Notification' in window && Notification.permission === 'default') {
@@ -319,7 +319,16 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
     <div className="navbar-user" ref={dropdownRef}>
       <div 
         className="navbar-user-clickable notification-trigger"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => {
+          setIsOpen(!isOpen);
+          // Try to play sound on interaction to unlock audio context for future notifications
+          if (audioRef.current) {
+            audioRef.current.volume = 0; // Silent play
+            audioRef.current.play().then(() => {
+              if (audioRef.current) audioRef.current.volume = 1; // Restore volume
+            }).catch(() => {});
+          }
+        }}
         style={{ position: 'relative', padding: '0.5rem' }}
       >
         <i className="fas fa-bell" style={{ fontSize: '1.2rem', color: 'var(--gray-light)' }}></i>

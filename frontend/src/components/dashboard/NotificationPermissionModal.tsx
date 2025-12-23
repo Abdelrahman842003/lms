@@ -38,6 +38,11 @@ export const NotificationPermissionModal = () => {
       setPermission(result);
       if (result === 'granted') {
         setIsVisible(false);
+        
+        // Play sound to confirm and unlock audio
+        const audio = new Audio('/sounds/notification.mp3');
+        audio.play().catch(() => {});
+
         // Optional: Send a test notification
         new Notification('تم تفعيل الإشعارات بنجاح', {
           body: 'ستصلك الآن جميع التنبيهات المهمة',
