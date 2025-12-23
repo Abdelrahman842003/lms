@@ -67,8 +67,13 @@ class StudentAttendanceController extends Controller
 
         $lecture->load('teacher');
 
-        // Award attendance points
-        $pointTransaction = $this->pointService->awardAttendancePoints($student, $lecture);
+        $pointTransaction = null;
+        try {
+            // Award attendance points
+            $pointTransaction = $this->pointService->awardAttendancePoints($student, $lecture);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Failed to award attendance points: ' . $e->getMessage());
+        }
 
         // Send Notification
         try {
