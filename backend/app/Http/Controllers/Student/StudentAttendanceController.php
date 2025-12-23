@@ -65,11 +65,19 @@ class StudentAttendanceController extends Controller
         
         $attendance->update(['status' => 'present']);
 
+        $lecture->load('teacher');
+
         // Award attendance points
         $pointTransaction = $this->pointService->awardAttendancePoints($student, $lecture);
 
         // Send Notification
-        $student->notify(new \App\Notifications\StudentAttendanceNotification($lecture->title, $lecture->teacher->name));
+        try {
+            if ($lecture->teacher) {
+                $student->notify(new \App\Notifications\StudentAttendanceNotification($lecture->title, $lecture->teacher->name));
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Failed to send attendance notification: ' . $e->getMessage());
+        }
 
         return $this->successResponse([
             'message' => 'Attendance marked successfully',
