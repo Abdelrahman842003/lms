@@ -24,13 +24,18 @@ class DeviceTokenController extends Controller
              return $this->errorResponse('Unauthorized', 401);
         }
 
-        $user->deviceTokens()->updateOrCreate(
+        // Use firstOrCreate to avoid unique constraint violation
+        // We only want to store the token if it doesn't exist
+        $user->deviceTokens()->firstOrCreate(
             ['token' => $request->token],
             [
                 'device_type' => $request->device_type,
                 'last_used_at' => now(),
             ]
         );
+        
+        // If it exists, we can optionally update the last_used_at
+        // But firstOrCreate handles the insertion safely
 
         return $this->successResponse(null, 'Token stored successfully');
     }
