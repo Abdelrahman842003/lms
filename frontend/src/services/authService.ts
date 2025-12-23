@@ -132,7 +132,8 @@ async function refreshAccessToken(): Promise<string | null> {
       throw new Error('Failed to refresh token');
     }
 
-    const res = await response.json();
+    const resText = await response.text();
+    const res = JSON.parse(resText);
     const newAccessToken = res.data.access_token;
     
     if (newAccessToken) {
@@ -215,11 +216,17 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}, skip
     if (!response.ok) {
       let error: any;
       try {
-        error = await response.json();
-      } catch (e) {
-        // If JSON parse fails, try to get text
+        // Read response as text first
         const text = await response.text();
-        error = { message: text || `API Error: ${response.status}` };
+        // Try to parse as JSON
+        try {
+          error = JSON.parse(text);
+        } catch (e) {
+          // If not valid JSON, use text as message
+          error = { message: text || `API Error: ${response.status}` };
+        }
+      } catch (e) {
+        error = { message: `API Error: ${response.status}` };
       }
 
       console.error('API Error:', response.status, error);
