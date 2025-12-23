@@ -33,7 +33,7 @@ class StudentAbsentNotification extends Notification
      */
     public function via($notifiable)
     {
-        return ['database'];
+        return ['database', \App\Notifications\Channels\FcmChannel::class];
     }
 
     /**
