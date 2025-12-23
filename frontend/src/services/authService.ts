@@ -267,7 +267,7 @@ export async function loginAdmin(
   username: string,
   password: string
 ): Promise<AuthResponse> {
-  await csrf();
+  // await csrf();
   // We use fetchApi here to handle headers automatically, but we need to pass the endpoint directly
   // Note: fetchApi assumes /api prefix if not present, but ENDPOINTS already have it.
   // The fetchApi logic I wrote handles both cases.
@@ -300,7 +300,7 @@ export async function loginTeacher(
   phone: string,
   password: string
 ): Promise<AuthResponse> {
-  await csrf();
+  // await csrf();
   return await fetchApi(ENDPOINTS.LOGIN_TEACHER, {
     method: 'POST',
     body: JSON.stringify({ phone, password }),
@@ -314,7 +314,7 @@ export async function loginStudent(
   phone: string,
   password: string
 ): Promise<AuthResponse> {
-  await csrf();
+  // await csrf();
   const data = await fetchApi(ENDPOINTS.LOGIN_STUDENT, {
     method: 'POST',
     body: JSON.stringify({ phone, password }),
@@ -350,7 +350,7 @@ export async function loginSecretary(
   phone: string,
   password: string
 ): Promise<AuthResponse> {
-  await csrf();
+  // await csrf();
   return await fetchApi(ENDPOINTS.LOGIN_SECRETARY, {
     method: 'POST',
     body: JSON.stringify({ phone, password }),
