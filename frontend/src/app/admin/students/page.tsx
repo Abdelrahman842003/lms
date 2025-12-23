@@ -121,7 +121,9 @@ function StudentsPage() {
   const fetchStats = async () => {
     try {
       const data = await import('@/services/authService').then(m => m.getStudentStatistics());
-      setStats(data);
+      if (data) {
+        setStats(data);
+      }
     } catch (error) {
       console.error('Failed to fetch stats', error);
     }
@@ -275,7 +277,7 @@ function StudentsPage() {
       <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-6 mb-8">
         <StatCard
           title="إجمالي الطلاب"
-          value={stats.total_students}
+          value={stats?.total_students || 0}
           icon="fas fa-user-graduate"
           color="primary"
           variant="centered"
@@ -283,7 +285,7 @@ function StudentsPage() {
 
         <StatCard
           title="طلاب نشطين"
-          value={stats.active_students}
+          value={stats?.active_students || 0}
           icon="fas fa-user-check"
           color="success"
           variant="centered"
@@ -291,7 +293,7 @@ function StudentsPage() {
 
         <StatCard
           title="حسابات معلقة"
-          value={stats.suspended_accounts}
+          value={stats?.suspended_accounts || 0}
           icon="fas fa-user-slash"
           color="danger"
           variant="centered"
@@ -299,7 +301,7 @@ function StudentsPage() {
 
         <StatCard
           title="انضموا هذا الشهر"
-          value={stats.joined_this_month}
+          value={stats?.joined_this_month || 0}
           icon="fas fa-user-plus"
           color="warning"
           variant="centered"
