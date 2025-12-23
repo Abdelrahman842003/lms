@@ -30,22 +30,32 @@ class FcmChannel
         $body = $data['message'] ?? '';
         $customData = $data; // Send all data as custom data
 
-        $credentialsPath = config('services.firebase.credentials') 
+        $credentials = config('services.firebase.credentials') 
             ?? env('GOOGLE_APPLICATION_CREDENTIALS')
             ?? storage_path('firebase-credentials.json');
         
-        if (!file_exists($credentialsPath)) {
-            Log::error("Firebase credentials not found at: " . $credentialsPath);
+        // Check if credentials is JSON content or file path
+        $credentialsArray = null;
+        if (is_string($credentials) && (str_starts_with(trim($credentials), '{') || str_starts_with(trim($credentials), '['))) {
+            // It's JSON content from Docker secret
+            $credentialsArray = json_decode($credentials, true);
+            Log::info("Using Firebase credentials from Docker secret");
+        } elseif (file_exists($credentials)) {
+            // It's a file path
+            $credentialsArray = json_decode(file_get_contents($credentials), true);
+            Log::info("Using Firebase credentials from file: " . $credentials);
+        } else {
+            Log::error("Firebase credentials not found or invalid");
             return;
         }
 
         try {
             $client = new Client();
-            $client->setAuthConfig($credentialsPath);
+            $client->setAuthConfig($credentialsArray);
             $client->addScope('https://www.googleapis.com/auth/firebase.messaging');
             $httpClient = $client->authorize();
 
-            $projectId = $this->getProjectId($credentialsPath);
+            $projectId = $credentialsArray['project_id'] ?? null;
             $endpoint = "https://fcm.googleapis.com/v1/projects/{$projectId}/messages:send";
 
             foreach ($tokens as $token) {
@@ -85,9 +95,5 @@ class FcmChannel
         }
     }
 
-    private function getProjectId($path)
-    {
-        $json = json_decode(file_get_contents($path), true);
-        return $json['project_id'] ?? null;
-    }
+
 }
