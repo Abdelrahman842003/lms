@@ -165,6 +165,23 @@ services:
       - lms_network
     command: sh -c "test -f .env || cp .env.example .env; composer install --no-scripts || true; php artisan reverb:start --host=0.0.0.0 --port=8080"
 
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: lms_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/ssl:/etc/nginx/ssl
+    depends_on:
+      - frontend
+      - octane
+    networks:
+      - lms_network
+
   # Next.js Frontend
   frontend:
     build:
