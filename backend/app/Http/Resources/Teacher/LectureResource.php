@@ -22,6 +22,11 @@ class LectureResource extends JsonResource
             'enrolled' => $this->attendances_count,
             'status' => $this->getStatus(),
             'is_active' => $this->is_active,
+            'grade' => $this->grade ? [
+                'id' => $this->grade->id,
+                'name' => $this->grade->name,
+            ] : null,
+            'grade_id' => $this->grade_id,
             'created_at' => $this->created_at,
         ];
     }

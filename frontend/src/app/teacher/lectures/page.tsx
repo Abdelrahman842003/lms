@@ -386,6 +386,12 @@ export default function TeacherLecturesPage() {
                   <i className="fas fa-calendar w-5 text-primary"></i>
                   <span>{lecture.date}</span>
                 </div>
+                {lecture.grade && (
+                  <div className="flex items-center gap-2 text-sm text-light">
+                    <i className="fas fa-graduation-cap w-5 text-primary"></i>
+                    <span>{lecture.grade.name}</span>
+                  </div>
+                )}
                 <div className="flex items-center gap-2 text-sm text-light">
                   <i className="fas fa-clock w-5 text-primary"></i>
                   <span>{lecture.time} ({lecture.duration})</span>

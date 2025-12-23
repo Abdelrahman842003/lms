@@ -9,6 +9,7 @@ class LectureService
     public function getLectures($teacher, int $perPage = 10, array $filters = [])
     {
         return $teacher->lectures()
+            ->with(['grade'])
             ->withCount('attendances')
             ->orderByRaw("
                 CASE
