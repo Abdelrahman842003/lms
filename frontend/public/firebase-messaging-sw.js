@@ -47,3 +47,8 @@ self.addEventListener('notificationclick', function(event) {
     })
   );
 });
+
+// Empty fetch handler to satisfy PWA installability requirements
+self.addEventListener('fetch', (event) => {
+  // We don't need to cache anything for now, just having the listener is enough
+});
