@@ -663,7 +663,7 @@ export async function updateTeacherStudentPermissions(id: string, permissions: s
  */
 export async function getTeacherStudentDetails(id: string): Promise<any> {
   const res = await fetchApi(`/teacher/students/${id}`);
-  return res.student;
+  return { ...res.student, subscription_history: res.subscription_history };
 }
 
 /**

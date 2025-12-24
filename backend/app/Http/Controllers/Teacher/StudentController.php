@@ -143,8 +143,11 @@ class StudentController extends Controller
         // Load student relations for stats
         $enrollment->student->load(['examResults.exam', 'attendances.lecture']);
 
+        $subscriptionHistory = $this->studentService->getSubscriptionHistory($enrollment);
+
         return $this->successResponse([
-            'student' => new EnrollmentResource($enrollment)
+            'student' => new EnrollmentResource($enrollment),
+            'subscription_history' => $subscriptionHistory
         ]);
     }
 

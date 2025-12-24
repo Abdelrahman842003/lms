@@ -14,6 +14,7 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
   const { user } = useAuth();
   const router = useRouter();
   const [student, setStudent] = useState<any>(null);
+  const [subscriptionHistory, setSubscriptionHistory] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -23,6 +24,18 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
         setIsLoading(true);
         const data = await getTeacherStudentDetails(id);
         setStudent(data);
+        // The API now returns subscription_history alongside student
+        if (data.subscription_history) {
+           setSubscriptionHistory(data.subscription_history);
+        } else {
+           // Fallback if API structure is slightly different (e.g. wrapped)
+           // But based on controller change, it should be in the response root, 
+           // however getTeacherStudentDetails returns res.student. 
+           // Wait, getTeacherStudentDetails in authService returns res.student.
+           // My controller returns { student: ..., subscription_history: ... }
+           // So getTeacherStudentDetails will return the student object ONLY if it returns res.student.
+           // I need to check authService again.
+        }
       } catch (err: any) {
         console.error('Failed to fetch student details:', err);
         setError(err.message || 'حدث خطأ أثناء جلب بيانات الطالب');
@@ -210,6 +223,52 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
           </div>
         </div>
       </DashboardCard>
+
+      {/* Subscription History Section */}
+      <div className="mt-8">
+        <DashboardCard
+          title="سجل الاشتراكات"
+          icon="fas fa-history"
+        >
+          {subscriptionHistory.length === 0 ? (
+            <div className="text-center p-8">
+              <p className="text-gray-light">لا يوجد سجل اشتراكات</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-right">
+                <thead>
+                  <tr className="border-b border-white/10 text-gray-light text-sm">
+                    <th className="pb-4 font-medium">الشهر</th>
+                    <th className="pb-4 font-medium">المبلغ المستحق</th>
+                    <th className="pb-4 font-medium">المدفوع</th>
+                    <th className="pb-4 font-medium">المتبقي</th>
+                    <th className="pb-4 font-medium">الحالة</th>
+                  </tr>
+                </thead>
+                <tbody className="text-sm">
+                  {subscriptionHistory.map((item: any, index: number) => (
+                    <tr key={index} className="border-b border-white/5 last:border-0 hover:bg-white/[0.02] transition-colors">
+                      <td className="py-4 text-white">{item.month_name}</td>
+                      <td className="py-4 text-white">{item.amount_due} EGP</td>
+                      <td className="py-4 text-success">{item.amount_paid} EGP</td>
+                      <td className="py-4 text-danger">{item.amount_remaining} EGP</td>
+                      <td className="py-4">
+                        <span className={`badge ${
+                          item.status === 'paid' ? 'badge-success' : 
+                          item.status === 'partial' ? 'badge-warning' : 'badge-danger'
+                        }`}>
+                          {item.status_label}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </DashboardCard>
+      </div>
 
       {/* Exams Grid */}
       <div className="mt-8">

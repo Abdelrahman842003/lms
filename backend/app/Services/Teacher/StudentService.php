@@ -389,6 +389,62 @@ class StudentService
     }
 
     /**
+     * Get subscription history for a student
+     */
+    public function getSubscriptionHistory(Enrollment $enrollment): array
+    {
+        $history = [];
+        $startDate = $enrollment->created_at->startOfMonth();
+        $endDate = now()->endOfMonth();
+        
+        $currentMonth = $startDate->copy();
+        
+        while ($currentMonth <= $endDate) {
+            $monthStart = $currentMonth->copy()->startOfMonth();
+            $monthEnd = $currentMonth->copy()->endOfMonth();
+            
+            // Calculate price for this month
+            $price = 0;
+            if ($enrollment->group && $enrollment->group->price) {
+                $price = $enrollment->group->price;
+            } elseif ($enrollment->grade && $enrollment->grade->price) {
+                $price = $enrollment->grade->price;
+            }
+
+            // Calculate paid amount for this month
+            $amountPaid = \App\Models\PaymentLog::where('teacher_id', $enrollment->teacher_id)
+                ->where('student_id', $enrollment->student_id)
+                ->where('status', 'confirmed')
+                ->whereBetween('confirmed_at', [$monthStart, $monthEnd])
+                ->sum('amount');
+
+            $amountRemaining = $price - $amountPaid;
+
+            $status = 'pending';
+            if ($amountRemaining <= 0 && $amountPaid > 0) {
+                $status = 'paid';
+            } elseif ($amountPaid > 0) {
+                $status = 'partial';
+            }
+
+            $history[] = [
+                'month' => $currentMonth->format('Y-m'),
+                'month_name' => \App\Services\HelperService::getArabicMonthName($currentMonth->month) . ' ' . $currentMonth->year,
+                'amount_due' => (float) $price,
+                'amount_paid' => (float) $amountPaid,
+                'amount_remaining' => (float) max(0, $amountRemaining),
+                'status' => $status,
+                'status_label' => \App\Services\HelperService::getStatusLabel($status),
+            ];
+
+            $currentMonth->addMonth();
+        }
+
+        // Sort by month descending (newest first)
+        return array_reverse($history);
+    }
+
+    /**
      * Generate slug from Arabic name
      */
     private function generateSlug(string $name): string
