@@ -185,15 +185,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     // Listen for teacher suspended events
-    const handleTeacherSuspended = () => {
+    const handleTeacherSuspended = async () => {
       console.log('Teacher suspended event received');
       toast.error('عفواً، هذا المدرس معلق حالياً. جاري تحويلك...');
       
       // Refresh user data to trigger smart selection
-      checkAuth();
+      await checkAuth();
       
-      // Redirect to teachers list
-      router.push('/student/teachers');
+      // Redirect to dashboard (which handles both active teacher and disabled state)
+      router.push('/student/dashboard');
     };
 
     window.addEventListener('auth:unauthorized', handleUnauthorized);
