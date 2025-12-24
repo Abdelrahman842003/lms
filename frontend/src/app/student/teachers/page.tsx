@@ -2,8 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import toast from 'react-hot-toast';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
+import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { TeacherInfo } from '@/services/authService';
 
@@ -12,6 +12,7 @@ export default function StudentTeachersPage() {
   const { user, isLoading: authLoading } = useAuth();
   const [teachers, setTeachers] = useState<TeacherInfo[]>([]);
   const [selectedTeacher, setSelectedTeacher] = useState<string | null>(null);
+  const [suspendedTeacher, setSuspendedTeacher] = useState<TeacherInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -37,7 +38,7 @@ export default function StudentTeachersPage() {
   const handleSelectTeacher = (teacherId: string) => {
     const teacher = teachers.find(t => t.teacher_id === teacherId);
     if (teacher?.is_suspended) {
-      toast.error(`ممنوع الدخول علي المدرس ${teacher.teacher_name} في الوقت الحالي`);
+      setSuspendedTeacher(teacher);
       return;
     }
     setSelectedTeacher(teacherId);
@@ -130,8 +131,28 @@ export default function StudentTeachersPage() {
           </div>
         )}
       </div>
-
-
+      <ConfirmationModal
+        isOpen={!!suspendedTeacher}
+        title="تنبيه"
+        message={
+          <div className="text-center">
+            <div className="w-16 h-16 bg-warning/10 rounded-full flex items-center justify-center mx-auto mb-4">
+              <i className="fas fa-exclamation-triangle text-2xl text-warning"></i>
+            </div>
+            <p className="text-lg font-medium text-white mb-2">
+              عفواً، هذا المدرس ({suspendedTeacher?.teacher_name}) معلق حالياً
+            </p>
+            <p className="text-gray-400 text-sm">
+              لا يمكن الدخول إلى لوحة التحكم الخاصة بهذا المدرس في الوقت الحالي. يرجى التواصل مع الإدارة للمزيد من التفاصيل.
+            </p>
+          </div>
+        }
+        confirmText="حسناً"
+        onConfirm={() => setSuspendedTeacher(null)}
+        onCancel={() => setSuspendedTeacher(null)}
+        showCancel={false}
+        variant="warning"
+      />
     </DashboardLayout>
   );
 }
