@@ -127,12 +127,6 @@ export default function StudentDashboard() {
           color="warning"
         />
         <StatCard
-          title="الامتحانات القادمة"
-          value={stats.upcomingExamsCount}
-          icon="fas fa-clock"
-          color="primary"
-        />
-        <StatCard
           title="نسبة الحضور"
           value={stats.attendanceRate}
           suffix="%"

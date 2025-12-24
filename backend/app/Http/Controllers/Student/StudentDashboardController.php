@@ -78,10 +78,7 @@ class StudentDashboardController extends Controller
             
         $examAverage = $examResults->avg('score') ?? 0;
 
-        // 6. Upcoming Exams Count
-        $upcomingExamsCount = Exam::where('teacher_id', $teacherId)
-            ->where('date', '>=', Carbon::today())
-            ->count();
+
 
         // 7. Upcoming Lectures (Keep for now as it might be used elsewhere, or just return empty if frontend removes it)
         $upcomingLectures = Lecture::where('teacher_id', $teacherId)
@@ -156,7 +153,6 @@ class StudentDashboardController extends Controller
                     'walletBalance' => $enrollment ? $enrollment->balance : 0,
                     'mistakesCount' => $mistakesCount,
                     'totalPoints' => $totalPoints,
-                    'upcomingExamsCount' => $upcomingExamsCount,
                     'attendanceRate' => $attendanceRate,
                     'examAverage' => round($examAverage, 1),
                 ],
