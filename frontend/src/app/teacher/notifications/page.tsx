@@ -267,6 +267,17 @@ function NotificationsContent() {
         icon="fas fa-list"
         action={
           <div className="flex gap-3">
+            <button 
+              onClick={() => {
+                setFormData(prev => ({ ...prev, recipient_type: 'admin' }));
+                setShowModal(true);
+              }} 
+              className="btn btn-secondary"
+            >
+              <i className="fas fa-headset"></i>
+              <span>تواصل مع الدعم</span>
+            </button>
+
             {filter !== 'from_developer' && (
               <button 
                 onClick={() => {
