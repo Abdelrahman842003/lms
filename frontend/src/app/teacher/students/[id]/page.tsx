@@ -264,71 +264,73 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
         </DashboardCard>
       </div>
 
-      {/* Exams Grid */}
+      {/* Exams History Section */}
       <div className="mt-8">
-        {(!student.exam_stats?.results || student.exam_stats.results.length === 0) ? (
-          <div className="text-center p-12 bg-white/[0.02] rounded-2xl">
-            <i className="fas fa-clipboard-list text-5xl text-gray-light mb-4 opacity-50"></i>
-            <p className="text-gray-light text-lg">لا توجد امتحانات سابقة</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(350px,1fr))] gap-6">
-            {student.exam_stats.results.map((exam: any, index: number) => (
-              <DashboardCard
-                key={index}
-                title={exam.exam_title}
-                action={
-                  <div className="flex items-center gap-2">
-                    <span className={exam.percentage >= 50 ? 'badge badge-success' : 'badge badge-danger'}>
-                      {exam.percentage >= 50 ? 'ناجح' : 'راسب'}
-                    </span>
-                    <button 
-                      className="w-8 h-8 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 flex items-center justify-center transition-colors cursor-not-allowed opacity-50"
-                    >
-                      <i className="fas fa-trash"></i>
-                    </button>
-                  </div>
-                }
-              >
-                <div className="mb-4">
-                  <p className="text-sm text-gray-light mb-4">
-                    {exam.description || 'تفاصيل الامتحانات'}
-                  </p>
-
-                  <div className="grid gap-3 mb-4">
-                    <div className="flex items-center gap-2 text-sm text-gray-300">
-                      <i className="fas fa-star w-5 text-primary"></i>
-                      <span>الدرجة: {exam.score} / {exam.max_score}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-300">
-                      <i className="fas fa-percent w-5 text-primary"></i>
-                      <span>النسبة: {exam.percentage}%</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-300">
-                      <i className="fas fa-calendar w-5 text-primary"></i>
-                      <span>{new Date(exam.date).toLocaleDateString('ar-EG')}</span>
-                    </div>
-                  </div>
-
-                  {/* Buttons removed as per request */}
-                  {/* <div className="flex gap-2">
-                    <button 
-                      className="btn btn-primary btn-sm flex-1" 
-                      onClick={() => router.push(`/teacher/exams/${exam.exam_id}`)}
-                    >
-                      <i className="fas fa-eye"></i>
-                      <span>عرض</span>
-                    </button>
-                    <button className="btn btn-outline btn-sm flex-1">
-                      <i className="fas fa-file-alt"></i>
-                      <span>تقرير</span>
-                    </button>
-                  </div> */}
-                </div>
-              </DashboardCard>
-            ))}
-          </div>
-        )}
+        <DashboardCard
+          title="سجل الامتحانات"
+          icon="fas fa-file-alt"
+        >
+          {(!student.exam_stats?.results || student.exam_stats.results.length === 0) ? (
+            <div className="text-center p-8">
+              <p className="text-gray-light">لا توجد امتحانات سابقة</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-right">
+                <thead>
+                  <tr className="border-b border-white/10 text-gray-light text-sm">
+                    <th className="pb-4 font-medium">الامتحان</th>
+                    <th className="pb-4 font-medium">الدرجة</th>
+                    <th className="pb-4 font-medium">النسبة</th>
+                    <th className="pb-4 font-medium">التاريخ</th>
+                    <th className="pb-4 font-medium">الحالة</th>
+                    <th className="pb-4 font-medium">الإجراءات</th>
+                  </tr>
+                </thead>
+                <tbody className="text-sm">
+                  {student.exam_stats.results.map((exam: any, index: number) => (
+                    <tr key={index} className="border-b border-white/5 last:border-0 hover:bg-white/[0.02] transition-colors">
+                      <td className="py-4 text-white">
+                        <div>
+                          <div className="font-medium">{exam.exam_title}</div>
+                          <div className="text-xs text-gray-light mt-1">{exam.description || 'تفاصيل الامتحانات'}</div>
+                        </div>
+                      </td>
+                      <td className="py-4 text-white">
+                        <div className="flex items-center gap-2">
+                          <i className="fas fa-star text-primary text-xs"></i>
+                          <span>{exam.score} / {exam.max_score}</span>
+                        </div>
+                      </td>
+                      <td className="py-4 text-white">
+                        <div className="flex items-center gap-2">
+                          <i className="fas fa-percent text-primary text-xs"></i>
+                          <span>{exam.percentage}%</span>
+                        </div>
+                      </td>
+                      <td className="py-4 text-gray-300">
+                        {new Date(exam.date).toLocaleDateString('ar-EG')}
+                      </td>
+                      <td className="py-4">
+                        <span className={`badge ${exam.percentage >= 50 ? 'badge-success' : 'badge-danger'}`}>
+                          {exam.percentage >= 50 ? 'ناجح' : 'راسب'}
+                        </span>
+                      </td>
+                      <td className="py-4">
+                        <button 
+                          className="w-8 h-8 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 flex items-center justify-center transition-colors cursor-not-allowed opacity-50"
+                          title="حذف النتيجة"
+                        >
+                          <i className="fas fa-trash"></i>
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </DashboardCard>
       </div>
     </DashboardLayout>
   );
