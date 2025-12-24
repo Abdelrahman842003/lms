@@ -25,20 +25,38 @@ class StudentDashboardController extends Controller
         $student = $request->user();
         $teacherId = $request->teacher_id;
 
-        // 1. Get Enrollment (for Balance)
+        // 0. Validate Teacher & Enrollment Status
+        $teacher = \App\Models\Teacher::find($teacherId);
+        if (!$teacher || $teacher->is_suspended) {
+             return response()->json([
+                'status' => false,
+                'message' => 'Teacher is suspended or not found',
+                'data' => null
+            ], 403);
+        }
+
+        // 1. Get Enrollment (for Balance & Status)
         $enrollment = Enrollment::where('student_id', $student->id)
             ->where('teacher_id', $teacherId)
             ->first();
 
+        if (!$enrollment || !$enrollment->is_active) {
+             return response()->json([
+                'status' => false,
+                'message' => 'Enrollment is not active',
+                'data' => null
+            ], 403);
+        }
+
         // 2. Mistakes Count (Unmastered)
         $mistakesStats = $this->mistakesService->getStats($student->id, $teacherId);
-        $mistakesCount = 888; // Hardcoded debug value
+        $mistakesCount = $mistakesStats['pending'] ?? 0;
 
         // 3. Total Points
         $pointsRecord = \App\Models\StudentPoint::where('student_id', $student->id)
             ->where('teacher_id', $teacherId)
             ->first();
-        $totalPoints = 999; // Hardcoded debug value
+        $totalPoints = $pointsRecord ? $pointsRecord->total_points : 0;
 
         // 4. Attendance Rate
         $totalLectures = Lecture::where('teacher_id', $teacherId)->count();
@@ -62,7 +80,7 @@ class StudentDashboardController extends Controller
 
         // 6. Upcoming Exams Count
         $upcomingExamsCount = Exam::where('teacher_id', $teacherId)
-            ->where('start_date', '>=', Carbon::today())
+            ->where('date', '>=', Carbon::today())
             ->count();
 
         // 7. Upcoming Lectures (Keep for now as it might be used elsewhere, or just return empty if frontend removes it)
