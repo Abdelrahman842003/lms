@@ -247,79 +247,7 @@ class ReportService
     }
 
 
-    /**
-     * Get detailed monthly subscription status for each student
-     */
-    public function getStudentMonthlySubscriptionDetails(Teacher $teacher, Carbon $startDate, Carbon $endDate): array
-    {
-        $details = [];
-        $currentMonth = $startDate->copy()->startOfMonth();
-        $lastMonth = $endDate->copy()->startOfMonth();
-        
-        while ($currentMonth <= $lastMonth) {
-            $monthStart = $currentMonth->copy()->startOfMonth();
-            $monthEnd = $currentMonth->copy()->endOfMonth();
-            
-            // Adjust to actual date range for payments
-            $queryStart = $monthStart->lt($startDate) ? $startDate->copy()->startOfDay() : $monthStart;
-            $queryEnd = $monthEnd->gt($endDate) ? $endDate->copy()->endOfDay() : $monthEnd->endOfDay();
 
-            // Get active enrollments for this month
-            $enrollments = \App\Models\Enrollment::where('teacher_id', $teacher->id)
-                ->withTrashed()
-                ->where('created_at', '<=', $monthEnd)
-                ->where(function($q) use ($monthStart) {
-                    $q->whereNull('deleted_at')
-                      ->orWhere('deleted_at', '>=', $monthStart);
-                })
-                ->with(['student' => function($q) {
-                    $q->withTrashed();
-                }, 'group', 'grade'])
-                ->get();
-
-            foreach ($enrollments as $enrollment) {
-                if (!$enrollment->student) continue;
-
-                $price = 0;
-                if ($enrollment->group && $enrollment->group->price) {
-                    $price = $enrollment->group->price;
-                } elseif ($enrollment->grade && $enrollment->grade->price) {
-                    $price = $enrollment->grade->price;
-                }
-
-                $amountPaid = \App\Models\PaymentLog::where('teacher_id', $teacher->id)
-                    ->where('student_id', $enrollment->student_id)
-                    ->where('status', 'confirmed')
-                    ->whereBetween('confirmed_at', [$queryStart, $queryEnd])
-                    ->sum('amount');
-
-                $amountRemaining = $price - $amountPaid;
-
-                $status = 'pending';
-                if ($amountRemaining <= 0 && $amountPaid > 0) {
-                    $status = 'paid';
-                } elseif ($amountPaid > 0) {
-                    $status = 'partial';
-                }
-
-                $details[] = [
-                    'month' => $currentMonth->format('Y-m'),
-                    'month_name' => \App\Services\HelperService::getArabicMonthName($currentMonth->month) . ' ' . $currentMonth->year,
-                    'student_name' => $enrollment->student->name,
-                    'student_phone' => $enrollment->student->phone,
-                    'amount_due' => (float) $price,
-                    'amount_paid' => (float) $amountPaid,
-                    'amount_remaining' => (float) max(0, $amountRemaining),
-                    'status' => $status,
-                    'status_label' => \App\Services\HelperService::getStatusLabel($status),
-                ];
-            }
-
-            $currentMonth->addMonth();
-        }
-        
-        return $details;
-    }
 
     /**
      * Get Arabic status label

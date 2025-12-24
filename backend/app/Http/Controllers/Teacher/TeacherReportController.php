@@ -59,24 +59,7 @@ class TeacherReportController extends Controller
             ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
     }
 
-    /**
-     * Get student subscriptions details
-     */
-    public function studentSubscriptions(Request $request): JsonResponse
-    {
-        $validated = $request->validate([
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after_or_equal:start_date',
-        ]);
 
-        $startDate = Carbon::parse($validated['start_date'])->startOfDay();
-        $endDate = Carbon::parse($validated['end_date'])->endOfDay();
-
-        $teacher = $request->user();
-        $details = $this->reportService->getStudentMonthlySubscriptionDetails($teacher, $startDate, $endDate);
-
-        return $this->successResponse($details);
-    }
 
     /**
      * Generate PDF using mPDF with Arabic support

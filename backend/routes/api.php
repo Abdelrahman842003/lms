@@ -143,7 +143,7 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureTeacherNotSuspende
     // Reports
     Route::get('reports/my-report', [\App\Http\Controllers\Teacher\TeacherReportController::class, 'myReport']);
     Route::get('reports/my-report/pdf', [\App\Http\Controllers\Teacher\TeacherReportController::class, 'myReportPdf']);
-    Route::get('reports/student-subscriptions', [\App\Http\Controllers\Teacher\TeacherReportController::class, 'studentSubscriptions']);
+
 });
 
 // ============================================
