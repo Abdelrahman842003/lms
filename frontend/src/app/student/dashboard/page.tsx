@@ -25,8 +25,10 @@ export default function StudentDashboard() {
       // Always load dashboard stats for the selected teacher (if any)
       if (selectedTeacher) {
         try {
-            const dashboardResponse = await fetchApi(`/student/dashboard?teacher_id=${selectedTeacher.teacher_id}`);
+            const timestamp = new Date().getTime();
+            const dashboardResponse = await fetchApi(`/student/dashboard?teacher_id=${selectedTeacher.teacher_id}&t=${timestamp}`);
             if (dashboardResponse) {
+                console.log('Dashboard Response:', dashboardResponse);
                 setStats(dashboardResponse.stats || {
                     walletBalance: 0,
                     mistakesCount: 0,
@@ -110,6 +112,12 @@ export default function StudentDashboard() {
       user={mockUser}
     >
       <div className="max-w-[1200px] mx-auto">
+      
+      {/* DEBUG SECTION - REMOVE LATER */}
+      <div className="bg-gray-800 p-4 mb-4 rounded text-xs font-mono text-green-400 overflow-auto">
+        <p>Teacher ID: {selectedTeacher?.teacher_id}</p>
+        <p>Stats: {JSON.stringify(stats)}</p>
+      </div>
       {/* Stats Grid */}
       <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-6 mb-8">
         <StatCard
