@@ -158,13 +158,7 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
         icon="fas fa-info-circle"
       >
         <div className="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-4">
-          <div className="bg-[#1a1f37] flex justify-between items-center p-5 rounded-xl border border-white/5 hover:border-primary/50 transition-colors">
-            <span className="text-white font-semibold">{student.username}</span>
-            <div className="flex items-center gap-2 text-gray-light">
-              <span>اسم المستخدم</span>
-              <i className="fas fa-user"></i>
-            </div>
-          </div>
+
 
           <div className="bg-[#1a1f37] flex justify-between items-center p-5 rounded-xl border border-white/5 hover:border-primary/50 transition-colors">
             <span className="text-white font-semibold ltr">{student.parent_phone || '-'}</span>
@@ -298,7 +292,7 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
               >
                 <div className="mb-4">
                   <p className="text-sm text-gray-light mb-4">
-                    {exam.description || 'تفاصيل الامتحان ونتائج الطالب'}
+                    {exam.description || 'تفاصيل الامتحانات'}
                   </p>
 
                   <div className="grid gap-3 mb-4">
