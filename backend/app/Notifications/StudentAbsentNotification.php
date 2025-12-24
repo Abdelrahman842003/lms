@@ -6,8 +6,10 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Broadcasting\PrivateChannel;
 
-class StudentAbsentNotification extends Notification
+class StudentAbsentNotification extends Notification implements ShouldBroadcast
 {
     use Queueable;
 
@@ -33,7 +35,7 @@ class StudentAbsentNotification extends Notification
      */
     public function via($notifiable)
     {
-        return ['database', \App\Notifications\Channels\FcmChannel::class];
+        return ['database', 'broadcast', \App\Notifications\Channels\FcmChannel::class];
     }
 
     /**
@@ -50,6 +52,18 @@ class StudentAbsentNotification extends Notification
             'type' => 'absent',
             'lecture_title' => $this->lectureTitle,
             'teacher_name' => $this->teacherName,
+        ];
+    }
+
+    /**
+     * Get the channels the event should broadcast on.
+     *
+     * @return array<int, \Illuminate\Broadcasting\Channel>
+     */
+    public function broadcastOn(): array
+    {
+        return [
+            new PrivateChannel('App.Models.User.' . $this->id),
         ];
     }
 }

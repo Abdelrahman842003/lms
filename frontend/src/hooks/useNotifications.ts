@@ -139,13 +139,22 @@ export function useNotifications({
     }
 
     const echo = initializeEcho(token);
-    const channelName = `notifications.${userType}.${userId}`;
+    const channelName = `App.Models.User.${userId}`;
 
     const channel = echo.private(channelName);
 
     channel
-      .listen('.new.notification', (data: Notification) => {
-        handleNotification(data);
+      .listen('.Illuminate\\Notifications\\Events\\BroadcastNotificationCreated', (data: any) => {
+        // Map backend notification structure to frontend interface
+        const notification: Notification = {
+          notification_id: data.id || crypto.randomUUID(),
+          title: data.title || 'New Notification',
+          message: data.message || '',
+          type: data.type || 'general',
+          data: data,
+          created_at: new Date().toISOString(),
+        };
+        handleNotification(notification);
       })
       .subscribed(() => {
         setIsConnected(true);

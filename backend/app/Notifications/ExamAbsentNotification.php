@@ -5,10 +5,12 @@ namespace App\Notifications;
 use App\Models\Exam;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Notifications\Notification;
 use App\Notifications\Channels\FcmChannel;
 
-class ExamAbsentNotification extends Notification implements ShouldQueue
+class ExamAbsentNotification extends Notification implements ShouldBroadcast
 {
     use Queueable;
 
@@ -21,7 +23,7 @@ class ExamAbsentNotification extends Notification implements ShouldQueue
 
     public function via($notifiable): array
     {
-        return ['database', FcmChannel::class];
+        return ['database', 'broadcast', FcmChannel::class];
     }
 
     public function toArray($notifiable): array
@@ -32,6 +34,13 @@ class ExamAbsentNotification extends Notification implements ShouldQueue
             'type' => 'exam_absent',
             'exam_id' => $this->exam->id,
             'exam_title' => $this->exam->title,
+        ];
+    }
+
+    public function broadcastOn(): array
+    {
+        return [
+            new PrivateChannel('App.Models.User.' . $this->id),
         ];
     }
 }

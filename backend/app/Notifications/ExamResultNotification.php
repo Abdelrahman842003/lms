@@ -5,9 +5,11 @@ namespace App\Notifications;
 use App\Models\ExamResult;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Notifications\Notification;
 
-class ExamResultNotification extends Notification implements ShouldQueue
+class ExamResultNotification extends Notification implements ShouldBroadcast
 {
     use Queueable;
 
@@ -28,7 +30,7 @@ class ExamResultNotification extends Notification implements ShouldQueue
      */
     public function via($notifiable): array
     {
-        return ['database', \App\Notifications\Channels\FcmChannel::class];
+        return ['database', 'broadcast', \App\Notifications\Channels\FcmChannel::class];
     }
 
     /**
@@ -62,6 +64,18 @@ class ExamResultNotification extends Notification implements ShouldQueue
             'max_score' => $exam->max_score,
             'percentage' => $percentage,
             'progress' => $this->progress,
+        ];
+    }
+
+    /**
+     * Get the channels the event should broadcast on.
+     *
+     * @return array<int, \Illuminate\Broadcasting\Channel>
+     */
+    public function broadcastOn(): array
+    {
+        return [
+            new PrivateChannel('App.Models.User.' . $this->result->student_id),
         ];
     }
 

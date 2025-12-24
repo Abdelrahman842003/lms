@@ -6,10 +6,12 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Broadcasting\PrivateChannel;
 
 use App\Notifications\Channels\FcmChannel;
 
-class AdminNotification extends Notification
+class AdminNotification extends Notification implements ShouldBroadcast
 {
     use Queueable;
 
@@ -31,7 +33,7 @@ class AdminNotification extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['database', FcmChannel::class];
+        return ['database', 'broadcast', FcmChannel::class];
     }
 
     /**
@@ -46,6 +48,18 @@ class AdminNotification extends Notification
             'message' => $this->message,
             'sender_name' => $this->senderName,
             'sender_role' => $this->senderRole,
+        ];
+    }
+
+    /**
+     * Get the channels the event should broadcast on.
+     *
+     * @return array<int, \Illuminate\Broadcasting\Channel>
+     */
+    public function broadcastOn(): array
+    {
+        return [
+            new PrivateChannel('App.Models.User.' . $this->id),
         ];
     }
 }
