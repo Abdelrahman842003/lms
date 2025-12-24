@@ -266,13 +266,13 @@ function NotificationsContent() {
         title="سجل الإخطارات"
         icon="fas fa-list"
         action={
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
             <button 
               onClick={() => {
                 setFormData(prev => ({ ...prev, recipient_type: 'admin' }));
                 setShowModal(true);
               }} 
-              className="btn btn-secondary"
+              className="btn btn-secondary w-full sm:w-auto justify-center"
             >
               <i className="fas fa-headset"></i>
               <span>تواصل مع الدعم</span>
@@ -287,7 +287,7 @@ function NotificationsContent() {
                   }));
                   setShowModal(true);
                 }} 
-                className="btn btn-primary"
+                className="btn btn-primary w-full sm:w-auto justify-center"
               >
                 <i className="fas fa-paper-plane"></i>
                 <span>
@@ -303,7 +303,7 @@ function NotificationsContent() {
               ]}
               value={filter}
               onChange={(value) => setFilter(value as 'students' | 'sent_to_developer' | 'from_developer')}
-              className="w-auto min-w-[150px]"
+              className="w-full sm:w-auto min-w-[150px]"
             />
           </div>
         }
@@ -448,7 +448,7 @@ function NotificationsContent() {
 
 export default function NotificationsPage() {
   return (
-    <Suspense fallback={<div className="p-8 text-center">جاري التحميل...</div>}>
+    <Suspense fallback={<div className="p-8 text-center"></div>}>
       <NotificationsContent />
     </Suspense>
   );
