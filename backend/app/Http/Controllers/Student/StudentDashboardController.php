@@ -131,16 +131,20 @@ class StudentDashboardController extends Controller
             ->values();
 
         return response()->json([
-            'stats' => [
-                'walletBalance' => $enrollment ? $enrollment->balance : 0,
-                'mistakesCount' => $mistakesCount,
-                'totalPoints' => $totalPoints,
-                'upcomingExamsCount' => $upcomingExamsCount,
-                'attendanceRate' => $attendanceRate,
-                'examAverage' => round($examAverage, 1),
-            ],
-            'upcomingLectures' => $upcomingLectures,
-            'latestNews' => $latestNews,
+            'status' => true,
+            'message' => 'Dashboard data retrieved successfully',
+            'data' => [
+                'stats' => [
+                    'walletBalance' => $enrollment ? $enrollment->balance : 0,
+                    'mistakesCount' => $mistakesCount,
+                    'totalPoints' => $totalPoints,
+                    'upcomingExamsCount' => $upcomingExamsCount,
+                    'attendanceRate' => $attendanceRate,
+                    'examAverage' => round($examAverage, 1),
+                ],
+                'upcomingLectures' => $upcomingLectures,
+                'latestNews' => $latestNews,
+            ]
         ]);
     }
 }
