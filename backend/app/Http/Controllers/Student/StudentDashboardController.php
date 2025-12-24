@@ -32,13 +32,13 @@ class StudentDashboardController extends Controller
 
         // 2. Mistakes Count (Unmastered)
         $mistakesStats = $this->mistakesService->getStats($student->id, $teacherId);
-        $mistakesCount = $mistakesStats['pending'] ?? 0;
+        $mistakesCount = 888; // Hardcoded debug value
 
         // 3. Total Points
         $pointsRecord = \App\Models\StudentPoint::where('student_id', $student->id)
             ->where('teacher_id', $teacherId)
             ->first();
-        $totalPoints = $pointsRecord ? $pointsRecord->total_points : 0;
+        $totalPoints = 999; // Hardcoded debug value
 
         // 4. Attendance Rate
         $totalLectures = Lecture::where('teacher_id', $teacherId)->count();
