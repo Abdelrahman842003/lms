@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   loginTeacher, 
   loginStudent, 
@@ -35,6 +36,7 @@ interface RegisterData {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedTeacher, setSelectedTeacher] = useState<TeacherInfo | null>(null);
@@ -182,12 +184,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       window.location.href = '/login';
     };
 
+    // Listen for teacher suspended events
+    const handleTeacherSuspended = () => {
+      console.log('Teacher suspended event received');
+      toast.error('عفواً، هذا المدرس معلق حالياً. جاري تحويلك...');
+      
+      // Refresh user data to trigger smart selection
+      checkAuth();
+      
+      // Redirect to teachers list
+      router.push('/student/teachers');
+    };
+
     window.addEventListener('auth:unauthorized', handleUnauthorized);
+    window.addEventListener('auth:teacher_suspended', handleTeacherSuspended);
 
     return () => {
       window.removeEventListener('auth:unauthorized', handleUnauthorized);
+      window.removeEventListener('auth:teacher_suspended', handleTeacherSuspended);
     };
-  }, []);
+  }, [router]);
 
   const login = async (phone: string, password: string, userType: 'teacher' | 'student' | 'secretary' | 'admin' = 'teacher') => {
     try {

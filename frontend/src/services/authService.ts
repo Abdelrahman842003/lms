@@ -236,10 +236,20 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}, skip
       errorWithStatus.errors = error.errors;
       
       // Only dispatch auth:unauthorized for non-login 401 errors or 403 (Forbidden/Suspended)
+      // BUT ignore TEACHER_SUSPENDED error (let the UI handle it)
       if ((response.status === 401 || response.status === 403) && !skipAuthEvent) {
-        // Dispatch event for AuthContext to handle logout
-        if (typeof window !== 'undefined') {
-          window.dispatchEvent(new Event('auth:unauthorized'));
+        const isTeacherSuspended = error?.error === 'TEACHER_SUSPENDED';
+        
+        if (!isTeacherSuspended) {
+          // Dispatch event for AuthContext to handle logout
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new Event('auth:unauthorized'));
+          }
+        } else {
+          // Dispatch event for AuthContext to handle teacher suspension (switch teacher)
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new Event('auth:teacher_suspended'));
+          }
         }
       }
       
