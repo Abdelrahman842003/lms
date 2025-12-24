@@ -82,7 +82,7 @@ class TeacherReportController extends Controller
         $mpdf->autoScriptToLang = true;
         $mpdf->autoLangToFont = true;
 
-        $html = view('pdf.report', [
+        $html = view('pdf.teacher_report', [
             'report' => $report,
             'type' => $type,
             'title' => $title,
