@@ -12,6 +12,10 @@ use Carbon\Carbon;
 
 class StudentDashboardController extends Controller
 {
+    public function __construct(
+        private \App\Services\MistakesService $mistakesService
+    ) {}
+
     public function index(Request $request)
     {
         $request->validate([
@@ -26,22 +30,17 @@ class StudentDashboardController extends Controller
             ->where('teacher_id', $teacherId)
             ->first();
 
-        // 2. Purchased Lectures Count
-        // Assuming purchased lectures are tracked via student_lectures pivot or similar. 
-        // Checking StudentLectureController logic might be needed, but for now let's assume 
-        // we can count lectures where the student has access. 
-        // Actually, looking at previous code, 'purchased' logic was: 
-        // $purchasedLectures = lectures.filter(l => l.is_purchased || l.price === 0);
-        // In backend, we need to check how purchase is stored. 
-        // Let's assume a 'purchases' relationship or similar on Student model, or check 'lectures' relationship.
-        // Based on StudentLectureController: 
-        // $lectures = Lecture::where('teacher_id', $request->teacher_id)...
-        // It doesn't explicitly show purchase logic other than 'attendances'.
-        // Let's assume for now we count attended/purchased lectures if there's a pivot.
-        // Wait, the user said "Wallet Balance" and "Purchased Lectures".
-        // Let's look at `Student` model to see relationships.
-        
-        // 3. Attendance Rate
+        // 2. Mistakes Count (Unmastered)
+        $mistakesStats = $this->mistakesService->getStats($student->id, $teacherId);
+        $mistakesCount = $mistakesStats['pending'] ?? 0;
+
+        // 3. Total Points
+        $pointsRecord = \App\Models\StudentPoint::where('student_id', $student->id)
+            ->where('teacher_id', $teacherId)
+            ->first();
+        $totalPoints = $pointsRecord ? $pointsRecord->total_points : 0;
+
+        // 4. Attendance Rate
         $totalLectures = Lecture::where('teacher_id', $teacherId)->count();
         $attendedLectures = $student->attendances()
             ->whereHas('lecture', function ($q) use ($teacherId) {
@@ -52,7 +51,7 @@ class StudentDashboardController extends Controller
             
         $attendanceRate = $totalLectures > 0 ? round(($attendedLectures / $totalLectures) * 100) : 0;
 
-        // 4. Exam Average
+        // 5. Exam Average
         $examResults = ExamResult::where('student_id', $student->id)
             ->whereHas('exam', function ($q) use ($teacherId) {
                 $q->where('teacher_id', $teacherId);
@@ -61,8 +60,12 @@ class StudentDashboardController extends Controller
             
         $examAverage = $examResults->avg('score') ?? 0;
 
-        // 5. Upcoming Lectures
-        // 5. Upcoming Lectures
+        // 6. Upcoming Exams Count
+        $upcomingExamsCount = Exam::where('teacher_id', $teacherId)
+            ->where('start_date', '>=', Carbon::today())
+            ->count();
+
+        // 7. Upcoming Lectures (Keep for now as it might be used elsewhere, or just return empty if frontend removes it)
         $upcomingLectures = Lecture::where('teacher_id', $teacherId)
             ->where('start_time', '>=', Carbon::today())
             ->orderBy('start_time')
@@ -78,7 +81,26 @@ class StudentDashboardController extends Controller
                 ];
             });
 
-        // 6. Recent Exams
+        // 8. Latest News (Mixed Feed: Attendance & Exams)
+        $recentAttendance = $student->attendances()
+            ->whereHas('lecture', function ($q) use ($teacherId) {
+                $q->where('teacher_id', $teacherId);
+            })
+            ->with('lecture:id,title')
+            ->latest()
+            ->take(5)
+            ->get()
+            ->map(function ($attendance) {
+                return [
+                    'type' => 'attendance',
+                    'id' => $attendance->id,
+                    'title' => $attendance->lecture->title,
+                    'status' => $attendance->status, // present, absent
+                    'date' => $attendance->created_at->format('Y-m-d'),
+                    'timestamp' => $attendance->created_at->timestamp,
+                ];
+            });
+
         $recentExams = Exam::where('teacher_id', $teacherId)
             ->whereHas('results', function ($q) use ($student) {
                 $q->where('student_id', $student->id);
@@ -87,28 +109,38 @@ class StudentDashboardController extends Controller
                 $q->where('student_id', $student->id);
             }])
             ->latest()
-            ->take(3)
+            ->take(5)
             ->get()
             ->map(function ($exam) {
                 $result = $exam->results->first();
                 return [
+                    'type' => 'exam',
                     'id' => $exam->id,
                     'title' => $exam->title,
                     'score' => $result ? $result->score : 0,
-                    'total' => $exam->total_marks ?? 100, // Assuming total_marks exists
+                    'total' => $exam->total_marks ?? 100,
                     'date' => $exam->created_at->format('Y-m-d'),
+                    'timestamp' => $exam->created_at->timestamp,
                 ];
             });
+
+        // Merge and sort by timestamp desc
+        $latestNews = $recentAttendance->concat($recentExams)
+            ->sortByDesc('timestamp')
+            ->take(5)
+            ->values();
 
         return response()->json([
             'stats' => [
                 'walletBalance' => $enrollment ? $enrollment->balance : 0,
-                'purchasedLectures' => 0, // Placeholder until we confirm purchase logic
+                'mistakesCount' => $mistakesCount,
+                'totalPoints' => $totalPoints,
+                'upcomingExamsCount' => $upcomingExamsCount,
                 'attendanceRate' => $attendanceRate,
                 'examAverage' => round($examAverage, 1),
             ],
             'upcomingLectures' => $upcomingLectures,
-            'recentExams' => $recentExams,
+            'latestNews' => $latestNews,
         ]);
     }
 }

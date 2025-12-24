@@ -12,19 +12,14 @@ export default function StudentDashboard() {
   const { user, selectedTeacher } = useAuth();
   const [stats, setStats] = useState({
     walletBalance: 0,
-    purchasedLectures: 0,
+    mistakesCount: 0,
+    totalPoints: 0,
+    upcomingExamsCount: 0,
     attendanceRate: 0,
     examAverage: 0,
   });
   const [upcomingLectures, setUpcomingLectures] = useState<any[]>([]);
-  const [recentExams, setRecentExams] = useState<any[]>([]);
-  const [gamificationStats, setGamificationStats] = useState<{
-    total_points: number;
-    weekly_points: number;
-    rank: number;
-    attendance_streak: number;
-  } | null>(null);
-
+  const [latestNews, setLatestNews] = useState<any[]>([]);
   useEffect(() => {
     const loadDashboardData = async () => {
       // Always load dashboard stats for the selected teacher (if any)
@@ -34,24 +29,16 @@ export default function StudentDashboard() {
             if (dashboardResponse) {
                 setStats(dashboardResponse.stats || {
                     walletBalance: 0,
-                    purchasedLectures: 0,
+                    mistakesCount: 0,
+                    totalPoints: 0,
+                    upcomingExamsCount: 0,
                     attendanceRate: 0,
                     examAverage: 0,
                 });
-                setRecentExams(dashboardResponse.recentExams || []);
+                setLatestNews(dashboardResponse.latestNews || []);
             }
         } catch (error) {
             console.error('Failed to load dashboard stats:', error);
-        }
-
-        // Load gamification stats
-        try {
-            const pointsResponse = await fetchApi(`/student/points/${selectedTeacher.teacher_id}`);
-            if (pointsResponse.success) {
-                setGamificationStats(pointsResponse.data);
-            }
-        } catch (error) {
-            console.error('Failed to load gamification stats:', error);
         }
       }
 
@@ -117,18 +104,6 @@ export default function StudentDashboard() {
     avatar: user?.avatar || '',
   };
 
-  // if (loading) {
-  //   return (
-  //     <DashboardLayout role="student" user={mockUser}>
-  //       <div style={{ padding: '40px', textAlign: 'center', color: 'white' }}>
-  //         <i className="fas fa-spinner fa-spin" style={{ fontSize: '2rem', marginBottom: '16px' }}></i>
-  //         <p>جاري تحميل البيانات...</p>
-  //       </div>
-  //     </DashboardLayout>
-  //   );
-  // }
-
-
   return (
     <DashboardLayout
       role="student"
@@ -138,9 +113,21 @@ export default function StudentDashboard() {
       {/* Stats Grid */}
       <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-6 mb-8">
         <StatCard
-          title="المحاضرات المشتراة"
-          value={stats.purchasedLectures}
-          icon="fas fa-book-open"
+          title="أخطائي"
+          value={stats.mistakesCount}
+          icon="fas fa-exclamation-triangle"
+          color="danger"
+        />
+        <StatCard
+          title="نقاطي"
+          value={stats.totalPoints}
+          icon="fas fa-trophy"
+          color="warning"
+        />
+        <StatCard
+          title="الامتحانات القادمة"
+          value={stats.upcomingExamsCount}
+          icon="fas fa-clock"
           color="primary"
         />
         <StatCard
@@ -148,43 +135,15 @@ export default function StudentDashboard() {
           value={stats.attendanceRate}
           suffix="%"
           icon="fas fa-check-circle"
-          color="warning"
+          color="success"
         />
         <StatCard
           title="متوسط الدرجات"
           value={stats.examAverage}
           suffix="%"
           icon="fas fa-chart-line"
-          color="danger"
+          color="info"
         />
-        {/* Gamification Points Widget */}
-        {gamificationStats && (
-          <Link href="/student/leaderboard" className="block">
-            <div className="bg-gradient-to-br from-yellow-500/20 to-amber-600/10 rounded-2xl p-5 border border-yellow-500/30 hover:border-yellow-500/50 transition-all card-hover cursor-pointer">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-gray-400 text-sm font-medium">نقاطي 🏆</span>
-                <div className="flex items-center gap-1 text-xs text-gray-400">
-                  <span>#{gamificationStats.rank}</span>
-                  <i className="fas fa-arrow-up text-success"></i>
-                </div>
-              </div>
-              <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-bold text-white">{gamificationStats.total_points}</span>
-                <span className="text-sm text-gray-400">نقطة</span>
-              </div>
-              <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/10">
-                <div className="flex items-center gap-1 text-sm">
-                  <span className="text-success">+{gamificationStats.weekly_points}</span>
-                  <span className="text-gray-500">هذا الأسبوع</span>
-                </div>
-                <div className="flex items-center gap-1 text-sm text-amber-400">
-                  <span>{gamificationStats.attendance_streak}</span>
-                  <span>🔥</span>
-                </div>
-              </div>
-            </div>
-          </Link>
-        )}
       </div>
 
       {/* Quick Access Section - Added for better navigation */}
@@ -279,43 +238,48 @@ export default function StudentDashboard() {
           </div>
         </DashboardCard>
 
-        {/* Recent Exams */}
+        {/* Latest News */}
         <DashboardCard
-          title="آخر النتائج"
-          icon="fas fa-trophy"
-          action={
-            <Link href="/student/exams" className="btn btn-sm btn-outline">
-              عرض الكل
-            </Link>
-          }
+          title="آخر الأخبار"
+          icon="fas fa-newspaper"
         >
           <div className="flex flex-col gap-4">
-            {recentExams.length === 0 ? (
-                <p className="text-center text-gray-light p-5">لا توجد نتائج امتحانات حديثة</p>
+            {latestNews.length === 0 ? (
+                <p className="text-center text-gray-light p-5">لا توجد أخبار حديثة</p>
             ) : (
-                recentExams.map((exam) => (
-                <div key={exam.id}>
-                    <div className="flex justify-between items-center mb-2">
-                    <span className="text-white font-medium">
-                        {exam.title}
-                    </span>
-                    <span
-                        className={`font-bold text-[1.1rem] ${
-                          exam.score >= 80 ? 'text-success' : exam.score >= 60 ? 'text-warning' : 'text-danger'
-                        }`}
-                    >
-                        {exam.score}/{exam.total}
-                    </span>
+                latestNews.map((item, index) => (
+                <div key={`${item.type}-${item.id}-${index}`} className="flex items-center gap-4 p-3 rounded-xl bg-white/5 border border-white/5">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg ${
+                        item.type === 'attendance' 
+                            ? (item.status === 'present' ? 'bg-success/20 text-success' : 'bg-danger/20 text-danger')
+                            : 'bg-primary/20 text-primary'
+                    }`}>
+                        <i className={`fas ${
+                            item.type === 'attendance' 
+                                ? (item.status === 'present' ? 'fa-check' : 'fa-times')
+                                : 'fa-file-alt'
+                        }`}></i>
                     </div>
-                    <div className="progress-bar">
-                    <div
-                        className="progress-bar-fill"
-                        style={{ width: `${(exam.score / exam.total) * 100}%` }}
-                    ></div>
+                    <div className="flex-1">
+                        <h4 className="text-white font-medium mb-1">{item.title}</h4>
+                        <p className="text-xs text-gray-400">
+                            {item.type === 'attendance' ? (
+                                item.status === 'present' ? 'تم حضور المحاضرة' : 'غياب عن المحاضرة'
+                            ) : (
+                                `تم رصد درجة الامتحان: ${item.score}/${item.total}`
+                            )}
+                        </p>
                     </div>
-                    <p className="text-xs text-gray-light mt-1">
-                    {exam.date}
-                    </p>
+                    <div className="text-right">
+                        <span className="text-xs text-gray-500 block mb-1">{item.date}</span>
+                        {item.type === 'exam' && (
+                             <span className={`text-xs font-bold ${
+                                (item.score / item.total) >= 0.5 ? 'text-success' : 'text-danger'
+                             }`}>
+                                {Math.round((item.score / item.total) * 100)}%
+                             </span>
+                        )}
+                    </div>
                 </div>
                 ))
             )}

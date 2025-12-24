@@ -19,22 +19,38 @@ class DashboardController extends Controller
             $totalStudents = $teacher->students()->count();
 
             // Get active students (students who have logged in recently or have activity)
-            // For now, we'll consider all students as active
             $activeStudents = $totalStudents;
 
-            // Get total revenue (this would need a payments table in the future)
-            $totalRevenue = 0;
+            // Get total groups
+            $totalGroups = $teacher->groups()->count();
 
-            // Get upcoming lectures count
-            $upcomingLectures = $teacher->lectures()
-                ->where('start_time', '>', now())
+            // Get total exams
+            $totalExams = \App\Models\Exam::where('teacher_id', $teacher->id)->count();
+
+            // Calculate Average Attendance
+            // Total Present / Total Attendance Records * 100
+            $teacherLecturesIds = $teacher->lectures()->pluck('id');
+            $totalAttendanceRecords = \App\Models\Attendance::whereIn('lecture_id', $teacherLecturesIds)->count();
+            $totalPresent = \App\Models\Attendance::whereIn('lecture_id', $teacherLecturesIds)
+                ->where('status', 'present')
                 ->count();
+            
+            $averageAttendance = $totalAttendanceRecords > 0 
+                ? round(($totalPresent / $totalAttendanceRecords) * 100) 
+                : 0;
+
+            // Average Exam Score
+            $averageExamScore = \App\Models\ExamResult::whereHas('exam', function($q) use ($teacher) {
+                $q->where('teacher_id', $teacher->id);
+            })->avg('percentage') ?? 0;
 
             return [
                 'total_students' => $totalStudents,
                 'active_students' => $activeStudents,
-                'total_revenue' => $totalRevenue,
-                'upcoming_lectures' => $upcomingLectures,
+                'total_groups' => $totalGroups,
+                'total_exams' => $totalExams,
+                'average_attendance' => $averageAttendance,
+                'average_exam_score' => round($averageExamScore, 1),
             ];
         });
 
