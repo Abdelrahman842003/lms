@@ -188,11 +188,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const handleTeacherSuspended = async () => {
       console.log('Teacher suspended event received');
       
+      // Get current teacher before refresh
+      const prevStored = localStorage.getItem('selectedTeacher');
+      const prevId = prevStored ? JSON.parse(prevStored).teacher_id : null;
+
       // Refresh user data to trigger smart selection
       await checkAuth();
       
-      // Redirect to dashboard (which handles both active teacher and disabled state)
-      router.push('/student/dashboard');
+      // Get new teacher after refresh
+      const nextStored = localStorage.getItem('selectedTeacher');
+      const nextId = nextStored ? JSON.parse(nextStored).teacher_id : null;
+
+      // Only redirect if teacher changed (switched to active) or if no teacher (disabled)
+      // If teacher stayed the same (meaning it's active), stay on current page
+      if (prevId !== nextId || !nextId) {
+        router.push('/student/dashboard');
+      }
     };
 
     window.addEventListener('auth:unauthorized', handleUnauthorized);
