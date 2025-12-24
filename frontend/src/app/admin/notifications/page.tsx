@@ -8,17 +8,19 @@ import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { DataTable } from '@/components/dashboard/DataTable';
 import { Select } from '@/components/ui/Select';
 import { useAuth } from '@/contexts/AuthContext';
-import { getNotifications, sendNotification, Notification as SentNotification } from '@/services/notificationService';
+import { getNotifications, sendNotification, Notification as SentNotification, ReceivedNotification } from '@/services/notificationService';
 import { toast } from 'react-hot-toast';
 import NotificationDetailsModal from '@/components/ui/NotificationDetailsModal';
 
 export default function AdminNotificationsPage() {
   const { user } = useAuth();
   const [notifications, setNotifications] = useState<SentNotification[]>([]);
+  const [receivedNotifications, setReceivedNotifications] = useState<ReceivedNotification[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedNotification, setSelectedNotification] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [filter, setFilter] = useState<'sent' | 'received'>('sent');
   const [formData, setFormData] = useState({
     title: '',
     message: '',
@@ -41,6 +43,7 @@ export default function AdminNotificationsPage() {
     try {
       const response = await getNotifications();
       setNotifications(response.notifications || []);
+      setReceivedNotifications(response.received_notifications || []);
     } catch (error) {
       console.error('Failed to fetch notifications:', error);
     }
@@ -76,7 +79,7 @@ export default function AdminNotificationsPage() {
     setShowDetailsModal(true);
   };
 
-  const tableColumns = [
+  const sentTableColumns = [
     {
       key: 'title',
       label: 'العنوان',
@@ -124,6 +127,60 @@ export default function AdminNotificationsPage() {
     },
   ];
 
+  const receivedTableColumns = [
+    {
+      key: 'title',
+      label: 'العنوان',
+      sortable: true,
+      render: (value: string, row: any) => (
+        <button 
+          onClick={(e) => {
+            e.stopPropagation();
+            handleRowClick(row);
+          }}
+          className="text-white hover:text-primary transition-colors font-medium text-right"
+        >
+          {value || 'بدون عنوان'}
+        </button>
+      )
+    },
+    {
+      key: 'message',
+      label: 'الرسالة',
+      sortable: false,
+      className: 'hidden md:table-cell',
+      render: (value: string) => value?.length > 50 ? value.substring(0, 50) + '...' : value,
+    },
+    {
+      key: 'sender_name',
+      label: 'المرسل',
+      sortable: true,
+      render: (value: string, row: any) => (
+        <span className="badge badge-secondary">
+          {row.data?.sender_name || 'مستخدم'}
+        </span>
+      )
+    },
+    {
+      key: 'created_at',
+      label: 'تاريخ الاستلام',
+      sortable: true,
+      className: 'hidden lg:table-cell',
+      render: (value: string) => new Date(value).toLocaleDateString('ar-EG'),
+    },
+  ];
+
+  const getFilteredData = () => {
+    if (filter === 'received') {
+      return receivedNotifications.map(n => ({
+        ...n,
+        title: n.data?.title,
+        message: n.data?.message,
+      }));
+    }
+    return notifications;
+  };
+
   return (
     <DashboardLayout
       role="admin"
@@ -135,20 +192,16 @@ export default function AdminNotificationsPage() {
       {/* Stats Grid */}
       <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-6 mb-8">
         <StatCard
-          title="إجمالي الإخطارات"
+          title="إجمالي الإخطارات المرسلة"
           value={notifications.length}
-          icon="fas fa-bell"
+          icon="fas fa-paper-plane"
           color="primary"
           variant="centered"
         />
         <StatCard
-          title="إخطارات هذا الشهر"
-          value={notifications.filter(n => {
-            const date = new Date(n.created_at);
-            const now = new Date();
-            return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
-          }).length}
-          icon="fas fa-calendar-check"
+          title="رسائل الدعم الواردة"
+          value={receivedNotifications.length}
+          icon="fas fa-inbox"
           color="secondary"
           variant="centered"
         />
@@ -156,18 +209,33 @@ export default function AdminNotificationsPage() {
 
       {/* Notifications Table */}
       <DashboardCard
-        title="سجل الإخطارات المرسلة"
-        icon="fas fa-list"
+        title={filter === 'sent' ? "سجل الإخطارات المرسلة" : "رسائل الدعم الواردة"}
+        icon={filter === 'sent' ? "fas fa-paper-plane" : "fas fa-inbox"}
         action={
-          <button onClick={() => setShowModal(true)} className="btn btn-primary">
-            <i className="fas fa-paper-plane"></i>
-            <span>إرسال إخطار جديد</span>
-          </button>
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+            <button 
+              onClick={() => setShowModal(true)} 
+              className="btn btn-primary w-full sm:w-auto justify-center"
+            >
+              <i className="fas fa-plus"></i>
+              <span>إرسال إخطار جديد</span>
+            </button>
+            
+            <Select
+              options={[
+                { value: 'sent', label: 'الإخطارات المرسلة' },
+                { value: 'received', label: 'رسائل الدعم الواردة' }
+              ]}
+              value={filter}
+              onChange={(value) => setFilter(value as 'sent' | 'received')}
+              className="w-full sm:w-auto min-w-[200px]"
+            />
+          </div>
         }
       >
         <DataTable
-          columns={tableColumns}
-          data={notifications}
+          columns={filter === 'sent' ? sentTableColumns : receivedTableColumns}
+          data={getFilteredData()}
           searchable={true}
           pagination={true}
           itemsPerPage={10}
