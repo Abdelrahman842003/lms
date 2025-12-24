@@ -112,14 +112,7 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
           variant="centered"
         />
 
-        <StatCard
-          title="المدفوعات"
-          value={student.payment_stats?.total_paid || 0}
-          icon="fas fa-dollar-sign"
-          color="danger"
-          prefix="EGP"
-          variant="centered"
-        />
+
       </div>
 
       {/* Header Section */}
