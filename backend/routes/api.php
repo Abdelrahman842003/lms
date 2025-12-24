@@ -158,7 +158,7 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureTeacherNotSuspende
     Route::get('/exams', [\App\Http\Controllers\Student\StudentExamController::class, 'index']);
     Route::get('/lectures', [\App\Http\Controllers\Student\StudentLectureController::class, 'index']);
     Route::get('/attendance', [\App\Http\Controllers\Student\StudentAttendanceController::class, 'index']);
-    Route::get('/dashboard', [\App\Http\Controllers\Student\StudentDashboardController::class, 'index']);
+    Route::get('/dashboard', [\App\Http\Controllers\Student\StudentDashboardController::class, 'getDashboard']);
     
     // Exam Taking Routes
     Route::get('/exams/{exam}', [\App\Http\Controllers\Student\StudentExamController::class, 'show']);

@@ -16,7 +16,7 @@ class StudentDashboardController extends Controller
         private \App\Services\MistakesService $mistakesService
     ) {}
 
-    public function index(Request $request)
+    public function getDashboard(Request $request)
     {
         $request->validate([
             'teacher_id' => 'required|exists:teachers,id',
