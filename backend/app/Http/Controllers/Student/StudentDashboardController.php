@@ -25,11 +25,6 @@ class StudentDashboardController extends Controller
         $student = $request->user();
         $teacherId = $request->teacher_id;
 
-        \Illuminate\Support\Facades\Log::info('Student Dashboard Request', [
-            'student_id' => $student->id,
-            'teacher_id' => $teacherId,
-        ]);
-
         // 1. Get Enrollment (for Balance)
         $enrollment = Enrollment::where('student_id', $student->id)
             ->where('teacher_id', $teacherId)
@@ -44,11 +39,6 @@ class StudentDashboardController extends Controller
             ->where('teacher_id', $teacherId)
             ->first();
         $totalPoints = $pointsRecord ? $pointsRecord->total_points : 0;
-
-        \Illuminate\Support\Facades\Log::info('Student Dashboard Stats', [
-            'mistakesCount' => $mistakesCount,
-            'totalPoints' => $totalPoints,
-        ]);
 
         // 4. Attendance Rate
         $totalLectures = Lecture::where('teacher_id', $teacherId)->count();
