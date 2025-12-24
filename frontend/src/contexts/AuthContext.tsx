@@ -187,7 +187,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Listen for teacher suspended events
     const handleTeacherSuspended = async () => {
       console.log('Teacher suspended event received');
-      toast.error('عفواً، هذا المدرس معلق حالياً. جاري تحويلك...');
       
       // Refresh user data to trigger smart selection
       await checkAuth();
