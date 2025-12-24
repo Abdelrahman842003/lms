@@ -189,6 +189,7 @@ class ReportService
             // and (not deleted OR deleted after month start)
             
             $enrollments = Enrollment::where('teacher_id', $teacher->id)
+                ->withTrashed()
                 ->where('created_at', '<=', $monthEnd)
                 ->where(function($q) use ($monthStart) {
                     $q->whereNull('deleted_at')
@@ -265,12 +266,15 @@ class ReportService
 
             // Get active enrollments for this month
             $enrollments = \App\Models\Enrollment::where('teacher_id', $teacher->id)
+                ->withTrashed()
                 ->where('created_at', '<=', $monthEnd)
                 ->where(function($q) use ($monthStart) {
                     $q->whereNull('deleted_at')
                       ->orWhere('deleted_at', '>=', $monthStart);
                 })
-                ->with(['student', 'group', 'grade'])
+                ->with(['student' => function($q) {
+                    $q->withTrashed();
+                }, 'group', 'grade'])
                 ->get();
 
             foreach ($enrollments as $enrollment) {
