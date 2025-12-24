@@ -280,11 +280,9 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
                 <thead>
                   <tr className="border-b border-white/10 text-gray-light text-sm">
                     <th className="pb-4 font-medium">الامتحان</th>
-                    <th className="pb-4 font-medium">الدرجة</th>
                     <th className="pb-4 font-medium">النسبة</th>
                     <th className="pb-4 font-medium">التاريخ</th>
                     <th className="pb-4 font-medium">الحالة</th>
-                    <th className="pb-4 font-medium">الإجراءات</th>
                   </tr>
                 </thead>
                 <tbody className="text-sm">
@@ -294,12 +292,6 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
                         <div>
                           <div className="font-medium">{exam.exam_title}</div>
                           <div className="text-xs text-gray-light mt-1">{exam.description || 'تفاصيل الامتحانات'}</div>
-                        </div>
-                      </td>
-                      <td className="py-4 text-white">
-                        <div className="flex items-center gap-2">
-                          <i className="fas fa-star text-primary text-xs"></i>
-                          <span>{exam.score} / {exam.max_score}</span>
                         </div>
                       </td>
                       <td className="py-4 text-white">
@@ -315,14 +307,6 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
                         <span className={`badge ${exam.percentage >= 50 ? 'badge-success' : 'badge-danger'}`}>
                           {exam.percentage >= 50 ? 'ناجح' : 'راسب'}
                         </span>
-                      </td>
-                      <td className="py-4">
-                        <button 
-                          className="w-8 h-8 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 flex items-center justify-center transition-colors cursor-not-allowed opacity-50"
-                          title="حذف النتيجة"
-                        >
-                          <i className="fas fa-trash"></i>
-                        </button>
                       </td>
                     </tr>
                   ))}
