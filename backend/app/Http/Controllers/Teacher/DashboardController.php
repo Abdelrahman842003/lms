@@ -44,6 +44,34 @@ class DashboardController extends Controller
                 $q->where('teacher_id', $teacher->id);
             })->avg('percentage') ?? 0;
 
+            // Attendance Trend (Last 7 Lectures)
+            $attendanceTrend = $teacher->lectures()
+                ->where('start_time', '<=', now())
+                ->orderBy('start_time', 'desc')
+                ->take(7)
+                ->get()
+                ->map(function ($lecture) {
+                    $total = $lecture->attendances()->count();
+                    $present = $lecture->attendances()->where('status', 'present')->count();
+                    return [
+                        'date' => $lecture->start_time->format('m/d'),
+                        'rate' => $total > 0 ? round(($present / $total) * 100) : 0,
+                    ];
+                })->reverse()->values();
+
+            // Exam Performance Trend (Last 5 Exams)
+            $examPerformanceTrend = \App\Models\Exam::where('teacher_id', $teacher->id)
+                ->withAvg('results', 'percentage')
+                ->orderBy('created_at', 'desc')
+                ->take(5)
+                ->get()
+                ->map(function ($exam) {
+                    return [
+                        'title' => $exam->title,
+                        'average' => round($exam->results_avg_percentage ?? 0, 1),
+                    ];
+                })->reverse()->values();
+
             return [
                 'total_students' => $totalStudents,
                 'active_students' => $activeStudents,
@@ -51,6 +79,8 @@ class DashboardController extends Controller
                 'total_exams' => $totalExams,
                 'average_attendance' => $averageAttendance,
                 'average_exam_score' => round($averageExamScore, 1),
+                'attendance_trend' => $attendanceTrend,
+                'exam_performance_trend' => $examPerformanceTrend,
             ];
         });
 

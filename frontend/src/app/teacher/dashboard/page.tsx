@@ -5,6 +5,7 @@ import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { DataTable } from '@/components/dashboard/DataTable';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
+import { TeacherStatsCharts } from '@/components/dashboard/TeacherStatsCharts';
 import { useAuth } from '@/contexts/AuthContext';
 
 
@@ -18,6 +19,8 @@ export default function TeacherDashboard() {
     totalExams: 0,
     averageAttendance: 0,
     averageExamScore: 0,
+    attendanceTrend: [],
+    examPerformanceTrend: [],
   });
   const [students, setStudents] = React.useState<any[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
@@ -40,6 +43,8 @@ export default function TeacherDashboard() {
           totalExams: statsData.total_exams || 0,
           averageAttendance: statsData.average_attendance || 0,
           averageExamScore: statsData.average_exam_score || 0,
+          attendanceTrend: statsData.attendance_trend || [],
+          examPerformanceTrend: statsData.exam_performance_trend || [],
         });
         setStudents(studentsData.students || []);
       } catch (error: any) {
@@ -154,9 +159,14 @@ export default function TeacherDashboard() {
         />
       </div>
 
-      {/* Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Students */}
+        {/* Teacher Statistics Charts */}
+        <div className="lg:col-span-2">
+          <TeacherStatsCharts stats={stats} />
+        </div>
+
+      
+      {/* Recent Students Table */}
+      <div className="mt-6">
         <DashboardCard
           title="آخر الطلاب"
           noPadding
@@ -168,42 +178,6 @@ export default function TeacherDashboard() {
             searchable={false}
             pagination={false}
           />
-        </DashboardCard>
-
-        {/* Teacher Statistics */}
-        <DashboardCard
-          title="إحصائيات المعلم"
-          icon="fas fa-chart-bar"
-        >
-          <div className="flex flex-col gap-6 p-2">
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-white font-medium">أداء الامتحانات</span>
-                <span className="text-primary font-bold">{stats.averageExamScore}%</span>
-              </div>
-              <div className="w-full bg-white/5 rounded-full h-2.5">
-                <div 
-                  className="bg-primary h-2.5 rounded-full transition-all duration-1000" 
-                  style={{ width: `${stats.averageExamScore}%` }}
-                ></div>
-              </div>
-              <p className="text-xs text-gray-400 mt-2">متوسط درجات الطلاب في جميع الامتحانات</p>
-            </div>
-
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-white font-medium">نسبة الحضور</span>
-                <span className="text-success font-bold">{stats.averageAttendance}%</span>
-              </div>
-              <div className="w-full bg-white/5 rounded-full h-2.5">
-                <div 
-                  className="bg-success h-2.5 rounded-full transition-all duration-1000" 
-                  style={{ width: `${stats.averageAttendance}%` }}
-                ></div>
-              </div>
-              <p className="text-xs text-gray-400 mt-2">متوسط نسبة حضور الطلاب للمحاضرات</p>
-            </div>
-          </div>
         </DashboardCard>
       </div>
     </DashboardLayout>
