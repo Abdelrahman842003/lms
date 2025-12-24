@@ -20,6 +20,7 @@ export default function StudentDashboard() {
   });
   const [upcomingLectures, setUpcomingLectures] = useState<any[]>([]);
   const [latestNews, setLatestNews] = useState<any[]>([]);
+  const [debugError, setDebugError] = useState<string | null>(null);
   useEffect(() => {
     const loadDashboardData = async () => {
       // Always load dashboard stats for the selected teacher (if any)
@@ -39,8 +40,9 @@ export default function StudentDashboard() {
                 });
                 setLatestNews(dashboardResponse.latestNews || []);
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Failed to load dashboard stats:', error);
+            setDebugError(error.message || JSON.stringify(error));
         }
       }
 
@@ -112,11 +114,11 @@ export default function StudentDashboard() {
       user={mockUser}
     >
       <div className="max-w-[1200px] mx-auto">
-      
       {/* DEBUG SECTION - REMOVE LATER */}
       <div className="bg-gray-800 p-4 mb-4 rounded text-xs font-mono text-green-400 overflow-auto">
         <p>Teacher ID: {selectedTeacher?.teacher_id}</p>
         <p>Stats: {JSON.stringify(stats)}</p>
+        {debugError && <p className="text-red-500 mt-2">Error: {debugError}</p>}
       </div>
       {/* Stats Grid */}
       <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-6 mb-8">
