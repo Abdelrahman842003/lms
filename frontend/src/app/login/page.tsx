@@ -296,7 +296,7 @@ export default function LoginPage() {
 
                 <div className="my-4 flex justify-center">
                   <Turnstile
-                    sitekey="1x00000000000000000000AA"
+                    sitekey="0x4AAAAAAACJEKS0EfFec1vOk"
                     onVerify={() => setIsVerified(true)}
                     onError={() => setIsVerified(false)}
                     onExpire={() => setIsVerified(false)}
