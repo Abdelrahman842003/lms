@@ -43,6 +43,7 @@ export default function TeacherGamificationPage() {
 
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
 
 
 
@@ -171,6 +172,18 @@ export default function TeacherGamificationPage() {
             {/* Leaderboard Tab */}
             {activeTab === 'leaderboard' && (
               <div className="space-y-6">
+                {/* Search Bar */}
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="ابحث عن طالب..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full p-3 pr-12 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                  />
+                  <i className="fas fa-search absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                </div>
+
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Weekly Leaderboard */}
                   <DashboardCard title="أشطر الطلاب هذا الأسبوع" icon="fas fa-calendar-week">
@@ -181,7 +194,9 @@ export default function TeacherGamificationPage() {
                       </div>
                     ) : (
                       <div className="space-y-3">
-                        {weeklyLeaderboard.map((entry) => (
+                        {weeklyLeaderboard
+                          .filter(entry => entry.student.name.toLowerCase().includes(searchQuery.toLowerCase()))
+                          .map((entry) => (
                           <div
                             key={entry.student_id}
                             className={`flex items-center justify-between p-3 rounded-xl bg-gradient-to-r ${getRankColor(entry.rank)} border`}
@@ -206,7 +221,9 @@ export default function TeacherGamificationPage() {
                       </div>
                     ) : (
                       <div className="space-y-3">
-                        {allTimeLeaderboard.map((entry) => (
+                        {allTimeLeaderboard
+                          .filter(entry => entry.student.name.toLowerCase().includes(searchQuery.toLowerCase()))
+                          .map((entry) => (
                           <div
                             key={entry.student_id}
                             className={`flex items-center justify-between p-3 rounded-xl bg-gradient-to-r ${getRankColor(entry.rank)} border`}
