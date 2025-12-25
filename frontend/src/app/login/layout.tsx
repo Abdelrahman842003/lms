@@ -7,7 +7,7 @@ async function getSeoSettings() {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 3000);
 
-        const res = await fetch(`${apiUrl}/public/settings`, {
+        const res = await fetch(`${apiUrl}/public-settings`, {
             next: { revalidate: 3600 },
             signal: controller.signal
         });
