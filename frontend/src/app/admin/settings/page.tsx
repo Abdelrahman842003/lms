@@ -20,6 +20,7 @@ function SettingsPage() {
     siteDescription: 'منصة تعليمية متكاملة',
     maintenanceMode: false,
     pricePerStudent: '0',
+    whatsappNumber: '',
   });
 
   const [seoSettings, setSeoSettings] = useState({
@@ -45,6 +46,7 @@ function SettingsPage() {
         if (data.siteDescription) setGeneralSettings(prev => ({ ...prev, siteDescription: data.siteDescription }));
         if (data.maintenanceMode) setGeneralSettings(prev => ({ ...prev, maintenanceMode: data.maintenanceMode === 'true' }));
         if (data.pricePerStudent) setGeneralSettings(prev => ({ ...prev, pricePerStudent: data.pricePerStudent }));
+        if (data.whatsappNumber) setGeneralSettings(prev => ({ ...prev, whatsappNumber: data.whatsappNumber }));
 
         // Update SEO Settings
         if (data.seo_title) setSeoSettings(prev => ({ ...prev, seo_title: data.seo_title }));
@@ -75,6 +77,7 @@ function SettingsPage() {
       { key: 'siteDescription', value: generalSettings.siteDescription, group: 'general' },
       { key: 'maintenanceMode', value: String(generalSettings.maintenanceMode), group: 'general' },
       { key: 'pricePerStudent', value: generalSettings.pricePerStudent, group: 'general' },
+      { key: 'whatsappNumber', value: generalSettings.whatsappNumber, group: 'general' },
       // SEO
       { key: 'seo_title', value: seoSettings.seo_title, group: 'seo' },
       { key: 'seo_description', value: seoSettings.seo_description, group: 'seo' },
@@ -166,6 +169,23 @@ function SettingsPage() {
                       </div>
                     </div>
                     <p className="text-xs text-gray-500 mt-1">يستخدم هذا السعر لحساب الإيرادات المتوقعة من كل طالب</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-gray-300 mb-2 text-sm">رقم الواتساب للتواصل</label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder="201012345678"
+                        value={generalSettings.whatsappNumber}
+                        onChange={(e) => setGeneralSettings({...generalSettings, whatsappNumber: e.target.value})}
+                        className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all pr-10"
+                      />
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+                        <i className="fab fa-whatsapp"></i>
+                      </div>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">يستخدم هذا الرقم في زر "تواصل مع الإدارة" على الصفحة الرئيسية</p>
                   </div>
                 </div>
 

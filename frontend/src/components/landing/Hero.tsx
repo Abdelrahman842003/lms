@@ -360,7 +360,7 @@ export default function Hero() {
                     className="mockup-btn mockup-btn-whatsapp"
                   >
                     <i className="fab fa-whatsapp"></i>
-                    <span>مدرس جديد</span>
+                    <span>تواصل مع الإدارة</span>
                   </a>
                 </div>
               </div>
