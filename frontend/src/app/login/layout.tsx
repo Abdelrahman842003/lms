@@ -37,10 +37,20 @@ export async function generateMetadata(): Promise<Metadata> {
     };
 }
 
+import Script from 'next/script';
+
 export default function LoginLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  return children;
+  return (
+    <>
+      <Script 
+        src="https://challenges.cloudflare.com/turnstile/v0/api.js" 
+        strategy="beforeInteractive"
+      />
+      {children}
+    </>
+  );
 }

@@ -294,7 +294,7 @@ export default function LoginPage() {
                   </label>
                 </div>
 
-                <div className="my-4 flex justify-center items-center min-h-[65px] w-full bg-white/5 rounded-lg p-2">
+                <div className="my-4 flex justify-center items-center min-h-[65px] w-full bg-white/5 border border-white/10 rounded-lg p-2">
                   <Turnstile
                     siteKey="0x4AAAAAAACJEKS0EfFec1vOk"
                     onSuccess={() => setIsVerified(true)}
