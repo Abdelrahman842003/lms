@@ -294,15 +294,12 @@ export default function LoginPage() {
                   </label>
                 </div>
 
-                <div className="my-4 flex justify-center">
+                <div className="my-4 flex justify-center items-center min-h-[65px] w-full bg-white/5 rounded-lg p-2">
                   <Turnstile
                     siteKey="0x4AAAAAAACJEKS0EfFec1vOk"
                     onSuccess={() => setIsVerified(true)}
                     onError={() => setIsVerified(false)}
                     onExpire={() => setIsVerified(false)}
-                    options={{
-                      theme: 'dark',
-                    }}
                   />
                 </div>
 
