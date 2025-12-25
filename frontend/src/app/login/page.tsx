@@ -10,6 +10,8 @@ import { UserTypeSelector } from '@/components/auth/UserTypeSelector';
 import { AuthInput } from '@/components/auth/AuthInput';
 import { AuthButton } from '@/components/auth/AuthButton';
 
+import Turnstile from 'react-turnstile';
+
 interface ValidationErrors {
   phone?: string;
   password?: string;
@@ -30,6 +32,7 @@ export default function LoginPage() {
     phone: false,
     password: false,
   });
+  const [isVerified, setIsVerified] = useState(false);
 
   // Redirect authenticated users to their dashboard
   useEffect(() => {
@@ -106,6 +109,11 @@ export default function LoginPage() {
     
     // Validate before submit
     if (!validateForm()) {
+      return;
+    }
+
+    if (!isVerified) {
+      setError('يرجى التحقق من أنك لست روبوت');
       return;
     }
     
@@ -284,6 +292,16 @@ export default function LoginPage() {
                     <input type="checkbox" className="w-[18px] h-[18px] cursor-pointer accent-primary" />
                     <span>تذكرني</span>
                   </label>
+                </div>
+
+                <div className="my-4 flex justify-center">
+                  <Turnstile
+                    sitekey="1x00000000000000000000AA"
+                    onVerify={() => setIsVerified(true)}
+                    onError={() => setIsVerified(false)}
+                    onExpire={() => setIsVerified(false)}
+                    theme="dark"
+                  />
                 </div>
 
                 <AuthButton isLoading={isLoading} loadingText="جاري تسجيل الدخول...">
