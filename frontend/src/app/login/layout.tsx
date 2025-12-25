@@ -2,7 +2,8 @@ import type { Metadata } from 'next'
 
 async function getSeoSettings() {
     try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/public/settings`, {
+        const apiUrl = process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL;
+        const res = await fetch(`${apiUrl}/public/settings`, {
             next: { revalidate: 3600 }
         });
         if (!res.ok) return null;

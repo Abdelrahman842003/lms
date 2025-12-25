@@ -213,6 +213,7 @@ services:
     environment:
       - NODE_ENV=production
       - NEXT_PUBLIC_API_URL=/api
+      - INTERNAL_API_URL=http://octane:8000/api
       - NEXT_PUBLIC_REVERB_APP_KEY=${REVERB_APP_KEY:-y2vqna5uho5zsdz6kdyz}
       - NEXT_PUBLIC_REVERB_HOST=neetaq.com
       - NEXT_PUBLIC_REVERB_PORT=443
