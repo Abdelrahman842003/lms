@@ -7,9 +7,7 @@ export default function NotFound() {
         <h1 className="text-9xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary opacity-20 select-none">
           404
         </h1>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <i className="fas fa-search text-6xl text-primary animate-bounce"></i>
-        </div>
+
       </div>
       
       <h2 className="text-3xl font-bold text-white mb-4">
