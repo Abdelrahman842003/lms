@@ -44,6 +44,7 @@ export default function TeacherGamificationPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
+  const [leaderboardType, setLeaderboardType] = useState<'weekly' | 'all_time'>('weekly');
 
 
 
@@ -55,7 +56,7 @@ export default function TeacherGamificationPage() {
     try {
       setLoading(true);
       const [leaderboardRes, settingsRes] = await Promise.all([
-        fetchApi(`/teacher/leaderboard?page=${pageNum}`),
+        fetchApi(`/teacher/leaderboard?page=${pageNum}&per_page=10`),
         fetchApi('/teacher/gamification/settings'),
       ]);
       
