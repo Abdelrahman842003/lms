@@ -146,24 +146,7 @@ function SettingsPage() {
             <DashboardCard title="الإعدادات العامة" icon="fas fa-sliders-h">
               <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-gray-300 mb-2 text-sm">اسم الموقع</label>
-                    <input
-                      type="text"
-                      value={generalSettings.siteName}
-                      onChange={(e) => setGeneralSettings({...generalSettings, siteName: e.target.value})}
-                      className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-gray-300 mb-2 text-sm">وصف الموقع</label>
-                    <input
-                      type="text"
-                      value={generalSettings.siteDescription}
-                      onChange={(e) => setGeneralSettings({...generalSettings, siteDescription: e.target.value})}
-                      className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
-                    />
-                  </div>
+                  {/* Site Name and Description removed as per user request */}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">

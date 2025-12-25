@@ -7,6 +7,7 @@ import { AuthProvider } from '@/contexts/AuthContext'
 import { Toaster } from 'react-hot-toast'
 import ServiceWorkerCleanup from '@/components/ServiceWorkerCleanup'
 import InstallPrompt from '@/components/InstallPrompt'
+import MaintenanceGuard from '@/components/MaintenanceGuard';
 
 // Fetch SEO settings from API
 async function getSeoSettings() {
@@ -84,6 +85,8 @@ export default async function RootLayout({
         }
     };
 
+    const maintenanceMode = settings?.maintenanceMode === 'true';
+
     return (
         <html lang="ar" dir="rtl" className="h-full">
             <head>
@@ -112,12 +115,15 @@ export default async function RootLayout({
                 <AuthProvider>
                   <ServiceWorkerCleanup />
                   <InstallPrompt />
-                  <div className="max-w-[1200px] mx-auto">
-                    {children}
-                    <Toaster position="top-center" />
-                  </div>
+                  <MaintenanceGuard maintenanceMode={maintenanceMode}>
+                    <div className="max-w-[1200px] mx-auto">
+                        {children}
+                        <Toaster position="top-center" />
+                    </div>
+                  </MaintenanceGuard>
                 </AuthProvider>
             </body>
         </html>
     )
+
 }
