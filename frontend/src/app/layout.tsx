@@ -8,15 +8,43 @@ import { Toaster } from 'react-hot-toast'
 import ServiceWorkerCleanup from '@/components/ServiceWorkerCleanup'
 import InstallPrompt from '@/components/InstallPrompt'
 
-export const metadata: Metadata = {
-    title: 'المنصة التعليمية | Educational Platform',
-    description: 'نظام شامل يربط بين الطلاب والمعلمين وأولياء الأمور. إدارة سهلة للمحاضرات، الامتحانات، والواجبات مع تحليلات دقيقة للأداء.',
-    keywords: 'تعليم، منصة تعليمية، طلاب، معلمين، امتحانات، واجبات، تعليم إلكتروني',
-    authors: [{ name: 'Educational Platform Team' }],
-    icons: {
-        icon: '/logo.png',
-        apple: '/logo.png',
-    },
+// Fetch SEO settings from API
+async function getSeoSettings() {
+    try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/public/settings`, {
+            next: { revalidate: 3600 } // Cache for 1 hour
+        });
+        if (!res.ok) return null;
+        const data = await res.json();
+        return data.data;
+    } catch {
+        return null;
+    }
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+    const settings = await getSeoSettings();
+    
+    return {
+        title: settings?.seo_title || settings?.siteName || 'المنصة التعليمية | Educational Platform',
+        description: settings?.seo_description || settings?.siteDescription || 'نظام شامل يربط بين الطلاب والمعلمين وأولياء الأمور.',
+        keywords: settings?.seo_keywords || 'تعليم، منصة تعليمية، طلاب، معلمين، امتحانات',
+        authors: [{ name: 'Educational Platform Team' }],
+        openGraph: {
+            title: settings?.seo_title || settings?.siteName || 'المنصة التعليمية',
+            description: settings?.seo_description || settings?.siteDescription || 'نظام تعليمي متكامل',
+            images: settings?.seo_og_image ? [settings.seo_og_image] : [],
+            type: 'website',
+        },
+        verification: {
+            google: settings?.seo_google_verification || undefined,
+            other: settings?.seo_bing_verification ? { 'msvalidate.01': settings.seo_bing_verification } : undefined,
+        },
+        icons: {
+            icon: '/logo.png',
+            apple: '/logo.png',
+        },
+    };
 }
 
 export const viewport: Viewport = {
