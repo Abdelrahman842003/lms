@@ -33,6 +33,7 @@ export default function LoginPage() {
     password: false,
   });
   const [isVerified, setIsVerified] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string>('');
 
   // Redirect authenticated users to their dashboard
   useEffect(() => {
@@ -120,7 +121,7 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      await login(formData.phone, formData.password, userType);
+      await login(formData.phone, formData.password, userType, turnstileToken);
       
       // Keep loading active - don't set to false, let navigation happen
       if (userType === 'student') {
@@ -297,7 +298,10 @@ export default function LoginPage() {
                 <div className="my-4 flex justify-center">
                   <Turnstile
                     siteKey="0x4AAAAAAACJEKS0EfFec1vOk"
-                    onSuccess={() => setIsVerified(true)}
+                    onSuccess={(token) => {
+                      setIsVerified(true);
+                      setTurnstileToken(token);
+                    }}
                     onError={() => setIsVerified(false)}
                     onExpire={() => setIsVerified(false)}
                   />

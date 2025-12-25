@@ -8,17 +8,26 @@ use App\Http\Resources\Teacher\TeacherResource;
 use App\Services\Teacher\TeacherService;
 use Illuminate\Http\Request;
 
+use App\Services\TurnstileService;
+
 class AuthController extends Controller
 {
     protected $teacherService;
+    protected $turnstileService;
 
-    public function __construct(TeacherService $teacherService)
+    public function __construct(TeacherService $teacherService, TurnstileService $turnstileService)
     {
         $this->teacherService = $teacherService;
+        $this->turnstileService = $turnstileService;
     }
 
     public function login(TeacherLoginRequest $request)
     {
+        // Validate Turnstile Token
+        if (!$this->turnstileService->validate($request->turnstile_token)) {
+            return $this->errorResponse('فشل التحقق من أنك لست روبوت (Turnstile Error)', 422);
+        }
+
         $data = $this->teacherService->login($request->phone, $request->password);
 
         if (!$data) {
