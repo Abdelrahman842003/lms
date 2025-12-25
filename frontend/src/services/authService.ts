@@ -275,8 +275,7 @@ export async function csrf(): Promise<void> {
  */
 export async function loginAdmin(
   username: string,
-  password: string,
-  turnstileToken?: string
+  password: string
 ): Promise<AuthResponse> {
   // await csrf();
   // We use fetchApi here to handle headers automatically, but we need to pass the endpoint directly
@@ -293,7 +292,7 @@ export async function loginAdmin(
   
   const data = await fetchApi(ENDPOINTS.LOGIN_ADMIN, {
     method: 'POST',
-    body: JSON.stringify({ username, password, turnstile_token: turnstileToken }),
+    body: JSON.stringify({ username, password }),
   }, true); // skipAuthEvent: true
 
   return {
@@ -309,13 +308,12 @@ export async function loginAdmin(
  */
 export async function loginTeacher(
   phone: string,
-  password: string,
-  turnstileToken?: string
+  password: string
 ): Promise<AuthResponse> {
   // await csrf();
   return await fetchApi(ENDPOINTS.LOGIN_TEACHER, {
     method: 'POST',
-    body: JSON.stringify({ phone, password, turnstile_token: turnstileToken }),
+    body: JSON.stringify({ phone, password }),
   }, true); // skipAuthEvent: true - don't dispatch auth:unauthorized for login
 }
 
@@ -324,13 +322,12 @@ export async function loginTeacher(
  */
 export async function loginStudent(
   phone: string,
-  password: string,
-  turnstileToken?: string
+  password: string
 ): Promise<AuthResponse> {
   // await csrf();
   const data = await fetchApi(ENDPOINTS.LOGIN_STUDENT, {
     method: 'POST',
-    body: JSON.stringify({ phone, password, turnstile_token: turnstileToken }),
+    body: JSON.stringify({ phone, password }),
   }, true); // skipAuthEvent: true
   return {
     token: data.token,
@@ -361,13 +358,12 @@ export async function getStudentTeacherDashboard(teacherId: string): Promise<any
  */
 export async function loginSecretary(
   phone: string,
-  password: string,
-  turnstileToken?: string
+  password: string
 ): Promise<AuthResponse> {
   // await csrf();
   return await fetchApi(ENDPOINTS.LOGIN_SECRETARY, {
     method: 'POST',
-    body: JSON.stringify({ phone, password, turnstile_token: turnstileToken }),
+    body: JSON.stringify({ phone, password }),
   }, true); // skipAuthEvent: true
 }
 

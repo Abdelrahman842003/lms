@@ -15,37 +15,27 @@ use App\Services\Admin\StudentService;
 use App\Services\Admin\DashboardService;
 use Illuminate\Http\Request;
 
-use App\Services\TurnstileService;
-
 class AuthController extends Controller
 {
     protected $adminService;
     protected $teacherService;
     protected $studentService;
     protected $dashboardService;
-    protected $turnstileService;
 
     public function __construct(
         AdminService $adminService,
         TeacherService $teacherService,
         StudentService $studentService,
-        DashboardService $dashboardService,
-        TurnstileService $turnstileService
+        DashboardService $dashboardService
     ) {
         $this->adminService = $adminService;
         $this->teacherService = $teacherService;
         $this->studentService = $studentService;
         $this->dashboardService = $dashboardService;
-        $this->turnstileService = $turnstileService;
     }
 
     public function login(AdminLoginRequest $request)
     {
-        // Validate Turnstile Token
-        if (!$this->turnstileService->validate($request->turnstile_token)) {
-            return $this->errorResponse('فشل التحقق من أنك لست روبوت (Turnstile Error)', 422);
-        }
-
         $data = $this->adminService->login($request->username, $request->password);
 
         // Generate Access Token (Short-lived - 30 mins by config)

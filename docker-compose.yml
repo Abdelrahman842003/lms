@@ -52,7 +52,6 @@ services:
       - /var/www/backend/vendor
       - /var/www/backend/storage
       - ./secrets/neetaq-54091-firebase-adminsdk-fbsvc-b830b7b75f.json:/var/www/backend/storage/firebase-credentials.json:ro
-      - ./secrets/cloudflare_turnstile_secret_key.txt:/var/www/backend/storage/turnstile_secret.txt:ro
     ports:
       - "8000:8000"
     environment:

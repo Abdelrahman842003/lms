@@ -8,26 +8,17 @@ use App\Http\Resources\Secretary\SecretaryResource;
 use App\Services\Secretary\SecretaryService;
 use Illuminate\Http\Request;
 
-use App\Services\TurnstileService;
-
 class AuthController extends Controller
 {
     protected $secretaryService;
-    protected $turnstileService;
 
-    public function __construct(SecretaryService $secretaryService, TurnstileService $turnstileService)
+    public function __construct(SecretaryService $secretaryService)
     {
         $this->secretaryService = $secretaryService;
-        $this->turnstileService = $turnstileService;
     }
 
     public function login(SecretaryLoginRequest $request)
     {
-        // Validate Turnstile Token
-        if (!$this->turnstileService->validate($request->turnstile_token)) {
-            return $this->errorResponse('فشل التحقق من أنك لست روبوت (Turnstile Error)', 422);
-        }
-
         $data = $this->secretaryService->login($request->phone, $request->password);
 
         if (!$data) {

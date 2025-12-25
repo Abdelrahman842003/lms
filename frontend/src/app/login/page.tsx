@@ -10,8 +10,6 @@ import { UserTypeSelector } from '@/components/auth/UserTypeSelector';
 import { AuthInput } from '@/components/auth/AuthInput';
 import { AuthButton } from '@/components/auth/AuthButton';
 
-import { Turnstile } from '@marsidev/react-turnstile';
-
 interface ValidationErrors {
   phone?: string;
   password?: string;
@@ -32,8 +30,7 @@ export default function LoginPage() {
     phone: false,
     password: false,
   });
-  const [isVerified, setIsVerified] = useState(false);
-  const [turnstileToken, setTurnstileToken] = useState<string>('');
+
 
   // Redirect authenticated users to their dashboard
   useEffect(() => {
@@ -112,16 +109,11 @@ export default function LoginPage() {
     if (!validateForm()) {
       return;
     }
-
-    if (!isVerified) {
-      setError('يرجى التحقق من أنك لست روبوت');
-      return;
-    }
     
     setIsLoading(true);
 
     try {
-      await login(formData.phone, formData.password, userType, turnstileToken);
+      await login(formData.phone, formData.password, userType);
       
       // Keep loading active - don't set to false, let navigation happen
       if (userType === 'student') {
@@ -293,18 +285,6 @@ export default function LoginPage() {
                     <input type="checkbox" className="w-[18px] h-[18px] cursor-pointer accent-primary" />
                     <span>تذكرني</span>
                   </label>
-                </div>
-
-                <div className="my-4 flex justify-center">
-                  <Turnstile
-                    siteKey="0x4AAAAAAACJEKS0EfFec1vOk"
-                    onSuccess={(token) => {
-                      setIsVerified(true);
-                      setTurnstileToken(token);
-                    }}
-                    onError={() => setIsVerified(false)}
-                    onExpire={() => setIsVerified(false)}
-                  />
                 </div>
 
                 <AuthButton isLoading={isLoading} loadingText="جاري تسجيل الدخول...">

@@ -20,7 +20,7 @@ interface AuthContextType {
   isLoading: boolean;
   selectedTeacher: TeacherInfo | null;
   selectTeacher: (teacher: TeacherInfo) => void;
-  login: (phone: string, password: string, userType?: 'teacher' | 'student' | 'secretary' | 'admin', turnstileToken?: string) => Promise<void>;
+  login: (phone: string, password: string, userType?: 'teacher' | 'student' | 'secretary' | 'admin') => Promise<void>;
   logout: () => void;
   register: (userData: RegisterData) => Promise<void>;
   updateUser: (userData: Partial<User>) => void;
@@ -215,21 +215,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [router]);
 
-  const login = async (phone: string, password: string, userType: 'teacher' | 'student' | 'secretary' | 'admin' = 'teacher', turnstileToken?: string) => {
+  const login = async (phone: string, password: string, userType: 'teacher' | 'student' | 'secretary' | 'admin' = 'teacher') => {
     try {
       setIsLoading(true);
       
       // Call appropriate login function based on user type
       let response;
       if (userType === 'teacher') {
-        response = await loginTeacher(phone, password, turnstileToken);
+        response = await loginTeacher(phone, password);
       } else if (userType === 'student') {
-        response = await loginStudent(phone, password, turnstileToken);
+        response = await loginStudent(phone, password);
       } else if (userType === 'admin') {
         // Admin uses username/email, not phone
-        response = await loginAdmin(phone, password, turnstileToken);
+        response = await loginAdmin(phone, password);
       } else {
-        response = await loginSecretary(phone, password, turnstileToken);
+        response = await loginSecretary(phone, password);
       }
       
       // Create user object from response
