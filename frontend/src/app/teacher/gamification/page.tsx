@@ -185,61 +185,65 @@ export default function TeacherGamificationPage() {
                   <i className="fas fa-search absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Weekly Leaderboard */}
-                  <DashboardCard title="أشطر الطلاب هذا الأسبوع" icon="fas fa-calendar-week">
-                    {weeklyLeaderboard.length === 0 ? (
-                      <div className="text-center py-8 text-gray-400">
-                        <i className="fas fa-chart-line text-3xl mb-3 opacity-50"></i>
-                        <p>لا توجد بيانات بعد</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        {weeklyLeaderboard
-                          .filter(entry => entry.student.name.toLowerCase().includes(searchQuery.toLowerCase()))
-                          .map((entry) => (
-                          <div
-                            key={entry.student_id}
-                            className={`flex items-center justify-between p-3 rounded-xl bg-gradient-to-r ${getRankColor(entry.rank)} border`}
-                          >
-                            <div className="flex items-center gap-3">
-                              <span className="text-xl">{getRankBadge(entry.rank)}</span>
-                              <span className="font-medium text-white">{entry.student.name}</span>
-                            </div>
-                            <div className="text-primary font-bold">{entry.weekly_points} نقطة</div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </DashboardCard>
-  
-                  {/* All Time Leaderboard */}
-                  <DashboardCard title="أشطر الطلاب على الإطلاق" icon="fas fa-infinity">
-                    {allTimeLeaderboard.length === 0 ? (
-                      <div className="text-center py-8 text-gray-400">
-                        <i className="fas fa-chart-line text-3xl mb-3 opacity-50"></i>
-                        <p>لا توجد بيانات بعد</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        {allTimeLeaderboard
-                          .filter(entry => entry.student.name.toLowerCase().includes(searchQuery.toLowerCase()))
-                          .map((entry) => (
-                          <div
-                            key={entry.student_id}
-                            className={`flex items-center justify-between p-3 rounded-xl bg-gradient-to-r ${getRankColor(entry.rank)} border`}
-                          >
-                            <div className="flex items-center gap-3">
-                              <span className="text-xl">{getRankBadge(entry.rank)}</span>
-                              <span className="font-medium text-white">{entry.student.name}</span>
-                            </div>
-                            <div className="text-secondary font-bold">{entry.total_points} نقطة</div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </DashboardCard>
+                {/* Leaderboard Type Toggle */}
+                <div className="flex gap-2 justify-center">
+                  <button
+                    onClick={() => setLeaderboardType('weekly')}
+                    className={`px-6 py-3 rounded-xl font-semibold transition-all ${
+                      leaderboardType === 'weekly'
+                        ? 'bg-primary text-white shadow-lg shadow-primary/20'
+                        : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                    }`}
+                  >
+                    <i className="fas fa-calendar-week ml-2"></i>
+                    أشطر الطلاب هذا الشهر
+                  </button>
+                  <button
+                    onClick={() => setLeaderboardType('all_time')}
+                    className={`px-6 py-3 rounded-xl font-semibold transition-all ${
+                      leaderboardType === 'all_time'
+                        ? 'bg-secondary text-white shadow-lg shadow-secondary/20'
+                        : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                    }`}
+                  >
+                    <i className="fas fa-infinity ml-2"></i>
+                    أشطر الطلاب على الإطلاق
+                  </button>
                 </div>
+
+                {/* Single Leaderboard */}
+                <DashboardCard 
+                  title={leaderboardType === 'weekly' ? 'أشطر الطلاب هذا الشهر' : 'أشطر الطلاب على الإطلاق'} 
+                  icon={leaderboardType === 'weekly' ? 'fas fa-calendar-week' : 'fas fa-infinity'}
+                >
+                  {(leaderboardType === 'weekly' ? weeklyLeaderboard : allTimeLeaderboard)
+                    .filter(entry => entry.student.name.toLowerCase().includes(searchQuery.toLowerCase()))
+                    .length === 0 ? (
+                    <div className="text-center py-8 text-gray-400">
+                      <i className="fas fa-chart-line text-3xl mb-3 opacity-50"></i>
+                      <p>لا توجد بيانات بعد</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {(leaderboardType === 'weekly' ? weeklyLeaderboard : allTimeLeaderboard)
+                        .filter(entry => entry.student.name.toLowerCase().includes(searchQuery.toLowerCase()))
+                        .map((entry) => (
+                        <div
+                          key={entry.student_id}
+                          className={`flex items-center justify-between p-3 rounded-xl bg-gradient-to-r ${getRankColor(entry.rank)} border`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="text-xl">{getRankBadge(entry.rank)}</span>
+                            <span className="font-medium text-white">{entry.student.name}</span>
+                          </div>
+                          <div className={`${leaderboardType === 'weekly' ? 'text-primary' : 'text-secondary'} font-bold`}>
+                            {leaderboardType === 'weekly' ? entry.weekly_points : entry.total_points} نقطة
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </DashboardCard>
 
                 {/* Pagination */}
                 {totalPages > 1 && (
