@@ -24,7 +24,6 @@ export default function EditStudentPage() {
 
   const [formData, setFormData] = useState({
     name: '',
-    phone: '',
     parent_phone: '',
     gender: 'male',
     education_type: '',
@@ -47,7 +46,6 @@ export default function EditStudentPage() {
       const data = await getTeacherStudentDetails(studentId);
       setFormData({
         name: data.name || '',
-        phone: data.phone || '',
         parent_phone: data.parent_phone || '',
         gender: data.gender || 'male',
         education_type: data.education_type || '',
@@ -91,9 +89,7 @@ export default function EditStudentPage() {
       errors.name = 'الاسم مطلوب';
     }
 
-    if (!formData.phone.trim()) {
-      errors.phone = 'رقم الهاتف مطلوب';
-    }
+
 
     if (!formData.gender) {
       errors.gender = 'النوع مطلوب';
@@ -126,7 +122,6 @@ export default function EditStudentPage() {
     try {
       const submitData: any = {
         name: formData.name,
-        phone: formData.phone,
         parent_phone: formData.parent_phone || null,
         gender: formData.gender,
         education_type: formData.education_type || null,
@@ -206,28 +201,7 @@ export default function EditStudentPage() {
               {formErrors.name && <span className="text-red-500 text-sm mt-1 block">{formErrors.name}</span>}
             </div>
 
-            <div>
-              <label htmlFor="phone" className="block text-gray-light mb-2 text-[0.95rem]">
-                رقم هاتف الطالب <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="tel"
-                id="phone"
-                className={`w-full p-3 bg-white/5 border rounded-lg text-white text-[1rem] focus:ring-1 outline-none transition-all ${
-                  formErrors.phone ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-white/10 focus:border-primary focus:ring-primary'
-                }`}
-                value={formData.phone}
-                onChange={(e) => {
-                  const value = e.target.value.replace(/[^0-9]/g, '');
-                  setFormData({ ...formData, phone: value });
-                }}
-                placeholder="أدخل رقم الهاتف (أرقام فقط)"
-                pattern="[0-9]*"
-                inputMode="numeric"
-                disabled={isSubmitting}
-              />
-              {formErrors.phone && <span className="text-red-500 text-sm mt-1 block">{formErrors.phone}</span>}
-            </div>
+
 
             <div>
               <label htmlFor="parent_phone" className="block text-gray-light mb-2 text-[0.95rem]">رقم هاتف ولي الأمر</label>
