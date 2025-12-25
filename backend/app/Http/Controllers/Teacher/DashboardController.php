@@ -39,11 +39,6 @@ class DashboardController extends Controller
                 ? round(($totalPresent / $totalAttendanceRecords) * 100) 
                 : 0;
 
-            // Average Exam Score
-            $averageExamScore = \App\Models\ExamResult::whereHas('exam', function($q) use ($teacher) {
-                $q->where('teacher_id', $teacher->id);
-            })->avg('percentage') ?? 0;
-
             // Attendance Trend (Last 7 Lectures)
             $attendanceTrend = $teacher->lectures()
                 ->where('start_time', '<=', now())
@@ -59,28 +54,13 @@ class DashboardController extends Controller
                     ];
                 })->reverse()->values();
 
-            // Exam Performance Trend (Last 5 Exams)
-            $examPerformanceTrend = \App\Models\Exam::where('teacher_id', $teacher->id)
-                ->withAvg('results', 'percentage')
-                ->orderBy('created_at', 'desc')
-                ->take(5)
-                ->get()
-                ->map(function ($exam) {
-                    return [
-                        'title' => $exam->title,
-                        'average' => round($exam->results_avg_percentage ?? 0, 1),
-                    ];
-                })->reverse()->values();
-
             return [
                 'total_students' => $totalStudents,
                 'active_students' => $activeStudents,
                 'total_groups' => $totalGroups,
                 'total_exams' => $totalExams,
                 'average_attendance' => $averageAttendance,
-                'average_exam_score' => round($averageExamScore, 1),
                 'attendance_trend' => $attendanceTrend,
-                'exam_performance_trend' => $examPerformanceTrend,
             ];
         });
 
