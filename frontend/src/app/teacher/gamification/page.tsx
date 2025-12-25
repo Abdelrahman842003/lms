@@ -42,9 +42,10 @@ export default function TeacherGamificationPage() {
   const [activeTab, setActiveTab] = useState<'leaderboard' | 'settings'>('leaderboard');
 
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [leaderboardType, setLeaderboardType] = useState<'weekly' | 'all_time'>('weekly');
+  const [loadingMore, setLoadingMore] = useState(false);
 
 
 
@@ -52,24 +53,34 @@ export default function TeacherGamificationPage() {
     loadData(1);
   }, []);
 
-  const loadData = async (pageNum = 1) => {
+  const loadData = async (pageNum = 1, append = false) => {
     try {
-      setLoading(true);
+      if (append) {
+        setLoadingMore(true);
+      } else {
+        setLoading(true);
+      }
+      
       const [leaderboardRes, settingsRes] = await Promise.all([
         fetchApi(`/teacher/leaderboard?page=${pageNum}&per_page=10`),
-        fetchApi('/teacher/gamification/settings'),
+        !append ? fetchApi('/teacher/gamification/settings') : Promise.resolve(null),
       ]);
       
       if (leaderboardRes) {
-
-        setWeeklyLeaderboard(leaderboardRes.weekly.data || []);
-        setAllTimeLeaderboard(leaderboardRes.all_time.data || []);
+        if (append) {
+          // Append new data to existing
+          setWeeklyLeaderboard(prev => [...prev, ...(leaderboardRes.weekly.data || [])]);
+          setAllTimeLeaderboard(prev => [...prev, ...(leaderboardRes.all_time.data || [])]);
+        } else {
+          // Replace data
+          setWeeklyLeaderboard(leaderboardRes.weekly.data || []);
+          setAllTimeLeaderboard(leaderboardRes.all_time.data || []);
+        }
         
-        const maxPages = Math.max(
-          leaderboardRes.weekly.last_page || 1,
-          leaderboardRes.all_time.last_page || 1
-        );
-        setTotalPages(maxPages);
+        // Check if there's more data
+        const weeklyHasMore = leaderboardRes.weekly.current_page < leaderboardRes.weekly.last_page;
+        const allTimeHasMore = leaderboardRes.all_time.current_page < leaderboardRes.all_time.last_page;
+        setHasMore(weeklyHasMore || allTimeHasMore);
         setPage(pageNum);
       }
       if (settingsRes) {
@@ -77,10 +88,14 @@ export default function TeacherGamificationPage() {
       }
     } catch (error: any) {
       console.error('Failed to load gamification data:', error);
-
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
+  };
+
+  const loadMore = () => {
+    loadData(page + 1, true);
   };
 
   const updateSettings = async (updates: Partial<GamificationSettings>) => {
@@ -245,25 +260,25 @@ export default function TeacherGamificationPage() {
                   )}
                 </DashboardCard>
 
-                {/* Pagination */}
-                {totalPages > 1 && (
-                  <div className="flex justify-center gap-2">
+                {/* Load More Button */}
+                {hasMore && !searchQuery && (
+                  <div className="flex justify-center">
                     <button
-                      disabled={page === 1}
-                      onClick={() => loadData(page - 1)}
-                      className="px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      onClick={loadMore}
+                      disabled={loadingMore}
+                      className="px-8 py-3 rounded-xl bg-primary hover:bg-primary/80 text-white font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                     >
-                      السابق
-                    </button>
-                    <span className="flex items-center px-4 font-bold text-white bg-white/5 rounded-lg">
-                      {page} / {totalPages}
-                    </span>
-                    <button
-                      disabled={page === totalPages}
-                      onClick={() => loadData(page + 1)}
-                      className="px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                      التالي
+                      {loadingMore ? (
+                        <>
+                          <i className="fas fa-spinner fa-spin"></i>
+                          <span>جاري التحميل...</span>
+                        </>
+                      ) : (
+                        <>
+                          <i className="fas fa-chevron-down"></i>
+                          <span>عرض المزيد</span>
+                        </>
+                      )}
                     </button>
                   </div>
                 )}
