@@ -36,7 +36,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 export const TeacherStatsCharts: React.FC<TeacherStatsChartsProps> = ({ stats }) => {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div className="w-full">
       {/* Attendance Chart */}
       <div className="bg-gray-900/50 backdrop-blur-md border border-white/5 rounded-2xl p-6 relative overflow-hidden group hover:border-white/10 transition-all duration-300">
         <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
