@@ -12,13 +12,23 @@ import InstallPrompt from '@/components/InstallPrompt'
 async function getSeoSettings() {
     try {
         const apiUrl = process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL;
+        
+        // Add timeout to prevent build hangs
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
+
         const res = await fetch(`${apiUrl}/public/settings`, {
-            next: { revalidate: 3600 } // Cache for 1 hour
+            next: { revalidate: 3600 },
+            signal: controller.signal
         });
+        
+        clearTimeout(timeoutId);
+
         if (!res.ok) return null;
         const data = await res.json();
         return data.data;
-    } catch {
+    } catch (error) {
+        console.warn('Failed to fetch SEO settings (using defaults):', error);
         return null;
     }
 }
