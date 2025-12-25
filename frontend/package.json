@@ -11,6 +11,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@marsidev/react-turnstile": "^1.4.0",
     "@types/canvas-confetti": "^1.9.0",
     "axios": "^1.11.0",
     "canvas-confetti": "^1.9.4",
@@ -28,7 +29,6 @@
     "react-easy-crop": "^5.5.6",
     "react-hot-toast": "^2.5.2",
     "react-qr-code": "^2.0.18",
-    "react-turnstile": "^1.1.4",
     "recharts": "^3.6.0"
   },
   "devDependencies": {

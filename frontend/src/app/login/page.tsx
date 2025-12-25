@@ -10,7 +10,7 @@ import { UserTypeSelector } from '@/components/auth/UserTypeSelector';
 import { AuthInput } from '@/components/auth/AuthInput';
 import { AuthButton } from '@/components/auth/AuthButton';
 
-import Turnstile from 'react-turnstile';
+import { Turnstile } from '@marsidev/react-turnstile';
 
 interface ValidationErrors {
   phone?: string;
@@ -296,11 +296,13 @@ export default function LoginPage() {
 
                 <div className="my-4 flex justify-center">
                   <Turnstile
-                    sitekey="0x4AAAAAAACJEKS0EfFec1vOk"
-                    onVerify={() => setIsVerified(true)}
+                    siteKey="0x4AAAAAAACJEKS0EfFec1vOk"
+                    onSuccess={() => setIsVerified(true)}
                     onError={() => setIsVerified(false)}
                     onExpire={() => setIsVerified(false)}
-                    theme="dark"
+                    options={{
+                      theme: 'dark',
+                    }}
                   />
                 </div>
 
