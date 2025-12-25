@@ -17,21 +17,15 @@ async function getSeoSettings() {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
 
-        console.log('Fetching SEO from:', `${apiUrl}/public-settings`);
-
         const res = await fetch(`${apiUrl}/public-settings`, {
-            next: { revalidate: 0 }, // Force dynamic for debugging
+            next: { revalidate: 3600 },
             signal: controller.signal
         });
         
         clearTimeout(timeoutId);
 
-        if (!res.ok) {
-            console.error('SEO Fetch Failed:', res.status, res.statusText);
-            return null;
-        }
+        if (!res.ok) return null;
         const data = await res.json();
-        console.log('SEO Data Received:', data.data?.seo_title);
         return data.data;
     } catch (error) {
         console.warn('Failed to fetch SEO settings (using defaults):', error);
