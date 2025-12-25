@@ -10,13 +10,12 @@ class TurnstileService
 
     public function __construct()
     {
-        $secretPath = base_path('secrets/cloudflare_turnstile_secret_key.txt');
-        
-        if (file_exists($secretPath)) {
-            $this->secretKey = trim(file_get_contents($secretPath));
+        $path = storage_path('turnstile_secret.txt');
+        if (file_exists($path)) {
+            $this->secretKey = trim(file_get_contents($path));
         } else {
             // Fallback or log error
-            $this->secretKey = '';
+            $this->secretKey = config('services.turnstile.secret');
         }
     }
 
