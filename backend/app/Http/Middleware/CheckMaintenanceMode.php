@@ -17,7 +17,7 @@ class CheckMaintenanceMode
     public function handle(Request $request, Closure $next): Response
     {
         // Skip for admin routes and login
-        if ($request->is('api/admin/*') || $request->is('admin/*') || $request->is('api/login/*')) {
+        if ($request->is('api/admin/*') || $request->is('admin/*') || $request->is('api/login/*') || $request->is('api/public-settings')) {
             return $next($request);
         }
 
