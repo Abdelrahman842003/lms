@@ -53,11 +53,26 @@ export const viewport: Viewport = {
     themeColor: '#4263EB',
 }
 
-export default function RootLayout({
+export default async function RootLayout({
     children,
 }: {
     children: React.ReactNode
 }) {
+    const settings = await getSeoSettings();
+    
+    const jsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'WebSite',
+        name: settings?.seo_title || settings?.siteName || 'المنصة التعليمية',
+        url: 'https://neetaq.com',
+        description: settings?.seo_description || settings?.siteDescription,
+        potentialAction: {
+            '@type': 'SearchAction',
+            target: 'https://neetaq.com/search?q={search_term_string}',
+            'query-input': 'required name=search_term_string'
+        }
+    };
+
     return (
         <html lang="ar" dir="rtl" className="h-full">
             <head>
@@ -73,6 +88,10 @@ export default function RootLayout({
                 />
                 
                 <link rel="manifest" href="/manifest.json" />
+                <script
+                    type="application/ld+json"
+                    dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+                />
             </head>
             <body
                 className="max-w-[2000px] mx-auto"
