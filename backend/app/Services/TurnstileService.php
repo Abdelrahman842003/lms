@@ -10,8 +10,14 @@ class TurnstileService
 
     public function __construct()
     {
-        // TODO: Move this to .env (TURNSTILE_SECRET_KEY)
-        $this->secretKey = '0x4AAAAAAACJEKVvmuxhQsRFA4xAEe34Wt5I';
+        $secretPath = base_path('secrets/cloudflare_turnstile_secret_key.txt');
+        
+        if (file_exists($secretPath)) {
+            $this->secretKey = trim(file_get_contents($secretPath));
+        } else {
+            // Fallback or log error
+            $this->secretKey = '';
+        }
     }
 
     public function validate($token)
