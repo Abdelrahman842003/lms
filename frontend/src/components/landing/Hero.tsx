@@ -346,7 +346,7 @@ export default function Hero() {
                   </Link>
                   <a 
                     href={whatsappNumber 
-                      ? `https://wa.me/${whatsappNumber.replace(/[^0-9]/g, '')}?text=${encodeURIComponent('مرحباً، أنا مدرس جديد وأريد الانضمام للمنصة')}`
+                      ? `https://wa.me/${whatsappNumber.replace(/[^0-9]/g, '')}?text=${encodeURIComponent('السلام عليكم محتاج استفسار بخصوص : ')}`
                       : '#'
                     }
                     onClick={(e) => {
