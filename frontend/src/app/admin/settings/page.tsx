@@ -22,6 +22,15 @@ function SettingsPage() {
     pricePerStudent: '0',
   });
 
+  const [seoSettings, setSeoSettings] = useState({
+    seo_title: '',
+    seo_description: '',
+    seo_keywords: '',
+    seo_og_image: '',
+    seo_google_verification: '',
+    seo_bing_verification: '',
+  });
+
 
   // Fetch settings on mount
   useEffect(() => {
@@ -37,6 +46,13 @@ function SettingsPage() {
         if (data.maintenanceMode) setGeneralSettings(prev => ({ ...prev, maintenanceMode: data.maintenanceMode === 'true' }));
         if (data.pricePerStudent) setGeneralSettings(prev => ({ ...prev, pricePerStudent: data.pricePerStudent }));
 
+        // Update SEO Settings
+        if (data.seo_title) setSeoSettings(prev => ({ ...prev, seo_title: data.seo_title }));
+        if (data.seo_description) setSeoSettings(prev => ({ ...prev, seo_description: data.seo_description }));
+        if (data.seo_keywords) setSeoSettings(prev => ({ ...prev, seo_keywords: data.seo_keywords }));
+        if (data.seo_og_image) setSeoSettings(prev => ({ ...prev, seo_og_image: data.seo_og_image }));
+        if (data.seo_google_verification) setSeoSettings(prev => ({ ...prev, seo_google_verification: data.seo_google_verification }));
+        if (data.seo_bing_verification) setSeoSettings(prev => ({ ...prev, seo_bing_verification: data.seo_bing_verification }));
 
       } catch (error) {
         console.error('Failed to fetch settings:', error);
@@ -59,6 +75,13 @@ function SettingsPage() {
       { key: 'siteDescription', value: generalSettings.siteDescription, group: 'general' },
       { key: 'maintenanceMode', value: String(generalSettings.maintenanceMode), group: 'general' },
       { key: 'pricePerStudent', value: generalSettings.pricePerStudent, group: 'general' },
+      // SEO
+      { key: 'seo_title', value: seoSettings.seo_title, group: 'seo' },
+      { key: 'seo_description', value: seoSettings.seo_description, group: 'seo' },
+      { key: 'seo_keywords', value: seoSettings.seo_keywords, group: 'seo' },
+      { key: 'seo_og_image', value: seoSettings.seo_og_image, group: 'seo' },
+      { key: 'seo_google_verification', value: seoSettings.seo_google_verification, group: 'seo' },
+      { key: 'seo_bing_verification', value: seoSettings.seo_bing_verification, group: 'seo' },
     ];
 
     try {
@@ -74,6 +97,7 @@ function SettingsPage() {
 
   const tabs = [
     { id: 'general', label: 'عام', icon: 'fas fa-cog' },
+    { id: 'seo', label: 'SEO', icon: 'fas fa-search' },
     { id: 'security', label: 'الأمان', icon: 'fas fa-shield-alt' },
   ];
 
@@ -192,6 +216,89 @@ function SettingsPage() {
             </DashboardCard>
           )}
 
+
+          {/* SEO Settings */}
+          {activeTab === 'seo' && (
+            <DashboardCard title="إعدادات SEO" icon="fas fa-search">
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-gray-300 mb-2 text-sm">عنوان الموقع (Title Tag)</label>
+                    <input
+                      type="text"
+                      value={seoSettings.seo_title}
+                      onChange={(e) => setSeoSettings({...seoSettings, seo_title: e.target.value})}
+                      className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                      placeholder="مثال: نطاق | منصة تعليمية متكاملة"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-gray-300 mb-2 text-sm">الكلمات المفتاحية</label>
+                    <input
+                      type="text"
+                      value={seoSettings.seo_keywords}
+                      onChange={(e) => setSeoSettings({...seoSettings, seo_keywords: e.target.value})}
+                      className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                      placeholder="تعليم، منصة، طلاب، مدرسين"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-gray-300 mb-2 text-sm">وصف الموقع (Meta Description)</label>
+                  <textarea
+                    value={seoSettings.seo_description}
+                    onChange={(e) => setSeoSettings({...seoSettings, seo_description: e.target.value})}
+                    className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all resize-y min-h-[100px]"
+                    placeholder="وصف يظهر في نتائج البحث..."
+                    rows={3}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">يُفضل أن يكون الوصف بين 150-160 حرفاً</p>
+                </div>
+
+                <div>
+                  <label className="block text-gray-300 mb-2 text-sm">رابط صورة Open Graph</label>
+                  <input
+                    type="url"
+                    value={seoSettings.seo_og_image}
+                    onChange={(e) => setSeoSettings({...seoSettings, seo_og_image: e.target.value})}
+                    className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                    placeholder="https://example.com/og-image.jpg"
+                    dir="ltr"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">الصورة التي تظهر عند مشاركة الموقع على وسائل التواصل</p>
+                </div>
+
+                <div className="border-t border-white/10 pt-6">
+                  <h3 className="text-white font-bold mb-4">أكواد التحقق</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-gray-300 mb-2 text-sm">كود تحقق Google</label>
+                      <input
+                        type="text"
+                        value={seoSettings.seo_google_verification}
+                        onChange={(e) => setSeoSettings({...seoSettings, seo_google_verification: e.target.value})}
+                        className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all font-mono text-sm"
+                        placeholder="google-site-verification=..."
+                        dir="ltr"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-gray-300 mb-2 text-sm">كود تحقق Bing</label>
+                      <input
+                        type="text"
+                        value={seoSettings.seo_bing_verification}
+                        onChange={(e) => setSeoSettings({...seoSettings, seo_bing_verification: e.target.value})}
+                        className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all font-mono text-sm"
+                        placeholder="msvalidate.01=..."
+                        dir="ltr"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </DashboardCard>
+          )}
 
           {/* Security Settings */}
           {activeTab === 'security' && (

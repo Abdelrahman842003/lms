@@ -46,8 +46,22 @@ class SettingsController extends Controller
 
     public function getPublicSettings()
     {
-        $settings = Setting::whereIn('key', ['siteName', 'siteDescription', 'maintenanceMode', 'whatsappNumber'])
-            ->pluck('value', 'key');
+        $settings = Setting::whereIn('key', [
+            'siteName', 
+            'siteDescription', 
+            'maintenanceMode', 
+            'whatsappNumber',
+            // SEO Settings
+            'seo_title',
+            'seo_description',
+            'seo_keywords',
+            'seo_og_image',
+            'seo_twitter_handle',
+            'seo_google_verification',
+            'seo_bing_verification',
+            'seo_robots_txt',
+            'seo_canonical_url',
+        ])->pluck('value', 'key');
         
         return response()->json([
             'status' => true,
