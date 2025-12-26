@@ -77,6 +77,7 @@ Route::post('/login/teacher', [TeacherAuthController::class, 'login']);
 Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureTeacherNotSuspended::class])->prefix('teacher')->name('teacher.')->group(function () {
     Route::post('/logout', [TeacherAuthController::class, 'logout']);
     Route::get('/me', [TeacherAuthController::class, 'me']);
+    Route::post('/change-password', [TeacherAuthController::class, 'changePassword']);
     
     // Dashboard routes
     Route::get('/dashboard/stats', [\App\Http\Controllers\Teacher\DashboardController::class, 'getStats']);
@@ -154,6 +155,7 @@ Route::post('/login/student', [StudentAuthController::class, 'login']);
 Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureTeacherNotSuspendedForStudent::class])->prefix('student')->group(function () {
     Route::post('/logout', [StudentAuthController::class, 'logout']);
     Route::get('/me', [StudentAuthController::class, 'me']);
+    Route::post('/change-password', [StudentAuthController::class, 'changePassword']);
     Route::post('/attend', [\App\Http\Controllers\Student\StudentAttendanceController::class, 'markAttendance']);
     Route::get('/exams', [\App\Http\Controllers\Student\StudentExamController::class, 'index']);
     Route::get('/lectures', [\App\Http\Controllers\Student\StudentLectureController::class, 'index']);

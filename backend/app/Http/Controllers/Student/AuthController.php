@@ -80,6 +80,21 @@ class AuthController extends Controller
         ]);
     }
 
+    public function changePassword(\App\Http\Requests\Auth\ChangePasswordRequest $request)
+    {
+        $user = $request->user();
+
+        if (!\Illuminate\Support\Facades\Hash::check($request->current_password, $user->password)) {
+            return $this->errorResponse('كلمة المرور الحالية غير صحيحة', 422);
+        }
+
+        $user->update([
+            'password' => \Illuminate\Support\Facades\Hash::make($request->new_password)
+        ]);
+
+        return $this->successResponse(null, 'تم تغيير كلمة المرور بنجاح');
+    }
+
     /**
      * Get list of enrolled teachers
      */

@@ -5,6 +5,7 @@ import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { useAuth } from '@/contexts/AuthContext';
 import { uploadAvatar, deleteAvatar, getAvatarUrl } from '@/services/avatarService';
+import { getAuthToken } from '@/services/authService';
 import { ImageCropModal, ConfirmationModal, Skeleton } from '@/components/ui';
 
 export default function TeacherProfile() {
@@ -145,8 +146,42 @@ export default function TeacherProfile() {
       alert('كلمات المرور غير متطابقة');
       return;
     }
-    // TODO: Implement password change
-    // TODO: Implement password change API call
+
+    try {
+      const token = getAuthToken();
+      const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const API_URL = BASE_URL.endsWith('/api') ? BASE_URL : `${BASE_URL}/api`;
+
+      const response = await fetch(`${API_URL}/teacher/change-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          current_password: formData.currentPassword,
+          new_password: formData.newPassword,
+          new_password_confirmation: formData.confirmPassword,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'فشل تغيير كلمة المرور');
+      }
+
+      alert('تم تغيير كلمة المرور بنجاح');
+      setFormData(prev => ({
+        ...prev,
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+      }));
+    } catch (err: any) {
+      alert(err.message || 'حدث خطأ أثناء تغيير كلمة المرور');
+    }
   };
 
   if (isLoading) {

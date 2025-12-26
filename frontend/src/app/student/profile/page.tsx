@@ -4,6 +4,7 @@ import React from 'react';
 import { DashboardLayout, DashboardCard } from '@/components/dashboard';
 import { useAuth } from '@/contexts/AuthContext';
 import { uploadAvatar, deleteAvatar, getAvatarUrl } from '@/services/avatarService';
+import { getAuthToken } from '@/services/authService';
 import { ImageCropModal, ConfirmationModal, Skeleton } from '@/components/ui';
 import { AuthInput } from '@/components/auth/AuthInput';
 
@@ -181,11 +182,46 @@ export default function StudentProfilePage() {
       return;
     }
 
-    // TODO: Implement password change
-    // TODO: Implement password change API call
-    // Clear errors on success (mock)
-    setErrors({});
-    setErrors({});
+    try {
+      const token = getAuthToken();
+      const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const API_URL = BASE_URL.endsWith('/api') ? BASE_URL : `${BASE_URL}/api`;
+
+      const response = await fetch(`${API_URL}/student/change-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          current_password: formData.currentPassword,
+          new_password: formData.newPassword,
+          new_password_confirmation: formData.confirmPassword,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'فشل تغيير كلمة المرور');
+      }
+
+      alert('تم تغيير كلمة المرور بنجاح');
+      setFormData(prev => ({
+        ...prev,
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+      }));
+      setErrors({});
+    } catch (err: any) {
+      setErrors(prev => ({
+        ...prev,
+        submit: err.message || 'حدث خطأ أثناء تغيير كلمة المرور'
+      }));
+      alert(err.message || 'حدث خطأ أثناء تغيير كلمة المرور');
+    }
   };
 
   const downloadQRCode = () => {
