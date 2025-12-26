@@ -70,7 +70,7 @@ class ImageService
      */
     public function getUrl(string $path): string
     {
-        $baseUrl = env('CLOUDFLARE_R2_PUBLIC_URL');
+        $baseUrl = config('filesystems.disks.r2.url');
         
         if (!$baseUrl) {
             return '/' . ltrim($path, '/');
