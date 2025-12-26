@@ -126,7 +126,7 @@ export default function TeacherReportsPage() {
   ];
 
   return (
-    <DashboardLayout role="teacher" user={user || undefined}>
+    <DashboardLayout role={user?.userType as 'teacher' | 'secretary' || 'teacher'} user={user || undefined}>
       <div className="max-w-7xl mx-auto">
         <h1 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
           <i className="fas fa-chart-bar text-primary"></i>

@@ -135,7 +135,7 @@ export default function TeacherGamificationPage() {
   };
 
   return (
-    <DashboardLayout role="teacher" user={mockUser}>
+    <DashboardLayout role={user?.userType as 'teacher' | 'secretary' || 'teacher'} user={mockUser}>
       <div className="max-w-[1200px] mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
