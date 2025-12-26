@@ -86,12 +86,12 @@ export default function TeacherProfile() {
 
     // Validate
     if (!file.type.startsWith('image/')) {
-      alert('يرجى اختيار صورة صحيحة');
+      toast.error('يرجى اختيار صورة صحيحة');
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      alert('حجم الصورة يجب أن لا يتجاوز 5 ميغابايت');
+      toast.error('حجم الصورة يجب أن لا يتجاوز 5 ميغابايت');
       return;
     }
 
@@ -121,9 +121,10 @@ export default function TeacherProfile() {
       const response = await uploadAvatar(file);
       if (response.success && response.data?.url) {
         setAvatarUrl(response.data.url);
+        toast.success('تم تحديث الصورة الشخصية بنجاح');
       }
     } catch (err: any) {
-      alert(err.message || 'فشل رفع الصورة');
+      toast.error(err.message || 'فشل رفع الصورة');
     } finally {
       setIsUploadingAvatar(false);
     }
@@ -144,8 +145,9 @@ export default function TeacherProfile() {
       await deleteAvatar();
       setAvatarUrl(null);
       setShowDeleteModal(false);
+      toast.success('تم حذف الصورة الشخصية بنجاح');
     } catch (err: any) {
-      alert(err.message || 'فشل حذف الصورة');
+      toast.error(err.message || 'فشل حذف الصورة');
     } finally {
       setIsUploadingAvatar(false);
     }
