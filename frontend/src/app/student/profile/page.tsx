@@ -151,6 +151,7 @@ export default function StudentProfilePage() {
       await deleteAvatar();
       setAvatarUrl(null);
       setShowDeleteModal(false);
+      toast.success('تم حذف الصورة الشخصية بنجاح');
     } catch (err: any) {
       toast.error(err.message || 'فشل حذف الصورة');
     } finally {
