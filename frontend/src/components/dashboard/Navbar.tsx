@@ -218,20 +218,36 @@ const getRoleLabel = (role: string): string => {
   return labels[role] || role;
 };
 
-// Map menu items to required permissions for secretary
+// Map menu items to required permissions for secretary - STRICT MODE
+// Each menu item must have at least ONE matching permission to be visible
 const secretaryPermissionMap: Record<string, string[]> = {
-  students: ['view students', 'create students', 'edit students', 'delete students'],
-  secretaries: [], // Secretaries cannot manage other secretaries
+  // Dashboard - always visible, no permission needed
+  dashboard: [],
+  
+  // Persons section
+  persons: ['view students', 'create students', 'edit students', 'delete students', 'manage student groups'],
+  students: ['view students', 'create students', 'edit students', 'delete students', 'manage student groups'],
+  secretaries: [], // Never visible to secretary
+  
+  // Academics section
+  academics: ['view groups', 'create groups', 'edit groups', 'delete groups', 'view grades', 'create grades', 'edit grades', 'delete grades'],
   groups: ['view groups', 'create groups', 'edit groups', 'delete groups'],
   grades: ['view grades', 'create grades', 'edit grades', 'delete grades'],
-  lectures: ['view lectures', 'create lectures', 'edit lectures', 'delete lectures'],
-  exams: ['view exams', 'create exams', 'edit exams', 'delete exams'],
+  
+  // Lectures
+  lectures: ['view lectures', 'create lectures', 'edit lectures', 'delete lectures', 'manage lecture attendance'],
+  
+  // Exams
+  exams: ['view exams', 'create exams', 'edit exams', 'delete exams', 'grade exams'],
+  
+  // Notifications
   notifications: ['send notifications'],
-  gamification: ['view dashboard'],
+  
+  // Gamification / Leaderboard
+  gamification: ['view dashboard', 'view reports'],
+  
+  // Reports
   reports: ['view reports'],
-  dashboard: ['view dashboard'],
-  persons: ['view students', 'create students', 'edit students', 'delete students'],
-  academics: ['view groups', 'view grades'],
 };
 
 const filterNavItemsByPermissions = (items: SidebarItem[], permissions: string[]): SidebarItem[] => {
@@ -239,26 +255,35 @@ const filterNavItemsByPermissions = (items: SidebarItem[], permissions: string[]
     // Dashboard is always visible
     if (item.id === 'dashboard') return true;
     
-    const requiredPerms = secretaryPermissionMap[item.id] || [];
+    // Secretaries can NEVER be visible to a secretary
+    if (item.id === 'secretaries') return false;
+    
+    const requiredPerms = secretaryPermissionMap[item.id];
+    
+    // If no permission mapping exists for this item, hide it (STRICT)
+    if (!requiredPerms || requiredPerms.length === 0) return false;
     
     if (item.children) {
       // For parent items, check if any child should be visible
       const visibleChildren = item.children.filter(child => {
-        if (child.id === 'secretaries') return false; // Never show secretaries to secretary
-        const childPerms = secretaryPermissionMap[child.id] || [];
-        return childPerms.length === 0 || childPerms.some(perm => permissions.includes(perm));
+        if (child.id === 'secretaries') return false;
+        const childPerms = secretaryPermissionMap[child.id];
+        // STRICT: Must have at least one matching permission
+        if (!childPerms || childPerms.length === 0) return false;
+        return childPerms.some(perm => permissions.includes(perm));
       });
       return visibleChildren.length > 0;
     }
     
-    // Check if user has ANY of the required permissions
-    return requiredPerms.length === 0 || requiredPerms.some(perm => permissions.includes(perm));
+    // STRICT: Check if user has at least ONE of the required permissions
+    return requiredPerms.some(perm => permissions.includes(perm));
   }).map(item => {
     if (item.children) {
       const visibleChildren = item.children.filter(child => {
         if (child.id === 'secretaries') return false;
-        const childPerms = secretaryPermissionMap[child.id] || [];
-        return childPerms.length === 0 || childPerms.some(perm => permissions.includes(perm));
+        const childPerms = secretaryPermissionMap[child.id];
+        if (!childPerms || childPerms.length === 0) return false;
+        return childPerms.some(perm => permissions.includes(perm));
       });
       return { ...item, children: visibleChildren };
     }
