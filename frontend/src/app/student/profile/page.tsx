@@ -7,6 +7,7 @@ import { uploadAvatar, deleteAvatar, getAvatarUrl } from '@/services/avatarServi
 import { getAuthToken } from '@/services/authService';
 import { ImageCropModal, ConfirmationModal, Skeleton } from '@/components/ui';
 import { AuthInput } from '@/components/auth/AuthInput';
+import { toast } from 'react-hot-toast';
 
 import QRCode from 'react-qr-code';
 
@@ -92,12 +93,12 @@ export default function StudentProfilePage() {
 
     // Validate
     if (!file.type.startsWith('image/')) {
-      alert('يرجى اختيار صورة صحيحة');
+      toast.error('يرجى اختيار صورة صحيحة');
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      alert('حجم الصورة يجب أن لا يتجاوز 5 ميغابايت');
+      toast.error('حجم الصورة يجب أن لا يتجاوز 5 ميغابايت');
       return;
     }
 
@@ -129,7 +130,7 @@ export default function StudentProfilePage() {
         setAvatarUrl(response.data.url);
       }
     } catch (err: any) {
-      alert(err.message || 'فشل رفع الصورة');
+      toast.error(err.message || 'فشل رفع الصورة');
     } finally {
       setIsUploadingAvatar(false);
     }
@@ -151,7 +152,7 @@ export default function StudentProfilePage() {
       setAvatarUrl(null);
       setShowDeleteModal(false);
     } catch (err: any) {
-      alert(err.message || 'فشل حذف الصورة');
+      toast.error(err.message || 'فشل حذف الصورة');
     } finally {
       setIsUploadingAvatar(false);
     }
@@ -222,7 +223,7 @@ export default function StudentProfilePage() {
         throw new Error(data.message || 'فشل تغيير كلمة المرور');
       }
 
-      alert('تم تغيير كلمة المرور بنجاح');
+      toast.success('تم تغيير كلمة المرور بنجاح');
       setFormData(prev => ({
         ...prev,
         currentPassword: '',
@@ -235,7 +236,7 @@ export default function StudentProfilePage() {
         ...prev,
         submit: err.message || 'حدث خطأ أثناء تغيير كلمة المرور'
       }));
-      alert(err.message || 'حدث خطأ أثناء تغيير كلمة المرور');
+      toast.error(err.message || 'حدث خطأ أثناء تغيير كلمة المرور');
     }
   };
 

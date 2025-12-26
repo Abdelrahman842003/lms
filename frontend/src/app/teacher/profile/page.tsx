@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { uploadAvatar, deleteAvatar, getAvatarUrl } from '@/services/avatarService';
 import { getAuthToken } from '@/services/authService';
 import { ImageCropModal, ConfirmationModal, Skeleton } from '@/components/ui';
+import { toast } from 'react-hot-toast';
 
 export default function TeacherProfile() {
   const { user, isLoading } = useAuth();
@@ -28,6 +29,8 @@ export default function TeacherProfile() {
     newPassword: '',
     confirmPassword: '',
   });
+
+  const [errors, setErrors] = React.useState<Record<string, string>>({});
 
   const [passwordStrength, setPasswordStrength] = React.useState(0);
 
@@ -156,23 +159,27 @@ export default function TeacherProfile() {
   };
 
   const validatePasswordForm = () => {
+    const newErrors: Record<string, string> = {};
+    let isValid = true;
+
     if (!formData.currentPassword) {
-      alert('يرجى إدخال كلمة المرور الحالية');
-      return false;
+      newErrors.currentPassword = 'يرجى إدخال كلمة المرور الحالية';
+      isValid = false;
     }
     if (!formData.newPassword) {
-      alert('يرجى إدخال كلمة المرور الجديدة');
-      return false;
-    }
-    if (formData.newPassword.length < 8) {
-      alert('كلمة المرور الجديدة يجب أن تكون 8 أحرف على الأقل');
-      return false;
+      newErrors.newPassword = 'يرجى إدخال كلمة المرور الجديدة';
+      isValid = false;
+    } else if (formData.newPassword.length < 8) {
+      newErrors.newPassword = 'كلمة المرور الجديدة يجب أن تكون 8 أحرف على الأقل';
+      isValid = false;
     }
     if (formData.newPassword !== formData.confirmPassword) {
-      alert('كلمات المرور غير متطابقة');
-      return false;
+      newErrors.confirmPassword = 'كلمات المرور غير متطابقة';
+      isValid = false;
     }
-    return true;
+
+    setErrors(newErrors);
+    return isValid;
   };
 
   const handlePasswordChange = async (e: React.FormEvent) => {
@@ -207,15 +214,16 @@ export default function TeacherProfile() {
         throw new Error(data.message || 'فشل تغيير كلمة المرور');
       }
 
-      alert('تم تغيير كلمة المرور بنجاح');
+      toast.success('تم تغيير كلمة المرور بنجاح');
       setFormData(prev => ({
         ...prev,
         currentPassword: '',
         newPassword: '',
         confirmPassword: '',
       }));
+      setErrors({});
     } catch (err: any) {
-      alert(err.message || 'حدث خطأ أثناء تغيير كلمة المرور');
+      toast.error(err.message || 'حدث خطأ أثناء تغيير كلمة المرور');
     }
   };
 
@@ -385,8 +393,13 @@ export default function TeacherProfile() {
                     type="password"
                     value={formData.currentPassword}
                     onChange={(e) => setFormData({ ...formData, currentPassword: e.target.value })}
-                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white text-[0.95rem] font-tajawal"
+                    className={`w-full px-4 py-3 bg-white/5 border rounded-lg text-white text-[0.95rem] font-tajawal ${
+                      errors.currentPassword ? 'border-red-500/50' : 'border-white/10'
+                    }`}
                   />
+                  {errors.currentPassword && (
+                    <p className="text-red-500 text-xs mt-1">{errors.currentPassword}</p>
+                  )}
                 </div>
 
                 <div>
@@ -397,8 +410,13 @@ export default function TeacherProfile() {
                     type="password"
                     value={formData.newPassword}
                     onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
-                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white text-[0.95rem] font-tajawal"
+                    className={`w-full px-4 py-3 bg-white/5 border rounded-lg text-white text-[0.95rem] font-tajawal ${
+                      errors.newPassword ? 'border-red-500/50' : 'border-white/10'
+                    }`}
                   />
+                  {errors.newPassword && (
+                    <p className="text-red-500 text-xs mt-1">{errors.newPassword}</p>
+                  )}
                   {formData.newPassword && (
                     <div className="mt-2 flex gap-1 h-1">
                       {[...Array(4)].map((_, i) => (
@@ -432,13 +450,16 @@ export default function TeacherProfile() {
                     value={formData.confirmPassword}
                     onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                     className={`w-full px-4 py-3 bg-white/5 border rounded-lg text-white text-[0.95rem] font-tajawal ${
-                      formData.confirmPassword && formData.newPassword !== formData.confirmPassword
+                      errors.confirmPassword || (formData.confirmPassword && formData.newPassword !== formData.confirmPassword)
                         ? 'border-red-500/50'
                         : formData.confirmPassword && formData.newPassword === formData.confirmPassword
                         ? 'border-green-500/50'
                         : 'border-white/10'
                     }`}
                   />
+                  {errors.confirmPassword && (
+                    <p className="text-red-500 text-xs mt-1">{errors.confirmPassword}</p>
+                  )}
                   {formData.confirmPassword && (
                     <p className={`text-xs mt-1 ${
                       formData.newPassword === formData.confirmPassword ? 'text-green-500' : 'text-red-500'
