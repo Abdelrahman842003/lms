@@ -128,6 +128,7 @@ export default function StudentProfilePage() {
       const response = await uploadAvatar(file);
       if (response.success && response.data?.url) {
         setAvatarUrl(response.data.url);
+        toast.success('تم تحديث الصورة الشخصية بنجاح');
       }
     } catch (err: any) {
       toast.error(err.message || 'فشل رفع الصورة');
