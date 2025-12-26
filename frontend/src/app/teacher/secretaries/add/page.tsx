@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { secretaryService } from '@/services/secretaryService';
 import { getTeacherPermissions, Permission } from '@/services/roles';
 import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
 
 export default function AddSecretaryPage() {
   const { user } = useAuth();
@@ -15,6 +16,8 @@ export default function AddSecretaryPage() {
   const [availablePermissions, setAvailablePermissions] = useState<Permission[]>([]);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isCustomPermissions, setIsCustomPermissions] = useState(false);
+  const [isCheckingPhone, setIsCheckingPhone] = useState(false);
+  const [existingSecretary, setExistingSecretary] = useState<any>(null);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -27,23 +30,9 @@ export default function AddSecretaryPage() {
     fetchPermissions();
   }, []);
 
-  // Auto-generate password when name and phone are provided
-  useEffect(() => {
-    if (formData.name && formData.phone) {
-      const nameSlug = formData.name.trim().toLowerCase().replace(/\s+/g, '-');
-      const generatedPassword = `${nameSlug}${formData.phone}`;
-      
-      setFormData(prev => ({
-        ...prev,
-        password: generatedPassword
-      }));
-    }
-  }, [formData.name, formData.phone]);
-
   const fetchPermissions = async () => {
     try {
       const response = await getTeacherPermissions();
-      // Safely extract permissions array handling different response structures
       const permissionsList = Array.isArray(response.data) 
         ? response.data 
         : (Array.isArray(response) ? response : []);
@@ -57,12 +46,50 @@ export default function AddSecretaryPage() {
     }
   };
 
+  const checkPhone = async (phone: string) => {
+    if (!phone || phone.length < 11) return;
+    
+    setIsCheckingPhone(true);
+    try {
+      const response = await secretaryService.checkPhone(phone);
+      if (response.exists && response.secretary) {
+        setExistingSecretary(response.secretary);
+        setFormData(prev => ({
+          ...prev,
+          name: response.secretary.name,
+          // Keep password empty or whatever, it won't be used
+        }));
+        toast.success('هذا السكرتير موجود بالفعل، سيتم إضافته لقائمتك');
+      } else {
+        setExistingSecretary(null);
+        // Don't clear name if user already typed it
+      }
+    } catch (error) {
+      console.error('Failed to check phone:', error);
+    } finally {
+      setIsCheckingPhone(false);
+    }
+  };
+
   const validateForm = () => {
     const errors: Record<string, string> = {};
 
     if (!formData.name.trim()) errors.name = 'الاسم مطلوب';
-    if (!formData.phone.trim()) errors.phone = 'رقم الهاتف مطلوب';
-    if (!formData.password || formData.password.length < 6) errors.password = 'كلمة المرور مطلوبة (6 أحرف على الأقل)';
+    
+    if (!formData.phone.trim()) {
+      errors.phone = 'رقم الهاتف مطلوب';
+    } else if (!/^01[0125][0-9]{8}$/.test(formData.phone)) {
+      errors.phone = 'رقم الهاتف يجب أن يكون رقم مصري صحيح';
+    }
+
+    // Password is required only if it's a NEW secretary
+    if (!existingSecretary) {
+      if (!formData.password) {
+        errors.password = 'كلمة المرور مطلوبة';
+      } else if (formData.password.length < 6) {
+        errors.password = 'كلمة المرور يجب أن تكون 6 أحرف على الأقل';
+      }
+    }
 
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -83,7 +110,6 @@ export default function AddSecretaryPage() {
 
     setIsSubmitting(true);
     try {
-      // If custom permissions is NOT enabled, assign ALL available permissions
       const permissionsToSubmit = isCustomPermissions 
         ? formData.permissions 
         : availablePermissions.map(p => p.name);
@@ -92,10 +118,12 @@ export default function AddSecretaryPage() {
         ...formData,
         permissions: permissionsToSubmit
       });
+      toast.success(existingSecretary ? 'تم إضافة السكرتير بنجاح' : 'تم إنشاء حساب السكرتير بنجاح');
       router.push('/teacher/secretaries');
     } catch (error: any) {
       console.error('Failed to create secretary:', error);
       setFormErrors({ submit: error.message || 'فشل إضافة السكرتير' });
+      toast.error(error.message || 'فشل إضافة السكرتير');
     } finally {
       setIsSubmitting(false);
     }
@@ -124,53 +152,72 @@ export default function AddSecretaryPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
+              <label htmlFor="phone" className="block text-gray-light mb-2 text-sm">رقم الهاتف <span className="text-red-500">*</span></label>
+              <div className="relative">
+                <input
+                  type="tel"
+                  id="phone"
+                  className={`w-full p-3 bg-white/5 border rounded-lg text-white focus:ring-1 outline-none transition-all ${
+                    formErrors.phone ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-white/10 focus:border-primary focus:ring-primary'
+                  }`}
+                  value={formData.phone}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/[^0-9]/g, '');
+                    setFormData({ ...formData, phone: value });
+                    if (value.length === 11) {
+                        checkPhone(value);
+                    } else {
+                        setExistingSecretary(null);
+                    }
+                  }}
+                  onBlur={() => checkPhone(formData.phone)}
+                  placeholder="أدخل رقم الهاتف"
+                  disabled={isSubmitting}
+                />
+                {isCheckingPhone && (
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                    <i className="fas fa-spinner fa-spin text-primary"></i>
+                  </div>
+                )}
+              </div>
+              {formErrors.phone && <span className="text-red-500 text-sm mt-1 block">{formErrors.phone}</span>}
+            </div>
+
+            <div>
               <label htmlFor="name" className="block text-gray-light mb-2 text-sm">الاسم <span className="text-red-500">*</span></label>
               <input
                 type="text"
                 id="name"
                 className={`w-full p-3 bg-white/5 border rounded-lg text-white focus:ring-1 outline-none transition-all ${
                   formErrors.name ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-white/10 focus:border-primary focus:ring-primary'
-                }`}
+                } ${existingSecretary ? 'opacity-70 cursor-not-allowed' : ''}`}
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="أدخل اسم السكرتير"
-                disabled={isSubmitting}
+                disabled={isSubmitting || !!existingSecretary}
+                readOnly={!!existingSecretary}
               />
               {formErrors.name && <span className="text-red-500 text-sm mt-1 block">{formErrors.name}</span>}
+              {existingSecretary && <span className="text-green-500 text-xs mt-1 block">تم العثور على حساب موجود بهذا الاسم</span>}
             </div>
 
-            <div>
-              <label htmlFor="phone" className="block text-gray-light mb-2 text-sm">رقم الهاتف <span className="text-red-500">*</span></label>
-              <input
-                type="tel"
-                id="phone"
-                className={`w-full p-3 bg-white/5 border rounded-lg text-white focus:ring-1 outline-none transition-all ${
-                  formErrors.phone ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-white/10 focus:border-primary focus:ring-primary'
-                }`}
-                value={formData.phone}
-                onChange={(e) => {
-                  const value = e.target.value.replace(/[^0-9]/g, '');
-                  setFormData({ ...formData, phone: value });
-                }}
-                placeholder="أدخل رقم الهاتف"
-                disabled={isSubmitting}
-              />
-              {formErrors.phone && <span className="text-red-500 text-sm mt-1 block">{formErrors.phone}</span>}
-            </div>
-
-
-
-            <div>
-              <label htmlFor="password" className="block text-gray-light mb-2 text-sm">كلمة المرور (تلقائي)</label>
-              <input
-                type="text"
-                id="password"
-                className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white/50 cursor-not-allowed"
-                value={formData.password}
-                readOnly
-                disabled
-              />
-            </div>
+            {!existingSecretary && (
+              <div className="animate-fadeIn">
+                <label htmlFor="password" className="block text-gray-light mb-2 text-sm">كلمة المرور <span className="text-red-500">*</span></label>
+                <input
+                  type="text"
+                  id="password"
+                  className={`w-full p-3 bg-white/5 border rounded-lg text-white focus:ring-1 outline-none transition-all ${
+                    formErrors.password ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-white/10 focus:border-primary focus:ring-primary'
+                  }`}
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  placeholder="أدخل كلمة المرور"
+                  disabled={isSubmitting}
+                />
+                {formErrors.password && <span className="text-red-500 text-sm mt-1 block">{formErrors.password}</span>}
+              </div>
+            )}
 
             <div className="md:col-span-2 mt-5">
               <div className="flex items-center justify-between mb-4 px-1">

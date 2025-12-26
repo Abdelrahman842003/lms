@@ -70,7 +70,9 @@ class Teacher extends Authenticatable
 
     public function secretaries()
     {
-        return $this->hasMany(Secretary::class);
+        return $this->belongsToMany(Secretary::class, 'secretary_teacher')
+            ->withPivot('permissions')
+            ->withTimestamps();
     }
 
     public function lectures()

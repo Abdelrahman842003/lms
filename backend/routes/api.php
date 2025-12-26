@@ -106,6 +106,7 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureTeacherNotSuspende
     Route::post('/lectures/{lecture}/end', [\App\Http\Controllers\Teacher\LectureController::class, 'endLecture']);
     
     // Secretary Management
+    Route::post('secretaries/check-phone', [\App\Http\Controllers\Teacher\SecretaryController::class, 'checkPhone']);
     Route::put('secretaries/{secretary}/permissions', [\App\Http\Controllers\Teacher\SecretaryController::class, 'updatePermissions']);
     Route::put('secretaries/{secretary}/toggle-status', [\App\Http\Controllers\Teacher\SecretaryController::class, 'toggleStatus']);
     Route::apiResource('secretaries', \App\Http\Controllers\Teacher\SecretaryController::class);

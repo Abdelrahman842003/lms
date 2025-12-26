@@ -39,6 +39,14 @@ export const secretaryService = {
     return fetchApi(`/teacher/secretaries/${id}`);
   },
 
+  // Check phone
+  checkPhone: async (phone: string) => {
+    return fetchApi('/teacher/secretaries/check-phone', {
+      method: 'POST',
+      body: JSON.stringify({ phone }),
+    });
+  },
+
   // Create secretary
   createSecretary: async (data: CreateSecretaryData) => {
     return fetchApi('/teacher/secretaries', {

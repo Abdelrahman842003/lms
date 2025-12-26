@@ -38,9 +38,11 @@ class Secretary extends Authenticatable
         ];
     }
 
-    public function teacher()
+    public function teachers()
     {
-        return $this->belongsTo(Teacher::class);
+        return $this->belongsToMany(Teacher::class, 'secretary_teacher')
+            ->withPivot('permissions')
+            ->withTimestamps();
     }
 
     public function scopeFilter($query, array $filters)
