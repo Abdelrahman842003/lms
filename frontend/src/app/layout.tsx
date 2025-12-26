@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next'
+import { cache } from 'react'
 import '@/styles/globals.css'
 import '@/styles/components.css'
 import '@/styles/layout.css'
@@ -10,16 +11,16 @@ import InstallPrompt from '@/components/InstallPrompt'
 import MaintenanceGuard from '@/components/MaintenanceGuard';
 
 // Fetch SEO settings from API
-async function getSeoSettings() {
+const getSeoSettings = cache(async () => {
     try {
         const apiUrl = process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL;
         
         // Add timeout to prevent build hangs
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
+        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
 
         const res = await fetch(`${apiUrl}/public-settings`, {
-            next: { revalidate: 0 },
+            next: { revalidate: 60 },
             signal: controller.signal
         });
         
@@ -32,7 +33,7 @@ async function getSeoSettings() {
         console.warn('Failed to fetch SEO settings (using defaults):', error);
         return null;
     }
-}
+});
 
 export async function generateMetadata(): Promise<Metadata> {
     const settings = await getSeoSettings();

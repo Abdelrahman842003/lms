@@ -3,33 +3,24 @@
 import React, { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { fetchApi } from '@/services/authService';
 import MaintenancePage from '@/app/maintenance/page';
 
-export default function MaintenanceGuard({ children }: { children: React.ReactNode }) {
-  const [isMaintenance, setIsMaintenance] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+export default function MaintenanceGuard({ 
+  children, 
+  maintenanceMode 
+}: { 
+  children: React.ReactNode;
+  maintenanceMode: boolean;
+}) {
   const { user, isLoading: isAuthLoading } = useAuth();
   const pathname = usePathname();
+  const [isMaintenance, setIsMaintenance] = useState(maintenanceMode);
 
   useEffect(() => {
-    const checkMaintenance = async () => {
-      try {
-        const data = await fetchApi('/public-settings', { method: 'GET' });
-        if (data) {
-          setIsMaintenance(data.maintenanceMode === 'true');
-        }
-      } catch (error) {
-        console.error('Failed to check maintenance status:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    setIsMaintenance(maintenanceMode);
+  }, [maintenanceMode]);
 
-    checkMaintenance();
-  }, []);
-
-  if (isLoading || isAuthLoading) {
+  if (isAuthLoading) {
     return (
       <div className="min-h-screen bg-[#0f111a] flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
