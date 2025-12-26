@@ -45,14 +45,8 @@ class SecretaryPermissionsSeeder extends Seeder
             'edit groups',
             'delete groups',
             
-            // Payments
-            'view payments',
-            'create payments',
-            'edit payments',
-            'delete payments',
-            'verify payments',
-            
-            // Reports & Dashboard
+       
+           // Reports & Dashboard
             'view dashboard',
             'view reports',
             
