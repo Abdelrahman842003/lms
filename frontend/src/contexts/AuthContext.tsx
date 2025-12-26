@@ -93,7 +93,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               location: response.user.location,
               gender: response.user.gender,
               education_type: response.user.education_type,
-              teachers: response.teachers, // Add teachers list to user object
+              teachers: response.teachers || response.user.teachers,
+              permissions: response.user.permissions,
             };
 
             setUser(userData);
@@ -246,7 +247,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         location: response.user.location,
         gender: response.user.gender,
         education_type: response.user.education_type,
-        teachers: response.teachers,
+        teachers: response.teachers || response.user.teachers,
+        permissions: response.user.permissions, // Secretary permissions
       };
 
       setUser(userData);

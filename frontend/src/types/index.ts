@@ -13,6 +13,7 @@ export interface User {
     gender?: string
     education_type?: string
     teachers?: any[]
+    permissions?: string[]  // Secretary/Admin permissions
 }
 
 // Education platform specific types

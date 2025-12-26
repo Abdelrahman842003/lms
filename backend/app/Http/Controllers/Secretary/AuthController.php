@@ -60,7 +60,7 @@ class AuthController extends Controller
     public function me(Request $request)
     {
         return $this->successResponse([
-            'user' => new SecretaryResource($request->user()->load('teacher')),
+            'user' => new SecretaryResource($request->user()->load('teachers')),
             'role' => 'secretary'
         ]);
     }

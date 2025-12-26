@@ -6,13 +6,14 @@ import { usePathname } from 'next/navigation';
 import { SidebarItem } from '@/types/dashboard';
 
 interface SidebarProps {
-  role: 'admin' | 'teacher' | 'student';
+  role: 'admin' | 'teacher' | 'student' | 'secretary';
   user: {
     name: string;
     avatar?: string;
   };
   isOpen: boolean;
   onClose: () => void;
+  permissions?: string[];
 }
 
 const getSidebarItems = (role: string): SidebarItem[] => {
@@ -197,13 +198,72 @@ const getRoleLabel = (role: string): string => {
     admin: 'مدير النظام',
     teacher: 'مدرس',
     student: 'طالب',
+    secretary: 'سكرتير',
   };
   return labels[role] || role;
 };
 
-export const Sidebar: React.FC<SidebarProps> = ({ role, user, isOpen, onClose }) => {
+// Map menu items to required permissions
+const permissionMap: Record<string, string[]> = {
+  students: ['view students', 'create students', 'edit students', 'delete students'],
+  secretaries: [], // Secretaries cannot manage other secretaries
+  groups: ['view groups', 'create groups', 'edit groups', 'delete groups'],
+  grades: ['view grades', 'create grades', 'edit grades', 'delete grades'],
+  lectures: ['view lectures', 'create lectures', 'edit lectures', 'delete lectures'],
+  exams: ['view exams', 'create exams', 'edit exams', 'delete exams'],
+  notifications: ['send notifications'],
+  attendance: ['manage lecture attendance'],
+  reports: ['view reports'],
+  dashboard: ['view dashboard'],
+};
+
+const filterItemsByPermissions = (items: SidebarItem[], permissions: string[]): SidebarItem[] => {
+  return items.filter(item => {
+    // Dashboard is always visible
+    if (item.id === 'dashboard') return true;
+    
+    // Check if user has ANY of the required permissions for this menu
+    const requiredPerms = permissionMap[item.id] || [];
+    if (requiredPerms.length === 0 && !item.children) return false;
+    
+    const hasPermission = requiredPerms.some(perm => permissions.includes(perm));
+    
+    if (item.children) {
+      // For parent items, check if any child should be visible
+      const visibleChildren = item.children.filter(child => {
+        const childPerms = permissionMap[child.id] || [];
+        return childPerms.some(perm => permissions.includes(perm));
+      });
+      if (visibleChildren.length > 0) {
+        return { ...item, children: visibleChildren };
+      }
+      return false;
+    }
+    
+    return hasPermission;
+  }).map(item => {
+    if (item.children) {
+      const visibleChildren = item.children.filter(child => {
+        const childPerms = permissionMap[child.id] || [];
+        return childPerms.some(perm => permissions.includes(perm));
+      });
+      return { ...item, children: visibleChildren };
+    }
+    return item;
+  });
+};
+
+export const Sidebar: React.FC<SidebarProps> = ({ role, user, isOpen, onClose, permissions = [] }) => {
   const pathname = usePathname();
-  const items = getSidebarItems(role);
+  
+  // Get items based on role, then filter by permissions for secretary
+  let items = getSidebarItems(role === 'secretary' ? 'teacher' : role);
+  if (role === 'secretary' && permissions.length > 0) {
+    items = filterItemsByPermissions(items, permissions);
+  } else if (role === 'secretary') {
+    // No permissions = only dashboard
+    items = items.filter(item => item.id === 'dashboard');
+  }
   const [expandedItems, setExpandedItems] = React.useState<string[]>([]);
 
   const toggleExpand = (id: string, e: React.MouseEvent) => {

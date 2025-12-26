@@ -218,11 +218,67 @@ const getRoleLabel = (role: string): string => {
   return labels[role] || role;
 };
 
+// Map menu items to required permissions for secretary
+const secretaryPermissionMap: Record<string, string[]> = {
+  students: ['view students', 'create students', 'edit students', 'delete students'],
+  secretaries: [], // Secretaries cannot manage other secretaries
+  groups: ['view groups', 'create groups', 'edit groups', 'delete groups'],
+  grades: ['view grades', 'create grades', 'edit grades', 'delete grades'],
+  lectures: ['view lectures', 'create lectures', 'edit lectures', 'delete lectures'],
+  exams: ['view exams', 'create exams', 'edit exams', 'delete exams'],
+  notifications: ['send notifications'],
+  gamification: ['view dashboard'],
+  reports: ['view reports'],
+  dashboard: ['view dashboard'],
+  persons: ['view students', 'create students', 'edit students', 'delete students'],
+  academics: ['view groups', 'view grades'],
+};
+
+const filterNavItemsByPermissions = (items: SidebarItem[], permissions: string[]): SidebarItem[] => {
+  return items.filter(item => {
+    // Dashboard is always visible
+    if (item.id === 'dashboard') return true;
+    
+    const requiredPerms = secretaryPermissionMap[item.id] || [];
+    
+    if (item.children) {
+      // For parent items, check if any child should be visible
+      const visibleChildren = item.children.filter(child => {
+        if (child.id === 'secretaries') return false; // Never show secretaries to secretary
+        const childPerms = secretaryPermissionMap[child.id] || [];
+        return childPerms.length === 0 || childPerms.some(perm => permissions.includes(perm));
+      });
+      return visibleChildren.length > 0;
+    }
+    
+    // Check if user has ANY of the required permissions
+    return requiredPerms.length === 0 || requiredPerms.some(perm => permissions.includes(perm));
+  }).map(item => {
+    if (item.children) {
+      const visibleChildren = item.children.filter(child => {
+        if (child.id === 'secretaries') return false;
+        const childPerms = secretaryPermissionMap[child.id] || [];
+        return childPerms.length === 0 || childPerms.some(perm => permissions.includes(perm));
+      });
+      return { ...item, children: visibleChildren };
+    }
+    return item;
+  });
+};
+
 export const Navbar: React.FC<NavbarProps> = ({ role, user, onMenuClick }) => {
   const pathname = usePathname();
   const router = useRouter();
-  const { logout } = useAuth();
-  const items = getNavItems(role);
+  const { logout, user: authUser } = useAuth();
+  
+  // Get nav items and filter for secretary
+  let items = getNavItems(role);
+  if (role === 'secretary' && authUser?.permissions) {
+    items = filterNavItemsByPermissions(items, authUser.permissions);
+  } else if (role === 'secretary') {
+    // No permissions = only dashboard
+    items = items.filter(item => item.id === 'dashboard');
+  }
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [activeSubMenu, setActiveSubMenu] = useState<string | null>(null);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
