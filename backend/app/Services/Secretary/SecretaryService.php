@@ -16,7 +16,20 @@ class SecretaryService
             return false;
         }
 
-        if ($secretary->teacher->is_suspended) {
+        // Check if the secretary is linked to any active (non-suspended) teachers
+        $teachers = $secretary->teachers()->get();
+        
+        if ($teachers->isEmpty()) {
+            // No teachers linked - cannot login
+            throw ValidationException::withMessages([
+                'phone' => ['عذراً، لا يمكن الدخول للنظام حالياً. يرجى التواصل مع الإدارة للمساعدة.'],
+            ]);
+        }
+
+        // Check if all teachers are suspended
+        $allSuspended = $teachers->every(fn ($teacher) => $teacher->is_suspended);
+        
+        if ($allSuspended) {
             throw ValidationException::withMessages([
                 'phone' => ['عذراً، لا يمكن الدخول للنظام حالياً. يرجى التواصل مع الإدارة للمساعدة.'],
             ]);
@@ -26,7 +39,7 @@ class SecretaryService
 
         return [
             'token' => $token,
-            'user' => $secretary->load('teacher'),
+            'user' => $secretary->load('teachers'),
         ];
     }
 }
