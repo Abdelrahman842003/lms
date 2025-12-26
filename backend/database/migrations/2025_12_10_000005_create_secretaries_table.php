@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('secretaries', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('teacher_id')->constrained('teachers')->cascadeOnDelete();
+            $table->foreignUuid('teacher_id')->nullable()->constrained('teachers')->cascadeOnDelete();
             $table->string('name');
             $table->string('phone')->nullable()->unique();
             $table->string('password');

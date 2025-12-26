@@ -18,18 +18,11 @@ return new class extends Migration
             $table->unique(['secretary_id', 'teacher_id']);
         });
 
-        // Make teacher_id nullable in secretaries table as it's now a many-to-many relationship
-        Schema::table('secretaries', function (Blueprint $table) {
-            $table->foreignUuid('teacher_id')->nullable()->change();
-        });
     }
 
     public function down(): void
     {
         Schema::dropIfExists('secretary_teacher');
         
-        Schema::table('secretaries', function (Blueprint $table) {
-            $table->foreignUuid('teacher_id')->nullable(false)->change();
-        });
     }
 };
