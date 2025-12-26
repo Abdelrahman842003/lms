@@ -162,9 +162,33 @@ export default function AddSecretaryPage() {
                   }`}
                   value={formData.phone}
                   onChange={(e) => {
-                    const value = e.target.value.replace(/[^0-9]/g, '');
+                    let value = e.target.value.replace(/[^0-9]/g, '');
+                    if (value.length > 11) value = value.slice(0, 11);
+                    
                     setFormData({ ...formData, phone: value });
-                    if (value.length === 11) {
+
+                    // Real-time validation
+                    if (value.length > 0) {
+                      if (!value.startsWith('01')) {
+                        setFormErrors(prev => ({ ...prev, phone: 'يجب أن يبدأ الرقم ب 01' }));
+                      } else if (value.length === 11 && !/^01[0125][0-9]{8}$/.test(value)) {
+                        setFormErrors(prev => ({ ...prev, phone: 'رقم الهاتف غير صحيح' }));
+                      } else {
+                        setFormErrors(prev => {
+                          const newErrors = { ...prev };
+                          delete newErrors.phone;
+                          return newErrors;
+                        });
+                      }
+                    } else {
+                        setFormErrors(prev => {
+                          const newErrors = { ...prev };
+                          delete newErrors.phone;
+                          return newErrors;
+                        });
+                    }
+
+                    if (value.length === 11 && /^01[0125][0-9]{8}$/.test(value)) {
                         checkPhone(value);
                     } else {
                         setExistingSecretary(null);
