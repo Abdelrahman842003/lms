@@ -161,8 +161,8 @@ export default function StudentProfilePage() {
     if (!formData.newPassword) {
       newErrors.newPassword = 'يرجى إدخال كلمة المرور الجديدة';
       isValid = false;
-    } else if (formData.newPassword.length < 6) {
-      newErrors.newPassword = 'كلمة المرور يجب أن تكون 6 أحرف على الأقل';
+    } else if (formData.newPassword.length < 8) {
+      newErrors.newPassword = 'كلمة المرور يجب أن تكون 8 أحرف على الأقل';
       isValid = false;
     }
 

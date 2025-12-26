@@ -40,7 +40,10 @@ services:
       - frontend
       - reverb
     networks:
-      - lms_network
+      lms_network:
+        aliases:
+          - neetaq.com
+          - www.neetaq.com
 
   # MySQL Database
   mysql:
@@ -274,6 +277,7 @@ services:
       - NEXT_PUBLIC_REVERB_HOST=${REVERB_PUBLIC_HOST}
       - NEXT_PUBLIC_REVERB_PORT=443
       - NEXT_PUBLIC_REVERB_SCHEME=https
+      - NODE_TLS_REJECT_UNAUTHORIZED=0
     depends_on:
       - octane
       - reverb

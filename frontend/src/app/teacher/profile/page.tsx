@@ -140,10 +140,30 @@ export default function TeacherProfile() {
     setIsEditing(false);
   };
 
-  const handlePasswordChange = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const validatePasswordForm = () => {
+    if (!formData.currentPassword) {
+      alert('يرجى إدخال كلمة المرور الحالية');
+      return false;
+    }
+    if (!formData.newPassword) {
+      alert('يرجى إدخال كلمة المرور الجديدة');
+      return false;
+    }
+    if (formData.newPassword.length < 8) {
+      alert('كلمة المرور الجديدة يجب أن تكون 8 أحرف على الأقل');
+      return false;
+    }
     if (formData.newPassword !== formData.confirmPassword) {
       alert('كلمات المرور غير متطابقة');
+      return false;
+    }
+    return true;
+  };
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validatePasswordForm()) {
       return;
     }
 
