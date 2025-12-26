@@ -174,7 +174,7 @@ export default function TeacherLecturesPage() {
       setShowQRModal(true);
     } catch (error) {
       console.error('Failed to generate QR code:', error);
-      alert('Failed to generate QR code');
+      toast.error('Failed to generate QR code');
     }
   };
 

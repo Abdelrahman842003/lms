@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { getTeacherStudents, deleteTeacherStudent, activateTeacherStudent, toggleTeacherStudentStatus, getStudentActivationDetails } from '@/services/authService';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import toast from 'react-hot-toast';
 
 export default function StudentsPage() {
   const { user } = useAuth();
@@ -147,7 +148,7 @@ export default function StudentsPage() {
               fetchStudents();
             } catch (error) {
               console.error('Failed to activate student:', error);
-              alert('فشل تفعيل الاشتراك');
+              toast.error('فشل تفعيل الاشتراك');
             } finally {
               setIsProcessing(false);
             }
@@ -161,7 +162,7 @@ export default function StudentsPage() {
       setModalOpen(true);
     } catch (error) {
       console.error('Failed to get activation details:', error);
-      alert('فشل جلب تفاصيل الاشتراك');
+      toast.error('فشل جلب تفاصيل الاشتراك');
       setIsProcessing(false);
     }
   };
@@ -180,11 +181,12 @@ export default function StudentsPage() {
           fetchStudents();
         } catch (error) {
           console.error('Failed to delete student:', error);
-          alert('فشل حذف الطالب');
+          toast.error('فشل حذف الطالب');
         } finally {
           setIsProcessing(false);
         }
       },
+      showCancel: true,
     });
     setModalOpen(true);
   };
@@ -204,11 +206,12 @@ export default function StudentsPage() {
           fetchStudents();
         } catch (error) {
           console.error('Failed to toggle student status:', error);
-          alert(`فشل ${isDisabling ? 'تعطيل' : 'تفعيل'} الحساب`);
+          toast.error(`فشل ${isDisabling ? 'تعطيل' : 'تفعيل'} الحساب`);
         } finally {
           setIsProcessing(false);
         }
       },
+      showCancel: true,
     });
     setModalOpen(true);
   };

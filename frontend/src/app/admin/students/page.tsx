@@ -8,6 +8,7 @@ import { DataTable } from '@/components/dashboard/DataTable';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { getStudents, updateStudent, createStudent, getTeachers } from '@/services/authService';
+import toast from 'react-hot-toast';
 
 // ... existing imports
 
@@ -157,10 +158,10 @@ function StudentsPage() {
       await updateStudent(selectedStudent.id, editFormData);
       setIsEditModalOpen(false);
       fetchStudents(currentPage); // Refresh data
-      alert('تم تحديث بيانات الطالب بنجاح');
+      toast.success('تم تحديث بيانات الطالب بنجاح');
     } catch (error: any) {
       console.error('Failed to update student', error);
-      alert(error.message || 'فشل تحديث البيانات');
+      toast.error(error.message || 'فشل تحديث البيانات');
     } finally {
       setIsLoading(false);
     }
@@ -181,10 +182,10 @@ function StudentsPage() {
         teacher_id: ''
       });
       fetchStudents(1); // Refresh data and go to first page
-      alert('تم إضافة الطالب بنجاح');
+      toast.success('تم إضافة الطالب بنجاح');
     } catch (error: any) {
       console.error('Failed to create student', error);
-      alert(error.message || 'فشل إضافة الطالب');
+      toast.error(error.message || 'فشل إضافة الطالب');
     } finally {
       setIsLoading(false);
     }

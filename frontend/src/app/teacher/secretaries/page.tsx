@@ -10,6 +10,7 @@ import { getSecretaries, deleteSecretary, toggleSecretaryStatus } from '@/servic
 import { Secretary } from '@/services/secretaryService';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import toast from 'react-hot-toast';
 
 export default function SecretariesPage() {
   const { user } = useAuth();
@@ -69,7 +70,7 @@ export default function SecretariesPage() {
           fetchSecretaries();
         } catch (error) {
           console.error('Failed to delete secretary:', error);
-          alert('فشل حذف السكرتير');
+          toast.error('فشل حذف السكرتير');
         } finally {
           setIsProcessing(false);
         }
@@ -93,7 +94,7 @@ export default function SecretariesPage() {
           fetchSecretaries();
         } catch (error) {
           console.error('Failed to toggle secretary status:', error);
-          alert(`فشل ${isDisabling ? 'تعطيل' : 'تفعيل'} الحساب`);
+          toast.error(`فشل ${isDisabling ? 'تعطيل' : 'تفعيل'} الحساب`);
         } finally {
           setIsProcessing(false);
         }
