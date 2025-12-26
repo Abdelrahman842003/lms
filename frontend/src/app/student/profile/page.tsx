@@ -35,6 +35,21 @@ export default function StudentProfilePage() {
     confirmPassword: '',
   });
 
+  const [passwordStrength, setPasswordStrength] = React.useState(0);
+
+  const calculatePasswordStrength = (password: string) => {
+    let strength = 0;
+    if (password.length >= 8) strength += 1;
+    if (password.match(/[a-z]/) && password.match(/[A-Z]/)) strength += 1;
+    if (password.match(/\d/)) strength += 1;
+    if (password.match(/[^a-zA-Z\d]/)) strength += 1;
+    return strength;
+  };
+
+  React.useEffect(() => {
+    setPasswordStrength(calculatePasswordStrength(formData.newPassword));
+  }, [formData.newPassword]);
+
   // Update form data when user data is available
   React.useEffect(() => {
     if (user) {
@@ -478,6 +493,28 @@ export default function StudentProfilePage() {
                     error={errors.newPassword}
                     className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white text-[0.95rem] font-tajawal !text-center"
                   />
+                  {formData.newPassword && (
+                    <div className="mt-2 flex gap-1 h-1 px-1">
+                      {[...Array(4)].map((_, i) => (
+                        <div
+                          key={i}
+                          className={`h-full flex-1 rounded-full transition-all duration-300 ${
+                            i < passwordStrength
+                              ? passwordStrength <= 2
+                                ? 'bg-red-500'
+                                : passwordStrength === 3
+                                ? 'bg-yellow-500'
+                                : 'bg-green-500'
+                              : 'bg-white/10'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  )}
+                  <div className="text-xs text-gray-400 mt-1 flex justify-between px-1">
+                    <span>ضعيف</span>
+                    <span>قوي</span>
+                  </div>
                 </div>
 
                 <div>
@@ -488,8 +525,21 @@ export default function StudentProfilePage() {
                     value={formData.confirmPassword}
                     onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                     error={errors.confirmPassword}
-                    className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white text-[0.95rem] font-tajawal !text-center"
+                    className={`w-full p-3 bg-white/5 border rounded-lg text-white text-[0.95rem] font-tajawal !text-center ${
+                      formData.confirmPassword && formData.newPassword !== formData.confirmPassword
+                        ? 'border-red-500/50'
+                        : formData.confirmPassword && formData.newPassword === formData.confirmPassword
+                        ? 'border-green-500/50'
+                        : 'border-white/10'
+                    }`}
                   />
+                  {formData.confirmPassword && (
+                    <p className={`text-xs mt-1 text-center ${
+                      formData.newPassword === formData.confirmPassword ? 'text-green-500' : 'text-red-500'
+                    }`}>
+                      {formData.newPassword === formData.confirmPassword ? 'كلمات المرور متطابقة' : 'كلمات المرور غير متطابقة'}
+                    </p>
+                  )}
                 </div>
               </div>
 
