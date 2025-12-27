@@ -70,6 +70,25 @@ interface ApiResponse<T> {
 }
 
 /**
+ * Get default Arabic error message for HTTP status codes
+ */
+function getDefaultArabicError(status: number): string {
+  const errors: Record<number, string> = {
+    400: 'طلب غير صالح',
+    401: 'غير مصرح لك بالدخول. يرجى تسجيل الدخول.',
+    403: 'غير مصرح لك بهذا الإجراء',
+    404: 'العنصر المطلوب غير موجود',
+    405: 'طريقة الطلب غير مسموحة',
+    419: 'انتهت صلاحية الجلسة. يرجى إعادة تحميل الصفحة.',
+    422: 'البيانات المدخلة غير صالحة',
+    429: 'تم تجاوز الحد المسموح من الطلبات. يرجى الانتظار.',
+    500: 'حدث خطأ في الخادم. يرجى المحاولة لاحقاً.',
+    503: 'الخدمة غير متاحة حالياً. يرجى المحاولة لاحقاً.',
+  };
+  return errors[status] || 'حدث خطأ غير متوقع';
+}
+
+/**
  * Helper to get cookie by name
  */
 function getCookie(name: string): string | null {
@@ -231,7 +250,9 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}, skip
 
       console.error('API Error:', response.status, error);
 
-      const errorWithStatus = new Error(error.message || 'API request failed') as any;
+      // استخدام الرسالة العربية من الـ API إذا وجدت، وإلا استخدام الرسالة الافتراضية
+      const arabicMessage = error.message || getDefaultArabicError(response.status);
+      const errorWithStatus = new Error(arabicMessage) as any;
       errorWithStatus.status = response.status;
       errorWithStatus.errors = error.errors;
       

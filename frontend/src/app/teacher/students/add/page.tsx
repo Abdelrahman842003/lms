@@ -439,7 +439,7 @@ export default function AddStudentPage() {
                   const value = e.target.value.replace(/[^0-9]/g, '');
                   setFormData({ ...formData, parent_phone: value });
                 }}
-                placeholder="01020313432"
+                placeholder="010xxxxxxxx"
                 disabled={isSubmitting || !isPhoneChecked || existingStudentFound}
                 readOnly={existingStudentFound}
               />
