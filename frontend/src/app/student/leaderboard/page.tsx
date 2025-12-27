@@ -136,7 +136,7 @@ export default function StudentLeaderboardPage() {
   const mockUser = {
     name: user?.name || 'طالب',
     email: (user as any)?.email || '',
-    avatar: (user as any)?.avatar_key || '/images/avatars/default-avatar.png',
+    avatar: user?.avatar || '/images/avatars/default-avatar.png',
     role: 'student' as const,
   };
 

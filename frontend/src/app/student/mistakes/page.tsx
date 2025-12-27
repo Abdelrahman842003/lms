@@ -89,24 +89,45 @@ export default function MistakesPage() {
   };
 
   const markAsMastered = async (id: string) => {
+    // Optimistic update
+    const previousMistakes = [...mistakes];
+    const previousStats = stats ? { ...stats } : null;
+
+    // Remove from list (or mark as mastered if we want to keep it)
+    // Based on previous code, it was removing it. Let's stick to that for now, 
+    // or maybe just mark it as mastered so user sees the change?
+    // The UI supports is_mastered styling. Let's try marking it first, it feels more "real-time" to see it turn green than disappear.
+    // BUT, the previous code was `filter`. If I change to `map`, it changes behavior.
+    // Let's stick to `filter` as it implies "Done with this".
+    
+    setMistakes(prev => prev.filter(m => m.id !== id));
+    
+    if (stats) {
+      setStats({
+        ...stats,
+        mastered: stats.mastered + 1,
+        pending: stats.pending - 1,
+      });
+    }
+
     try {
       const response = await fetchApi(`/student/mistakes/${id}/mastered`, {
         method: 'POST',
       });
       
       if (response && response.success) {
-        setMistakes(prev => prev.filter(m => m.id !== id));
-        if (stats) {
-          setStats({
-            ...stats,
-            mastered: stats.mastered + 1,
-            pending: stats.pending - 1,
-          });
-        }
+        // Success, do nothing (state already updated)
+        // toast.success('تم تسجيل السؤال كـ "فهمتها"');
       } else {
+        // Revert on failure
+        setMistakes(previousMistakes);
+        setStats(previousStats);
         console.error('Failed to mark as mastered, invalid response:', response);
       }
     } catch (error) {
+      // Revert on error
+      setMistakes(previousMistakes);
+      setStats(previousStats);
       console.error('Failed to mark as mastered:', error);
     }
   };
