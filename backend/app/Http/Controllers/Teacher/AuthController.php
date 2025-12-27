@@ -79,4 +79,19 @@ class AuthController extends Controller
 
         return $this->successResponse(null, 'تم تغيير كلمة المرور بنجاح');
     }
+
+    public function updateProfile(Request $request)
+    {
+        $user = $request->user();
+
+        $validated = $request->validate([
+            'name' => 'sometimes|required|string|max:255',
+        ]);
+
+        $user->update($validated);
+
+        return $this->successResponse([
+            'user' => new TeacherResource($user->fresh()),
+        ], 'تم تحديث الملف الشخصي بنجاح');
+    }
 }

@@ -78,6 +78,7 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureTeacherNotSuspende
     Route::post('/logout', [TeacherAuthController::class, 'logout']);
     Route::get('/me', [TeacherAuthController::class, 'me']);
     Route::post('/change-password', [TeacherAuthController::class, 'changePassword']);
+    Route::put('/profile', [TeacherAuthController::class, 'updateProfile']);
     
     // Dashboard routes
     Route::get('/dashboard/stats', [\App\Http\Controllers\Teacher\DashboardController::class, 'getStats']);

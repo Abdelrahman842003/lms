@@ -155,9 +155,40 @@ export default function TeacherProfile() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement profile update
-    // TODO: Implement profile update API call
-    setIsEditing(false);
+    
+    try {
+      const token = getAuthToken();
+      const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const API_URL = BASE_URL.endsWith('/api') ? BASE_URL : `${BASE_URL}/api`;
+
+      const response = await fetch(`${API_URL}/teacher/profile`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.name,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'فشل تحديث الملف الشخصي');
+      }
+
+      toast.success('تم تحديث الملف الشخصي بنجاح');
+      setIsEditing(false);
+      
+      // Update local user state if needed
+      if (data.data?.user) {
+        // You could dispatch an event or update context here
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'فشل تحديث الملف الشخصي');
+    }
   };
 
   const validatePasswordForm = () => {
