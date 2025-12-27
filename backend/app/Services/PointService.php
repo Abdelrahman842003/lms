@@ -132,7 +132,11 @@ class PointService
                     return [
                         'rank' => $index + 1,
                         'student_id' => $item->student_id,
-                        'student' => $item->student,
+                        'student' => [
+                            'id' => $item->student->id,
+                            'name' => $item->student->name,
+                            'avatar_key' => $item->student->avatar_key ? app(\App\Services\Media\ImageService::class)->getUrl($item->student->avatar_key) : null,
+                        ],
                         'weekly_points' => (int) $item->weekly_points,
                     ];
                 });
@@ -159,7 +163,11 @@ class PointService
              return [
                 'rank' => $rank,
                 'student_id' => $item->student_id,
-                'student' => $item->student,
+                'student' => [
+                    'id' => $item->student->id,
+                    'name' => $item->student->name,
+                    'avatar_key' => $item->student->avatar_key ? app(\App\Services\Media\ImageService::class)->getUrl($item->student->avatar_key) : null,
+                ],
                 'weekly_points' => (int) $item->weekly_points,
              ];
         });
@@ -188,7 +196,11 @@ class PointService
                 return [
                     'rank' => $index + 1,
                     'student_id' => $item->student_id,
-                    'student' => $item->student,
+                    'student' => [
+                        'id' => $item->student->id,
+                        'name' => $item->student->name,
+                        'avatar_key' => $item->student->avatar_key ? app(\App\Services\Media\ImageService::class)->getUrl($item->student->avatar_key) : null,
+                    ],
                     'total_points' => (int) $item->total_points,
                 ];
             });
@@ -212,7 +224,11 @@ class PointService
                     return [
                         'rank' => $index + 1,
                         'student_id' => $item->student_id,
-                        'student' => $item->student,
+                        'student' => [
+                            'id' => $item->student->id,
+                            'name' => $item->student->name,
+                            'avatar_key' => $item->student->avatar_key ? app(\App\Services\Media\ImageService::class)->getUrl($item->student->avatar_key) : null,
+                        ],
                         'total_points' => $item->total_points,
                     ];
                 });
@@ -236,7 +252,11 @@ class PointService
              return [
                 'rank' => $rank,
                 'student_id' => $item->student_id,
-                'student' => $item->student,
+                'student' => [
+                    'id' => $item->student->id,
+                    'name' => $item->student->name,
+                    'avatar_key' => $item->student->avatar_key ? app(\App\Services\Media\ImageService::class)->getUrl($item->student->avatar_key) : null,
+                ],
                 'total_points' => $item->total_points,
              ];
         });
