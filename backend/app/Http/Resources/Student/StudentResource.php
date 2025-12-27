@@ -21,9 +21,7 @@ class StudentResource extends JsonResource
             'education_type' => $this->education_type,
             'username' => $this->phone,
             'role' => 'student',
-            'teacher' => new TeacherResource($this->whenLoaded('teachers', function() {
-                return $this->teachers->first();
-            })),
+            'teachers' => TeacherResource::collection($this->whenLoaded('teachers')),
             'joined' => $this->created_at->format('Y-m-d'),
             'created_at' => $this->created_at->toIso8601String(),
             'avatar' => $this->avatar_key ? app(\App\Services\Media\ImageService::class)->getUrl($this->avatar_key) : null,

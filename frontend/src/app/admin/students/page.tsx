@@ -191,6 +191,15 @@ function StudentsPage() {
     }
   };
 
+  const [isTeachersModalOpen, setIsTeachersModalOpen] = useState(false);
+  const [selectedStudentTeachers, setSelectedStudentTeachers] = useState<any[]>([]);
+
+  const handleShowTeachers = (student: any) => {
+    setSelectedStudentTeachers(student.teachers || []);
+    setSelectedStudent(student);
+    setIsTeachersModalOpen(true);
+  };
+
   const columns = [
     {
       key: 'id',
@@ -223,11 +232,22 @@ function StudentsPage() {
       className: 'hidden md:table-cell'
     },
     { 
-      key: 'teacher', 
+      key: 'teachers', 
       label: 'المدرس', 
-      sortable: true,
+      sortable: false,
       className: 'hidden lg:table-cell',
-      render: (teacher: any) => teacher?.name || '-'
+      render: (_: any, row: any) => {
+        const count = row.teachers?.length || 0;
+        return (
+          <button 
+            onClick={() => handleShowTeachers(row)}
+            className={`badge ${count > 0 ? 'badge-primary cursor-pointer hover:bg-primary/80' : 'badge-ghost'}`}
+            disabled={count === 0}
+          >
+            {count} {count === 1 ? 'مدرس' : 'مدرسين'}
+          </button>
+        );
+      }
     },
     { 
       key: 'status', 
@@ -402,6 +422,54 @@ function StudentsPage() {
         />
       </DashboardCard>
 
+      {/* Teachers List Modal */}
+      {isTeachersModalOpen && selectedStudent && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[1000] p-4">
+          <div className="bg-[#1a1f37] p-5 rounded-2xl w-full max-w-md border border-white/10 relative shadow-2xl">
+            <button 
+              onClick={() => setIsTeachersModalOpen(false)}
+              className="absolute top-4 left-4 bg-transparent border-none text-gray-400 text-lg cursor-pointer hover:text-white transition-colors"
+            >
+              <i className="fas fa-times"></i>
+            </button>
+
+            <h2 className="text-white mb-6 text-xl font-bold border-b border-white/10 pb-4">
+              مدرسين الطالب: {selectedStudent.name}
+            </h2>
+
+            <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+              {selectedStudentTeachers.length > 0 ? (
+                selectedStudentTeachers.map((teacher: any) => (
+                  <div key={teacher.id} className="bg-white/5 p-3 rounded-xl flex items-center gap-3 border border-white/5 hover:border-primary/30 transition-colors">
+                    <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">
+                      {teacher.name.charAt(0)}
+                    </div>
+                    <div>
+                      <h3 className="text-white font-semibold">{teacher.name}</h3>
+                      <p className="text-gray-400 text-xs">تاريخ الانضمام: {new Date(teacher.created_at).toLocaleDateString('ar-EG')}</p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-gray-400">
+                  <i className="fas fa-chalkboard-teacher text-4xl mb-3 opacity-50"></i>
+                  <p>لا يوجد مدرسين</p>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-white/10">
+              <button 
+                className="btn btn-primary w-full"
+                onClick={() => setIsTeachersModalOpen(false)}
+              >
+                إغلاق
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Add Student Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[1000] p-4">
@@ -505,10 +573,18 @@ function StudentsPage() {
             </div>
 
             <div className="grid grid-cols-2 gap-4 mb-6">
-              <div className="bg-white/5 p-4 rounded-xl text-center border border-white/5">
+              <div 
+                className="bg-white/5 p-4 rounded-xl text-center border border-white/5 cursor-pointer hover:border-primary/30 transition-colors"
+                onClick={() => {
+                  setIsDetailsModalOpen(false);
+                  handleShowTeachers(selectedStudent);
+                }}
+              >
                 <i className="fas fa-chalkboard-teacher text-xl text-primary mb-2"></i>
-                <h3 className="text-white text-lg mb-0.5 font-semibold">{selectedStudent.teacher?.name || '-'}</h3>
-                <p className="text-gray-400 text-xs m-0">المدرس</p>
+                <h3 className="text-white text-lg mb-0.5 font-semibold">
+                  {selectedStudent.teachers?.length || 0}
+                </h3>
+                <p className="text-gray-400 text-xs m-0">المدرسين</p>
               </div>
               <div className="bg-white/5 p-4 rounded-xl text-center border border-white/5">
                 <i className="fas fa-phone text-xl text-warning mb-2"></i>
