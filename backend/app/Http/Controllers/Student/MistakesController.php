@@ -70,7 +70,10 @@ class MistakesController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'تم تسجيل السؤال كـ "فهمتها" ✓',
+            'data' => [
+                'success' => true,
+                'message' => 'تم تسجيل السؤال كـ "فهمتها" ✓',
+            ],
         ]);
     }
 }
