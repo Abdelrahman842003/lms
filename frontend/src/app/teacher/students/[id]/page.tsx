@@ -85,7 +85,7 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
     >
       {/* Stats Grid */}
       {/* Stats Grid */}
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
         <StatCard
           title="حضور الشهر"
           value={`${student.attendance_stats?.present_count || 0} / ${student.attendance_stats?.total_lectures || 0}`}
@@ -117,7 +117,7 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
 
       {/* Header Section */}
       {/* Header Section */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary text-2xl overflow-hidden">
             {student.avatar ? (
@@ -131,7 +131,7 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
             <p className="m-0 text-gray-light text-sm">{student.phone} | {student.group_name}</p>
           </div>
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-2 sm:gap-3 w-full sm:w-auto">
           <button onClick={() => router.back()} className="btn btn-outline">
             <i className="fas fa-arrow-right"></i>
             <span>عودة</span>
@@ -150,7 +150,7 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
         title="البيانات الأساسية"
         icon="fas fa-info-circle"
       >
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
 
 
           <div className="bg-[#1a1f37] flex justify-between items-center p-5 rounded-xl border border-white/5 hover:border-primary/50 transition-colors">
