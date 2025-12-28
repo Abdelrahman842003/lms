@@ -65,15 +65,30 @@ class ParentSummaryController extends Controller
             // 1. Attendance Data
             $lecturesInPeriod = Lecture::where('teacher_id', $teacherId)
                 ->whereBetween('start_time', [$startDate, $endDate])
-                ->pluck('id');
-
-            $attendanceRecords = Attendance::whereIn('lecture_id', $lecturesInPeriod)
-                ->where('student_id', $student->id)
                 ->get();
 
-            $presentCount = $attendanceRecords->where('status', 'present')->count();
-            $absentCount = $attendanceRecords->where('status', 'absent')->count();
-            $totalLectures = $lecturesInPeriod->count();
+            $lectureIds = $lecturesInPeriod->pluck('id');
+
+            $attendanceRecords = Attendance::whereIn('lecture_id', $lectureIds)
+                ->where('student_id', $student->id)
+                ->get()
+                ->keyBy('lecture_id');
+
+            // Build lecture list with attendance status
+            $lectureList = $lecturesInPeriod->map(function ($lecture) use ($attendanceRecords) {
+                $attendance = $attendanceRecords->get($lecture->id);
+                return [
+                    'id' => $lecture->id,
+                    'title' => $lecture->title,
+                    'date' => $lecture->start_time->format('Y-m-d'),
+                    'time' => $lecture->start_time->format('H:i'),
+                    'status' => $attendance ? $attendance->status : 'not_recorded',
+                ];
+            });
+
+            $presentCount = $lectureList->where('status', 'present')->count();
+            $absentCount = $lectureList->where('status', 'absent')->count();
+            $totalLectures = $lectureList->count();
             $attendanceRate = $totalLectures > 0 ? round(($presentCount / $totalLectures) * 100) : 0;
 
             // 2. Exams Data
@@ -137,6 +152,7 @@ class ParentSummaryController extends Controller
                     'present' => $presentCount,
                     'absent' => $absentCount,
                     'rate' => $attendanceRate,
+                    'list' => $lectureList->values(),
                 ],
                 'exams' => [
                     'list' => $examsInPeriod->values(),
