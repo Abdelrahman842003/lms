@@ -205,6 +205,12 @@ const getNavItems = (role: string): SidebarItem[] => {
       icon: 'fas fa-bell',
       href: '/student/notifications',
     },
+    {
+      id: 'parent-summary',
+      label: 'ولي الأمر',
+      icon: 'fas fa-user-friends',
+      href: '/student/parent-summary',
+    },
   ];
 };
 

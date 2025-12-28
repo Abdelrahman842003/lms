@@ -196,6 +196,9 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureTeacherNotSuspende
     Route::post('payments/confirm', [\App\Http\Controllers\Student\PaymentConfirmationController::class, 'confirm']);
     Route::get('payments/pending', [\App\Http\Controllers\Student\PaymentConfirmationController::class, 'pending']);
     Route::get('payments/history', [\App\Http\Controllers\Student\PaymentConfirmationController::class, 'history']);
+
+    // Parent Summary (ولي الأمر)
+    Route::get('/parent-summary', [\App\Http\Controllers\Student\ParentSummaryController::class, 'index']);
 });
 
 // ============================================
