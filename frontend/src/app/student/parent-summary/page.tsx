@@ -306,12 +306,16 @@ export default function ParentSummaryPage() {
                       className="w-full py-3 bg-white/5 hover:bg-white/10 rounded-xl text-gray-400 hover:text-white transition-all flex items-center justify-center gap-2"
                     >
                       <span>{isExpanded ? 'إخفاء التفاصيل' : 'عرض التفاصيل'}</span>
-                      <i className={`fas fa-chevron-${isExpanded ? 'up' : 'down'}`}></i>
+                      <i className={`fas fa-chevron-down transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}></i>
                     </button>
                   </div>
 
-                  {/* Expandable Details */}
-                  {isExpanded && (
+                  {/* Expandable Details with Animation */}
+                  <div 
+                    className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                      isExpanded ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'
+                    }`}
+                  >
                     <div className="px-6 pb-6 border-t border-white/10 pt-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {/* Lectures List */}
@@ -385,7 +389,7 @@ export default function ParentSummaryPage() {
                         )}
                       </div>
                     </div>
-                  )}
+                  </div>
                 </div>
               );
             })}

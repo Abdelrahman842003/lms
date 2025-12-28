@@ -132,7 +132,7 @@ class ParentSummaryController extends Controller
             // 5. Subscription Status
             $subscriptionEnd = $enrollment->subscription_end;
             $isActive = $enrollment->is_active && ($subscriptionEnd === null || Carbon::parse($subscriptionEnd)->isFuture());
-            $daysLeft = $subscriptionEnd ? Carbon::now()->diffInDays(Carbon::parse($subscriptionEnd), false) : null;
+            $daysLeft = $subscriptionEnd ? (int) round(Carbon::now()->diffInDays(Carbon::parse($subscriptionEnd), false)) : null;
 
             $summary[] = [
                 'teacher' => [
