@@ -192,10 +192,6 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureTeacherNotSuspende
     Route::get('/mistakes', [\App\Http\Controllers\Student\MistakesController::class, 'index']);
     Route::post('/mistakes/{id}/mastered', [\App\Http\Controllers\Student\MistakesController::class, 'markAsMastered']);
 
-    // Payment Confirmation (Rate Limited)
-    Route::post('payments/confirm', [\App\Http\Controllers\Student\PaymentConfirmationController::class, 'confirm']);
-    Route::get('payments/pending', [\App\Http\Controllers\Student\PaymentConfirmationController::class, 'pending']);
-    Route::get('payments/history', [\App\Http\Controllers\Student\PaymentConfirmationController::class, 'history']);
 
     // Parent Summary (ولي الأمر)
     Route::get('/parent-summary', [\App\Http\Controllers\Student\ParentSummaryController::class, 'index']);
