@@ -81,6 +81,7 @@ export default function ParentSummaryPage() {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [period, setPeriod] = useState<'day' | 'month'>('day');
   const [expandedTeachers, setExpandedTeachers] = useState<Set<string>>(new Set());
+  const [selectedTeacherId, setSelectedTeacherId] = useState<string>('all');
 
   useEffect(() => {
     loadSummary();
@@ -188,6 +189,35 @@ export default function ParentSummaryPage() {
                 </button>
               </div>
             </div>
+            {/* Teacher Filter */}
+            {data && data.teachers.length > 1 && (
+              <div className="flex-1 min-w-[200px]">
+                <label className="block text-sm text-gray-400 mb-2">اختر مدرسك</label>
+                <select
+                  value={selectedTeacherId}
+                  onChange={(e) => {
+                    setSelectedTeacherId(e.target.value);
+                    if (e.target.value !== 'all') {
+                      // Scroll to the teacher card
+                      setTimeout(() => {
+                        const element = document.getElementById(`teacher-${e.target.value}`);
+                        if (element) {
+                          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                      }, 100);
+                    }
+                  }}
+                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:border-primary focus:outline-none"
+                >
+                  <option value="all" className="bg-gray-900">جميع المدرسين</option>
+                  {data.teachers.map((t) => (
+                    <option key={t.teacher.id} value={t.teacher.id} className="bg-gray-900">
+                      {t.teacher.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
         </div>
 
@@ -212,13 +242,16 @@ export default function ParentSummaryPage() {
         {/* Teacher Cards */}
         {!loading && data && data.teachers.length > 0 && (
           <div className="grid grid-cols-1 gap-6">
-            {data.teachers.map((teacher) => {
+            {data.teachers
+              .filter((t) => selectedTeacherId === 'all' || t.teacher.id === selectedTeacherId)
+              .map((teacher) => {
               const isExpanded = expandedTeachers.has(teacher.teacher.id);
               
               return (
                 <div
                   key={teacher.teacher.id}
-                  className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden"
+                  id={`teacher-${teacher.teacher.id}`}
+                  className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden scroll-mt-24"
                 >
                   {/* Teacher Header - Always Visible */}
                   <div className="p-6 flex items-center justify-between">
