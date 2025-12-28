@@ -83,9 +83,35 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
       role={user?.userType as 'teacher' | 'secretary' || 'teacher'}
       user={user || undefined}
     >
+      {/* Header Section */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary text-2xl overflow-hidden">
+            {student.avatar ? (
+              <img src={student.avatar} alt={student.name} className="w-full h-full object-cover" />
+            ) : (
+              <i className="fas fa-user-graduate"></i>
+            )}
+          </div>
+          <div>
+            <h2 className="text-xl sm:text-2xl font-bold text-white m-0">{student.name}</h2>
+            <p className="m-0 text-gray-light text-xs sm:text-sm">{student.phone} | {student.group_name}</p>
+          </div>
+        </div>
+        <div className="flex gap-2 sm:gap-3 w-full sm:w-auto">
+          <button onClick={() => router.back()} className="btn btn-outline flex-1 sm:flex-none text-sm sm:text-base">
+            <i className="fas fa-arrow-right"></i>
+            <span>عودة</span>
+          </button>
+          <Link href={`/teacher/students/${student.id}/edit`} className="btn btn-primary flex-1 sm:flex-none text-sm sm:text-base">
+            <i className="fas fa-edit"></i>
+            <span>تعديل الطالب</span>
+          </Link>
+        </div>
+      </div>
+
       {/* Stats Grid */}
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
         <StatCard
           title="حضور الشهر"
           value={`${student.attendance_stats?.present_count || 0} / ${student.attendance_stats?.total_lectures || 0}`}
@@ -111,36 +137,6 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
           suffix="%"
           variant="centered"
         />
-
-
-      </div>
-
-      {/* Header Section */}
-      {/* Header Section */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary text-2xl overflow-hidden">
-            {student.avatar ? (
-              <img src={student.avatar} alt={student.name} className="w-full h-full object-cover" />
-            ) : (
-              <i className="fas fa-user-graduate"></i>
-            )}
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold text-white m-0">{student.name}</h2>
-            <p className="m-0 text-gray-light text-sm">{student.phone} | {student.group_name}</p>
-          </div>
-        </div>
-        <div className="flex gap-2 sm:gap-3 w-full sm:w-auto">
-          <button onClick={() => router.back()} className="btn btn-outline">
-            <i className="fas fa-arrow-right"></i>
-            <span>عودة</span>
-          </button>
-          <Link href={`/teacher/students/${student.id}/edit`} className="btn btn-primary">
-            <i className="fas fa-edit"></i>
-            <span>تعديل الطالب</span>
-          </Link>
-        </div>
       </div>
 
       {/* Basic Data Section */}
