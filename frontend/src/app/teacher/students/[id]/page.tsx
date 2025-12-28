@@ -208,7 +208,7 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
       </DashboardCard>
 
       {/* Subscription History Section */}
-      <div className="mt-8">
+      <div className="mt-6 sm:mt-8">
         <DashboardCard
           title="سجل الاشتراكات"
           icon="fas fa-history"
@@ -218,43 +218,77 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
               <p className="text-gray-light">لا يوجد سجل اشتراكات</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-right">
-                <thead>
-                  <tr className="border-b border-white/10 text-gray-light text-sm">
-                    <th className="pb-4 font-medium">الشهر</th>
-                    <th className="pb-4 font-medium">المبلغ المستحق</th>
-                    <th className="pb-4 font-medium">المدفوع</th>
-                    <th className="pb-4 font-medium">المتبقي</th>
-                    <th className="pb-4 font-medium">الحالة</th>
-                  </tr>
-                </thead>
-                <tbody className="text-sm">
-                  {subscriptionHistory.map((item: any, index: number) => (
-                    <tr key={index} className="border-b border-white/5 last:border-0 hover:bg-white/[0.02] transition-colors">
-                      <td className="py-4 text-white">{item.month_name}</td>
-                      <td className="py-4 text-white">{item.amount_due} EGP</td>
-                      <td className="py-4 text-success">{item.amount_paid} EGP</td>
-                      <td className="py-4 text-danger">{item.amount_remaining} EGP</td>
-                      <td className="py-4">
-                        <span className={`badge ${
-                          item.status === 'paid' ? 'badge-success' : 
-                          item.status === 'partial' ? 'badge-warning' : 'badge-danger'
-                        }`}>
-                          {item.status_label}
-                        </span>
-                      </td>
+            <>
+              {/* Mobile Card Layout */}
+              <div className="block sm:hidden space-y-3">
+                {subscriptionHistory.map((item: any, index: number) => (
+                  <div key={index} className="bg-[#1a1f37] p-4 rounded-xl border border-white/5">
+                    <div className="flex justify-between items-center mb-3">
+                      <span className="text-white font-bold">{item.month_name}</span>
+                      <span className={`badge ${
+                        item.status === 'paid' ? 'badge-success' : 
+                        item.status === 'partial' ? 'badge-warning' : 'badge-danger'
+                      }`}>
+                        {item.status_label}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 text-xs">
+                      <div className="text-center">
+                        <div className="text-gray-light mb-1">المستحق</div>
+                        <div className="text-white font-medium">{item.amount_due}</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-gray-light mb-1">المدفوع</div>
+                        <div className="text-success font-medium">{item.amount_paid}</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-gray-light mb-1">المتبقي</div>
+                        <div className="text-danger font-medium">{item.amount_remaining}</div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop Table Layout */}
+              <div className="hidden sm:block overflow-x-auto">
+                <table className="w-full text-right">
+                  <thead>
+                    <tr className="border-b border-white/10 text-gray-light text-sm">
+                      <th className="pb-4 font-medium">الشهر</th>
+                      <th className="pb-4 font-medium">المبلغ المستحق</th>
+                      <th className="pb-4 font-medium">المدفوع</th>
+                      <th className="pb-4 font-medium">المتبقي</th>
+                      <th className="pb-4 font-medium">الحالة</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="text-sm">
+                    {subscriptionHistory.map((item: any, index: number) => (
+                      <tr key={index} className="border-b border-white/5 last:border-0 hover:bg-white/[0.02] transition-colors">
+                        <td className="py-4 text-white">{item.month_name}</td>
+                        <td className="py-4 text-white">{item.amount_due} EGP</td>
+                        <td className="py-4 text-success">{item.amount_paid} EGP</td>
+                        <td className="py-4 text-danger">{item.amount_remaining} EGP</td>
+                        <td className="py-4">
+                          <span className={`badge ${
+                            item.status === 'paid' ? 'badge-success' : 
+                            item.status === 'partial' ? 'badge-warning' : 'badge-danger'
+                          }`}>
+                            {item.status_label}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </DashboardCard>
       </div>
 
       {/* Exams History Section */}
-      <div className="mt-8">
+      <div className="mt-6 sm:mt-8">
         <DashboardCard
           title="سجل الامتحانات"
           icon="fas fa-file-alt"
@@ -264,44 +298,68 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
               <p className="text-gray-light">لا توجد امتحانات سابقة</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-right">
-                <thead>
-                  <tr className="border-b border-white/10 text-gray-light text-sm">
-                    <th className="pb-4 font-medium">الامتحان</th>
-                    <th className="pb-4 font-medium">النسبة</th>
-                    <th className="pb-4 font-medium">التاريخ</th>
-                    <th className="pb-4 font-medium">الحالة</th>
-                  </tr>
-                </thead>
-                <tbody className="text-sm">
-                  {student.exam_stats.results.map((exam: any, index: number) => (
-                    <tr key={index} className="border-b border-white/5 last:border-0 hover:bg-white/[0.02] transition-colors">
-                      <td className="py-4 text-white">
-                        <div>
-                          <div className="font-medium">{exam.exam_title}</div>
-                          <div className="text-xs text-gray-light mt-1">{exam.description || 'تفاصيل الامتحانات'}</div>
-                        </div>
-                      </td>
-                      <td className="py-4 text-white">
-                        <div className="flex items-center gap-2">
-                          <i className="fas fa-percent text-primary text-xs"></i>
-                          <span>{exam.percentage}%</span>
-                        </div>
-                      </td>
-                      <td className="py-4 text-gray-300">
-                        {new Date(exam.date).toLocaleDateString('ar-EG')}
-                      </td>
-                      <td className="py-4">
-                        <span className={`badge ${exam.percentage >= 50 ? 'badge-success' : 'badge-danger'}`}>
-                          {exam.percentage >= 50 ? 'ناجح' : 'راسب'}
-                        </span>
-                      </td>
+            <>
+              {/* Mobile Card Layout */}
+              <div className="block sm:hidden space-y-3">
+                {student.exam_stats.results.map((exam: any, index: number) => (
+                  <div key={index} className="bg-[#1a1f37] p-4 rounded-xl border border-white/5">
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex-1">
+                        <div className="text-white font-bold text-sm">{exam.exam_title}</div>
+                        <div className="text-xs text-gray-light mt-1">{new Date(exam.date).toLocaleDateString('ar-EG')}</div>
+                      </div>
+                      <span className={`badge ${exam.percentage >= 50 ? 'badge-success' : 'badge-danger'}`}>
+                        {exam.percentage >= 50 ? 'ناجح' : 'راسب'}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-center mt-3 py-2 bg-white/5 rounded-lg">
+                      <i className="fas fa-percent text-primary text-xs ml-2"></i>
+                      <span className="text-white text-lg font-bold">{exam.percentage}%</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop Table Layout */}
+              <div className="hidden sm:block overflow-x-auto">
+                <table className="w-full text-right">
+                  <thead>
+                    <tr className="border-b border-white/10 text-gray-light text-sm">
+                      <th className="pb-4 font-medium">الامتحان</th>
+                      <th className="pb-4 font-medium">النسبة</th>
+                      <th className="pb-4 font-medium">التاريخ</th>
+                      <th className="pb-4 font-medium">الحالة</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="text-sm">
+                    {student.exam_stats.results.map((exam: any, index: number) => (
+                      <tr key={index} className="border-b border-white/5 last:border-0 hover:bg-white/[0.02] transition-colors">
+                        <td className="py-4 text-white">
+                          <div>
+                            <div className="font-medium">{exam.exam_title}</div>
+                            <div className="text-xs text-gray-light mt-1">{exam.description || 'تفاصيل الامتحانات'}</div>
+                          </div>
+                        </td>
+                        <td className="py-4 text-white">
+                          <div className="flex items-center gap-2">
+                            <i className="fas fa-percent text-primary text-xs"></i>
+                            <span>{exam.percentage}%</span>
+                          </div>
+                        </td>
+                        <td className="py-4 text-gray-300">
+                          {new Date(exam.date).toLocaleDateString('ar-EG')}
+                        </td>
+                        <td className="py-4">
+                          <span className={`badge ${exam.percentage >= 50 ? 'badge-success' : 'badge-danger'}`}>
+                            {exam.percentage >= 50 ? 'ناجح' : 'راسب'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </DashboardCard>
       </div>
