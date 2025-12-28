@@ -207,11 +207,12 @@ export default function ParentSummaryPage() {
                       }, 100);
                     }
                   }}
-                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:border-primary focus:outline-none"
+                  className="w-full px-4 py-3 bg-[#1a1a2e] border border-white/10 rounded-xl text-white focus:border-primary focus:outline-none"
+                  style={{ backgroundColor: '#1a1a2e' }}
                 >
-                  <option value="all" className="bg-gray-900">جميع المدرسين</option>
+                  <option value="all" style={{ backgroundColor: '#1a1a2e' }}>جميع المدرسين</option>
                   {data.teachers.map((t) => (
-                    <option key={t.teacher.id} value={t.teacher.id} className="bg-gray-900">
+                    <option key={t.teacher.id} value={t.teacher.id} style={{ backgroundColor: '#1a1a2e' }}>
                       {t.teacher.name}
                     </option>
                   ))}
