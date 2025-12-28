@@ -11,10 +11,11 @@ use Carbon\Carbon;
 
 class LectureAttendanceController extends Controller
 {
+    use \App\Traits\ResolvesTeacher;
     public function generateQrCode(Request $request, Lecture $lecture)
     {
         // Ensure the user is the teacher of this lecture
-        if ($lecture->teacher_id !== $request->user()->id) {
+        if ($lecture->teacher_id !== $this->getTeacherFromRequest($request)->id) {
             abort(403, 'Unauthorized');
         }
 
@@ -37,7 +38,7 @@ class LectureAttendanceController extends Controller
     public function recordAttendance(Request $request, Lecture $lecture)
     {
         // Ensure the user is the teacher of this lecture
-        if ($lecture->teacher_id !== $request->user()->id) {
+        if ($lecture->teacher_id !== $this->getTeacherFromRequest($request)->id) {
             return $this->errorResponse('Unauthorized', 403);
         }
 
@@ -66,7 +67,7 @@ class LectureAttendanceController extends Controller
         ]);
 
         $student = \App\Models\Student::find($studentId);
-        $student->notify(new \App\Notifications\StudentAttendanceNotification($lecture->title, $request->user()->name));
+        $student->notify(new \App\Notifications\StudentAttendanceNotification($lecture->title, $this->getTeacherFromRequest($request)->name));
 
         return $this->successResponse([
             'message' => 'تم تسجيل الحضور بنجاح',

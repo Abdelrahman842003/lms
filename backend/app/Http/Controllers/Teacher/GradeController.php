@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 
 class GradeController extends Controller
 {
+    use \App\Traits\ResolvesTeacher;
     protected $gradeService;
 
     public function __construct(GradeService $gradeService)
@@ -21,7 +22,7 @@ class GradeController extends Controller
 
     public function index(Request $request)
     {
-        $teacher = $request->user();
+        $teacher = $this->getTeacherFromRequest($request);
         $perPage = $request->input('per_page', 10);
         $filters = $request->only(['search']);
         $grades = $this->gradeService->getGrades($teacher, $perPage, $filters);
@@ -33,7 +34,7 @@ class GradeController extends Controller
 
     public function store(StoreGradeRequest $request)
     {
-        $teacher = $request->user();
+        $teacher = $this->getTeacherFromRequest($request);
         $grade = $this->gradeService->createGrade($teacher, $request->validated());
 
         return $this->successResponse([
@@ -44,7 +45,7 @@ class GradeController extends Controller
 
     public function update(UpdateGradeRequest $request, Grade $grade)
     {
-        if ($grade->teacher_id !== $request->user()->id) {
+        if ($grade->teacher_id !== $this->getTeacherFromRequest($request)->id) {
             return $this->errorResponse('Unauthorized', 403);
         }
 
@@ -58,7 +59,7 @@ class GradeController extends Controller
 
     public function destroy(Request $request, Grade $grade)
     {
-        if ($grade->teacher_id !== $request->user()->id) {
+        if ($grade->teacher_id !== $this->getTeacherFromRequest($request)->id) {
             return $this->errorResponse('Unauthorized', 403);
         }
 

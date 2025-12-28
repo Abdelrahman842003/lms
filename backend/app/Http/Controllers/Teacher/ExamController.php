@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Auth;
 
 class ExamController extends Controller
 {
+    use \App\Traits\ResolvesTeacher;
     protected $examService;
 
     public function __construct(ExamService $examService)
@@ -23,7 +24,7 @@ class ExamController extends Controller
     public function results(Exam $exam)
     {
         try {
-            if ($exam->teacher_id !== Auth::id()) {
+            if ($exam->teacher_id !== $this->getTeacherFromRequest(request())->id) {
                 return $this->errorResponse('Unauthorized', 403);
             }
 
@@ -55,7 +56,7 @@ class ExamController extends Controller
     {
         $perPage = $request->input('per_page', 10);
         $filters = $request->only(['search', 'date_from', 'date_to']);
-        $exams = $this->examService->getExams(Auth::user(), $perPage, $filters);
+        $exams = $this->examService->getExams($this->getTeacherFromRequest(request()), $perPage, $filters);
 
         return $this->successResponse(
             \App\Http\Resources\Teacher\ExamResource::collection($exams)->response()->getData(true)
@@ -65,7 +66,7 @@ class ExamController extends Controller
     public function store(StoreExamRequest $request)
     {
         try {
-            $exam = $this->examService->createExam(Auth::user(), $request->validated());
+            $exam = $this->examService->createExam($this->getTeacherFromRequest(request()), $request->validated());
 
             return $this->successResponse([
                 'exam' => $exam
@@ -77,7 +78,7 @@ class ExamController extends Controller
 
     public function show(Exam $exam)
     {
-        if ($exam->teacher_id !== Auth::id()) {
+        if ($exam->teacher_id !== $this->getTeacherFromRequest(request())->id) {
             return $this->errorResponse('Unauthorized', 403);
         }
 
@@ -88,7 +89,7 @@ class ExamController extends Controller
 
     public function update(UpdateExamRequest $request, Exam $exam)
     {
-        if ($exam->teacher_id !== Auth::id()) {
+        if ($exam->teacher_id !== $this->getTeacherFromRequest(request())->id) {
             return $this->errorResponse('Unauthorized', 403);
         }
 

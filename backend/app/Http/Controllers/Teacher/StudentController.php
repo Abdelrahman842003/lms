@@ -16,6 +16,8 @@ use Illuminate\Http\Request;
 
 class StudentController extends Controller
 {
+    use \App\Traits\ResolvesTeacher;
+
     protected $studentService;
     protected $generatePassword;
     protected $validateGroupGrade;
@@ -35,7 +37,12 @@ class StudentController extends Controller
      */
     public function index(Request $request)
     {
-        $teacher = $request->user();
+        $teacher = $this->getTeacherFromRequest($request);
+        
+        if (!$teacher) {
+            return $this->errorResponse('Teacher not found', 404);
+        }
+
         $perPage = $request->input('per_page', 10);
         $search = $request->input('search');
         $status = $request->input('status');
@@ -58,7 +65,7 @@ class StudentController extends Controller
         
         if ($student) {
             // Check if already enrolled with this teacher
-            $teacher = $request->user();
+            $teacher = $this->getTeacherFromRequest($request);
             $enrollment = Enrollment::where('student_id', $student->id)
                 ->where('teacher_id', $teacher->id)
                 ->first();
@@ -93,7 +100,7 @@ class StudentController extends Controller
     public function store(StoreStudentRequest $request)
     {
         try {
-            $teacher = $request->user();
+            $teacher = $this->getTeacherFromRequest($request);
             $validated = $request->validated();
 
             if (!$this->validateGroupGrade->execute($validated['group_id'] ?? null, $validated['grade_id'] ?? null)) {
@@ -132,7 +139,7 @@ class StudentController extends Controller
      */
     public function show(string $id)
     {
-        $teacher = request()->user();
+        $teacher = $this->getTeacherFromRequest(request());
         
         // Find enrollment by student_id
         $enrollment = Enrollment::with(['student', 'grade', 'group'])
@@ -156,7 +163,7 @@ class StudentController extends Controller
      */
     public function update(UpdateStudentRequest $request, string $id)
     {
-        $teacher = $request->user();
+        $teacher = $this->getTeacherFromRequest($request);
         
         $enrollment = Enrollment::with(['student'])
             ->where('teacher_id', $teacher->id)
@@ -200,7 +207,7 @@ class StudentController extends Controller
      */
     public function destroy(string $id)
     {
-        $teacher = request()->user();
+        $teacher = $this->getTeacherFromRequest(request());
         
         $enrollment = Enrollment::where('teacher_id', $teacher->id)
             ->where('student_id', $id)
@@ -218,7 +225,7 @@ class StudentController extends Controller
      */
     public function statistics(Request $request)
     {
-        $teacher = $request->user();
+        $teacher = $this->getTeacherFromRequest($request);
         $stats = $this->studentService->getStatistics($teacher);
 
         return $this->successResponse($stats);
@@ -229,7 +236,7 @@ class StudentController extends Controller
      */
     public function updatePermissions(UpdatePermissionsRequest $request, string $id)
     {
-        $teacher = $request->user();
+        $teacher = $this->getTeacherFromRequest($request);
         
         $enrollment = Enrollment::with('student')
             ->where('teacher_id', $teacher->id)
@@ -249,7 +256,7 @@ class StudentController extends Controller
      */
     public function toggleStatus(Request $request, string $id)
     {
-        $teacher = $request->user();
+        $teacher = $this->getTeacherFromRequest($request);
         
         $enrollment = Enrollment::where('teacher_id', $teacher->id)
             ->where('student_id', $id)
@@ -268,7 +275,7 @@ class StudentController extends Controller
      */
     public function activationDetails(Request $request, string $id)
     {
-        $teacher = $request->user();
+        $teacher = $this->getTeacherFromRequest($request);
         
         $enrollment = Enrollment::with(['student', 'grade', 'group'])
             ->where('teacher_id', $teacher->id)
@@ -285,7 +292,7 @@ class StudentController extends Controller
      */
     public function activate(Request $request, string $id)
     {
-        $teacher = $request->user();
+        $teacher = $this->getTeacherFromRequest($request);
         
         $enrollment = Enrollment::where('teacher_id', $teacher->id)
             ->where('student_id', $id)

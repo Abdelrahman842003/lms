@@ -11,12 +11,13 @@ use Illuminate\Support\Facades\DB;
 
 class PaymentLogController extends Controller
 {
+    use \App\Traits\ResolvesTeacher;
     /**
      * List all payments for the teacher
      */
     public function index(Request $request)
     {
-        $teacher = $request->user();
+        $teacher = $this->getTeacherFromRequest($request);
         $perPage = $request->input('per_page', 20);
 
         $query = PaymentLog::forTeacher($teacher->id)
@@ -52,7 +53,7 @@ class PaymentLogController extends Controller
      */
     public function pending(Request $request)
     {
-        $teacher = $request->user();
+        $teacher = $this->getTeacherFromRequest($request);
 
         $payments = PaymentLog::pending()
             ->forTeacher($teacher->id)
@@ -77,7 +78,7 @@ class PaymentLogController extends Controller
             'client_side_uuid' => 'required|uuid',
         ]);
 
-        $teacher = $request->user();
+        $teacher = $this->getTeacherFromRequest($request);
 
         // Idempotency check
         $existing = PaymentLog::where('client_side_uuid', $validated['client_side_uuid'])->first();
@@ -138,7 +139,7 @@ class PaymentLogController extends Controller
             'payments.*.notes' => 'nullable|string|max:500',
         ]);
 
-        $teacher = $request->user();
+        $teacher = $this->getTeacherFromRequest($request);
         $results = ['success' => [], 'errors' => []];
 
         foreach ($validated['payments'] as $paymentData) {
@@ -210,7 +211,7 @@ class PaymentLogController extends Controller
      */
     public function show(Request $request, string $id)
     {
-        $teacher = $request->user();
+        $teacher = $this->getTeacherFromRequest($request);
 
         $payment = PaymentLog::forTeacher($teacher->id)
             ->with(['student:id,name,phone', 'enrollment'])
@@ -226,7 +227,7 @@ class PaymentLogController extends Controller
      */
     public function cancel(Request $request, string $id)
     {
-        $teacher = $request->user();
+        $teacher = $this->getTeacherFromRequest($request);
 
         $payment = PaymentLog::forTeacher($teacher->id)
             ->where('status', 'pending')
@@ -244,7 +245,7 @@ class PaymentLogController extends Controller
      */
     public function statistics(Request $request)
     {
-        $teacher = $request->user();
+        $teacher = $this->getTeacherFromRequest($request);
 
         $stats = [
             'total' => PaymentLog::forTeacher($teacher->id)->count(),

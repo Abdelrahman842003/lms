@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 
 class NotificationController extends Controller
 {
+    use \App\Traits\ResolvesTeacher;
     protected $notificationService;
 
     public function __construct(NotificationService $notificationService)
@@ -20,7 +21,7 @@ class NotificationController extends Controller
 
     public function index()
     {
-        $teacher = Auth::user();
+        $teacher = $this->getTeacherFromRequest(request());
         
         $notifications = SentNotification::where('teacher_id', $teacher->id)
             ->orderBy('created_at', 'desc')
@@ -38,7 +39,7 @@ class NotificationController extends Controller
 
     public function store(SendNotificationRequest $request)
     {
-        $teacher = Auth::user();
+        $teacher = $this->getTeacherFromRequest(request());
         $validated = $request->validated();
 
         $recipients = $this->notificationService->getRecipients(
@@ -73,7 +74,7 @@ class NotificationController extends Controller
     }
     public function markAsRead($id)
     {
-        $teacher = Auth::user();
+        $teacher = $this->getTeacherFromRequest(request());
         $notification = $teacher->notifications()->where('id', $id)->first();
 
         if ($notification) {

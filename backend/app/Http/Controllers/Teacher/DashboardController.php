@@ -10,9 +10,10 @@ use App\Models\Lecture;
 
 class DashboardController extends Controller
 {
+    use \App\Traits\ResolvesTeacher;
     public function getStats(Request $request)
     {
-        $teacher = $request->user();
+        $teacher = $this->getTeacherFromRequest($request);
 
         $stats = CacheService::getTeacherDashboardStats($teacher->id, function () use ($teacher) {
             // Get total students
@@ -69,7 +70,7 @@ class DashboardController extends Controller
 
     public function getRecentStudents(Request $request)
     {
-        $teacher = $request->user();
+        $teacher = $this->getTeacherFromRequest($request);
         $limit = $request->input('limit', 5);
 
         $enrollments = \App\Models\Enrollment::where('teacher_id', $teacher->id)
@@ -85,7 +86,7 @@ class DashboardController extends Controller
 
     public function getUpcomingLectures(Request $request)
     {
-        $teacher = $request->user();
+        $teacher = $this->getTeacherFromRequest($request);
         $limit = $request->input('limit', 4);
 
         $lectures = $teacher->lectures()

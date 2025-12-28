@@ -8,12 +8,13 @@ use Illuminate\Http\Request;
 
 class SyncErrorController extends Controller
 {
+    use \App\Traits\ResolvesTeacher;
     /**
      * List all sync errors for the teacher
      */
     public function index(Request $request)
     {
-        $teacher = $request->user();
+        $teacher = $this->getTeacherFromRequest($request);
         $perPage = $request->input('per_page', 20);
 
         $query = SyncError::forUser($teacher->id);
@@ -44,7 +45,7 @@ class SyncErrorController extends Controller
      */
     public function show(Request $request, string $id)
     {
-        $teacher = $request->user();
+        $teacher = $this->getTeacherFromRequest($request);
 
         $error = SyncError::forUser($teacher->id)->findOrFail($id);
 
@@ -62,7 +63,7 @@ class SyncErrorController extends Controller
             'notes' => 'nullable|string|max:1000',
         ]);
 
-        $teacher = $request->user();
+        $teacher = $this->getTeacherFromRequest($request);
 
         $error = SyncError::forUser($teacher->id)
             ->unresolved()
@@ -81,7 +82,7 @@ class SyncErrorController extends Controller
      */
     public function unresolvedCount(Request $request)
     {
-        $teacher = $request->user();
+        $teacher = $this->getTeacherFromRequest($request);
 
         $count = SyncError::forUser($teacher->id)->unresolved()->count();
 
@@ -101,7 +102,7 @@ class SyncErrorController extends Controller
             'notes' => 'nullable|string|max:1000',
         ]);
 
-        $teacher = $request->user();
+        $teacher = $this->getTeacherFromRequest($request);
 
         $count = SyncError::forUser($teacher->id)
             ->unresolved()

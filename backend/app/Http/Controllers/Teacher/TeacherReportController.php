@@ -11,6 +11,7 @@ use Mpdf\Mpdf;
 
 class TeacherReportController extends Controller
 {
+    use \App\Traits\ResolvesTeacher;
     public function __construct(
         private ReportService $reportService
     ) {}
@@ -28,7 +29,7 @@ class TeacherReportController extends Controller
         $startDate = Carbon::parse($validated['start_date'])->startOfDay();
         $endDate = Carbon::parse($validated['end_date'])->endOfDay();
 
-        $teacher = $request->user();
+        $teacher = $this->getTeacherFromRequest($request);
         $report = $this->reportService->getTeacherReport($teacher, $startDate, $endDate);
 
         return $this->successResponse($report);
@@ -47,7 +48,7 @@ class TeacherReportController extends Controller
         $startDate = Carbon::parse($validated['start_date'])->startOfDay();
         $endDate = Carbon::parse($validated['end_date'])->endOfDay();
 
-        $teacher = $request->user();
+        $teacher = $this->getTeacherFromRequest($request);
         $report = $this->reportService->getTeacherReport($teacher, $startDate, $endDate);
 
         $pdfContent = $this->generatePdf($report, 'teacher', 'تقرير المدرس: ' . $teacher->name);

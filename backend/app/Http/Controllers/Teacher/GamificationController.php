@@ -12,6 +12,7 @@ use Illuminate\Validation\Rule;
 
 class GamificationController extends Controller
 {
+    use \App\Traits\ResolvesTeacher;
     public function __construct(
         private PointService $pointService
     ) {}
@@ -21,7 +22,7 @@ class GamificationController extends Controller
      */
     public function leaderboard(Request $request): JsonResponse
     {
-        $teacher = $request->user();
+        $teacher = $this->getTeacherFromRequest($request);
         $perPage = $request->input('per_page', 15);
         
         $weeklyLeaderboard = $this->pointService->getWeeklyLeaderboardPaginated($teacher->id, $perPage);
@@ -41,7 +42,7 @@ class GamificationController extends Controller
      */
     public function settings(Request $request): JsonResponse
     {
-        $teacher = $request->user();
+        $teacher = $this->getTeacherFromRequest($request);
         $settings = GamificationSetting::getOrCreate($teacher->id);
 
         return response()->json([

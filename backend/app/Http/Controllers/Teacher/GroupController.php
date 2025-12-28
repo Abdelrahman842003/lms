@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 
 class GroupController extends Controller
 {
+    use \App\Traits\ResolvesTeacher;
     protected $groupService;
 
     public function __construct(GroupService $groupService)
@@ -21,7 +22,7 @@ class GroupController extends Controller
 
     public function index(Request $request)
     {
-        $teacher = $request->user();
+        $teacher = $this->getTeacherFromRequest($request);
         $perPage = $request->input('per_page', 10);
         $filters = $request->only(['search', 'grade_id']);
         $groups = $this->groupService->getGroups($teacher, $perPage, $filters);
@@ -33,7 +34,7 @@ class GroupController extends Controller
 
     public function show(Request $request, Group $group)
     {
-        if ($group->teacher_id !== $request->user()->id) {
+        if ($group->teacher_id !== $this->getTeacherFromRequest($request)->id) {
             return $this->errorResponse('Unauthorized', 403);
         }
 
@@ -47,7 +48,7 @@ class GroupController extends Controller
 
     public function store(StoreGroupRequest $request)
     {
-        $teacher = $request->user();
+        $teacher = $this->getTeacherFromRequest($request);
         $group = $this->groupService->createGroup($teacher, $request->validated());
 
         return $this->successResponse([
@@ -58,7 +59,7 @@ class GroupController extends Controller
 
     public function update(UpdateGroupRequest $request, Group $group)
     {
-        if ($group->teacher_id !== $request->user()->id) {
+        if ($group->teacher_id !== $this->getTeacherFromRequest($request)->id) {
             return $this->errorResponse('Unauthorized', 403);
         }
 
@@ -72,7 +73,7 @@ class GroupController extends Controller
 
     public function destroy(Request $request, Group $group)
     {
-        if ($group->teacher_id !== $request->user()->id) {
+        if ($group->teacher_id !== $this->getTeacherFromRequest($request)->id) {
             return $this->errorResponse('Unauthorized', 403);
         }
 
