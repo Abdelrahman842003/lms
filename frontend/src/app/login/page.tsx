@@ -30,6 +30,8 @@ export default function LoginPage() {
     phone: false,
     password: false,
   });
+  const [countdown, setCountdown] = useState<number>(0);
+  const [isBanned, setIsBanned] = useState(false);
 
 
   // Redirect authenticated users to their dashboard
@@ -45,6 +47,26 @@ export default function LoginPage() {
       router.replace(dashboardPath);
     }
   }, [user, authLoading, router]);
+
+  // Countdown timer for ban
+  useEffect(() => {
+    if (!isBanned || countdown <= 0) {
+      return;
+    }
+
+    const timer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          setIsBanned(false);
+          setError('');
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [isBanned]); // Run when isBanned changes to true
 
   // Validation function - Real-time Egyptian phone validation
   const validateField = (name: string, value: string): string | undefined => {
@@ -129,13 +151,30 @@ export default function LoginPage() {
       
       // Show user-friendly error message
       if (err.status === 401) {
-        setError('بيانات الدخول غير صحيحة. تأكد من رقم الهاتف وكلمة المرور.');
+        // Check if there are remaining attempts info
+        const attemptsRemaining = err.data?.attempts_remaining;
+        if (attemptsRemaining !== undefined) {
+          setError(`بيانات الدخول غير صحيحة - متبقي ${attemptsRemaining} محاولات`);
+        } else {
+          setError('بيانات الدخول غير صحيحة. تأكد من رقم الهاتف وكلمة المرور.');
+        }
+        
+        // Notify if device was removed
+        if (err.data?.device_removed) {
+          setError(prev => prev + '\n(تم تسجيل خروجك من جهاز قديم)');
+        }
       } else if (err.status === 422) {
         // Check if there's a specific message for phone (suspension) or general errors
         const specificError = err.errors?.phone?.[0] || err.message;
         setError(specificError || 'البيانات المدخلة غير صحيحة.');
       } else if (err.status === 429) {
-        setError('تم تجاوز عدد المحاولات المسموحة. حاول مرة أخرى بعد قليل.');
+        // Handle login ban with countdown
+        const retryAfter = Math.max(0, err.data?.retry_after || 60);
+        if (retryAfter > 0) {
+          setIsBanned(true);
+          setCountdown(retryAfter);
+        }
+        setError(`تم حظرك مؤقتاً بسبب محاولات تسجيل دخول فاشلة متعددة`);
       } else {
         // Show the actual error message if available, otherwise generic
         setError(err.message || 'فشل تسجيل الدخول. يرجى المحاولة مرة أخرى.');
@@ -229,9 +268,20 @@ export default function LoginPage() {
 
               <form onSubmit={handleSubmit} className="flex flex-col" noValidate>
                 {error && (
-                  <div className="flex items-center gap-[10px] p-[12px_16px] bg-[#FF5B5B1A] border border-[#FF5B5B4D] rounded-[10px] text-danger text-[0.9rem] mb-4">
-                    <i className="fas fa-exclamation-circle text-[1.1rem]"></i>
-                    <span>{error}</span>
+                  <div className={`flex items-center gap-[10px] p-[12px_16px] rounded-[10px] text-[0.9rem] mb-4 ${
+                    isBanned 
+                      ? 'bg-[#FF8C001A] border border-[#FF8C004D] text-[#FF8C00]' 
+                      : 'bg-[#FF5B5B1A] border border-[#FF5B5B4D] text-danger'
+                  }`}>
+                    <i className={`fas ${isBanned ? 'fa-clock' : 'fa-exclamation-circle'} text-[1.1rem]`}></i>
+                    <div className="flex flex-col">
+                      <span>{error}</span>
+                      {isBanned && countdown > 0 && (
+                        <span className="text-[0.85rem] mt-1 font-semibold">
+                          يمكنك المحاولة مرة أخرى بعد: {countdown} ثانية
+                        </span>
+                      )}
+                    </div>
                   </div>
                 )}
 
@@ -287,9 +337,22 @@ export default function LoginPage() {
                   </label>
                 </div>
 
-                <AuthButton isLoading={isLoading} loadingText="جاري تسجيل الدخول...">
-                  <span>تسجيل الدخول</span>
-                  <i className="fas fa-arrow-left text-[1rem]"></i>
+                <AuthButton 
+                  isLoading={isLoading} 
+                  loadingText="جاري تسجيل الدخول..."
+                  disabled={isBanned}
+                >
+                  {isBanned ? (
+                    <>
+                      <i className="fas fa-clock text-[1rem]"></i>
+                      <span>انتظر {countdown} ثانية</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>تسجيل الدخول</span>
+                      <i className="fas fa-arrow-left text-[1rem]"></i>
+                    </>
+                  )}
                 </AuthButton>
               </form>
             </LoginCard>

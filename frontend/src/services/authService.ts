@@ -255,6 +255,7 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}, skip
       const errorWithStatus = new Error(arabicMessage) as any;
       errorWithStatus.status = response.status;
       errorWithStatus.errors = error.errors;
+      errorWithStatus.data = error.data; // Include data for attempts_remaining, retry_after, etc.
       
       // Only dispatch auth:unauthorized for non-login 401 errors or 403 (Forbidden/Suspended)
       // BUT ignore TEACHER_SUSPENDED error (let the UI handle it)

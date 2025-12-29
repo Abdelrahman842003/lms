@@ -30,15 +30,26 @@ trait ApiResponseTrait
      * @param string $message
      * @param int $code
      * @param mixed $errors
+     * @param mixed $data Additional data (attempts_remaining, retry_after, etc.)
      * @return JsonResponse
      */
-    protected function errorResponse($message = 'Error', $code = 400, $errors = null): JsonResponse
+    protected function errorResponse($message = 'Error', $code = 400, $errors = null, $data = null): JsonResponse
     {
-        return response()->json([
+        $response = [
             'status' => false,
             'status_code' => $code,
             'message' => $message,
-            'errors' => $errors,
-        ], $code);
+        ];
+
+        if ($errors !== null) {
+            $response['errors'] = $errors;
+        }
+
+        if ($data !== null) {
+            $response['data'] = $data;
+        }
+
+        return response()->json($response, $code);
     }
 }
+

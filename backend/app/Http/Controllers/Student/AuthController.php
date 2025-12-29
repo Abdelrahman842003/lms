@@ -5,16 +5,25 @@ namespace App\Http\Controllers\Student;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\StudentLoginRequest;
 use App\Http\Resources\Student\StudentResource;
+use App\Services\Auth\DeviceLimitService;
+use App\Services\Auth\LoginAttemptService;
 use App\Services\Student\StudentService;
 use Illuminate\Http\Request;
 
 class AuthController extends Controller
 {
     protected $studentService;
+    protected $loginAttemptService;
+    protected $deviceLimitService;
 
-    public function __construct(StudentService $studentService)
-    {
+    public function __construct(
+        StudentService $studentService,
+        LoginAttemptService $loginAttemptService,
+        DeviceLimitService $deviceLimitService
+    ) {
         $this->studentService = $studentService;
+        $this->loginAttemptService = $loginAttemptService;
+        $this->deviceLimitService = $deviceLimitService;
     }
 
     /**
@@ -24,10 +33,26 @@ class AuthController extends Controller
     {
         $data = $this->studentService->login($request->phone, $request->password);
 
-
         if (!$data) {
-            return $this->errorResponse('بيانات الدخول غير صحيحة', 401);
+            // Record failed attempt
+            $attemptResult = $this->loginAttemptService->recordFailedAttempt(
+                $request->phone,
+                $request->ip()
+            );
+
+            $message = 'بيانات الدخول غير صحيحة';
+            if (isset($attemptResult['attempts_remaining'])) {
+                $message .= ' - متبقي ' . $attemptResult['attempts_remaining'] . ' محاولات';
+            }
+
+            return $this->errorResponse($message, 401, null, $attemptResult);
         }
+
+        // Clear failed attempts on successful login
+        $this->loginAttemptService->clearAttempts($request->phone, $request->ip());
+
+        // Manage device limits (auto-removes oldest if at limit)
+        $deviceResult = $this->deviceLimitService->checkAndManageDevices($data['user']);
 
         // Generate Access Token (Short-lived - 60 mins)
         $accessToken = $data['user']->createToken('access_token', ['access-api'], now()->addMinutes(60))->plainTextToken;
@@ -40,7 +65,8 @@ class AuthController extends Controller
             'refresh_token' => $refreshToken,
             'user' => new StudentResource($data['user']),
             'teachers' => $data['teachers'],
-            'role' => 'student'
+            'role' => 'student',
+            'device_removed' => $deviceResult['removed_device'] ?? false,
         ]);
     }
 

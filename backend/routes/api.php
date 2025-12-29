@@ -72,7 +72,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
 // Teacher Authentication Routes (Central DB)
 // ============================================
 Route::post('/register/teacher', [\App\Http\Controllers\Teacher\TeacherController::class, 'register']);
-Route::post('/login/teacher', [TeacherAuthController::class, 'login']);
+Route::post('/login/teacher', [TeacherAuthController::class, 'login'])
+    ->middleware([\App\Http\Middleware\LoginThrottleMiddleware::class]);
 
 Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureTeacherNotSuspended::class])->prefix('teacher')->name('teacher.')->group(function () {
     Route::post('/logout', [TeacherAuthController::class, 'logout']);
@@ -152,7 +153,8 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureTeacherNotSuspende
 // ============================================
 // Student Authentication Routes
 // ============================================
-Route::post('/login/student', [StudentAuthController::class, 'login']);
+Route::post('/login/student', [StudentAuthController::class, 'login'])
+    ->middleware([\App\Http\Middleware\LoginThrottleMiddleware::class]);
 
 Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureTeacherNotSuspendedForStudent::class])->prefix('student')->group(function () {
     Route::post('/logout', [StudentAuthController::class, 'logout']);
@@ -200,7 +202,8 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureTeacherNotSuspende
 // ============================================
 // Secretary Authentication Routes
 // ============================================
-Route::post('/login/secretary', [SecretaryAuthController::class, 'login']);
+Route::post('/login/secretary', [SecretaryAuthController::class, 'login'])
+    ->middleware([\App\Http\Middleware\LoginThrottleMiddleware::class]);
 
 Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureSecretaryTeacherNotSuspended::class])->prefix('secretary')->group(function () {
     Route::post('/logout', [SecretaryAuthController::class, 'logout']);
