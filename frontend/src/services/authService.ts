@@ -902,7 +902,7 @@ export async function createExam(data: any): Promise<any> {
     method: 'POST',
     body: JSON.stringify(data),
   });
-  return res.exam;
+  return { exam: res.exam, warning: res.warning };
 }
 
 /**
@@ -923,7 +923,7 @@ export async function updateExam(id: string, data: any): Promise<any> {
     method: 'PUT',
     body: JSON.stringify(data),
   });
-  return res.exam;
+  return { exam: res.exam, warning: res.warning };
 }
 
 /**

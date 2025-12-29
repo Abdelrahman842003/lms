@@ -131,7 +131,7 @@ export default function AddExamPage() {
 
     setLoading(true);
     try {
-      await createExam({
+      const response = await createExam({
         title,
         subject,
         grade_id: gradeId,
@@ -142,7 +142,21 @@ export default function AddExamPage() {
         time_per_question: timePerQuestion,
         questions
       });
+      
       toast.success('تم إنشاء الامتحان بنجاح');
+      
+      // عرض التحذير إذا وجد تعارض محتمل
+      if (response?.warning) {
+        toast(response.warning, {
+          icon: '⚠️',
+          duration: 6000,
+          style: {
+            background: '#f59e0b',
+            color: '#1f2937',
+          },
+        });
+      }
+      
       router.push('/teacher/exams');
     } catch (error) {
       console.error('Error creating exam:', error);

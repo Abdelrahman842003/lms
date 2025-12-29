@@ -182,10 +182,22 @@ export default function EditExamPage() {
         questions: questions,
       };
 
-      await updateExam(examId, submitData);
+      const response = await updateExam(examId, submitData);
       
       setSuccessMessage('تم تحديث بيانات الامتحان بنجاح!');
       toast.success('تم تحديث الامتحان بنجاح');
+      
+      // عرض التحذير إذا وجد تعارض محتمل
+      if (response?.warning) {
+        toast(response.warning, {
+          icon: '⚠️',
+          duration: 6000,
+          style: {
+            background: '#f59e0b',
+            color: '#1f2937',
+          },
+        });
+      }
       
       // Redirect to exam details after 1.5 seconds
       setTimeout(() => {

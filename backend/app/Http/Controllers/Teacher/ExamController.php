@@ -66,11 +66,36 @@ class ExamController extends Controller
     public function store(StoreExamRequest $request)
     {
         try {
-            $exam = $this->examService->createExam($this->getTeacherFromRequest(request()), $request->validated());
+            $teacher = $this->getTeacherFromRequest(request());
+            $data = $request->validated();
+            
+            // التحقق من تعارض التواريخ كتحذير مبكر
+            $warning = null;
+            $dateConflict = $this->examService->checkDateConflicts(
+                $data['grade_id'],
+                $data['date'],
+                $teacher->id
+            );
+            
+            if ($dateConflict) {
+                $teacherNames = $dateConflict['conflicting_exams']
+                    ->pluck('teacher.name')
+                    ->unique()
+                    ->implode('، ');
+                $warning = "تنبيه: يوجد امتحان في نفس التاريخ للمدرس: {$teacherNames}. قد يؤثر على {$dateConflict['affected_students_count']} طالب مشترك.";
+            }
+            
+            $exam = $this->examService->createExam($teacher, $data);
 
-            return $this->successResponse([
+            $response = [
                 'exam' => $exam
-            ], 'Exam created successfully', 201);
+            ];
+            
+            if ($warning) {
+                $response['warning'] = $warning;
+            }
+
+            return $this->successResponse($response, 'تم إنشاء الامتحان بنجاح', 201);
         } catch (\Exception $e) {
             return $this->errorResponse('Failed to create exam: ' . $e->getMessage(), 500);
         }
@@ -89,16 +114,43 @@ class ExamController extends Controller
 
     public function update(UpdateExamRequest $request, Exam $exam)
     {
-        if ($exam->teacher_id !== $this->getTeacherFromRequest(request())->id) {
+        $teacher = $this->getTeacherFromRequest(request());
+        
+        if ($exam->teacher_id !== $teacher->id) {
             return $this->errorResponse('Unauthorized', 403);
         }
 
         try {
-            $exam = $this->examService->updateExam($exam, $request->validated());
+            $data = $request->validated();
+            
+            // التحقق من تعارض التواريخ كتحذير مبكر
+            $warning = null;
+            $dateConflict = $this->examService->checkDateConflicts(
+                $data['grade_id'],
+                $data['date'],
+                $teacher->id,
+                $exam->id
+            );
+            
+            if ($dateConflict) {
+                $teacherNames = $dateConflict['conflicting_exams']
+                    ->pluck('teacher.name')
+                    ->unique()
+                    ->implode('، ');
+                $warning = "تنبيه: يوجد امتحان في نفس التاريخ للمدرس: {$teacherNames}. قد يؤثر على {$dateConflict['affected_students_count']} طالب مشترك.";
+            }
+            
+            $exam = $this->examService->updateExam($exam, $data);
 
-            return $this->successResponse([
+            $response = [
                 'exam' => $exam
-            ], 'Exam updated successfully');
+            ];
+            
+            if ($warning) {
+                $response['warning'] = $warning;
+            }
+
+            return $this->successResponse($response, 'تم تحديث الامتحان بنجاح');
         } catch (\Exception $e) {
             return $this->errorResponse('Failed to update exam: ' . $e->getMessage(), 500);
         }
@@ -113,6 +165,24 @@ class ExamController extends Controller
     public function toggleStatus(Exam $exam)
     {
         $isActive = !$exam->is_active;
+        
+        // التحقق من التعارضات قبل التفعيل
+        if ($isActive) {
+            $conflict = $this->examService->checkActiveConflicts($exam);
+            
+            if ($conflict) {
+                $teacherNames = $conflict['conflicting_exams']
+                    ->pluck('teacher.name')
+                    ->unique()
+                    ->implode('، ');
+                    
+                return $this->errorResponse(
+                    "لا يمكن تفعيل الامتحان. يوجد امتحان فعال الآن للمدرس: {$teacherNames}. سيؤثر على {$conflict['affected_students_count']} طالب مشترك.",
+                    409
+                );
+            }
+        }
+        
         $updateData = ['is_active' => $isActive];
         
         if ($isActive) {
