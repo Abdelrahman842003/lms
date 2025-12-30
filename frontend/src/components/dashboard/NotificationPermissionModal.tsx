@@ -3,12 +3,16 @@
 import React, { useState, useEffect } from 'react';
 
 import { useAuth } from '@/contexts/AuthContext';
+import { useSettings } from '@/contexts/SettingsContext';
 
 export const NotificationPermissionModal = () => {
   const { enableNotifications } = useAuth();
+  const { isLoading } = useSettings();
   const [isVisible, setIsVisible] = useState(false);
 
   const checkPermission = () => {
+    if (isLoading) return; // Wait for settings to load (and firebase to init)
+    
     if (!('Notification' in window)) {
       setIsVisible(false);
       return;

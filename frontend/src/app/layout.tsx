@@ -5,6 +5,7 @@ import '@/styles/components.css'
 import '@/styles/layout.css'
 import '@/styles/pages/login.css'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { SettingsProvider } from '@/contexts/SettingsContext'
 import { Toaster } from 'react-hot-toast'
 import ServiceWorkerCleanup from '@/components/ServiceWorkerCleanup'
 import InstallPrompt from '@/components/InstallPrompt'
@@ -113,6 +114,7 @@ export default async function RootLayout({
                 suppressHydrationWarning={true}
             >
                 <div className="grid-pattern" />
+                <SettingsProvider>
                 <AuthProvider>
                   <ServiceWorkerCleanup />
                   <InstallPrompt />
@@ -123,6 +125,7 @@ export default async function RootLayout({
                     </div>
                   </MaintenanceGuard>
                 </AuthProvider>
+                </SettingsProvider>
             </body>
         </html>
     )

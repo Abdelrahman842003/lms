@@ -13,6 +13,7 @@ import {
 } from '@/services/authService';
 import { User } from '@/types';
 import toast from 'react-hot-toast';
+import { useSettings } from '@/contexts/SettingsContext';
 
 interface AuthContextType {
   user: User | null;
@@ -40,6 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedTeacher, setSelectedTeacher] = useState<TeacherInfo | null>(null);
+  const { isLoading: isSettingsLoading } = useSettings();
 
   useEffect(() => {
     // Load user from localStorage immediately (synchronously, client-side only)
@@ -450,9 +452,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     enableNotifications,
   };
 
+
   // Automatically register FCM token when user is authenticated
   useEffect(() => {
-    if (user && !isLoading) {
+    if (user && !isLoading && !isSettingsLoading) {
       // Only auto-register if permission is ALREADY granted
       // We don't want to trigger the native prompt automatically
       if (Notification.permission === 'granted') {
@@ -464,7 +467,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return () => clearTimeout(timer);
       }
     }
-  }, [user, isLoading]);
+  }, [user, isLoading, isSettingsLoading]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

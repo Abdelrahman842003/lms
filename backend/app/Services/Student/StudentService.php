@@ -43,7 +43,7 @@ class StudentService
                     'teacher_id' => $enrollment->teacher_id,
                     'teacher_name' => $enrollment->teacher->name,
                     'teacher_avatar' => $enrollment->teacher->avatar_key 
-                        ? env('CLOUDFLARE_R2_PUBLIC_URL') . '/' . $enrollment->teacher->avatar_key 
+                        ? config('filesystems.disks.r2.url') . '/' . $enrollment->teacher->avatar_key 
                         : null,
                     'is_suspended' => (bool) $enrollment->teacher->is_suspended,
                     'grade_name' => $enrollment->grade?->name,
@@ -121,7 +121,7 @@ class StudentService
                 'id' => $enrollment->teacher->id,
                 'name' => $enrollment->teacher->name,
                 'avatar' => $enrollment->teacher->avatar_key 
-                    ? env('CLOUDFLARE_R2_PUBLIC_URL') . '/' . $enrollment->teacher->avatar_key 
+                    ? config('filesystems.disks.r2.url') . '/' . $enrollment->teacher->avatar_key 
                     : null,
             ],
             'grade' => $enrollment->grade?->name,

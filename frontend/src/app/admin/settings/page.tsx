@@ -32,6 +32,33 @@ function SettingsPage() {
     seo_bing_verification: '',
   });
 
+  const [apiKeys, setApiKeys] = useState({
+    // Firebase
+    firebase_service_account: '',
+    firebase_api_key: '',
+    firebase_auth_domain: '',
+    firebase_project_id: '',
+    firebase_storage_bucket: '',
+    firebase_messaging_sender_id: '',
+    firebase_app_id: '',
+    
+    // Cloudflare R2
+    cloudflare_r2_access_key_id: '',
+    cloudflare_r2_secret_access_key: '',
+    cloudflare_r2_bucket: '',
+    cloudflare_r2_endpoint: '',
+    cloudflare_r2_public_url: '',
+    
+    // Cloudflare KV
+    cloudflare_kv_account_id: '',
+    cloudflare_kv_namespace_id: '',
+    cloudflare_kv_api_token: '',
+    
+    // AI
+    openai_api_key: '',
+    gemini_api_key: '',
+  });
+
 
   // Fetch settings on mount
   useEffect(() => {
@@ -55,6 +82,15 @@ function SettingsPage() {
         if (data.seo_og_image) setSeoSettings(prev => ({ ...prev, seo_og_image: data.seo_og_image }));
         if (data.seo_google_verification) setSeoSettings(prev => ({ ...prev, seo_google_verification: data.seo_google_verification }));
         if (data.seo_bing_verification) setSeoSettings(prev => ({ ...prev, seo_bing_verification: data.seo_bing_verification }));
+
+        // Update API Keys
+        setApiKeys(prev => ({
+          ...prev,
+          ...Object.keys(prev).reduce((acc, key) => {
+            if (data[key]) acc[key] = data[key];
+            return acc;
+          }, {} as any)
+        }));
 
       } catch (error) {
         console.error('Failed to fetch settings:', error);
@@ -85,6 +121,12 @@ function SettingsPage() {
       { key: 'seo_og_image', value: seoSettings.seo_og_image, group: 'seo' },
       { key: 'seo_google_verification', value: seoSettings.seo_google_verification, group: 'seo' },
       { key: 'seo_bing_verification', value: seoSettings.seo_bing_verification, group: 'seo' },
+      // API Keys
+      ...Object.entries(apiKeys).map(([key, value]) => ({
+        key,
+        value,
+        group: 'secrets'
+      }))
     ];
 
     try {
@@ -101,6 +143,7 @@ function SettingsPage() {
   const tabs = [
     { id: 'general', label: 'عام', icon: 'fas fa-cog' },
     { id: 'seo', label: 'SEO', icon: 'fas fa-search' },
+    { id: 'secrets', label: 'مفاتيح API', icon: 'fas fa-key' },
     { id: 'security', label: 'الأمان', icon: 'fas fa-shield-alt' },
   ];
 
@@ -301,6 +344,213 @@ function SettingsPage() {
                 </div>
               </div>
             </DashboardCard>
+          )}
+
+          {/* API Keys Settings */}
+          {activeTab === 'secrets' && (
+            <div className="space-y-6">
+              {/* Firebase */}
+              <DashboardCard title="إعدادات Firebase" icon="fab fa-google">
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-gray-300 mb-2 text-sm">Service Account (JSON)</label>
+                    <textarea
+                      value={apiKeys.firebase_service_account}
+                      onChange={(e) => setApiKeys({...apiKeys, firebase_service_account: e.target.value})}
+                      className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all font-mono text-xs h-32"
+                      placeholder='{"type": "service_account", ...}'
+                      dir="ltr"
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-gray-300 mb-2 text-sm">API Key</label>
+                      <input
+                        type="password"
+                        value={apiKeys.firebase_api_key}
+                        onChange={(e) => setApiKeys({...apiKeys, firebase_api_key: e.target.value})}
+                        className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                        dir="ltr"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-gray-300 mb-2 text-sm">Auth Domain</label>
+                      <input
+                        type="text"
+                        value={apiKeys.firebase_auth_domain}
+                        onChange={(e) => setApiKeys({...apiKeys, firebase_auth_domain: e.target.value})}
+                        className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                        dir="ltr"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-gray-300 mb-2 text-sm">Project ID</label>
+                      <input
+                        type="text"
+                        value={apiKeys.firebase_project_id}
+                        onChange={(e) => setApiKeys({...apiKeys, firebase_project_id: e.target.value})}
+                        className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                        dir="ltr"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-gray-300 mb-2 text-sm">Storage Bucket</label>
+                      <input
+                        type="text"
+                        value={apiKeys.firebase_storage_bucket}
+                        onChange={(e) => setApiKeys({...apiKeys, firebase_storage_bucket: e.target.value})}
+                        className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                        dir="ltr"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-gray-300 mb-2 text-sm">Messaging Sender ID</label>
+                      <input
+                        type="text"
+                        value={apiKeys.firebase_messaging_sender_id}
+                        onChange={(e) => setApiKeys({...apiKeys, firebase_messaging_sender_id: e.target.value})}
+                        className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                        dir="ltr"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-gray-300 mb-2 text-sm">App ID</label>
+                      <input
+                        type="text"
+                        value={apiKeys.firebase_app_id}
+                        onChange={(e) => setApiKeys({...apiKeys, firebase_app_id: e.target.value})}
+                        className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                        dir="ltr"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </DashboardCard>
+
+              {/* Cloudflare R2 */}
+              <DashboardCard title="إعدادات Cloudflare R2" icon="fas fa-cloud">
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-gray-300 mb-2 text-sm">Access Key ID</label>
+                      <input
+                        type="password"
+                        value={apiKeys.cloudflare_r2_access_key_id}
+                        onChange={(e) => setApiKeys({...apiKeys, cloudflare_r2_access_key_id: e.target.value})}
+                        className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                        dir="ltr"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-gray-300 mb-2 text-sm">Secret Access Key</label>
+                      <input
+                        type="password"
+                        value={apiKeys.cloudflare_r2_secret_access_key}
+                        onChange={(e) => setApiKeys({...apiKeys, cloudflare_r2_secret_access_key: e.target.value})}
+                        className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                        dir="ltr"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-gray-300 mb-2 text-sm">Bucket Name</label>
+                      <input
+                        type="text"
+                        value={apiKeys.cloudflare_r2_bucket}
+                        onChange={(e) => setApiKeys({...apiKeys, cloudflare_r2_bucket: e.target.value})}
+                        className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                        dir="ltr"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-gray-300 mb-2 text-sm">Endpoint</label>
+                      <input
+                        type="text"
+                        value={apiKeys.cloudflare_r2_endpoint}
+                        onChange={(e) => setApiKeys({...apiKeys, cloudflare_r2_endpoint: e.target.value})}
+                        className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                        dir="ltr"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-gray-300 mb-2 text-sm">Public URL</label>
+                      <input
+                        type="text"
+                        value={apiKeys.cloudflare_r2_public_url}
+                        onChange={(e) => setApiKeys({...apiKeys, cloudflare_r2_public_url: e.target.value})}
+                        className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                        dir="ltr"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </DashboardCard>
+
+              {/* Cloudflare KV */}
+              <DashboardCard title="إعدادات Cloudflare KV" icon="fas fa-database">
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-gray-300 mb-2 text-sm">Account ID</label>
+                      <input
+                        type="text"
+                        value={apiKeys.cloudflare_kv_account_id}
+                        onChange={(e) => setApiKeys({...apiKeys, cloudflare_kv_account_id: e.target.value})}
+                        className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                        dir="ltr"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-gray-300 mb-2 text-sm">Namespace ID</label>
+                      <input
+                        type="text"
+                        value={apiKeys.cloudflare_kv_namespace_id}
+                        onChange={(e) => setApiKeys({...apiKeys, cloudflare_kv_namespace_id: e.target.value})}
+                        className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                        dir="ltr"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-gray-300 mb-2 text-sm">API Token</label>
+                      <input
+                        type="password"
+                        value={apiKeys.cloudflare_kv_api_token}
+                        onChange={(e) => setApiKeys({...apiKeys, cloudflare_kv_api_token: e.target.value})}
+                        className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                        dir="ltr"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </DashboardCard>
+
+              {/* AI Keys */}
+              <DashboardCard title="إعدادات الذكاء الاصطناعي (AI)" icon="fas fa-robot">
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-gray-300 mb-2 text-sm">OpenAI API Key</label>
+                      <input
+                        type="password"
+                        value={apiKeys.openai_api_key}
+                        onChange={(e) => setApiKeys({...apiKeys, openai_api_key: e.target.value})}
+                        className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                        dir="ltr"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-gray-300 mb-2 text-sm">Gemini API Key</label>
+                      <input
+                        type="password"
+                        value={apiKeys.gemini_api_key}
+                        onChange={(e) => setApiKeys({...apiKeys, gemini_api_key: e.target.value})}
+                        className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                        dir="ltr"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </DashboardCard>
+            </div>
           )}
 
           {/* Security Settings */}

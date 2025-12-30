@@ -18,3 +18,9 @@ export const updateSettings = async (settings: Setting[]): Promise<void> => {
     body: JSON.stringify({ settings }),
   });
 };
+
+export const getPublicSettings = async (): Promise<Record<string, string>> => {
+  return await fetchApi('/settings/public', {
+    method: 'GET',
+  });
+};

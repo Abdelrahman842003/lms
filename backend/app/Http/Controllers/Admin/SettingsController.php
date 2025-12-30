@@ -10,7 +10,19 @@ class SettingsController extends Controller
 {
     public function index()
     {
-        $settings = Setting::all()->pluck('value', 'key');
+        $settings = Setting::all()->mapWithKeys(function ($setting) {
+            $value = $setting->value;
+            
+            // If key is encrypted, mask it
+            // The Model Accessor already decrypts it, so $value here is the plain text (if we wanted it)
+            // But for security, we mask it before sending to frontend
+            if (in_array($setting->key, Setting::$encryptedKeys) && !empty($value)) {
+                $value = '********';
+            }
+            
+            return [$setting->key => $value];
+        });
+
         return response()->json([
             'status' => true,
             'message' => 'Settings retrieved successfully',
@@ -27,12 +39,25 @@ class SettingsController extends Controller
             'settings.*.group' => 'nullable|string',
         ]);
 
-        foreach ($data['settings'] as $setting) {
+        foreach ($data['settings'] as $settingData) {
+            $key = $settingData['key'];
+            $value = $settingData['value'];
+            $group = $settingData['group'] ?? 'general';
+
+            // Handle Encrypted Keys
+            if (in_array($key, Setting::$encryptedKeys)) {
+                // If value is masked (********), skip updating (user didn't change it)
+                if ($value === '********') {
+                    continue;
+                }
+                // The Model Mutator will handle encryption automatically
+            }
+
             Setting::updateOrCreate(
-                ['key' => $setting['key']],
+                ['key' => $key],
                 [
-                    'value' => $setting['value'],
-                    'group' => $setting['group'] ?? 'general'
+                    'value' => $value,
+                    'group' => $group
                 ]
             );
         }
@@ -61,12 +86,22 @@ class SettingsController extends Controller
             'seo_bing_verification',
             'seo_robots_txt',
             'seo_canonical_url',
-        ])->pluck('value', 'key');
+            // Public Firebase Config (Safe to expose)
+            'firebase_api_key',
+            'firebase_auth_domain',
+            'firebase_project_id',
+            'firebase_storage_bucket',
+            'firebase_messaging_sender_id',
+            'firebase_app_id',
+        ])->get();
+        
+        // The Model Accessor automatically decrypts values
+        $mappedSettings = $settings->pluck('value', 'key');
         
         return response()->json([
             'status' => true,
             'message' => 'Public settings retrieved successfully',
-            'data' => $settings
+            'data' => $mappedSettings
         ]);
     }
 }

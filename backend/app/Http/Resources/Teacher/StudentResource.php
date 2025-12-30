@@ -17,7 +17,7 @@ class StudentResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'avatar' => $this->avatar_key ? env('CLOUDFLARE_R2_PUBLIC_URL') . '/' . $this->avatar_key : null,
+            'avatar' => $this->avatar_key ? config('filesystems.disks.r2.url') . '/' . $this->avatar_key : null,
             'phone' => $this->phone,
             'parent_phone' => $this->parent_phone,
             'gender' => $this->gender,
