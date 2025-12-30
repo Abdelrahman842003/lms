@@ -453,14 +453,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Automatically register FCM token when user is authenticated
   useEffect(() => {
     if (user && !isLoading) {
-      // Small delay to ensure user is fully loaded
-      const timer = setTimeout(() => {
-        enableNotifications().catch(err => {
-          console.error('Auto FCM registration failed:', err);
-        });
-      }, 1000);
-      
-      return () => clearTimeout(timer);
+      // Only auto-register if permission is ALREADY granted
+      // We don't want to trigger the native prompt automatically
+      if (Notification.permission === 'granted') {
+        const timer = setTimeout(() => {
+          enableNotifications().catch(err => {
+            console.error('Auto FCM registration failed:', err);
+          });
+        }, 1000);
+        return () => clearTimeout(timer);
+      }
     }
   }, [user, isLoading]);
 

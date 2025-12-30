@@ -2,56 +2,82 @@
 
 import React, { useState, useEffect } from 'react';
 
+import { useAuth } from '@/contexts/AuthContext';
+
 export const NotificationPermissionModal = () => {
-  const [permission, setPermission] = useState<NotificationPermission>('default');
+  const { enableNotifications } = useAuth();
   const [isVisible, setIsVisible] = useState(false);
 
   const checkPermission = () => {
     if (!('Notification' in window)) {
-      // If notifications are not supported, we can't enforce them.
-      // Alternatively, we could show a message saying the browser is not supported.
-      // For now, let's just hide the modal to not block the user.
       setIsVisible(false);
       return;
     }
 
     const currentPermission = Notification.permission;
-    setPermission(currentPermission);
-    setIsVisible(currentPermission !== 'granted');
+
+    // If denied, never show
+    if (currentPermission === 'denied' || currentPermission === 'granted') {
+      setIsVisible(false);
+      return;
+    }
+
+    // Check cooldown
+    const cooldown = localStorage.getItem('notification_prompt_cooldown');
+    if (cooldown && Date.now() < parseInt(cooldown)) {
+      setIsVisible(false);
+      return;
+    }
+
+    setIsVisible(true);
   };
 
   useEffect(() => {
     checkPermission();
 
-    // Re-check on window focus (in case user changed settings in another tab/window)
     const handleFocus = () => checkPermission();
     window.addEventListener('focus', handleFocus);
 
     return () => window.removeEventListener('focus', handleFocus);
   }, []);
 
+  const handleDismiss = () => {
+    // Set 24-hour cooldown
+    const tomorrow = Date.now() + 24 * 60 * 60 * 1000;
+    localStorage.setItem('notification_prompt_cooldown', tomorrow.toString());
+    setIsVisible(false);
+  };
+
   const requestPermission = async () => {
     if (!('Notification' in window)) return;
 
     try {
       const result = await Notification.requestPermission();
-      setPermission(result);
+      
       if (result === 'granted') {
         setIsVisible(false);
+        localStorage.removeItem('notification_prompt_cooldown');
+        
+        // Register token with backend
+        enableNotifications();
         
         // Play sound to confirm and unlock audio
         const audio = new Audio('/sounds/notification.mp3');
         audio.play().catch(() => {});
 
-        // Optional: Send a test notification
         new Notification('تم تفعيل الإشعارات بنجاح', {
           body: 'ستصلك الآن جميع التنبيهات المهمة',
           icon: '/logo.png',
           dir: 'rtl'
         });
+      } else {
+        // If user dismissed the browser prompt (result === 'default') or denied it
+        // We treat it as a dismissal for now
+        handleDismiss();
       }
     } catch (error) {
       console.error('Error requesting notification permission:', error);
+      handleDismiss();
     }
   };
 
@@ -73,7 +99,7 @@ export const NotificationPermissionModal = () => {
       padding: '20px'
     }}>
       <div style={{
-        backgroundColor: '#1a1f37', // Matches dashboard theme
+        backgroundColor: '#1a1f37',
         border: '1px solid rgba(255, 255, 255, 0.1)',
         borderRadius: '16px',
         padding: '32px',
@@ -103,7 +129,7 @@ export const NotificationPermissionModal = () => {
           fontWeight: '700', 
           marginBottom: '16px' 
         }}>
-          تفعيل الإشعارات مطلوب
+          تفعيل الإشعارات
         </h2>
 
         <p style={{ 
@@ -112,61 +138,10 @@ export const NotificationPermissionModal = () => {
           lineHeight: '1.6',
           marginBottom: '32px' 
         }}>
-          لضمان عدم تفويت أي تحديثات مهمة أو امتحانات أو محاضرات، يجب عليك تفعيل الإشعارات للمتابعة.
+          لضمان عدم تفويت أي تحديثات مهمة أو امتحانات أو محاضرات، يرجى تفعيل الإشعارات.
         </p>
 
-        {permission === 'denied' ? (
-          <div style={{
-            backgroundColor: 'rgba(255, 91, 91, 0.1)',
-            border: '1px solid rgba(255, 91, 91, 0.2)',
-            borderRadius: '12px',
-            padding: '16px',
-            textAlign: 'right'
-          }}>
-            <p style={{ 
-              color: '#ff5b5b', 
-              fontWeight: '600', 
-              marginBottom: '8px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}>
-              <i className="fas fa-exclamation-circle"></i>
-              الإشعارات محظورة
-            </p>
-            <p style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '0.9rem' }}>
-              لقد قمت بحظر الإشعارات سابقاً. يرجى اتباع الخطوات التالية لتفعيلها:
-            </p>
-            <ol style={{ 
-              color: 'rgba(255, 255, 255, 0.7)', 
-              fontSize: '0.9rem', 
-              marginRight: '20px',
-              marginTop: '8px',
-              textAlign: 'right'
-            }}>
-              <li>اضغط على أيقونة القفل 🔒 بجوار رابط الموقع في الأعلى.</li>
-              <li>ابحث عن "الإشعارات" أو "Notifications".</li>
-              <li>قم بتغيير الإعداد إلى "سماح" أو "Allow".</li>
-              <li>قم بتحديث الصفحة.</li>
-            </ol>
-            <button 
-              onClick={() => window.location.reload()}
-              style={{
-                marginTop: '16px',
-                width: '100%',
-                padding: '10px',
-                backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                border: 'none',
-                borderRadius: '8px',
-                color: 'white',
-                cursor: 'pointer',
-                fontWeight: '600'
-              }}
-            >
-              تحديث الصفحة
-            </button>
-          </div>
-        ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <button
             onClick={requestPermission}
             style={{
@@ -187,7 +162,33 @@ export const NotificationPermissionModal = () => {
           >
             تفعيل الإشعارات
           </button>
-        )}
+
+          <button
+            onClick={handleDismiss}
+            style={{
+              background: 'transparent',
+              color: 'rgba(255, 255, 255, 0.6)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              padding: '12px 32px',
+              borderRadius: '12px',
+              fontSize: '0.9rem',
+              fontWeight: '500',
+              cursor: 'pointer',
+              width: '100%',
+              transition: 'all 0.2s'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+              e.currentTarget.style.color = 'white';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent';
+              e.currentTarget.style.color = 'rgba(255, 255, 255, 0.6)';
+            }}
+          >
+            ليس الآن
+          </button>
+        </div>
       </div>
     </div>
   );
