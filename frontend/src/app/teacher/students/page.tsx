@@ -5,6 +5,7 @@ import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { DataTable } from '@/components/dashboard/DataTable';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { ConfirmationModal } from '@/components/ui';
+import { Filter } from '@/components/Filter';
 import { useAuth } from '@/contexts/AuthContext';
 import { getTeacherStudents, deleteTeacherStudent, activateTeacherStudent, toggleTeacherStudentStatus, getStudentActivationDetails } from '@/services/authService';
 import { useRouter } from 'next/navigation';
@@ -341,15 +342,16 @@ export default function StudentsPage() {
           onSearch={setSearchQuery}
           headerActions={
             <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-              <select
-                className="w-full sm:w-auto px-4 h-[42px] rounded-lg border border-white/10 bg-[#1e1e2d] text-white outline-none cursor-pointer min-w-[120px] appearance-none bg-no-repeat bg-[left_12px_center] pl-10 bg-[url('data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20width=%2716%27%20height=%2716%27%20viewBox=%270%200%2024%2024%27%20fill=%27none%27%20stroke=%27white%27%20stroke-width=%272%27%20stroke-linecap=%27round%27%20stroke-linejoin=%27round%27%3E%3Cpath%20d=%27M6%209l6%206%206-6%27/%3E%3C/svg%3E')]"
+              <Filter
+                options={[
+                  { value: '', label: 'كل الطلاب' },
+                  { value: 'active', label: 'الطلاب النشطين' },
+                  { value: 'inactive', label: 'الطلاب المعطلين' }
+                ]}
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-              >
-                <option value="">كل الطلاب</option>
-                <option value="active">الطلاب النشطين</option>
-                <option value="inactive">الطلاب المعطلين</option>
-              </select>
+                onChange={(value) => setStatusFilter(value)}
+                className="w-full sm:w-auto min-w-[150px]"
+              />
               <Link href="/teacher/students/add" className="btn btn-primary w-full sm:w-auto justify-center">
                 <i className="fas fa-plus"></i>
                 <span>إضافة طالب جديد</span>

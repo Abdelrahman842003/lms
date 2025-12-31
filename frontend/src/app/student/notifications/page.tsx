@@ -5,7 +5,7 @@ import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { DataTable } from '@/components/dashboard/DataTable';
-import { Select } from '@/components/ui/Select';
+import { Filter } from '@/components/Filter';
 import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { getNotifications, sendNotification, Notification as SentNotification, ReceivedNotification } from '@/services/notificationService';
@@ -230,7 +230,7 @@ function StudentNotificationsContent() {
               <span>تواصل مع الدعم</span>
             </button>
             
-            <Select
+            <Filter
               options={[
                 { value: 'received', label: 'الواردة (من المدرس/الإدارة)' },
                 { value: 'sent_to_developer', label: 'المرسلة (للدعم الفني)' }

@@ -5,7 +5,7 @@ import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { DataTable } from '@/components/dashboard/DataTable';
-import { Select } from '@/components/ui/Select';
+import { Filter } from '@/components/Filter';
 import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { getGrades, Grade } from '@/services/gradeService';
@@ -295,7 +295,7 @@ function NotificationsContent() {
                 </span>
               </button>
             )}
-            <Select
+            <Filter
               options={[
                 { value: 'students', label: 'للطلاب' },
                 { value: 'sent_to_developer', label: 'مرسلة للمطور' },
@@ -364,7 +364,7 @@ function NotificationsContent() {
                 {formData.recipient_type !== 'admin' && (
                   <div className="space-y-2">
                     <label htmlFor="recipient_type" className="block text-sm font-medium text-gray-300">المستقبلين</label>
-                    <Select
+                    <Filter
                       options={[
                         { value: 'all', label: 'جميع الطلاب' },
                         { value: 'grade', label: 'صف دراسي معين' },
@@ -380,7 +380,7 @@ function NotificationsContent() {
                 {formData.recipient_type === 'grade' && (
                   <div className="space-y-2">
                     <label htmlFor="grade_id" className="block text-sm font-medium text-gray-300">اختر الصف</label>
-                    <Select
+                    <Filter
                       options={[
                         { value: '', label: '-- اختر الصف --' },
                         ...grades.map(grade => ({ value: grade.id.toString(), label: grade.name }))
@@ -395,7 +395,7 @@ function NotificationsContent() {
                 {formData.recipient_type === 'group' && (
                   <div className="space-y-2">
                     <label htmlFor="group_id" className="block text-sm font-medium text-gray-300">اختر المجموعة</label>
-                    <Select
+                    <Filter
                       options={[
                         { value: '', label: '-- اختر المجموعة --' },
                         ...groups.map(group => ({ value: group.id.toString(), label: group.name }))

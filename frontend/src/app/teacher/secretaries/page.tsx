@@ -5,6 +5,7 @@ import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { DataTable } from '@/components/dashboard/DataTable';
 import { ConfirmationModal } from '@/components/ui';
+import { Filter } from '@/components/Filter';
 import { useAuth } from '@/contexts/AuthContext';
 import { getSecretaries, deleteSecretary, toggleSecretaryStatus } from '@/services/authService';
 import { Secretary } from '@/services/secretaryService';
@@ -179,18 +180,19 @@ export default function SecretariesPage() {
           onSearch={setSearchQuery}
           headerActions={
             <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-              <select
-                className="w-full sm:w-auto px-4 h-[42px] rounded-lg border border-white/10 bg-[#1e1e2d] text-white outline-none cursor-pointer min-w-[120px] appearance-none bg-[url('data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20width=%2716%27%20height=%2716%27%20viewBox=%270%200%2024%2024%27%20fill=%27none%27%20stroke=%27white%27%20stroke-width=%272%27%20stroke-linecap=%27round%27%20stroke-linejoin=%27round%27%3E%3Cpath%20d=%27M6%209l6%206%206-6%27/%3E%3C/svg%3E')] bg-no-repeat bg-[left_12px_center] pl-10"
+              <Filter
+                options={[
+                  { value: '', label: 'كل السكرتارية' },
+                  { value: 'active', label: 'السكرتارية النشطين' },
+                  { value: 'inactive', label: 'السكرتارية المعطلين' }
+                ]}
                 value={statusFilter}
-                onChange={(e) => {
-                  setStatusFilter(e.target.value);
+                onChange={(value) => {
+                  setStatusFilter(value);
                   setCurrentPage(1);
                 }}
-              >
-                <option value="">كل السكرتارية</option>
-                <option value="active">السكرتارية النشطين</option>
-                <option value="inactive">السكرتارية المعطلين</option>
-              </select>
+                className="w-full sm:w-auto min-w-[150px]"
+              />
               <Link href="/teacher/secretaries/add" className="btn btn-primary w-full sm:w-auto justify-center">
                 <i className="fas fa-plus"></i>
                 <span>إضافة سكرتير</span>
