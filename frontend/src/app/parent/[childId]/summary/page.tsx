@@ -331,7 +331,7 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
 
           {/* Teacher Summaries */}
           {!isLoading && summary && (
-            <div className="space-y-6">
+            <div className="space-y-8">
               {summary.teachers.map((teacherData) => (
                 <DashboardCard
                   key={teacherData.teacher.id}
@@ -435,104 +435,108 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
                     className="w-full py-2 text-primary text-sm font-medium hover:underline flex items-center justify-center gap-2"
                   >
                     <span>{expandedTeacher === teacherData.teacher.id ? 'إخفاء التفاصيل' : 'عرض التفاصيل'}</span>
-                    <i className={`fas fa-chevron-down transition-transform ${expandedTeacher === teacherData.teacher.id ? 'rotate-180' : ''}`}></i>
+                    <i className={`fas fa-chevron-down transition-transform duration-300 ${expandedTeacher === teacherData.teacher.id ? 'rotate-180' : ''}`}></i>
                   </button>
 
-                  {expandedTeacher === teacherData.teacher.id && (
-                    <div className="mt-4 space-y-6">
-                      {/* Lectures List */}
-                      <div>
-                        <h4 className="text-white font-bold mb-3 flex items-center gap-2">
-                          <i className="fas fa-book-open text-primary"></i>
-                          المحاضرات ({teacherData.attendance.list.length})
-                        </h4>
-                        {teacherData.attendance.list.length === 0 ? (
-                          <p className="text-gray-500 text-sm text-center py-4">لا توجد محاضرات في هذه الفترة</p>
-                        ) : (
-                          <div className="overflow-x-auto">
-                            <table className="w-full text-right">
-                              <thead>
-                                <tr className="border-b border-white/10 text-gray-400 text-sm">
-                                  <th className="pb-3 font-medium">المحاضرة</th>
-                                  <th className="pb-3 font-medium">التاريخ</th>
-                                  <th className="pb-3 font-medium">الوقت</th>
-                                  <th className="pb-3 font-medium">الحالة</th>
-                                </tr>
-                              </thead>
-                              <tbody className="text-sm">
-                                {teacherData.attendance.list.map((lecture) => (
-                                  <tr key={lecture.id} className="border-b border-white/5 last:border-0">
-                                    <td className="py-3 text-white">{lecture.title}</td>
-                                    <td className="py-3 text-gray-400">{lecture.date}</td>
-                                    <td className="py-3 text-gray-400">{lecture.time}</td>
-                                    <td className="py-3">
-                                      <span className={`px-2 py-1 rounded-full text-xs border ${getAttendanceStatusStyle(lecture.status)}`}>
-                                        {getAttendanceStatusLabel(lecture.status)}
-                                      </span>
-                                    </td>
+                  <div className={`grid transition-[grid-template-rows,margin] duration-300 ease-in-out ${
+                    expandedTeacher === teacherData.teacher.id ? 'grid-rows-[1fr] mt-4' : 'grid-rows-[0fr] mt-0'
+                  }`}>
+                    <div className="overflow-hidden">
+                      <div className="space-y-6">
+                        {/* Lectures List */}
+                        <div>
+                          <h4 className="text-white font-bold mb-3 flex items-center gap-2">
+                            <i className="fas fa-book-open text-primary"></i>
+                            المحاضرات ({teacherData.attendance.list.length})
+                          </h4>
+                          {teacherData.attendance.list.length === 0 ? (
+                            <p className="text-gray-500 text-sm text-center py-4">لا توجد محاضرات في هذه الفترة</p>
+                          ) : (
+                            <div className="overflow-x-auto">
+                              <table className="w-full text-right">
+                                <thead>
+                                  <tr className="border-b border-white/10 text-gray-400 text-sm">
+                                    <th className="pb-3 font-medium">المحاضرة</th>
+                                    <th className="pb-3 font-medium">التاريخ</th>
+                                    <th className="pb-3 font-medium">الوقت</th>
+                                    <th className="pb-3 font-medium">الحالة</th>
                                   </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Exams List */}
-                      <div>
-                        <h4 className="text-white font-bold mb-3 flex items-center gap-2">
-                          <i className="fas fa-file-alt text-primary"></i>
-                          الامتحانات ({teacherData.exams.list.length})
-                        </h4>
-                        {teacherData.exams.list.length === 0 ? (
-                          <p className="text-gray-500 text-sm text-center py-4">لا توجد امتحانات في هذه الفترة</p>
-                        ) : (
-                          <div className="overflow-x-auto">
-                            <table className="w-full text-right">
-                              <thead>
-                                <tr className="border-b border-white/10 text-gray-400 text-sm">
-                                  <th className="pb-3 font-medium">الامتحان</th>
-                                  <th className="pb-3 font-medium">التاريخ</th>
-                                  <th className="pb-3 font-medium">الدرجة</th>
-                                  <th className="pb-3 font-medium">النسبة</th>
-                                  <th className="pb-3 font-medium">الحالة</th>
-                                </tr>
-                              </thead>
-                              <tbody className="text-sm">
-                                {teacherData.exams.list.map((exam) => (
-                                  <tr key={exam.id} className="border-b border-white/5 last:border-0">
-                                    <td className="py-3 text-white">{exam.title}</td>
-                                    <td className="py-3 text-gray-400">{exam.date}</td>
-                                    <td className="py-3 text-white">
-                                      {exam.score !== null ? `${exam.score}/${exam.max_score}` : '-'}
-                                    </td>
-                                    <td className="py-3">
-                                      {exam.percentage !== null ? (
-                                        <span className={`font-bold ${exam.percentage >= 50 ? 'text-green-400' : 'text-red-400'}`}>
-                                          {exam.percentage}%
+                                </thead>
+                                <tbody className="text-sm">
+                                  {teacherData.attendance.list.map((lecture) => (
+                                    <tr key={lecture.id} className="border-b border-white/5 last:border-0">
+                                      <td className="py-3 text-white">{lecture.title}</td>
+                                      <td className="py-3 text-gray-400">{lecture.date}</td>
+                                      <td className="py-3 text-gray-400">{lecture.time}</td>
+                                      <td className="py-3">
+                                        <span className={`px-2 py-1 rounded-full text-xs border ${getAttendanceStatusStyle(lecture.status)}`}>
+                                          {getAttendanceStatusLabel(lecture.status)}
                                         </span>
-                                      ) : '-'}
-                                    </td>
-                                    <td className="py-3">
-                                      <span className={`px-2 py-1 rounded-full text-xs ${
-                                        exam.percentage !== null
-                                          ? exam.percentage >= 50
-                                            ? 'bg-green-500/20 text-green-400'
-                                            : 'bg-red-500/20 text-red-400'
-                                          : 'bg-gray-500/20 text-gray-400'
-                                      }`}>
-                                        {exam.percentage !== null ? (exam.percentage >= 50 ? 'ناجح' : 'راسب') : 'لم يختبر'}
-                                      </span>
-                                    </td>
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Exams List */}
+                        <div>
+                          <h4 className="text-white font-bold mb-3 flex items-center gap-2">
+                            <i className="fas fa-file-alt text-primary"></i>
+                            الامتحانات ({teacherData.exams.list.length})
+                          </h4>
+                          {teacherData.exams.list.length === 0 ? (
+                            <p className="text-gray-500 text-sm text-center py-4">لا توجد امتحانات في هذه الفترة</p>
+                          ) : (
+                            <div className="overflow-x-auto">
+                              <table className="w-full text-right">
+                                <thead>
+                                  <tr className="border-b border-white/10 text-gray-400 text-sm">
+                                    <th className="pb-3 font-medium">الامتحان</th>
+                                    <th className="pb-3 font-medium">التاريخ</th>
+                                    <th className="pb-3 font-medium">الدرجة</th>
+                                    <th className="pb-3 font-medium">النسبة</th>
+                                    <th className="pb-3 font-medium">الحالة</th>
                                   </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        )}
+                                </thead>
+                                <tbody className="text-sm">
+                                  {teacherData.exams.list.map((exam) => (
+                                    <tr key={exam.id} className="border-b border-white/5 last:border-0">
+                                      <td className="py-3 text-white">{exam.title}</td>
+                                      <td className="py-3 text-gray-400">{exam.date}</td>
+                                      <td className="py-3 text-white">
+                                        {exam.score !== null ? `${exam.score}/${exam.max_score}` : '-'}
+                                      </td>
+                                      <td className="py-3">
+                                        {exam.percentage !== null ? (
+                                          <span className={`font-bold ${exam.percentage >= 50 ? 'text-green-400' : 'text-red-400'}`}>
+                                            {exam.percentage}%
+                                          </span>
+                                        ) : '-'}
+                                      </td>
+                                      <td className="py-3">
+                                        <span className={`px-2 py-1 rounded-full text-xs ${
+                                          exam.percentage !== null
+                                            ? exam.percentage >= 50
+                                              ? 'bg-green-500/20 text-green-400'
+                                              : 'bg-red-500/20 text-red-400'
+                                            : 'bg-gray-500/20 text-gray-400'
+                                        }`}>
+                                          {exam.percentage !== null ? (exam.percentage >= 50 ? 'ناجح' : 'راسب') : 'لم يختبر'}
+                                        </span>
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  )}
+                  </div>
                 </DashboardCard>
               ))}
 
