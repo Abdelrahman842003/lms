@@ -228,7 +228,7 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
 
           {/* Filters */}
           <DashboardCard title="" icon="">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-6">
               {/* Date Filter */}
               <div>
                 <label className="block text-gray-400 text-sm font-medium mb-3">التاريخ</label>
