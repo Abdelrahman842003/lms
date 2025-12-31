@@ -491,9 +491,11 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user, onMenuClick }) => {
             </div>
 
             {/* Mobile Menu Toggle */}
-            <button className="navbar-menu-toggle" onClick={toggleMobileSidebar}>
-              <i className="fas fa-bars"></i>
-            </button>
+            {role !== 'parent' && (
+              <button className="navbar-menu-toggle" onClick={toggleMobileSidebar}>
+                <i className="fas fa-bars"></i>
+              </button>
+            )}
           </div>
         </div>
       </nav>
