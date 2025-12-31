@@ -315,7 +315,7 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
 
           {/* Teacher Summaries */}
           {!isLoading && summary && (
-            <div className="space-y-8">
+            <div className="space-y-8 p-6">
               {displayedTeachers.map((teacherData) => (
                 <DashboardCard
                   key={teacherData.teacher.id}
