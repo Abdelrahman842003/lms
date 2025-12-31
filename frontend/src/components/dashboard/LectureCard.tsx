@@ -38,8 +38,18 @@ export const LectureCard: React.FC<LectureCardProps> = ({
           : 'bg-[#101426]/15 border border-white/10 hover:shadow-[0_12px_40px_rgba(0,0,0,0.3)] hover:-translate-y-[1px] hover:backdrop-blur-[20px] hover:border-[#1bc5f8]/50'
       }`}
     >
-      {/* Top Section: Menu and Delete buttons */}
+      {/* Top Section: Menu and Status */}
       <div className="flex justify-between items-start mb-6">
+        {/* Status Badge */}
+        <span className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${
+          lecture.status === 'جاري الآن' ? 'bg-[#2ecc71]/20 text-[#2ecc71] border border-[#2ecc71]/30' : 
+          lecture.status === 'اليوم' ? 'bg-[#f39c12]/20 text-[#f39c12] border border-[#f39c12]/30' : 
+          lecture.status === 'منتهية' ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30' : 
+          'bg-primary/20 text-primary border border-primary/30'
+        }`}>
+          {lecture.status}
+        </span>
+
         {/* Three-dot Menu */}
         <div className="relative">
           <button 
@@ -51,70 +61,52 @@ export const LectureCard: React.FC<LectureCardProps> = ({
           
           {/* Dropdown Menu */}
           {isMenuOpen && (
-            <div className="absolute right-0 top-full mt-2 w-52 bg-[#1a1f35] border border-white/10 rounded-xl shadow-2xl z-10 overflow-hidden backdrop-blur-xl">
-              <button
-                className="w-full px-4 py-3 text-right text-white hover:bg-white/5 transition-colors flex items-center gap-3"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onViewAttendees();
-                }}
-              >
-                <i className="fas fa-eye w-5 text-primary"></i>
-                <span>عرض التفاصيل</span>
-              </button>
-              <button
-                className="w-full px-4 py-3 text-right text-white hover:bg-white/5 transition-colors flex items-center gap-3"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEdit();
-                }}
-              >
-                <i className="fas fa-edit w-5 text-primary"></i>
-                <span>تعديل</span>
-              </button>
-              <button
-                className="w-full px-4 py-3 text-right text-white hover:bg-white/5 transition-colors flex items-center gap-3"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onCopy();
-                }}
-              >
-                <i className="fas fa-copy w-5 text-primary"></i>
-                <span>نسخ المحاضرة</span>
-              </button>
-              <button
-                className="w-full px-4 py-3 text-right text-danger hover:bg-danger/10 transition-colors flex items-center gap-3 border-t border-white/10"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete();
-                }}
-              >
-                <i className="fas fa-trash w-5"></i>
-                <span>حذف</span>
-              </button>
+            <div className="absolute left-0 top-full mt-2 w-56 bg-[#1a1f37] border border-white/10 rounded-xl shadow-2xl z-10 overflow-hidden backdrop-blur-xl">
+              <div className="p-1">
+                <button
+                  className="w-full px-4 py-2.5 text-right text-white hover:bg-white/5 rounded-lg transition-colors flex items-center gap-3 mb-1"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onViewAttendees();
+                  }}
+                >
+                  <i className="fas fa-eye w-5 text-primary"></i>
+                  <span className="text-sm font-medium">عرض التفاصيل</span>
+                </button>
+                <button
+                  className="w-full px-4 py-2.5 text-right text-white hover:bg-white/5 rounded-lg transition-colors flex items-center gap-3 mb-1"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit();
+                  }}
+                >
+                  <i className="fas fa-edit w-5 text-primary"></i>
+                  <span className="text-sm font-medium">تعديل</span>
+                </button>
+                <button
+                  className="w-full px-4 py-2.5 text-right text-white hover:bg-white/5 rounded-lg transition-colors flex items-center gap-3 mb-1"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onCopy();
+                  }}
+                >
+                  <i className="fas fa-copy w-5 text-primary"></i>
+                  <span className="text-sm font-medium">نسخ المحاضرة</span>
+                </button>
+                <div className="h-px bg-white/10 my-1"></div>
+                <button
+                  className="w-full px-4 py-2.5 text-right text-[#ff6b6b] hover:bg-[#ff6b6b]/10 rounded-lg transition-colors flex items-center gap-3"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete();
+                  }}
+                >
+                  <i className="fas fa-trash w-5"></i>
+                  <span className="text-sm font-medium">حذف</span>
+                </button>
+              </div>
             </div>
           )}
-        </div>
-
-        {/* Status Badge and Delete Button */}
-        <div className="flex items-center gap-2">
-          <span className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${
-            lecture.status === 'جاري الآن' ? 'bg-[#2ecc71]/20 text-[#2ecc71] border border-[#2ecc71]/30' : 
-            lecture.status === 'اليوم' ? 'bg-[#f39c12]/20 text-[#f39c12] border border-[#f39c12]/30' : 
-            lecture.status === 'منتهية' ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30' : 
-            'bg-primary/20 text-primary border border-primary/30'
-          }`}>
-            {lecture.status}
-          </span>
-          <button 
-            className="w-10 h-10 rounded-xl bg-[rgba(231,76,60,0.15)] hover:bg-[rgba(231,76,60,0.25)] text-danger border border-danger/20 hover:border-danger/40 flex items-center justify-center transition-all"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete();
-            }}
-          >
-            <i className="fas fa-trash"></i>
-          </button>
         </div>
       </div>
 
@@ -162,13 +154,13 @@ export const LectureCard: React.FC<LectureCardProps> = ({
               <span>إنعاش</span>
             </button>
           ) : (
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-3">
               <button 
                 className="py-3 rounded-xl bg-[rgba(66,99,235,0.15)] hover:bg-[rgba(66,99,235,0.25)] text-primary border border-primary/30 hover:border-primary/50 font-medium text-sm flex flex-col items-center justify-center gap-1.5 transition-all" 
                 onClick={onScan}
               >
                 <i className="fas fa-qrcode text-base"></i>
-                <span className="text-xs">مسح<br/>QR طالب</span>
+                <span className="text-xs">مسح QR طالب</span>
               </button>
               <button 
                 className="py-3 rounded-xl bg-[rgba(66,99,235,0.15)] hover:bg-[rgba(66,99,235,0.25)] text-primary border border-primary/30 hover:border-primary/50 font-medium text-sm flex flex-col items-center justify-center gap-1.5 transition-all" 
@@ -176,13 +168,6 @@ export const LectureCard: React.FC<LectureCardProps> = ({
               >
                 <i className="fas fa-qrcode text-base"></i>
                 <span className="text-xs">QR Code</span>
-              </button>
-              <button 
-                className="py-3 rounded-xl bg-[rgba(66,99,235,0.15)] hover:bg-[rgba(66,99,235,0.25)] text-primary border border-primary/30 hover:border-primary/50 font-medium text-sm flex flex-col items-center justify-center gap-1.5 transition-all" 
-                onClick={onEnd}
-              >
-                <i className="fas fa-check-circle text-base"></i>
-                <span className="text-xs">تعديل</span>
               </button>
             </div>
           )}
