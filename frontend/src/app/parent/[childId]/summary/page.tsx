@@ -54,10 +54,6 @@ interface TeacherSummary {
     taken: number;
     average: number;
   };
-  points: {
-    total: number;
-    weekly: number;
-  };
   ranking: {
     position: number | null;
     total: number;
@@ -124,10 +120,9 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
     (acc, t) => ({
       attendanceRate: acc.attendanceRate + t.attendance.rate,
       examAverage: acc.examAverage + t.exams.average,
-      totalPoints: acc.totalPoints + t.points.total,
       teacherCount: acc.teacherCount + 1,
     }),
-    { attendanceRate: 0, examAverage: 0, totalPoints: 0, teacherCount: 0 }
+    { attendanceRate: 0, examAverage: 0, teacherCount: 0 }
   );
 
   const avgAttendance = overallStats && overallStats.teacherCount > 0 
@@ -310,12 +305,6 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
                 icon="fas fa-chart-line"
                 color="info"
               />
-              <StatCard
-                title="إجمالي النقاط"
-                value={overallStats?.totalPoints || 0}
-                icon="fas fa-star"
-                color="warning"
-              />
             </div>
           )}
 
@@ -358,7 +347,7 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
                   </div>
 
                   {/* Stats Grid - Teacher Dashboard Style */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-6">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mb-6">
                     {/* Attendance */}
                     <div className="bg-[#0D1120] rounded-xl p-5 text-center">
                       <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-2">
@@ -380,18 +369,6 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
                       <p className="text-gray-400 text-xs">متوسط الدرجات</p>
                       <p className="text-gray-500 text-xs mt-1">
                         {teacherData.exams.taken}/{teacherData.exams.total} امتحان
-                      </p>
-                    </div>
-
-                    {/* Points */}
-                    <div className="bg-[#0D1120] rounded-xl p-5 text-center">
-                      <div className="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center mx-auto mb-2">
-                        <i className="fas fa-star text-yellow-400"></i>
-                      </div>
-                      <p className="text-xl font-bold text-white">{teacherData.points.total}</p>
-                      <p className="text-gray-400 text-xs">النقاط الكلية</p>
-                      <p className="text-gray-500 text-xs mt-1">
-                        +{teacherData.points.weekly} هذا الأسبوع
                       </p>
                     </div>
 

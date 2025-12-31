@@ -138,14 +138,6 @@ class SummaryController extends Controller
             $examsTaken = $examsInPeriod->whereNotNull('score')->count();
             $examAverage = $examsInPeriod->whereNotNull('percentage')->avg('percentage') ?? 0;
 
-            // 3. Points Data
-            $pointsRecord = StudentPoint::where('student_id', $student->id)
-                ->where('teacher_id', $currentTeacherId)
-                ->first();
-
-            $totalPoints = $pointsRecord ? $pointsRecord->total_points : 0;
-            $weeklyPoints = $pointsRecord ? $pointsRecord->weekly_points : 0;
-
             // 4. Leaderboard Ranking
             $allStudentPoints = StudentPoint::where('teacher_id', $currentTeacherId)
                 ->orderByDesc('total_points')
@@ -191,10 +183,6 @@ class SummaryController extends Controller
                     'total' => $examsInPeriod->count(),
                     'taken' => $examsTaken,
                     'average' => round($examAverage, 1),
-                ],
-                'points' => [
-                    'total' => $totalPoints,
-                    'weekly' => $weeklyPoints,
                 ],
                 'ranking' => [
                     'position' => $studentRank,
