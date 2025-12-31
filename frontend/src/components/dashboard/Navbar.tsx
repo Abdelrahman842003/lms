@@ -211,9 +211,9 @@ const getNavItems = (role: string): SidebarItem[] => {
 const getParentNavItems = (): SidebarItem[] => {
   return [
     {
-      id: 'children',
-      label: 'أبنائي',
-      icon: 'fas fa-users',
+      id: 'dashboard',
+      label: 'الرئيسية',
+      icon: 'fas fa-home',
       href: '/parent/children',
     },
   ];
