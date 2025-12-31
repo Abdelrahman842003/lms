@@ -190,13 +190,33 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureTeacherNotSuspende
     Route::get('/points/{teacher}/history', [\App\Http\Controllers\Student\GamificationController::class, 'history']);
     Route::get('/leaderboard/{teacher}', [\App\Http\Controllers\Student\GamificationController::class, 'leaderboard']);
 
+
     // Mistakes (Smart Mistakes Notebook)
     Route::get('/mistakes', [\App\Http\Controllers\Student\MistakesController::class, 'index']);
     Route::post('/mistakes/{id}/mastered', [\App\Http\Controllers\Student\MistakesController::class, 'markAsMastered']);
+});
 
+// ============================================
+// Guardian (Parent) Authentication Routes
+// ============================================
+Route::post('/login/parent', [\App\Http\Controllers\Guardian\AuthController::class, 'login'])
+    ->middleware([\App\Http\Middleware\LoginThrottleMiddleware::class]);
 
-    // Parent Summary (ولي الأمر)
-    Route::get('/parent-summary', [\App\Http\Controllers\Student\ParentSummaryController::class, 'index']);
+Route::middleware(['auth:sanctum'])->prefix('parent')->group(function () {
+    Route::post('/logout', [\App\Http\Controllers\Guardian\AuthController::class, 'logout']);
+    Route::get('/me', [\App\Http\Controllers\Guardian\AuthController::class, 'me']);
+    Route::get('/children', [\App\Http\Controllers\Guardian\AuthController::class, 'children']);
+    
+    // Child Summary
+    Route::get('/children/{studentId}/summary', [\App\Http\Controllers\Guardian\SummaryController::class, 'index']);
+    
+    // Notifications
+    Route::get('/notifications', [\App\Http\Controllers\Guardian\NotificationController::class, 'index']);
+    Route::post('/notifications/{id}/read', [\App\Http\Controllers\Guardian\NotificationController::class, 'markAsRead']);
+    Route::post('/notifications/mark-all-read', [\App\Http\Controllers\Guardian\NotificationController::class, 'markAllAsRead']);
+    
+    // Device Tokens for FCM
+    Route::post('/device-tokens', [\App\Http\Controllers\Api\DeviceTokenController::class, 'store']);
 });
 
 // ============================================

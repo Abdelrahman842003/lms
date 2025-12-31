@@ -7,14 +7,17 @@ const ENDPOINTS = {
   LOGIN_TEACHER: '/api/login/teacher',
   LOGIN_STUDENT: '/api/login/student',
   LOGIN_SECRETARY: '/api/login/secretary',
+  LOGIN_PARENT: '/api/login/parent',
   LOGOUT_ADMIN: '/api/admin/logout',
   LOGOUT_TEACHER: '/api/teacher/logout',
   LOGOUT_STUDENT: '/api/student/logout',
   LOGOUT_SECRETARY: '/api/secretary/logout',
+  LOGOUT_PARENT: '/api/parent/logout',
   ME_TEACHER: '/api/teacher/me',
   ME_STUDENT: '/api/student/me',
   ME_SECRETARY: '/api/secretary/me',
   ME_ADMIN: '/api/admin/me',
+  ME_PARENT: '/api/parent/me',
   UPDATE_ADMIN_PROFILE: '/api/admin/profile',
   CHANGE_ADMIN_PASSWORD: '/api/admin/change-password',
   TEACHER_DASHBOARD_STATS: '/api/teacher/dashboard/stats',
@@ -29,8 +32,24 @@ export interface AuthResponse {
   token: string;
   refresh_token?: string;
   user: any;
-  role: 'teacher' | 'student' | 'secretary' | 'admin';
+  role: 'teacher' | 'student' | 'secretary' | 'admin' | 'parent';
   teachers?: TeacherInfo[]; // For student login - list of enrolled teachers
+  children?: ChildInfo[]; // For parent login - list of children
+  parent_phone?: string; // For parent login
+}
+
+export interface ChildInfo {
+  id: string;
+  name: string;
+  phone: string | null;
+  avatar: string | null;
+  teachers: {
+    id: string;
+    name: string;
+    avatar: string | null;
+    grade: string | null;
+    group: string | null;
+  }[];
 }
 
 export interface TeacherInfo {
@@ -390,10 +409,31 @@ export async function loginSecretary(
 }
 
 /**
- * Logout user (admin, teacher or student)
+ * Login as a parent (guardian)
+ */
+export async function loginParent(
+  phone: string,
+  password: string
+): Promise<AuthResponse> {
+  const data = await fetchApi(ENDPOINTS.LOGIN_PARENT, {
+    method: 'POST',
+    body: JSON.stringify({ phone, password }),
+  }, true); // skipAuthEvent: true
+  return {
+    token: data.token,
+    refresh_token: data.refresh_token,
+    user: { id: 'parent', name: 'ولي الأمر', phone: data.parent_phone },
+    role: data.role,
+    children: data.children,
+    parent_phone: data.parent_phone,
+  };
+}
+
+/**
+ * Logout user (admin, teacher, student, secretary, or parent)
  */
 export async function logout(
-  userType: 'admin' | 'teacher' | 'student' | 'secretary',
+  userType: 'admin' | 'teacher' | 'student' | 'secretary' | 'parent',
   fcmToken?: string | null
 ): Promise<{ message: string }> {
   const endpoint = userType === 'admin'
@@ -402,7 +442,9 @@ export async function logout(
       ? ENDPOINTS.LOGOUT_TEACHER 
       : userType === 'student'
         ? ENDPOINTS.LOGOUT_STUDENT
-        : ENDPOINTS.LOGOUT_SECRETARY;
+        : userType === 'parent'
+          ? ENDPOINTS.LOGOUT_PARENT
+          : ENDPOINTS.LOGOUT_SECRETARY;
 
   await fetchApi(endpoint, {
     method: 'POST',
@@ -416,7 +458,7 @@ export async function logout(
  * Get current user data
  */
 export async function getCurrentUser(
-  userType: 'teacher' | 'student' | 'secretary' | 'admin'
+  userType: 'teacher' | 'student' | 'secretary' | 'admin' | 'parent'
 ): Promise<AuthResponse> {
   const endpoint = userType === 'teacher' 
     ? ENDPOINTS.ME_TEACHER 
@@ -424,7 +466,9 @@ export async function getCurrentUser(
       ? ENDPOINTS.ME_STUDENT
       : userType === 'admin'
         ? ENDPOINTS.ME_ADMIN
-        : ENDPOINTS.ME_SECRETARY;
+        : userType === 'parent'
+          ? ENDPOINTS.ME_PARENT
+          : ENDPOINTS.ME_SECRETARY;
 
   return await fetchApi(endpoint, {
     method: 'GET',

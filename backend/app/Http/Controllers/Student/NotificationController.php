@@ -14,9 +14,16 @@ class NotificationController extends Controller
     {
         $student = Auth::user();
         
+        // Get received notifications, excluding those marked for parent only
         $receivedNotifications = $student->notifications()
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->get()
+            ->filter(function ($notification) {
+                // Exclude notifications that are for parent only
+                $data = $notification->data;
+                return !isset($data['for_parent']) || $data['for_parent'] !== true;
+            })
+            ->values();
 
         $sentNotifications = $student->sentNotifications()
             ->orderBy('created_at', 'desc')
@@ -24,7 +31,7 @@ class NotificationController extends Controller
 
         return $this->successResponse([
             'received_notifications' => $receivedNotifications,
-            'notifications' => $sentNotifications // Frontend expects 'notifications' to be sent ones in one view, but let's check frontend logic
+            'notifications' => $sentNotifications
         ]);
     }
 

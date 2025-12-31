@@ -6,7 +6,7 @@ import { NotificationPermissionModal } from './NotificationPermissionModal';
 
 
 interface DashboardLayoutProps {
-  role: 'admin' | 'teacher' | 'student' | 'secretary';
+  role: 'admin' | 'teacher' | 'student' | 'secretary' | 'parent';
   user?: {
     name: string;
     avatar?: string;

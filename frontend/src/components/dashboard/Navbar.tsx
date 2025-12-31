@@ -9,7 +9,7 @@ import { NotificationDropdown } from './NotificationDropdown';
 import { TeacherSelectionDropdown } from './TeacherSelectionDropdown';
 
 interface NavbarProps {
-  role: 'admin' | 'teacher' | 'student' | 'secretary';
+  role: 'admin' | 'teacher' | 'student' | 'secretary' | 'parent';
   user?: {
     name: string;
     avatar?: string;
@@ -205,11 +205,22 @@ const getNavItems = (role: string): SidebarItem[] => {
       icon: 'fas fa-bell',
       href: '/student/notifications',
     },
+  ];
+};
+
+const getParentNavItems = (): SidebarItem[] => {
+  return [
     {
-      id: 'parent-summary',
-      label: 'ولي الأمر',
-      icon: 'fas fa-user-friends',
-      href: '/student/parent-summary',
+      id: 'children',
+      label: 'أبنائي',
+      icon: 'fas fa-users',
+      href: '/parent/children',
+    },
+    {
+      id: 'notifications',
+      label: 'الإخطارات',
+      icon: 'fas fa-bell',
+      href: '/parent/notifications',
     },
   ];
 };
@@ -220,6 +231,7 @@ const getRoleLabel = (role: string): string => {
     teacher: 'مدرس',
     student: 'طالب',
     secretary: 'سكرتير',
+    parent: 'ولي أمر',
   };
   return labels[role] || role;
 };
@@ -303,7 +315,7 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user, onMenuClick }) => {
   const { logout, user: authUser } = useAuth();
   
   // Get nav items and filter for secretary
-  let items = getNavItems(role);
+  let items = role === 'parent' ? getParentNavItems() : getNavItems(role);
   if (role === 'secretary' && authUser?.permissions) {
     items = filterNavItemsByPermissions(items, authUser.permissions);
   } else if (role === 'secretary') {

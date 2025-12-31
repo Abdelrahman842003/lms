@@ -195,4 +195,172 @@ class NotificationService
 
         return $notificationIds;
     }
+
+    /**
+     * Send notification to parent(s) of a student
+     * 
+     * @param \App\Models\Student $student The student whose parent should be notified
+     * @param string $title Notification title
+     * @param string $message Notification message
+     * @param array $data Additional data
+     * @param string $type Notification type
+     * @return void
+     */
+    public function sendToParent(
+        \App\Models\Student $student,
+        string $title,
+        string $message,
+        array $data = [],
+        string $type = 'general'
+    ): void {
+        $parentPhone = $student->parent_phone;
+        
+        if (empty($parentPhone)) {
+            Log::info("Student {$student->id} has no parent_phone, skipping parent notification");
+            return;
+        }
+
+        // Add child name to the notification data
+        $data['child_id'] = $student->id;
+        $data['child_name'] = $student->name;
+
+        // Store notification in student's notifications (parent will aggregate from children)
+        $notificationId = Str::uuid()->toString();
+        
+        try {
+            $student->notifications()->create([
+                'id' => $notificationId,
+                'type' => 'App\\Notifications\\ParentNotification',
+                'data' => [
+                    'title' => $title,
+                    'message' => $message,
+                    'type' => $type,
+                    'for_parent' => true,
+                    ...$data,
+                ],
+                'read_at' => null,
+            ]);
+        } catch (\Exception $e) {
+            Log::error("Failed to store parent notification: " . $e->getMessage());
+        }
+
+        // Broadcast via Reverb for parent's channel
+        try {
+            broadcast(new NewNotificationEvent(
+                userId: $parentPhone,
+                userType: 'parent',
+                notificationId: $notificationId,
+                title: $title,
+                message: $message,
+                data: $data,
+                type: $type,
+            ));
+        } catch (\Exception $e) {
+            Log::error("Reverb broadcast to parent failed: " . $e->getMessage());
+        }
+
+        // Send FCM to parent
+        try {
+            $this->sendFcmToParent($parentPhone, $notificationId, $title, $message, $data, $type);
+        } catch (\Exception $e) {
+            Log::error("FCM to parent failed: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Send FCM notification to parent by phone
+     */
+    protected function sendFcmToParent(
+        string $parentPhone,
+        string $notificationId,
+        string $title,
+        string $message,
+        array $data,
+        string $type
+    ): void {
+        $tokens = \App\Models\ParentDeviceToken::getTokensForPhone($parentPhone);
+
+        if (empty($tokens)) {
+            Log::info("No FCM tokens found for parent phone: " . substr($parentPhone, 0, 5) . "...");
+            return;
+        }
+
+        $fcmData = [
+            'notification_id' => $notificationId,
+            'title' => $title,
+            'message' => $message,
+            'type' => $type,
+            ...$data,
+        ];
+
+        $credentialsPath = config('services.firebase.credentials')
+            ?? env('GOOGLE_APPLICATION_CREDENTIALS')
+            ?? storage_path('firebase-credentials.json');
+
+        if (!file_exists($credentialsPath)) {
+            Log::error("Firebase credentials not found at: {$credentialsPath}");
+            return;
+        }
+
+        try {
+            $client = new Client();
+            $client->setAuthConfig($credentialsPath);
+            $client->addScope('https://www.googleapis.com/auth/firebase.messaging');
+            $httpClient = $client->authorize();
+
+            $json = json_decode(file_get_contents($credentialsPath), true);
+            $projectId = $json['project_id'] ?? null;
+
+            if (!$projectId) {
+                Log::error("Firebase project_id not found in credentials");
+                return;
+            }
+
+            $endpoint = "https://fcm.googleapis.com/v1/projects/{$projectId}/messages:send";
+
+            foreach ($tokens as $token) {
+                $payload = [
+                    'message' => [
+                        'token' => $token,
+                        'notification' => [
+                            'title' => $title,
+                            'body' => $message,
+                        ],
+                        'data' => array_map(fn($v) => is_array($v) ? json_encode($v) : (string) $v, $fcmData),
+                    ]
+                ];
+
+                try {
+                    $httpClient->post($endpoint, ['json' => $payload]);
+                    Log::info("FCM notification sent to parent token: " . substr($token, 0, 20) . "...");
+                } catch (\GuzzleHttp\Exception\ClientException $e) {
+                    $statusCode = $e->getResponse()->getStatusCode();
+
+                    if ($statusCode == 404 || $statusCode == 400) {
+                        \App\Models\ParentDeviceToken::removeToken($token);
+                        Log::info("Deleted invalid parent FCM token: " . substr($token, 0, 20) . "...");
+                    } else {
+                        Log::error("FCM error for parent token: " . $e->getMessage());
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            Log::error("FCM initialization error for parent: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Send notification to all parents of multiple students
+     */
+    public function sendToParents(
+        iterable $students,
+        string $title,
+        string $message,
+        array $data = [],
+        string $type = 'general'
+    ): void {
+        foreach ($students as $student) {
+            $this->sendToParent($student, $title, $message, $data, $type);
+        }
+    }
 }

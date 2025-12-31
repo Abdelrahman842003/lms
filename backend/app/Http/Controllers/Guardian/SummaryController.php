@@ -1,45 +1,66 @@
 <?php
 
-namespace App\Http\Controllers\Student;
+namespace App\Http\Controllers\Guardian;
 
 use App\Http\Controllers\Controller;
+use App\Models\Student;
 use App\Models\Enrollment;
 use App\Models\Lecture;
 use App\Models\Exam;
-use App\Models\ExamResult;
 use App\Models\Attendance;
-use App\Models\FailedQuestion;
 use App\Models\StudentPoint;
 use App\Services\Media\ImageService;
+use App\Services\MistakesService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
-class ParentSummaryController extends Controller
+class SummaryController extends Controller
 {
     public function __construct(
-        private \App\Services\MistakesService $mistakesService,
+        private MistakesService $mistakesService,
         private ImageService $imageService
     ) {}
 
     /**
-     * Get parent summary across all active teachers
+     * Get summary for a specific child across all teachers or a specific teacher
      */
-    public function index(Request $request)
+    public function index(Request $request, string $studentId)
     {
+        $parent = $request->user();
+        
+        if (!$parent || !$parent->parent_phone) {
+            return $this->errorResponse('غير مصرح', 401);
+        }
+
+        // Verify this student belongs to this parent
+        $student = Student::where('id', $studentId)
+            ->where('parent_phone', $parent->parent_phone)
+            ->first();
+
+        if (!$student) {
+            return $this->errorResponse('الطالب غير موجود أو غير مسموح لك بعرض بياناته', 403);
+        }
+
         $validated = $request->validate([
             'date' => 'nullable|date',
             'period' => 'nullable|in:day,month',
+            'teacher_id' => 'nullable|uuid',
         ]);
 
-        $student = $request->user();
         $date = Carbon::parse($validated['date'] ?? now());
         $period = $validated['period'] ?? 'day';
+        $teacherId = $validated['teacher_id'] ?? null;
 
-        // Get all active enrollments
-        $enrollments = Enrollment::where('student_id', $student->id)
+        // Get enrollments (optionally filtered by teacher)
+        $enrollmentsQuery = Enrollment::where('student_id', $student->id)
             ->where('is_active', true)
-            ->with(['teacher', 'grade', 'group'])
-            ->get();
+            ->with(['teacher', 'grade', 'group']);
+
+        if ($teacherId) {
+            $enrollmentsQuery->where('teacher_id', $teacherId);
+        }
+
+        $enrollments = $enrollmentsQuery->get();
 
         $summary = [];
 
@@ -51,7 +72,7 @@ class ParentSummaryController extends Controller
                 continue;
             }
 
-            $teacherId = $teacher->id;
+            $currentTeacherId = $teacher->id;
 
             // Calculate date range
             if ($period === 'day') {
@@ -63,7 +84,7 @@ class ParentSummaryController extends Controller
             }
 
             // 1. Attendance Data
-            $lecturesInPeriod = Lecture::where('teacher_id', $teacherId)
+            $lecturesInPeriod = Lecture::where('teacher_id', $currentTeacherId)
                 ->whereBetween('start_time', [$startDate, $endDate])
                 ->get();
 
@@ -92,7 +113,7 @@ class ParentSummaryController extends Controller
             $attendanceRate = $totalLectures > 0 ? round(($presentCount / $totalLectures) * 100) : 0;
 
             // 2. Exams Data
-            $examsInPeriod = Exam::where('teacher_id', $teacherId)
+            $examsInPeriod = Exam::where('teacher_id', $currentTeacherId)
                 ->whereBetween('created_at', [$startDate, $endDate])
                 ->with(['results' => function ($q) use ($student) {
                     $q->where('student_id', $student->id);
@@ -119,14 +140,14 @@ class ParentSummaryController extends Controller
 
             // 3. Points Data
             $pointsRecord = StudentPoint::where('student_id', $student->id)
-                ->where('teacher_id', $teacherId)
+                ->where('teacher_id', $currentTeacherId)
                 ->first();
 
             $totalPoints = $pointsRecord ? $pointsRecord->total_points : 0;
             $weeklyPoints = $pointsRecord ? $pointsRecord->weekly_points : 0;
 
             // 4. Mistakes Data
-            $mistakesStats = $this->mistakesService->getStats($student->id, $teacherId);
+            $mistakesStats = $this->mistakesService->getStats($student->id, $currentTeacherId);
             $pendingMistakes = $mistakesStats['pending'] ?? 0;
 
             // 5. Subscription Status
@@ -176,9 +197,10 @@ class ParentSummaryController extends Controller
         }
 
         return $this->successResponse([
-            'student' => [
+            'child' => [
                 'id' => $student->id,
                 'name' => $student->name,
+                'avatar' => $student->avatar_key ? $this->imageService->getUrl($student->avatar_key) : null,
             ],
             'date' => $date->format('Y-m-d'),
             'period' => $period,

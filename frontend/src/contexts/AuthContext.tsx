@@ -6,10 +6,12 @@ import {
   loginTeacher, 
   loginStudent, 
   loginAdmin, 
-  loginSecretary, 
+  loginSecretary,
+  loginParent,
   logout as apiLogout, 
   getCurrentUser,
-  TeacherInfo 
+  TeacherInfo,
+  ChildInfo
 } from '@/services/authService';
 import { User } from '@/types';
 import toast from 'react-hot-toast';
@@ -20,8 +22,11 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   selectedTeacher: TeacherInfo | null;
+  selectedChild: ChildInfo | null;
+  children: ChildInfo[];
   selectTeacher: (teacher: TeacherInfo) => void;
-  login: (phone: string, password: string, userType?: 'teacher' | 'student' | 'secretary' | 'admin') => Promise<void>;
+  selectChild: (child: ChildInfo) => void;
+  login: (phone: string, password: string, userType?: 'teacher' | 'student' | 'secretary' | 'admin' | 'parent') => Promise<void>;
   logout: () => void;
   register: (userData: RegisterData) => Promise<void>;
   updateUser: (userData: Partial<User>) => void;
@@ -36,11 +41,13 @@ interface RegisterData {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+export function AuthProvider({ children: childrenProp }: { children: ReactNode }) {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedTeacher, setSelectedTeacher] = useState<TeacherInfo | null>(null);
+  const [selectedChild, setSelectedChild] = useState<ChildInfo | null>(null);
+  const [childrenList, setChildrenList] = useState<ChildInfo[]>([]);
   const { isLoading: isSettingsLoading } = useSettings();
 
   useEffect(() => {
@@ -218,7 +225,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [router]);
 
-  const login = async (phone: string, password: string, userType: 'teacher' | 'student' | 'secretary' | 'admin' = 'teacher') => {
+  const login = async (phone: string, password: string, userType: 'teacher' | 'student' | 'secretary' | 'admin' | 'parent' = 'teacher') => {
     try {
       setIsLoading(true);
       
@@ -231,6 +238,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else if (userType === 'admin') {
         // Admin uses username/email, not phone
         response = await loginAdmin(phone, password);
+      } else if (userType === 'parent') {
+        response = await loginParent(phone, password);
       } else {
         response = await loginSecretary(phone, password);
       }
@@ -290,6 +299,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
       
+      // For parents, handle children list
+      if (userType === 'parent' && response.children && response.children.length > 0) {
+        localStorage.setItem('parentChildren', JSON.stringify(response.children));
+        setChildrenList(response.children);
+        
+        // Select first child by default
+        if (response.children.length > 0) {
+          setSelectedChild(response.children[0]);
+          localStorage.setItem('selectedChild', JSON.stringify(response.children[0]));
+        }
+      }
+      
       // Set a cookie for middleware to detect auth state
       document.cookie = "auth_state=true; path=/; max-age=2592000; SameSite=Lax"; // 30 days
       // Set user role cookie for middleware redirection
@@ -305,6 +326,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const selectTeacher = (teacher: TeacherInfo) => {
     setSelectedTeacher(teacher);
     localStorage.setItem('selectedTeacher', JSON.stringify(teacher));
+  };
+
+  const selectChild = (child: ChildInfo) => {
+    setSelectedChild(child);
+    localStorage.setItem('selectedChild', JSON.stringify(child));
   };
 
   const register = async (userData: RegisterData) => {
@@ -444,7 +470,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAuthenticated: !!user,
     isLoading,
     selectedTeacher,
+    selectedChild,
+    children: childrenList,
     selectTeacher,
+    selectChild,
     login,
     logout,
     register,
@@ -469,7 +498,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [user, isLoading, isSettingsLoading]);
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={value}>{childrenProp}</AuthContext.Provider>;
 }
 
 export function useAuth() {

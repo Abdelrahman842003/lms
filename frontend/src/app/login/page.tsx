@@ -18,7 +18,7 @@ interface ValidationErrors {
 export default function LoginPage() {
   const router = useRouter();
   const { login, user, isLoading: authLoading } = useAuth();
-  const [userType, setUserType] = useState<'teacher' | 'student' | 'secretary'>('teacher');
+  const [userType, setUserType] = useState<'teacher' | 'student' | 'secretary' | 'parent'>('teacher');
   const [formData, setFormData] = useState({
     phone: '',
     password: '',
@@ -140,6 +140,8 @@ export default function LoginPage() {
       // Keep loading active - don't set to false, let navigation happen
       if (userType === 'student') {
         router.push('/student/teachers');
+      } else if (userType === 'parent') {
+        router.push('/parent/children');
       } else {
         const dashboardPath = userType === 'secretary' ? '/teacher/dashboard' : `/${userType}/dashboard`;
         router.push(dashboardPath);
@@ -259,6 +261,7 @@ export default function LoginPage() {
               title={
                 userType === 'teacher' ? 'مرحبا بك مدرسي العزيز' :
                 userType === 'student' ? 'مرحبا بك طالبي العزيز' :
+                userType === 'parent' ? 'مرحبا بك ولي الأمر العزيز' :
                 'مرحبا بك سكرتيري العزيز'
               }
               subtitle="سجل دخولك لإدارة فصولك الدراسية"
