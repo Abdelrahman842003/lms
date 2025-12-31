@@ -434,36 +434,25 @@ export default function TeacherLecturesPage() {
           </button>
         </div>
       ) : (
-        <div className="lectures-grid grid grid-cols-[repeat(auto-fill,minmax(350px,1fr))] gap-6 max-md:grid-cols-1">
+<div className="lectures-grid grid grid-cols-[repeat(auto-fill,minmax(380px,1fr))] gap-6 max-md:grid-cols-1">
           {lectures.map((lecture) => {
             const isActive = lecture.is_active;
             const isMenuOpen = openMenuId === lecture.id;
             return (
             <div 
               key={lecture.id} 
-              className={`dashboard-card relative transition-all duration-300 ease-in-out ${isActive ? 'lecture-card-active border-2 border-success bg-[rgba(46,204,113,0.05)]' : 'border border-white/10'}`}
+              className={`relative rounded-2xl p-6 transition-all duration-300 ease-in-out flex flex-col ${
+                isActive 
+                  ? 'bg-gradient-to-br from-[rgba(46,204,113,0.15)] to-[rgba(46,204,113,0.05)] border-2 border-[#2ecc71] shadow-[0_0_30px_rgba(46,204,113,0.3)]' 
+                  : 'bg-[rgba(16,20,38,0.6)] border border-white/10 hover:border-white/20 hover:shadow-xl'
+              }`}
             >
-              {/* Header with Title, Status and Menu */}
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex items-center gap-3 flex-1">
-                  <button 
-                    className="btn-icon-danger px-2 py-1 rounded-md bg-[rgba(231,76,60,0.1)] text-danger border-none cursor-pointer hover:bg-[rgba(231,76,60,0.2)] transition-colors"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteClick(lecture);
-                    }}
-                  >
-                    <i className="fas fa-trash"></i>
-                  </button>
-                  <span className={`badge ${lecture.status === 'اليوم' ? 'badge-warning' : lecture.status === 'جاري الآن' ? 'badge-success' : lecture.status === 'منتهية' ? 'badge-secondary' : 'badge-primary'}`}>
-                    {lecture.status}
-                  </span>
-                </div>
-                
+              {/* Top Section: Menu and Delete buttons */}
+              <div className="flex justify-between items-start mb-6">
                 {/* Three-dot Menu */}
                 <div className="relative">
                   <button 
-                    className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center transition-colors"
+                    className="w-10 h-10 rounded-xl bg-[rgba(16,20,38,0.8)] hover:bg-[rgba(66,99,235,0.2)] border border-white/10 hover:border-primary/50 flex items-center justify-center transition-all"
                     onClick={(e) => {
                       e.stopPropagation();
                       setOpenMenuId(isMenuOpen ? null : lecture.id);
@@ -474,7 +463,7 @@ export default function TeacherLecturesPage() {
                   
                   {/* Dropdown Menu */}
                   {isMenuOpen && (
-                    <div className="absolute left-0 top-full mt-2 w-48 bg-[#1a1f35] border border-white/10 rounded-lg shadow-xl z-10 overflow-hidden">
+                    <div className="absolute right-0 top-full mt-2 w-52 bg-[#1a1f35] border border-white/10 rounded-xl shadow-2xl z-10 overflow-hidden backdrop-blur-xl">
                       <button
                         className="w-full px-4 py-3 text-right text-white hover:bg-white/5 transition-colors flex items-center gap-3"
                         onClick={() => {
@@ -482,7 +471,7 @@ export default function TeacherLecturesPage() {
                           setOpenMenuId(null);
                         }}
                       >
-                        <i className="fas fa-eye w-5"></i>
+                        <i className="fas fa-eye w-5 text-primary"></i>
                         <span>عرض التفاصيل</span>
                       </button>
                       <button
@@ -492,7 +481,7 @@ export default function TeacherLecturesPage() {
                           setOpenMenuId(null);
                         }}
                       >
-                        <i className="fas fa-edit w-5"></i>
+                        <i className="fas fa-edit w-5 text-primary"></i>
                         <span>تعديل</span>
                       </button>
                       <button
@@ -502,7 +491,7 @@ export default function TeacherLecturesPage() {
                           setOpenMenuId(null);
                         }}
                       >
-                        <i className="fas fa-copy w-5"></i>
+                        <i className="fas fa-copy w-5 text-primary"></i>
                         <span>نسخ المحاضرة</span>
                       </button>
                       <button
@@ -518,73 +507,94 @@ export default function TeacherLecturesPage() {
                     </div>
                   )}
                 </div>
+
+                {/* Status Badge and Delete Button */}
+                <div className="flex items-center gap-2">
+                  <span className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${
+                    lecture.status === 'جاري الآن' ? 'bg-[#2ecc71]/20 text-[#2ecc71] border border-[#2ecc71]/30' : 
+                    lecture.status === 'اليوم' ? 'bg-[#f39c12]/20 text-[#f39c12] border border-[#f39c12]/30' : 
+                    lecture.status === 'منتهية' ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30' : 
+                    'bg-primary/20 text-primary border border-primary/30'
+                  }`}>
+                    {lecture.status}
+                  </span>
+                  <button 
+                    className="w-10 h-10 rounded-xl bg-[rgba(231,76,60,0.15)] hover:bg-[rgba(231,76,60,0.25)] text-danger border border-danger/20 hover:border-danger/40 flex items-center justify-center transition-all"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteClick(lecture);
+                    }}
+                  >
+                    <i className="fas fa-trash"></i>
+                  </button>
+                </div>
               </div>
 
               {/* Title */}
-              <h3 className="text-xl font-bold text-white mb-2">
+              <h3 className="text-2xl font-bold text-white mb-3 leading-tight">
                 {lecture.title}
               </h3>
 
               {/* Description */}
-              <p className="text-sm text-gray-light mb-4 line-clamp-2">
-                {lecture.description || 'لا يوجد وصف'}
+              <p className="text-sm text-gray-light/80 mb-6 line-clamp-2 min-h-[40px]">
+                {lecture.description || 'New topic'}
               </p>
 
               {/* Lecture Info */}
-              <div className="grid gap-3 mb-6">
-                <div className="flex items-center gap-3 text-sm text-light">
-                  <i className="fas fa-calendar w-5 text-primary"></i>
+              <div className="grid gap-3.5 mb-6">
+                <div className="flex items-center gap-3 text-sm text-gray-light">
+                  <i className="fas fa-calendar w-5 text-primary text-base"></i>
                   <span>{lecture.date}</span>
                 </div>
                 {lecture.grade && (
-                  <div className="flex items-center gap-3 text-sm text-light">
-                    <i className="fas fa-graduation-cap w-5 text-primary"></i>
+                  <div className="flex items-center gap-3 text-sm text-gray-light">
+                    <i className="fas fa-graduation-cap w-5 text-primary text-base"></i>
                     <span>{lecture.grade.name}</span>
                   </div>
                 )}
-                <div className="flex items-center gap-3 text-sm text-light">
-                  <i className="fas fa-clock w-5 text-primary"></i>
+                <div className="flex items-center gap-3 text-sm text-gray-light">
+                  <i className="fas fa-clock w-5 text-primary text-base"></i>
                   <span>{lecture.time} ({lecture.duration})</span>
                 </div>
-                <div className="flex items-center gap-3 text-sm text-light">
-                  <i className="fas fa-users w-5 text-primary"></i>
+                <div className="flex items-center gap-3 text-sm text-gray-light">
+                  <i className="fas fa-users w-5 text-primary text-base"></i>
                   <span>{lecture.enrolled} طالب مسجل</span>
                 </div>
               </div>
 
               {/* Action Buttons */}
               {lecture.status !== 'منتهية' && (
-                <div className="mt-auto pt-4 border-t border-white/10">
+                <div className="mt-auto grid gap-3">
                   {!isActive ? (
                     <button 
-                      className="btn btn-primary w-full" 
+                      className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#ff6b6b] to-[#ee5a6f] hover:from-[#ff5252] hover:to-[#e94560] text-white font-semibold text-base flex items-center justify-center gap-2 transition-all shadow-lg hover:shadow-xl transform hover:scale-[1.02]" 
                       onClick={() => handleActivateClick(lecture)}
                     >
-                      <i className="fas fa-play-circle"></i>
-                      <span>تفعيل المحاضرة</span>
+                      <i className="fas fa-play-circle text-lg"></i>
+                      <span>إنعاش</span>
                     </button>
                   ) : (
-                    <div className="flex gap-2">
+                    <div className="grid grid-cols-3 gap-2">
                       <button 
-                        className="btn btn-outline flex-1" 
-                        onClick={() => handleQRCodeClick(lecture)}
-                      >
-                        <i className="fas fa-qrcode"></i>
-                        <span>QR Code</span>
-                      </button>
-                      <button
-                        className="btn btn-outline flex-1"
+                        className="py-3 rounded-xl bg-[rgba(66,99,235,0.15)] hover:bg-[rgba(66,99,235,0.25)] text-primary border border-primary/30 hover:border-primary/50 font-medium text-sm flex flex-col items-center justify-center gap-1.5 transition-all" 
                         onClick={() => handleScanClick(lecture)}
                       >
-                        <i className="fas fa-camera"></i>
-                        <span>مسح QR طالب</span>
+                        <i className="fas fa-qrcode text-base"></i>
+                        <span className="text-xs">مسح<br/>QR طالب</span>
                       </button>
                       <button 
-                        className="btn btn-danger flex-1" 
+                        className="py-3 rounded-xl bg-[rgba(66,99,235,0.15)] hover:bg-[rgba(66,99,235,0.25)] text-primary border border-primary/30 hover:border-primary/50 font-medium text-sm flex flex-col items-center justify-center gap-1.5 transition-all" 
+                        onClick={() => handleQRCodeClick(lecture)}
+                      >
+                        <i className="fas fa-qrcode text-base"></i>
+                        <span className="text-xs">QR Code</span>
+                      </button>
+                      <button 
+                        className="py-3 rounded-xl bg-[rgba(66,99,235,0.15)] hover:bg-[rgba(66,99,235,0.25)] text-primary border border-primary/30 hover:border-primary/50 font-medium text-sm flex flex-col items-center justify-center gap-1.5 transition-all" 
                         onClick={() => handleEndLectureClick(lecture)}
                       >
-                        <i className="fas fa-stop-circle"></i>
-                        <span>إنهاء</span>
+                        <i className="fas fa-check-circle text-base"></i>
+                        <span className="text-xs">تعديل</span>
                       </button>
                     </div>
                   )}

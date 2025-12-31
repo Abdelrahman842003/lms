@@ -1704,16 +1704,15 @@ select.form-input option:active {
 
 /* Lecture Cards Improvements */
 .lecture-card-active {
-  animation: pulse-border 2s ease-in-out infinite;
+  animation: pulse-glow 3s ease-in-out infinite;
 }
 
-@keyframes pulse-border {
-  0%,
-  100% {
-    box-shadow: 0 0 20px rgba(46, 204, 113, 0.3);
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 25px rgba(46, 204, 113, 0.4), 0 0 50px rgba(46, 204, 113, 0.2);
   }
   50% {
-    box-shadow: 0 0 30px rgba(46, 204, 113, 0.5);
+    box-shadow: 0 0 35px rgba(46, 204, 113, 0.6), 0 0 70px rgba(46, 204, 113, 0.3);
   }
 }
 
@@ -1726,16 +1725,31 @@ select.form-input option:active {
   text-overflow: ellipsis;
 }
 
-.dashboard-card {
-  display: flex;
-  flex-direction: column;
-  min-height: 380px;
-}
-
 .lectures-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
   gap: 24px;
+}
+
+/* Lecture Card Hover Effects */
+.lectures-grid > div:hover {
+  transform: translateY(-4px);
+}
+
+/* Backdrop for dropdown menus */
+.relative > div[class*="absolute"] {
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @media (max-width: 768px) {
