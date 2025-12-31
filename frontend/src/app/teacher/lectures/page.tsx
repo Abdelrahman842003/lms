@@ -23,7 +23,7 @@ import { getGrades } from '@/services/gradeService';
 import { getGroups, Group } from '@/services/groupService';
 import QRCodeModal from '@/components/dashboard/QRCodeModal';
 import QRScannerModal from '@/components/dashboard/QRScannerModal';
-import { Filter } from '@/components/Filter';
+
 import toast from 'react-hot-toast';
 
 export default function TeacherLecturesPage() {
@@ -388,15 +388,18 @@ export default function TeacherLecturesPage() {
           />
         </div>
         <div className="w-64 max-md:w-full">
-          <Filter
-            options={[
-              { value: '', label: 'كل المجموعات' },
-              ...groups.map(group => ({ value: group.id.toString(), label: group.name }))
-            ]}
+          <select
             value={selectedGroupId}
-            onChange={(value) => setSelectedGroupId(value)}
-            className="w-64 max-md:w-full"
-          />
+            onChange={(e) => setSelectedGroupId(e.target.value)}
+            className="form-select w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+          >
+            <option value="" className="bg-[#1a1f37]">كل المجموعات</option>
+            {groups.map(group => (
+              <option key={group.id} value={group.id} className="bg-[#1a1f37]">
+                {group.name}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
@@ -661,35 +664,37 @@ export default function TeacherLecturesPage() {
                 </div>
                 <div className="form-group">
                   <label htmlFor="grade">الصف الدراسي</label>
-                  <Filter
-                    options={[
-                      { value: '', label: 'اختر الصف' },
-                      ...grades.map((grade) => ({
-                        value: grade.id.toString(),
-                        label: grade.name,
-                      })),
-                    ]}
-                    value={formData.grade_id?.toString() || ''}
-                    onChange={(value) => setFormData({ ...formData, grade_id: value })}
-                    className="w-full"
-                  />
+                  <select
+                    id="grade"
+                    className="form-select w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                    value={formData.grade_id || ''}
+                    onChange={(e) => setFormData({ ...formData, grade_id: e.target.value })}
+                  >
+                    <option value="" className="bg-[#1a1f37]">اختر الصف</option>
+                    {grades.map((grade) => (
+                      <option key={grade.id} value={grade.id} className="bg-[#1a1f37]">
+                        {grade.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div className="form-group">
                   <label htmlFor="group">المجموعة (اختياري)</label>
-                  <Filter
-                    options={[
-                      { value: '', label: 'كل المجموعات' },
-                      ...groups
-                        .filter(g => !formData.grade_id || g.grade_id?.toString() === formData.grade_id.toString())
-                        .map((group) => ({
-                          value: group.id.toString(),
-                          label: group.name,
-                        })),
-                    ]}
-                    value={formData.group_id?.toString() || ''}
-                    onChange={(value) => setFormData({ ...formData, group_id: value })}
-                    className="w-full"
-                  />
+                  <select
+                    id="group"
+                    className="form-select w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                    value={formData.group_id || ''}
+                    onChange={(e) => setFormData({ ...formData, group_id: e.target.value })}
+                  >
+                    <option value="" className="bg-[#1a1f37]">كل المجموعات</option>
+                    {groups
+                      .filter(g => !formData.grade_id || g.grade_id?.toString() === formData.grade_id.toString())
+                      .map((group) => (
+                        <option key={group.id} value={group.id} className="bg-[#1a1f37]">
+                          {group.name}
+                        </option>
+                      ))}
+                  </select>
                 </div>
                 <div className="form-group">
                   <label htmlFor="description">الوصف (اختياري)</label>
