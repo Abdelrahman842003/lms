@@ -216,12 +216,6 @@ const getParentNavItems = (): SidebarItem[] => {
       icon: 'fas fa-users',
       href: '/parent/children',
     },
-    {
-      id: 'notifications',
-      label: 'الإخطارات',
-      icon: 'fas fa-bell',
-      href: '/parent/notifications',
-    },
   ];
 };
 

@@ -9,6 +9,25 @@ import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { PageTransition } from '@/components/shared/PageTransition';
 import { fetchApi } from '@/services/authService';
 
+interface LectureItem {
+  id: string;
+  title: string;
+  date: string;
+  time: string;
+  status: 'present' | 'absent' | 'not_recorded';
+}
+
+interface ExamItem {
+  id: string;
+  title: string;
+  subject: string;
+  score: number | null;
+  max_score: number;
+  percentage: number | null;
+  status: string;
+  date: string;
+}
+
 interface TeacherSummary {
   teacher: {
     id: string;
@@ -27,10 +46,10 @@ interface TeacherSummary {
     present: number;
     absent: number;
     rate: number;
-    list: any[];
+    list: LectureItem[];
   };
   exams: {
-    list: any[];
+    list: ExamItem[];
     total: number;
     taken: number;
     average: number;
@@ -41,6 +60,10 @@ interface TeacherSummary {
   };
   mistakes: {
     pending: number;
+  };
+  ranking: {
+    position: number | null;
+    total: number;
   };
   subscription: {
     is_active: boolean;
@@ -66,9 +89,10 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
   const { user, children } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [summary, setSummary] = useState<SummaryData | null>(null);
-  const [period, setPeriod] = useState<'day' | 'month'>('day');
+  const [period, setPeriod] = useState<'day' | 'month'>('month');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedTeacherId, setSelectedTeacherId] = useState<string | null>(null);
+  const [expandedTeacher, setExpandedTeacher] = useState<string | null>(null);
 
   const child = children.find(c => c.id === resolvedParams.childId);
 
@@ -116,6 +140,28 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
   const avgExams = overallStats && overallStats.teacherCount > 0 
     ? Math.round(overallStats.examAverage / overallStats.teacherCount) 
     : 0;
+
+  const getAttendanceStatusStyle = (status: string) => {
+    switch (status) {
+      case 'present':
+        return 'bg-green-500/20 text-green-400 border-green-500/30';
+      case 'absent':
+        return 'bg-red-500/20 text-red-400 border-red-500/30';
+      default:
+        return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+    }
+  };
+
+  const getAttendanceStatusLabel = (status: string) => {
+    switch (status) {
+      case 'present':
+        return 'حاضر';
+      case 'absent':
+        return 'غائب';
+      default:
+        return 'غير مسجل';
+    }
+  };
 
   if (!child) {
     return (
@@ -173,7 +219,7 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
                     )}
                   </div>
                   <div>
-                    <h1 className="text-2xl font-bold text-white mb-1">{child.name}</h1>
+                    <h1 className="text-2xl font-bold text-white mb-1">تقارير {child.name}</h1>
                     <p className="text-gray-400 text-sm flex items-center gap-2">
                       <i className="fas fa-chalkboard-teacher"></i>
                       {child.teachers.length} مدرس
@@ -185,7 +231,7 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
           </div>
 
           {/* Filters */}
-          <DashboardCard title="الفلاتر" icon="fas fa-filter">
+          <DashboardCard title="" icon="">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Date Filter */}
               <div>
@@ -253,14 +299,13 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
 
           {/* Overall Statistics */}
           {!isLoading && summary && summary.teachers.length > 0 && (
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-6 mb-8">
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4 mb-6">
               <StatCard
                 title="نسبة الحضور"
                 value={avgAttendance}
                 suffix="%"
                 icon="fas fa-check-circle"
                 color="success"
-                variant="centered"
               />
               <StatCard
                 title="متوسط الدرجات"
@@ -268,21 +313,18 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
                 suffix="%"
                 icon="fas fa-chart-line"
                 color="info"
-                variant="centered"
               />
               <StatCard
                 title="إجمالي النقاط"
                 value={overallStats?.totalPoints || 0}
                 icon="fas fa-star"
                 color="warning"
-                variant="centered"
               />
               <StatCard
                 title="أخطاء معلقة"
                 value={overallStats?.totalMistakes || 0}
                 icon="fas fa-exclamation-triangle"
                 color="danger"
-                variant="centered"
               />
             </div>
           )}
@@ -293,9 +335,29 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
               {summary.teachers.map((teacherData) => (
                 <DashboardCard
                   key={teacherData.teacher.id}
-                  title={teacherData.teacher.name}
-                  icon="fas fa-chalkboard-teacher"
-                  action={
+                  title=""
+                  icon=""
+                >
+                  {/* Teacher Header */}
+                  <div className="flex items-center justify-between mb-4 pb-4 border-b border-white/10">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center overflow-hidden">
+                        {teacherData.teacher.avatar ? (
+                          <img src={teacherData.teacher.avatar} alt={teacherData.teacher.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <i className="fas fa-chalkboard-teacher text-white text-lg"></i>
+                        )}
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-bold text-white">{teacherData.teacher.name}</h3>
+                        {teacherData.grade && (
+                          <p className="text-gray-400 text-sm">
+                            {teacherData.grade}
+                            {teacherData.group && ` - ${teacherData.group}`}
+                          </p>
+                        )}
+                      </div>
+                    </div>
                     <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                       teacherData.subscription.is_active
                         ? 'bg-green-500/20 text-green-400'
@@ -303,62 +365,174 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
                     }`}>
                       {teacherData.subscription.is_active ? 'فعال' : 'غير فعال'}
                     </span>
-                  }
-                >
-                  {teacherData.grade && (
-                    <p className="text-gray-400 text-sm mb-4">
-                      {teacherData.grade}
-                      {teacherData.group && ` - ${teacherData.group}`}
-                    </p>
-                  )}
+                  </div>
 
-                  {/* Stats Grid */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {/* Stats Grid - Teacher Dashboard Style */}
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
                     {/* Attendance */}
-                    <div className="bg-[#0D1120] rounded-lg p-4 text-center">
+                    <div className="bg-[#0D1120] rounded-xl p-4 text-center border border-white/5">
                       <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-2">
                         <i className="fas fa-check text-green-400"></i>
                       </div>
-                      <p className="text-2xl font-bold text-white">{teacherData.attendance.rate}%</p>
-                      <p className="text-gray-400 text-sm">نسبة الحضور</p>
+                      <p className="text-xl font-bold text-white">{teacherData.attendance.rate}%</p>
+                      <p className="text-gray-400 text-xs">نسبة الحضور</p>
                       <p className="text-gray-500 text-xs mt-1">
                         {teacherData.attendance.present}/{teacherData.attendance.total_lectures} محاضرة
                       </p>
                     </div>
 
                     {/* Exams */}
-                    <div className="bg-[#0D1120] rounded-lg p-4 text-center">
+                    <div className="bg-[#0D1120] rounded-xl p-4 text-center border border-white/5">
                       <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center mx-auto mb-2">
                         <i className="fas fa-file-alt text-blue-400"></i>
                       </div>
-                      <p className="text-2xl font-bold text-white">{teacherData.exams.average}%</p>
-                      <p className="text-gray-400 text-sm">متوسط الدرجات</p>
+                      <p className="text-xl font-bold text-white">{teacherData.exams.average}%</p>
+                      <p className="text-gray-400 text-xs">متوسط الدرجات</p>
                       <p className="text-gray-500 text-xs mt-1">
                         {teacherData.exams.taken}/{teacherData.exams.total} امتحان
                       </p>
                     </div>
 
                     {/* Points */}
-                    <div className="bg-[#0D1120] rounded-lg p-4 text-center">
+                    <div className="bg-[#0D1120] rounded-xl p-4 text-center border border-white/5">
                       <div className="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center mx-auto mb-2">
                         <i className="fas fa-star text-yellow-400"></i>
                       </div>
-                      <p className="text-2xl font-bold text-white">{teacherData.points.total}</p>
-                      <p className="text-gray-400 text-sm">النقاط الكلية</p>
+                      <p className="text-xl font-bold text-white">{teacherData.points.total}</p>
+                      <p className="text-gray-400 text-xs">النقاط الكلية</p>
                       <p className="text-gray-500 text-xs mt-1">
                         +{teacherData.points.weekly} هذا الأسبوع
                       </p>
                     </div>
 
+                    {/* Ranking */}
+                    <div className="bg-[#0D1120] rounded-xl p-4 text-center border border-white/5">
+                      <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center mx-auto mb-2">
+                        <i className="fas fa-trophy text-purple-400"></i>
+                      </div>
+                      <p className="text-xl font-bold text-white">
+                        {teacherData.ranking.position ? `#${teacherData.ranking.position}` : '-'}
+                      </p>
+                      <p className="text-gray-400 text-xs">الترتيب</p>
+                      <p className="text-gray-500 text-xs mt-1">
+                        من {teacherData.ranking.total} طالب
+                      </p>
+                    </div>
+
                     {/* Mistakes */}
-                    <div className="bg-[#0D1120] rounded-lg p-4 text-center">
+                    <div className="bg-[#0D1120] rounded-xl p-4 text-center border border-white/5">
                       <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-2">
                         <i className="fas fa-book text-red-400"></i>
                       </div>
-                      <p className="text-2xl font-bold text-white">{teacherData.mistakes.pending}</p>
-                      <p className="text-gray-400 text-sm">أخطاء معلقة</p>
+                      <p className="text-xl font-bold text-white">{teacherData.mistakes.pending}</p>
+                      <p className="text-gray-400 text-xs">أخطاء معلقة</p>
                     </div>
                   </div>
+
+                  {/* Expandable Details */}
+                  <button
+                    onClick={() => setExpandedTeacher(expandedTeacher === teacherData.teacher.id ? null : teacherData.teacher.id)}
+                    className="w-full py-2 text-primary text-sm font-medium hover:underline flex items-center justify-center gap-2"
+                  >
+                    <span>{expandedTeacher === teacherData.teacher.id ? 'إخفاء التفاصيل' : 'عرض التفاصيل'}</span>
+                    <i className={`fas fa-chevron-down transition-transform ${expandedTeacher === teacherData.teacher.id ? 'rotate-180' : ''}`}></i>
+                  </button>
+
+                  {expandedTeacher === teacherData.teacher.id && (
+                    <div className="mt-4 space-y-6">
+                      {/* Lectures List */}
+                      <div>
+                        <h4 className="text-white font-bold mb-3 flex items-center gap-2">
+                          <i className="fas fa-book-open text-primary"></i>
+                          المحاضرات ({teacherData.attendance.list.length})
+                        </h4>
+                        {teacherData.attendance.list.length === 0 ? (
+                          <p className="text-gray-500 text-sm text-center py-4">لا توجد محاضرات في هذه الفترة</p>
+                        ) : (
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-right">
+                              <thead>
+                                <tr className="border-b border-white/10 text-gray-400 text-sm">
+                                  <th className="pb-3 font-medium">المحاضرة</th>
+                                  <th className="pb-3 font-medium">التاريخ</th>
+                                  <th className="pb-3 font-medium">الوقت</th>
+                                  <th className="pb-3 font-medium">الحالة</th>
+                                </tr>
+                              </thead>
+                              <tbody className="text-sm">
+                                {teacherData.attendance.list.map((lecture) => (
+                                  <tr key={lecture.id} className="border-b border-white/5 last:border-0">
+                                    <td className="py-3 text-white">{lecture.title}</td>
+                                    <td className="py-3 text-gray-400">{lecture.date}</td>
+                                    <td className="py-3 text-gray-400">{lecture.time}</td>
+                                    <td className="py-3">
+                                      <span className={`px-2 py-1 rounded-full text-xs border ${getAttendanceStatusStyle(lecture.status)}`}>
+                                        {getAttendanceStatusLabel(lecture.status)}
+                                      </span>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Exams List */}
+                      <div>
+                        <h4 className="text-white font-bold mb-3 flex items-center gap-2">
+                          <i className="fas fa-file-alt text-primary"></i>
+                          الامتحانات ({teacherData.exams.list.length})
+                        </h4>
+                        {teacherData.exams.list.length === 0 ? (
+                          <p className="text-gray-500 text-sm text-center py-4">لا توجد امتحانات في هذه الفترة</p>
+                        ) : (
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-right">
+                              <thead>
+                                <tr className="border-b border-white/10 text-gray-400 text-sm">
+                                  <th className="pb-3 font-medium">الامتحان</th>
+                                  <th className="pb-3 font-medium">التاريخ</th>
+                                  <th className="pb-3 font-medium">الدرجة</th>
+                                  <th className="pb-3 font-medium">النسبة</th>
+                                  <th className="pb-3 font-medium">الحالة</th>
+                                </tr>
+                              </thead>
+                              <tbody className="text-sm">
+                                {teacherData.exams.list.map((exam) => (
+                                  <tr key={exam.id} className="border-b border-white/5 last:border-0">
+                                    <td className="py-3 text-white">{exam.title}</td>
+                                    <td className="py-3 text-gray-400">{exam.date}</td>
+                                    <td className="py-3 text-white">
+                                      {exam.score !== null ? `${exam.score}/${exam.max_score}` : '-'}
+                                    </td>
+                                    <td className="py-3">
+                                      {exam.percentage !== null ? (
+                                        <span className={`font-bold ${exam.percentage >= 50 ? 'text-green-400' : 'text-red-400'}`}>
+                                          {exam.percentage}%
+                                        </span>
+                                      ) : '-'}
+                                    </td>
+                                    <td className="py-3">
+                                      <span className={`px-2 py-1 rounded-full text-xs ${
+                                        exam.percentage !== null
+                                          ? exam.percentage >= 50
+                                            ? 'bg-green-500/20 text-green-400'
+                                            : 'bg-red-500/20 text-red-400'
+                                          : 'bg-gray-500/20 text-gray-400'
+                                      }`}>
+                                        {exam.percentage !== null ? (exam.percentage >= 50 ? 'ناجح' : 'راسب') : 'لم يختبر'}
+                                      </span>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </DashboardCard>
               ))}
 

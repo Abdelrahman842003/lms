@@ -150,7 +150,22 @@ class SummaryController extends Controller
             $mistakesStats = $this->mistakesService->getStats($student->id, $currentTeacherId);
             $pendingMistakes = $mistakesStats['pending'] ?? 0;
 
-            // 5. Subscription Status
+            // 5. Leaderboard Ranking
+            $allStudentPoints = StudentPoint::where('teacher_id', $currentTeacherId)
+                ->orderByDesc('total_points')
+                ->get();
+            
+            $totalStudentsInLeaderboard = $allStudentPoints->count();
+            $studentRank = null;
+            
+            foreach ($allStudentPoints as $index => $sp) {
+                if ($sp->student_id === $student->id) {
+                    $studentRank = $index + 1;
+                    break;
+                }
+            }
+
+            // 6. Subscription Status
             $subscriptionEnd = $enrollment->subscription_end;
             $isActive = $enrollment->is_active && ($subscriptionEnd === null || Carbon::parse($subscriptionEnd)->isFuture());
             $daysLeft = $subscriptionEnd ? (int) round(Carbon::now()->diffInDays(Carbon::parse($subscriptionEnd), false)) : null;
@@ -187,6 +202,10 @@ class SummaryController extends Controller
                 ],
                 'mistakes' => [
                     'pending' => $pendingMistakes,
+                ],
+                'ranking' => [
+                    'position' => $studentRank,
+                    'total' => $totalStudentsInLeaderboard,
                 ],
                 'subscription' => [
                     'is_active' => $isActive,
