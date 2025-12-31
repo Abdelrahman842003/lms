@@ -315,7 +315,7 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
 
           {/* Teacher Summaries */}
           {!isLoading && summary && (
-            <div className="space-y-8 p-6">
+            <div className="space-y-8">
               {displayedTeachers.map((teacherData) => (
                 <DashboardCard
                   key={teacherData.teacher.id}
@@ -323,7 +323,7 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
                   icon=""
                 >
                   {/* Teacher Header */}
-                  <div className="flex items-center justify-between mb-6 pb-6 border-b border-white/10">
+                  <div className="flex items-center justify-between mb-6 pb-6 border-b p-6 border-white/10">
                     <div className="flex items-center gap-4">
                       <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center overflow-hidden border-2 border-white/5">
                         {teacherData.teacher.avatar ? (
