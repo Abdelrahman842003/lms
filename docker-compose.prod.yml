@@ -253,8 +253,8 @@ services:
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile
-      target: production
+      dockerfile: Dockerfile.prod
+      target: runner
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
         NEXT_PUBLIC_REVERB_APP_KEY: ${REVERB_APP_KEY}

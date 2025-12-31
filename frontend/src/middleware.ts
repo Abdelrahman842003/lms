@@ -47,13 +47,14 @@ export function middleware(request: NextRequest) {
   const isDashboard = pathname.startsWith('/dashboard');
   const isTeacherRoute = pathname.startsWith('/teacher');
   const isStudentRoute = pathname.startsWith('/student');
+  const isParentRoute = pathname.startsWith('/parent');
   const isAdminRoute = pathname.startsWith('/admin') && !pathname.startsWith('/admin/login');
   
   // Define auth routes (login pages)
   const isAuthRoute = pathname === '/login' || pathname === '/register' || pathname === '/admin/login';
 
   // 1. Redirect unauthenticated users trying to access protected routes
-  if ((isDashboard || isTeacherRoute || isStudentRoute || isAdminRoute) && !hasSession) {
+  if ((isDashboard || isTeacherRoute || isStudentRoute || isParentRoute || isAdminRoute) && !hasSession) {
     const loginUrl = new URL('/login', request.url);
     // If trying to access admin route, redirect to admin login if it exists, otherwise generic login
     if (isAdminRoute) {
@@ -77,7 +78,10 @@ export function middleware(request: NextRequest) {
       } else if (userRole === 'admin') {
         return NextResponse.redirect(new URL('/admin/dashboard', request.url));
       } else if (userRole === 'secretary') {
+      } else if (userRole === 'secretary') {
         return NextResponse.redirect(new URL('/secretary/dashboard', request.url));
+      } else if (userRole === 'parent') {
+        return NextResponse.redirect(new URL('/parent/children', request.url));
       }
     }
     

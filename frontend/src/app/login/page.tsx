@@ -43,7 +43,9 @@ export default function LoginPage() {
         ? '/admin/dashboard'
         : user.userType === 'secretary' 
           ? '/teacher/dashboard'
-          : `/${user.userType}/dashboard`;
+          : user.userType === 'parent'
+            ? '/parent/children'
+            : `/${user.userType}/dashboard`;
       router.replace(dashboardPath);
     }
   }, [user, authLoading, router]);
