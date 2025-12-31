@@ -4,6 +4,8 @@ import React, { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
+import { StatCard } from '@/components/dashboard/StatCard';
+import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { PageTransition } from '@/components/shared/PageTransition';
 import { fetchApi } from '@/services/authService';
 
@@ -96,22 +98,45 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
     }
   };
 
+  // Calculate overall statistics
+  const overallStats = summary?.teachers.reduce(
+    (acc, t) => ({
+      attendanceRate: acc.attendanceRate + t.attendance.rate,
+      examAverage: acc.examAverage + t.exams.average,
+      totalPoints: acc.totalPoints + t.points.total,
+      totalMistakes: acc.totalMistakes + t.mistakes.pending,
+      teacherCount: acc.teacherCount + 1,
+    }),
+    { attendanceRate: 0, examAverage: 0, totalPoints: 0, totalMistakes: 0, teacherCount: 0 }
+  );
+
+  const avgAttendance = overallStats && overallStats.teacherCount > 0 
+    ? Math.round(overallStats.attendanceRate / overallStats.teacherCount) 
+    : 0;
+  const avgExams = overallStats && overallStats.teacherCount > 0 
+    ? Math.round(overallStats.examAverage / overallStats.teacherCount) 
+    : 0;
+
   if (!child) {
     return (
       <PageTransition>
         <DashboardLayout
           role="parent"
           user={{ name: user?.name || 'ولي الأمر', avatar: user?.avatar }}
-          title="تقارير الابن"
         >
-          <div className="p-6 text-center">
-            <p className="text-gray-400">الابن غير موجود</p>
-            <button
-              onClick={() => router.push('/parent/children')}
-              className="mt-4 text-primary hover:underline"
-            >
-              العودة لقائمة الأبناء
-            </button>
+          <div className="max-w-[1200px] mx-auto">
+            <div className="text-center py-16">
+              <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
+                <i className="fas fa-user-slash text-3xl text-gray-400"></i>
+              </div>
+              <h3 className="text-lg font-bold text-white mb-2">الابن غير موجود</h3>
+              <button
+                onClick={() => router.push('/parent/children')}
+                className="mt-4 text-primary hover:underline"
+              >
+                العودة لقائمة الأبناء
+              </button>
+            </div>
           </div>
         </DashboardLayout>
       </PageTransition>
@@ -127,7 +152,7 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
         <div className="max-w-[1200px] mx-auto">
           {/* Header with child info */}
           <div className="bg-white/5 border border-white/10 rounded-2xl p-5 mb-6">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-4">
               <div className="flex items-center gap-4">
                 <button
                   onClick={() => router.push('/parent/children')}
@@ -160,7 +185,7 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
           </div>
 
           {/* Filters */}
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-5 mb-6">
+          <DashboardCard title="الفلاتر" icon="fas fa-filter">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Date Filter */}
               <div>
@@ -179,7 +204,7 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
                 <div className="flex gap-2">
                   <button
                     onClick={() => setPeriod('day')}
-                    className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all $
+                    className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${
                       period === 'day'
                         ? 'bg-primary text-white shadow-lg shadow-primary/30'
                         : 'bg-[#0D1120] text-gray-400 hover:text-white hover:bg-white/5'
@@ -217,7 +242,7 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
                 </select>
               </div>
             </div>
-          </div>
+          </DashboardCard>
 
           {/* Loading State */}
           {isLoading && (
@@ -226,41 +251,66 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
             </div>
           )}
 
-          {/* Summary Cards */}
+          {/* Overall Statistics */}
+          {!isLoading && summary && summary.teachers.length > 0 && (
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-6 mb-8">
+              <StatCard
+                title="نسبة الحضور"
+                value={avgAttendance}
+                suffix="%"
+                icon="fas fa-check-circle"
+                color="success"
+                variant="centered"
+              />
+              <StatCard
+                title="متوسط الدرجات"
+                value={avgExams}
+                suffix="%"
+                icon="fas fa-chart-line"
+                color="info"
+                variant="centered"
+              />
+              <StatCard
+                title="إجمالي النقاط"
+                value={overallStats?.totalPoints || 0}
+                icon="fas fa-star"
+                color="warning"
+                variant="centered"
+              />
+              <StatCard
+                title="أخطاء معلقة"
+                value={overallStats?.totalMistakes || 0}
+                icon="fas fa-exclamation-triangle"
+                color="danger"
+                variant="centered"
+              />
+            </div>
+          )}
+
+          {/* Teacher Summaries */}
           {!isLoading && summary && (
             <div className="space-y-6">
               {summary.teachers.map((teacherData) => (
-                <div key={teacherData.teacher.id} className="bg-[#1A1F2E] rounded-xl p-5">
-                  {/* Teacher Header */}
-                  <div className="flex items-center gap-3 mb-4 pb-4 border-b border-white/10">
-                    <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
-                      {teacherData.teacher.avatar ? (
-                        <img
-                          src={teacherData.teacher.avatar}
-                          alt={teacherData.teacher.name}
-                          className="w-full h-full rounded-full object-cover"
-                        />
-                      ) : (
-                        <i className="fas fa-chalkboard-teacher text-primary"></i>
-                      )}
-                    </div>
-                    <div>
-                      <h3 className="text-white font-bold">{teacherData.teacher.name}</h3>
-                      <p className="text-gray-400 text-sm">
-                        {teacherData.grade && `${teacherData.grade}`}
-                        {teacherData.group && ` - ${teacherData.group}`}
-                      </p>
-                    </div>
-                    <div className="mr-auto">
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        teacherData.subscription.is_active
-                          ? 'bg-green-500/20 text-green-400'
-                          : 'bg-red-500/20 text-red-400'
-                      }`}>
-                        {teacherData.subscription.is_active ? 'فعال' : 'غير فعال'}
-                      </span>
-                    </div>
-                  </div>
+                <DashboardCard
+                  key={teacherData.teacher.id}
+                  title={teacherData.teacher.name}
+                  icon="fas fa-chalkboard-teacher"
+                  action={
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                      teacherData.subscription.is_active
+                        ? 'bg-green-500/20 text-green-400'
+                        : 'bg-red-500/20 text-red-400'
+                    }`}>
+                      {teacherData.subscription.is_active ? 'فعال' : 'غير فعال'}
+                    </span>
+                  }
+                >
+                  {teacherData.grade && (
+                    <p className="text-gray-400 text-sm mb-4">
+                      {teacherData.grade}
+                      {teacherData.group && ` - ${teacherData.group}`}
+                    </p>
+                  )}
 
                   {/* Stats Grid */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -309,16 +359,17 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
                       <p className="text-gray-400 text-sm">أخطاء معلقة</p>
                     </div>
                   </div>
-                </div>
+                </DashboardCard>
               ))}
 
               {/* No Data */}
               {summary.teachers.length === 0 && (
-                <div className="text-center py-12">
-                  <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
-                    <i className="fas fa-chart-bar text-2xl text-gray-400"></i>
+                <div className="text-center py-16">
+                  <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
+                    <i className="fas fa-chart-bar text-3xl text-gray-400"></i>
                   </div>
-                  <p className="text-gray-400">لا توجد بيانات للفترة المحددة</p>
+                  <h3 className="text-lg font-bold text-white mb-2">لا توجد بيانات للفترة المحددة</h3>
+                  <p className="text-gray-400">جرب تغيير الفلاتر لعرض البيانات</p>
                 </div>
               )}
             </div>
