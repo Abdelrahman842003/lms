@@ -8,6 +8,7 @@ import { StatCard } from '@/components/dashboard/StatCard';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { PageTransition } from '@/components/shared/PageTransition';
 import { fetchApi } from '@/services/authService';
+import { Filter } from '@/components/Filter';
 
 interface LectureItem {
   id: string;
@@ -270,18 +271,18 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
               {/* Teacher Filter */}
               <div>
                 <label className="block text-gray-400 text-sm font-medium mb-3">المدرس</label>
-                <select
+                <Filter
+                  options={[
+                    { value: '', label: 'جميع المدرسين' },
+                    ...child.teachers.map((teacher) => ({
+                      value: teacher.id,
+                      label: teacher.name,
+                    })),
+                  ]}
                   value={selectedTeacherId || ''}
-                  onChange={(e) => setSelectedTeacherId(e.target.value || null)}
-                  className="w-full bg-[#0D1120] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-primary focus:outline-none transition-colors"
-                >
-                  <option value="">جميع المدرسين</option>
-                  {child.teachers.map((teacher) => (
-                    <option key={teacher.id} value={teacher.id}>
-                      {teacher.name}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(value) => setSelectedTeacherId(value || null)}
+                  className="w-full"
+                />
               </div>
             </div>
           </DashboardCard>
