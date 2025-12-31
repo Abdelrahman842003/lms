@@ -368,9 +368,9 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
                   </div>
 
                   {/* Stats Grid - Teacher Dashboard Style */}
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-5 mb-6">
                     {/* Attendance */}
-                    <div className="bg-[#0D1120] rounded-xl p-4 text-center border border-white/5">
+                    <div className="bg-[#0D1120] rounded-xl p-5 text-center border border-white/5">
                       <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-2">
                         <i className="fas fa-check text-green-400"></i>
                       </div>
@@ -382,7 +382,7 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
                     </div>
 
                     {/* Exams */}
-                    <div className="bg-[#0D1120] rounded-xl p-4 text-center border border-white/5">
+                    <div className="bg-[#0D1120] rounded-xl p-5 text-center border border-white/5">
                       <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center mx-auto mb-2">
                         <i className="fas fa-file-alt text-blue-400"></i>
                       </div>
@@ -394,7 +394,7 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
                     </div>
 
                     {/* Points */}
-                    <div className="bg-[#0D1120] rounded-xl p-4 text-center border border-white/5">
+                    <div className="bg-[#0D1120] rounded-xl p-5 text-center border border-white/5">
                       <div className="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center mx-auto mb-2">
                         <i className="fas fa-star text-yellow-400"></i>
                       </div>
@@ -406,7 +406,7 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
                     </div>
 
                     {/* Ranking */}
-                    <div className="bg-[#0D1120] rounded-xl p-4 text-center border border-white/5">
+                    <div className="bg-[#0D1120] rounded-xl p-5 text-center border border-white/5">
                       <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center mx-auto mb-2">
                         <i className="fas fa-trophy text-purple-400"></i>
                       </div>
@@ -420,7 +420,7 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
                     </div>
 
                     {/* Mistakes */}
-                    <div className="bg-[#0D1120] rounded-xl p-4 text-center border border-white/5">
+                    <div className="bg-[#0D1120] rounded-xl p-5 text-center border border-white/5">
                       <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-2">
                         <i className="fas fa-book text-red-400"></i>
                       </div>
