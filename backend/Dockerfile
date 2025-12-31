@@ -23,11 +23,7 @@ RUN composer install --no-dev --optimize-autoloader --no-scripts --no-interactio
 
 COPY . .
 
-# Optimize Laravel
-RUN php artisan config:cache \
-    && php artisan route:cache \
-    && php artisan view:cache \
-    && php artisan event:cache
+
 
 # ==================== Production Stage ====================
 FROM base AS production
