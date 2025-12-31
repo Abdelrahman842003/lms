@@ -12,6 +12,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->foreignUuid('teacher_id')->nullable()->constrained('teachers')->onDelete('cascade');
             $table->foreignUuid('admin_id')->nullable()->constrained('admins')->onDelete('cascade');
+            $table->foreignUuid('student_id')->nullable()->constrained('students')->onDelete('cascade');
             $table->string('title');
             $table->text('message');
             $table->string('recipient_type'); // all, grade, group, admin

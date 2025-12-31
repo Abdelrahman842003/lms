@@ -24,7 +24,7 @@ class LectureController extends Controller
     {
         $teacher = $this->getTeacherFromRequest($request);
         $perPage = $request->input('per_page', 10);
-        $filters = $request->only(['search', 'date_from', 'date_to']);
+        $filters = $request->only(['search', 'date_from', 'date_to', 'group_id']);
         $lectures = $this->lectureService->getLectures($teacher, $perPage, $filters);
         
         return $this->successResponse(
@@ -39,6 +39,7 @@ class LectureController extends Controller
                 'title' => 'required|string|max:255',
                 'description' => 'nullable|string',
                 'grade_id' => 'required|exists:grades,id',
+                'group_id' => 'nullable|exists:groups,id',
                 'date' => 'required|date',
             ]);
 
@@ -48,6 +49,7 @@ class LectureController extends Controller
                 'title' => $validated['title'],
                 'description' => $validated['description'],
                 'grade_id' => $request->input('grade_id'),
+                'group_id' => $request->input('group_id'),
                 'start_time' => $date->copy()->startOfDay(),
                 'end_time' => $date->copy()->addHours(24),
                 'is_active' => false,
@@ -144,15 +146,64 @@ class LectureController extends Controller
             return $this->errorResponse('Unauthorized', 403);
         }
 
-        if (!$lecture->is_active) {
-            return $this->errorResponse('المحاضرة منتهية بالفعل', 400);
-        }
-
+        // Allow re-activation of ended lectures (removed the is_active check)
         $this->lectureService->endLecture($lecture);
 
         return $this->successResponse([
             'message' => 'تم إنهاء المحاضرة وتسجيل الغياب للطلاب المتغيبين',
             'lecture' => new LectureResource($lecture->fresh())
         ]);
+    }
+
+    /**
+     * Get attendees for a specific lecture
+     */
+    public function getAttendees(Request $request, Lecture $lecture)
+    {
+        if ($lecture->teacher_id !== $this->getTeacherFromRequest($request)->id) {
+            return $this->errorResponse('Unauthorized', 403);
+        }
+
+        $attendances = $lecture->attendances()
+            ->with('student')
+            ->get()
+            ->map(function ($attendance) {
+                return [
+                    'id' => $attendance->id,
+                    'student_id' => $attendance->student_id,
+                    'student_name' => $attendance->student?->name,
+                    'student_phone' => $attendance->student?->phone,
+                    'status' => $attendance->status,
+                    'attended_at' => $attendance->created_at->format('Y-m-d H:i'),
+                ];
+            });
+
+        return $this->successResponse([
+            'lecture' => [
+                'id' => $lecture->id,
+                'title' => $lecture->title,
+            ],
+            'attendees' => $attendances,
+            'total_present' => $attendances->where('status', 'present')->count(),
+            'total_absent' => $attendances->where('status', 'absent')->count(),
+        ]);
+    }
+
+    public function exportAttendees(Request $request, Lecture $lecture)
+    {
+        $attendances = $lecture->attendances()
+            ->with('student')
+            ->get();
+
+        $data = [
+            'lecture' => $lecture,
+            'attendees' => $attendances,
+            'total_present' => $attendances->where('status', 'present')->count(),
+            'total_absent' => $attendances->where('status', 'absent')->count(),
+            'date' => now()->format('Y-m-d'),
+        ];
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('exports.attendees', $data);
+        return $pdf->download("attendance_report_{$lecture->id}.pdf");
     }
 }

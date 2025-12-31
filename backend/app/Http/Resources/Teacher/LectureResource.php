@@ -20,6 +20,7 @@ class LectureResource extends JsonResource
             'time' => $this->start_time->format('h:i A'),
             'duration' => $this->start_time->diffInHours($this->end_time) . ' ساعة',
             'enrolled' => $this->attendances_count,
+            'present_count' => $this->present_count ?? 0,
             'status' => $this->getStatus(),
             'is_active' => $this->is_active,
             'grade' => $this->grade ? [
@@ -27,6 +28,11 @@ class LectureResource extends JsonResource
                 'name' => $this->grade->name,
             ] : null,
             'grade_id' => $this->grade_id,
+            'group' => $this->group ? [
+                'id' => $this->group->id,
+                'name' => $this->group->name,
+            ] : null,
+            'group_id' => $this->group_id,
             'created_at' => $this->created_at,
         ];
     }

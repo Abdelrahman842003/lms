@@ -17,6 +17,7 @@ class UpdateExamRequest extends FormRequest
             'title' => 'required|string|max:255',
             'subject' => 'required|string|max:255',
             'grade_id' => 'required|exists:grades,id',
+            'group_id' => 'nullable|exists:groups,id',
             'date' => 'required|date',
             'duration' => 'required|integer|min:1',
             'total_marks' => 'required|integer|min:1',
@@ -26,6 +27,7 @@ class UpdateExamRequest extends FormRequest
             'questions.*.text' => 'required_with:questions|string',
             'questions.*.options' => 'required_with:questions|array|min:4|max:4',
             'questions.*.correct_answer' => 'required_with:questions|string',
+            'questions.*.duration' => 'required_with:questions|integer|min:10|max:600',
         ];
     }
 

@@ -14,9 +14,13 @@ import {
   generateQrCode,
   recordAttendance,
   toggleLectureActive,
-  endLecture
+  endLecture,
+  getAttendees,
+  Attendee,
+  exportAttendeesPDF
 } from '@/services/lectureService';
 import { getGrades } from '@/services/gradeService';
+import { getGroups, Group } from '@/services/groupService';
 import QRCodeModal from '@/components/dashboard/QRCodeModal';
 import QRScannerModal from '@/components/dashboard/QRScannerModal';
 import toast from 'react-hot-toast';
@@ -39,20 +43,27 @@ export default function TeacherLecturesPage() {
     title: '',
     description: '',
     grade_id: '',
+    group_id: '',
     date: '',
   });
   const [grades, setGrades] = useState<any[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [selectedGroupId, setSelectedGroupId] = useState('');
   
   useEffect(() => {
-    const fetchGrades = async () => {
+    const fetchData = async () => {
       try {
-        const response = await getGrades(1, 100); // Fetch all grades
-        setGrades(response.data);
+        const [gradesResponse, groupsResponse] = await Promise.all([
+          getGrades(1, 100),
+          getGroups(1, 100)
+        ]);
+        setGrades(gradesResponse.data);
+        setGroups(groupsResponse.data || []);
       } catch (error) {
-        console.error('Failed to fetch grades:', error);
+        console.error('Failed to fetch data:', error);
       }
     };
-    fetchGrades();
+    fetchData();
   }, []);
   
   // QR Code State
@@ -74,19 +85,49 @@ export default function TeacherLecturesPage() {
   const [selectedLectureForEnd, setSelectedLectureForEnd] = useState<Lecture | null>(null);
 
   // Menu State
+  // Menu State
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+
+  // Attendees Modal State
+  const [showAttendeesModal, setShowAttendeesModal] = useState(false);
+  const [selectedLectureForAttendees, setSelectedLectureForAttendees] = useState<string | null>(null);
+  const [attendeesData, setAttendeesData] = useState<{ attendees: Attendee[], total_present: number, total_absent: number } | null>(null);
+  const [isLoadingAttendees, setIsLoadingAttendees] = useState(false);
+
+  const handleViewAttendees = async (lectureId: string) => {
+    setSelectedLectureForAttendees(lectureId);
+    setIsLoadingAttendees(true);
+    setShowAttendeesModal(true);
+    try {
+      const data = await getAttendees(lectureId);
+      setAttendeesData({
+        attendees: data.attendees,
+        total_present: data.total_present,
+        total_absent: data.total_absent
+      });
+    } catch (error) {
+      console.error('Failed to fetch attendees:', error);
+      toast.error('فشل جلب بيانات الحضور');
+      setShowAttendeesModal(false);
+    } finally {
+      setIsLoadingAttendees(false);
+    }
+  };
 
   useEffect(() => {
     const timer = setTimeout(() => {
       fetchLectures(1);
     }, 500);
     return () => clearTimeout(timer);
-  }, [searchQuery]);
+  }, [searchQuery, selectedGroupId]);
 
   const fetchLectures = async (page = 1) => {
     try {
       setIsLoading(true);
-      const response = await getLectures(page, itemsPerPage, { search: searchQuery });
+      const response = await getLectures(page, itemsPerPage, { 
+        search: searchQuery,
+        group_id: selectedGroupId || undefined
+      });
       setLectures(response.data);
       setTotalPages(response.meta.last_page);
       setTotalItems(response.meta.total);
@@ -119,7 +160,21 @@ export default function TeacherLecturesPage() {
       title: lecture.title,
       description: lecture.description || '',
       grade_id: lecture.grade_id || '',
+      group_id: lecture.group_id || '',
       date: lecture.start_time.split(' ')[0], // Extract YYYY-MM-DD
+    });
+    setShowModal(true);
+  };
+
+  const handleCopyClick = (lecture: Lecture) => {
+    setIsEditing(false); // This will be a new lecture, so not editing
+    setSelectedLecture(null); // No selected lecture for a new copy
+    setFormData({
+      title: `${lecture.title} (نسخة)`,
+      description: lecture.description || '',
+      grade_id: lecture.grade_id || '', // Ensure it's a string
+      group_id: lecture.group_id || '', // Ensure it's a string
+      date: '', // Reset date for a new lecture
     });
     setShowModal(true);
   };
@@ -320,15 +375,31 @@ export default function TeacherLecturesPage() {
         </div>
       </div>
 
-      {/* Search Bar */}
-      <div className="mb-6">
-        <input
-          type="text"
-          placeholder="بحث عن محاضرة..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="form-input w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white"
-        />
+      {/* Filters */}
+      <div className="flex gap-4 mb-6 max-md:flex-col">
+        <div className="flex-1">
+          <input
+            type="text"
+            placeholder="بحث عن محاضرة..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="form-input w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white"
+          />
+        </div>
+        <div className="w-64 max-md:w-full">
+          <select
+            className="form-input w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white"
+            value={selectedGroupId}
+            onChange={(e) => setSelectedGroupId(e.target.value)}
+          >
+            <option value="">كل المجموعات</option>
+            {groups.map((group) => (
+              <option key={group.id} value={group.id}>
+                {group.name}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* Lectures Grid */}
@@ -443,12 +514,52 @@ export default function TeacherLecturesPage() {
                         <span>QR Code</span>
                       </button>
 
-                      <button 
-                        className="btn btn-outline btn-sm flex-1" 
+                      <button
+                        className="menu-item"
                         onClick={() => handleScanClick(lecture)}
                       >
-                        <i className="fas fa-camera"></i>
-                        <span>Scan</span>
+                        <i className="fas fa-qrcode"></i>
+                        مسح QR طالب
+                      </button>
+                      <button
+                        className="menu-item"
+                        onClick={() => handleViewAttendees(lecture.id)}
+                      >
+                        <i className="fas fa-users"></i>
+                        عرض الحضور
+                      </button>
+                      
+                      {!lecture.is_active && (
+                        <button
+                          className="menu-item"
+                          onClick={() => handleActivateClick(lecture)}
+                        >
+                          <i className="fas fa-redo"></i>
+                          إعادة تفعيل
+                        </button>
+                      )}
+
+                      <button
+                        className="menu-item"
+                        onClick={() => handleCopyClick(lecture)}
+                      >
+                        <i className="fas fa-copy"></i>
+                        نسخ المحاضرة
+                      </button>
+                      <button
+                        className="menu-item"
+                        onClick={() => handleEditClick(lecture)}
+                      >
+                        <i className="fas fa-edit"></i>
+                        تعديل
+                      </button>
+
+                      <button
+                        className="menu-item text-red-500"
+                        onClick={() => handleDeleteClick(lecture)}
+                      >
+                        <i className="fas fa-trash"></i>
+                        حذف
                       </button>
 
                       <button 
@@ -536,6 +647,24 @@ export default function TeacherLecturesPage() {
                     {grades.map((grade) => (
                       <option key={grade.id} value={grade.id}>
                         {grade.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label htmlFor="group">المجموعة (اختياري)</label>
+                  <select
+                    id="group"
+                    className="form-input"
+                    value={formData.group_id || ''}
+                    onChange={(e) => setFormData({ ...formData, group_id: e.target.value })}
+                  >
+                    <option value="">كل المجموعات</option>
+                    {groups
+                      .filter(g => !formData.grade_id || g.grade_id === formData.grade_id)
+                      .map((group) => (
+                      <option key={group.id} value={group.id}>
+                        {group.name}
                       </option>
                     ))}
                   </select>
@@ -707,6 +836,90 @@ export default function TeacherLecturesPage() {
               >
                 تأكيد الإنهاء
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Attendees Modal */}
+      {showAttendeesModal && (
+        <div className="modal-overlay" onClick={() => setShowAttendeesModal(false)}>
+          <div className="modal-content max-w-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>سجل الحضور</h3>
+              <div className="flex gap-2">
+                <button 
+                  className="btn btn-outline btn-sm"
+                  onClick={async () => {
+                    if (!selectedLectureForAttendees) return;
+                    try {
+                      await exportAttendeesPDF(selectedLectureForAttendees);
+                      toast.success('تم تحميل التقرير بنجاح');
+                    } catch (error) {
+                      console.error('Failed to export PDF:', error);
+                      toast.error('فشل تحميل التقرير');
+                    }
+                  }}
+                >
+                  <i className="fas fa-file-pdf ml-2"></i>
+                  تصدير PDF
+                </button>
+                <button className="modal-close" onClick={() => setShowAttendeesModal(false)}>
+                  <i className="fas fa-times"></i>
+                </button>
+              </div>
+            </div>
+            <div className="modal-body">
+              {isLoadingAttendees ? (
+                <div className="text-center py-8">جاري التحميل...</div>
+              ) : attendeesData ? (
+                <>
+                  <div className="grid grid-cols-2 gap-4 mb-6">
+                    <div className="bg-green-50 p-4 rounded-lg text-center">
+                      <div className="text-2xl font-bold text-green-600">{attendeesData.total_present}</div>
+                      <div className="text-sm text-gray-600">حاضر</div>
+                    </div>
+                    <div className="bg-red-50 p-4 rounded-lg text-center">
+                      <div className="text-2xl font-bold text-red-600">{attendeesData.total_absent}</div>
+                      <div className="text-sm text-gray-600">غائب</div>
+                    </div>
+                  </div>
+                  
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="bg-gray-50 border-b">
+                          <th className="px-4 py-2 text-right">الطالب</th>
+                          <th className="px-4 py-2 text-right">رقم الهاتف</th>
+                          <th className="px-4 py-2 text-center">الحالة</th>
+                          <th className="px-4 py-2 text-right">وقت الحضور</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {attendeesData.attendees.map((attendee) => (
+                          <tr key={attendee.id} className="border-b">
+                            <td className="px-4 py-2">{attendee.student_name}</td>
+                            <td className="px-4 py-2">{attendee.student_phone}</td>
+                            <td className="px-4 py-2 text-center">
+                              <span className={`px-2 py-1 rounded-full text-xs ${
+                                attendee.status === 'present' 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : 'bg-red-100 text-red-800'
+                              }`}>
+                                {attendee.status === 'present' ? 'حاضر' : 'غائب'}
+                              </span>
+                            </td>
+                            <td className="px-4 py-2">
+                              {attendee.attended_at || '-'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-8 text-gray-500">لا توجد بيانات</div>
+              )}
             </div>
           </div>
         </div>

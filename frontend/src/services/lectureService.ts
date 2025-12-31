@@ -13,6 +13,7 @@ export interface Lecture {
   time: string;
   duration: string;
   enrolled: number;
+  present_count?: number;
   status: string;
   created_at: string;
   qr_code?: string;
@@ -23,12 +24,18 @@ export interface Lecture {
     id: string;
     name: string;
   } | null;
+  group_id?: string | null;
+  group?: {
+    id: string;
+    name: string;
+  } | null;
 }
 
 export interface CreateLectureData {
   title: string;
   description?: string;
   grade_id?: string;
+  group_id?: string;
   date: string;
 }
 
@@ -36,7 +43,27 @@ export interface UpdateLectureData {
   title?: string;
   description?: string;
   grade_id?: string;
+  group_id?: string;
   date?: string;
+}
+
+export interface Attendee {
+  id: string;
+  student_id: string;
+  student_name: string;
+  student_phone: string;
+  status: 'present' | 'absent';
+  attended_at: string;
+}
+
+export interface AttendeesResponse {
+  lecture: {
+    id: string;
+    title: string;
+  };
+  attendees: Attendee[];
+  total_present: number;
+  total_absent: number;
 }
 
 interface ApiResponse<T> {
@@ -53,7 +80,7 @@ export interface LecturesResponse {
 export const getLectures = async (
   page = 1, 
   perPage = 10,
-  filters?: { search?: string; date_from?: string; date_to?: string }
+  filters?: { search?: string; date_from?: string; date_to?: string; group_id?: string }
 ): Promise<any> => {
   const token = localStorage.getItem('token');
   const queryParams = new URLSearchParams({
@@ -62,6 +89,7 @@ export const getLectures = async (
     ...(filters?.search && { search: filters.search }),
     ...(filters?.date_from && { date_from: filters.date_from }),
     ...(filters?.date_to && { date_to: filters.date_to }),
+    ...(filters?.group_id && { group_id: filters.group_id }),
   });
 
   const response = await fetch(`${API_BASE_URL}/api/teacher/lectures?${queryParams}`, {
@@ -243,4 +271,46 @@ export const endLecture = async (id: string): Promise<{ message: string; lecture
 
   const res: ApiResponse<{ message: string; lecture: Lecture }> = await response.json();
   return res.data;
+};
+
+export const getAttendees = async (lectureId: string): Promise<AttendeesResponse> => {
+  const token = localStorage.getItem('token');
+  const response = await fetch(`${API_BASE_URL}/api/teacher/lectures/${lectureId}/attendees`, {
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || 'فشل جلب بيانات الحضور');
+  }
+
+  const res: ApiResponse<AttendeesResponse> = await response.json();
+  return res.data;
+};
+
+export const exportAttendeesPDF = async (lectureId: string): Promise<void> => {
+  const token = localStorage.getItem('token');
+  const response = await fetch(`${API_BASE_URL}/api/teacher/lectures/${lectureId}/attendees/export`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('فشل تحميل ملف التقرير');
+  }
+
+  const blob = await response.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `attendance_report_${lectureId}.pdf`;
+  document.body.appendChild(a);
+  a.click();
+  window.URL.revokeObjectURL(url);
+  document.body.removeChild(a);
 };

@@ -7,7 +7,7 @@ import { StatCard } from '@/components/dashboard/StatCard';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { DataTable } from '@/components/dashboard/DataTable';
 import { useAuth } from '@/contexts/AuthContext';
-import { getExams, toggleExamStatus, endExam } from '@/services/authService';
+import { getExams, toggleExamStatus, endExam, copyExam } from '@/services/authService';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import { toast } from 'react-hot-toast';
 
@@ -105,6 +105,19 @@ export default function ExamsPage() {
       toast.error('حدث خطأ أثناء إنهاء الامتحان');
     } finally {
       setIsProcessing(false);
+    }
+  };
+
+  const handleCopy = async (exam: Exam) => {
+    if (confirm('هل أنت متأكد من نسخ هذا الامتحان؟')) {
+      try {
+        await copyExam(exam.id.toString());
+        toast.success('تم نسخ الامتحان بنجاح');
+        fetchExams(currentPage);
+      } catch (error) {
+        console.error('Error copying exam:', error);
+        toast.error('فشل نسخ الامتحان');
+      }
     }
   };
 
@@ -214,6 +227,11 @@ export default function ExamsPage() {
       label: 'تعديل',
       icon: 'fas fa-edit',
       onClick: (row: Exam) => router.push(`/teacher/exams/${row.id}/edit`),
+    },
+    {
+      label: 'نسخ',
+      icon: 'fas fa-copy',
+      onClick: (row: Exam) => handleCopy(row),
     },
     {
       label: 'حذف',

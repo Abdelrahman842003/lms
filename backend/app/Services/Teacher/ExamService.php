@@ -28,11 +28,12 @@ class ExamService
                 'title' => $data['title'],
                 'subject' => $data['subject'],
                 'grade_id' => $data['grade_id'],
+                'group_id' => $data['group_id'] ?? null,
                 'date' => $data['date'],
                 'duration' => $data['duration'],
                 'max_score' => $data['total_marks'],
                 'actual_question_count' => $data['actual_question_count'],
-                'time_per_question' => $data['time_per_question'],
+                'time_per_question' => $data['time_per_question'] ?? 60, // Default or global setting
             ]);
 
             $this->createQuestions($exam, $data['questions']);
@@ -48,11 +49,12 @@ class ExamService
                 'title' => $data['title'],
                 'subject' => $data['subject'],
                 'grade_id' => $data['grade_id'],
+                'group_id' => $data['group_id'] ?? null,
                 'date' => $data['date'],
                 'duration' => $data['duration'],
                 'max_score' => $data['total_marks'],
                 'actual_question_count' => $data['actual_question_count'],
-                'time_per_question' => $data['time_per_question'],
+                'time_per_question' => $data['time_per_question'] ?? 60,
             ]);
 
             $exam->questions()->delete();
@@ -67,6 +69,23 @@ class ExamService
         $exam->delete();
     }
 
+    public function copyExam(Exam $exam): Exam
+    {
+        return DB::transaction(function () use ($exam) {
+            $newExam = $exam->replicate(['is_active', 'activated_at', 'ended_at', 'created_at', 'updated_at']);
+            $newExam->title = $exam->title . ' (نسخة)';
+            $newExam->save();
+
+            foreach ($exam->questions as $question) {
+                $newQuestion = $question->replicate(['exam_id', 'created_at', 'updated_at']);
+                $newQuestion->exam_id = $newExam->id;
+                $newQuestion->save();
+            }
+
+            return $newExam->load('questions');
+        });
+    }
+
     private function createQuestions(Exam $exam, array $questions): void
     {
         foreach ($questions as $q) {
@@ -75,6 +94,7 @@ class ExamService
                 'text' => $q['text'],
                 'options' => $q['options'],
                 'correct_answer' => $q['correct_answer'],
+                'duration' => $q['duration'] ?? 60,
             ]);
         }
     }

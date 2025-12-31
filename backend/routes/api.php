@@ -101,11 +101,14 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureTeacherNotSuspende
     Route::get('exams/{exam}/results', [\App\Http\Controllers\Teacher\ExamController::class, 'results']);
     Route::put('exams/{exam}/toggle-status', [\App\Http\Controllers\Teacher\ExamController::class, 'toggleStatus']);
     Route::put('exams/{exam}/end', [\App\Http\Controllers\Teacher\ExamController::class, 'endExam']);
+    Route::post('exams/{exam}/copy', [\App\Http\Controllers\Teacher\ExamController::class, 'copy']);
     Route::apiResource('exams', \App\Http\Controllers\Teacher\ExamController::class);
     Route::post('/lectures/{lecture}/qr-code', [\App\Http\Controllers\Teacher\LectureAttendanceController::class, 'generateQrCode']);
     Route::post('/lectures/{lecture}/attendance', [\App\Http\Controllers\Teacher\LectureAttendanceController::class, 'recordAttendance']);
     Route::put('/lectures/{lecture}/toggle-active', [\App\Http\Controllers\Teacher\LectureController::class, 'toggleActive']);
     Route::post('/lectures/{lecture}/end', [\App\Http\Controllers\Teacher\LectureController::class, 'endLecture']);
+    Route::get('/lectures/{lecture}/attendees', [\App\Http\Controllers\Teacher\LectureController::class, 'getAttendees']);
+    Route::get('/lectures/{lecture}/attendees/export', [\App\Http\Controllers\Teacher\LectureController::class, 'exportAttendees']);
     
     // Secretary Management
     Route::post('secretaries/check-phone', [\App\Http\Controllers\Teacher\SecretaryController::class, 'checkPhone']);

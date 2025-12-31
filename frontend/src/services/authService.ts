@@ -980,6 +980,16 @@ export async function deleteExam(id: string): Promise<any> {
 }
 
 /**
+ * Copy an exam
+ */
+export async function copyExam(id: string): Promise<any> {
+  const res = await fetchApi(`/teacher/exams/${id}/copy`, {
+    method: 'POST',
+  });
+  return res.exam;
+}
+
+/**
  * Get all secretaries
  */
 export async function getSecretaries(page = 1, search = '', status = ''): Promise<any> {

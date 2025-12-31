@@ -38,11 +38,20 @@ class GroupController extends Controller
             return $this->errorResponse('Unauthorized', 403);
         }
 
-        $group->load(['grade', 'students']);
+        $group->load(['grade', 'enrollments.student']);
+        
+        // Get students from enrollments where student exists
+        $students = $group->enrollments
+            ->filter(function ($enrollment) {
+                return $enrollment->student !== null;
+            })
+            ->map(function ($enrollment) {
+                return $enrollment->student;
+            });
 
         return $this->successResponse([
             'group' => new GroupResource($group),
-            'students' => \App\Http\Resources\Teacher\StudentResource::collection($group->students)
+            'students' => \App\Http\Resources\Teacher\StudentResource::collection($students)
         ]);
     }
 

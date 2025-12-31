@@ -1,0 +1,571 @@
+
+> user-dashboard@1.0.0 lint
+> next lint
+
+ ⚠ Warning: Found multiple lockfiles. Selecting /home/abdelrahman/Desktop/New Folder/package-lock.json.
+   Consider removing the lockfiles at:
+   * /home/abdelrahman/Desktop/New Folder/frontend/package-lock.json
+
+
+./src/app/admin/dashboard/page.tsx
+14:50  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+23:62  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+43:81  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+48:88  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+92:37  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/admin/login/page.tsx
+130:19  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/admin/notifications/page.tsx
+21:68  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+40:6  Warning: React Hook useEffect has a missing dependency: 'router'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+59:52  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+77:32  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+87:36  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+135:36  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+158:36  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/admin/permissions/page.tsx
+61:19  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+82:16  Warning: 'err' is defined but never used.  @typescript-eslint/no-unused-vars
+82:21  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+93:19  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+93:28  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/admin/profile/page.tsx
+73:21  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+102:21  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+184:17  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/app/admin/reports/page.tsx
+42:40  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+53:32  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/admin/roles/page.tsx
+82:19  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+104:16  Warning: 'err' is defined but never used.  @typescript-eslint/no-unused-vars
+104:21  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+115:19  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+115:28  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/admin/settings/page.tsx
+92:20  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+231:86  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+231:103  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+
+./src/app/admin/students/page.tsx
+17:44  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+20:58  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+37:44  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+78:6  Warning: React Hook useEffect has a missing dependency: 'fetchStudents'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+104:6  Warning: React Hook useEffect has a missing dependency: 'fetchStudents'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+137:6  Warning: React Hook useEffect has a missing dependency: 'fetchStudents'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+139:37  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+162:21  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+186:21  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+195:74  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+197:40  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+208:19  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+208:28  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+216:36  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+239:19  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+239:29  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+274:22  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+282:22  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+288:17  Warning: '_row' is defined but never used.  @typescript-eslint/no-unused-vars
+288:23  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+442:55  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/admin/teachers/[id]/page.tsx
+20:42  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+30:21  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+82:42  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+82:51  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+89:42  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+89:51  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/admin/teachers/page.tsx
+25:12  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+29:60  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+39:6  Warning: React Hook useEffect has a missing dependency: 'fetchSubscription'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+48:21  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+258:44  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+262:58  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+274:56  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+384:6  Warning: React Hook useEffect has a missing dependency: 'fetchTeachers'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+413:85  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+433:6  Warning: React Hook useEffect has a missing dependency: 'fetchTeachers'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+471:35  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+483:43  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+512:19  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+519:40  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+545:19  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+545:28  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+553:36  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+594:32  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+607:22  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+612:22  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+619:28  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+647:22  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+650:20  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+651:19  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+652:22  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+653:22  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/layout.tsx
+97:17  Warning: Custom fonts not added in `pages/_document.js` will only load for a single page. This is discouraged. See: https://nextjs.org/docs/messages/no-page-custom-font  @next/next/no-page-custom-font
+
+./src/app/login/page.tsx
+69:6  Warning: React Hook useEffect has a missing dependency: 'countdown'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+150:19  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+268:21  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/app/parent/[childId]/summary/page.tsx
+28:11  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+31:11  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+77:6  Warning: React Hook useEffect has a missing dependency: 'fetchSummary'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+140:19  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+232:25  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/app/parent/children/page.tsx
+52:23  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/app/student/attend/page.tsx
+36:6  Warning: React Hook useEffect has a missing dependency: 'markAttendance'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/app/student/dashboard/page.tsx
+21:60  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+22:48  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+61:30  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+63:64  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+74:59  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+82:31  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+82:39  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+209:25  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/app/student/exams/[id]/take/page.tsx
+83:21  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+119:21  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+140:21  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+167:6  Warning: React Hook useEffect has an unnecessary dependency: 'attemptData.progress.current'. Either exclude it or remove the dependency array. Mutable values like 'attemptData.progress.current' aren't valid dependencies because mutating them doesn't re-render the component.  react-hooks/exhaustive-deps
+
+./src/app/student/exams/page.tsx
+15:38  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+66:14  Warning: 'e' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/student/leaderboard/page.tsx
+132:58  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+138:21  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+192:21  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+420:31  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+491:31  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/app/student/lectures/page.tsx
+23:48  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+42:16  Warning: 'e' is defined but never used.  @typescript-eslint/no-unused-vars
+61:21  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/student/mistakes/page.tsx
+48:6  Warning: React Hook useEffect has a missing dependency: 'loadMistakes'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+83:21  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/student/mistakes/quiz/page.tsx
+36:6  Warning: React Hook useEffect has a missing dependency: 'loadQuiz'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/app/student/notifications/page.tsx
+22:68  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+151:32  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+276:41  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/student/profile/page.tsx
+84:14  Warning: 'err' is defined but never used.  @typescript-eslint/no-unused-vars
+133:19  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+156:19  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+236:19  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+305:21  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/app/student/teachers/page.tsx
+95:21  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/app/teacher/dashboard/page.tsx
+25:50  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+50:23  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+75:36  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+79:15  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+116:23  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/teacher/exams/[id]/edit/page.tsx
+25:40  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+49:6  Warning: React Hook useEffect has a missing dependency: 'fetchExamData'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+76:56  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+92:34  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+147:63  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+206:21  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/teacher/exams/[id]/page.tsx
+62:21  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+88:34  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+424:29  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+424:33  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+
+./src/app/teacher/exams/[id]/results/page.tsx
+53:6  Warning: React Hook useEffect has a missing dependency: 'fetchResults'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/app/teacher/exams/add/page.tsx
+37:30  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+76:40  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+173:63  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/teacher/exams/page.tsx
+53:6  Warning: React Hook React.useEffect has a missing dependency: 'fetchExams'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+70:31  Warning: '_id' is defined but never used.  @typescript-eslint/no-unused-vars
+147:19  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+172:19  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+184:19  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/teacher/gamification/page.tsx
+89:21  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+361:47  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+362:103  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/teacher/grades/page.tsx
+98:6  Warning: React Hook useEffect has a missing dependency: 'fetchGrades'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+385:82  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+385:103  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+
+./src/app/teacher/groups/[id]/page.tsx
+17:44  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/teacher/groups/page.tsx
+111:6  Warning: React Hook useEffect has a missing dependency: 'fetchGroups'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+462:73  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+462:94  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+
+./src/app/teacher/lectures/page.tsx
+49:40  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+122:6  Warning: React Hook useEffect has a missing dependency: 'fetchLectures'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+257:21  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+291:21  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+317:21  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+727:47  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+727:71  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+781:110  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+781:147  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+818:49  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+818:79  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+821:72  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+821:77  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+
+./src/app/teacher/notifications/page.tsx
+26:68  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+171:52  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+193:32  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/teacher/notifications/students/page.tsx
+114:52  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/teacher/profile/page.tsx
+77:14  Warning: 'err' is defined but never used.  @typescript-eslint/no-unused-vars
+126:19  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+149:19  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+189:19  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+258:19  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+326:19  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/app/teacher/reports/page.tsx
+24:40  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+354:66  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+400:69  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/teacher/secretaries/[id]/edit/page.tsx
+32:6  Warning: React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+106:21  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/teacher/secretaries/add/page.tsx
+20:62  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+123:21  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/teacher/secretaries/page.tsx
+43:6  Warning: React Hook useEffect has a missing dependency: 'fetchSecretaries'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+115:15  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+145:28  Error: Expected a `const` instead of a literal type assertion.  @typescript-eslint/prefer-as-const
+
+./src/app/teacher/students/[id]/edit/page.tsx
+41:6  Warning: React Hook useEffect has a missing dependency: 'fetchStudentData'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+123:25  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+142:21  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/teacher/students/[id]/page.tsx
+16:42  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+17:66  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+39:21  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+91:15  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+224:49  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+266:53  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+304:56  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+335:60  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/teacher/students/add/page.tsx
+232:40  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+259:21  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/teacher/students/page.tsx
+17:44  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+40:6  Warning: React Hook useEffect has a missing dependency: 'fetchStudents'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+58:42  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+65:69  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+67:79  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+80:55  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+170:34  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+194:40  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+224:36  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+228:15  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+261:23  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+268:23  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+274:23  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+289:29  Error: Expected a `const` instead of a literal type assertion.  @typescript-eslint/prefer-as-const
+290:22  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+291:21  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+296:22  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+297:21  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+302:22  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+303:21  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+308:28  Error: Expected a `const` instead of a literal type assertion.  @typescript-eslint/prefer-as-const
+309:22  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+312:20  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+313:19  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+314:22  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+315:22  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/components/InstallPrompt.tsx
+6:56  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+10:25  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+41:11  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/components/auth/withAdminAuth.tsx
+15:12  Warning: '_' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+16:12  Warning: '__' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/dashboard/DataTable.tsx
+112:33  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+112:43  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/components/dashboard/Navbar.tsx
+399:13  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+470:21  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+528:17  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/components/dashboard/NotificationDropdown.tsx
+143:35  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+153:56  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+280:6  Warning: React Hook useEffect has a missing dependency: 'fetchNotifications'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/components/dashboard/NotificationPermissionModal.tsx
+46:6  Warning: React Hook useEffect has a missing dependency: 'checkPermission'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/components/dashboard/Sidebar.tsx
+362:17  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/components/dashboard/TeacherSelectionDropdown.tsx
+39:41  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+111:13  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+173:45  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+193:29  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/components/dashboard/TeacherStatsCharts.tsx
+23:52  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/components/landing/Hero.tsx
+426:15  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/components/payments/NewPaymentModal.tsx
+36:49  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+83:21  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/components/ui/AvatarUpload.tsx
+44:14  Warning: 'err' is defined but never used.  @typescript-eslint/no-unused-vars
+93:19  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+117:19  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+134:13  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/components/ui/ImageCropModal.tsx
+15:62  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+18:31  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+26:61  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+26:85  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+38:61  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/components/ui/NotificationDetailsModal.tsx
+12:20  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/components/ui/NotificationModal.tsx
+15:23  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/components/ui/index.tsx
+112:9  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/contexts/AuthContext.tsx
+118:64  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+119:63  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+124:67  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+149:30  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+226:6  Warning: React Hook useEffect has a missing dependency: 'user'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+269:39  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+287:58  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+288:57  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+431:46  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/contexts/StudentTeacherContext.tsx
+10:18  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+22:54  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+54:6  Warning: React Hook useEffect has a missing dependency: 'refreshDashboard'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/hooks/useNotifications.ts
+147:90  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/lib/firebase.ts
+8:44  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+74:12  Warning: 'err' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/middleware.ts
+7:3  Error: Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free.  @typescript-eslint/ban-ts-comment
+
+./src/services/authService.ts
+34:9  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+73:9  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+88:12  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+195:118  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+255:18  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+262:18  Warning: 'e' is defined but never used.  @typescript-eslint/no-unused-vars
+266:16  Warning: 'e' is defined but never used.  @typescript-eslint/no-unused-vars
+274:59  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+300:26  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+393:78  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+483:37  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+512:12  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+527:43  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+527:57  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+538:55  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+538:69  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+549:62  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+557:64  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+567:59  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+577:67  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+577:81  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+588:82  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+602:12  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+617:55  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+617:69  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+628:43  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+628:57  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+639:52  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+643:55  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+650:59  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+657:76  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+664:78  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+671:62  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+678:101  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+693:68  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+700:50  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+700:64  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+710:62  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+710:76  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+720:99  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+730:69  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+738:65  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+747:112  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+760:72  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+767:71  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+776:44  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+784:41  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+784:55  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+795:53  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+795:67  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+806:56  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+815:44  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+823:41  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+823:55  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+834:53  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+834:67  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+845:56  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+854:61  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+864:52  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+874:46  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+882:43  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+882:57  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+893:55  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+893:69  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+904:58  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+913:66  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+926:12  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+944:40  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+944:54  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+955:52  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+965:52  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+965:66  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+976:55  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+985:53  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+995:83  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+1008:45  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+1008:59  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+1019:57  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+1019:71  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+1030:94  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+1040:66  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+1049:60  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+1058:49  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+1066:59  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+1073:46  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+1073:60  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+1092:52  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+1099:90  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+1110:69  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+1197:73  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/services/gradeService.ts
+26:12  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/services/groupService.ts
+38:12  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+50:79  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/services/lectureService.ts
+84:12  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+114:26  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/services/notificationService.ts
+26:20  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/types/dashboard.ts
+38:20  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+38:30  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+42:26  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+43:25  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+44:18  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+45:67  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+46:18  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+51:9  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+63:24  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+64:22  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+65:26  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+187:20  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/types/index.ts
+15:16  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/utils/index.ts
+99:46  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+99:56  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+113:46  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+113:56  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+130:32  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
+npm error Lifecycle script `lint` failed with error:
+npm error code 1
+npm error path /home/abdelrahman/Desktop/New Folder/frontend
+npm error workspace user-dashboard@1.0.0
+npm error location /home/abdelrahman/Desktop/New Folder/frontend
+npm error command failed
+npm error command sh -c next lint

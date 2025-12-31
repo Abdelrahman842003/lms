@@ -12,6 +12,8 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->foreignUuid('teacher_id')->constrained('teachers')->onDelete('cascade');
             $table->foreignUuid('grade_id')->constrained('grades')->cascadeOnDelete();
+            $table->uuid('group_id')->nullable();
+            $table->foreign('group_id')->references('id')->on('groups')->nullOnDelete();
             $table->string('title');
             $table->text('description')->nullable();
             $table->string('qr_code')->nullable()->unique();

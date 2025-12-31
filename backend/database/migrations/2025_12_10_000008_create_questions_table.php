@@ -14,6 +14,7 @@ return new class extends Migration
             $table->text('text');
             $table->json('options');
             $table->string('correct_answer');
+            $table->integer('duration')->default(60); // Duration in seconds
             $table->timestamps();
         });
     }

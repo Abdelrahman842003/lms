@@ -162,6 +162,20 @@ class ExamController extends Controller
         return $this->successResponse(null, 'تم حذف الامتحان بنجاح');
     }
 
+    public function copy(Exam $exam)
+    {
+        if ($exam->teacher_id !== $this->getTeacherFromRequest(request())->id) {
+            return $this->errorResponse('Unauthorized', 403);
+        }
+
+        try {
+            $newExam = $this->examService->copyExam($exam);
+            return $this->successResponse(['exam' => $newExam], 'تم نسخ الامتحان بنجاح');
+        } catch (\Exception $e) {
+            return $this->errorResponse('Failed to copy exam: ' . $e->getMessage(), 500);
+        }
+    }
+
     public function toggleStatus(Exam $exam)
     {
         $isActive = !$exam->is_active;

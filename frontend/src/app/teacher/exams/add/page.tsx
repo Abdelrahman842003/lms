@@ -5,12 +5,75 @@ import { useRouter } from 'next/navigation';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { getGrades, createExam } from '@/services/authService';
+import { getGroups, Group } from '@/services/groupService';
 import { toast } from 'react-hot-toast';
 
+import {
+  DndContext, 
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+
 interface Question {
+  id: string;
   text: string;
   options: string[];
   correct_answer: string;
+  duration: number;
+}
+
+interface SortableItemProps {
+  id: string;
+  text: string;
+  duration: number;
+  onRemove: () => void;
+}
+
+function SortableItem(props: SortableItemProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+  } = useSortable({id: props.id});
+  
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+  
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="p-3 mb-2 bg-white/5 rounded border border-white/10 flex items-center gap-3 cursor-move touch-none">
+      <i className="fas fa-grip-vertical text-gray-400"></i>
+      <div className="flex-1">
+        <p className="font-medium text-white truncate">{props.text || 'سؤال جديد'}</p>
+        <span className="text-xs text-gray-400">{props.duration} ثانية</span>
+      </div>
+      <button 
+        onClick={(e) => {
+          e.stopPropagation(); // Prevent drag start
+          props.onRemove();
+        }} 
+        className="text-red-400 hover:text-red-300 p-2"
+        onPointerDown={(e) => e.stopPropagation()} // Prevent drag start on button
+      >
+        <i className="fas fa-trash"></i>
+      </button>
+    </div>
+  );
 }
 
 export default function AddExamPage() {
@@ -18,6 +81,7 @@ export default function AddExamPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [grades, setGrades] = useState<any[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
   
   // Wizard State
   const [step, setStep] = useState<'details' | 'questions'>('details');
@@ -27,13 +91,35 @@ export default function AddExamPage() {
   const [title, setTitle] = useState('');
   const [subject, setSubject] = useState('');
   const [gradeId, setGradeId] = useState('');
+  const [groupId, setGroupId] = useState('');
   const [date, setDate] = useState('');
   const [duration, setDuration] = useState(60);
   const [totalMarks, setTotalMarks] = useState(100);
-  const [questionCount, setQuestionCount] = useState(50); // Total questions in pool
-  const [actualQuestionCount, setActualQuestionCount] = useState(10); // Questions shown in actual exam
-  const [timePerQuestion, setTimePerQuestion] = useState(60); // Seconds per question
+  const [actualQuestionCount, setActualQuestionCount] = useState(0); // Questions shown in actual exam
+  
+  // Final Modal State
+  const [showFinishModal, setShowFinishModal] = useState(false);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
 
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const {active, over} = event;
+    
+    if (over && active.id !== over.id) {
+      setQuestions((items) => {
+        const oldIndex = items.findIndex(i => i.id === active.id);
+        const newIndex = items.findIndex(i => i.id === over.id);
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
+  };
+  
   // Form Validation Errors
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
@@ -41,17 +127,20 @@ export default function AddExamPage() {
   const [questions, setQuestions] = useState<Question[]>([]);
 
   useEffect(() => {
-    fetchGrades();
+    const fetchData = async () => {
+      try {
+        const [gradesData, groupsData] = await Promise.all([
+          getGrades(),
+          getGroups(1, 100)
+        ]);
+        setGrades(gradesData.data || []);
+        setGroups(groupsData.data || []);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      }
+    };
+    fetchData();
   }, []);
-
-  const fetchGrades = async () => {
-    try {
-      const gradesData = await getGrades();
-      setGrades(gradesData.data || []);
-    } catch (error) {
-      console.error('Error fetching grades:', error);
-    }
-  };
 
   const validateDetails = (): boolean => {
     const errors: Record<string, string> = {};
@@ -62,11 +151,6 @@ export default function AddExamPage() {
     if (!date) errors.date = 'تاريخ الامتحان مطلوب';
     if (!duration || duration < 1) errors.duration = 'مدة الامتحان مطلوبة (دقيقة واحدة على الأقل)';
     if (!totalMarks || totalMarks < 1) errors.totalMarks = 'الدرجة الكلية مطلوبة';
-    if (!questionCount || questionCount < 1) errors.questionCount = 'عدد الأسئلة الكلي مطلوب';
-    if (!actualQuestionCount || actualQuestionCount < 1) errors.actualQuestionCount = 'عدد الأسئلة الفعلية مطلوب';
-    if (actualQuestionCount > questionCount) errors.actualQuestionCount = 'عدد الأسئلة الفعلية يجب أن يكون أقل من أو يساوي الكلي';
-    if (!timePerQuestion || timePerQuestion < 10) errors.timePerQuestion = 'مدة السؤال يجب أن تكون 10 ثوانٍ على الأقل';
-    if (timePerQuestion > 600) errors.timePerQuestion = 'مدة السؤال يجب ألا تتجاوز 10 دقائق';
     
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -80,14 +164,16 @@ export default function AddExamPage() {
       return;
     }
     
-    // Initialize questions array
-    setQuestions(
-      Array(questionCount).fill(null).map(() => ({
+    // Initialize with one empty question if empty
+    if (questions.length === 0) {
+      setQuestions([{
+        id: crypto.randomUUID(),
         text: '',
         options: ['', '', '', ''],
-        correct_answer: ''
-      }))
-    );
+        correct_answer: '',
+        duration: 60
+      }]);
+    }
     setStep('questions');
   };
 
@@ -111,7 +197,18 @@ export default function AddExamPage() {
       toast.error('يرجى إكمال السؤال الحالي قبل الانتقال للتالي');
       return;
     }
+    
     if (currentQuestionIndex < questions.length - 1) {
+      setCurrentQuestionIndex(prev => prev + 1);
+    } else {
+      // Add new question
+      setQuestions([...questions, {
+        id: crypto.randomUUID(),
+        text: '',
+        options: ['', '', '', ''],
+        correct_answer: '',
+        duration: 60
+      }]);
       setCurrentQuestionIndex(prev => prev + 1);
     }
   };
@@ -123,29 +220,36 @@ export default function AddExamPage() {
   };
 
   const handleSubmit = async () => {
+    // Validate current question before finishing
     const currentQ = questions[currentQuestionIndex];
     if (!currentQ.text || currentQ.options.some(o => !o) || !currentQ.correct_answer) {
       toast.error('يرجى إكمال السؤال الحالي قبل الحفظ');
       return;
     }
 
+    // Open modal to confirm actual question count
+    setActualQuestionCount(questions.length); // Default to total questions
+    setShowFinishModal(true);
+  };
+
+  const handleFinalSubmit = async () => {
     setLoading(true);
     try {
       const response = await createExam({
         title,
         subject,
         grade_id: gradeId,
+        group_id: groupId || undefined,
         date,
         duration,
         total_marks: totalMarks,
         actual_question_count: actualQuestionCount,
-        time_per_question: timePerQuestion,
+        time_per_question: 60, // Default, not used if questions have duration
         questions
       });
       
       toast.success('تم إنشاء الامتحان بنجاح');
       
-      // عرض التحذير إذا وجد تعارض محتمل
       if (response?.warning) {
         toast(response.warning, {
           icon: '⚠️',
@@ -163,6 +267,7 @@ export default function AddExamPage() {
       toast.error('حدث خطأ أثناء إنشاء الامتحان');
     } finally {
       setLoading(false);
+      setShowFinishModal(false);
     }
   };
 
@@ -226,6 +331,21 @@ export default function AddExamPage() {
                   {formErrors.gradeId && <span className="text-red-500 text-xs mt-1 block"><i className="fas fa-exclamation-circle ml-1"></i>{formErrors.gradeId}</span>}
                 </div>
                 <div className="form-group">
+                  <label className="block text-sm font-medium text-white mb-2">المجموعة (اختياري)</label>
+                  <select
+                    className="form-input w-full"
+                    value={groupId}
+                    onChange={(e) => setGroupId(e.target.value)}
+                  >
+                    <option value="">كل المجموعات</option>
+                    {groups
+                      .filter(g => !gradeId || g.grade_id === gradeId)
+                      .map(g => (
+                      <option key={g.id} value={g.id}>{g.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group">
                   <label className="block text-sm font-medium text-white mb-2">تاريخ الامتحان <span className="text-red-500">*</span></label>
                   <input
                     type="datetime-local"
@@ -254,44 +374,6 @@ export default function AddExamPage() {
                     onChange={(e) => setTotalMarks(e.target.value === '' ? 0 : parseInt(e.target.value))}
                   />
                   {formErrors.totalMarks && <span className="text-red-500 text-xs mt-1 block"><i className="fas fa-exclamation-circle ml-1"></i>{formErrors.totalMarks}</span>}
-                </div>
-                <div className="form-group">
-                  <label className="block text-sm font-medium text-white mb-2">عدد الأسئلة الكلي (بنك الأسئلة) <span className="text-red-500">*</span></label>
-                  <input
-                    type="number"
-                    className={`form-input w-full ${formErrors.questionCount ? 'border-red-500' : ''}`}
-                    value={questionCount || ''}
-                    onChange={(e) => setQuestionCount(e.target.value === '' ? 0 : parseInt(e.target.value))}
-                    min="1"
-                  />
-                  <small className="text-gray-500 text-xs mt-1 block">العدد الكلي للأسئلة التي ستضيفها</small>
-                  {formErrors.questionCount && <span className="text-red-500 text-xs mt-1 block"><i className="fas fa-exclamation-circle ml-1"></i>{formErrors.questionCount}</span>}
-                </div>
-                <div className="form-group">
-                  <label className="block text-sm font-medium text-white mb-2">عدد الأسئلة الفعلية في الامتحان <span className="text-red-500">*</span></label>
-                  <input
-                    type="number"
-                    className={`form-input w-full ${formErrors.actualQuestionCount ? 'border-red-500' : ''}`}
-                    value={actualQuestionCount || ''}
-                    onChange={(e) => setActualQuestionCount(e.target.value === '' ? 0 : parseInt(e.target.value))}
-                    min="1"
-                    max={questionCount}
-                  />
-                  <small className="text-gray-500 text-xs mt-1 block">سيتم اختيار هذا العدد عشوائياً من بنك الأسئلة لكل طالب</small>
-                  {formErrors.actualQuestionCount && <span className="text-red-500 text-xs mt-1 block"><i className="fas fa-exclamation-circle ml-1"></i>{formErrors.actualQuestionCount}</span>}
-                </div>
-                <div className="form-group md:col-span-2">
-                  <label className="block text-sm font-medium text-white mb-2">مدة كل سؤال (ثانية) <span className="text-red-500">*</span></label>
-                  <input
-                    type="number"
-                    className={`form-input w-full ${formErrors.timePerQuestion ? 'border-red-500' : ''}`}
-                    value={timePerQuestion || ''}
-                    onChange={(e) => setTimePerQuestion(e.target.value === '' ? 0 : parseInt(e.target.value))}
-                    min="10"
-                    max="600"
-                  />
-                  <small className="text-gray-500 text-xs mt-1 block">الوقت المتاح للإجابة على كل سؤال (من 10 ثانية إلى 10 دقائق)</small>
-                  {formErrors.timePerQuestion && <span className="text-red-500 text-xs mt-1 block"><i className="fas fa-exclamation-circle ml-1"></i>{formErrors.timePerQuestion}</span>}
                 </div>
               </div>
 
@@ -331,7 +413,20 @@ export default function AddExamPage() {
                 
                 <div className="p-6">
                   <div className="form-group mb-6">
-                    <label className="block text-sm font-medium mb-2">نص السؤال</label>
+                    <div className="flex justify-between items-center mb-2">
+                      <label className="block text-sm font-medium">نص السؤال</label>
+                      <div className="flex items-center gap-2">
+                        <label className="text-xs text-gray-400">مدة السؤال (ثانية):</label>
+                        <input
+                          type="number"
+                          className="form-input w-20 py-1 px-2 text-sm"
+                          value={questions[currentQuestionIndex].duration || 60}
+                          onChange={(e) => handleQuestionChange('duration', parseInt(e.target.value))}
+                          min="10"
+                          max="600"
+                        />
+                      </div>
+                    </div>
                     <input
                       type="text"
                       className="form-input w-full"
@@ -387,31 +482,149 @@ export default function AddExamPage() {
                   السابق
                 </button>
 
-                {currentQuestionIndex < questions.length - 1 ? (
-                  <button
-                    type="button"
-                    onClick={handleNextQuestion}
-                    className="btn btn-primary px-6"
-                  >
-                    التالي
-                    <i className="fas fa-arrow-left mr-2"></i>
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={handleSubmit}
-                    className="btn btn-success px-8 bg-green-600 hover:bg-green-700 text-white"
-                    disabled={loading}
-                  >
-                    {loading ? 'جاري الحفظ...' : 'حفظ وإنهاء'}
-                    <i className="fas fa-check mr-2"></i>
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={() => setShowPreviewModal(true)}
+                  className="btn btn-secondary px-6"
+                >
+                  معاينة وترتيب
+                  <i className="fas fa-sort mr-2"></i>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => toast('قريباً: استيراد الأسئلة من PDF', { icon: '🚧' })}
+                  className="btn btn-outline px-6"
+                >
+                  استيراد PDF
+                  <i className="fas fa-file-pdf mr-2"></i>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleNextQuestion}
+                  className="btn btn-primary px-6"
+                >
+                  سؤال جديد
+                  <i className="fas fa-plus mr-2"></i>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  className="btn btn-success px-8 bg-green-600 hover:bg-green-700 text-white"
+                  disabled={loading}
+                >
+                  إنهاء
+                  <i className="fas fa-check mr-2"></i>
+                </button>
               </div>
             </div>
           )}
         </div>
       </div>
+      {/* Finish Modal */}
+      {showFinishModal && (
+        <div className="modal-overlay" onClick={() => setShowFinishModal(false)}>
+          <div className="modal-content max-w-md" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>إعدادات الامتحان النهائية</h3>
+              <button className="modal-close" onClick={() => setShowFinishModal(false)}>
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="form-group">
+                <label className="block text-sm font-medium text-white mb-2">
+                  عدد الأسئلة التي ستظهر للطالب
+                </label>
+                <input
+                  type="number"
+                  className="form-input w-full"
+                  value={actualQuestionCount}
+                  onChange={(e) => setActualQuestionCount(parseInt(e.target.value))}
+                  min="1"
+                  max={questions.length}
+                />
+                <p className="text-xs text-gray-400 mt-2">
+                  لديك {questions.length} سؤال في بنك الأسئلة.
+                  يمكنك اختيار عدد أقل ليتم اختيار الأسئلة عشوائياً لكل طالب.
+                </p>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setShowFinishModal(false)}
+              >
+                إلغاء
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={handleFinalSubmit}
+                disabled={loading}
+              >
+                {loading ? 'جاري الحفظ...' : 'حفظ ونشر الامتحان'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Preview & Reorder Modal */}
+      {showPreviewModal && (
+        <div className="modal-overlay" onClick={() => setShowPreviewModal(false)}>
+          <div className="modal-content max-w-2xl h-[80vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>معاينة وترتيب الأسئلة</h3>
+              <button className="modal-close" onClick={() => setShowPreviewModal(false)}>
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            <div className="modal-body flex-1 overflow-y-auto">
+              <DndContext 
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext 
+                  items={questions.map(q => q.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  {questions.map((question) => (
+                    <SortableItem 
+                      key={question.id} 
+                      id={question.id} 
+                      text={question.text} 
+                      duration={question.duration}
+                      onRemove={() => {
+                        if (questions.length > 1) {
+                          setQuestions(questions.filter(q => q.id !== question.id));
+                          if (currentQuestionIndex >= questions.length - 1) {
+                            setCurrentQuestionIndex(Math.max(0, questions.length - 2));
+                          }
+                        } else {
+                          toast.error('يجب أن يحتوي الامتحان على سؤال واحد على الأقل');
+                        }
+                      }}
+                    />
+                  ))}
+                </SortableContext>
+              </DndContext>
+            </div>
+            <div className="modal-footer">
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => setShowPreviewModal(false)}
+              >
+                حفظ الترتيب
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 }

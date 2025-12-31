@@ -13,6 +13,7 @@ class Lecture extends Model
     protected $fillable = [
         'teacher_id',
         'grade_id',
+        'group_id',
         'title',
         'description',
         'start_time',
@@ -39,6 +40,11 @@ class Lecture extends Model
         return $this->belongsTo(Grade::class);
     }
 
+    public function group()
+    {
+        return $this->belongsTo(Group::class);
+    }
+
     public function attendances()
     {
         return $this->hasMany(Attendance::class);
@@ -55,6 +61,10 @@ class Lecture extends Model
 
         if ($dateTo = $filters['date_to'] ?? null) {
             $query->whereDate('start_time', '<=', $dateTo);
+        }
+
+        if ($groupId = $filters['group_id'] ?? null) {
+            $query->where('group_id', $groupId);
         }
     }
 }
