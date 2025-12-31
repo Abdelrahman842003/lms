@@ -1602,6 +1602,7 @@ select.form-input option:active {
   margin-bottom: 24px;
   line-height: 1.2;
   background: linear-gradient(135deg, white 0%, var(--gray-light) 100%);
+  background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -1686,5 +1687,46 @@ select.form-input option:active {
 @media (max-width: 768px) {
   .hero-title {
     font-size: 2.5rem;
+  }
+}
+
+/* Lecture Cards Improvements */
+.lecture-card-active {
+  animation: pulse-border 2s ease-in-out infinite;
+}
+
+@keyframes pulse-border {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(46, 204, 113, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(46, 204, 113, 0.5);
+  }
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dashboard-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 380px;
+}
+
+.lectures-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 24px;
+}
+
+@media (max-width: 768px) {
+  .lectures-grid {
+    grid-template-columns: 1fr;
   }
 }

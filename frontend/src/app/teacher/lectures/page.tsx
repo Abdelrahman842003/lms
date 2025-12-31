@@ -406,7 +406,7 @@ export default function TeacherLecturesPage() {
       {isLoading ? (
         <div className="lectures-grid grid grid-cols-[repeat(auto-fill,minmax(350px,1fr))] gap-6 max-md:grid-cols-1">
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="rounded-xl shadow-lg border border-white/5 h-[280px] flex flex-col gap-4">
+            <div key={i} className="rounded-xl shadow-lg border border-white/5 h-[280px] flex flex-col gap-4 p-4">
               <div className="flex justify-between items-start">
                 <div className="skeleton-item w-[60%] h-6"></div>
                 <div className="skeleton-item w-[20%] h-6 rounded-xl"></div>
@@ -437,21 +437,17 @@ export default function TeacherLecturesPage() {
         <div className="lectures-grid grid grid-cols-[repeat(auto-fill,minmax(350px,1fr))] gap-6 max-md:grid-cols-1">
           {lectures.map((lecture) => {
             const isActive = lecture.is_active;
+            const isMenuOpen = openMenuId === lecture.id;
             return (
             <div 
               key={lecture.id} 
-              className={`dashboard-card transition-all duration-300 ease-in-out ${isActive ? 'lecture-card-active col-span-2 border-2 border-success bg-[rgba(46,204,113,0.05)] max-md:col-auto' : 'border border-white/10'}`}
+              className={`dashboard-card relative transition-all duration-300 ease-in-out ${isActive ? 'lecture-card-active border-2 border-success bg-[rgba(46,204,113,0.05)]' : 'border border-white/10'}`}
             >
-              <div className="mb-4">
-                <div className="flex justify-between items-start mb-3">
-                  <h3 className="text-lg font-bold text-white flex-1">
-                    {lecture.title}
-                  </h3>
-                  <span className={lecture.status === 'اليوم' ? 'badge badge-warning' : lecture.status === 'جاري الآن' ? 'badge badge-success' : lecture.status === 'منتهية' ? 'badge badge-secondary' : 'badge badge-primary'}>
-                    {lecture.status}
-                  </span>
+              {/* Header with Title, Status and Menu */}
+              <div className="flex justify-between items-start mb-4">
+                <div className="flex items-center gap-3 flex-1">
                   <button 
-                    className="btn-icon-danger mr-2 px-2 py-1 rounded-md bg-[rgba(231,76,60,0.1)] text-danger border-none cursor-pointer"
+                    className="btn-icon-danger px-2 py-1 rounded-md bg-[rgba(231,76,60,0.1)] text-danger border-none cursor-pointer hover:bg-[rgba(231,76,60,0.2)] transition-colors"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleDeleteClick(lecture);
@@ -459,117 +455,138 @@ export default function TeacherLecturesPage() {
                   >
                     <i className="fas fa-trash"></i>
                   </button>
+                  <span className={`badge ${lecture.status === 'اليوم' ? 'badge-warning' : lecture.status === 'جاري الآن' ? 'badge-success' : lecture.status === 'منتهية' ? 'badge-secondary' : 'badge-primary'}`}>
+                    {lecture.status}
+                  </span>
                 </div>
-                <p className="text-sm text-gray-light mb-4">
-                  {lecture.description}
-                </p>
+                
+                {/* Three-dot Menu */}
+                <div className="relative">
+                  <button 
+                    className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setOpenMenuId(isMenuOpen ? null : lecture.id);
+                    }}
+                  >
+                    <i className="fas fa-ellipsis-v text-white"></i>
+                  </button>
+                  
+                  {/* Dropdown Menu */}
+                  {isMenuOpen && (
+                    <div className="absolute left-0 top-full mt-2 w-48 bg-[#1a1f35] border border-white/10 rounded-lg shadow-xl z-10 overflow-hidden">
+                      <button
+                        className="w-full px-4 py-3 text-right text-white hover:bg-white/5 transition-colors flex items-center gap-3"
+                        onClick={() => {
+                          handleViewAttendees(lecture.id);
+                          setOpenMenuId(null);
+                        }}
+                      >
+                        <i className="fas fa-eye w-5"></i>
+                        <span>عرض التفاصيل</span>
+                      </button>
+                      <button
+                        className="w-full px-4 py-3 text-right text-white hover:bg-white/5 transition-colors flex items-center gap-3"
+                        onClick={() => {
+                          handleEditClick(lecture);
+                          setOpenMenuId(null);
+                        }}
+                      >
+                        <i className="fas fa-edit w-5"></i>
+                        <span>تعديل</span>
+                      </button>
+                      <button
+                        className="w-full px-4 py-3 text-right text-white hover:bg-white/5 transition-colors flex items-center gap-3"
+                        onClick={() => {
+                          handleCopyClick(lecture);
+                          setOpenMenuId(null);
+                        }}
+                      >
+                        <i className="fas fa-copy w-5"></i>
+                        <span>نسخ المحاضرة</span>
+                      </button>
+                      <button
+                        className="w-full px-4 py-3 text-right text-danger hover:bg-danger/10 transition-colors flex items-center gap-3 border-t border-white/10"
+                        onClick={() => {
+                          handleDeleteClick(lecture);
+                          setOpenMenuId(null);
+                        }}
+                      >
+                        <i className="fas fa-trash w-5"></i>
+                        <span>حذف</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
 
-              <div className="grid gap-3 mb-4">
-                <div className="flex items-center gap-2 text-sm text-light">
+              {/* Title */}
+              <h3 className="text-xl font-bold text-white mb-2">
+                {lecture.title}
+              </h3>
+
+              {/* Description */}
+              <p className="text-sm text-gray-light mb-4 line-clamp-2">
+                {lecture.description || 'لا يوجد وصف'}
+              </p>
+
+              {/* Lecture Info */}
+              <div className="grid gap-3 mb-6">
+                <div className="flex items-center gap-3 text-sm text-light">
                   <i className="fas fa-calendar w-5 text-primary"></i>
                   <span>{lecture.date}</span>
                 </div>
                 {lecture.grade && (
-                  <div className="flex items-center gap-2 text-sm text-light">
+                  <div className="flex items-center gap-3 text-sm text-light">
                     <i className="fas fa-graduation-cap w-5 text-primary"></i>
                     <span>{lecture.grade.name}</span>
                   </div>
                 )}
-                <div className="flex items-center gap-2 text-sm text-light">
+                <div className="flex items-center gap-3 text-sm text-light">
                   <i className="fas fa-clock w-5 text-primary"></i>
                   <span>{lecture.time} ({lecture.duration})</span>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-light">
+                <div className="flex items-center gap-3 text-sm text-light">
                   <i className="fas fa-users w-5 text-primary"></i>
                   <span>{lecture.enrolled} طالب مسجل</span>
                 </div>
               </div>
 
+              {/* Action Buttons */}
               {lecture.status !== 'منتهية' && (
-                <div className="lecture-actions flex gap-2 max-md:flex-wrap">
-                  <button 
-                    className="btn btn-primary btn-sm flex-1" 
-                    onClick={() => handleEditClick(lecture)}
-                  >
-                    <i className="fas fa-edit"></i>
-                    <span>تعديل</span>
-                  </button>
-
+                <div className="mt-auto pt-4 border-t border-white/10">
                   {!isActive ? (
                     <button 
-                      className="btn btn-success btn-sm flex-[2]" 
+                      className="btn btn-primary w-full" 
                       onClick={() => handleActivateClick(lecture)}
                     >
-                      <i className="fas fa-power-off"></i>
+                      <i className="fas fa-play-circle"></i>
                       <span>تفعيل المحاضرة</span>
                     </button>
                   ) : (
-                    <>
+                    <div className="flex gap-2">
                       <button 
-                        className="btn btn-outline btn-sm flex-1" 
+                        className="btn btn-outline flex-1" 
                         onClick={() => handleQRCodeClick(lecture)}
                       >
                         <i className="fas fa-qrcode"></i>
                         <span>QR Code</span>
                       </button>
-
                       <button
-                        className="menu-item"
+                        className="btn btn-outline flex-1"
                         onClick={() => handleScanClick(lecture)}
                       >
-                        <i className="fas fa-qrcode"></i>
-                        مسح QR طالب
+                        <i className="fas fa-camera"></i>
+                        <span>مسح QR طالب</span>
                       </button>
-                      <button
-                        className="menu-item"
-                        onClick={() => handleViewAttendees(lecture.id)}
-                      >
-                        <i className="fas fa-users"></i>
-                        عرض الحضور
-                      </button>
-                      
-                      {!lecture.is_active && (
-                        <button
-                          className="menu-item"
-                          onClick={() => handleActivateClick(lecture)}
-                        >
-                          <i className="fas fa-redo"></i>
-                          إعادة تفعيل
-                        </button>
-                      )}
-
-                      <button
-                        className="menu-item"
-                        onClick={() => handleCopyClick(lecture)}
-                      >
-                        <i className="fas fa-copy"></i>
-                        نسخ المحاضرة
-                      </button>
-                      <button
-                        className="menu-item"
-                        onClick={() => handleEditClick(lecture)}
-                      >
-                        <i className="fas fa-edit"></i>
-                        تعديل
-                      </button>
-
-                      <button
-                        className="menu-item text-red-500"
-                        onClick={() => handleDeleteClick(lecture)}
-                      >
-                        <i className="fas fa-trash"></i>
-                        حذف
-                      </button>
-
                       <button 
-                        className="btn btn-danger btn-sm flex-1" 
+                        className="btn btn-danger flex-1" 
                         onClick={() => handleEndLectureClick(lecture)}
                       >
                         <i className="fas fa-stop-circle"></i>
                         <span>إنهاء</span>
                       </button>
-                    </>
+                    </div>
                   )}
                 </div>
               )}
