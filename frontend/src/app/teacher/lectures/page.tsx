@@ -23,6 +23,7 @@ import { getGrades } from '@/services/gradeService';
 import { getGroups, Group } from '@/services/groupService';
 import QRCodeModal from '@/components/dashboard/QRCodeModal';
 import QRScannerModal from '@/components/dashboard/QRScannerModal';
+import { Filter } from '@/components/Filter';
 import toast from 'react-hot-toast';
 
 export default function TeacherLecturesPage() {
@@ -387,18 +388,15 @@ export default function TeacherLecturesPage() {
           />
         </div>
         <div className="w-64 max-md:w-full">
-          <select
-            className="form-input w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white"
+          <Filter
+            options={[
+              { value: '', label: 'كل المجموعات' },
+              ...groups.map(group => ({ value: group.id.toString(), label: group.name }))
+            ]}
             value={selectedGroupId}
-            onChange={(e) => setSelectedGroupId(e.target.value)}
-          >
-            <option value="">كل المجموعات</option>
-            {groups.map((group) => (
-              <option key={group.id} value={group.id}>
-                {group.name}
-              </option>
-            ))}
-          </select>
+            onChange={(value) => setSelectedGroupId(value)}
+            className="w-64 max-md:w-full"
+          />
         </div>
       </div>
 
