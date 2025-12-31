@@ -209,6 +209,11 @@
   overflow: hidden;
 }
 
+[dir="rtl"] .navbar-dropdown {
+  left: 0;
+  right: auto;
+}
+
 @keyframes dropdownFadeIn {
   from {
     opacity: 0;
