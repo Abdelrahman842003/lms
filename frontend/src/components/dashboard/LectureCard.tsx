@@ -61,9 +61,9 @@ export const LectureCard: React.FC<LectureCardProps> = ({
           
           {/* Dropdown Menu */}
           {isMenuOpen && (
-            <div className="navbar-dropdown" style={{ minWidth: '200px', left: '0', right: 'auto' }}>
+            <div className="actions-menu show" style={{ minWidth: '200px', left: '0', right: 'auto', position: 'absolute', top: '100%', marginTop: '8px' }}>
               <button
-                className="navbar-dropdown-item"
+                className="actions-menu-item w-full"
                 onClick={(e) => {
                   e.stopPropagation();
                   onViewAttendees();
@@ -73,7 +73,7 @@ export const LectureCard: React.FC<LectureCardProps> = ({
                 <span>عرض التفاصيل</span>
               </button>
               <button
-                className="navbar-dropdown-item"
+                className="actions-menu-item w-full"
                 onClick={(e) => {
                   e.stopPropagation();
                   onEdit();
@@ -83,7 +83,7 @@ export const LectureCard: React.FC<LectureCardProps> = ({
                 <span>تعديل</span>
               </button>
               <button
-                className="navbar-dropdown-item"
+                className="actions-menu-item w-full"
                 onClick={(e) => {
                   e.stopPropagation();
                   onCopy();
@@ -92,16 +92,14 @@ export const LectureCard: React.FC<LectureCardProps> = ({
                 <i className="fas fa-copy"></i>
                 <span>نسخ المحاضرة</span>
               </button>
-              <div className="navbar-dropdown-divider"></div>
               <button
-                className="navbar-dropdown-item logout-item"
-                style={{ color: '#ff6b6b' }}
+                className="actions-menu-item danger w-full"
                 onClick={(e) => {
                   e.stopPropagation();
                   onDelete();
                 }}
               >
-                <i className="fas fa-trash" style={{ color: '#ff6b6b' }}></i>
+                <i className="fas fa-trash"></i>
                 <span>حذف</span>
               </button>
             </div>
