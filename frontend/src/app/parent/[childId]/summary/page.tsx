@@ -123,70 +123,76 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
       <DashboardLayout
         role="parent"
         user={{ name: user?.name || 'ولي الأمر', avatar: user?.avatar }}
-        title={`تقارير ${child.name}`}
       >
-        <div className="p-4 md:p-6">
+        <div className="max-w-[1200px] mx-auto">
           {/* Header with child info */}
-          <div className="flex items-center gap-4 mb-6">
-            <button
-              onClick={() => router.push('/parent/children')}
-              className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:bg-white/10 hover:text-white transition-colors"
-            >
-              <i className="fas fa-arrow-right"></i>
-            </button>
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary/50 flex items-center justify-center text-white text-lg font-bold">
-                {child.avatar ? (
-                  <img
-                    src={child.avatar}
-                    alt={child.name}
-                    className="w-full h-full rounded-full object-cover"
-                  />
-                ) : (
-                  child.name.charAt(0)
-                )}
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-white">{child.name}</h1>
-                <p className="text-gray-400 text-sm">{child.teachers.length} مدرس</p>
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-5 mb-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => router.push('/parent/children')}
+                  className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:bg-white/10 hover:text-white transition-colors"
+                >
+                  <i className="fas fa-arrow-right"></i>
+                </button>
+                <div className="flex items-center gap-3">
+                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-primary/50 flex items-center justify-center text-white text-xl font-bold border-2 border-white/10">
+                    {child.avatar ? (
+                      <img
+                        src={child.avatar}
+                        alt={child.name}
+                        className="w-full h-full rounded-full object-cover"
+                      />
+                    ) : (
+                      child.name.charAt(0)
+                    )}
+                  </div>
+                  <div>
+                    <h1 className="text-2xl font-bold text-white mb-1">{child.name}</h1>
+                    <p className="text-gray-400 text-sm flex items-center gap-2">
+                      <i className="fas fa-chalkboard-teacher"></i>
+                      {child.teachers.length} مدرس
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
           {/* Filters */}
-          <div className="bg-[#1A1F2E] rounded-xl p-4 mb-6">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-5 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Date Filter */}
               <div>
-                <label className="block text-gray-400 text-sm mb-2">التاريخ</label>
+                <label className="block text-gray-400 text-sm font-medium mb-2">التاريخ</label>
                 <input
                   type="date"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
-                  className="w-full bg-[#0D1120] border border-white/10 rounded-lg px-4 py-2 text-white focus:border-primary focus:outline-none"
+                  className="w-full bg-[#0D1120] border border-white/10 rounded-lg px-4 py-2.5 text-white focus:border-primary focus:outline-none transition-colors"
                 />
               </div>
 
               {/* Period Filter */}
               <div>
-                <label className="block text-gray-400 text-sm mb-2">الفترة</label>
+                <label className="block text-gray-400 text-sm font-medium mb-2">الفترة</label>
                 <div className="flex gap-2">
                   <button
                     onClick={() => setPeriod('day')}
-                    className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all $
                       period === 'day'
-                        ? 'bg-primary text-white'
-                        : 'bg-[#0D1120] text-gray-400 hover:text-white'
+                        ? 'bg-primary text-white shadow-lg shadow-primary/30'
+                        : 'bg-[#0D1120] text-gray-400 hover:text-white hover:bg-white/5'
                     }`}
                   >
                     يومي
                   </button>
                   <button
                     onClick={() => setPeriod('month')}
-                    className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${
                       period === 'month'
-                        ? 'bg-primary text-white'
-                        : 'bg-[#0D1120] text-gray-400 hover:text-white'
+                        ? 'bg-primary text-white shadow-lg shadow-primary/30'
+                        : 'bg-[#0D1120] text-gray-400 hover:text-white hover:bg-white/5'
                     }`}
                   >
                     شهري
@@ -196,11 +202,11 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
 
               {/* Teacher Filter */}
               <div>
-                <label className="block text-gray-400 text-sm mb-2">المدرس</label>
+                <label className="block text-gray-400 text-sm font-medium mb-2">المدرس</label>
                 <select
                   value={selectedTeacherId || ''}
                   onChange={(e) => setSelectedTeacherId(e.target.value || null)}
-                  className="w-full bg-[#0D1120] border border-white/10 rounded-lg px-4 py-2 text-white focus:border-primary focus:outline-none"
+                  className="w-full bg-[#0D1120] border border-white/10 rounded-lg px-4 py-2.5 text-white focus:border-primary focus:outline-none transition-colors"
                 >
                   <option value="">جميع المدرسين</option>
                   {child.teachers.map((teacher) => (
