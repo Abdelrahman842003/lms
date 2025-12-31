@@ -193,9 +193,11 @@
 .navbar-dropdown {
   position: absolute;
   top: calc(100% + 12px);
-  right: 0;
+  inset-inline-end: 0;
+  right: auto;
   left: auto;
   min-width: 240px;
+  max-width: 90vw;
   background: rgba(16, 20, 38, 0.95);
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.1);
