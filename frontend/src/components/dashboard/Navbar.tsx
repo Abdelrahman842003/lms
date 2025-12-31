@@ -209,14 +209,7 @@ const getNavItems = (role: string): SidebarItem[] => {
 };
 
 const getParentNavItems = (): SidebarItem[] => {
-  return [
-    {
-      id: 'dashboard',
-      label: 'الرئيسية',
-      icon: 'fas fa-home',
-      href: '/parent/children',
-    },
-  ];
+  return [];
 };
 
 const getRoleLabel = (role: string): string => {
