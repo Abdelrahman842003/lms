@@ -146,11 +146,7 @@ class SummaryController extends Controller
             $totalPoints = $pointsRecord ? $pointsRecord->total_points : 0;
             $weeklyPoints = $pointsRecord ? $pointsRecord->weekly_points : 0;
 
-            // 4. Mistakes Data
-            $mistakesStats = $this->mistakesService->getStats($student->id, $currentTeacherId);
-            $pendingMistakes = $mistakesStats['pending'] ?? 0;
-
-            // 5. Leaderboard Ranking
+            // 4. Leaderboard Ranking
             $allStudentPoints = StudentPoint::where('teacher_id', $currentTeacherId)
                 ->orderByDesc('total_points')
                 ->get();
@@ -199,9 +195,6 @@ class SummaryController extends Controller
                 'points' => [
                     'total' => $totalPoints,
                     'weekly' => $weeklyPoints,
-                ],
-                'mistakes' => [
-                    'pending' => $pendingMistakes,
                 ],
                 'ranking' => [
                     'position' => $studentRank,

@@ -58,9 +58,6 @@ interface TeacherSummary {
     total: number;
     weekly: number;
   };
-  mistakes: {
-    pending: number;
-  };
   ranking: {
     position: number | null;
     total: number;
@@ -128,10 +125,9 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
       attendanceRate: acc.attendanceRate + t.attendance.rate,
       examAverage: acc.examAverage + t.exams.average,
       totalPoints: acc.totalPoints + t.points.total,
-      totalMistakes: acc.totalMistakes + t.mistakes.pending,
       teacherCount: acc.teacherCount + 1,
     }),
-    { attendanceRate: 0, examAverage: 0, totalPoints: 0, totalMistakes: 0, teacherCount: 0 }
+    { attendanceRate: 0, examAverage: 0, totalPoints: 0, teacherCount: 0 }
   );
 
   const avgAttendance = overallStats && overallStats.teacherCount > 0 
@@ -320,12 +316,6 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
                 icon="fas fa-star"
                 color="warning"
               />
-              <StatCard
-                title="أخطاء معلقة"
-                value={overallStats?.totalMistakes || 0}
-                icon="fas fa-exclamation-triangle"
-                color="danger"
-              />
             </div>
           )}
 
@@ -368,7 +358,7 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
                   </div>
 
                   {/* Stats Grid - Teacher Dashboard Style */}
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-6 mb-6">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-6">
                     {/* Attendance */}
                     <div className="bg-[#0D1120] rounded-xl p-5 text-center">
                       <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-2">
@@ -417,15 +407,6 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
                       <p className="text-gray-500 text-xs mt-1">
                         من {teacherData.ranking.total} طالب
                       </p>
-                    </div>
-
-                    {/* Mistakes */}
-                    <div className="bg-[#0D1120] rounded-xl p-5 text-center">
-                      <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-2">
-                        <i className="fas fa-book text-red-400"></i>
-                      </div>
-                      <p className="text-xl font-bold text-white">{teacherData.mistakes.pending}</p>
-                      <p className="text-gray-400 text-xs">أخطاء معلقة</p>
                     </div>
                   </div>
 
