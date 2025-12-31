@@ -299,7 +299,7 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
 
           {/* Overall Statistics */}
           {!isLoading && summary && summary.teachers.length > 0 && (
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4 mb-6">
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-6 mb-8">
               <StatCard
                 title="نسبة الحضور"
                 value={avgAttendance}
@@ -368,7 +368,7 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
                   </div>
 
                   {/* Stats Grid - Teacher Dashboard Style */}
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-5 mb-6">
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-6 mb-6">
                     {/* Attendance */}
                     <div className="bg-[#0D1120] rounded-xl p-5 text-center border border-white/5">
                       <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-2">
@@ -438,8 +438,8 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
                     <i className={`fas fa-chevron-down transition-transform duration-300 ${expandedTeacher === teacherData.teacher.id ? 'rotate-180' : ''}`}></i>
                   </button>
 
-                  <div className={`grid transition-[grid-template-rows,margin] duration-300 ease-in-out ${
-                    expandedTeacher === teacherData.teacher.id ? 'grid-rows-[1fr] mt-4' : 'grid-rows-[0fr] mt-0'
+                  <div className={`grid transition-[grid-template-rows,margin,opacity] duration-300 ease-in-out ${
+                    expandedTeacher === teacherData.teacher.id ? 'grid-rows-[1fr] mt-6 opacity-100' : 'grid-rows-[0fr] mt-0 opacity-0'
                   }`}>
                     <div className="overflow-hidden">
                       <div className="space-y-6">
