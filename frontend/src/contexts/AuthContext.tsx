@@ -71,6 +71,18 @@ export function AuthProvider({ children: childrenProp }: { children: ReactNode }
       if (storedTeacher) {
         setSelectedTeacher(JSON.parse(storedTeacher));
       }
+      
+      // Load parent children
+      const storedChildren = localStorage.getItem('parentChildren');
+      if (storedChildren) {
+        setChildrenList(JSON.parse(storedChildren));
+      }
+      
+      // Load selected child
+      const storedChild = localStorage.getItem('selectedChild');
+      if (storedChild) {
+        setSelectedChild(JSON.parse(storedChild));
+      }
     } catch (error) {
       console.error('AuthContext: Failed to parse stored user/teacher:', error);
     }

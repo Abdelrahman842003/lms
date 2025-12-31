@@ -4,7 +4,6 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
-import { PageTransition } from '@/components/shared/PageTransition';
 
 export default function ParentChildrenPage() {
   const router = useRouter();
@@ -16,107 +15,91 @@ export default function ParentChildrenPage() {
   };
 
   return (
-    <PageTransition>
-      <DashboardLayout
-        role="parent"
-        user={{ name: user?.name || 'ولي الأمر', avatar: user?.avatar }}
-        title="أبنائي"
-      >
-        <div className="p-4 md:p-6">
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">
-              مرحباً ولي الأمر
-            </h1>
-            <p className="text-gray-400">
-              اختر ابنك لعرض تقاريره ومتابعة أدائه
-            </p>
+    <DashboardLayout
+      role="parent"
+      user={{ name: user?.name || 'ولي الأمر', avatar: user?.avatar }}
+    >
+      <div className="p-5">
+        <div className="text-center mb-10">
+          <h1 className="text-[2rem] text-white flex items-center justify-center gap-3 mb-2">
+            <i className="fas fa-users text-primary"></i>
+            أبنائي
+          </h1>
+          <p className="text-gray-light text-base">اختر ابنك لعرض تقاريره ومتابعة أدائه</p>
+        </div>
+
+        {children.length === 0 ? (
+          <div className="text-center p-[60px_20px] bg-white/3 rounded-2xl border border-white/5">
+            <i className="fas fa-user-slash text-[4rem] text-gray-light mb-5"></i>
+            <h2 className="text-white mb-2.5">لا يوجد أبناء مسجلين</h2>
+            <p className="text-gray-light">لم يتم تسجيل أي طالب برقم هاتفك كولي أمر. تواصل مع المدرس لتسجيل رقمك.</p>
           </div>
-
-          {/* Children Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        ) : (
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-5">
             {children.map((child) => (
-              <button
+              <div
                 key={child.id}
+                className={`group bg-white/3 border border-white/8 rounded-2xl p-6 transition-all duration-300 flex flex-col items-center text-center relative cursor-pointer hover:-translate-y-1 hover:border-primary hover:shadow-[0_10px_40px_rgba(66,99,235,0.2)]
+                  ${selectedChild?.id === child.id ? 'border-primary bg-primary/10' : ''}`}
                 onClick={() => handleSelectChild(child)}
-                className={`bg-[#1A1F2E] rounded-xl p-5 border-2 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg text-right ${
-                  selectedChild?.id === child.id
-                    ? 'border-primary shadow-primary/20'
-                    : 'border-transparent hover:border-primary/30'
-                }`}
               >
-                {/* Child Avatar & Name */}
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-primary/50 flex items-center justify-center text-white text-2xl font-bold">
-                    {child.avatar ? (
-                      <img
-                        src={child.avatar}
-                        alt={child.name}
-                        className="w-full h-full rounded-full object-cover"
-                      />
-                    ) : (
-                      child.name.charAt(0)
-                    )}
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-white">{child.name}</h3>
-                    {child.phone && (
-                      <p className="text-gray-400 text-sm">{child.phone}</p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Teachers List */}
-                <div className="space-y-2">
-                  <p className="text-gray-400 text-sm font-medium">المدرسين:</p>
-                  {child.teachers.length > 0 ? (
-                    <div className="flex flex-wrap gap-2">
-                      {child.teachers.slice(0, 3).map((teacher) => (
-                        <span
-                          key={teacher.id}
-                          className="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full"
-                        >
-                          {teacher.name}
-                        </span>
-                      ))}
-                      {child.teachers.length > 3 && (
-                        <span className="bg-gray-700 text-gray-300 text-xs px-2 py-1 rounded-full">
-                          +{child.teachers.length - 3}
-                        </span>
-                      )}
-                    </div>
+                {/* Child Avatar */}
+                <div className="w-20 h-20 rounded-full overflow-hidden mb-4 border-[3px] border-white/10">
+                  {child.avatar ? (
+                    <img src={child.avatar} alt={child.name} className="w-full h-full object-cover" />
                   ) : (
-                    <p className="text-gray-500 text-sm">لا يوجد مدرسين مسجلين</p>
+                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary to-secondary text-white text-[2rem]">
+                      {child.name.charAt(0)}
+                    </div>
                   )}
                 </div>
 
-                {/* View Button */}
-                <div className="mt-4 pt-4 border-t border-white/10">
-                  <span className="text-primary text-sm font-medium flex items-center gap-2">
-                    عرض التقارير
-                    <i className="fas fa-arrow-left"></i>
-                  </span>
+                {/* Child Info */}
+                <div className="mb-4">
+                  <h3 className="text-white text-xl mb-2">{child.name}</h3>
+                  {child.phone && (
+                    <p className="text-gray-light text-sm flex items-center justify-center gap-1.5 mb-1">
+                      <i className="fas fa-phone"></i>
+                      {child.phone}
+                    </p>
+                  )}
                 </div>
-              </button>
+
+                {/* Teachers List */}
+                <div className="w-full mb-3">
+                  <div className="bg-white/5 rounded-xl p-[12px_20px]">
+                    <span className="text-xs text-gray-light block mb-2">المدرسين المشتركين</span>
+                    {child.teachers && child.teachers.length > 0 ? (
+                      <div className="flex flex-wrap gap-2 justify-center">
+                        {child.teachers.slice(0, 3).map((teacher) => (
+                          <span
+                            key={teacher.id}
+                            className="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full"
+                          >
+                            {teacher.name}
+                          </span>
+                        ))}
+                        {child.teachers.length > 3 && (
+                          <span className="bg-gray-700 text-gray-300 text-xs px-2 py-1 rounded-full">
+                            +{child.teachers.length - 3}
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-gray-500 text-sm">لا يوجد مدرسين</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Arrow Icon */}
+                <div className="absolute left-5 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                  <i className="fas fa-arrow-left"></i>
+                </div>
+              </div>
             ))}
           </div>
-
-          {/* Empty State */}
-          {children.length === 0 && (
-            <div className="text-center py-16">
-              <div className="w-24 h-24 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-6">
-                <i className="fas fa-users text-4xl text-gray-400"></i>
-              </div>
-              <h3 className="text-xl font-bold text-white mb-2">
-                لا يوجد أبناء مسجلين
-              </h3>
-              <p className="text-gray-400 max-w-md mx-auto">
-                لم يتم ربط أي طالب برقم هاتفك. تواصل مع المدرس لتسجيل رقمك كولي أمر.
-              </p>
-            </div>
-          )}
-        </div>
-      </DashboardLayout>
-    </PageTransition>
+        )}
+      </div>
+    </DashboardLayout>
   );
 }
