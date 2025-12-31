@@ -661,38 +661,35 @@ export default function TeacherLecturesPage() {
                 </div>
                 <div className="form-group">
                   <label htmlFor="grade">الصف الدراسي</label>
-                  <select
-                    id="grade"
-                    className="form-input"
-                    value={formData.grade_id || ''}
-                    onChange={(e) => setFormData({ ...formData, grade_id: e.target.value })}
-                    required
-                  >
-                    <option value="">اختر الصف</option>
-                    {grades.map((grade) => (
-                      <option key={grade.id} value={grade.id}>
-                        {grade.name}
-                      </option>
-                    ))}
-                  </select>
+                  <Filter
+                    options={[
+                      { value: '', label: 'اختر الصف' },
+                      ...grades.map((grade) => ({
+                        value: grade.id.toString(),
+                        label: grade.name,
+                      })),
+                    ]}
+                    value={formData.grade_id?.toString() || ''}
+                    onChange={(value) => setFormData({ ...formData, grade_id: value })}
+                    className="w-full"
+                  />
                 </div>
                 <div className="form-group">
                   <label htmlFor="group">المجموعة (اختياري)</label>
-                  <select
-                    id="group"
-                    className="form-input"
-                    value={formData.group_id || ''}
-                    onChange={(e) => setFormData({ ...formData, group_id: e.target.value })}
-                  >
-                    <option value="">كل المجموعات</option>
-                    {groups
-                      .filter(g => !formData.grade_id || g.grade_id === formData.grade_id)
-                      .map((group) => (
-                      <option key={group.id} value={group.id}>
-                        {group.name}
-                      </option>
-                    ))}
-                  </select>
+                  <Filter
+                    options={[
+                      { value: '', label: 'كل المجموعات' },
+                      ...groups
+                        .filter(g => !formData.grade_id || g.grade_id?.toString() === formData.grade_id.toString())
+                        .map((group) => ({
+                          value: group.id.toString(),
+                          label: group.name,
+                        })),
+                    ]}
+                    value={formData.group_id?.toString() || ''}
+                    onChange={(value) => setFormData({ ...formData, group_id: value })}
+                    className="w-full"
+                  />
                 </div>
                 <div className="form-group">
                   <label htmlFor="description">الوصف (اختياري)</label>
