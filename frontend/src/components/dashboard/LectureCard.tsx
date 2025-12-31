@@ -61,50 +61,49 @@ export const LectureCard: React.FC<LectureCardProps> = ({
           
           {/* Dropdown Menu */}
           {isMenuOpen && (
-            <div className="absolute left-0 top-full mt-2 w-56 bg-[#1a1f37] border border-white/10 rounded-xl shadow-2xl z-10 overflow-hidden backdrop-blur-xl">
-              <div className="p-1">
-                <button
-                  className="w-full px-4 py-2.5 text-right text-white hover:bg-white/5 rounded-lg transition-colors flex items-center gap-3 mb-1"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onViewAttendees();
-                  }}
-                >
-                  <i className="fas fa-eye w-5 text-primary"></i>
-                  <span className="text-sm font-medium">عرض التفاصيل</span>
-                </button>
-                <button
-                  className="w-full px-4 py-2.5 text-right text-white hover:bg-white/5 rounded-lg transition-colors flex items-center gap-3 mb-1"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onEdit();
-                  }}
-                >
-                  <i className="fas fa-edit w-5 text-primary"></i>
-                  <span className="text-sm font-medium">تعديل</span>
-                </button>
-                <button
-                  className="w-full px-4 py-2.5 text-right text-white hover:bg-white/5 rounded-lg transition-colors flex items-center gap-3 mb-1"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onCopy();
-                  }}
-                >
-                  <i className="fas fa-copy w-5 text-primary"></i>
-                  <span className="text-sm font-medium">نسخ المحاضرة</span>
-                </button>
-                <div className="h-px bg-white/10 my-1"></div>
-                <button
-                  className="w-full px-4 py-2.5 text-right text-[#ff6b6b] hover:bg-[#ff6b6b]/10 rounded-lg transition-colors flex items-center gap-3"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete();
-                  }}
-                >
-                  <i className="fas fa-trash w-5"></i>
-                  <span className="text-sm font-medium">حذف</span>
-                </button>
-              </div>
+            <div className="navbar-dropdown" style={{ minWidth: '200px', left: '0', right: 'auto' }}>
+              <button
+                className="navbar-dropdown-item"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onViewAttendees();
+                }}
+              >
+                <i className="fas fa-eye"></i>
+                <span>عرض التفاصيل</span>
+              </button>
+              <button
+                className="navbar-dropdown-item"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit();
+                }}
+              >
+                <i className="fas fa-edit"></i>
+                <span>تعديل</span>
+              </button>
+              <button
+                className="navbar-dropdown-item"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onCopy();
+                }}
+              >
+                <i className="fas fa-copy"></i>
+                <span>نسخ المحاضرة</span>
+              </button>
+              <div className="navbar-dropdown-divider"></div>
+              <button
+                className="navbar-dropdown-item logout-item"
+                style={{ color: '#ff6b6b' }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete();
+                }}
+              >
+                <i className="fas fa-trash" style={{ color: '#ff6b6b' }}></i>
+                <span>حذف</span>
+              </button>
             </div>
           )}
         </div>
