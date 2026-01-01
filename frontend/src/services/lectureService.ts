@@ -273,9 +273,14 @@ export const endLecture = async (id: string): Promise<{ message: string; lecture
   return res.data;
 };
 
-export const getAttendees = async (lectureId: string): Promise<AttendeesResponse> => {
+export const getAttendees = async (lectureId: string, groupId?: string): Promise<AttendeesResponse> => {
   const token = localStorage.getItem('token');
-  const response = await fetch(`${API_BASE_URL}/api/teacher/lectures/${lectureId}/attendees`, {
+  const queryParams = new URLSearchParams();
+  if (groupId) {
+    queryParams.append('group_id', groupId);
+  }
+  
+  const response = await fetch(`${API_BASE_URL}/api/teacher/lectures/${lectureId}/attendees?${queryParams.toString()}`, {
     headers: {
       'Content-Type': 'application/json',
       'Accept': 'application/json',

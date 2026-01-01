@@ -69,8 +69,8 @@ export const LectureCard: React.FC<LectureCardProps> = ({
                   onViewAttendees();
                 }}
               >
-                <i className="fas fa-eye"></i>
-                <span>عرض التفاصيل</span>
+                <i className="fas fa-clipboard-list"></i>
+                <span>سجل الحضور</span>
               </button>
               <button
                 className="actions-menu-item w-full"

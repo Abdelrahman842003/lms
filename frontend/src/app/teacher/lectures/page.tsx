@@ -101,7 +101,7 @@ export default function TeacherLecturesPage() {
     setIsLoadingAttendees(true);
     setShowAttendeesModal(true);
     try {
-      const data = await getAttendees(lectureId);
+      const data = await getAttendees(lectureId, selectedGroupId);
       setAttendeesData({
         attendees: data.attendees,
         total_present: data.total_present,
