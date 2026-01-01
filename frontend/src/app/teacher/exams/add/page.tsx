@@ -403,7 +403,7 @@ export default function AddExamPage() {
                 ></div>
               </div>
 
-              <div className="bg-[#1e1e2d] rounded-xl shadow-lg border border-white/5">
+              <div className="rounded-xl shadow-lg border border-white/5">
                 <div className="dashboard-card-header">
                   <div className="dashboard-card-title">
                     <h4 className="font-bold text-lg">سؤال {currentQuestionIndex + 1}</h4>
@@ -411,7 +411,7 @@ export default function AddExamPage() {
                   </div>
                 </div>
                 
-                <div className="p-4 md:p-6">
+                <div>
                   <div className="form-group mb-6">
                     <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-2 gap-2 md:gap-0">
                       <label className="block text-sm font-medium">نص السؤال</label>
