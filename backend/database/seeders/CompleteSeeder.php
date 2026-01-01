@@ -36,6 +36,7 @@ class CompleteSeeder extends Seeder
 {
     public function run(): void
     {
+        $faker = \Faker\Factory::create();
         $this->command->info('🚀 Starting Test Scenario Seeding...');
 
         // 1. Create Teachers
@@ -59,19 +60,19 @@ class CompleteSeeder extends Seeder
             
             // 6. Create Lectures and Attendance
             $lectures = $this->createLectures($teacher, $grades);
-            $this->createAttendance($lectures, $students);
+            $this->createAttendance($lectures, $students, $faker);
             
             // 7. Create Exams with Questions
-            $exams = $this->createExamsWithQuestions($teacher, $grades);
+            $exams = $this->createExamsWithQuestions($teacher, $grades, $faker);
             
             // 8. Create Exam Attempts and Results
-            $this->createExamAttempts($exams, $students);
+            $this->createExamAttempts($exams, $students, $faker);
             
             // 9. Create Gamification System
             $this->createGamification($teacher, $students);
             
             // 10. Create Payments
-            $this->createPayments($teacher, $students);
+            $this->createPayments($teacher, $students, $faker);
             
             // 11. Create Failed Questions
             $this->createFailedQuestions($teacher, $students, $exams);
@@ -213,21 +214,21 @@ class CompleteSeeder extends Seeder
         return $lectures;
     }
 
-    private function createAttendance(array $lectures, array $students): void
+    private function createAttendance(array $lectures, array $students, $faker): void
     {
         foreach ($lectures as $lecture) {
             foreach ($students as $student) {
                 if (rand(0, 10) > 2) { // 80% attendance
                     Attendance::firstOrCreate(
                         ['lecture_id' => $lecture->id, 'student_id' => $student->id],
-                        ['status' => fake()->randomElement(['present', 'present', 'present', 'late'])]
+                        ['status' => $faker->randomElement(['present', 'present', 'present', 'late'])]
                     );
                 }
             }
         }
     }
 
-    private function createExamsWithQuestions(Teacher $teacher, array $grades): array
+    private function createExamsWithQuestions(Teacher $teacher, array $grades, $faker): array
     {
         $exams = [];
         
@@ -252,7 +253,7 @@ class CompleteSeeder extends Seeder
                     ['exam_id' => $exam->id, 'text' => "Question $q for Exam " . ($index + 1)],
                     [
                         'options' => json_encode(['Option A', 'Option B', 'Option C', 'Option D']),
-                        'correct_answer' => fake()->randomElement(['Option A', 'Option B', 'Option C', 'Option D']),
+                        'correct_answer' => $faker->randomElement(['Option A', 'Option B', 'Option C', 'Option D']),
                     ]
                 );
             }
@@ -263,7 +264,7 @@ class CompleteSeeder extends Seeder
         return $exams;
     }
 
-    private function createExamAttempts(array $exams, array $students): void
+    private function createExamAttempts(array $exams, array $students, $faker): void
     {
         foreach ($exams as $exam) {
             $questions = Question::where('exam_id', $exam->id)->get();
@@ -290,7 +291,7 @@ class CompleteSeeder extends Seeder
                     StudentAnswer::firstOrCreate(
                         ['exam_attempt_id' => $attempt->id, 'question_id' => $question->id],
                         [
-                            'answer' => fake()->randomElement(['Option A', 'Option B']),
+                            'answer' => $faker->randomElement(['Option A', 'Option B']),
                             'is_correct' => $isCorrect,
                             'answered_at' => Carbon::now()->subHours(rand(1, 48)),
                         ]
@@ -343,7 +344,7 @@ class CompleteSeeder extends Seeder
         }
     }
 
-    private function createPayments(Teacher $teacher, array $students): void
+    private function createPayments(Teacher $teacher, array $students, $faker): void
     {
         $statuses = ['pending', 'confirmed', 'expired'];
         
@@ -358,7 +359,7 @@ class CompleteSeeder extends Seeder
                 ['student_id' => $student->id, 'teacher_id' => $teacher->id, 'confirmation_code' => 'TEST-' . substr($teacher->id, 0, 8) . '-' . $index],
                 [
                     'enrollment_id' => $enrollment->id,
-                    'client_side_uuid' => fake()->uuid(),
+                    'client_side_uuid' => $faker->uuid(),
                     'amount' => rand(100, 300),
                     'status' => $statuses[$index % 3],
                     'payment_method' => 'cash',
