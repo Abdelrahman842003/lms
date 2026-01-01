@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
+import { Filter } from '@/components/Filter';
 import { useAuth } from '@/contexts/AuthContext';
 import { createTeacherStudent, searchStudentByPhone } from '@/services/authService';
 import { getGrades } from '@/services/gradeService';
@@ -600,50 +601,34 @@ export default function AddStudentPage() {
             </div>
 
             <div>
+
               <label htmlFor="grade_id" className="block text-gray-light mb-2 text-[0.95rem]">الصف الدراسي {!existingStudentFound && <span className="text-red-500">*</span>}</label>
-              <select
-                id="grade_id"
-                className={`w-full p-3 bg-transparent border rounded-lg text-white text-[1rem] focus:ring-1 outline-none transition-all disabled:opacity-60 disabled:cursor-not-allowed ${
-                  formErrors.grade_id ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-white/10 focus:border-primary focus:ring-primary'
-                }`}
+              <Filter
+                options={grades.map(g => ({ value: g.id.toString(), label: g.name }))}
                 value={formData.grade_id}
-                onChange={(e) => setFormData({ ...formData, grade_id: e.target.value, group_id: '' })}
+                onChange={(value) => setFormData({ ...formData, grade_id: value, group_id: '' })}
+                placeholder="اختر الصف الدراسي"
+                className={formErrors.grade_id ? 'border-red-500' : ''}
                 disabled={isSubmitting || !isPhoneChecked || (existingStudentFound && !!formData.grade_id)}
-              >
-                <option value="" className="bg-[#1a1f37]">اختر الصف الدراسي</option>
-                {grades.map((grade) => (
-                  <option key={grade.id} value={grade.id} className="bg-[#1a1f37]">
-                    {grade.name}
-                  </option>
-                ))}
-              </select>
+              />
               {formErrors.grade_id && <span className="text-red-500 text-sm mt-1 block"><i className="fas fa-exclamation-circle ml-1"></i>{formErrors.grade_id}</span>}
             </div>
 
             <div>
+
               <label htmlFor="group_id" className="block text-gray-light mb-2 text-[0.95rem]">المجموعة {!existingStudentFound && <span className="text-red-500">*</span>}</label>
-              <select
-                id="group_id"
-                className={`w-full p-3 bg-transparent border rounded-lg text-white text-[1rem] focus:ring-1 outline-none transition-all disabled:opacity-60 disabled:cursor-not-allowed ${
-                  formErrors.group_id ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-white/10 focus:border-primary focus:ring-primary'
-                }`}
+              <Filter
+                options={filteredGroups.map(g => ({ value: g.id.toString(), label: g.name }))}
                 value={formData.group_id}
-                onChange={(e) => setFormData({ ...formData, group_id: e.target.value })}
+                onChange={(value) => setFormData({ ...formData, group_id: value })}
+                placeholder={!formData.grade_id 
+                  ? 'اختر الصف الدراسي أولاً' 
+                  : filteredGroups.length === 0 
+                    ? 'لا توجد مجموعات لهذا الصف' 
+                    : 'اختر المجموعة'}
+                className={formErrors.group_id ? 'border-red-500' : ''}
                 disabled={isSubmitting || !isPhoneChecked || !formData.grade_id}
-              >
-                <option value="" className="bg-[#1a1f37]">
-                  {!formData.grade_id 
-                    ? 'اختر الصف الدراسي أولاً' 
-                    : filteredGroups.length === 0 
-                      ? 'لا توجد مجموعات لهذا الصف' 
-                      : 'اختر المجموعة'}
-                </option>
-                {filteredGroups.map((group) => (
-                  <option key={group.id} value={group.id} className="bg-[#1a1f37]">
-                    {group.name}
-                  </option>
-                ))}
-              </select>
+              />
               {formErrors.group_id && <span className="text-red-500 text-sm mt-1 block"><i className="fas fa-exclamation-circle ml-1"></i>{formErrors.group_id}</span>}
               {formData.grade_id && filteredGroups.length === 0 && (
                 <span className="text-gray-light text-sm mt-1 block flex items-center gap-1">
