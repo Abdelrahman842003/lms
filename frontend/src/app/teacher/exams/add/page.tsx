@@ -276,8 +276,7 @@ export default function AddExamPage() {
       role={user?.userType as 'teacher' | 'secretary' || 'teacher'}
       user={{ name: user?.name || 'المدرس', avatar: user?.avatar || '' }}
     >
-      {/* Solid background overlay to hide body pattern */}
-      <div className="fixed inset-0 bg-[#0a0a0f] -z-10" style={{ top: '80px' }}></div>
+
       
       <div className="rounded-xl shadow-lg border border-white/5 p-6">
         <div className="dashboard-card-header">
@@ -474,14 +473,7 @@ export default function AddExamPage() {
 
               <div className="flex flex-col lg:flex-row lg:justify-between gap-4 mt-8">
                 {/* Previous Button - Order 2 on mobile, 1 on desktop */}
-                <button
-                  type="button"
-                  onClick={handlePrevQuestion}
-                  className={`btn btn-secondary px-6 w-full lg:w-auto order-2 lg:order-1 ${currentQuestionIndex === 0 ? 'hidden lg:invisible' : ''}`}
-                >
-                  <i className="fas fa-arrow-right ml-2"></i>
-                  السابق
-                </button>
+               
 
                 {/* Middle Buttons - Order 1 on mobile, 2 on desktop */}
                 <div className="flex flex-col sm:flex-row gap-3 order-1 lg:order-2 w-full lg:w-auto">
