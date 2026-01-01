@@ -106,16 +106,30 @@ class CompleteSeeder extends Seeder
     {
         $this->command->info('👨‍🎓 Creating 10 Students...');
         
+        // Realistic parent names
+        $parentNames = [
+            'عبدالرحمن عبد علي',
+            'محمد أحمد حسن',
+            'فاطمة محمود',
+            'أحمد علي محمد',
+            'نورا حسن',
+            'خالد عبدالله',
+            'سارة إبراهيم',
+            'عمر يوسف',
+            'مريم سعيد',
+            'حسام الدين'
+        ];
+        
         $students = [];
         for ($i = 1; $i <= 10; $i++) {
             $pad = str_pad($i, 2, '0', STR_PAD_LEFT);
             $parentPhone = "011123456$pad";
             
-            // Create or get guardian
+            // Create or get guardian with realistic name
             $guardian = Guardian::firstOrCreate(
                 ['phone' => $parentPhone],
                 [
-                    'name' => "Parent $i",
+                    'name' => $parentNames[$i - 1],
                     'password' => Hash::make('password'),
                 ]
             );
