@@ -24,6 +24,7 @@ class Student extends Authenticatable
         'avatar_key',
         'phone',
         'parent_phone',
+        'guardian_id',
         'gender',
         'education_type',
         'location',
@@ -45,6 +46,14 @@ class Student extends Authenticatable
     public function enrollments()
     {
         return $this->hasMany(Enrollment::class);
+    }
+
+    /**
+     * Guardian relationship
+     */
+    public function guardian()
+    {
+        return $this->belongsTo(Guardian::class);
     }
 
     /**

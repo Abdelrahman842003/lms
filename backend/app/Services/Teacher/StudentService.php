@@ -73,6 +73,24 @@ class StudentService
                     'education_type' => $data['education_type'] ?? null,
                     'location' => $data['location'] ?? null,
                 ]);
+                
+                // Create or link guardian if parent_phone provided
+                if (!empty($data['parent_phone'])) {
+                    $guardian = \App\Models\Guardian::where('phone', $data['parent_phone'])->first();
+                    
+                    if (!$guardian) {
+                        // Create new guardian
+                        $guardian = \App\Models\Guardian::create([
+                            'phone' => $data['parent_phone'],
+                            'name' => $data['parent_name'] ?? $this->extractParentName($data['name']),
+                            'password' => Hash::make($data['password']), // Same password initially
+                        ]);
+                    }
+                    
+                    // Link student to guardian
+                    $student->guardian_id = $guardian->id;
+                    $student->save();
+                }
             }
 
             // Create enrollment
@@ -479,5 +497,29 @@ class StudentService
         }
 
         return strtolower(preg_replace('/[^a-zA-Z0-9]+/', '_', $text));
+    }
+
+    /**
+     * Extract parent name from student name (last 2 words)
+     */
+    private function extractParentName(string $studentName): string
+    {
+        $trimmedName = trim($studentName);
+        if (empty($trimmedName)) {
+            return 'ولي الأمر';
+        }
+        
+        $words = preg_split('/\s+/', $trimmedName);
+        
+        if (count($words) === 1) {
+            return $words[0];
+        }
+        
+        if (count($words) === 2) {
+            return $words[1];
+        }
+        
+        // Take last 2 words for names with 3+ words
+        return implode(' ', array_slice($words, -2));
     }
 }

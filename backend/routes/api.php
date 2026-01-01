@@ -208,6 +208,8 @@ Route::post('/login/parent', [\App\Http\Controllers\Guardian\AuthController::cla
 Route::middleware(['auth:sanctum'])->prefix('parent')->group(function () {
     Route::post('/logout', [\App\Http\Controllers\Guardian\AuthController::class, 'logout']);
     Route::get('/me', [\App\Http\Controllers\Guardian\AuthController::class, 'me']);
+    Route::put('/profile', [\App\Http\Controllers\Guardian\AuthController::class, 'updateProfile']);
+    Route::post('/change-password', [\App\Http\Controllers\Guardian\AuthController::class, 'changePassword']);
     Route::get('/children', [\App\Http\Controllers\Guardian\AuthController::class, 'children']);
     
     // Child Summary

@@ -19,12 +19,14 @@ return new class extends Migration
             $table->string('location')->nullable();
             $table->string('phone')->nullable()->unique();
             $table->string('parent_phone')->nullable();
+            $table->uuid('guardian_id')->nullable();
             $table->enum('gender', ['male', 'female'])->default('male');
             $table->enum('education_type', ['general', 'azhar'])->nullable();
             
             $table->timestamps();
             
             $table->index('phone');
+            $table->index('guardian_id');
         });
     }
 

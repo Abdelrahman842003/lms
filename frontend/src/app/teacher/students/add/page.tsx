@@ -45,8 +45,27 @@ export default function AddStudentPage() {
     group_id: '',
     location: '',
   });
+  const [parentName, setParentName] = useState('');
 
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
+  // Extract parent name from student name (last 2 words)
+  const extractParentName = (studentName: string): string => {
+    const trimmedName = studentName.trim();
+    if (!trimmedName) return '';
+    
+    const words = trimmedName.split(/\s+/);
+    if (words.length === 1) return words[0];
+    if (words.length === 2) return words[1];
+    
+    // Take last 2 words for names with 3+ words
+    return words.slice(-2).join(' ');
+  };
+
+  // Auto-update parent name when student name changes
+  useEffect(() => {
+    setParentName(extractParentName(formData.name));
+  }, [formData.name]);
 
   // Calculate password strength
   const getPasswordStrength = (password: string): { level: 'weak' | 'medium' | 'strong'; text: string; color: string } => {
@@ -242,6 +261,7 @@ export default function AddStudentPage() {
       
       // Only add optional fields if they have values
       if (formData.parent_phone) submitData.parent_phone = formData.parent_phone;
+      if (parentName) submitData.parent_name = parentName; // Send guardian name
       if (formData.education_type) submitData.education_type = formData.education_type;
       if (formData.grade_id) submitData.grade_id = formData.grade_id;
       if (formData.group_id) submitData.group_id = formData.group_id;
@@ -424,6 +444,30 @@ export default function AddStudentPage() {
               {existingStudentFound && <span className="text-success text-sm mt-1 block">تم جلب الاسم تلقائياً</span>}
             </div>
 
+            {/* Auto-extracted Parent Name - Editable */}
+            {!existingStudentFound && parentName && (
+              <div className="md:col-span-2">
+                <label htmlFor="parent_name" className="block text-gray-light mb-2 text-[0.95rem]">
+                  اسم ولي الأمر <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="parent_name"
+                  className={`w-full p-3 bg-transparent border rounded-lg text-white text-[1rem] focus:ring-1 outline-none transition-all ${
+                    formErrors.parent_name ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-white/10 focus:border-primary focus:ring-primary'
+                  } disabled:opacity-60 disabled:cursor-not-allowed`}
+                  value={parentName}
+                  onChange={(e) => setParentName(e.target.value)}
+                  placeholder="اسم ولي الأمر الكامل"
+                  disabled={isSubmitting || !isPhoneChecked}
+                />
+                <span className="text-gray-light text-sm mt-1 block flex items-center gap-1">
+                  <i className="fas fa-info-circle"></i>
+                  تم استخراج الاسم تلقائياً - يمكنك تعديله
+                </span>
+              </div>
+            )}
+
             <div>
               <label htmlFor="parent_phone" className="block text-gray-light mb-2 text-[0.95rem]">
                 رقم هاتف ولي الأمر {!existingStudentFound && <span className="text-red-500">*</span>}
@@ -452,7 +496,7 @@ export default function AddStudentPage() {
             {!existingStudentFound && (
               <div>
                 <label htmlFor="password" className="block text-gray-light mb-2 text-[0.95rem]">
-                  كلمة المرور <span className="text-red-500">*</span>
+                  كلمة المرور (للطالب و ولي الأمر) <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <input
@@ -491,6 +535,12 @@ export default function AddStudentPage() {
                 )}
                 
                 {formErrors.password && <span className="text-red-500 text-sm mt-1 block">{formErrors.password}</span>}
+                
+                {/* Shared Password Info */}
+                <div className="bg-blue-500/10 border border-blue-500/20 text-blue-400 p-3 rounded-lg mt-2 text-sm flex items-start gap-2">
+                  <i className="fas fa-info-circle mt-0.5"></i>
+                  <span>سيتم استخدام نفس كلمة المرور لحساب الطالب وولي الأمر</span>
+                </div>
                 
                 {/* Password Requirements */}
                 <div className="text-gray-light text-xs mt-2 space-y-1">
