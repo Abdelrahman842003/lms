@@ -22,6 +22,7 @@ use App\Models\StudentPoint;
 use App\Models\PointTransaction;
 use App\Models\FailedQuestion;
 use App\Models\StudentActivityLog;
+use App\Models\Guardian;
 use Illuminate\Support\Facades\Hash;
 use Carbon\Carbon;
 
