@@ -22,6 +22,7 @@ import { getGroups, Group } from '@/services/groupService';
 import QRCodeModal from '@/components/dashboard/QRCodeModal';
 import QRScannerModal from '@/components/dashboard/QRScannerModal';
 import { LectureCard } from '@/components/dashboard/LectureCard';
+import { Filter } from '@/components/Filter';
 
 import toast from 'react-hot-toast';
 
@@ -508,37 +509,28 @@ export default function TeacherLecturesPage() {
                 </div>
                 <div className="form-group">
                   <label htmlFor="grade">الصف الدراسي</label>
-                  <select
-                    id="grade"
-                    className="form-input w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
-                    value={formData.grade_id || ''}
-                    onChange={(e) => setFormData({ ...formData, grade_id: e.target.value })}
-                  >
-                    <option value="" className="bg-[#1a1f37]">اختر الصف</option>
-                    {grades.map((grade) => (
-                      <option key={grade.id} value={grade.id} className="bg-[#1a1f37]">
-                        {grade.name}
-                      </option>
-                    ))}
-                  </select>
+                  <Filter
+                    options={grades.map((grade) => ({ value: String(grade.id), label: grade.name }))}
+                    value={String(formData.grade_id || '')}
+                    onChange={(value) => setFormData({ ...formData, grade_id: value })}
+                    placeholder="اختر الصف"
+                    className="w-full"
+                  />
                 </div>
                 <div className="form-group">
                   <label htmlFor="group">المجموعة (اختياري)</label>
-                  <select
-                    id="group"
-                    className="form-input w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
-                    value={formData.group_id || ''}
-                    onChange={(e) => setFormData({ ...formData, group_id: e.target.value })}
-                  >
-                    <option value="" className="bg-[#1a1f37]">كل المجموعات</option>
-                    {groups
-                      .filter(g => !formData.grade_id || g.grade_id?.toString() === formData.grade_id.toString())
-                      .map((group) => (
-                        <option key={group.id} value={group.id} className="bg-[#1a1f37]">
-                          {group.name}
-                        </option>
-                      ))}
-                  </select>
+                  <Filter
+                    options={[
+                      { value: '', label: 'كل المجموعات' },
+                      ...groups
+                        .filter(g => !formData.grade_id || String(g.grade_id) === String(formData.grade_id))
+                        .map((group) => ({ value: String(group.id), label: group.name }))
+                    ]}
+                    value={String(formData.group_id || '')}
+                    onChange={(value) => setFormData({ ...formData, group_id: value })}
+                    placeholder="كل المجموعات"
+                    className="w-full"
+                  />
                 </div>
                 <div className="form-group">
                   <label htmlFor="description">الوصف (اختياري)</label>
