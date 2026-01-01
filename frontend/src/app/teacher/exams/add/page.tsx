@@ -317,32 +317,28 @@ export default function AddExamPage() {
                 </div>
                 <div className="form-group">
                   <label className="block text-sm font-medium text-white mb-2">الصف الدراسي <span className="text-red-500">*</span></label>
-                  <select
-                    className={`form-input w-full ${formErrors.gradeId ? 'border-red-500' : ''}`}
+                  <Filter
+                    options={grades.map(g => ({ value: g.id, label: g.name }))}
                     value={gradeId}
-                    onChange={(e) => setGradeId(e.target.value)}
-                  >
-                    <option value="">اختر الصف</option>
-                    {grades.map(g => (
-                      <option key={g.id} value={g.id}>{g.name}</option>
-                    ))}
-                  </select>
+                    onChange={(value) => setGradeId(value)}
+                    placeholder="اختر الصف"
+                    className={formErrors.gradeId ? 'border-red-500' : ''}
+                  />
                   {formErrors.gradeId && <span className="text-red-500 text-xs mt-1 block"><i className="fas fa-exclamation-circle ml-1"></i>{formErrors.gradeId}</span>}
                 </div>
                 <div className="form-group">
                   <label className="block text-sm font-medium text-white mb-2">المجموعة (اختياري)</label>
-                  <select
-                    className="form-input w-full"
+                  <Filter
+                    options={[
+                      { value: '', label: 'كل المجموعات' },
+                      ...groups
+                        .filter(g => !gradeId || g.grade_id === gradeId)
+                        .map(g => ({ value: g.id, label: g.name }))
+                    ]}
                     value={groupId}
-                    onChange={(e) => setGroupId(e.target.value)}
-                  >
-                    <option value="">كل المجموعات</option>
-                    {groups
-                      .filter(g => !gradeId || g.grade_id === gradeId)
-                      .map(g => (
-                      <option key={g.id} value={g.id}>{g.name}</option>
-                    ))}
-                  </select>
+                    onChange={(value) => setGroupId(value)}
+                    placeholder="كل المجموعات"
+                  />
                 </div>
                 <div className="form-group">
                   <label className="block text-sm font-medium text-white mb-2">تاريخ الامتحان <span className="text-red-500">*</span></label>
