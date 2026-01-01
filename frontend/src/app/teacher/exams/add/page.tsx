@@ -377,17 +377,17 @@ export default function AddExamPage() {
                 </div>
               </div>
 
-              <div className="flex justify-between">
+              <div className="flex flex-col-reverse sm:flex-row justify-between gap-4 mt-8">
                 <button
                   type="button"
                   onClick={() => router.push('/teacher/exams')}
-                  className="btn btn-secondary px-8 py-3 text-lg"
+                  className="btn btn-secondary px-8 py-3 text-lg w-full sm:w-auto"
                 >
                   <i className="fas fa-arrow-right ml-2"></i>
                   رجوع
                 </button>
 
-                <button type="submit" className="btn btn-primary px-8 py-3 text-lg">
+                <button type="submit" className="btn btn-primary px-8 py-3 text-lg w-full sm:w-auto">
                   التالي: إضافة الأسئلة
                   <i className="fas fa-arrow-left mr-2"></i>
                 </button>
