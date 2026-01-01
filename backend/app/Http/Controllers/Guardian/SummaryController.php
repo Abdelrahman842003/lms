@@ -28,13 +28,13 @@ class SummaryController extends Controller
     {
         $parent = $request->user();
         
-        if (!$parent || !$parent->parent_phone) {
+        if (!$parent || !$parent->phone) {
             return $this->errorResponse('غير مصرح', 401);
         }
 
         // Verify this student belongs to this parent
         $student = Student::where('id', $studentId)
-            ->where('parent_phone', $parent->parent_phone)
+            ->where('parent_phone', $parent->phone)
             ->first();
 
         if (!$student) {
