@@ -109,12 +109,25 @@ class CompleteSeeder extends Seeder
         $students = [];
         for ($i = 1; $i <= 10; $i++) {
             $pad = str_pad($i, 2, '0', STR_PAD_LEFT);
+            $parentPhone = "011123456$pad";
+            
+            // Create or get guardian
+            $guardian = Guardian::firstOrCreate(
+                ['phone' => $parentPhone],
+                [
+                    'name' => "Parent $i",
+                    'password' => Hash::make('password'),
+                ]
+            );
+            
+            // Create student linked to guardian
             $students[] = Student::firstOrCreate(
                 ['phone' => "010123456$pad"],
                 [
                     'name' => "Student $i",
                     'password' => Hash::make('password'),
-                    'parent_phone' => "011123456$pad",
+                    'parent_phone' => $parentPhone,
+                    'guardian_id' => $guardian->id,
                 ]
             );
         }
