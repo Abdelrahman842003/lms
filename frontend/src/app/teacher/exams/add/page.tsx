@@ -396,14 +396,14 @@ export default function AddExamPage() {
           ) : (
             <div className="space-y-8">
               {/* Progress Bar */}
-              <div className="w-full bg-gray-700 rounded-full h-2.5 mb-6">
+              <div className="w-full  rounded-full h-2.5 mb-6">
                 <div 
                   className="bg-primary h-2.5 rounded-full transition-all duration-300" 
                   style={{ width: `${((currentQuestionIndex + 1) / questions.length) * 100}%` }}
                 ></div>
               </div>
 
-              <div className="rounded-xl shadow-lg border border-white/5">
+              <div className="">
                 <div className="dashboard-card-header">
                   <div className="dashboard-card-title">
                     <h4 className="font-bold text-lg">سؤال {currentQuestionIndex + 1}</h4>
