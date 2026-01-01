@@ -15,9 +15,6 @@ import {
   recordAttendance,
   toggleLectureActive,
   endLecture,
-  getAttendees,
-  Attendee,
-  exportAttendeesPDF
 } from '@/services/lectureService';
 import { getGrades } from '@/services/gradeService';
 import { getGroups, Group } from '@/services/groupService';
@@ -84,36 +81,15 @@ export default function TeacherLecturesPage() {
 
   // End Lecture State
   const [showEndLectureModal, setShowEndLectureModal] = useState(false);
+  const router = useRouter();
   const [selectedLectureForEnd, setSelectedLectureForEnd] = useState<Lecture | null>(null);
 
   // Menu State
-  // Menu State
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
-  // Attendees Modal State
-  const [showAttendeesModal, setShowAttendeesModal] = useState(false);
-  const [selectedLectureForAttendees, setSelectedLectureForAttendees] = useState<string | null>(null);
-  const [attendeesData, setAttendeesData] = useState<{ attendees: Attendee[], total_present: number, total_absent: number } | null>(null);
-  const [isLoadingAttendees, setIsLoadingAttendees] = useState(false);
-
-  const handleViewAttendees = async (lectureId: string) => {
-    setSelectedLectureForAttendees(lectureId);
-    setIsLoadingAttendees(true);
-    setShowAttendeesModal(true);
-    try {
-      const data = await getAttendees(lectureId, selectedGroupId);
-      setAttendeesData({
-        attendees: data.attendees,
-        total_present: data.total_present,
-        total_absent: data.total_absent
-      });
-    } catch (error) {
-      console.error('Failed to fetch attendees:', error);
-      toast.error('فشل جلب بيانات الحضور');
-      setShowAttendeesModal(false);
-    } finally {
-      setIsLoadingAttendees(false);
-    }
+  const handleViewAttendees = (lectureId: string) => {
+    const queryParams = selectedGroupId ? `?group_id=${selectedGroupId}` : '';
+    router.push(`/teacher/lectures/${lectureId}/attendance${queryParams}`);
   };
 
   useEffect(() => {
@@ -730,90 +706,6 @@ export default function TeacherLecturesPage() {
               >
                 تأكيد الإنهاء
               </button>
-            </div>
-          </div>
-        </div>
-      )}
-      {/* Attendees Modal */}
-      {showAttendeesModal && (
-        <div className="modal-overlay" onClick={() => setShowAttendeesModal(false)}>
-          <div className="modal-content max-w-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>سجل الحضور</h3>
-              <div className="flex gap-2">
-                <button 
-                  className="btn btn-outline btn-sm"
-                  onClick={async () => {
-                    if (!selectedLectureForAttendees) return;
-                    try {
-                      await exportAttendeesPDF(selectedLectureForAttendees);
-                      toast.success('تم تحميل التقرير بنجاح');
-                    } catch (error) {
-                      console.error('Failed to export PDF:', error);
-                      toast.error('فشل تحميل التقرير');
-                    }
-                  }}
-                >
-                  <i className="fas fa-file-pdf ml-2"></i>
-                  تصدير PDF
-                </button>
-                <button className="modal-close" onClick={() => setShowAttendeesModal(false)}>
-                  <i className="fas fa-times"></i>
-                </button>
-              </div>
-            </div>
-            <div className="modal-body">
-              {isLoadingAttendees ? (
-                <div className="text-center py-8">جاري التحميل...</div>
-              ) : attendeesData ? (
-                <>
-                  <div className="grid grid-cols-2 gap-4 mb-6">
-                    <div className="bg-green-50 p-4 rounded-lg text-center">
-                      <div className="text-2xl font-bold text-green-600">{attendeesData.total_present}</div>
-                      <div className="text-sm text-gray-600">حاضر</div>
-                    </div>
-                    <div className="bg-red-50 p-4 rounded-lg text-center">
-                      <div className="text-2xl font-bold text-red-600">{attendeesData.total_absent}</div>
-                      <div className="text-sm text-gray-600">غائب</div>
-                    </div>
-                  </div>
-                  
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="bg-gray-50 border-b">
-                          <th className="px-4 py-2 text-right">الطالب</th>
-                          <th className="px-4 py-2 text-right">رقم الهاتف</th>
-                          <th className="px-4 py-2 text-center">الحالة</th>
-                          <th className="px-4 py-2 text-right">وقت الحضور</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {attendeesData.attendees.map((attendee) => (
-                          <tr key={attendee.id} className="border-b">
-                            <td className="px-4 py-2">{attendee.student_name}</td>
-                            <td className="px-4 py-2">{attendee.student_phone}</td>
-                            <td className="px-4 py-2 text-center">
-                              <span className={`px-2 py-1 rounded-full text-xs ${
-                                attendee.status === 'present' 
-                                  ? 'bg-green-100 text-green-800' 
-                                  : 'bg-red-100 text-red-800'
-                              }`}>
-                                {attendee.status === 'present' ? 'حاضر' : 'غائب'}
-                              </span>
-                            </td>
-                            <td className="px-4 py-2">
-                              {attendee.attended_at || '-'}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </>
-              ) : (
-                <div className="text-center py-8 text-gray-500">لا توجد بيانات</div>
-              )}
             </div>
           </div>
         </div>
