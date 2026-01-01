@@ -32,7 +32,7 @@ export const LectureCard: React.FC<LectureCardProps> = ({
 
   return (
     <div 
-      className={`relative rounded-2xl p-6 transition-all duration-500 ease-in-out flex flex-col ${
+      className={`relative rounded-2xl p-6 transition-all duration-500 ease-in-out flex flex-col ${isMenuOpen ? 'z-10' : ''} ${
         isActive 
           ? 'bg-gradient-to-br from-[rgba(46,204,113,0.15)] to-[rgba(46,204,113,0.05)] border-2 border-[#2ecc71] shadow-[0_0_30px_rgba(46,204,113,0.3)]' 
           : 'bg-[#101426]/15 border border-white/10 hover:shadow-[0_12px_40px_rgba(0,0,0,0.3)] hover:-translate-y-[1px] hover:backdrop-blur-[20px] hover:border-[#1bc5f8]/50'
