@@ -12,6 +12,7 @@
         "php": "^8.2",
         "aws/aws-sdk-php": "^3.369",
         "barryvdh/laravel-dompdf": "*",
+        "fakerphp/faker": "^1.23",
         "google/apiclient": "^2.0",
         "guzzlehttp/guzzle": "^7.8",
         "intervention/image": "^3.0",
@@ -28,7 +29,6 @@
         "spatie/laravel-permission": "^6.23"
     },
     "require-dev": {
-        "fakerphp/faker": "^1.23",
         "laravel/pail": "^1.2.2",
         "laravel/pint": "^1.24",
         "mockery/mockery": "^1.6",
