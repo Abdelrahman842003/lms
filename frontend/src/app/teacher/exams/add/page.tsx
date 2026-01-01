@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { getGrades, createExam } from '@/services/authService';
 import { getGroups, Group } from '@/services/groupService';
 import { toast } from 'react-hot-toast';
+import { Filter } from '@/components/Filter';
 
 import {
   DndContext, 
