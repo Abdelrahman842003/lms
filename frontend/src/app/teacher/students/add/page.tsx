@@ -565,18 +565,17 @@ export default function AddStudentPage() {
               <label htmlFor="gender" className="block text-gray-light mb-2 text-[0.95rem]">
                 النوع <span className="text-red-500">*</span>
               </label>
-              <select
-                id="gender"
-                className={`w-full p-3 bg-transparent border rounded-lg text-white text-[1rem] focus:ring-1 outline-none transition-all ${
-                  formErrors.gender ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-white/10 focus:border-primary focus:ring-primary'
-                } disabled:opacity-60 disabled:cursor-not-allowed`}
+              <Filter
+                options={[
+                  { value: 'male', label: 'ذكر' },
+                  { value: 'female', label: 'أنثى' }
+                ]}
                 value={formData.gender}
-                onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                onChange={(value) => setFormData({ ...formData, gender: value })}
+                placeholder="اختر النوع"
+                className={formErrors.gender ? 'border-red-500' : ''}
                 disabled={isSubmitting || !isPhoneChecked || existingStudentFound}
-              >
-                <option value="male" className="bg-[#1a1f37]">ذكر</option>
-                <option value="female" className="bg-[#1a1f37]">أنثى</option>
-              </select>
+              />
               {formErrors.gender && <span className="text-red-500 text-sm mt-1 block">{formErrors.gender}</span>}
             </div>
 
@@ -584,19 +583,17 @@ export default function AddStudentPage() {
               <label htmlFor="education_type" className="block text-gray-light mb-2 text-[0.95rem]">
                 نوع التعليم {!existingStudentFound && <span className="text-red-500">*</span>}
               </label>
-              <select
-                id="education_type"
-                className={`w-full p-3 bg-transparent border rounded-lg text-white text-[1rem] focus:ring-1 outline-none transition-all disabled:opacity-60 disabled:cursor-not-allowed ${
-                  formErrors.education_type ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-white/10 focus:border-primary focus:ring-primary'
-                }`}
+              <Filter
+                options={[
+                  { value: 'general', label: 'عام' },
+                  { value: 'azhar', label: 'أزهري' }
+                ]}
                 value={formData.education_type}
-                onChange={(e) => setFormData({ ...formData, education_type: e.target.value })}
+                onChange={(value) => setFormData({ ...formData, education_type: value })}
+                placeholder="اختر نوع التعليم"
+                className={formErrors.education_type ? 'border-red-500' : ''}
                 disabled={isSubmitting || !isPhoneChecked || existingStudentFound}
-              >
-                <option value="" className="bg-[#1a1f37]">اختر نوع التعليم</option>
-                <option value="general" className="bg-[#1a1f37]">عام</option>
-                <option value="azhar" className="bg-[#1a1f37]">أزهري</option>
-              </select>
+              />
               {formErrors.education_type && <span className="text-red-500 text-sm mt-1 block"><i className="fas fa-exclamation-circle ml-1"></i>{formErrors.education_type}</span>}
             </div>
 
