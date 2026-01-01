@@ -16,12 +16,12 @@ class NotificationController extends Controller
     {
         $parent = $request->user();
         
-        if (!$parent || !$parent->parent_phone) {
+        if (!$parent || !$parent->phone) {
             return $this->errorResponse('غير مصرح', 401);
         }
 
         // Get all children
-        $children = Student::where('parent_phone', $parent->parent_phone)->get();
+        $children = Student::where('parent_phone', $parent->phone)->get();
 
         $allNotifications = [];
 
@@ -73,12 +73,12 @@ class NotificationController extends Controller
     {
         $parent = $request->user();
         
-        if (!$parent || !$parent->parent_phone) {
+        if (!$parent || !$parent->phone) {
             return $this->errorResponse('غير مصرح', 401);
         }
 
         // Get all children
-        $children = Student::where('parent_phone', $parent->parent_phone)->get();
+        $children = Student::where('parent_phone', $parent->phone)->get();
         $childIds = $children->pluck('id')->toArray();
 
         // Find the notification in any child's notifications

@@ -37,6 +37,10 @@ export const getNotifications = async () => {
     endpoint = '/admin/notifications';
   } else if (userType === 'student') {
     endpoint = '/student/notifications';
+  } else if (userType === 'parent') {
+    endpoint = '/parent/notifications';
+  } else if (userType === 'secretary') {
+    endpoint = '/secretary/notifications';
   }
   
   const data = await fetchApi(endpoint);
@@ -51,6 +55,10 @@ export const sendNotification = async (data: SendNotificationData) => {
     endpoint = '/admin/notifications';
   } else if (userType === 'student') {
     endpoint = '/student/notifications';
+  } else if (userType === 'parent') {
+    endpoint = '/parent/notifications';
+  } else if (userType === 'secretary') {
+    endpoint = '/secretary/notifications';
   }
 
   return await fetchApi(endpoint, {
