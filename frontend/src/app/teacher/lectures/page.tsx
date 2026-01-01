@@ -367,18 +367,16 @@ export default function TeacherLecturesPage() {
           />
         </div>
         <div className="w-64 max-md:w-full">
-          <select
+          <Filter
+            options={[
+              { value: '', label: 'كل المجموعات' },
+              ...groups.map(group => ({ value: String(group.id), label: group.name }))
+            ]}
             value={selectedGroupId}
-            onChange={(e) => setSelectedGroupId(e.target.value)}
-            className="form-input w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
-          >
-            <option value="" className="bg-[#1a1f37]">كل المجموعات</option>
-            {groups.map(group => (
-              <option key={group.id} value={group.id} className="bg-[#1a1f37]">
-                {group.name}
-              </option>
-            ))}
-          </select>
+            onChange={(value) => setSelectedGroupId(value)}
+            placeholder="كل المجموعات"
+            className="w-full"
+          />
         </div>
       </div>
 
