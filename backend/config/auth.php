@@ -60,6 +60,11 @@ return [
             'driver' => 'session',
             'provider' => 'secretaries',
         ],
+
+        'guardian' => [
+            'driver' => 'session',
+            'provider' => 'guardians',
+        ],
     ],
 
     /*
@@ -103,6 +108,11 @@ return [
         'secretaries' => [
             'driver' => 'eloquent',
             'model' => App\Models\Secretary::class,
+        ],
+
+        'guardians' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\Guardian::class,
         ],
     ],
 
