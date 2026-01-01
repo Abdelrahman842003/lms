@@ -292,7 +292,7 @@ export default function AddExamPage() {
           )}
         </div>
 
-        <div className="p-6">
+        <div className="p-4 md:p-6">
           {step === 'details' ? (
             <form onSubmit={handleStartQuestions}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
@@ -411,9 +411,9 @@ export default function AddExamPage() {
                   </div>
                 </div>
                 
-                <div className="p-6">
+                <div className="p-4 md:p-6">
                   <div className="form-group mb-6">
-                    <div className="flex justify-between items-center mb-2">
+                    <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-2 gap-2 md:gap-0">
                       <label className="block text-sm font-medium">نص السؤال</label>
                       <div className="flex items-center gap-2">
                         <label className="text-xs text-gray-400">مدة السؤال (ثانية):</label>
@@ -472,52 +472,59 @@ export default function AddExamPage() {
                 </div>
               </div>
 
-              <div className="flex justify-between mt-8">
+              <div className="flex flex-col lg:flex-row lg:justify-between gap-4 mt-8">
+                {/* Previous Button - Order 2 on mobile, 1 on desktop */}
                 <button
                   type="button"
                   onClick={handlePrevQuestion}
-                  className={`btn btn-secondary px-6 ${currentQuestionIndex === 0 ? 'invisible' : ''}`}
+                  className={`btn btn-secondary px-6 w-full lg:w-auto order-2 lg:order-1 ${currentQuestionIndex === 0 ? 'hidden lg:invisible' : ''}`}
                 >
                   <i className="fas fa-arrow-right ml-2"></i>
                   السابق
                 </button>
 
-                <button
-                  type="button"
-                  onClick={() => setShowPreviewModal(true)}
-                  className="btn btn-secondary px-6"
-                >
-                  معاينة وترتيب
-                  <i className="fas fa-sort mr-2"></i>
-                </button>
+                {/* Middle Buttons - Order 1 on mobile, 2 on desktop */}
+                <div className="flex flex-col sm:flex-row gap-3 order-1 lg:order-2 w-full lg:w-auto">
+                  <button
+                    type="button"
+                    onClick={() => setShowPreviewModal(true)}
+                    className="btn btn-secondary px-6 w-full sm:w-auto flex-1 lg:flex-none justify-center"
+                  >
+                    معاينة وترتيب
+                    <i className="fas fa-sort mr-2"></i>
+                  </button>
 
-                <button
-                  type="button"
-                  onClick={() => toast('قريباً: استيراد الأسئلة من PDF', { icon: '🚧' })}
-                  className="btn btn-outline px-6"
-                >
-                  استيراد PDF
-                  <i className="fas fa-file-pdf mr-2"></i>
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => toast('قريباً: استيراد الأسئلة من PDF', { icon: '🚧' })}
+                    className="btn btn-outline px-6 w-full sm:w-auto flex-1 lg:flex-none justify-center"
+                  >
+                    استيراد PDF
+                    <i className="fas fa-file-pdf mr-2"></i>
+                  </button>
+                </div>
 
-                <button
-                  type="button"
-                  onClick={handleNextQuestion}
-                  className="btn btn-primary px-6"
-                >
-                  سؤال جديد
-                  <i className="fas fa-plus mr-2"></i>
-                </button>
+                {/* Right Buttons - Order 3 on mobile, 3 on desktop */}
+                <div className="flex flex-col sm:flex-row gap-3 order-3 lg:order-3 w-full lg:w-auto">
+                    <button
+                    type="button"
+                    onClick={handleNextQuestion}
+                    className="btn btn-primary px-6 w-full sm:w-auto flex-1 lg:flex-none justify-center"
+                    >
+                    سؤال جديد
+                    <i className="fas fa-plus mr-2"></i>
+                    </button>
 
-                <button
-                  type="button"
-                  onClick={handleSubmit}
-                  className="btn btn-success px-8 bg-green-600 hover:bg-green-700 text-white"
-                  disabled={loading}
-                >
-                  إنهاء
-                  <i className="fas fa-check mr-2"></i>
-                </button>
+                    <button
+                    type="button"
+                    onClick={handleSubmit}
+                    className="btn btn-success px-8 bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto flex-1 lg:flex-none justify-center"
+                    disabled={loading}
+                    >
+                    إنهاء
+                    <i className="fas fa-check mr-2"></i>
+                    </button>
+                </div>
               </div>
             </div>
           )}
@@ -526,7 +533,7 @@ export default function AddExamPage() {
       {/* Finish Modal */}
       {showFinishModal && (
         <div className="modal-overlay" onClick={() => setShowFinishModal(false)}>
-          <div className="modal-content max-w-md" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-content w-[95%] max-w-md" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>إعدادات الامتحان النهائية</h3>
               <button className="modal-close" onClick={() => setShowFinishModal(false)}>
@@ -575,7 +582,7 @@ export default function AddExamPage() {
       {/* Preview & Reorder Modal */}
       {showPreviewModal && (
         <div className="modal-overlay" onClick={() => setShowPreviewModal(false)}>
-          <div className="modal-content max-w-2xl h-[80vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-content w-[95%] max-w-2xl h-[80vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>معاينة وترتيب الأسئلة</h3>
               <button className="modal-close" onClick={() => setShowPreviewModal(false)}>
