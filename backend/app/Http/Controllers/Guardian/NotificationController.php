@@ -58,7 +58,21 @@ class NotificationController extends Controller
         $unreadCount = count(array_filter($allNotifications, fn($n) => $n['read_at'] === null));
 
         return $this->successResponse([
-            'notifications' => $allNotifications,
+            'notifications' => [],
+            'received_notifications' => array_map(function ($n) {
+                return [
+                    'id' => (string)$n['id'],
+                    'type' => $n['type'] ?? 'general',
+                    'data' => [
+                        'title' => $n['title'],
+                        'message' => $n['message'],
+                        'sender_name' => $n['sender_name'],
+                        'child_name' => $n['child_name'] ?? null,
+                    ],
+                    'read_at' => $n['read_at'],
+                    'created_at' => $n['created_at'],
+                ];
+            }, $allNotifications),
             'stats' => [
                 'total' => $totalCount,
                 'unread' => $unreadCount,
