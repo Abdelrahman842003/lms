@@ -160,10 +160,10 @@ export const LectureCard: React.FC<LectureCardProps> = ({
         <div className="mt-auto grid gap-3">
           {!isActive ? (
             <button 
-              className="btn btn-success w-full flex items-center justify-center gap-2 transition-all transform hover:scale-[1.02]" 
+              className="btn btn-success w-full" 
               onClick={onActivate}
             >
-              <i className="fas fa-play-circle text-lg"></i>
+              <i className="fas fa-play-circle ml-2"></i>
               <span>تفعيل المحاضرة</span>
             </button>
           ) : (
@@ -186,10 +186,10 @@ export const LectureCard: React.FC<LectureCardProps> = ({
               </div>
               
               <button 
-                className="btn btn-danger w-full flex items-center justify-center gap-2" 
+                className="btn btn-danger w-full" 
                 onClick={onEnd}
               >
-                <i className="fas fa-stop-circle"></i>
+                <i className="fas fa-stop-circle ml-2"></i>
                 <span>إنهاء المحاضرة</span>
               </button>
             </>
