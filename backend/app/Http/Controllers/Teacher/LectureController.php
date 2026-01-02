@@ -9,6 +9,7 @@ use App\Http\Resources\Teacher\LectureResource;
 use App\Models\Lecture;
 use App\Services\Teacher\LectureService;
 use Illuminate\Http\Request;
+use Carbon\Carbon;
 
 class LectureController extends Controller
 {
@@ -206,7 +207,9 @@ class LectureController extends Controller
      */
     public function getAttendees(Request $request, Lecture $lecture)
     {
-        if ($lecture->teacher_id !== $this->getTeacherFromRequest($request)->id) {
+        $teacher = $this->getTeacherFromRequest($request);
+        
+        if (!$teacher || $lecture->teacher_id !== $teacher->id) {
             return $this->errorResponse('Unauthorized', 403);
         }
 
@@ -250,7 +253,7 @@ class LectureController extends Controller
         // Get available dates logic
         $availableDates = [];
         
-        if ($lecture->is_recurring && $lecture->recurrence_days) {
+        if ($lecture->is_recurring && is_array($lecture->recurrence_days)) {
             $startDate = $lecture->created_at->copy()->startOfDay();
             $endDate = now()->endOfDay();
             
