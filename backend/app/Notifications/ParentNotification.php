@@ -43,7 +43,14 @@ class ParentNotification extends Notification implements ShouldBroadcast
      */
     public function via(object $notifiable): array
     {
-        return ['database', 'broadcast', FcmChannel::class];
+        $channels = ['database', 'broadcast'];
+
+        // Only send FCM (Push) for attendance and exams
+        if (in_array($this->type, ['absent', 'exam_result'])) {
+            $channels[] = FcmChannel::class;
+        }
+
+        return $channels;
     }
 
     /**
@@ -60,6 +67,30 @@ class ParentNotification extends Notification implements ShouldBroadcast
             'child_name' => $this->childName,
             'type' => $this->type,
         ], $this->data);
+    }
+
+    /**
+     * Get the FCM representation of the notification.
+     */
+    public function toFcm(object $notifiable): array
+    {
+        $message = $this->message;
+
+        // Ensure Teacher name is in the message for exams if not already
+        if ($this->type === 'exam_result' && !str_contains($message, $this->senderName)) {
+            $message .= "\nالمدرس: " . $this->senderName;
+        }
+
+        // Ensure Student name is in the message if not already (usually is, but good to be safe)
+        if ($this->childName && !str_contains($message, $this->childName)) {
+            $message = "الطالب: " . $this->childName . "\n" . $message;
+        }
+
+        return [
+            'title' => $this->title,
+            'message' => $message,
+            'data' => $this->toArray($notifiable)
+        ];
     }
 
     /**

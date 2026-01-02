@@ -24,11 +24,20 @@ class FcmChannel
         }
 
         // Get data from notification
-        // We assume toArray returns title and message as per existing notifications
         $data = $notification->toArray($notifiable);
         $title = $data['title'] ?? 'Notification';
         $body = $data['message'] ?? '';
         $customData = $data; // Send all data as custom data
+
+        // Check if notification has toFcm method for custom formatting
+        if (method_exists($notification, 'toFcm')) {
+            $fcmData = $notification->toFcm($notifiable);
+            $title = $fcmData['title'] ?? $title;
+            $body = $fcmData['message'] ?? $body;
+            if (isset($fcmData['data'])) {
+                $customData = array_merge($customData, $fcmData['data']);
+            }
+        }
 
         $credentials = config('services.firebase.credentials') 
             ?? env('GOOGLE_APPLICATION_CREDENTIALS')
