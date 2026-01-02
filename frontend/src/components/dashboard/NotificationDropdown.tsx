@@ -454,7 +454,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
                         <p style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.8)', margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                           {notification.data.message}
                         </p>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem', flexWrap: 'wrap', gap: '0.25rem' }}>
                           <span style={{ fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.5)' }}>
                             {new Date(notification.created_at).toLocaleDateString('ar-EG', {
                               day: 'numeric',
@@ -463,17 +463,31 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
                               minute: '2-digit'
                             })}
                           </span>
-                          {notification.data.sender_name && (
-                            <span style={{ 
-                              fontSize: '0.65rem', 
-                              color: 'var(--secondary)', 
-                              backgroundColor: 'rgba(0, 214, 143, 0.1)', 
-                              padding: '0.125rem 0.375rem', 
-                              borderRadius: '0.25rem' 
-                            }}>
-                              {notification.data.sender_name}
-                            </span>
-                          )}
+                          <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
+                            {notification.data.child_name && (
+                              <span style={{ 
+                                fontSize: '0.65rem', 
+                                color: 'var(--primary)', 
+                                backgroundColor: 'rgba(66, 99, 235, 0.15)', 
+                                padding: '0.125rem 0.375rem', 
+                                borderRadius: '0.25rem' 
+                              }}>
+                                <i className="fas fa-user-graduate" style={{ marginLeft: '0.25rem', fontSize: '0.55rem' }}></i>
+                                {notification.data.child_name}
+                              </span>
+                            )}
+                            {notification.data.sender_name && (
+                              <span style={{ 
+                                fontSize: '0.65rem', 
+                                color: 'var(--secondary)', 
+                                backgroundColor: 'rgba(0, 214, 143, 0.1)', 
+                                padding: '0.125rem 0.375rem', 
+                                borderRadius: '0.25rem' 
+                              }}>
+                                {notification.data.sender_name}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
