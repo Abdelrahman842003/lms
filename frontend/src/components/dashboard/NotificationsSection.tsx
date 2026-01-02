@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { DashboardCard } from './DashboardCard';
+import { fetchApi } from '@/services/authService';
 
 interface Notification {
   id: string;
@@ -26,13 +27,8 @@ export const NotificationsSection = () => {
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/parent/notifications`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            Accept: 'application/json',
-          },
-        });
-        const data = await response.json();
+        const data = await fetchApi('/parent/notifications');
+        
         // Handle different response structures
         let fetchedNotifications: Notification[] = [];
         
@@ -64,7 +60,7 @@ export const NotificationsSection = () => {
 
     if (token) {
       fetchNotifications();
-
+      
       // Setup Reverb Listener
       import('@/lib/echo').then(({ initializeEcho }) => {
         try {
