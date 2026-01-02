@@ -13,6 +13,7 @@ interface LectureCardProps {
   onScan: () => void;
   onQRCode: () => void;
   onEnd: () => void;
+  onManualAttendance: () => void;
 }
 
 export const LectureCard: React.FC<LectureCardProps> = ({
@@ -27,6 +28,7 @@ export const LectureCard: React.FC<LectureCardProps> = ({
   onScan,
   onQRCode,
   onEnd,
+  onManualAttendance,
 }) => {
   const isActive = lecture.is_active;
 
@@ -72,6 +74,20 @@ export const LectureCard: React.FC<LectureCardProps> = ({
                 <i className="fas fa-clipboard-list"></i>
                 <span>سجل الحضور</span>
               </button>
+              
+              {isActive && (
+                <button
+                  className="actions-menu-item w-full"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onManualAttendance();
+                  }}
+                >
+                  <i className="fas fa-user-check"></i>
+                  <span>حضور يدوي</span>
+                </button>
+              )}
+
               <button
                 className="actions-menu-item w-full"
                 onClick={(e) => {
@@ -144,29 +160,39 @@ export const LectureCard: React.FC<LectureCardProps> = ({
         <div className="mt-auto grid gap-3">
           {!isActive ? (
             <button 
-              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#ff6b6b] to-[#ee5a6f] hover:from-[#ff5252] hover:to-[#e94560] text-white font-semibold text-base flex items-center justify-center gap-2 transition-all shadow-lg hover:shadow-xl transform hover:scale-[1.02]" 
+              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#2ecc71] to-[#27ae60] hover:from-[#27ae60] hover:to-[#219150] text-white font-semibold text-base flex items-center justify-center gap-2 transition-all shadow-lg hover:shadow-xl transform hover:scale-[1.02]" 
               onClick={onActivate}
             >
               <i className="fas fa-play-circle text-lg"></i>
-              <span>إنعاش</span>
+              <span>تفعيل المحاضرة</span>
             </button>
           ) : (
-            <div className="grid grid-cols-2 gap-3">
+            <>
+              <div className="grid grid-cols-2 gap-3">
+                <button 
+                  className="py-3 rounded-xl bg-[rgba(66,99,235,0.15)] hover:bg-[rgba(66,99,235,0.25)] text-primary border border-primary/30 hover:border-primary/50 font-medium text-sm flex flex-col items-center justify-center gap-1.5 transition-all" 
+                  onClick={onScan}
+                >
+                  <i className="fas fa-qrcode text-base"></i>
+                  <span className="text-xs">مسح QR طالب</span>
+                </button>
+                <button 
+                  className="py-3 rounded-xl bg-[rgba(66,99,235,0.15)] hover:bg-[rgba(66,99,235,0.25)] text-primary border border-primary/30 hover:border-primary/50 font-medium text-sm flex flex-col items-center justify-center gap-1.5 transition-all" 
+                  onClick={onQRCode}
+                >
+                  <i className="fas fa-qrcode text-base"></i>
+                  <span className="text-xs">QR Code</span>
+                </button>
+              </div>
+              
               <button 
-                className="py-3 rounded-xl bg-[rgba(66,99,235,0.15)] hover:bg-[rgba(66,99,235,0.25)] text-primary border border-primary/30 hover:border-primary/50 font-medium text-sm flex flex-col items-center justify-center gap-1.5 transition-all" 
-                onClick={onScan}
+                className="w-full py-3 rounded-xl bg-gradient-to-r from-[#ff6b6b] to-[#ee5a6f] hover:from-[#ff5252] hover:to-[#e94560] text-white font-semibold text-sm flex items-center justify-center gap-2 transition-all shadow-lg hover:shadow-xl" 
+                onClick={onEnd}
               >
-                <i className="fas fa-qrcode text-base"></i>
-                <span className="text-xs">مسح QR طالب</span>
+                <i className="fas fa-stop-circle"></i>
+                <span>إنهاء المحاضرة</span>
               </button>
-              <button 
-                className="py-3 rounded-xl bg-[rgba(66,99,235,0.15)] hover:bg-[rgba(66,99,235,0.25)] text-primary border border-primary/30 hover:border-primary/50 font-medium text-sm flex flex-col items-center justify-center gap-1.5 transition-all" 
-                onClick={onQRCode}
-              >
-                <i className="fas fa-qrcode text-base"></i>
-                <span className="text-xs">QR Code</span>
-              </button>
-            </div>
+            </>
           )}
         </div>
       )}

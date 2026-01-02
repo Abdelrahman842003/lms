@@ -22,6 +22,7 @@ import { getGroups, Group } from '@/services/groupService';
 import QRCodeModal from '@/components/dashboard/QRCodeModal';
 import QRScannerModal from '@/components/dashboard/QRScannerModal';
 import { LectureCard } from '@/components/dashboard/LectureCard';
+import { ManualAttendanceModal } from '@/components/dashboard/ManualAttendanceModal';
 import { Filter } from '@/components/Filter';
 
 import toast from 'react-hot-toast';
@@ -88,6 +89,10 @@ export default function TeacherLecturesPage() {
 
   // Menu State
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+
+  // Manual Attendance State
+  const [showManualAttendanceModal, setShowManualAttendanceModal] = useState(false);
+  const [selectedLectureForManualAttendance, setSelectedLectureForManualAttendance] = useState<Lecture | null>(null);
 
   const handleViewAttendees = (lectureId: string) => {
     const queryParams = selectedGroupId ? `?group_id=${selectedGroupId}` : '';
@@ -300,6 +305,11 @@ export default function TeacherLecturesPage() {
     }
   };
 
+  const handleManualAttendanceClick = (lecture: Lecture) => {
+    setSelectedLectureForManualAttendance(lecture);
+    setShowManualAttendanceModal(true);
+  };
+
   // Stats
   const totalLectures = totalItems;
   const upcomingLectures = lectures.filter(l => l.status === 'قادمة').length;
@@ -444,6 +454,10 @@ export default function TeacherLecturesPage() {
               onScan={() => handleScanClick(lecture)}
               onQRCode={() => handleQRCodeClick(lecture)}
               onEnd={() => handleEndLectureClick(lecture)}
+              onManualAttendance={() => {
+                handleManualAttendanceClick(lecture);
+                setOpenMenuId(null);
+              }}
             />
             );
           })}
@@ -701,6 +715,14 @@ export default function TeacherLecturesPage() {
           </div>
         </div>
       )}
+
+      {/* Manual Attendance Modal */}
+      <ManualAttendanceModal
+        isOpen={showManualAttendanceModal}
+        onClose={() => setShowManualAttendanceModal(false)}
+        lectureId={selectedLectureForManualAttendance?.id || ''}
+        lectureTitle={selectedLectureForManualAttendance?.title || ''}
+      />
     </DashboardLayout>
   );
 }
