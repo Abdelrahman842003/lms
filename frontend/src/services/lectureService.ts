@@ -93,7 +93,7 @@ export interface LecturesResponse {
 export const getLectures = async (
   page = 1, 
   perPage = 10,
-  filters?: { search?: string; date_from?: string; date_to?: string; group_id?: string }
+  filters?: { search?: string; date_from?: string; date_to?: string; group_id?: string; status?: string }
 ): Promise<any> => {
   const token = localStorage.getItem('token');
   const queryParams = new URLSearchParams({
@@ -103,6 +103,7 @@ export const getLectures = async (
     ...(filters?.date_from && { date_from: filters.date_from }),
     ...(filters?.date_to && { date_to: filters.date_to }),
     ...(filters?.group_id && { group_id: filters.group_id }),
+    ...(filters?.status && { status: filters.status }),
   });
 
   const response = await fetch(`${API_BASE_URL}/api/teacher/lectures?${queryParams}`, {

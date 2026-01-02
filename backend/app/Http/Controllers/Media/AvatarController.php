@@ -1,131 +1,75 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Media;
 
 use App\Http\Controllers\Controller;
 use App\Services\Media\AvatarService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class AvatarController extends Controller
 {
-    private AvatarService $avatarService;
+    public function __construct(
+        private AvatarService $avatarService
+    ) {}
 
-    public function __construct(AvatarService $avatarService)
-    {
-        $this->avatarService = $avatarService;
-    }
-
-    /**
-     * Upload avatar
-     * 
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function upload(Request $request)
+    public function upload(Request $request): JsonResponse
     {
         try {
-            // Validate request
             $request->validate([
-                'avatar' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:5120', // 5MB max
+                'avatar' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
             ]);
 
-            // Get authenticated user
             $user = Auth::user();
-            
-            // Detect user type
             $userType = AvatarService::detectUserType($user);
 
-            // Upload avatar
             $result = $this->avatarService->uploadAvatar(
                 $user,
                 $userType,
                 $request->file('avatar')
             );
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Avatar uploaded successfully',
-                'data' => $result,
-            ], 200);
+            return $this->successResponse($result, 'تم رفع الصورة بنجاح');
 
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 400);
+            return $this->errorResponse($e->getMessage(), 400);
         }
     }
 
-    /**
-     * Delete avatar
-     * 
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function delete(Request $request)
+    public function delete(Request $request): JsonResponse
     {
         try {
-            // Get authenticated user
             $user = Auth::user();
-            
-            // Detect user type
             $userType = AvatarService::detectUserType($user);
 
-            // Delete avatar
             $this->avatarService->deleteAvatar($user, $userType);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Avatar deleted successfully',
-                'data' => null, // Added data null to match typical response structure if needed, or just message
-            ], 200);
+            return $this->successResponse(null, 'تم حذف الصورة بنجاح');
 
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 400);
+            return $this->errorResponse($e->getMessage(), 400);
         }
     }
 
-    /**
-     * Get avatar URL
-     * 
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function show(Request $request)
+    public function show(Request $request): JsonResponse
     {
         try {
-            // Get authenticated user
             $user = Auth::user();
-            
-            // Detect user type
             $userType = AvatarService::detectUserType($user);
 
-            // Get avatar URL
             $url = $this->avatarService->getAvatarUrl($user, $userType);
 
             if (!$url) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No avatar found',
-                ], 404);
+                return $this->errorResponse('لا توجد صورة', 404);
             }
 
-            return response()->json([
-                'success' => true,
-                'data' => [
-                    'url' => $url,
-                ],
-            ], 200);
+            return $this->successResponse(['url' => $url]);
 
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 400);
+            return $this->errorResponse($e->getMessage(), 400);
         }
     }
 }

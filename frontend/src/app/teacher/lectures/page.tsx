@@ -56,6 +56,7 @@ export default function TeacherLecturesPage() {
   const [grades, setGrades] = useState<any[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState('');
   
   useEffect(() => {
     const fetchData = async () => {
@@ -113,14 +114,15 @@ export default function TeacherLecturesPage() {
       fetchLectures(1);
     }, 500);
     return () => clearTimeout(timer);
-  }, [searchQuery, selectedGroupId]);
+  }, [searchQuery, selectedGroupId, selectedStatus]);
 
   const fetchLectures = async (page = 1) => {
     try {
       setIsLoading(true);
       const response = await getLectures(page, itemsPerPage, { 
         search: searchQuery,
-        group_id: selectedGroupId || undefined
+        group_id: selectedGroupId || undefined,
+        status: selectedStatus || undefined
       });
       setLectures(response.data);
       setTotalPages(response.meta.last_page);
@@ -417,6 +419,21 @@ export default function TeacherLecturesPage() {
             value={selectedGroupId}
             onChange={(value) => setSelectedGroupId(value)}
             placeholder="كل المجموعات"
+            className="w-full"
+          />
+        </div>
+        <div className="w-48 max-md:w-full">
+          <Filter
+            options={[
+              { value: '', label: 'كل الحالات' },
+              { value: 'upcoming', label: 'قادمة' },
+              { value: 'ongoing', label: 'جارية' },
+              { value: 'finished', label: 'منتهية' },
+              { value: 'recurring', label: 'متكررة' },
+            ]}
+            value={selectedStatus}
+            onChange={(value) => setSelectedStatus(value)}
+            placeholder="الحالة"
             className="w-full"
           />
         </div>

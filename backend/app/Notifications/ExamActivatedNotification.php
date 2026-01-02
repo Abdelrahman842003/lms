@@ -1,32 +1,18 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Notifications;
 
 use App\Models\Exam;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
-use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Notifications\Notification;
-use App\Notifications\Channels\FcmChannel;
 
-class ExamActivatedNotification extends Notification implements ShouldBroadcast
+class ExamActivatedNotification extends BaseNotification
 {
-    use Queueable;
+    public function __construct(
+        private Exam $exam
+    ) {}
 
-    protected $exam;
-
-    public function __construct(Exam $exam)
-    {
-        $this->exam = $exam;
-    }
-
-    public function via($notifiable): array
-    {
-        return ['database', 'broadcast', FcmChannel::class];
-    }
-
-    public function toArray($notifiable): array
+    protected function getData(): array
     {
         return [
             'title' => 'امتحان جديد متاح الآن! 📝',
@@ -37,10 +23,9 @@ class ExamActivatedNotification extends Notification implements ShouldBroadcast
         ];
     }
 
-    public function broadcastOn(): array
+    public function broadcastType(): string
     {
-        return [
-            new PrivateChannel('App.Models.User.' . $this->id),
-        ];
+        return 'exam_activated';
     }
 }
+

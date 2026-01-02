@@ -1,19 +1,26 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Teacher;
 
 use App\Http\Controllers\Controller;
+use App\DTOs\Teacher\LectureData;
+use App\Http\Requests\Teacher\Lecture\CancelSessionRequest;
 use App\Http\Requests\Teacher\Lecture\StoreLectureRequest;
 use App\Http\Requests\Teacher\Lecture\UpdateLectureRequest;
 use App\Http\Resources\Teacher\LectureResource;
 use App\Models\Lecture;
 use App\Services\Teacher\LectureService;
+use App\Traits\ResolvesTeacher;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 use Carbon\Carbon;
 
 class LectureController extends Controller
 {
-    use \App\Traits\ResolvesTeacher;
+    use ResolvesTeacher;
     protected $lectureService;
 
     public function __construct(LectureService $lectureService)
@@ -23,74 +30,37 @@ class LectureController extends Controller
 
     public function index(Request $request)
     {
-        error_log("LectureController::index called");
         $teacher = $this->getTeacherFromRequest($request);
-        error_log("Teacher resolved: " . ($teacher ? $teacher->id : 'null'));
         if (!$teacher) {
             return $this->errorResponse('Unauthorized', 403);
         }
+        
         $perPage = $request->input('per_page', 10);
         $filters = $request->only(['search', 'date_from', 'date_to', 'group_id']);
         $lectures = $this->lectureService->getLectures($teacher, $perPage, $filters);
-        error_log("Lectures fetched: " . $lectures->count());
         
         return $this->successResponse(
             LectureResource::collection($lectures)->response()->getData(true)
         );
     }
 
-    public function store(Request $request)
+    public function store(StoreLectureRequest $request)
     {
         try {
-            $validated = $request->validate([
-                'title' => 'required|string|max:255',
-                'description' => 'nullable|string',
-                'grade_id' => 'required|exists:grades,id',
-                'group_id' => 'nullable|exists:groups,id',
-                'date' => 'nullable|date|required_without:is_recurring',
-                'is_recurring' => 'boolean',
-                'recurrence_days' => 'nullable|array|required_if:is_recurring,true',
-                'recurrence_time' => 'nullable|date_format:H:i|required_if:is_recurring,true',
-                'duration_minutes' => 'nullable|integer|min:1|required_if:is_recurring,true',
-            ]);
-
             $teacher = $this->getTeacherFromRequest($request);
             if (!$teacher) {
                 return $this->errorResponse('Unauthorized', 403);
             }
 
-            if ($request->boolean('is_recurring')) {
-                $lecture = $this->lectureService->createLecture($teacher, [
-                    'title' => $validated['title'],
-                    'description' => $validated['description'],
-                    'grade_id' => $request->input('grade_id'),
-                    'group_id' => $request->input('group_id'),
-                    'is_active' => false,
-                    'is_recurring' => true,
-                    'recurrence_days' => $request->input('recurrence_days'),
-                    'recurrence_time' => $request->input('recurrence_time'),
-                    'duration_minutes' => $request->input('duration_minutes'),
-                ]);
-            } else {
-                $date = \Carbon\Carbon::parse($validated['date']);
-                
-                $lecture = $this->lectureService->createLecture($teacher, [
-                    'title' => $validated['title'],
-                    'description' => $validated['description'],
-                    'grade_id' => $request->input('grade_id'),
-                    'group_id' => $request->input('group_id'),
-                    'start_time' => $date->copy()->startOfDay(),
-                    'end_time' => $date->copy()->addHours(24),
-                    'is_active' => false,
-                ]);
-            }
+            $lectureData = LectureData::fromRequest($request);
+            $lecture = $this->lectureService->createLecture($teacher, $lectureData->toArray());
 
             return $this->successResponse([
                 'lecture' => new LectureResource($lecture),
                 'message' => 'تم إضافة المحاضرة بنجاح'
-            ], 201);
+            ], 'تم إضافة المحاضرة بنجاح', 201);
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Lecture creation failed: ' . $e->getMessage());
+            Log::error('Lecture creation failed: ' . $e->getMessage());
             return $this->errorResponse($e->getMessage(), 500);
         }
     }
@@ -396,18 +366,15 @@ class LectureController extends Controller
         
         return $pdf->download("attendance_report_{$lecture->id}.pdf");
     }
-    public function cancelSession(Request $request, Lecture $lecture)
+    public function cancelSession(CancelSessionRequest $request, Lecture $lecture)
     {
         $teacher = $this->getTeacherFromRequest($request);
         if (!$teacher || $lecture->teacher_id !== $teacher->id) {
             return $this->errorResponse('Unauthorized', 403);
         }
 
-        $request->validate([
-            'date' => 'required|date',
-        ]);
-
-        $date = $request->input('date');
+        $validated = $request->validated();
+        $date = $validated['date'];
         $cancelledDates = $lecture->cancelled_dates ?? [];
 
         if (!in_array($date, $cancelledDates)) {

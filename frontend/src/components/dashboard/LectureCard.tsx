@@ -174,13 +174,18 @@ export const LectureCard: React.FC<LectureCardProps> = ({
       {lecture.status !== 'منتهية' && (
         <div className="mt-auto grid gap-3">
           {!isActive ? (
-            <button 
-              className="btn btn-success w-full" 
-              onClick={onActivate}
-            >
-              <i className="fas fa-play-circle ml-2"></i>
-              <span>تفعيل المحاضرة</span>
-            </button>
+            <div className="flex items-center gap-3">
+              <button 
+                className="flex-1 py-3 rounded-xl text-gray-light hover:text-white hover:bg-white/5 transition-all flex items-center justify-center gap-2" 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onActivate();
+                }}
+              >
+                <i className="fas fa-power-off"></i>
+                <span>تفعيل المحاضرة</span>
+              </button>
+            </div>
           ) : (
             <>
               <div className="grid grid-cols-2 gap-3">

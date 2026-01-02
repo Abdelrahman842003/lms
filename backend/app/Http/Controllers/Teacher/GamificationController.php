@@ -1,18 +1,22 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Teacher;
 
 use App\Http\Controllers\Controller;
 use App\Models\GamificationSetting;
 use App\Models\Student;
 use App\Services\PointService;
+use App\Traits\ResolvesTeacher;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
 class GamificationController extends Controller
 {
-    use \App\Traits\ResolvesTeacher;
+    use ResolvesTeacher;
+
     public function __construct(
         private PointService $pointService
     ) {}
@@ -28,12 +32,9 @@ class GamificationController extends Controller
         $weeklyLeaderboard = $this->pointService->getWeeklyLeaderboardPaginated($teacher->id, $perPage);
         $allTimeLeaderboard = $this->pointService->getAllTimeLeaderboardPaginated($teacher->id, $perPage);
 
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'weekly' => $weeklyLeaderboard,
-                'all_time' => $allTimeLeaderboard,
-            ],
+        return $this->successResponse([
+            'weekly' => $weeklyLeaderboard,
+            'all_time' => $allTimeLeaderboard,
         ]);
     }
 
@@ -45,10 +46,7 @@ class GamificationController extends Controller
         $teacher = $this->getTeacherFromRequest($request);
         $settings = GamificationSetting::getOrCreate($teacher->id);
 
-        return response()->json([
-            'success' => true,
-            'data' => $settings,
-        ]);
+        return $this->successResponse($settings);
     }
 
     /**
@@ -74,11 +72,7 @@ class GamificationController extends Controller
         $settings = GamificationSetting::getOrCreate($teacher->id);
         $settings->update($validated);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'تم تحديث إعدادات النقاط',
-            'data' => $settings->fresh(),
-        ]);
+        return $this->successResponse($settings->fresh(), 'تم تحديث إعدادات النقاط');
     }
 
     /**
@@ -96,13 +90,9 @@ class GamificationController extends Controller
 
         $student = Student::findOrFail($validated['student_id']);
         
-        // Verify student is enrolled with this teacher
         $enrollment = $student->enrollmentFor($teacher);
         if (!$enrollment) {
-            return response()->json([
-                'success' => false,
-                'message' => 'الطالب غير مشترك معك',
-            ], 403);
+            return $this->errorResponse('الطالب غير مشترك معك', 403);
         }
 
         $transaction = $this->pointService->awardManualBonus(
@@ -112,11 +102,7 @@ class GamificationController extends Controller
             $validated['description']
         );
 
-        return response()->json([
-            'success' => true,
-            'message' => "تم منح {$validated['points']} نقطة للطالب {$student->name}",
-            'data' => $transaction,
-        ]);
+        return $this->successResponse($transaction, "تم منح {$validated['points']} نقطة للطالب {$student->name}");
     }
 
     /**
@@ -128,9 +114,6 @@ class GamificationController extends Controller
         
         $stats = $this->pointService->getStudentStats($studentId, $teacher->id);
 
-        return response()->json([
-            'success' => true,
-            'data' => $stats,
-        ]);
+        return $this->successResponse($stats);
     }
 }

@@ -4,8 +4,12 @@ namespace App\Providers;
 
 use App\Listeners\BroadcastNotificationSent;
 use App\Models\Enrollment;
+use App\Models\Exam;
+use App\Models\Lecture;
 use App\Models\Student;
 use App\Observers\EnrollmentObserver;
+use App\Observers\ExamObserver;
+use App\Observers\LectureObserver;
 use App\Observers\StudentObserver;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -32,6 +36,8 @@ class AppServiceProvider extends ServiceProvider
         // Register cache invalidation observers
         Student::observe(StudentObserver::class);
         Enrollment::observe(EnrollmentObserver::class);
+        Lecture::observe(LectureObserver::class);
+        Exam::observe(ExamObserver::class);
 
         // Broadcast all database notifications via Reverb for real-time delivery
         Event::listen(NotificationSent::class, BroadcastNotificationSent::class);

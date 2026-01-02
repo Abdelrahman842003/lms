@@ -1,22 +1,26 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Teacher;
 
 use App\Actions\Teacher\GenerateStudentPassword;
 use App\Actions\Teacher\ValidateGroupGrade;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Teacher\Student\StoreStudentRequest;
-use App\Http\Requests\Teacher\Student\UpdateStudentRequest;
 use App\Http\Requests\Teacher\Student\UpdatePermissionsRequest;
+use App\Http\Requests\Teacher\Student\UpdateStudentRequest;
 use App\Http\Resources\Teacher\EnrollmentResource;
 use App\Models\Enrollment;
 use App\Models\Student;
 use App\Services\Teacher\StudentService;
+use App\Traits\ResolvesTeacher;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class StudentController extends Controller
 {
-    use \App\Traits\ResolvesTeacher;
+    use ResolvesTeacher;
 
     protected $studentService;
     protected $generatePassword;

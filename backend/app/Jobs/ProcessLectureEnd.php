@@ -1,78 +1,73 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Jobs;
 
+use App\Models\Attendance;
 use App\Models\Lecture;
+use App\Notifications\StudentAbsentNotification;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 
 class ProcessLectureEnd implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    protected $lecture;
+    public function __construct(
+        protected Lecture $lecture
+    ) {}
 
-    /**
-     * Create a new job instance.
-     */
-    public function __construct(Lecture $lecture)
-    {
-        $this->lecture = $lecture;
-    }
-
-    /**
-     * Execute the job.
-     */
     public function handle(): void
     {
-        \Illuminate\Support\Facades\Log::info("ProcessLectureEnd Job Started for Lecture ID: {$this->lecture->id}");
-
-        // Get all active students for this teacher
         $teacher = $this->lecture->teacher;
         
         if (!$teacher) {
-            \Illuminate\Support\Facades\Log::error("Teacher not found for lecture {$this->lecture->id}");
+            Log::error("ProcessLectureEnd: Teacher not found for lecture {$this->lecture->id}");
             return;
         }
 
         $activeStudents = $teacher->activeStudents()
             ->wherePivot('grade_id', $this->lecture->grade_id)
             ->get();
-            
-        \Illuminate\Support\Facades\Log::info("Found " . $activeStudents->count() . " active students for teacher {$teacher->id} in grade {$this->lecture->grade_id}");
+
+        $absentCount = 0;
 
         foreach ($activeStudents as $student) {
-            // Check if student already has an attendance record for this lecture
             $hasAttended = $this->lecture->attendances()
                 ->where('student_id', $student->id)
                 ->exists();
 
             if (!$hasAttended) {
-                \Illuminate\Support\Facades\Log::info("Student {$student->id} did not attend. Creating absent record.");
-                
-                // Create absent record
-                \App\Models\Attendance::create([
+                Attendance::create([
                     'lecture_id' => $this->lecture->id,
                     'student_id' => $student->id,
                     'status' => 'absent',
-                    'attended_at' => null,
                 ]);
 
-                // Send notification
                 try {
-                    $student->notify(new \App\Notifications\StudentAbsentNotification($this->lecture->title, $teacher->name));
-                    \Illuminate\Support\Facades\Log::info("Notification sent to student {$student->id}");
+                    $student->notify(new StudentAbsentNotification(
+                        $this->lecture->title,
+                        $teacher->name
+                    ));
                 } catch (\Exception $e) {
-                    \Illuminate\Support\Facades\Log::error("Failed to send notification to student {$student->id}: " . $e->getMessage());
+                    Log::error("ProcessLectureEnd: Notification failed for student {$student->id}", [
+                        'error' => $e->getMessage()
+                    ]);
                 }
-            } else {
-                \Illuminate\Support\Facades\Log::info("Student {$student->id} attended.");
+
+                $absentCount++;
             }
         }
-        
-        \Illuminate\Support\Facades\Log::info("ProcessLectureEnd Job Completed");
+
+        Log::info("ProcessLectureEnd: Completed for lecture {$this->lecture->id}", [
+            'total_students' => $activeStudents->count(),
+            'absent_marked' => $absentCount
+        ]);
     }
 }
+

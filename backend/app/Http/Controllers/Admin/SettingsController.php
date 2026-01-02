@@ -1,25 +1,26 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class SettingsController extends Controller
 {
-    // Keys that should stay masked (sensitive API keys)
-    private static $maskedKeys = [
+    private static array $maskedKeys = [
         'openai_api_key',
         'gemini_api_key',
     ];
 
-    public function index()
+    public function index(): JsonResponse
     {
         $settings = Setting::all()->mapWithKeys(function ($setting) {
             $value = $setting->value;
             
-            // Only mask AI API keys for extra security
             if (in_array($setting->key, self::$maskedKeys) && !empty($value)) {
                 $value = '********';
             }
@@ -27,14 +28,10 @@ class SettingsController extends Controller
             return [$setting->key => $value];
         });
 
-        return response()->json([
-            'status' => true,
-            'message' => 'Settings retrieved successfully',
-            'data' => $settings
-        ]);
+        return $this->successResponse($settings, 'تم استرجاع الإعدادات بنجاح');
     }
 
-    public function update(Request $request)
+    public function update(Request $request): JsonResponse
     {
         $data = $request->validate([
             'settings' => 'required|array',
@@ -48,13 +45,10 @@ class SettingsController extends Controller
             $value = $settingData['value'];
             $group = $settingData['group'] ?? 'general';
 
-            // Handle Encrypted Keys
             if (in_array($key, Setting::$encryptedKeys)) {
-                // If value is masked (********), skip updating (user didn't change it)
                 if ($value === '********') {
                     continue;
                 }
-                // The Model Mutator will handle encryption automatically
             }
 
             Setting::updateOrCreate(
@@ -66,21 +60,16 @@ class SettingsController extends Controller
             );
         }
 
-        return response()->json([
-            'status' => true,
-            'message' => 'Settings updated successfully',
-            'data' => null
-        ]);
+        return $this->successResponse(null, 'تم تحديث الإعدادات بنجاح');
     }
 
-    public function getPublicSettings()
+    public function getPublicSettings(): JsonResponse
     {
         $settings = Setting::whereIn('key', [
             'siteName', 
             'siteDescription', 
             'maintenanceMode', 
             'whatsappNumber',
-            // SEO Settings
             'seo_title',
             'seo_description',
             'seo_keywords',
@@ -90,7 +79,6 @@ class SettingsController extends Controller
             'seo_bing_verification',
             'seo_robots_txt',
             'seo_canonical_url',
-            // Public Firebase Config (Safe to expose)
             'firebase_api_key',
             'firebase_auth_domain',
             'firebase_project_id',
@@ -99,13 +87,8 @@ class SettingsController extends Controller
             'firebase_app_id',
         ])->get();
         
-        // The Model Accessor automatically decrypts values
         $mappedSettings = $settings->pluck('value', 'key');
         
-        return response()->json([
-            'status' => true,
-            'message' => 'Public settings retrieved successfully',
-            'data' => $mappedSettings
-        ]);
+        return $this->successResponse($mappedSettings, 'تم استرجاع الإعدادات العامة بنجاح');
     }
 }

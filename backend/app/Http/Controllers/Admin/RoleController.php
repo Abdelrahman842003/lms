@@ -1,21 +1,24 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
 
 class RoleController extends Controller
 {
-    public function index()
+    public function index(): JsonResponse
     {
         $roles = Role::with('permissions')->get();
-        return response()->json(['data' => $roles]);
+        return $this->successResponse($roles);
     }
 
-    public function store(Request $request)
+    public function store(Request $request): JsonResponse
     {
         $request->validate([
             'name' => 'required|string|unique:roles,name',
@@ -29,15 +32,15 @@ class RoleController extends Controller
             $role->syncPermissions($request->permissions);
         }
 
-        return response()->json(['data' => $role->load('permissions'), 'message' => 'Role created successfully'], 201);
+        return $this->successResponse($role->load('permissions'), 'تم إنشاء الدور بنجاح', 201);
     }
 
-    public function show(Role $role)
+    public function show(Role $role): JsonResponse
     {
-        return response()->json(['data' => $role->load('permissions')]);
+        return $this->successResponse($role->load('permissions'));
     }
 
-    public function update(Request $request, Role $role)
+    public function update(Request $request, Role $role): JsonResponse
     {
         $request->validate([
             'name' => 'required|string|unique:roles,name,' . $role->id,
@@ -51,12 +54,12 @@ class RoleController extends Controller
             $role->syncPermissions($request->permissions);
         }
 
-        return response()->json(['data' => $role->load('permissions'), 'message' => 'Role updated successfully']);
+        return $this->successResponse($role->load('permissions'), 'تم تحديث الدور بنجاح');
     }
 
-    public function destroy(Role $role)
+    public function destroy(Role $role): JsonResponse
     {
         $role->delete();
-        return response()->json(['message' => 'Role deleted successfully']);
+        return $this->successResponse(null, 'تم حذف الدور بنجاح');
     }
 }

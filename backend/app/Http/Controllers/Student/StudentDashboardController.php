@@ -1,22 +1,28 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\Enrollment;
-use App\Models\Lecture;
 use App\Models\Exam;
 use App\Models\ExamResult;
+use App\Models\Lecture;
+use App\Models\StudentPoint;
+use App\Models\Teacher;
+use App\Services\MistakesService;
 use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class StudentDashboardController extends Controller
 {
     public function __construct(
-        private \App\Services\MistakesService $mistakesService
+        private MistakesService $mistakesService
     ) {}
 
-    public function getDashboard(Request $request)
+    public function getDashboard(Request $request): JsonResponse
     {
         $request->validate([
             'teacher_id' => 'required|exists:teachers,id',
@@ -26,13 +32,9 @@ class StudentDashboardController extends Controller
         $teacherId = $request->teacher_id;
 
         // 0. Validate Teacher & Enrollment Status
-        $teacher = \App\Models\Teacher::find($teacherId);
+        $teacher = Teacher::find($teacherId);
         if (!$teacher || $teacher->is_suspended) {
-             return response()->json([
-                'status' => false,
-                'message' => 'Teacher is suspended or not found',
-                'data' => null
-            ], 403);
+             return $this->errorResponse('Teacher is suspended or not found', 403);
         }
 
         // 1. Get Enrollment (for Balance & Status)
@@ -41,11 +43,7 @@ class StudentDashboardController extends Controller
             ->first();
 
         if (!$enrollment || !$enrollment->is_active) {
-             return response()->json([
-                'status' => false,
-                'message' => 'Enrollment is not active',
-                'data' => null
-            ], 403);
+             return $this->errorResponse('Enrollment is not active', 403);
         }
 
         // 2. Mistakes Count (Unmastered)
@@ -53,7 +51,7 @@ class StudentDashboardController extends Controller
         $mistakesCount = $mistakesStats['pending'] ?? 0;
 
         // 3. Total Points
-        $pointsRecord = \App\Models\StudentPoint::where('student_id', $student->id)
+        $pointsRecord = StudentPoint::where('student_id', $student->id)
             ->where('teacher_id', $teacherId)
             ->first();
         $totalPoints = $pointsRecord ? $pointsRecord->total_points : 0;
@@ -145,20 +143,16 @@ class StudentDashboardController extends Controller
             ->take(5)
             ->values();
 
-        return response()->json([
-            'status' => true,
-            'message' => 'Dashboard data retrieved successfully',
-            'data' => [
-                'stats' => [
-                    'walletBalance' => $enrollment ? $enrollment->balance : 0,
-                    'mistakesCount' => $mistakesCount,
-                    'totalPoints' => $totalPoints,
-                    'attendanceRate' => $attendanceRate,
-                    'examAverage' => round($examAverage, 1),
-                ],
-                'upcomingLectures' => $upcomingLectures,
-                'latestNews' => $latestNews,
-            ]
-        ]);
+        return $this->successResponse([
+            'stats' => [
+                'walletBalance' => $enrollment ? $enrollment->balance : 0,
+                'mistakesCount' => $mistakesCount,
+                'totalPoints' => $totalPoints,
+                'attendanceRate' => $attendanceRate,
+                'examAverage' => round($examAverage, 1),
+            ],
+            'upcomingLectures' => $upcomingLectures,
+            'latestNews' => $latestNews,
+        ], 'تم استرجاع بيانات لوحة التحكم بنجاح');
     }
 }

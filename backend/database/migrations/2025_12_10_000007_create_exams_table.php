@@ -24,6 +24,9 @@ return new class extends Migration
             $table->foreignUuid('grade_id')->nullable()->constrained('grades')->onDelete('set null');
             $table->foreignUuid('group_id')->nullable()->constrained('groups')->onDelete('set null');
             $table->timestamps();
+
+            // Performance indexes
+            $table->index(['teacher_id', 'is_active'], 'exams_teacher_active_index');
         });
     }
 

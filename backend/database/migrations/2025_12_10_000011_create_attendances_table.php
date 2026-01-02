@@ -14,6 +14,10 @@ return new class extends Migration
             $table->foreignUuid('student_id')->constrained('students')->onDelete('cascade');
             $table->enum('status', ['present', 'absent', 'late'])->default('absent');
             $table->timestamps();
+
+            // Performance indexes
+            $table->index(['lecture_id', 'created_at'], 'attendances_lecture_date_index');
+            $table->index(['student_id', 'created_at'], 'attendances_student_date_index');
         });
     }
 

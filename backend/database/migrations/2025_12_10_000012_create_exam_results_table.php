@@ -16,6 +16,9 @@ return new class extends Migration
             $table->decimal('percentage', 5, 2)->default(0);
             $table->foreignUuid('attempt_id')->nullable()->constrained('exam_attempts')->onDelete('set null');
             $table->timestamps();
+
+            // Performance indexes
+            $table->index(['exam_id', 'student_id'], 'exam_results_exam_student_index');
         });
     }
 

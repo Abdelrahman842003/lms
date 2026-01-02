@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
@@ -38,10 +40,7 @@ class GamificationController extends Controller
                 ];
             });
 
-        return response()->json([
-            'success' => true,
-            'data' => $points,
-        ]);
+        return $this->successResponse($points);
     }
 
     /**
@@ -54,15 +53,12 @@ class GamificationController extends Controller
         
         $settings = GamificationSetting::getOrCreate($teacherId);
 
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'total_points' => $stats['total_points'],
-                'weekly_points' => $stats['weekly_points'],
-                'rank' => $stats['rank'],
-                'attendance_streak' => $stats['attendance_streak'],
-                'is_leaderboard_visible' => $settings->show_leaderboard,
-            ],
+        return $this->successResponse([
+            'total_points' => $stats['total_points'],
+            'weekly_points' => $stats['weekly_points'],
+            'rank' => $stats['rank'],
+            'attendance_streak' => $stats['attendance_streak'],
+            'is_leaderboard_visible' => $settings->show_leaderboard,
         ]);
     }
 
@@ -78,10 +74,7 @@ class GamificationController extends Controller
             ->orderByDesc('created_at')
             ->paginate(20);
 
-        return response()->json([
-            'success' => true,
-            'data' => $transactions,
-        ]);
+        return $this->successResponse($transactions);
     }
 
     /**
@@ -93,29 +86,20 @@ class GamificationController extends Controller
         $settings = GamificationSetting::getOrCreate($teacherId);
 
         if (!$settings->show_leaderboard) {
-            return response()->json([
-                'success' => false,
-                'message' => 'لوحة الشرف غير متاحة',
-            ], 403);
+            return $this->errorResponse('لوحة الشرف غير متاحة', 403);
         }
 
-        // Always use default limit from settings (5)
-        // Limit to 5 as requested
         $limit = 5;
 
         $weeklyLeaderboard = $this->pointService->getWeeklyLeaderboard($teacherId, $limit);
         $allTimeLeaderboard = $this->pointService->getAllTimeLeaderboard($teacherId, $limit);
         
-        // Get student's own stats
         $myStats = $this->pointService->getStudentStats($student->id, $teacherId);
 
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'weekly' => $weeklyLeaderboard,
-                'all_time' => $allTimeLeaderboard,
-                'my_stats' => $myStats,
-            ],
+        return $this->successResponse([
+            'weekly' => $weeklyLeaderboard,
+            'all_time' => $allTimeLeaderboard,
+            'my_stats' => $myStats,
         ]);
     }
 }

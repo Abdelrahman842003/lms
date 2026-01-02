@@ -1,12 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
 use App\Services\MistakesService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-
 use Illuminate\Support\Facades\Log;
 
 class MistakesController extends Controller
@@ -26,7 +27,7 @@ class MistakesController extends Controller
 
         $student = $request->user();
 
-        Log::info('Fetching mistakes for student', [
+        Log::debug('Fetching mistakes for student', [
             'student_id' => $student->id,
             'teacher_id' => $request->teacher_id,
         ]);
@@ -36,19 +37,11 @@ class MistakesController extends Controller
             $request->teacher_id
         );
 
-        Log::info('Mistakes fetched', [
-            'count' => $mistakes->count(),
-            'student_id' => $student->id
-        ]);
-
         $stats = $this->mistakesService->getStats($student->id, $request->teacher_id);
 
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'mistakes' => $mistakes,
-                'stats' => $stats,
-            ],
+        return $this->successResponse([
+            'mistakes' => $mistakes,
+            'stats' => $stats,
         ]);
     }
 
@@ -62,18 +55,9 @@ class MistakesController extends Controller
         $success = $this->mistakesService->markAsMastered($id, $student->id);
 
         if (!$success) {
-            return response()->json([
-                'success' => false,
-                'message' => 'السؤال غير موجود',
-            ], 404);
+            return $this->errorResponse('السؤال غير موجود', 404);
         }
 
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'success' => true,
-                'message' => 'تم تسجيل السؤال كـ "فهمتها" ✓',
-            ],
-        ]);
+        return $this->successResponse(null, 'تم تسجيل السؤال كـ "فهمتها" ✓');
     }
 }

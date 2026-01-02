@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
@@ -16,18 +18,15 @@ class BroadcastAuthController extends Controller
     {
         $user = $request->user();
         
-        Log::info('Broadcasting auth attempt', [
+        Log::debug('Broadcasting auth attempt', [
             'user' => $user ? get_class($user) . ':' . $user->id : 'null',
             'channel' => $request->input('channel_name'),
-            'socket_id' => $request->input('socket_id'),
         ]);
         
         if (!$user) {
-            Log::warning('Broadcasting auth failed: no user');
-            return response()->json(['error' => 'Unauthorized'], 403);
+            return $this->errorResponse('Unauthorized', 403);
         }
 
-        // Use Laravel's built-in broadcast auth
         return Broadcast::auth($request);
     }
 }

@@ -1,19 +1,28 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Teacher;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Teacher\Exam\StoreExamRequest;
 use App\Http\Requests\Teacher\Exam\UpdateExamRequest;
-use App\Models\Exam;
-use App\Services\Teacher\ExamService;
 use App\Http\Resources\Teacher\ExamResource;
 use App\Http\Resources\Teacher\ExamResultDetailResource;
-use Illuminate\Support\Facades\Auth;
+use App\Models\Exam;
+use App\Models\ExamResult;
+use App\Models\Student;
+use App\Notifications\ExamAbsentNotification;
+use App\Notifications\ExamActivatedNotification;
+use App\Services\Teacher\ExamService;
+use App\Traits\ResolvesTeacher;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 
 class ExamController extends Controller
 {
-    use \App\Traits\ResolvesTeacher;
+    use ResolvesTeacher;
     protected $examService;
 
     public function __construct(ExamService $examService)
@@ -208,7 +217,7 @@ class ExamController extends Controller
 
         if ($isActive) {
             // Notify students
-            $this->notifyStudents($exam, new \App\Notifications\ExamActivatedNotification($exam));
+            $this->notifyStudents($exam, new ExamActivatedNotification($exam));
         }
 
         return $this->successResponse(
@@ -239,7 +248,7 @@ class ExamController extends Controller
 
     private function notifyStudents(Exam $exam, $notification)
     {
-        $query = \App\Models\Student::whereHas('enrollments', function ($q) use ($exam) {
+        $query = Student::whereHas('enrollments', function ($q) use ($exam) {
             $q->where('teacher_id', $exam->teacher_id);
         });
 
@@ -258,14 +267,14 @@ class ExamController extends Controller
         $students = $query->get();
         
         if ($students->count() > 0) {
-            \Illuminate\Support\Facades\Notification::send($students, $notification);
+            Notification::send($students, $notification);
         }
     }
 
     private function processExamResults(Exam $exam)
     {
         // Get all eligible students
-        $query = \App\Models\Student::whereHas('enrollments', function ($q) use ($exam) {
+        $query = Student::whereHas('enrollments', function ($q) use ($exam) {
             $q->where('teacher_id', $exam->teacher_id);
         });
 
@@ -288,7 +297,7 @@ class ExamController extends Controller
                 }
             } else {
                 // Mark as absent
-                \App\Models\ExamResult::create([
+                ExamResult::create([
                     'exam_id' => $exam->id,
                     'student_id' => $student->id,
                     'score' => 0,
@@ -296,7 +305,7 @@ class ExamController extends Controller
                     'status' => 'absent'
                 ]);
 
-                $student->notify(new \App\Notifications\ExamAbsentNotification($exam));
+                $student->notify(new ExamAbsentNotification($exam));
             }
         }
     }

@@ -27,6 +27,10 @@ return new class extends Migration
             $table->integer('duration_minutes')->nullable();
             $table->foreignUuid('parent_id')->nullable()->constrained('lectures')->nullOnDelete();
             $table->timestamps();
+
+            // Performance indexes
+            $table->index(['teacher_id', 'is_active'], 'lectures_teacher_active_index');
+            $table->index(['grade_id', 'is_active'], 'lectures_grade_active_index');
         });
     }
 

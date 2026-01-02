@@ -182,4 +182,56 @@ class CacheService
     {
         self::forgetTeacherCache($teacherId);
     }
+
+    // ==================== Lectures Cache ====================
+
+    public static function getTeacherLectures(string|int $teacherId, callable $callback): mixed
+    {
+        return Cache::tags(['teacher_' . $teacherId, 'lectures'])->remember(
+            "teacher:{$teacherId}:lectures",
+            self::TTL_SHORT,
+            $callback
+        );
+    }
+
+    public static function getLectureAttendees(string|int $lectureId, callable $callback): mixed
+    {
+        return Cache::tags(['lecture_' . $lectureId])->remember(
+            "lecture:{$lectureId}:attendees",
+            self::TTL_SHORT,
+            $callback
+        );
+    }
+
+    public static function forgetLecture(string|int $lectureId, string|int $teacherId): void
+    {
+        Cache::tags(['lecture_' . $lectureId])->flush();
+        Cache::forget("teacher:{$teacherId}:lectures");
+    }
+
+    // ==================== Exams Cache ====================
+
+    public static function getTeacherExams(string|int $teacherId, callable $callback): mixed
+    {
+        return Cache::tags(['teacher_' . $teacherId, 'exams'])->remember(
+            "teacher:{$teacherId}:exams",
+            self::TTL_SHORT,
+            $callback
+        );
+    }
+
+    public static function getExamResults(string|int $examId, callable $callback): mixed
+    {
+        return Cache::tags(['exam_' . $examId])->remember(
+            "exam:{$examId}:results",
+            self::TTL_SHORT,
+            $callback
+        );
+    }
+
+    public static function forgetExam(string|int $examId, string|int $teacherId): void
+    {
+        Cache::tags(['exam_' . $examId])->flush();
+        Cache::forget("teacher:{$teacherId}:exams");
+    }
 }

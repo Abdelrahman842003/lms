@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Resources\Teacher;
 
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -14,26 +17,24 @@ class LectureResource extends JsonResource
             'title' => $this->title,
             'description' => $this->description,
             'price' => $this->price,
-            'start_time' => $this->start_time ? $this->start_time->format('Y-m-d H:i') : null,
-            'end_time' => $this->end_time ? $this->end_time->format('Y-m-d H:i') : null,
-            'date' => $this->start_time ? $this->start_time->format('Y-m-d') : null,
-            'time' => $this->start_time ? $this->start_time->format('h:i A') : ($this->recurrence_time ? \Carbon\Carbon::parse($this->recurrence_time)->format('h:i A') : null),
-            'duration' => $this->start_time && $this->end_time 
-                ? $this->start_time->diffInHours($this->end_time) . ' ساعة' 
-                : ($this->duration_minutes ? round($this->duration_minutes / 60, 1) . ' ساعة' : null),
+            'start_time' => $this->start_time?->format('Y-m-d H:i'),
+            'end_time' => $this->end_time?->format('Y-m-d H:i'),
+            'date' => $this->start_time?->format('Y-m-d'),
+            'time' => $this->formatTime(),
+            'duration' => $this->formatDuration(),
             'enrolled' => $this->attendances_count,
             'present_count' => $this->present_count ?? 0,
             'status' => $this->getStatus(),
             'is_active' => $this->is_active,
-            'grade' => $this->grade ? [
+            'grade' => $this->whenLoaded('grade', fn() => [
                 'id' => $this->grade->id,
                 'name' => $this->grade->name,
-            ] : null,
+            ]),
             'grade_id' => $this->grade_id,
-            'group' => $this->group ? [
+            'group' => $this->whenLoaded('group', fn() => [
                 'id' => $this->group->id,
                 'name' => $this->group->name,
-            ] : null,
+            ]),
             'group_id' => $this->group_id,
             'created_at' => $this->created_at,
             'is_recurring' => $this->is_recurring,
@@ -42,7 +43,33 @@ class LectureResource extends JsonResource
         ];
     }
 
-    private function getStatus()
+    private function formatTime(): ?string
+    {
+        if ($this->start_time) {
+            return $this->start_time->format('h:i A');
+        }
+        
+        if ($this->recurrence_time) {
+            return Carbon::parse($this->recurrence_time)->format('h:i A');
+        }
+        
+        return null;
+    }
+
+    private function formatDuration(): ?string
+    {
+        if ($this->start_time && $this->end_time) {
+            return $this->start_time->diffInHours($this->end_time) . ' ساعة';
+        }
+        
+        if ($this->duration_minutes) {
+            return round($this->duration_minutes / 60, 1) . ' ساعة';
+        }
+        
+        return null;
+    }
+
+    private function getStatus(): string
     {
         if ($this->is_active) {
             return 'جاري الآن';

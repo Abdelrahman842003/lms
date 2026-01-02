@@ -30,6 +30,8 @@ return new class extends Migration
             // Indexes for performance
             $table->index('student_id');
             $table->index('teacher_id');
+            $table->index(['teacher_id', 'is_active'], 'enrollments_teacher_active_index');
+            $table->index(['grade_id', 'is_active'], 'enrollments_grade_active_index');
             $table->unique(['student_id', 'teacher_id'], 'enrollment_unique');
         });
     }

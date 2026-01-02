@@ -1,20 +1,23 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Spatie\Permission\Models\Permission;
 
 class PermissionController extends Controller
 {
-    public function index()
+    public function index(): JsonResponse
     {
         $permissions = Permission::all();
-        return response()->json(['data' => $permissions]);
+        return $this->successResponse($permissions);
     }
 
-    public function store(Request $request)
+    public function store(Request $request): JsonResponse
     {
         $request->validate([
             'name' => 'required|string|unique:permissions,name',
@@ -22,15 +25,15 @@ class PermissionController extends Controller
 
         $permission = Permission::create(['name' => $request->name, 'guard_name' => 'admin']);
 
-        return response()->json(['data' => $permission, 'message' => 'Permission created successfully'], 201);
+        return $this->successResponse($permission, 'تم إنشاء الصلاحية بنجاح', 201);
     }
 
-    public function show(Permission $permission)
+    public function show(Permission $permission): JsonResponse
     {
-        return response()->json(['data' => $permission]);
+        return $this->successResponse($permission);
     }
 
-    public function update(Request $request, Permission $permission)
+    public function update(Request $request, Permission $permission): JsonResponse
     {
         $request->validate([
             'name' => 'required|string|unique:permissions,name,' . $permission->id,
@@ -38,12 +41,12 @@ class PermissionController extends Controller
 
         $permission->update(['name' => $request->name]);
 
-        return response()->json(['data' => $permission, 'message' => 'Permission updated successfully']);
+        return $this->successResponse($permission, 'تم تحديث الصلاحية بنجاح');
     }
 
-    public function destroy(Permission $permission)
+    public function destroy(Permission $permission): JsonResponse
     {
         $permission->delete();
-        return response()->json(['message' => 'Permission deleted successfully']);
+        return $this->successResponse(null, 'تم حذف الصلاحية بنجاح');
     }
 }
