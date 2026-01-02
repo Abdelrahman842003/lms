@@ -55,6 +55,8 @@ export default function LectureAttendancePage() {
     }
   };
 
+  // ... existing imports
+
   const handleDateFilterChange = (value: string) => {
     setSelectedDateFilter(value);
     if (value === 'all') {
@@ -64,7 +66,6 @@ export default function LectureAttendancePage() {
       const now = new Date();
       const firstDay = new Date(now.getFullYear(), now.getMonth() - 1, 1);
       const lastDay = new Date(now.getFullYear(), now.getMonth(), 0);
-      // Adjust for timezone offset to avoid getting previous day
       const offset = firstDay.getTimezoneOffset();
       const firstDayLocal = new Date(firstDay.getTime() - (offset*60*1000));
       const lastDayLocal = new Date(lastDay.getTime() - (offset*60*1000));
@@ -86,6 +87,15 @@ export default function LectureAttendancePage() {
     'Friday': 'الجمعة',
     'Saturday': 'السبت',
   };
+
+  // Helper to get status of selected date
+  const getSelectedDateStatus = () => {
+    if (!data?.available_dates || selectedDateFilter === 'all' || selectedDateFilter === 'last_month') return null;
+    const dateObj = data.available_dates.find(d => d.date === selectedDateFilter);
+    return dateObj ? dateObj.status : null;
+  };
+
+  const selectedDateStatus = getSelectedDateStatus();
 
   return (
     <DashboardLayout
@@ -124,7 +134,7 @@ export default function LectureAttendancePage() {
         <button 
           onClick={handleExportPDF}
           className="btn btn-primary max-md:w-full"
-          disabled={isLoading || !data}
+          disabled={isLoading || !data || (selectedDateStatus !== 'active' && selectedDateFilter !== 'all' && selectedDateFilter !== 'last_month')}
         >
           <i className="fas fa-file-pdf"></i>
           <span>تصدير PDF</span>
@@ -139,13 +149,15 @@ export default function LectureAttendancePage() {
             value={selectedDateFilter}
             onChange={(e) => handleDateFilterChange(e.target.value)}
             className="form-input w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white appearance-none cursor-pointer"
-            style={{ backgroundImage: 'none' }} // Remove default arrow if needed, or style it
+            style={{ backgroundImage: 'none' }}
           >
             <option value="all" className="bg-[#1a1f37]">كل التواريخ</option>
             <option value="last_month" className="bg-[#1a1f37]">الشهر الماضي</option>
-            {data?.available_dates?.map((date) => (
-              <option key={date} value={date} className="bg-[#1a1f37]">
-                {new Date(date).toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            {data?.available_dates?.map((dateObj) => (
+              <option key={dateObj.date} value={dateObj.date} className="bg-[#1a1f37]">
+                {new Date(dateObj.date).toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                {dateObj.status === 'cancelled' ? ' (ملغاة)' : ''}
+                {dateObj.status === 'not_activated' ? ' (لم تفعل)' : ''}
               </option>
             ))}
           </select>
@@ -158,81 +170,105 @@ export default function LectureAttendancePage() {
         </div>
       ) : data ? (
         <div className="space-y-6">
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-[#101426]/40 border border-white/5 rounded-2xl p-6 flex items-center justify-between relative overflow-hidden group hover:border-green-500/30 transition-all duration-300">
-              <div className="relative z-10">
-                <p className="text-gray-400 text-sm font-medium mb-1">عدد الحضور</p>
-                <h3 className="text-3xl font-bold text-white">{data.total_present}</h3>
+          {selectedDateStatus === 'not_activated' ? (
+            <div className="flex flex-col items-center justify-center py-16 bg-[#101426]/40 border border-white/5 rounded-2xl">
+              <div className="w-20 h-20 rounded-full bg-yellow-500/10 flex items-center justify-center mb-4">
+                <i className="fas fa-exclamation-triangle text-3xl text-yellow-500"></i>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center text-green-500 text-xl group-hover:scale-110 transition-transform duration-300">
-                <i className="fas fa-check"></i>
-              </div>
-              <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-green-500/5 rounded-full blur-2xl group-hover:bg-green-500/10 transition-colors duration-300"></div>
+              <h3 className="text-xl font-bold text-white mb-2">لم يتم تفعيل المحاضرة</h3>
+              <p className="text-gray-400 text-center max-w-md">
+                لم يتم تفعيل المحاضرة في هذا التاريخ، لذلك لا توجد سجلات حضور.
+              </p>
             </div>
+          ) : selectedDateStatus === 'cancelled' ? (
+            <div className="flex flex-col items-center justify-center py-16 bg-[#101426]/40 border border-white/5 rounded-2xl">
+              <div className="w-20 h-20 rounded-full bg-red-500/10 flex items-center justify-center mb-4">
+                <i className="fas fa-ban text-3xl text-red-500"></i>
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">تم إلغاء المحاضرة</h3>
+              <p className="text-gray-400 text-center max-w-md">
+                تم إلغاء المحاضرة في هذا التاريخ.
+              </p>
+            </div>
+          ) : (
+            <>
+              {/* Stats Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-[#101426]/40 border border-white/5 rounded-2xl p-6 flex items-center justify-between relative overflow-hidden group hover:border-green-500/30 transition-all duration-300">
+                  <div className="relative z-10">
+                    <p className="text-gray-400 text-sm font-medium mb-1">عدد الحضور</p>
+                    <h3 className="text-3xl font-bold text-white">{data.total_present}</h3>
+                  </div>
+                  <div className="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center text-green-500 text-xl group-hover:scale-110 transition-transform duration-300">
+                    <i className="fas fa-check"></i>
+                  </div>
+                  <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-green-500/5 rounded-full blur-2xl group-hover:bg-green-500/10 transition-colors duration-300"></div>
+                </div>
 
-            <div className="bg-[#101426]/40 border border-white/5 rounded-2xl p-6 flex items-center justify-between relative overflow-hidden group hover:border-red-500/30 transition-all duration-300">
-              <div className="relative z-10">
-                <p className="text-gray-400 text-sm font-medium mb-1">عدد الغياب</p>
-                <h3 className="text-3xl font-bold text-white">{data.total_absent}</h3>
+                <div className="bg-[#101426]/40 border border-white/5 rounded-2xl p-6 flex items-center justify-between relative overflow-hidden group hover:border-red-500/30 transition-all duration-300">
+                  <div className="relative z-10">
+                    <p className="text-gray-400 text-sm font-medium mb-1">عدد الغياب</p>
+                    <h3 className="text-3xl font-bold text-white">{data.total_absent}</h3>
+                  </div>
+                  <div className="w-12 h-12 rounded-xl bg-red-500/10 flex items-center justify-center text-red-500 text-xl group-hover:scale-110 transition-transform duration-300">
+                    <i className="fas fa-times"></i>
+                  </div>
+                  <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-red-500/5 rounded-full blur-2xl group-hover:bg-red-500/10 transition-colors duration-300"></div>
+                </div>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-red-500/10 flex items-center justify-center text-red-500 text-xl group-hover:scale-110 transition-transform duration-300">
-                <i className="fas fa-times"></i>
-              </div>
-              <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-red-500/5 rounded-full blur-2xl group-hover:bg-red-500/10 transition-colors duration-300"></div>
-            </div>
-          </div>
 
-          {/* Attendees Table */}
-          <DashboardCard title="قائمة الطلاب" icon="fas fa-users">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-white/10">
-                    <th className="px-6 py-4 text-right text-sm font-semibold text-gray-400">الطالب</th>
-                    <th className="px-6 py-4 text-right text-sm font-semibold text-gray-400">رقم الهاتف</th>
-                    <th className="px-6 py-4 text-center text-sm font-semibold text-gray-400">الحالة</th>
-                    <th className="px-6 py-4 text-right text-sm font-semibold text-gray-400">وقت الحضور</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/5">
-                  {data.attendees.map((attendee) => (
-                    <tr key={attendee.id} className="hover:bg-white/5 transition-colors">
-                      <td className="px-6 py-4 text-white font-medium">{attendee.student_name}</td>
-                      <td className="px-6 py-4 text-gray-300 font-mono" dir="ltr">{attendee.student_phone}</td>
-                      <td className="px-6 py-4 text-center">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          attendee.status === 'present' 
-                            ? 'bg-green-500/10 text-green-500 border border-green-500/20' 
-                            : 'bg-red-500/10 text-red-500 border border-red-500/20'
-                        }`}>
-                          {attendee.status === 'present' ? 'حاضر' : 'غائب'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-gray-400 text-sm" dir="ltr">
-                        {attendee.attended_at ? new Date(attendee.attended_at).toLocaleString('ar-EG', {
-                          year: 'numeric',
-                          month: 'numeric',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                          hour12: true
-                        }) : '-'}
-                      </td>
-                    </tr>
-                  ))}
-                  {data.attendees.length === 0 && (
-                    <tr>
-                      <td colSpan={4} className="px-6 py-12 text-center text-gray-500">
-                        <i className="fas fa-users-slash text-4xl mb-3 opacity-50"></i>
-                        <p>لا يوجد طلاب في هذه القائمة</p>
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </DashboardCard>
+              {/* Attendees Table */}
+              <DashboardCard title="قائمة الطلاب" icon="fas fa-users">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-white/10">
+                        <th className="px-6 py-4 text-right text-sm font-semibold text-gray-400">الطالب</th>
+                        <th className="px-6 py-4 text-right text-sm font-semibold text-gray-400">رقم الهاتف</th>
+                        <th className="px-6 py-4 text-center text-sm font-semibold text-gray-400">الحالة</th>
+                        <th className="px-6 py-4 text-right text-sm font-semibold text-gray-400">وقت الحضور</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {data.attendees.map((attendee) => (
+                        <tr key={attendee.id} className="hover:bg-white/5 transition-colors">
+                          <td className="px-6 py-4 text-white font-medium">{attendee.student_name}</td>
+                          <td className="px-6 py-4 text-gray-300 font-mono" dir="ltr">{attendee.student_phone}</td>
+                          <td className="px-6 py-4 text-center">
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              attendee.status === 'present' 
+                                ? 'bg-green-500/10 text-green-500 border border-green-500/20' 
+                                : 'bg-red-500/10 text-red-500 border border-red-500/20'
+                            }`}>
+                              {attendee.status === 'present' ? 'حاضر' : 'غائب'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-gray-400 text-sm" dir="ltr">
+                            {attendee.attended_at ? new Date(attendee.attended_at).toLocaleString('ar-EG', {
+                              year: 'numeric',
+                              month: 'numeric',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              hour12: true
+                            }) : '-'}
+                          </td>
+                        </tr>
+                      ))}
+                      {data.attendees.length === 0 && (
+                        <tr>
+                          <td colSpan={4} className="px-6 py-12 text-center text-gray-500">
+                            <i className="fas fa-users-slash text-4xl mb-3 opacity-50"></i>
+                            <p>لا يوجد طلاب في هذه القائمة</p>
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </DashboardCard>
+            </>
+          )}
         </div>
       ) : (
         <div className="text-center py-12 text-gray-500">

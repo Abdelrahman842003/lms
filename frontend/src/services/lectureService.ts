@@ -76,7 +76,7 @@ export interface AttendeesResponse {
   attendees: Attendee[];
   total_present: number;
   total_absent: number;
-  available_dates?: string[];
+  available_dates?: { date: string; status: string }[];
 }
 
 interface ApiResponse<T> {

@@ -247,12 +247,80 @@ class LectureController extends Controller
             ];
         });
 
-        // Get available dates (dates with attendance records)
-        $availableDates = $lecture->attendances()
-            ->selectRaw('DATE(created_at) as date')
-            ->distinct()
-            ->orderBy('date', 'desc')
-            ->pluck('date');
+        // Get available dates logic
+        $availableDates = [];
+        
+        if ($lecture->is_recurring && $lecture->recurrence_days) {
+            $startDate = $lecture->created_at->copy()->startOfDay();
+            $endDate = now()->endOfDay();
+            
+            // Map day names to Carbon integers (Sunday = 0, Monday = 1, etc.)
+            $dayMap = [
+                'Sunday' => 0,
+                'Monday' => 1,
+                'Tuesday' => 2,
+                'Wednesday' => 3,
+                'Thursday' => 4,
+                'Friday' => 5,
+                'Saturday' => 6,
+            ];
+            
+            $recurrenceDays = array_map(function($day) use ($dayMap) {
+                return $dayMap[$day] ?? null;
+            }, $lecture->recurrence_days);
+            
+            $recurrenceDays = array_filter($recurrenceDays, function($day) {
+                return $day !== null;
+            });
+
+            // Iterate from start date to today
+            $current = $startDate->copy();
+            while ($current <= $endDate) {
+                if (in_array($current->dayOfWeek, $recurrenceDays)) {
+                    $dateStr = $current->format('Y-m-d');
+                    
+                    // Check status
+                    $status = 'not_activated';
+                    
+                    // Check if attendance exists for this date
+                    $hasAttendance = $lecture->attendances()
+                        ->whereDate('created_at', $dateStr)
+                        ->exists();
+                        
+                    if ($hasAttendance) {
+                        $status = 'active';
+                    } elseif (in_array($dateStr, $lecture->cancelled_dates ?? [])) {
+                        $status = 'cancelled';
+                    }
+                    
+                    $availableDates[] = [
+                        'date' => $dateStr,
+                        'status' => $status
+                    ];
+                }
+                $current->addDay();
+            }
+            
+            // Sort descending
+            usort($availableDates, function($a, $b) {
+                return strcmp($b['date'], $a['date']);
+            });
+            
+        } else {
+            // For non-recurring, just get dates with attendance
+            $dates = $lecture->attendances()
+                ->selectRaw('DATE(created_at) as date')
+                ->distinct()
+                ->orderBy('date', 'desc')
+                ->pluck('date');
+                
+            foreach ($dates as $date) {
+                $availableDates[] = [
+                    'date' => $date,
+                    'status' => 'active'
+                ];
+            }
+        }
 
         return $this->successResponse([
             'lecture' => [
