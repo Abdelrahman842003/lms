@@ -35,6 +35,10 @@ class Setting extends Model
         // AI
         'openai_api_key',
         'gemini_api_key',
+        
+        // Cloudflare Turnstile (Security)
+        'turnstile_site_key',
+        'turnstile_secret_key',
     ];
 
     public static function getValue($key, $default = null)

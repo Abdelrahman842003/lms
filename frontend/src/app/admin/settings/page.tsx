@@ -57,6 +57,10 @@ function SettingsPage() {
     // AI
     openai_api_key: '',
     gemini_api_key: '',
+    
+    // Cloudflare Turnstile (Security)
+    turnstile_site_key: '',
+    turnstile_secret_key: '',
   });
 
 
@@ -555,12 +559,47 @@ function SettingsPage() {
 
           {/* Security Settings */}
           {activeTab === 'security' && (
-            <DashboardCard title="إعدادات الأمان" icon="fas fa-shield-alt">
-              <div className="text-center py-10 text-gray-400">
-                <i className="fas fa-lock text-4xl mb-4 opacity-50"></i>
-                <p>إعدادات الأمان قيد التطوير...</p>
-              </div>
-            </DashboardCard>
+            <div className="space-y-6">
+              {/* Cloudflare Turnstile */}
+              <DashboardCard title="Cloudflare Turnstile (حماية من البوتات)" icon="fas fa-shield-alt">
+                <div className="space-y-4">
+                  <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg mb-4">
+                    <div className="flex items-start gap-3">
+                      <i className="fas fa-info-circle text-blue-400 mt-0.5"></i>
+                      <div className="text-sm text-blue-300">
+                        <p className="font-medium mb-1">ما هو Cloudflare Turnstile؟</p>
+                        <p className="text-blue-400/80">نظام حماية ذكي من Cloudflare يحمي نماذج تسجيل الدخول والتسجيل من الهجمات الآلية (بديل لـ reCAPTCHA)</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-gray-300 mb-2 text-sm">Site Key</label>
+                      <input
+                        type="text"
+                        value={apiKeys.turnstile_site_key}
+                        onChange={(e) => setApiKeys({...apiKeys, turnstile_site_key: e.target.value})}
+                        className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all font-mono text-sm"
+                        placeholder="0x4AAAAAAA..."
+                        dir="ltr"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">المفتاح العام (يُستخدم في الـ Frontend)</p>
+                    </div>
+                    <div>
+                      <label className="block text-gray-300 mb-2 text-sm">Secret Key</label>
+                      <input
+                        type="password"
+                        value={apiKeys.turnstile_secret_key}
+                        onChange={(e) => setApiKeys({...apiKeys, turnstile_secret_key: e.target.value})}
+                        className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                        dir="ltr"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">المفتاح السري (يُستخدم في الـ Backend للتحقق)</p>
+                    </div>
+                  </div>
+                </div>
+              </DashboardCard>
+            </div>
           )}
 
           {/* Save Button */}

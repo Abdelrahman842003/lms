@@ -107,6 +107,14 @@ class SettingsServiceProvider extends ServiceProvider
                     case 'gemini_api_key':
                         Config::set('services.gemini.api_key', $value);
                         break;
+
+                    // Cloudflare Turnstile (Security)
+                    case 'turnstile_site_key':
+                        Config::set('services.cloudflare.turnstile.site_key', $value);
+                        break;
+                    case 'turnstile_secret_key':
+                        Config::set('services.cloudflare.turnstile.secret_key', $value);
+                        break;
                 }
             }
         } catch (\Exception $e) {
