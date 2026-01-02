@@ -564,15 +564,25 @@ export default function TeacherLecturesPage() {
                   />
                 </div>
                 <div className="form-group">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={formData.is_recurring}
-                      onChange={(e) => setFormData({ ...formData, is_recurring: e.target.checked })}
-                      className="form-checkbox"
-                    />
-                    <span>محاضرة متكررة</span>
-                  </label>
+                  <label htmlFor="lecture_type">نوع المحاضرة</label>
+                  <select
+                    id="lecture_type"
+                    className="form-input"
+                    value={formData.is_recurring ? 'basic' : 'extra'}
+                    onChange={(e) => {
+                      const isBasic = e.target.value === 'basic';
+                      setFormData({ 
+                        ...formData, 
+                        is_recurring: isBasic,
+                        // Reset fields if switching types
+                        date: isBasic ? '' : formData.date,
+                        recurrence_days: isBasic ? formData.recurrence_days : [],
+                      });
+                    }}
+                  >
+                    <option value="extra">محاضرة إضافية</option>
+                    <option value="basic">محاضرة أساسية</option>
+                  </select>
                 </div>
 
                 {formData.is_recurring ? (
