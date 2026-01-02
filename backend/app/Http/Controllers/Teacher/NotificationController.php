@@ -67,6 +67,9 @@ class NotificationController extends Controller
             $recipients->count()
         );
 
+        // Send real-time notifications to parents
+        $this->notificationService->sendToParents($recipients, $teacher, $validated);
+
         return $this->successResponse([
             'message' => 'Notification sent successfully',
             'notification' => $sentNotification
