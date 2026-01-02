@@ -44,7 +44,10 @@ export const ManualAttendanceModal: React.FC<ManualAttendanceModalProps> = ({
   // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (searchQuery.length >= 3) {
+      // Egyptian phone validation: 11 digits, starts with 010, 011, 012, or 015
+      const egyptianPhoneRegex = /^01[0125][0-9]{8}$/;
+      
+      if (egyptianPhoneRegex.test(searchQuery)) {
         handleSearch();
       } else {
         setStudent(null);
@@ -138,7 +141,13 @@ export const ManualAttendanceModal: React.FC<ManualAttendanceModalProps> = ({
               className="w-full bg-[#101426] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-primary transition-colors pl-10"
               placeholder="اكتب رقم هاتف الطالب..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value.replace(/[^0-9]/g, '');
+                if (value.length <= 11) {
+                  setSearchQuery(value);
+                }
+              }}
+              maxLength={11}
             />
             <i className="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"></i>
           </div>
@@ -186,10 +195,19 @@ export const ManualAttendanceModal: React.FC<ManualAttendanceModalProps> = ({
                 )}
               </button>
             </div>
-          ) : searchQuery.length >= 3 ? (
+          ) : searchQuery.length > 0 ? (
             <div className="text-center py-8 text-gray-500">
-              <i className="fas fa-user-slash text-3xl mb-2 opacity-50"></i>
-              <p>لم يتم العثور على طالب بهذا الرقم</p>
+              {/^01[0125][0-9]{8}$/.test(searchQuery) ? (
+                <>
+                  <i className="fas fa-user-slash text-3xl mb-2 opacity-50"></i>
+                  <p>لم يتم العثور على طالب بهذا الرقم</p>
+                </>
+              ) : (
+                <>
+                  <i className="fas fa-exclamation-circle text-3xl mb-2 opacity-50 text-warning"></i>
+                  <p>الرجاء إدخال رقم هاتف مصري صحيح (11 رقم)</p>
+                </>
+              )}
             </div>
           ) : (
             <div className="text-center py-8 text-gray-500">
