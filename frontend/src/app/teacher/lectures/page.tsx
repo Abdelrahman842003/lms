@@ -41,12 +41,16 @@ export default function TeacherLecturesPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [selectedLecture, setSelectedLecture] = useState<Lecture | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState<CreateLectureData & { date: string }>({
+  const [formData, setFormData] = useState<CreateLectureData>({
     title: '',
     description: '',
     grade_id: '',
     group_id: '',
     date: '',
+    is_recurring: false,
+    recurrence_days: [],
+    recurrence_time: '',
+    duration_minutes: 120,
   });
   const [grades, setGrades] = useState<any[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
@@ -131,6 +135,10 @@ export default function TeacherLecturesPage() {
       description: '',
       grade_id: '',
       date: '',
+      is_recurring: false,
+      recurrence_days: [],
+      recurrence_time: '',
+      duration_minutes: 120,
     });
     setShowModal(true);
   };
@@ -556,19 +564,95 @@ export default function TeacherLecturesPage() {
                   />
                 </div>
                 <div className="form-group">
-                  <label htmlFor="date">تاريخ المحاضرة</label>
-                  <input
-                    type="date"
-                    id="date"
-                    className="form-input"
-                    value={formData.date}
-                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                    required
-                  />
-                  <p className="text-xs text-gray-light mt-1">
-                    ستبدأ المحاضرة في بداية هذا اليوم وتستمر لمدة 24 ساعة.
-                  </p>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.is_recurring}
+                      onChange={(e) => setFormData({ ...formData, is_recurring: e.target.checked })}
+                      className="form-checkbox"
+                    />
+                    <span>محاضرة متكررة</span>
+                  </label>
                 </div>
+
+                {formData.is_recurring ? (
+                  <>
+                    <div className="form-group">
+                      <label>أيام التكرار</label>
+                      <div className="flex flex-wrap gap-2">
+                        {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((day) => {
+                          const dayLabels: Record<string, string> = {
+                            'Sunday': 'الأحد',
+                            'Monday': 'الاثنين',
+                            'Tuesday': 'الثلاثاء',
+                            'Wednesday': 'الأربعاء',
+                            'Thursday': 'الخميس',
+                            'Friday': 'الجمعة',
+                            'Saturday': 'السبت',
+                          };
+                          return (
+                            <label key={day} className={`px-3 py-1 rounded-lg border cursor-pointer ${
+                              formData.recurrence_days?.includes(day) 
+                                ? 'bg-primary text-white border-primary' 
+                                : 'bg-white/5 border-white/10'
+                            }`}>
+                              <input
+                                type="checkbox"
+                                className="hidden"
+                                checked={formData.recurrence_days?.includes(day)}
+                                onChange={(e) => {
+                                  const newDays = e.target.checked
+                                    ? [...(formData.recurrence_days || []), day]
+                                    : (formData.recurrence_days || []).filter(d => d !== day);
+                                  setFormData({ ...formData, recurrence_days: newDays });
+                                }}
+                              />
+                              {dayLabels[day]}
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <div className="form-group">
+                      <label htmlFor="recurrence_time">وقت المحاضرة</label>
+                      <input
+                        type="time"
+                        id="recurrence_time"
+                        className="form-input"
+                        value={formData.recurrence_time}
+                        onChange={(e) => setFormData({ ...formData, recurrence_time: e.target.value })}
+                        required={formData.is_recurring}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label htmlFor="duration_minutes">مدة المحاضرة (دقيقة)</label>
+                      <input
+                        type="number"
+                        id="duration_minutes"
+                        className="form-input"
+                        value={formData.duration_minutes}
+                        onChange={(e) => setFormData({ ...formData, duration_minutes: parseInt(e.target.value) })}
+                        min="1"
+                        required={formData.is_recurring}
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <div className="form-group">
+                    <label htmlFor="date">تاريخ المحاضرة</label>
+                    <input
+                      type="date"
+                      id="date"
+                      className="form-input"
+                      value={formData.date}
+                      onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                      required={!formData.is_recurring}
+                    />
+                    <p className="text-xs text-gray-light mt-1">
+                      ستبدأ المحاضرة في بداية هذا اليوم وتستمر لمدة 24 ساعة.
+                    </p>
+                  </div>
+                )}
               </div>
               <div className="modal-footer">
                 <button

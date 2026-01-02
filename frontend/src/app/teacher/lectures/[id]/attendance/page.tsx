@@ -7,7 +7,7 @@ import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { useAuth } from '@/contexts/AuthContext';
 import { getAttendees, exportAttendeesPDF, AttendeesResponse } from '@/services/lectureService';
 import toast from 'react-hot-toast';
-import Link from 'next/link';
+
 
 export default function LectureAttendancePage() {
   const { user } = useAuth();
@@ -19,12 +19,18 @@ export default function LectureAttendancePage() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [data, setData] = useState<AttendeesResponse | null>(null);
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setIsLoading(true);
-        const response = await getAttendees(lectureId, groupId);
+        setIsLoading(true);
+        const response = await getAttendees(lectureId, groupId, {
+          date_from: dateFrom || undefined,
+          date_to: dateTo || undefined
+        });
         setData(response);
       } catch (error) {
         console.error('Failed to fetch attendees:', error);
@@ -37,7 +43,10 @@ export default function LectureAttendancePage() {
     if (lectureId) {
       fetchData();
     }
-  }, [lectureId, groupId]);
+    if (lectureId) {
+      fetchData();
+    }
+  }, [lectureId, groupId, dateFrom, dateTo]);
 
   const handleExportPDF = async () => {
     try {
@@ -80,6 +89,28 @@ export default function LectureAttendancePage() {
           <i className="fas fa-file-pdf"></i>
           <span>تصدير PDF</span>
         </button>
+      </div>
+
+      {/* Filters */}
+      <div className="flex gap-4 mb-6 max-md:flex-col">
+        <div className="flex-1">
+          <label className="block text-sm text-gray-400 mb-1">من تاريخ</label>
+          <input
+            type="date"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+            className="form-input w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white"
+          />
+        </div>
+        <div className="flex-1">
+          <label className="block text-sm text-gray-400 mb-1">إلى تاريخ</label>
+          <input
+            type="date"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+            className="form-input w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white"
+          />
+        </div>
       </div>
 
       {isLoading ? (

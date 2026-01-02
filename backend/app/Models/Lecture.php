@@ -21,6 +21,11 @@ class Lecture extends Model
         'qr_code',
         'qr_code_expires_at',
         'is_active',
+        'is_recurring',
+        'recurrence_days',
+        'recurrence_time',
+        'duration_minutes',
+        'parent_id',
     ];
 
     protected $casts = [
@@ -28,6 +33,8 @@ class Lecture extends Model
         'end_time' => 'datetime',
         'qr_code_expires_at' => 'datetime',
         'is_active' => 'boolean',
+        'is_recurring' => 'boolean',
+        'recurrence_days' => 'array',
     ];
 
     public function teacher()
@@ -49,6 +56,17 @@ class Lecture extends Model
     {
         return $this->hasMany(Attendance::class);
     }
+
+    public function parent()
+    {
+        return $this->belongsTo(Lecture::class, 'parent_id');
+    }
+
+    public function children()
+    {
+        return $this->hasMany(Lecture::class, 'parent_id');
+    }
+
     public function scopeFilter($query, array $filters)
     {
         if ($search = $filters['search'] ?? null) {

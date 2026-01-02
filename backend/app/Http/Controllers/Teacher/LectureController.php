@@ -40,20 +40,38 @@ class LectureController extends Controller
                 'description' => 'nullable|string',
                 'grade_id' => 'required|exists:grades,id',
                 'group_id' => 'nullable|exists:groups,id',
-                'date' => 'required|date',
+                'date' => 'nullable|date|required_without:is_recurring',
+                'is_recurring' => 'boolean',
+                'recurrence_days' => 'nullable|array|required_if:is_recurring,true',
+                'recurrence_time' => 'nullable|date_format:H:i|required_if:is_recurring,true',
+                'duration_minutes' => 'nullable|integer|min:1|required_if:is_recurring,true',
             ]);
 
-            $date = \Carbon\Carbon::parse($validated['date']);
-            
-            $lecture = $this->lectureService->createLecture($this->getTeacherFromRequest($request), [
-                'title' => $validated['title'],
-                'description' => $validated['description'],
-                'grade_id' => $request->input('grade_id'),
-                'group_id' => $request->input('group_id'),
-                'start_time' => $date->copy()->startOfDay(),
-                'end_time' => $date->copy()->addHours(24),
-                'is_active' => false,
-            ]);
+            if ($request->boolean('is_recurring')) {
+                $lecture = $this->lectureService->createLecture($this->getTeacherFromRequest($request), [
+                    'title' => $validated['title'],
+                    'description' => $validated['description'],
+                    'grade_id' => $request->input('grade_id'),
+                    'group_id' => $request->input('group_id'),
+                    'is_active' => false,
+                    'is_recurring' => true,
+                    'recurrence_days' => $request->input('recurrence_days'),
+                    'recurrence_time' => $request->input('recurrence_time'),
+                    'duration_minutes' => $request->input('duration_minutes'),
+                ]);
+            } else {
+                $date = \Carbon\Carbon::parse($validated['date']);
+                
+                $lecture = $this->lectureService->createLecture($this->getTeacherFromRequest($request), [
+                    'title' => $validated['title'],
+                    'description' => $validated['description'],
+                    'grade_id' => $request->input('grade_id'),
+                    'group_id' => $request->input('group_id'),
+                    'start_time' => $date->copy()->startOfDay(),
+                    'end_time' => $date->copy()->addHours(24),
+                    'is_active' => false,
+                ]);
+            }
 
             return $this->successResponse([
                 'lecture' => new LectureResource($lecture),
@@ -92,6 +110,31 @@ class LectureController extends Controller
     {
         if ($lecture->teacher_id !== $this->getTeacherFromRequest($request)->id) {
             return $this->errorResponse('Unauthorized', 403);
+        }
+
+        if ($lecture->start_time > now() || $lecture->is_active) {
+            // Send cancellation notification to enrolled students
+            try {
+                $students = $lecture->teacher->students()
+                    ->wherePivot('grade_id', $lecture->grade_id)
+                    ->wherePivot('is_active', true)
+                    ->get();
+
+                if ($students->count() > 0) {
+                    \Illuminate\Support\Facades\Notification::send(
+                        $students, 
+                        new \App\Notifications\LectureCancelledNotification(
+                            $lecture->title, 
+                            $lecture->teacher->name
+                        )
+                    );
+
+                    // Also notify guardians if needed (assuming relationship exists)
+                    // $guardians = ...
+                }
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Failed to send lecture cancellation notification: ' . $e->getMessage());
+            }
         }
 
         $this->lectureService->deleteLecture($lecture);
@@ -179,9 +222,17 @@ class LectureController extends Controller
         $allStudents = $query->get();
 
         // Get existing attendance records
-        $attendanceRecords = $lecture->attendances()
-            ->get()
-            ->keyBy('student_id');
+        $attendanceQuery = $lecture->attendances();
+
+        if ($request->has('date_from')) {
+            $attendanceQuery->whereDate('created_at', '>=', $request->input('date_from'));
+        }
+
+        if ($request->has('date_to')) {
+            $attendanceQuery->whereDate('created_at', '<=', $request->input('date_to'));
+        }
+
+        $attendanceRecords = $attendanceQuery->get()->keyBy('student_id');
 
         $attendees = $allStudents->map(function ($student) use ($attendanceRecords) {
             $record = $attendanceRecords->get($student->id);

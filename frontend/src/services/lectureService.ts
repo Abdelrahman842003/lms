@@ -36,7 +36,11 @@ export interface CreateLectureData {
   description?: string;
   grade_id?: string;
   group_id?: string;
-  date: string;
+  date?: string;
+  is_recurring?: boolean;
+  recurrence_days?: string[];
+  recurrence_time?: string;
+  duration_minutes?: number;
 }
 
 export interface UpdateLectureData {
@@ -273,11 +277,21 @@ export const endLecture = async (id: string): Promise<{ message: string; lecture
   return res.data;
 };
 
-export const getAttendees = async (lectureId: string, groupId?: string): Promise<AttendeesResponse> => {
+export const getAttendees = async (
+  lectureId: string, 
+  groupId?: string,
+  filters?: { date_from?: string; date_to?: string }
+): Promise<AttendeesResponse> => {
   const token = localStorage.getItem('token');
   const queryParams = new URLSearchParams();
   if (groupId) {
     queryParams.append('group_id', groupId);
+  }
+  if (filters?.date_from) {
+    queryParams.append('date_from', filters.date_from);
+  }
+  if (filters?.date_to) {
+    queryParams.append('date_to', filters.date_to);
   }
   
   const response = await fetch(`${API_BASE_URL}/api/teacher/lectures/${lectureId}/attendees?${queryParams.toString()}`, {
