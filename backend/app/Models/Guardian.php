@@ -43,4 +43,21 @@ class Guardian extends Authenticatable
     {
         return Student::where('parent_phone', $this->phone)->get();
     }
+    /**
+     * Get the device tokens for the guardian.
+     */
+    public function deviceTokens()
+    {
+        return $this->morphMany(DeviceToken::class, 'tokenable');
+    }
+
+    /**
+     * Route notifications for the FCM channel.
+     *
+     * @return array
+     */
+    public function routeNotificationForFcm()
+    {
+        return $this->deviceTokens()->pluck('token')->toArray();
+    }
 }

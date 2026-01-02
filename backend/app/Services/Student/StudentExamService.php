@@ -248,6 +248,22 @@ class StudentExamService
         // Send notification
         try {
             $attempt->student->notify(new ExamResultNotification($result, $progress));
+            
+            // Notify Parent
+            if ($attempt->student->parent_phone) {
+                $guardian = \App\Models\Guardian::where('phone', $attempt->student->parent_phone)->first();
+                if ($guardian) {
+                    $guardian->notify(new \App\Notifications\ParentNotification(
+                        $guardian->id,
+                        'نتيجة امتحان جديد',
+                        "أتم الطالب {$attempt->student->name} امتحان {$exam->title} وحصل على {$percentage}%",
+                        $exam->teacher->name ?? 'النظام',
+                        $attempt->student->name,
+                        'exam_result',
+                        ['exam_id' => $exam->id, 'result_id' => $result->id]
+                    ));
+                }
+            }
         } catch (\Exception $e) {
             \Log::error('Failed to send exam result notification: ' . $e->getMessage());
         }

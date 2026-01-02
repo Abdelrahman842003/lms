@@ -71,3 +71,19 @@ Broadcast::channel('notifications.admin.{id}', function ($user, $id) {
 Broadcast::channel('notifications.user.{id}', function ($user, $id) {
     return (string) $user->id === (string) $id;
 });
+
+// Parent/Guardian notifications channel
+Broadcast::channel('notifications.parent.{id}', function ($user, $id) {
+    Log::info('Channel auth attempt', [
+        'channel' => 'notifications.parent.' . $id,
+        'user_class' => get_class($user),
+        'user_id' => $user->id,
+        'requested_id' => $id,
+    ]);
+    
+    // Check if user class name ends with "Guardian" and IDs match
+    $isGuardian = str_ends_with(get_class($user), 'Guardian');
+    $idsMatch = (string) $user->id === (string) $id;
+    
+    return $isGuardian && $idsMatch;
+});

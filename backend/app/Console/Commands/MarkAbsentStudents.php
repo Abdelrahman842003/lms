@@ -77,6 +77,21 @@ class MarkAbsentStudents extends Command
 
                             // Send Notification
                             $student->notify(new StudentAbsentNotification($lecture->title, $teacher->name));
+
+                            // Send Notification to Parent
+                            if ($student->parent_phone) {
+                                $guardian = \App\Models\Guardian::where('phone', $student->parent_phone)->first();
+                                if ($guardian) {
+                                    $guardian->notify(new \App\Notifications\ParentNotification(
+                                        $guardian->id,
+                                        'تسجيل غياب',
+                                        "لقد تم تسجيل الطالب {$student->name} غائب في محاضرة: {$lecture->title} للمدرس {$teacher->name}",
+                                        $teacher->name,
+                                        $student->name,
+                                        'absent'
+                                    ));
+                                }
+                            }
                         });
                         
                         $this->info("Marked student {$student->name} as absent.");
