@@ -463,26 +463,33 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
                               minute: '2-digit'
                             })}
                           </span>
-                          <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
+                          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                             {notification.data.child_name && (
                               <span style={{ 
-                                fontSize: '0.65rem', 
-                                color: 'var(--primary)', 
-                                backgroundColor: 'rgba(66, 99, 235, 0.15)', 
-                                padding: '0.125rem 0.375rem', 
-                                borderRadius: '0.25rem' 
+                                fontSize: '0.75rem', 
+                                fontWeight: '600',
+                                color: '#6ea8fe', 
+                                backgroundColor: 'rgba(13, 110, 253, 0.2)', 
+                                border: '1px solid rgba(13, 110, 253, 0.3)',
+                                padding: '0.15rem 0.5rem', 
+                                borderRadius: '0.35rem',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.35rem'
                               }}>
-                                <i className="fas fa-user-graduate" style={{ marginLeft: '0.25rem', fontSize: '0.55rem' }}></i>
+                                <i className="fas fa-user-graduate" style={{ fontSize: '0.7rem' }}></i>
                                 {notification.data.child_name}
                               </span>
                             )}
                             {notification.data.sender_name && (
                               <span style={{ 
-                                fontSize: '0.65rem', 
-                                color: 'var(--secondary)', 
-                                backgroundColor: 'rgba(0, 214, 143, 0.1)', 
-                                padding: '0.125rem 0.375rem', 
-                                borderRadius: '0.25rem' 
+                                fontSize: '0.75rem', 
+                                fontWeight: '600',
+                                color: '#75b798', 
+                                backgroundColor: 'rgba(25, 135, 84, 0.2)', 
+                                border: '1px solid rgba(25, 135, 84, 0.3)',
+                                padding: '0.15rem 0.5rem', 
+                                borderRadius: '0.35rem' 
                               }}>
                                 {notification.data.sender_name}
                               </span>
