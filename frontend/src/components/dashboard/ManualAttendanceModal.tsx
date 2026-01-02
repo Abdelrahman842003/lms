@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { fetchApi } from '@/lib/api';
+import { fetchApi } from '@/services/authService';
 import toast from 'react-hot-toast';
 
 interface Student {
