@@ -23,13 +23,16 @@ class LectureController extends Controller
 
     public function index(Request $request)
     {
+        error_log("LectureController::index called");
         $teacher = $this->getTeacherFromRequest($request);
+        error_log("Teacher resolved: " . ($teacher ? $teacher->id : 'null'));
         if (!$teacher) {
             return $this->errorResponse('Unauthorized', 403);
         }
         $perPage = $request->input('per_page', 10);
         $filters = $request->only(['search', 'date_from', 'date_to', 'group_id']);
         $lectures = $this->lectureService->getLectures($teacher, $perPage, $filters);
+        error_log("Lectures fetched: " . $lectures->count());
         
         return $this->successResponse(
             LectureResource::collection($lectures)->response()->getData(true)
