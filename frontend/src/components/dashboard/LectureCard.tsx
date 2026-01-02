@@ -170,14 +170,14 @@ export const LectureCard: React.FC<LectureCardProps> = ({
             <>
               <div className="grid grid-cols-2 gap-3">
                 <button 
-                  className="btn btn-secondary flex flex-col items-center justify-center gap-1.5 py-3 h-auto" 
+                  className="py-3 rounded-xl bg-[rgba(66,99,235,0.15)] hover:bg-[rgba(66,99,235,0.25)] text-primary border border-primary/30 hover:border-primary/50 font-medium text-sm flex flex-col items-center justify-center gap-1.5 transition-all" 
                   onClick={onScan}
                 >
                   <i className="fas fa-qrcode text-base"></i>
                   <span className="text-xs">مسح QR طالب</span>
                 </button>
                 <button 
-                  className="btn btn-secondary flex flex-col items-center justify-center gap-1.5 py-3 h-auto" 
+                  className="py-3 rounded-xl bg-[rgba(66,99,235,0.15)] hover:bg-[rgba(66,99,235,0.25)] text-primary border border-primary/30 hover:border-primary/50 font-medium text-sm flex flex-col items-center justify-center gap-1.5 transition-all" 
                   onClick={onQRCode}
                 >
                   <i className="fas fa-qrcode text-base"></i>
