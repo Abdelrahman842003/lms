@@ -392,7 +392,7 @@ export default function TeacherLecturesPage() {
 
       {/* Lectures Grid */}
       {isLoading ? (
-        <div className="lectures-grid grid grid-cols-[repeat(auto-fill,minmax(350px,1fr))] gap-6 max-md:grid-cols-1">
+        <div className="lectures-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <div key={i} className="rounded-2xl bg-[#101426]/15 border border-white/10 h-[280px] flex flex-col gap-4 p-6">
               <div className="flex justify-between items-start">
@@ -422,7 +422,7 @@ export default function TeacherLecturesPage() {
           </button>
         </div>
       ) : (
-<div className="lectures-grid grid grid-cols-[repeat(auto-fill,minmax(380px,1fr))] gap-6 max-md:grid-cols-1">
+<div className="lectures-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {lectures.map((lecture) => {
             const isMenuOpen = openMenuId === lecture.id;
             return (
