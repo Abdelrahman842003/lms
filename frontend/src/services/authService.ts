@@ -422,7 +422,12 @@ export async function loginParent(
   return {
     token: data.token,
     refresh_token: data.refresh_token,
-    user: { id: 'parent', name: 'ولي الأمر', phone: data.parent_phone },
+    user: { 
+      id: data.user.id, 
+      name: data.user.name || 'ولي الأمر', 
+      phone: data.user.phone || data.parent_phone,
+      avatar: data.user.avatar
+    },
     role: data.role,
     children: data.children,
     parent_phone: data.parent_phone,
