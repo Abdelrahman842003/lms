@@ -67,11 +67,14 @@ export const NotificationsSection = () => {
           const userStr = localStorage.getItem('user');
           if (userStr) {
              const user = JSON.parse(userStr);
+             console.log('Setting up Reverb for user:', user.id); // DEBUG
              const echo = initializeEcho(token);
              const channelName = `notifications.parent.${user.id}`;
+             console.log('Subscribing to channel:', channelName); // DEBUG
              
              echo.private(channelName)
                .listen('.new.notification', (data: any) => {
+                 console.log('Received notification via Reverb:', data); // DEBUG
                  const newNotification: Notification = {
                    id: data.notification_id || Date.now().toString(),
                    title: data.title,
@@ -83,7 +86,11 @@ export const NotificationsSection = () => {
                    child_name: data.data?.child_name
                  };
                  
-                 setNotifications(prev => [newNotification, ...prev]);
+                 setNotifications(prev => {
+                    // Prevent duplicates
+                    if (prev.some(n => n.id === newNotification.id)) return prev;
+                    return [newNotification, ...prev];
+                 });
                });
                
              return () => {
@@ -99,12 +106,8 @@ export const NotificationsSection = () => {
 
   const markAsRead = async (id: string) => {
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/parent/notifications/${id}/read`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: 'application/json',
-        },
+      await fetchApi(`/parent/notifications/${id}/read`, {
+        method: 'POST'
       });
       setNotifications(prev =>
         prev.map(n => (n.id === id ? { ...n, read_at: new Date().toISOString() } : n))
