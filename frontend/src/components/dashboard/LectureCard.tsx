@@ -160,7 +160,7 @@ export const LectureCard: React.FC<LectureCardProps> = ({
         <div className="mt-auto grid gap-3">
           {!isActive ? (
             <button 
-              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#2ecc71] to-[#27ae60] hover:from-[#27ae60] hover:to-[#219150] text-white font-semibold text-base flex items-center justify-center gap-2 transition-all shadow-lg hover:shadow-xl transform hover:scale-[1.02]" 
+              className="btn btn-success w-full flex items-center justify-center gap-2 transition-all transform hover:scale-[1.02]" 
               onClick={onActivate}
             >
               <i className="fas fa-play-circle text-lg"></i>
@@ -170,14 +170,14 @@ export const LectureCard: React.FC<LectureCardProps> = ({
             <>
               <div className="grid grid-cols-2 gap-3">
                 <button 
-                  className="py-3 rounded-xl bg-[rgba(66,99,235,0.15)] hover:bg-[rgba(66,99,235,0.25)] text-primary border border-primary/30 hover:border-primary/50 font-medium text-sm flex flex-col items-center justify-center gap-1.5 transition-all" 
+                  className="btn btn-secondary flex flex-col items-center justify-center gap-1.5 py-3 h-auto" 
                   onClick={onScan}
                 >
                   <i className="fas fa-qrcode text-base"></i>
                   <span className="text-xs">مسح QR طالب</span>
                 </button>
                 <button 
-                  className="py-3 rounded-xl bg-[rgba(66,99,235,0.15)] hover:bg-[rgba(66,99,235,0.25)] text-primary border border-primary/30 hover:border-primary/50 font-medium text-sm flex flex-col items-center justify-center gap-1.5 transition-all" 
+                  className="btn btn-secondary flex flex-col items-center justify-center gap-1.5 py-3 h-auto" 
                   onClick={onQRCode}
                 >
                   <i className="fas fa-qrcode text-base"></i>
@@ -186,7 +186,7 @@ export const LectureCard: React.FC<LectureCardProps> = ({
               </div>
               
               <button 
-                className="w-full py-3 rounded-xl bg-gradient-to-r from-[#ff6b6b] to-[#ee5a6f] hover:from-[#ff5252] hover:to-[#e94560] text-white font-semibold text-sm flex items-center justify-center gap-2 transition-all shadow-lg hover:shadow-xl" 
+                className="btn btn-danger w-full flex items-center justify-center gap-2" 
                 onClick={onEnd}
               >
                 <i className="fas fa-stop-circle"></i>
