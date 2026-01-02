@@ -24,6 +24,9 @@ class LectureController extends Controller
     public function index(Request $request)
     {
         $teacher = $this->getTeacherFromRequest($request);
+        if (!$teacher) {
+            return $this->errorResponse('Unauthorized', 403);
+        }
         $perPage = $request->input('per_page', 10);
         $filters = $request->only(['search', 'date_from', 'date_to', 'group_id']);
         $lectures = $this->lectureService->getLectures($teacher, $perPage, $filters);
@@ -48,8 +51,13 @@ class LectureController extends Controller
                 'duration_minutes' => 'nullable|integer|min:1|required_if:is_recurring,true',
             ]);
 
+            $teacher = $this->getTeacherFromRequest($request);
+            if (!$teacher) {
+                return $this->errorResponse('Unauthorized', 403);
+            }
+
             if ($request->boolean('is_recurring')) {
-                $lecture = $this->lectureService->createLecture($this->getTeacherFromRequest($request), [
+                $lecture = $this->lectureService->createLecture($teacher, [
                     'title' => $validated['title'],
                     'description' => $validated['description'],
                     'grade_id' => $request->input('grade_id'),
@@ -63,7 +71,7 @@ class LectureController extends Controller
             } else {
                 $date = \Carbon\Carbon::parse($validated['date']);
                 
-                $lecture = $this->lectureService->createLecture($this->getTeacherFromRequest($request), [
+                $lecture = $this->lectureService->createLecture($teacher, [
                     'title' => $validated['title'],
                     'description' => $validated['description'],
                     'grade_id' => $request->input('grade_id'),
@@ -86,7 +94,8 @@ class LectureController extends Controller
 
     public function update(UpdateLectureRequest $request, Lecture $lecture)
     {
-        if ($lecture->teacher_id !== $this->getTeacherFromRequest($request)->id) {
+        $teacher = $this->getTeacherFromRequest($request);
+        if (!$teacher || $lecture->teacher_id !== $teacher->id) {
             return $this->errorResponse('Unauthorized', 403);
         }
 
@@ -109,7 +118,8 @@ class LectureController extends Controller
 
     public function destroy(Request $request, Lecture $lecture)
     {
-        if ($lecture->teacher_id !== $this->getTeacherFromRequest($request)->id) {
+        $teacher = $this->getTeacherFromRequest($request);
+        if (!$teacher || $lecture->teacher_id !== $teacher->id) {
             return $this->errorResponse('Unauthorized', 403);
         }
 
@@ -147,7 +157,8 @@ class LectureController extends Controller
 
     public function toggleActive(Request $request, Lecture $lecture)
     {
-        if ($lecture->teacher_id !== $this->getTeacherFromRequest($request)->id) {
+        $teacher = $this->getTeacherFromRequest($request);
+        if (!$teacher || $lecture->teacher_id !== $teacher->id) {
             return $this->errorResponse('Unauthorized', 403);
         }
 
@@ -186,7 +197,8 @@ class LectureController extends Controller
 
     public function endLecture(Request $request, Lecture $lecture)
     {
-        if ($lecture->teacher_id !== $this->getTeacherFromRequest($request)->id) {
+        $teacher = $this->getTeacherFromRequest($request);
+        if (!$teacher || $lecture->teacher_id !== $teacher->id) {
             return $this->errorResponse('Unauthorized', 403);
         }
 
@@ -383,7 +395,8 @@ class LectureController extends Controller
     }
     public function cancelSession(Request $request, Lecture $lecture)
     {
-        if ($lecture->teacher_id !== $this->getTeacherFromRequest($request)->id) {
+        $teacher = $this->getTeacherFromRequest($request);
+        if (!$teacher || $lecture->teacher_id !== $teacher->id) {
             return $this->errorResponse('Unauthorized', 403);
         }
 
