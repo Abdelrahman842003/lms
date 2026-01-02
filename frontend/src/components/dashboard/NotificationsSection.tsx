@@ -61,46 +61,36 @@ export const NotificationsSection = () => {
     if (token) {
       fetchNotifications();
       
-      // Setup Reverb Listener
-      import('@/lib/echo').then(({ initializeEcho }) => {
-        try {
-          const userStr = localStorage.getItem('user');
-          if (userStr) {
-             const user = JSON.parse(userStr);
-             console.log('Setting up Reverb for user:', user.id); // DEBUG
-             const echo = initializeEcho(token);
-             const channelName = `notifications.parent.${user.id}`;
-             console.log('Subscribing to channel:', channelName); // DEBUG
-             
-             echo.private(channelName)
-               .listen('.new.notification', (data: any) => {
-                 console.log('Received notification via Reverb:', data); // DEBUG
-                 const newNotification: Notification = {
-                   id: data.notification_id || Date.now().toString(),
-                   title: data.title,
-                   message: data.message,
-                   created_at: data.created_at || new Date().toISOString(),
-                   read_at: null,
-                   type: data.type || 'general',
-                   sender_name: data.data?.sender_name,
-                   child_name: data.data?.child_name
-                 };
-                 
-                 setNotifications(prev => {
-                    // Prevent duplicates
-                    if (prev.some(n => n.id === newNotification.id)) return prev;
-                    return [newNotification, ...prev];
-                 });
-               });
-               
-             return () => {
-               echo.leave(channelName);
-             };
-          }
-        } catch (e) {
-          console.error('Failed to setup Reverb in NotificationsSection:', e);
-        }
-      });
+      // Listen for Reverb events dispatched by NotificationDropdown
+      const handleReverbNotification = (event: Event) => {
+        const customEvent = event as CustomEvent;
+        const data = customEvent.detail;
+        
+        console.log('NotificationsSection received event:', data); // DEBUG
+
+        const newNotification: Notification = {
+           id: data.notification_id || Date.now().toString(),
+           title: data.title,
+           message: data.message,
+           created_at: data.created_at || new Date().toISOString(),
+           read_at: null,
+           type: data.type || 'general',
+           sender_name: data.data?.sender_name,
+           child_name: data.data?.child_name
+        };
+         
+        setNotifications(prev => {
+           // Prevent duplicates
+           if (prev.some(n => n.id === newNotification.id)) return prev;
+           return [newNotification, ...prev];
+        });
+      };
+
+      window.addEventListener('notification:reverb:received', handleReverbNotification);
+      
+      return () => {
+        window.removeEventListener('notification:reverb:received', handleReverbNotification);
+      };
     }
   }, [token]);
 

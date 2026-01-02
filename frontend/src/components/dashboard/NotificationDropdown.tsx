@@ -149,15 +149,14 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
               console.error('[NotificationDropdown] ❌ Channel error:', error);
             });
             
-            // Listen for the event
-            channel.listen('.new.notification', (data: any) => {
+              // Listen for the event
+              channel.listen('.new.notification', (data: any) => {
 
               
               const notificationId = data.notification_id || Date.now().toString();
               
               // Deduplication: Skip if already received
               if (receivedIdsRef.current.has(notificationId)) {
-                return;
                 return;
               }
               receivedIdsRef.current.add(notificationId);
@@ -166,6 +165,13 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
               setTimeout(() => {
                 receivedIdsRef.current.delete(notificationId);
               }, 5 * 60 * 1000);
+
+              // Dispatch event for other components (like NotificationsSection)
+              if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('notification:reverb:received', { 
+                  detail: data 
+                }));
+              }
               
               const newNotification: AppNotification = {
                 id: notificationId,
