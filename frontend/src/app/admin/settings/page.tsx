@@ -554,12 +554,7 @@ function SettingsPage() {
                   </div>
                 </div>
               </DashboardCard>
-            </div>
-          )}
 
-          {/* Security Settings */}
-          {activeTab === 'security' && (
-            <div className="space-y-6">
               {/* Cloudflare Turnstile */}
               <DashboardCard title="Cloudflare Turnstile (حماية من البوتات)" icon="fas fa-shield-alt">
                 <div className="space-y-4">
@@ -600,6 +595,16 @@ function SettingsPage() {
                 </div>
               </DashboardCard>
             </div>
+          )}
+
+          {/* Security Settings */}
+          {activeTab === 'security' && (
+            <DashboardCard title="إعدادات الأمان" icon="fas fa-shield-alt">
+              <div className="text-center py-10 text-gray-400">
+                <i className="fas fa-lock text-4xl mb-4 opacity-50"></i>
+                <p>إعدادات الأمان قيد التطوير...</p>
+              </div>
+            </DashboardCard>
           )}
 
           {/* Save Button */}
