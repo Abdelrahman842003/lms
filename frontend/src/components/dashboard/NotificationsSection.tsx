@@ -35,12 +35,24 @@ export const NotificationsSection = () => {
         const data = await response.json();
         // Handle different response structures
         let fetchedNotifications: Notification[] = [];
+        
+        const mapNotification = (n: any): Notification => ({
+          id: n.id,
+          title: n.data?.title || n.title || 'إشعار',
+          message: n.data?.message || n.message || '',
+          created_at: n.created_at,
+          read_at: n.read_at,
+          type: n.type || 'general',
+          sender_name: n.data?.sender_name || n.sender_name || 'النظام',
+          child_name: n.data?.child_name || n.child_name || ''
+        });
+
         if (data.received_notifications) {
-          fetchedNotifications = data.received_notifications;
+          fetchedNotifications = data.received_notifications.map(mapNotification);
         } else if (data.data && data.data.received_notifications) {
-          fetchedNotifications = data.data.received_notifications;
+          fetchedNotifications = data.data.received_notifications.map(mapNotification);
         } else if (data.notifications) {
-           fetchedNotifications = data.notifications;
+           fetchedNotifications = data.notifications.map(mapNotification);
         }
         setNotifications(fetchedNotifications);
       } catch (error) {
