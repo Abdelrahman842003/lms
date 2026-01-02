@@ -33,9 +33,16 @@ export const NotificationsSection = () => {
           },
         });
         const data = await response.json();
-        if (data.data?.notifications) {
-          setNotifications(data.data.notifications);
+        // Handle different response structures
+        let fetchedNotifications: Notification[] = [];
+        if (data.received_notifications) {
+          fetchedNotifications = data.received_notifications;
+        } else if (data.data && data.data.received_notifications) {
+          fetchedNotifications = data.data.received_notifications;
+        } else if (data.notifications) {
+           fetchedNotifications = data.notifications;
         }
+        setNotifications(fetchedNotifications);
       } catch (error) {
         console.error('Failed to fetch notifications:', error);
       } finally {
@@ -45,6 +52,40 @@ export const NotificationsSection = () => {
 
     if (token) {
       fetchNotifications();
+
+      // Setup Reverb Listener
+      import('@/lib/echo').then(({ initializeEcho }) => {
+        try {
+          const userStr = localStorage.getItem('user');
+          if (userStr) {
+             const user = JSON.parse(userStr);
+             const echo = initializeEcho(token);
+             const channelName = `notifications.parent.${user.id}`;
+             
+             echo.private(channelName)
+               .listen('.new.notification', (data: any) => {
+                 const newNotification: Notification = {
+                   id: data.notification_id || Date.now().toString(),
+                   title: data.title,
+                   message: data.message,
+                   created_at: data.created_at || new Date().toISOString(),
+                   read_at: null,
+                   type: data.type || 'general',
+                   sender_name: data.data?.sender_name,
+                   child_name: data.data?.child_name
+                 };
+                 
+                 setNotifications(prev => [newNotification, ...prev]);
+               });
+               
+             return () => {
+               echo.leave(channelName);
+             };
+          }
+        } catch (e) {
+          console.error('Failed to setup Reverb in NotificationsSection:', e);
+        }
+      });
     }
   }, [token]);
 
