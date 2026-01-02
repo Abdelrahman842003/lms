@@ -139,8 +139,15 @@ export default function LectureAttendancePage() {
                           {attendee.status === 'present' ? 'حاضر' : 'غائب'}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-gray-400 text-sm">
-                        {attendee.attended_at ? new Date(attendee.attended_at).toLocaleTimeString('ar-EG') : '-'}
+                      <td className="px-6 py-4 text-gray-400 text-sm" dir="ltr">
+                        {attendee.attended_at ? new Date(attendee.attended_at).toLocaleString('ar-EG', {
+                          year: 'numeric',
+                          month: 'numeric',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          hour12: true
+                        }) : '-'}
                       </td>
                     </tr>
                   ))}

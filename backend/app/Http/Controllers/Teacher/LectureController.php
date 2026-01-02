@@ -158,52 +158,94 @@ class LectureController extends Controller
     /**
      * Get attendees for a specific lecture
      */
+    /**
+     * Get attendees for a specific lecture
+     */
     public function getAttendees(Request $request, Lecture $lecture)
     {
         if ($lecture->teacher_id !== $this->getTeacherFromRequest($request)->id) {
             return $this->errorResponse('Unauthorized', 403);
         }
 
-        $attendances = $lecture->attendances()
-            ->with('student')
+        // Get all active students for this teacher in this grade/group
+        $query = $lecture->teacher->students()
+            ->wherePivot('grade_id', $lecture->grade_id)
+            ->wherePivot('is_active', true);
+            
+        if ($lecture->group_id) {
+            $query->wherePivot('group_id', $lecture->group_id);
+        }
+
+        $allStudents = $query->get();
+
+        // Get existing attendance records
+        $attendanceRecords = $lecture->attendances()
             ->get()
-            ->map(function ($attendance) {
-                return [
-                    'id' => $attendance->id,
-                    'student_id' => $attendance->student_id,
-                    'student_name' => $attendance->student?->name,
-                    'student_phone' => $attendance->student?->phone,
-                    'status' => $attendance->status,
-                    'attended_at' => $attendance->created_at->format('Y-m-d H:i'),
-                ];
-            });
+            ->keyBy('student_id');
+
+        $attendees = $allStudents->map(function ($student) use ($attendanceRecords) {
+            $record = $attendanceRecords->get($student->id);
+            
+            return [
+                'id' => $record ? $record->id : null,
+                'student_id' => $student->id,
+                'student_name' => $student->name,
+                'student_phone' => $student->phone,
+                'status' => $record ? $record->status : 'absent', // Default to absent if no record
+                'attended_at' => $record ? $record->created_at->format('Y-m-d H:i:s') : null,
+            ];
+        });
 
         return $this->successResponse([
             'lecture' => [
                 'id' => $lecture->id,
                 'title' => $lecture->title,
             ],
-            'attendees' => $attendances,
-            'total_present' => $attendances->where('status', 'present')->count(),
-            'total_absent' => $attendances->where('status', 'absent')->count(),
+            'attendees' => $attendees->values(),
+            'total_present' => $attendees->where('status', 'present')->count(),
+            'total_absent' => $attendees->where('status', 'absent')->count(),
         ]);
     }
 
     public function exportAttendees(Request $request, Lecture $lecture)
     {
-        $attendances = $lecture->attendances()
-            ->with('student')
-            ->get();
+        // Same logic as getAttendees to ensure consistency
+        $query = $lecture->teacher->students()
+            ->wherePivot('grade_id', $lecture->grade_id)
+            ->wherePivot('is_active', true);
+            
+        if ($lecture->group_id) {
+            $query->wherePivot('group_id', $lecture->group_id);
+        }
+
+        $allStudents = $query->get();
+
+        $attendanceRecords = $lecture->attendances()
+            ->get()
+            ->keyBy('student_id');
+
+        $attendees = $allStudents->map(function ($student) use ($attendanceRecords) {
+            $record = $attendanceRecords->get($student->id);
+            return (object) [
+                'student' => $student,
+                'status' => $record ? $record->status : 'absent',
+                'created_at' => $record ? $record->created_at : null,
+            ];
+        });
 
         $data = [
             'lecture' => $lecture,
-            'attendees' => $attendances,
-            'total_present' => $attendances->where('status', 'present')->count(),
-            'total_absent' => $attendances->where('status', 'absent')->count(),
+            'attendees' => $attendees,
+            'total_present' => $attendees->where('status', 'present')->count(),
+            'total_absent' => $attendees->where('status', 'absent')->count(),
             'date' => now()->format('Y-m-d'),
         ];
 
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('exports.attendees', $data);
+        // Set paper to A4 and enable UTF-8
+        $pdf->setPaper('a4', 'portrait');
+        $pdf->setOptions(['defaultFont' => 'dejavu sans']);
+        
         return $pdf->download("attendance_report_{$lecture->id}.pdf");
     }
 }
