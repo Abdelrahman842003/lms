@@ -18,9 +18,14 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->string('qr_code')->nullable()->unique();
             $table->timestamp('qr_code_expires_at')->nullable();
-            $table->dateTime('start_time');
-            $table->dateTime('end_time');
+            $table->dateTime('start_time')->nullable();
+            $table->dateTime('end_time')->nullable();
             $table->boolean('is_active')->default(false);
+            $table->boolean('is_recurring')->default(false);
+            $table->json('recurrence_days')->nullable();
+            $table->time('recurrence_time')->nullable();
+            $table->integer('duration_minutes')->nullable();
+            $table->foreignUuid('parent_id')->nullable()->constrained('lectures')->nullOnDelete();
             $table->timestamps();
         });
     }
