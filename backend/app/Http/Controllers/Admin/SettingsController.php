@@ -8,15 +8,19 @@ use Illuminate\Http\Request;
 
 class SettingsController extends Controller
 {
+    // Keys that should stay masked (sensitive API keys)
+    private static $maskedKeys = [
+        'openai_api_key',
+        'gemini_api_key',
+    ];
+
     public function index()
     {
         $settings = Setting::all()->mapWithKeys(function ($setting) {
             $value = $setting->value;
             
-            // If key is encrypted, mask it
-            // The Model Accessor already decrypts it, so $value here is the plain text (if we wanted it)
-            // But for security, we mask it before sending to frontend
-            if (in_array($setting->key, Setting::$encryptedKeys) && !empty($value)) {
+            // Only mask AI API keys for extra security
+            if (in_array($setting->key, self::$maskedKeys) && !empty($value)) {
                 $value = '********';
             }
             
