@@ -26,6 +26,7 @@ class Lecture extends Model
         'recurrence_time',
         'duration_minutes',
         'parent_id',
+        'cancelled_dates',
     ];
 
     protected $casts = [
@@ -35,6 +36,7 @@ class Lecture extends Model
         'is_active' => 'boolean',
         'is_recurring' => 'boolean',
         'recurrence_days' => 'array',
+        'cancelled_dates' => 'array',
     ];
 
     public function teacher()

@@ -29,6 +29,11 @@ export interface Lecture {
     id: string;
     name: string;
   } | null;
+  is_recurring?: boolean;
+  recurrence_days?: string[] | null;
+  recurrence_time?: string | null;
+  duration_minutes?: number | null;
+  cancelled_dates?: string[];
 }
 
 export interface CreateLectureData {
@@ -64,10 +69,14 @@ export interface AttendeesResponse {
   lecture: {
     id: string;
     title: string;
+    is_recurring?: boolean;
+    recurrence_days?: string[] | null;
+    group_name?: string;
   };
   attendees: Attendee[];
   total_present: number;
   total_absent: number;
+  available_dates?: string[];
 }
 
 interface ApiResponse<T> {
@@ -332,4 +341,25 @@ export const exportAttendeesPDF = async (lectureId: string): Promise<void> => {
   a.click();
   window.URL.revokeObjectURL(url);
   document.body.removeChild(a);
+};
+
+export const cancelSession = async (id: string, date: string): Promise<{ message: string; lecture: Lecture }> => {
+  const token = localStorage.getItem('token');
+  const response = await fetch(`${API_BASE_URL}/api/teacher/lectures/${id}/cancel-session`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify({ date }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || 'Failed to cancel session');
+  }
+
+  const res: ApiResponse<{ message: string; lecture: Lecture }> = await response.json();
+  return res.data;
 };

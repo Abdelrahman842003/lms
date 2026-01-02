@@ -38,6 +38,7 @@ class LectureResource extends JsonResource
             'created_at' => $this->created_at,
             'is_recurring' => $this->is_recurring,
             'recurrence_days' => $this->recurrence_days,
+            'cancelled_dates' => $this->cancelled_dates,
         ];
     }
 

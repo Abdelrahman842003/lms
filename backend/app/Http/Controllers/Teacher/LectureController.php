@@ -247,14 +247,25 @@ class LectureController extends Controller
             ];
         });
 
+        // Get available dates (dates with attendance records)
+        $availableDates = $lecture->attendances()
+            ->selectRaw('DATE(created_at) as date')
+            ->distinct()
+            ->orderBy('date', 'desc')
+            ->pluck('date');
+
         return $this->successResponse([
             'lecture' => [
                 'id' => $lecture->id,
                 'title' => $lecture->title,
+                'is_recurring' => $lecture->is_recurring,
+                'recurrence_days' => $lecture->recurrence_days,
+                'group_name' => $lecture->group ? $lecture->group->name : 'كل المجموعات',
             ],
             'attendees' => $attendees->values(),
             'total_present' => $attendees->where('status', 'present')->count(),
             'total_absent' => $attendees->where('status', 'absent')->count(),
+            'available_dates' => $availableDates,
         ]);
     }
 
@@ -298,5 +309,48 @@ class LectureController extends Controller
         $pdf->setOptions(['defaultFont' => 'dejavu sans']);
         
         return $pdf->download("attendance_report_{$lecture->id}.pdf");
+    }
+    public function cancelSession(Request $request, Lecture $lecture)
+    {
+        if ($lecture->teacher_id !== $this->getTeacherFromRequest($request)->id) {
+            return $this->errorResponse('Unauthorized', 403);
+        }
+
+        $request->validate([
+            'date' => 'required|date',
+        ]);
+
+        $date = $request->input('date');
+        $cancelledDates = $lecture->cancelled_dates ?? [];
+
+        if (!in_array($date, $cancelledDates)) {
+            $cancelledDates[] = $date;
+            $lecture->update(['cancelled_dates' => $cancelledDates]);
+
+            // Notify students
+            try {
+                $students = $lecture->teacher->students()
+                    ->wherePivot('grade_id', $lecture->grade_id)
+                    ->wherePivot('is_active', true)
+                    ->get();
+
+                if ($students->count() > 0) {
+                    \Illuminate\Support\Facades\Notification::send(
+                        $students, 
+                        new \App\Notifications\LectureCancelledNotification(
+                            $lecture->title . ' (' . $date . ')', 
+                            $lecture->teacher->name
+                        )
+                    );
+                }
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Failed to send session cancellation notification: ' . $e->getMessage());
+            }
+        }
+
+        return $this->successResponse([
+            'message' => 'تم إلغاء المحاضرة لهذا اليوم وإرسال الإشعارات',
+            'lecture' => new LectureResource($lecture->fresh())
+        ]);
     }
 }

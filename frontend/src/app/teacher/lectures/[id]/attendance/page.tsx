@@ -21,11 +21,11 @@ export default function LectureAttendancePage() {
   const [data, setData] = useState<AttendeesResponse | null>(null);
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const [selectedDateFilter, setSelectedDateFilter] = useState('all');
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        setIsLoading(true);
         setIsLoading(true);
         const response = await getAttendees(lectureId, groupId, {
           date_from: dateFrom || undefined,
@@ -43,9 +43,6 @@ export default function LectureAttendancePage() {
     if (lectureId) {
       fetchData();
     }
-    if (lectureId) {
-      fetchData();
-    }
   }, [lectureId, groupId, dateFrom, dateTo]);
 
   const handleExportPDF = async () => {
@@ -58,6 +55,38 @@ export default function LectureAttendancePage() {
     }
   };
 
+  const handleDateFilterChange = (value: string) => {
+    setSelectedDateFilter(value);
+    if (value === 'all') {
+      setDateFrom('');
+      setDateTo('');
+    } else if (value === 'last_month') {
+      const now = new Date();
+      const firstDay = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const lastDay = new Date(now.getFullYear(), now.getMonth(), 0);
+      // Adjust for timezone offset to avoid getting previous day
+      const offset = firstDay.getTimezoneOffset();
+      const firstDayLocal = new Date(firstDay.getTime() - (offset*60*1000));
+      const lastDayLocal = new Date(lastDay.getTime() - (offset*60*1000));
+      
+      setDateFrom(firstDayLocal.toISOString().split('T')[0]);
+      setDateTo(lastDayLocal.toISOString().split('T')[0]);
+    } else {
+      setDateFrom(value);
+      setDateTo(value);
+    }
+  };
+
+  const dayLabels: Record<string, string> = {
+    'Sunday': 'الأحد',
+    'Monday': 'الاثنين',
+    'Tuesday': 'الثلاثاء',
+    'Wednesday': 'الأربعاء',
+    'Thursday': 'الخميس',
+    'Friday': 'الجمعة',
+    'Saturday': 'السبت',
+  };
+
   return (
     <DashboardLayout
       role={user?.userType as 'teacher' | 'secretary' || 'teacher'}
@@ -66,7 +95,7 @@ export default function LectureAttendancePage() {
         avatar: user?.avatar || '',
       }}
     >
-      <div className="mb-6 flex justify-between items-center">
+      <div className="mb-6 flex justify-between items-center max-md:flex-col max-md:items-start max-md:gap-4">
         <div className="flex items-center gap-4">
           <button 
             onClick={() => router.back()} 
@@ -76,14 +105,25 @@ export default function LectureAttendancePage() {
           </button>
           <div>
             <h1 className="text-2xl font-bold text-white mb-1">سجل الحضور</h1>
-            <p className="text-gray-400 text-sm">
-              {data?.lecture?.title ? `محاضرة: ${data.lecture.title}` : 'جاري التحميل...'}
-            </p>
+            <div className="flex flex-wrap items-center gap-2 text-gray-400 text-sm">
+              <span>{data?.lecture?.title || 'جاري التحميل...'}</span>
+              {data?.lecture?.group_name && (
+                <span className="px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-xs">
+                  {data.lecture.group_name}
+                </span>
+              )}
+              {data?.lecture?.is_recurring && data.lecture.recurrence_days && (
+                <span className="text-primary text-xs flex items-center gap-1">
+                  <i className="fas fa-redo"></i>
+                  {data.lecture.recurrence_days.map(d => dayLabels[d]).join('، ')}
+                </span>
+              )}
+            </div>
           </div>
         </div>
         <button 
           onClick={handleExportPDF}
-          className="btn btn-primary"
+          className="btn btn-primary max-md:w-full"
           disabled={isLoading || !data}
         >
           <i className="fas fa-file-pdf"></i>
@@ -92,24 +132,23 @@ export default function LectureAttendancePage() {
       </div>
 
       {/* Filters */}
-      <div className="flex gap-4 mb-6 max-md:flex-col">
-        <div className="flex-1">
-          <label className="block text-sm text-gray-400 mb-1">من تاريخ</label>
-          <input
-            type="date"
-            value={dateFrom}
-            onChange={(e) => setDateFrom(e.target.value)}
-            className="form-input w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white"
-          />
-        </div>
-        <div className="flex-1">
-          <label className="block text-sm text-gray-400 mb-1">إلى تاريخ</label>
-          <input
-            type="date"
-            value={dateTo}
-            onChange={(e) => setDateTo(e.target.value)}
-            className="form-input w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white"
-          />
+      <div className="mb-6">
+        <label className="block text-sm text-gray-400 mb-2">تصفية حسب التاريخ</label>
+        <div className="w-full md:w-1/3">
+          <select
+            value={selectedDateFilter}
+            onChange={(e) => handleDateFilterChange(e.target.value)}
+            className="form-input w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white appearance-none cursor-pointer"
+            style={{ backgroundImage: 'none' }} // Remove default arrow if needed, or style it
+          >
+            <option value="all" className="bg-[#1a1f37]">كل التواريخ</option>
+            <option value="last_month" className="bg-[#1a1f37]">الشهر الماضي</option>
+            {data?.available_dates?.map((date) => (
+              <option key={date} value={date} className="bg-[#1a1f37]">
+                {new Date(date).toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 

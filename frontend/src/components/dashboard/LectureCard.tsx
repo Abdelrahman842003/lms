@@ -14,6 +14,7 @@ interface LectureCardProps {
   onQRCode: () => void;
   onEnd: () => void;
   onManualAttendance: () => void;
+  onCancelSession?: () => void;
 }
 
 export const LectureCard: React.FC<LectureCardProps> = ({
@@ -29,6 +30,7 @@ export const LectureCard: React.FC<LectureCardProps> = ({
   onQRCode,
   onEnd,
   onManualAttendance,
+  onCancelSession,
 }) => {
   const isActive = lecture.is_active;
 
@@ -118,6 +120,19 @@ export const LectureCard: React.FC<LectureCardProps> = ({
                 <i className="fas fa-trash"></i>
                 <span>حذف</span>
               </button>
+
+              {lecture.is_recurring && !isActive && lecture.status !== 'منتهية' && (
+                <button
+                  className="actions-menu-item warning w-full"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onCancelSession?.();
+                  }}
+                >
+                  <i className="fas fa-ban"></i>
+                  <span>إلغاء محاضرة اليوم</span>
+                </button>
+              )}
             </div>
           )}
         </div>

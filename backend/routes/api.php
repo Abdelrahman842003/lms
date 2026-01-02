@@ -107,6 +107,7 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureTeacherNotSuspende
     Route::post('/lectures/{lecture}/attendance', [\App\Http\Controllers\Teacher\LectureAttendanceController::class, 'recordAttendance']);
     Route::put('/lectures/{lecture}/toggle-active', [\App\Http\Controllers\Teacher\LectureController::class, 'toggleActive']);
     Route::post('/lectures/{lecture}/end', [\App\Http\Controllers\Teacher\LectureController::class, 'endLecture']);
+    Route::post('/lectures/{lecture}/cancel-session', [\App\Http\Controllers\Teacher\LectureController::class, 'cancelSession']);
     Route::get('/lectures/{lecture}/attendees', [\App\Http\Controllers\Teacher\LectureController::class, 'getAttendees']);
     Route::get('/lectures/{lecture}/attendees/export', [\App\Http\Controllers\Teacher\LectureController::class, 'exportAttendees']);
     

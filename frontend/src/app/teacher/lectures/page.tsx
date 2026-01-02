@@ -16,6 +16,7 @@ import {
   recordAttendance,
   toggleLectureActive,
   endLecture,
+  cancelSession,
 } from '@/services/lectureService';
 import { getGrades } from '@/services/gradeService';
 import { getGroups, Group } from '@/services/groupService';
@@ -97,6 +98,10 @@ export default function TeacherLecturesPage() {
   // Manual Attendance State
   const [showManualAttendanceModal, setShowManualAttendanceModal] = useState(false);
   const [selectedLectureForManualAttendance, setSelectedLectureForManualAttendance] = useState<Lecture | null>(null);
+  
+  // Cancel Session State
+  const [showCancelSessionModal, setShowCancelSessionModal] = useState(false);
+  const [selectedLectureForCancel, setSelectedLectureForCancel] = useState<Lecture | null>(null);
 
   const handleViewAttendees = (lectureId: string) => {
     const queryParams = selectedGroupId ? `?group_id=${selectedGroupId}` : '';
@@ -316,6 +321,25 @@ export default function TeacherLecturesPage() {
   const handleManualAttendanceClick = (lecture: Lecture) => {
     setSelectedLectureForManualAttendance(lecture);
     setShowManualAttendanceModal(true);
+  };
+
+  const handleCancelSessionClick = (lecture: Lecture) => {
+    setSelectedLectureForCancel(lecture);
+    setShowCancelSessionModal(true);
+  };
+
+  const confirmCancelSession = async () => {
+    if (!selectedLectureForCancel) return;
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      await cancelSession(selectedLectureForCancel.id, today);
+      toast.success('تم إلغاء المحاضرة لهذا اليوم');
+      setShowCancelSessionModal(false);
+      fetchLectures(currentPage);
+    } catch (error: any) {
+      console.error('Failed to cancel session:', error);
+      toast.error(error.message || 'فشل إلغاء المحاضرة');
+    }
   };
 
   // Stats
@@ -565,12 +589,14 @@ export default function TeacherLecturesPage() {
                 </div>
                 <div className="form-group">
                   <label htmlFor="lecture_type">نوع المحاضرة</label>
-                  <select
-                    id="lecture_type"
-                    className="form-input"
+                  <Filter
+                    options={[
+                      { value: 'extra', label: 'محاضرة إضافية' },
+                      { value: 'basic', label: 'محاضرة أساسية' }
+                    ]}
                     value={formData.is_recurring ? 'basic' : 'extra'}
-                    onChange={(e) => {
-                      const isBasic = e.target.value === 'basic';
+                    onChange={(value) => {
+                      const isBasic = value === 'basic';
                       setFormData({ 
                         ...formData, 
                         is_recurring: isBasic,
@@ -579,10 +605,9 @@ export default function TeacherLecturesPage() {
                         recurrence_days: isBasic ? formData.recurrence_days : [],
                       });
                     }}
-                  >
-                    <option value="extra">محاضرة إضافية</option>
-                    <option value="basic">محاضرة أساسية</option>
-                  </select>
+                    placeholder="اختر نوع المحاضرة"
+                    className="w-full"
+                  />
                 </div>
 
                 {formData.is_recurring ? (
@@ -804,6 +829,43 @@ export default function TeacherLecturesPage() {
                 onClick={confirmEndLecture}
               >
                 تأكيد الإنهاء
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cancel Session Confirmation Modal */}
+      {showCancelSessionModal && selectedLectureForCancel && (
+        <div className="modal-overlay" onClick={() => setShowCancelSessionModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>إلغاء محاضرة اليوم</h3>
+              <button className="modal-close" onClick={() => setShowCancelSessionModal(false)}>
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            <div className="modal-body">
+              <p>هل أنت متأكد من إلغاء محاضرة "{selectedLectureForCancel.title}" لهذا اليوم؟</p>
+              <div className="alert alert-warning mt-4">
+                <i className="fas fa-exclamation-triangle"></i>
+                <span>سيتم إرسال إشعار للطلاب وأولياء الأمور بإلغاء المحاضرة.</span>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setShowCancelSessionModal(false)}
+              >
+                إلغاء
+              </button>
+              <button
+                type="button"
+                className="btn btn-danger"
+                onClick={confirmCancelSession}
+              >
+                تأكيد الإلغاء
               </button>
             </div>
           </div>
