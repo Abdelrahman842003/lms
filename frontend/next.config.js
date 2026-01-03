@@ -21,6 +21,14 @@ const nextConfig = {
     // your project has ESLint errors.
     ignoreDuringBuilds: true,
   },
+  async rewrites() {
+    return [
+      {
+        source: '/api/:path*',
+        destination: `${process.env.INTERNAL_API_URL || 'http://octane:8000/api'}/:path*`,
+      },
+    ];
+  },
 };
 
 module.exports = nextConfig;
