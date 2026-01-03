@@ -3,225 +3,252 @@
 
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>تقرير الحضور - {{ $lecture->title }}</title>
     <style>
         @page {
             margin: 0;
+            header: page-header;
+            footer: page-footer;
         }
 
         body {
-            font-family: 'DejaVu Sans', sans-serif;
+            font-family: 'xbriyaz', 'dejavusans', sans-serif;
             direction: rtl;
             text-align: right;
             margin: 0;
-            padding: 40px;
+            padding: 0;
             background-color: #ffffff;
-            color: #333;
+            color: #1e293b;
+            font-size: 10pt;
         }
 
-        .header {
-            text-align: center;
-            margin-bottom: 40px;
-            border-bottom: 2px solid #4264eb;
-            padding-bottom: 20px;
-        }
-
-        .header h1 {
-            color: #4264eb;
-            font-size: 24px;
-            margin: 0 0 10px 0;
-        }
-
-        .header h2 {
-            color: #666;
-            font-size: 18px;
-            margin: 0;
-            font-weight: normal;
-        }
-
-        .meta-info {
-            display: table;
-            width: 100%;
+        /* Header */
+        .header-container {
+            background-color: #1e3a5f;
+            color: white;
+            padding: 30px 40px;
             margin-bottom: 30px;
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
         }
 
-        .meta-item {
-            display: table-cell;
-            width: 33%;
-            vertical-align: middle;
-        }
-
-        .meta-label {
-            font-size: 12px;
-            color: #888;
+        .header-title {
+            font-size: 24px;
+            font-weight: bold;
             margin-bottom: 5px;
         }
 
-        .meta-value {
+        .header-subtitle {
             font-size: 14px;
-            font-weight: bold;
-            color: #333;
+            opacity: 0.9;
         }
 
-        .stats-container {
-            margin-bottom: 30px;
-            display: table;
+        /* Meta Info Table */
+        .meta-table {
             width: 100%;
+            border-collapse: separate;
+            border-spacing: 15px 0;
+            margin-bottom: 30px;
         }
 
-        .stat-box {
-            display: table-cell;
-            width: 48%;
+        .meta-cell {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-right: 3px solid #1e3a5f;
             padding: 15px;
-            border-radius: 8px;
+            width: 33.33%;
+            vertical-align: top;
+        }
+
+        .meta-label {
+            font-size: 10px;
+            color: #64748b;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .meta-value {
+            font-size: 12px;
+            font-weight: bold;
+            color: #1e293b;
+        }
+
+        /* Stats Table */
+        .stats-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 15px 0;
+            margin-bottom: 30px;
+        }
+
+        .stat-cell {
+            padding: 20px;
             text-align: center;
+            border-radius: 8px;
+            width: 48%;
+            vertical-align: middle;
         }
 
         .stat-present {
-            background-color: rgba(0, 214, 143, 0.1);
-            border: 1px solid rgba(0, 214, 143, 0.2);
-            color: #00d68f;
+            background-color: #dcfce7;
+            border: 1px solid #bbf7d0;
+            color: #166534;
         }
 
         .stat-absent {
-            background-color: rgba(255, 91, 91, 0.1);
-            border: 1px solid rgba(255, 91, 91, 0.2);
-            color: #ff5b5b;
+            background-color: #fee2e2;
+            border: 1px solid #fecaca;
+            color: #991b1b;
         }
 
         .stat-number {
-            font-size: 24px;
+            font-size: 28px;
             font-weight: bold;
             display: block;
+            margin-bottom: 5px;
         }
 
         .stat-label {
             font-size: 12px;
-            opacity: 0.8;
+            font-weight: bold;
         }
 
-        table {
+        /* Data Table */
+        .data-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
+            border: 1px solid #e2e8f0;
         }
 
-        th {
-            background-color: #4264eb;
+        .data-table th {
+            background-color: #1e3a5f;
             color: white;
-            padding: 12px;
-            font-size: 12px;
+            padding: 12px 15px;
+            font-size: 11px;
+            font-weight: bold;
             text-align: right;
+            border: 1px solid #1e3a5f;
         }
 
-        td {
-            padding: 10px 12px;
-            border-bottom: 1px solid #eee;
-            font-size: 12px;
+        .data-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e2e8f0;
+            border-left: 1px solid #e2e8f0;
+            border-right: 1px solid #e2e8f0;
+            font-size: 11px;
+            color: #334155;
         }
 
-        tr:nth-child(even) {
-            background-color: #f8f9fa;
+        .data-table tr:nth-child(even) {
+            background-color: #f8fafc;
         }
 
-        .status-badge {
-            padding: 4px 8px;
+        /* Status Badges */
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
             border-radius: 4px;
             font-size: 10px;
             font-weight: bold;
         }
 
-        .status-present {
-            background-color: rgba(0, 214, 143, 0.1);
-            color: #008f5d;
+        .badge-present {
+            background-color: #dcfce7;
+            color: #166534;
         }
 
-        .status-absent {
-            background-color: rgba(255, 91, 91, 0.1);
-            color: #d63030;
+        .badge-absent {
+            background-color: #fee2e2;
+            color: #991b1b;
         }
 
+        /* Footer */
         .footer {
             position: fixed;
-            bottom: 20px;
+            bottom: 30px;
             left: 40px;
             right: 40px;
             text-align: center;
-            font-size: 10px;
-            color: #999;
-            border-top: 1px solid #eee;
-            padding-top: 10px;
+            font-size: 9px;
+            color: #94a3b8;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 15px;
         }
     </style>
 </head>
 
 <body>
-    <div class="header">
-        <h1>تقرير حضور المحاضرة</h1>
-        <h2>{{ $lecture->title }}</h2>
+    <div class="header-container">
+        <div class="header-title">تقرير حضور المحاضرة</div>
+        <div class="header-subtitle">{{ $lecture->title }}</div>
     </div>
 
-    <div class="meta-info">
-        <div class="meta-item">
-            <div class="meta-label">تاريخ التقرير</div>
-            <div class="meta-value">{{ $date }}</div>
-        </div>
-        <div class="meta-item" style="text-align: center;">
-            <div class="meta-label">الصف الدراسي</div>
-            <div class="meta-value">{{ $lecture->grade->name ?? '-' }}</div>
-        </div>
-        <div class="meta-item" style="text-align: left;">
-            <div class="meta-label">المجموعة</div>
-            <div class="meta-value">{{ $lecture->group->name ?? 'كل المجموعات' }}</div>
-        </div>
-    </div>
-
-    <div class="stats-container">
-        <div class="stat-box stat-present">
-            <span class="stat-number">{{ $total_present }}</span>
-            <span class="stat-label">حضور</span>
-        </div>
-        <div class="stat-box" style="width: 4%;"></div> <!-- Spacer -->
-        <div class="stat-box stat-absent">
-            <span class="stat-number">{{ $total_absent }}</span>
-            <span class="stat-label">غياب</span>
-        </div>
-    </div>
-
-    <table>
-        <thead>
-            <tr>
-                <th style="border-top-right-radius: 8px;">اسم الطالب</th>
-                <th>رقم الهاتف</th>
-                <th>وقت الحضور</th>
-                <th style="border-top-left-radius: 8px;">الحالة</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach($attendees as $attendee)
-                <tr>
-                    <td>{{ $attendee->student->name }}</td>
-                    <td dir="ltr" style="text-align: right;">{{ $attendee->student->phone }}</td>
-                    <td>
-                        @if($attendee->created_at)
-                            {{ $attendee->created_at->format('Y-m-d h:i A') }}
-                        @else
-                            -
-                        @endif
-                    </td>
-                    <td>
-                        @if($attendee->status === 'present')
-                            <span class="status-badge status-present">حاضر</span>
-                        @else
-                            <span class="status-badge status-absent">غائب</span>
-                        @endif
-                    </td>
-                </tr>
-            @endforeach
-        </tbody>
+    <!-- Meta Info using Table for reliable layout -->
+    <table class="meta-table">
+        <tr>
+            <td class="meta-cell">
+                <div class="meta-label">تاريخ التقرير</div>
+                <div class="meta-value">{{ $date }}</div>
+            </td>
+            <td class="meta-cell">
+                <div class="meta-label">الصف الدراسي</div>
+                <div class="meta-value">{{ $lecture->grade->name ?? '-' }}</div>
+            </td>
+            <td class="meta-cell" style="border-left: none;">
+                <div class="meta-label">المجموعة</div>
+                <div class="meta-value">{{ $lecture->group->name ?? 'كل المجموعات' }}</div>
+            </td>
+        </tr>
     </table>
+
+    <!-- Stats using Table for reliable layout -->
+    <table class="stats-table">
+        <tr>
+            <td class="stat-cell stat-present">
+                <span class="stat-number">{{ $total_present }}</span>
+                <span class="stat-label">حضور</span>
+            </td>
+            <td style="width: 4%;"></td> <!-- Spacer -->
+            <td class="stat-cell stat-absent">
+                <span class="stat-number">{{ $total_absent }}</span>
+                <span class="stat-label">غياب</span>
+            </td>
+        </tr>
+    </table>
+
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th width="35%">اسم الطالب</th>
+                    <th width="20%">رقم الهاتف</th>
+                    <th width="25%">وقت الحضور</th>
+                    <th width="20%">الحالة</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($attendees as $attendee)
+                    <tr>
+                        <td style="font-weight: bold;">{{ $attendee->student->name }}</td>
+                        <td dir="ltr" style="text-align: right; font-family: sans-serif;">{{ $attendee->student->phone }}
+                        </td>
+                        <td>
+                            @if($attendee->created_at)
+                                {{ $attendee->created_at->format('Y-m-d h:i A') }}
+                            @else
+                                -
+                            @endif
+                        </td>
+                        <td>
+                            @if($attendee->status === 'present')
+                                <span class="badge badge-present">حاضر</span>
+                            @else
+                                <span class="badge badge-absent">غائب</span>
+                            @endif
+                        </td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
 
     <div class="footer">
         تم استخراج هذا التقرير من نظام إدارة التعلم (LMS) • {{ date('Y-m-d h:i A') }}

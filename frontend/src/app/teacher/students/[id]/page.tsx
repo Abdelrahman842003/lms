@@ -55,7 +55,12 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
         role={user?.userType as 'teacher' | 'secretary' || 'teacher'}
         user={user || undefined}
       >
-        null
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <i className="fas fa-spinner fa-spin text-4xl text-primary mb-3"></i>
+            <p className="text-gray-light">جاري التحميل...</p>
+          </div>
+        </div>
       </DashboardLayout>
     );
   }
@@ -84,34 +89,34 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
       user={user || undefined}
     >
       {/* Header Section */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary text-2xl overflow-hidden">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
+        <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary text-xl sm:text-2xl overflow-hidden flex-shrink-0">
             {student.avatar ? (
               <img src={student.avatar} alt={student.name} className="w-full h-full object-cover" />
             ) : (
               <i className="fas fa-user-graduate"></i>
             )}
           </div>
-          <div>
-            <h2 className="text-xl sm:text-2xl font-bold text-white m-0">{student.name}</h2>
-            <p className="m-0 text-gray-light text-xs sm:text-sm">{student.phone} | {student.group_name}</p>
+          <div className="flex-1 min-w-0">
+            <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-white m-0 truncate">{student.name}</h2>
+            <p className="m-0 text-gray-light text-xs sm:text-sm truncate">{student.phone} | {student.group_name}</p>
           </div>
         </div>
-        <div className="flex gap-2 sm:gap-3 w-full sm:w-auto">
-          <button onClick={() => router.back()} className="btn btn-outline flex-1 sm:flex-none text-sm sm:text-base">
-            <i className="fas fa-arrow-right"></i>
-            <span>عودة</span>
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
+          <button onClick={() => router.back()} className="btn btn-outline w-full sm:w-auto text-sm sm:text-base px-4 sm:px-5 py-3 sm:py-2.5">
+            <i className="fas fa-arrow-right text-sm sm:text-base"></i>
+            <span className="whitespace-nowrap">عودة</span>
           </button>
-          <Link href={`/teacher/students/${student.id}/edit`} className="btn btn-primary flex-1 sm:flex-none text-sm sm:text-base">
-            <i className="fas fa-edit"></i>
-            <span>تعديل الطالب</span>
+          <Link href={`/teacher/students/${student.id}/edit`} className="btn btn-primary w-full sm:w-auto text-sm sm:text-base px-4 sm:px-5 py-3 sm:py-2.5">
+            <i className="fas fa-edit text-sm sm:text-base"></i>
+            <span className="whitespace-nowrap">تعديل الطالب</span>
           </Link>
         </div>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4 sm:mb-6">
         <StatCard
           title="حضور الشهر"
           value={`${student.attendance_stats?.present_count || 0} / ${student.attendance_stats?.total_lectures || 0}`}
@@ -140,92 +145,89 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
       </div>
 
       {/* Basic Data Section */}
-      {/* Basic Data Section */}
-      {/* Basic Data Section */}
       <DashboardCard
         title="البيانات الأساسية"
         icon="fas fa-info-circle"
       >
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-
-
-          <div className="bg-[#1a1f37] flex justify-between items-center p-5 rounded-xl border border-white/5 hover:border-primary/50 transition-colors">
-            <span className="text-white font-semibold ltr">{student.parent_phone || '-'}</span>
-            <div className="flex items-center gap-2 text-gray-light">
-              <span>رقم ولي الأمر</span>
-              <i className="fas fa-phone"></i>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="bg-[#1a1f37] flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 sm:p-5 rounded-xl border border-white/5 hover:border-primary/50 transition-colors gap-2 sm:gap-0">
+            <div className="flex items-center gap-2 text-gray-light order-2 sm:order-1">
+              <i className="fas fa-phone text-sm"></i>
+              <span className="text-sm">رقم ولي الأمر</span>
             </div>
+            <span className="text-white font-semibold ltr text-sm sm:text-base order-1 sm:order-2">{student.parent_phone || '-'}</span>
           </div>
 
-          <div className="bg-[#1a1f37] flex justify-between items-center p-5 rounded-xl border border-white/5 hover:border-primary/50 transition-colors">
-            <span className="text-white font-semibold">{student.gender === 'male' ? 'ذكر' : 'أنثى'}</span>
-            <div className="flex items-center gap-2 text-gray-light">
-              <span>النوع</span>
-              <i className="fas fa-venus-mars"></i>
+          <div className="bg-[#1a1f37] flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 sm:p-5 rounded-xl border border-white/5 hover:border-primary/50 transition-colors gap-2 sm:gap-0">
+            <div className="flex items-center gap-2 text-gray-light order-2 sm:order-1">
+              <i className="fas fa-venus-mars text-sm"></i>
+              <span className="text-sm">النوع</span>
             </div>
+            <span className="text-white font-semibold text-sm sm:text-base order-1 sm:order-2">{student.gender === 'male' ? 'ذكر' : 'أنثى'}</span>
           </div>
 
-          <div className="bg-[#1a1f37] flex justify-between items-center p-5 rounded-xl border border-white/5 hover:border-primary/50 transition-colors">
-            <span className="text-white font-semibold">{student.education_type === 'general' ? 'عام' : student.education_type === 'azhar' ? 'أزهري' : '-'}</span>
-            <div className="flex items-center gap-2 text-gray-light">
-              <span>نوع التعليم</span>
-              <i className="fas fa-university"></i>
+          <div className="bg-[#1a1f37] flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 sm:p-5 rounded-xl border border-white/5 hover:border-primary/50 transition-colors gap-2 sm:gap-0">
+            <div className="flex items-center gap-2 text-gray-light order-2 sm:order-1">
+              <i className="fas fa-university text-sm"></i>
+              <span className="text-sm">نوع التعليم</span>
             </div>
+            <span className="text-white font-semibold text-sm sm:text-base order-1 sm:order-2">{student.education_type === 'general' ? 'عام' : student.education_type === 'azhar' ? 'أزهري' : '-'}</span>
           </div>
 
-          <div className="bg-[#1a1f37] flex justify-between items-center p-5 rounded-xl border border-white/5 hover:border-primary/50 transition-colors">
-            <span className="text-white font-semibold">{student.grade_name || '-'}</span>
-            <div className="flex items-center gap-2 text-gray-light">
-              <span>الصف الدراسي</span>
-              <i className="fas fa-layer-group"></i>
+          <div className="bg-[#1a1f37] flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 sm:p-5 rounded-xl border border-white/5 hover:border-primary/50 transition-colors gap-2 sm:gap-0">
+            <div className="flex items-center gap-2 text-gray-light order-2 sm:order-1">
+              <i className="fas fa-layer-group text-sm"></i>
+              <span className="text-sm">الصف الدراسي</span>
             </div>
+            <span className="text-white font-semibold text-sm sm:text-base order-1 sm:order-2">{student.grade_name || '-'}</span>
           </div>
 
-          <div className="bg-[#1a1f37] flex justify-between items-center p-5 rounded-xl border border-white/5 hover:border-primary/50 transition-colors">
-            <span className="text-white font-semibold">{student.group_name || '-'}</span>
-            <div className="flex items-center gap-2 text-gray-light">
-              <span>المجموعة</span>
-              <i className="fas fa-users"></i>
+          <div className="bg-[#1a1f37] flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 sm:p-5 rounded-xl border border-white/5 hover:border-primary/50 transition-colors gap-2 sm:gap-0">
+            <div className="flex items-center gap-2 text-gray-light order-2 sm:order-1">
+              <i className="fas fa-users text-sm"></i>
+              <span className="text-sm">المجموعة</span>
             </div>
+            <span className="text-white font-semibold text-sm sm:text-base order-1 sm:order-2">{student.group_name || '-'}</span>
           </div>
 
-          <div className="bg-[#1a1f37] flex justify-between items-center p-5 rounded-xl border border-white/5 hover:border-primary/50 transition-colors">
-            <span className="text-white font-semibold">{student.location || '-'}</span>
-            <div className="flex items-center gap-2 text-gray-light">
-              <span>الموقع</span>
-              <i className="fas fa-map-marker-alt"></i>
+          <div className="bg-[#1a1f37] flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 sm:p-5 rounded-xl border border-white/5 hover:border-primary/50 transition-colors gap-2 sm:gap-0">
+            <div className="flex items-center gap-2 text-gray-light order-2 sm:order-1">
+              <i className="fas fa-map-marker-alt text-sm"></i>
+              <span className="text-sm">الموقع</span>
             </div>
+            <span className="text-white font-semibold text-sm sm:text-base order-1 sm:order-2">{student.location || '-'}</span>
           </div>
 
-          <div className="bg-[#1a1f37] flex justify-between items-center p-5 rounded-xl border border-white/5 hover:border-primary/50 transition-colors">
-            <span className="text-white font-semibold">{new Date(student.created_at).toLocaleDateString('ar-EG')}</span>
-            <div className="flex items-center gap-2 text-gray-light">
-              <span>تاريخ الإضافة</span>
-              <i className="fas fa-calendar-alt"></i>
+          <div className="bg-[#1a1f37] flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 sm:p-5 rounded-xl border border-white/5 hover:border-primary/50 transition-colors gap-2 sm:gap-0 sm:col-span-2">
+            <div className="flex items-center gap-2 text-gray-light order-2 sm:order-1">
+              <i className="fas fa-calendar-alt text-sm"></i>
+              <span className="text-sm">تاريخ الإضافة</span>
             </div>
+            <span className="text-white font-semibold text-sm sm:text-base order-1 sm:order-2">{new Date(student.created_at).toLocaleDateString('ar-EG')}</span>
           </div>
         </div>
       </DashboardCard>
 
+
       {/* Subscription History Section */}
-      <div className="mt-6 sm:mt-8">
+      <div className="mt-4 sm:mt-6">
         <DashboardCard
           title="سجل الاشتراكات"
           icon="fas fa-history"
         >
           {subscriptionHistory.length === 0 ? (
-            <div className="text-center p-8">
-              <p className="text-gray-light">لا يوجد سجل اشتراكات</p>
+            <div className="text-center p-6 sm:p-8">
+              <p className="text-gray-light text-sm">لا يوجد سجل اشتراكات</p>
             </div>
           ) : (
             <>
               {/* Mobile Card Layout */}
               <div className="block sm:hidden space-y-3">
                 {subscriptionHistory.map((item: any, index: number) => (
-                  <div key={index} className="bg-[#1a1f37] p-4 rounded-xl border border-white/5">
-                    <div className="flex justify-between items-center mb-3">
-                      <span className="text-white font-bold">{item.month_name}</span>
-                      <span className={`badge ${
+                  <div key={index} className="bg-[#1a1f37] p-3 sm:p-4 rounded-xl border border-white/5">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-white font-bold text-sm">{item.month_name}</span>
+                      <span className={`badge text-xs ${
                         item.status === 'paid' ? 'badge-success' : 
                         item.status === 'partial' ? 'badge-warning' : 'badge-danger'
                       }`}>
@@ -287,34 +289,36 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
         </DashboardCard>
       </div>
 
+
+
       {/* Exams History Section */}
-      <div className="mt-6 sm:mt-8">
+      <div className="mt-4 sm:mt-6">
         <DashboardCard
           title="سجل الامتحانات"
           icon="fas fa-file-alt"
         >
           {(!student.exam_stats?.results || student.exam_stats.results.length === 0) ? (
-            <div className="text-center p-8">
-              <p className="text-gray-light">لا توجد امتحانات سابقة</p>
+            <div className="text-center p-6 sm:p-8">
+              <p className="text-gray-light text-sm">لا توجد امتحانات سابقة</p>
             </div>
           ) : (
             <>
               {/* Mobile Card Layout */}
               <div className="block sm:hidden space-y-3">
                 {student.exam_stats.results.map((exam: any, index: number) => (
-                  <div key={index} className="bg-[#1a1f37] p-4 rounded-xl border border-white/5">
+                  <div key={index} className="bg-[#1a1f37] p-3 sm:p-4 rounded-xl border border-white/5">
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex-1">
                         <div className="text-white font-bold text-sm">{exam.exam_title}</div>
                         <div className="text-xs text-gray-light mt-1">{new Date(exam.date).toLocaleDateString('ar-EG')}</div>
                       </div>
-                      <span className={`badge ${exam.percentage >= 50 ? 'badge-success' : 'badge-danger'}`}>
+                      <span className={`badge text-xs ${exam.percentage >= 50 ? 'badge-success' : 'badge-danger'}`}>
                         {exam.percentage >= 50 ? 'ناجح' : 'راسب'}
                       </span>
                     </div>
-                    <div className="flex items-center justify-center mt-3 py-2 bg-white/5 rounded-lg">
+                    <div className="flex items-center justify-center mt-2 py-2 bg-white/5 rounded-lg">
                       <i className="fas fa-percent text-primary text-xs ml-2"></i>
-                      <span className="text-white text-lg font-bold">{exam.percentage}%</span>
+                      <span className="text-white text-base font-bold">{exam.percentage}%</span>
                     </div>
                   </div>
                 ))}

@@ -252,4 +252,4 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 // Public Settings
-Route::get('/public-settings', [\App\Http\Controllers\Admin\SettingsController::class, 'getPublicSettings']);       
+Route::get('/public-settings', [\App\Http\Controllers\Admin\SettingsController::class, 'getPublicSettings']);

@@ -33,26 +33,68 @@ export const LectureCard: React.FC<LectureCardProps> = ({
   onCancelSession,
 }) => {
   const isActive = lecture.is_active;
+  const [timeLeft, setTimeLeft] = React.useState<string>('');
+
+  React.useEffect(() => {
+    if (!isActive || !lecture.current_session_end_time) {
+      setTimeLeft('');
+      return;
+    }
+
+    const calculateTimeLeft = () => {
+      const end = new Date(lecture.current_session_end_time!).getTime();
+      const now = new Date().getTime();
+      const difference = end - now;
+
+      if (difference <= 0) {
+        setTimeLeft('00:00:00');
+        return;
+      }
+
+      const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+
+      setTimeLeft(
+        `${hours.toString().padStart(2, '0')}:${minutes
+          .toString()
+          .padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+      );
+    };
+
+    calculateTimeLeft();
+    const timer = setInterval(calculateTimeLeft, 1000);
+
+    return () => clearInterval(timer);
+  }, [isActive, lecture.current_session_end_time]);
 
   return (
     <div 
       className={`relative rounded-2xl p-6 transition-all duration-500 ease-in-out flex flex-col ${isMenuOpen ? 'z-10' : ''} ${
         isActive 
-          ? 'bg-gradient-to-br from-[rgba(46,204,113,0.15)] to-[rgba(46,204,113,0.05)] border-2 border-[#2ecc71] shadow-[0_0_30px_rgba(46,204,113,0.3)]' 
+          ? 'bg-[#101426]/15 border-2 border-primary shadow-[0_0_30px_rgba(66,99,235,0.3)]' 
           : 'bg-[#101426]/15 border border-white/10 hover:shadow-[0_12px_40px_rgba(0,0,0,0.3)] hover:-translate-y-[1px] hover:backdrop-blur-[20px] hover:border-[#1bc5f8]/50'
       }`}
     >
       {/* Top Section: Menu and Status */}
       <div className="flex justify-between items-start mb-6">
         {/* Status Badge */}
-        <span className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${
-          lecture.status === 'جاري الآن' ? 'bg-[#2ecc71]/20 text-[#2ecc71] border border-[#2ecc71]/30' : 
-          lecture.status === 'اليوم' ? 'bg-[#f39c12]/20 text-[#f39c12] border border-[#f39c12]/30' : 
-          lecture.status === 'منتهية' ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30' : 
-          'bg-primary/20 text-primary border border-primary/30'
-        }`}>
-          {lecture.status}
-        </span>
+        <div className="flex gap-2">
+          <span className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${
+            lecture.status === 'جاري الآن' ? 'bg-[#2ecc71]/20 text-[#2ecc71] border border-[#2ecc71]/30' : 
+            lecture.status === 'اليوم' ? 'bg-[#f39c12]/20 text-[#f39c12] border border-[#f39c12]/30' : 
+            lecture.status === 'منتهية' ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30' : 
+            'bg-primary/20 text-primary border border-primary/30'
+          }`}>
+            {lecture.status}
+          </span>
+          
+          {isActive && timeLeft && (
+            <span className="px-3 py-1.5 rounded-lg text-xs font-mono font-bold bg-red-500/20 text-red-400 border border-red-500/30 animate-pulse">
+              {timeLeft}
+            </span>
+          )}
+        </div>
 
         {/* Three-dot Menu */}
         <div className="relative">
@@ -123,7 +165,7 @@ export const LectureCard: React.FC<LectureCardProps> = ({
 
               {lecture.is_recurring && !isActive && lecture.status !== 'منتهية' && (
                 <button
-                  className="actions-menu-item warning w-full"
+                  className="actions-menu-item danger w-full"
                   onClick={(e) => {
                     e.stopPropagation();
                     onCancelSession?.();
@@ -160,12 +202,41 @@ export const LectureCard: React.FC<LectureCardProps> = ({
             <span>{lecture.grade.name}</span>
           </div>
         )}
+        {lecture.group && (
+          <div className="flex items-center gap-3 text-sm text-gray-light">
+            <i className="fas fa-users w-5 text-primary text-base"></i>
+            <span>{lecture.group.name}</span>
+          </div>
+        )}
         <div className="flex items-center gap-3 text-sm text-gray-light">
           <i className="fas fa-clock w-5 text-primary text-base"></i>
           <span>{lecture.time} ({lecture.duration})</span>
         </div>
+        {lecture.is_recurring && lecture.recurrence_days && lecture.recurrence_days.length > 0 && (
+          <div className="flex items-center gap-3 text-sm text-gray-light">
+            <i className="fas fa-redo w-5 text-primary text-base"></i>
+            <div className="flex flex-wrap gap-1">
+              {lecture.recurrence_days.map((day) => {
+                const dayLabels: Record<string, string> = {
+                  'Sunday': 'الأحد',
+                  'Monday': 'الاثنين',
+                  'Tuesday': 'الثلاثاء',
+                  'Wednesday': 'الأربعاء',
+                  'Thursday': 'الخميس',
+                  'Friday': 'الجمعة',
+                  'Saturday': 'السبت',
+                };
+                return (
+                  <span key={day} className="px-2 py-0.5 rounded bg-primary/20 text-primary text-xs">
+                    {dayLabels[day] || day}
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+        )}
         <div className="flex items-center gap-3 text-sm text-gray-light">
-          <i className="fas fa-users w-5 text-primary text-base"></i>
+          <i className="fas fa-user-check w-5 text-primary text-base"></i>
           <span>{lecture.enrolled} طالب مسجل</span>
         </div>
       </div>
@@ -187,32 +258,29 @@ export const LectureCard: React.FC<LectureCardProps> = ({
               </button>
             </div>
           ) : (
-            <>
-              <div className="grid grid-cols-2 gap-3">
-                <button 
-                  className="py-3 rounded-xl bg-[rgba(66,99,235,0.15)] hover:bg-[rgba(66,99,235,0.25)] text-primary border border-primary/30 hover:border-primary/50 font-medium text-sm flex flex-col items-center justify-center gap-1.5 transition-all" 
-                  onClick={onScan}
-                >
-                  <i className="fas fa-qrcode text-base"></i>
-                  <span className="text-xs">مسح QR طالب</span>
-                </button>
-                <button 
-                  className="py-3 rounded-xl bg-[rgba(66,99,235,0.15)] hover:bg-[rgba(66,99,235,0.25)] text-primary border border-primary/30 hover:border-primary/50 font-medium text-sm flex flex-col items-center justify-center gap-1.5 transition-all" 
-                  onClick={onQRCode}
-                >
-                  <i className="fas fa-qrcode text-base"></i>
-                  <span className="text-xs">QR Code</span>
-                </button>
-              </div>
-              
+            <div className="flex items-center gap-2">
               <button 
-                className="btn btn-danger w-full" 
+                className="flex-1 py-3 rounded-xl bg-[rgba(66,99,235,0.15)] hover:bg-[rgba(66,99,235,0.25)] text-primary border border-primary/30 hover:border-primary/50 font-medium text-xs flex flex-col items-center justify-center gap-1.5 transition-all" 
+                onClick={onScan}
+              >
+                <i className="fas fa-qrcode text-sm"></i>
+                <span>مسح QR</span>
+              </button>
+              <button 
+                className="flex-1 py-3 rounded-xl bg-[rgba(66,99,235,0.15)] hover:bg-[rgba(66,99,235,0.25)] text-primary border border-primary/30 hover:border-primary/50 font-medium text-xs flex flex-col items-center justify-center gap-1.5 transition-all" 
+                onClick={onQRCode}
+              >
+                <i className="fas fa-qrcode text-sm"></i>
+                <span>QR Code</span>
+              </button>
+              <button 
+                className="flex-1 py-3 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/30 hover:border-red-500/50 font-medium text-xs flex flex-col items-center justify-center gap-1.5 transition-all" 
                 onClick={onEnd}
               >
-                <i className="fas fa-stop-circle ml-2"></i>
-                <span>إنهاء المحاضرة</span>
+                <i className="fas fa-stop-circle text-sm"></i>
+                <span>إنهاء</span>
               </button>
-            </>
+            </div>
           )}
         </div>
       )}

@@ -34,6 +34,7 @@ export interface Lecture {
   recurrence_time?: string | null;
   duration_minutes?: number | null;
   cancelled_dates?: string[];
+  current_session_end_time?: string;
 }
 
 export interface CreateLectureData {

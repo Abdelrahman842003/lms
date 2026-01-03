@@ -35,8 +35,8 @@ class LectureController extends Controller
             return $this->errorResponse('Unauthorized', 403);
         }
         
-        $perPage = $request->input('per_page', 10);
-        $filters = $request->only(['search', 'date_from', 'date_to', 'group_id']);
+        $perPage = (int) $request->input('per_page', 10);
+        $filters = $request->only(['search', 'date_from', 'date_to', 'group_id', 'status']);
         $lectures = $this->lectureService->getLectures($teacher, $perPage, $filters);
         
         return $this->successResponse(
@@ -73,16 +73,26 @@ class LectureController extends Controller
         }
 
         $data = $request->validated();
+        \Illuminate\Support\Facades\Log::info('Update Lecture Data:', $data);
 
-        if (isset($data['date'])) {
+        if (isset($data['date']) && $data['date']) {
             $date = \Carbon\Carbon::parse($data['date']);
-            $data['start_time'] = $date->copy()->startOfDay();
-            $data['end_time'] = $date->copy()->addHours(24);
+            
+            if (isset($data['recurrence_time']) && isset($data['duration_minutes'])) {
+                // Parse time in Cairo and convert to UTC
+                $data['start_time'] = \Carbon\Carbon::parse($date->format('Y-m-d') . ' ' . $data['recurrence_time'], 'Africa/Cairo')
+                    ->setTimezone('UTC');
+                $data['end_time'] = $data['start_time']->copy()->addMinutes($data['duration_minutes']);
+            } else {
+                // Full day in Cairo converted to UTC
+                $data['start_time'] = $date->copy()->setTimezone('Africa/Cairo')->startOfDay()->setTimezone('UTC');
+                $data['end_time'] = $date->copy()->setTimezone('Africa/Cairo')->addHours(24)->setTimezone('UTC');
+            }
             unset($data['date']);
         }
 
         $lecture = $this->lectureService->updateLecture($lecture, $data);
-
+        
         return $this->successResponse([
             'lecture' => new LectureResource($lecture),
             'message' => 'تم تحديث المحاضرة بنجاح'
@@ -121,6 +131,7 @@ class LectureController extends Controller
             }
         }
 
+        // Dispatch event before deletion if the event handler needs the model's data
         $this->lectureService->deleteLecture($lecture);
 
         return $this->successResponse([
@@ -162,6 +173,8 @@ class LectureController extends Controller
             }
         }
 
+        \App\Events\LectureUpdated::dispatch($lecture);
+
         return $this->successResponse([
             'message' => $lecture->is_active ? 'تم تفعيل المحاضرة' : 'تم إلغاء تفعيل المحاضرة',
             'is_active' => $lecture->is_active
@@ -177,6 +190,8 @@ class LectureController extends Controller
 
         // Allow re-activation of ended lectures (removed the is_active check)
         $this->lectureService->endLecture($lecture);
+
+        \App\Events\LectureUpdated::dispatch($lecture);
 
         return $this->successResponse([
             'message' => 'تم إنهاء المحاضرة وتسجيل الغياب للطلاب المتغيبين',
@@ -359,12 +374,46 @@ class LectureController extends Controller
             'date' => now()->format('Y-m-d'),
         ];
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('exports.attendees', $data);
-        // Set paper to A4 and enable UTF-8
-        $pdf->setPaper('a4', 'portrait');
-        $pdf->setOptions(['defaultFont' => 'dejavu sans']);
+        $defaultConfig = (new \Mpdf\Config\ConfigVariables())->getDefaults();
+        $fontDirs = $defaultConfig['fontDir'];
+
+        $defaultFontConfig = (new \Mpdf\Config\FontVariables())->getDefaults();
+        $fontData = $defaultFontConfig['fontdata'];
+
+        $mpdf = new \Mpdf\Mpdf([
+            'mode' => 'utf-8',
+            'format' => 'A4',
+            'default_font_size' => 11,
+            'default_font' => 'xbriyaz',
+            'margin_left' => 15,
+            'margin_right' => 15,
+            'margin_top' => 15,
+            'margin_bottom' => 15,
+            'tempDir' => storage_path('app/mpdf'),
+            'fontDir' => array_merge($fontDirs, [
+                base_path('vendor/mpdf/mpdf/ttfonts'),
+            ]),
+            'fontdata' => $fontData + [
+                'xbriyaz' => [
+                    'R' => 'XB Riyaz.ttf',
+                    'B' => 'XB RiyazBd.ttf',
+                    'I' => 'XB RiyazIt.ttf',
+                    'BI' => 'XB RiyazBdIt.ttf',
+                    'useOTL' => 0xFF,
+                    'useKashida' => 75,
+                ]
+            ],
+        ]);
+
+        $mpdf->SetDirectionality('rtl');
+        $mpdf->autoScriptToLang = true;
+        $mpdf->autoLangToFont = true;
+
+        $html = view('exports.attendees', $data)->render();
         
-        return $pdf->download("attendance_report_{$lecture->id}.pdf");
+        $mpdf->WriteHTML($html);
+        
+        return $mpdf->Output("attendance_report_{$lecture->id}.pdf", 'D');
     }
     public function cancelSession(CancelSessionRequest $request, Lecture $lecture)
     {

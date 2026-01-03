@@ -87,3 +87,8 @@ Broadcast::channel('notifications.parent.{id}', function ($user, $id) {
     
     return $isGuardian && $idsMatch;
 });
+
+// Lectures channel for real-time updates
+Broadcast::channel('lectures.{id}', function ($user, $id) {
+    return (int) $user->id === (int) $id;
+});

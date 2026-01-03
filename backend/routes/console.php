@@ -12,3 +12,31 @@ Artisan::command('inspire', function () {
 \Illuminate\Support\Facades\Schedule::command('lectures:end-expired')->everyMinute();
 \Illuminate\Support\Facades\Schedule::command('exams:end-expired')->everyMinute();
 \Illuminate\Support\Facades\Schedule::command('payments:expire')->daily();
+\Illuminate\Support\Facades\Schedule::command('lectures:check-status')->everyMinute();
+
+Artisan::command('debug:pdf', function () {
+    try {
+        $lecture = \App\Models\Lecture::with(['grade', 'group'])->first();
+        if (!$lecture) {
+            $this->error('No lecture found');
+            return;
+        }
+        
+        $data = [
+            'lecture' => $lecture,
+            'attendees' => collect([]),
+            'total_present' => 0,
+            'total_absent' => 0,
+            'date' => now()->format('Y-m-d'),
+        ];
+        
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('exports.attendees', $data);
+        $pdf->setPaper('a4', 'portrait');
+        $pdf->setOptions(['defaultFont' => 'dejavu sans', 'isRemoteEnabled' => true]);
+        $pdf->save(storage_path('test.pdf'));
+        $this->info('PDF Generated Successfully at ' . storage_path('test.pdf'));
+    } catch (\Throwable $e) {
+        $this->error('Error: ' . $e->getMessage());
+        $this->error($e->getTraceAsString());
+    }
+});

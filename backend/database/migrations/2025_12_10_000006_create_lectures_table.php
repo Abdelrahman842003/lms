@@ -25,6 +25,7 @@ return new class extends Migration
             $table->json('recurrence_days')->nullable();
             $table->time('recurrence_time')->nullable();
             $table->integer('duration_minutes')->nullable();
+            $table->json('cancelled_dates')->nullable();
             $table->foreignUuid('parent_id')->nullable()->constrained('lectures')->nullOnDelete();
             $table->timestamps();
 

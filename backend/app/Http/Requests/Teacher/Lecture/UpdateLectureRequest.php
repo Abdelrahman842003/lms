@@ -16,7 +16,13 @@ class UpdateLectureRequest extends FormRequest
         return [
             'title' => 'sometimes|string|max:255',
             'description' => 'nullable|string',
-            'date' => 'sometimes|date',
+            'grade_id' => 'sometimes|exists:grades,id',
+            'group_id' => 'nullable|exists:groups,id',
+            'date' => 'nullable|date',
+            'is_recurring' => 'boolean',
+            'recurrence_days' => 'nullable|array',
+            'recurrence_time' => 'nullable|date_format:H:i',
+            'duration_minutes' => 'nullable|integer|min:1',
         ];
     }
 }

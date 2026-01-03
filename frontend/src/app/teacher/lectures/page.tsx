@@ -18,6 +18,7 @@ import {
   endLecture,
   cancelSession,
 } from '@/services/lectureService';
+import { initializeEcho, disconnectEcho } from '@/lib/echo';
 import { getGrades } from '@/services/gradeService';
 import { getGroups, Group } from '@/services/groupService';
 import QRCodeModal from '@/components/dashboard/QRCodeModal';
@@ -135,6 +136,39 @@ export default function TeacherLecturesPage() {
     }
   };
 
+  // Poll every minute to update status and countdowns
+  // Real-time updates with Reverb
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    const echo = initializeEcho(token);
+    
+    // Subscribe to teacher's private channel
+    const channel = echo.private(`lectures.${user.id}`);
+    
+    channel.listen('.LectureUpdated', (event: any) => {
+      console.log('Lecture updated event received:', event);
+      
+      // Refresh lectures list
+      getLectures(currentPage, itemsPerPage, { 
+        search: searchQuery,
+        group_id: selectedGroupId || undefined,
+        status: selectedStatus || undefined
+      }).then(response => {
+        setLectures(response.data);
+        setTotalPages(response.meta.last_page);
+        setTotalItems(response.meta.total);
+      }).catch(console.error);
+    });
+
+    return () => {
+      echo.leave(`lectures.${user.id}`);
+    };
+  }, [user?.id, currentPage, searchQuery, selectedGroupId, selectedStatus]);
+
   const handleAddClick = () => {
     setIsEditing(false);
     setFormData({
@@ -153,15 +187,38 @@ export default function TeacherLecturesPage() {
   const handleEditClick = (lecture: Lecture) => {
     setIsEditing(true);
     setSelectedLecture(lecture);
-    // Convert API date format to datetime-local input format (YYYY-MM-DDTHH:mm)
+    
+    let recurrenceTime = lecture.recurrence_time || '';
+    let durationMinutes = lecture.duration_minutes || 120;
 
+    // If it's a one-time lecture and has start/end times, derive time and duration
+    if (!lecture.is_recurring && lecture.start_time && lecture.end_time) {
+      try {
+        // Extract time from start_time (YYYY-MM-DD HH:mm:ss)
+        const startDate = new Date(lecture.start_time);
+        const hours = startDate.getHours().toString().padStart(2, '0');
+        const minutes = startDate.getMinutes().toString().padStart(2, '0');
+        recurrenceTime = `${hours}:${minutes}`;
+
+        // Calculate duration
+        const endDate = new Date(lecture.end_time);
+        const diffMs = endDate.getTime() - startDate.getTime();
+        durationMinutes = Math.round(diffMs / 60000);
+      } catch (e) {
+        console.error('Error parsing dates:', e);
+      }
+    }
 
     setFormData({
       title: lecture.title,
       description: lecture.description || '',
       grade_id: lecture.grade_id || '',
       group_id: lecture.group_id || '',
-      date: lecture.start_time.split(' ')[0], // Extract YYYY-MM-DD
+      date: lecture.start_time ? lecture.start_time.split(' ')[0] : '', // Extract YYYY-MM-DD
+      is_recurring: lecture.is_recurring || false,
+      recurrence_days: lecture.recurrence_days || [],
+      recurrence_time: recurrenceTime,
+      duration_minutes: durationMinutes,
     });
     setShowModal(true);
   };
@@ -175,6 +232,10 @@ export default function TeacherLecturesPage() {
       grade_id: lecture.grade_id || '', // Ensure it's a string
       group_id: lecture.group_id || '', // Ensure it's a string
       date: '', // Reset date for a new lecture
+      is_recurring: lecture.is_recurring || false,
+      recurrence_days: lecture.recurrence_days || [],
+      recurrence_time: lecture.recurrence_time || '',
+      duration_minutes: lecture.duration_minutes || 120,
     });
     setShowModal(true);
   };
@@ -426,6 +487,7 @@ export default function TeacherLecturesPage() {
           <Filter
             options={[
               { value: '', label: 'كل الحالات' },
+              { value: 'today', label: 'اليوم' },
               { value: 'upcoming', label: 'قادمة' },
               { value: 'ongoing', label: 'جارية' },
               { value: 'finished', label: 'منتهية' },
@@ -441,7 +503,7 @@ export default function TeacherLecturesPage() {
 
       {/* Lectures Grid */}
       {isLoading ? (
-        <div className="lectures-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="lectures-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <div key={i} className="rounded-2xl bg-[#101426]/15 border border-white/10 h-[280px] flex flex-col gap-4 p-6">
               <div className="flex justify-between items-start">
@@ -471,7 +533,7 @@ export default function TeacherLecturesPage() {
           </button>
         </div>
       ) : (
-<div className="lectures-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+<div className="lectures-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {lectures.map((lecture) => {
             const isMenuOpen = openMenuId === lecture.id;
             return (
@@ -505,6 +567,10 @@ export default function TeacherLecturesPage() {
               onEnd={() => handleEndLectureClick(lecture)}
               onManualAttendance={() => {
                 handleManualAttendanceClick(lecture);
+                setOpenMenuId(null);
+              }}
+              onCancelSession={() => {
+                handleCancelSessionClick(lecture);
                 setOpenMenuId(null);
               }}
             />
@@ -690,20 +756,42 @@ export default function TeacherLecturesPage() {
                     </div>
                   </>
                 ) : (
-                  <div className="form-group">
-                    <label htmlFor="date">تاريخ المحاضرة</label>
-                    <input
-                      type="date"
-                      id="date"
-                      className="form-input"
-                      value={formData.date}
-                      onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                      required={!formData.is_recurring}
-                    />
-                    <p className="text-xs text-gray-light mt-1">
-                      ستبدأ المحاضرة في بداية هذا اليوم وتستمر لمدة 24 ساعة.
-                    </p>
-                  </div>
+                  <>
+                    <div className="form-group">
+                      <label htmlFor="date">تاريخ المحاضرة</label>
+                      <input
+                        type="date"
+                        id="date"
+                        className="form-input"
+                        value={formData.date}
+                        onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                        required={!formData.is_recurring}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label htmlFor="recurrence_time">وقت المحاضرة</label>
+                      <input
+                        type="time"
+                        id="recurrence_time"
+                        className="form-input"
+                        value={formData.recurrence_time}
+                        onChange={(e) => setFormData({ ...formData, recurrence_time: e.target.value })}
+                        required={!formData.is_recurring}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label htmlFor="duration_minutes">مدة المحاضرة (دقيقة)</label>
+                      <input
+                        type="number"
+                        id="duration_minutes"
+                        className="form-input"
+                        value={formData.duration_minutes}
+                        onChange={(e) => setFormData({ ...formData, duration_minutes: parseInt(e.target.value) })}
+                        min="1"
+                        required={!formData.is_recurring}
+                      />
+                    </div>
+                  </>
                 )}
               </div>
               <div className="modal-footer">

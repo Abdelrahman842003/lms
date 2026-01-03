@@ -6,6 +6,7 @@ import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { useAuth } from '@/contexts/AuthContext';
 import { getAttendees, exportAttendeesPDF, AttendeesResponse } from '@/services/lectureService';
+import { Filter } from '@/components/Filter';
 import toast from 'react-hot-toast';
 
 
@@ -143,24 +144,21 @@ export default function LectureAttendancePage() {
 
       {/* Filters */}
       <div className="mb-6">
-        <label className="block text-sm text-gray-400 mb-2">تصفية حسب التاريخ</label>
         <div className="w-full md:w-1/3">
-          <select
+          <Filter
+            options={[
+              { value: 'all', label: 'كل التواريخ' },
+              { value: 'last_month', label: 'الشهر الماضي' },
+              ...(data?.available_dates?.map((dateObj) => ({
+                value: dateObj.date,
+                label: `${new Date(dateObj.date).toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}${dateObj.status === 'cancelled' ? ' (ملغاة)' : ''}${dateObj.status === 'not_activated' ? ' (لم تفعل)' : ''}`
+              })) || [])
+            ]}
             value={selectedDateFilter}
-            onChange={(e) => handleDateFilterChange(e.target.value)}
-            className="form-input w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white appearance-none cursor-pointer"
-            style={{ backgroundImage: 'none' }}
-          >
-            <option value="all" className="bg-[#1a1f37]">كل التواريخ</option>
-            <option value="last_month" className="bg-[#1a1f37]">الشهر الماضي</option>
-            {data?.available_dates?.map((dateObj) => (
-              <option key={dateObj.date} value={dateObj.date} className="bg-[#1a1f37]">
-                {new Date(dateObj.date).toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                {dateObj.status === 'cancelled' ? ' (ملغاة)' : ''}
-                {dateObj.status === 'not_activated' ? ' (لم تفعل)' : ''}
-              </option>
-            ))}
-          </select>
+            onChange={(value) => handleDateFilterChange(value)}
+            placeholder="تصفية حسب التاريخ"
+            className="w-full"
+          />
         </div>
       </div>
 

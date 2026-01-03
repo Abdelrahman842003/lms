@@ -23,11 +23,10 @@ class TeacherDataSeeder extends Seeder
     {
         // 1. Get or Create Main Demo Teacher
         $demoTeacher = Teacher::firstOrCreate(
-            ['username' => 'teacher'],
+            ['phone' => '01000000000'],
             [
                 'name' => 'Demo Teacher',
                 'password' => Hash::make('password'),
-                'phone' => '01000000000',
             ]
         );
 
@@ -97,6 +96,8 @@ class TeacherDataSeeder extends Seeder
             
             $lecture = Lecture::create([
                 'teacher_id' => $teacher->id,
+                'grade_id' => $grades[0]->id,
+                'group_id' => $groups[0]->id,
                 'title' => "Lecture " . (5 - $i) . " - " . $grades[0]->name,
                 'description' => 'Important lecture covering key concepts.',
                 'start_time' => $date->copy()->setHour(10),
@@ -120,6 +121,8 @@ class TeacherDataSeeder extends Seeder
             $date = Carbon::now()->addDays($i * 3);
             Lecture::create([
                 'teacher_id' => $teacher->id,
+                'grade_id' => $grades[0]->id,
+                'group_id' => $groups[0]->id,
                 'title' => "Upcoming Lecture $i",
                 'description' => 'Future lecture.',
                 'start_time' => $date->copy()->setHour(10),

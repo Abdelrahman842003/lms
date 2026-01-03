@@ -22,8 +22,12 @@ class SettingsServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Prevent issues during migration or if table doesn't exist
-        if (!Schema::hasTable('settings')) {
+        try {
+            // Prevent issues during migration or if table doesn't exist
+            if (!Schema::hasTable('settings')) {
+                return;
+            }
+        } catch (\Exception $e) {
             return;
         }
 

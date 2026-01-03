@@ -86,5 +86,39 @@ class Lecture extends Model
         if ($groupId = $filters['group_id'] ?? null) {
             $query->where('group_id', $groupId);
         }
+
+        if ($status = $filters['status'] ?? null) {
+            switch ($status) {
+                case 'today':
+                    $query->where(function ($q) {
+                        $q->whereDate('start_time', \Carbon\Carbon::today())
+                          ->orWhere(function ($q) {
+                              $q->where('is_recurring', true)
+                                ->whereJsonContains('recurrence_days', \Carbon\Carbon::now()->format('l'));
+                          });
+                    });
+                    break;
+                case 'upcoming':
+                    $query->where('start_time', '>', now())
+                          ->where('is_active', false);
+                    break;
+                case 'ongoing':
+                    $query->where(function ($q) {
+                        $q->where('is_active', true)
+                          ->orWhere(function ($q) {
+                              $q->where('start_time', '<=', now())
+                                ->where('end_time', '>', now());
+                          });
+                    });
+                    break;
+                case 'finished':
+                    $query->where('end_time', '<=', now())
+                          ->where('is_active', false);
+                    break;
+                case 'recurring':
+                    $query->where('is_recurring', true);
+                    break;
+            }
+        }
     }
 }

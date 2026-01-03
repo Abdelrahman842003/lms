@@ -64,13 +64,24 @@ final readonly class LectureData
             ];
         }
 
+        // Default to full day in Cairo, converted to UTC
+        $startTime = $this->date?->copy()->setTimezone('Africa/Cairo')->startOfDay()->setTimezone('UTC');
+        $endTime = $this->date?->copy()->setTimezone('Africa/Cairo')->addHours(24)->setTimezone('UTC');
+
+        if ($this->recurrenceTime && $this->durationMinutes) {
+            // Parse the specific time in Cairo timezone
+            $startTime = Carbon::parse($this->date->format('Y-m-d') . ' ' . $this->recurrenceTime, 'Africa/Cairo')
+                ->setTimezone('UTC');
+            $endTime = $startTime->copy()->addMinutes($this->durationMinutes);
+        }
+
         return [
             'title' => $this->title,
             'description' => $this->description,
             'grade_id' => $this->gradeId,
             'group_id' => $this->groupId,
-            'start_time' => $this->date?->copy()->startOfDay(),
-            'end_time' => $this->date?->copy()->addHours(24),
+            'start_time' => $startTime,
+            'end_time' => $endTime,
             'is_active' => false,
         ];
     }

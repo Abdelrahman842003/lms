@@ -63,7 +63,7 @@ class ExamController extends Controller
 
     public function index(\Illuminate\Http\Request $request)
     {
-        $perPage = $request->input('per_page', 10);
+        $perPage = (int) $request->input('per_page', 10);
         $filters = $request->only(['search', 'date_from', 'date_to']);
         $exams = $this->examService->getExams($this->getTeacherFromRequest(request()), $perPage, $filters);
 
