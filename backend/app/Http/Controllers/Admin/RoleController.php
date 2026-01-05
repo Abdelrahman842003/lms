@@ -5,34 +5,29 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Services\Admin\RoleService;
+use App\Http\Requests\Admin\Role\StoreRoleRequest;
+use App\Http\Requests\Admin\Role\UpdateRoleRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Spatie\Permission\Models\Role;
-use Spatie\Permission\Models\Permission;
 
 class RoleController extends Controller
 {
+    public function __construct(
+        private RoleService $roleService
+    ) {}
     public function index(): JsonResponse
     {
-        $roles = Role::with('permissions')->get();
+        $roles = $this->roleService->getAllRoles();
         return $this->successResponse($roles);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreRoleRequest $request): JsonResponse
     {
-        $request->validate([
-            'name' => 'required|string|unique:roles,name',
-            'permissions' => 'array',
-            'permissions.*' => 'string|exists:permissions,name',
-        ]);
+        $role = $this->roleService->createRole($request->validated());
 
-        $role = Role::create(['name' => $request->name, 'guard_name' => 'admin']);
-
-        if ($request->has('permissions')) {
-            $role->syncPermissions($request->permissions);
-        }
-
-        return $this->successResponse($role->load('permissions'), 'تم إنشاء الدور بنجاح', 201);
+        return $this->successResponse($role, 'تم إنشاء الدور بنجاح', 201);
     }
 
     public function show(Role $role): JsonResponse
@@ -40,26 +35,16 @@ class RoleController extends Controller
         return $this->successResponse($role->load('permissions'));
     }
 
-    public function update(Request $request, Role $role): JsonResponse
+    public function update(UpdateRoleRequest $request, Role $role): JsonResponse
     {
-        $request->validate([
-            'name' => 'required|string|unique:roles,name,' . $role->id,
-            'permissions' => 'array',
-            'permissions.*' => 'string|exists:permissions,name',
-        ]);
+        $role = $this->roleService->updateRole($role, $request->validated());
 
-        $role->update(['name' => $request->name]);
-
-        if ($request->has('permissions')) {
-            $role->syncPermissions($request->permissions);
-        }
-
-        return $this->successResponse($role->load('permissions'), 'تم تحديث الدور بنجاح');
+        return $this->successResponse($role, 'تم تحديث الدور بنجاح');
     }
 
     public function destroy(Role $role): JsonResponse
     {
-        $role->delete();
+        $this->roleService->deleteRole($role);
         return $this->successResponse(null, 'تم حذف الدور بنجاح');
     }
 }

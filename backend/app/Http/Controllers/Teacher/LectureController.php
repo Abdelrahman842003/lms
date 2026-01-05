@@ -64,6 +64,18 @@ class LectureController extends Controller
             return $this->errorResponse($e->getMessage(), 500);
         }
     }
+    
+    public function show(Request $request, Lecture $lecture)
+    {
+        $teacher = $this->getTeacherFromRequest($request);
+        if (!$teacher || $lecture->teacher_id !== $teacher->id) {
+            return $this->errorResponse('Unauthorized', 403);
+        }
+
+        return $this->successResponse([
+            'lecture' => new LectureResource($lecture->load(['grade', 'group']))
+        ]);
+    }
 
     public function update(UpdateLectureRequest $request, Lecture $lecture)
     {
@@ -146,34 +158,7 @@ class LectureController extends Controller
             return $this->errorResponse('Unauthorized', 403);
         }
 
-        $lecture->update([
-            'is_active' => !$lecture->is_active
-        ]);
-
-        if ($lecture->is_active) {
-            try {
-                // Get active students enrolled in this grade
-                $students = $lecture->teacher->students()
-                    ->wherePivot('grade_id', $lecture->grade_id)
-                    ->wherePivot('is_active', true)
-                    ->get();
-
-                if ($students->count() > 0) {
-                    \Illuminate\Support\Facades\Notification::send(
-                        $students, 
-                        new \App\Notifications\LectureActivatedNotification(
-                            $lecture->title, 
-                            $lecture->teacher->name, 
-                            $lecture->id
-                        )
-                    );
-                }
-            } catch (\Exception $e) {
-                \Illuminate\Support\Facades\Log::error('Failed to send lecture activation notification: ' . $e->getMessage());
-            }
-        }
-
-        \App\Events\LectureUpdated::dispatch($lecture);
+        $lecture = $this->lectureService->toggleActive($lecture);
 
         return $this->successResponse([
             'message' => $lecture->is_active ? 'تم تفعيل المحاضرة' : 'تم إلغاء تفعيل المحاضرة',
@@ -213,117 +198,13 @@ class LectureController extends Controller
             return $this->errorResponse('Unauthorized', 403);
         }
 
-        // Get all active students for this teacher in this grade/group
-        $query = $lecture->teacher->students()
-            ->wherePivot('grade_id', $lecture->grade_id)
-            ->wherePivot('is_active', true);
-            
-        if ($lecture->group_id) {
-            $query->wherePivot('group_id', $lecture->group_id);
-        }
+        $filters = [
+            'date_from' => $request->input('date_from'),
+            'date_to' => $request->input('date_to'),
+        ];
 
-        $allStudents = $query->get();
-
-        // Get existing attendance records
-        $attendanceQuery = $lecture->attendances();
-
-        if ($request->has('date_from')) {
-            $attendanceQuery->whereDate('created_at', '>=', $request->input('date_from'));
-        }
-
-        if ($request->has('date_to')) {
-            $attendanceQuery->whereDate('created_at', '<=', $request->input('date_to'));
-        }
-
-        $attendanceRecords = $attendanceQuery->get()->keyBy('student_id');
-
-        $attendees = $allStudents->map(function ($student) use ($attendanceRecords) {
-            $record = $attendanceRecords->get($student->id);
-            
-            return [
-                'id' => $record ? $record->id : null,
-                'student_id' => $student->id,
-                'student_name' => $student->name,
-                'student_phone' => $student->phone,
-                'status' => $record ? $record->status : 'absent', // Default to absent if no record
-                'attended_at' => $record ? $record->created_at->format('Y-m-d H:i:s') : null,
-            ];
-        });
-
-        // Get available dates logic
-        $availableDates = [];
-        
-        if ($lecture->is_recurring && is_array($lecture->recurrence_days)) {
-            $startDate = $lecture->created_at->copy()->startOfDay();
-            $endDate = now()->endOfDay();
-            
-            // Map day names to Carbon integers (Sunday = 0, Monday = 1, etc.)
-            $dayMap = [
-                'Sunday' => 0,
-                'Monday' => 1,
-                'Tuesday' => 2,
-                'Wednesday' => 3,
-                'Thursday' => 4,
-                'Friday' => 5,
-                'Saturday' => 6,
-            ];
-            
-            $recurrenceDays = array_map(function($day) use ($dayMap) {
-                return $dayMap[$day] ?? null;
-            }, $lecture->recurrence_days);
-            
-            $recurrenceDays = array_filter($recurrenceDays, function($day) {
-                return $day !== null;
-            });
-
-            // Iterate from start date to today
-            $current = $startDate->copy();
-            while ($current <= $endDate) {
-                if (in_array($current->dayOfWeek, $recurrenceDays)) {
-                    $dateStr = $current->format('Y-m-d');
-                    
-                    // Check status
-                    $status = 'not_activated';
-                    
-                    // Check if attendance exists for this date
-                    $hasAttendance = $lecture->attendances()
-                        ->whereDate('created_at', $dateStr)
-                        ->exists();
-                        
-                    if ($hasAttendance) {
-                        $status = 'active';
-                    } elseif (in_array($dateStr, $lecture->cancelled_dates ?? [])) {
-                        $status = 'cancelled';
-                    }
-                    
-                    $availableDates[] = [
-                        'date' => $dateStr,
-                        'status' => $status
-                    ];
-                }
-                $current->addDay();
-            }
-            
-            // Sort descending
-            usort($availableDates, function($a, $b) {
-                return strcmp($b['date'], $a['date']);
-            });
-            
-        } else {
-            // For non-recurring, just get dates with attendance
-            $dates = $lecture->attendances()
-                ->selectRaw('DATE(created_at) as date')
-                ->distinct()
-                ->orderBy('date', 'desc')
-                ->pluck('date');
-                
-            foreach ($dates as $date) {
-                $availableDates[] = [
-                    'date' => $date,
-                    'status' => 'active'
-                ];
-            }
-        }
+        $data = $this->lectureService->getAttendees($lecture, $filters);
+        $availableDates = $this->lectureService->getAvailableDates($lecture);
 
         return $this->successResponse([
             'lecture' => [
@@ -333,9 +214,9 @@ class LectureController extends Controller
                 'recurrence_days' => $lecture->recurrence_days,
                 'group_name' => $lecture->group ? $lecture->group->name : 'كل المجموعات',
             ],
-            'attendees' => $attendees->values(),
-            'total_present' => $attendees->where('status', 'present')->count(),
-            'total_absent' => $attendees->where('status', 'absent')->count(),
+            'attendees' => $data['attendees'],
+            'total_present' => $data['total_present'],
+            'total_absent' => $data['total_absent'],
             'available_dates' => $availableDates,
         ]);
     }
@@ -423,33 +304,7 @@ class LectureController extends Controller
         }
 
         $validated = $request->validated();
-        $date = $validated['date'];
-        $cancelledDates = $lecture->cancelled_dates ?? [];
-
-        if (!in_array($date, $cancelledDates)) {
-            $cancelledDates[] = $date;
-            $lecture->update(['cancelled_dates' => $cancelledDates]);
-
-            // Notify students
-            try {
-                $students = $lecture->teacher->students()
-                    ->wherePivot('grade_id', $lecture->grade_id)
-                    ->wherePivot('is_active', true)
-                    ->get();
-
-                if ($students->count() > 0) {
-                    \Illuminate\Support\Facades\Notification::send(
-                        $students, 
-                        new \App\Notifications\LectureCancelledNotification(
-                            $lecture->title . ' (' . $date . ')', 
-                            $lecture->teacher->name
-                        )
-                    );
-                }
-            } catch (\Exception $e) {
-                \Illuminate\Support\Facades\Log::error('Failed to send session cancellation notification: ' . $e->getMessage());
-            }
-        }
+        $this->lectureService->cancelSession($lecture, $validated['date']);
 
         return $this->successResponse([
             'message' => 'تم إلغاء المحاضرة لهذا اليوم وإرسال الإشعارات',

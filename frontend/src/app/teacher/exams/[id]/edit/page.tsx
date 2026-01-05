@@ -14,6 +14,7 @@ interface Question {
   text: string;
   options: string[];
   correct_answer: string;
+  duration?: number;
 }
 
 export default function EditExamPage() {
@@ -53,11 +54,17 @@ export default function EditExamPage() {
       setIsLoading(true);
       const data = await getExam(examId);
       
-      // Parse date for datetime-local input
+      // Parse date for datetime-local input (handle timezone correctly)
       let formattedDate = '';
       if (data.date) {
         const date = new Date(data.date);
-        formattedDate = date.toISOString().slice(0, 16);
+        // Format as YYYY-MM-DDTHH:mm in local timezone
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        formattedDate = `${year}-${month}-${day}T${hours}:${minutes}`;
       }
 
       setFormData({
@@ -170,16 +177,34 @@ export default function EditExamPage() {
     setSuccessMessage('');
 
     try {
+      // Add duration to each question
+      const questionsWithDuration = questions.map(q => ({
+        ...q,
+        duration: q.duration || formData.time_per_question || 60,
+      }));
+
+      // Format date manually to ensure it's sent as local time string
+      const dateObj = new Date(formData.date);
+      const year = dateObj.getFullYear();
+      const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const day = String(dateObj.getDate()).padStart(2, '0');
+      const hours = String(dateObj.getHours()).padStart(2, '0');
+      const minutes = String(dateObj.getMinutes()).padStart(2, '0');
+      const seconds = String(dateObj.getSeconds()).padStart(2, '0');
+      const formattedDateString = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+      
+
+
       const submitData = {
         title: formData.title,
         subject: formData.subject,
         grade_id: formData.grade_id,
-        date: formData.date,
+        date: formattedDateString,
         duration: formData.duration,
         total_marks: formData.max_score,
         actual_question_count: formData.actual_question_count,
         time_per_question: formData.time_per_question,
-        questions: questions,
+        questions: questionsWithDuration,
       };
 
       const response = await updateExam(examId, submitData);
@@ -328,6 +353,7 @@ export default function EditExamPage() {
                 }`}
                 value={formData.date}
                 onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                step="60"
                 disabled={isSubmitting}
               />
               {formErrors.date && <span className="text-red-500 text-sm mt-1 block">{formErrors.date}</span>}

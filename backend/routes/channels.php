@@ -90,5 +90,5 @@ Broadcast::channel('notifications.parent.{id}', function ($user, $id) {
 
 // Lectures channel for real-time updates
 Broadcast::channel('lectures.{id}', function ($user, $id) {
-    return (int) $user->id === (int) $id;
+    return (string) $user->id === (string) $id;
 });

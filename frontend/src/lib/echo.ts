@@ -40,12 +40,11 @@ export const initializeEcho = (token: string): Echo<"reverb"> => {
 
   echoInstance = new Echo({
     broadcaster: "reverb",
-    key: process.env.NEXT_PUBLIC_REVERB_APP_KEY,
-    wsHost: process.env.NEXT_PUBLIC_REVERB_HOST,
-    // Production: use 443 (Nginx), Development: use 8080 direct
-    wsPort: isProduction ? 443 : parseInt(process.env.NEXT_PUBLIC_REVERB_PORT || "8080"),
-    wssPort: isProduction ? 443 : parseInt(process.env.NEXT_PUBLIC_REVERB_PORT || "443"),
-    forceTLS: isProduction,
+    key: process.env.NEXT_PUBLIC_REVERB_APP_KEY || 'y2vqna5uho5zsdz6kdyz',
+    wsHost: 'localhost',
+    wsPort: 8080,
+    wssPort: 8080,
+    forceTLS: false,
     enabledTransports: ["ws", "wss"],
     authEndpoint: `${baseUrl}/api/broadcasting/auth`,
     auth: {

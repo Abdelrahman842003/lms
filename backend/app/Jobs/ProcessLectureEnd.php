@@ -24,6 +24,21 @@ class ProcessLectureEnd implements ShouldQueue
 
     public function handle(): void
     {
+        // Ensure lecture is deactivated if this job is triggered
+        if ($this->lecture->is_active) {
+            $this->lecture->update(['is_active' => false]);
+            
+            // Refresh model to get updated data
+            $this->lecture->refresh();
+            
+            \App\Events\LectureUpdated::dispatch($this->lecture);
+            
+            Log::info("ProcessLectureEnd: Auto-deactivated lecture {$this->lecture->id}");
+            
+            // Notify teacher immediately
+            $this->lecture->teacher->notify(new \App\Notifications\LectureStatusNotification($this->lecture, 'finished'));
+        }
+
         $teacher = $this->lecture->teacher;
         
         if (!$teacher) {
@@ -68,6 +83,28 @@ class ProcessLectureEnd implements ShouldQueue
             'total_students' => $activeStudents->count(),
             'absent_marked' => $absentCount
         ]);
+
+        // Schedule next occurrence for recurring lectures
+        if ($this->lecture->is_recurring && $this->lecture->recurrence_days && $this->lecture->recurrence_time) {
+            $now = now();
+            $nextOccurrence = null;
+            
+            // Find the next valid day
+            for ($i = 1; $i <= 7; $i++) {
+                $date = $now->copy()->addDays($i)->setTimezone('Africa/Cairo');
+                if (in_array($date->format('l'), $this->lecture->recurrence_days)) {
+                    $nextOccurrence = \Carbon\Carbon::parse($date->format('Y-m-d') . ' ' . $this->lecture->recurrence_time, 'Africa/Cairo')
+                        ->setTimezone('UTC');
+                    break;
+                }
+            }
+
+            if ($nextOccurrence) {
+                $delay = max(0, now()->diffInSeconds($nextOccurrence, false));
+                ProcessLectureStart::dispatch($this->lecture)->delay($delay);
+                Log::info("ProcessLectureEnd: Scheduled next occurrence for {$this->lecture->id} in {$delay}s at {$nextOccurrence}");
+            }
+        }
     }
 }
 

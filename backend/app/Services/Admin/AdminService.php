@@ -17,13 +17,34 @@ class AdminService
             throw ValidationException::withMessages(['username' => ['بيانات الدخول غير صحيحة']]);
         }
 
-        $token = $admin->createToken('admin_token', ['access-api'], now()->addMinutes(60))->plainTextToken;
+        // Generate Access Token (Short-lived - 60 mins)
+        $accessToken = $admin->createToken('access_token', ['access-api'], now()->addMinutes(60))->plainTextToken;
+        
+        // Generate Refresh Token (Long-lived - 30 days)
+        $refreshToken = $admin->createToken('refresh_token', ['issue-access-token'], now()->addDays(30))->plainTextToken;
 
         return [
-            'access_token' => $token,
+            'access_token' => $accessToken,
+            'refresh_token' => $refreshToken,
             'token_type' => 'Bearer',
             'user' => $admin,
         ];
+    }
+
+    public function logout($user, ?string $fcmToken = null): void
+    {
+        // Delete FCM token if provided
+        if ($fcmToken) {
+            \App\Models\DeviceToken::where('tokenable_id', $user->id)
+                ->where('tokenable_type', get_class($user))
+                ->where('token', $fcmToken)
+                ->delete();
+        }
+
+        // Delete current token
+        if ($user->currentAccessToken()) {
+            $user->currentAccessToken()->delete();
+        }
     }
 
     public function register(array $data): array

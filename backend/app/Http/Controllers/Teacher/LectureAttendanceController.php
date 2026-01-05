@@ -19,19 +19,21 @@ class LectureAttendanceController extends Controller
             abort(403, 'Unauthorized');
         }
 
-        $token = Str::random(32);
-        $lecture->update([
-            'qr_code' => $token,
-            'qr_code_expires_at' => Carbon::now()->addHour(),
-        ]);
+        // Generate a signed token valid for 10 seconds (5s refresh + 5s buffer)
+        $payload = [
+            'lecture_id' => $lecture->id,
+            'expires_at' => Carbon::now()->addSeconds(10)->timestamp,
+            'salt' => Str::random(8)
+        ];
+        
+        $token = \Illuminate\Support\Facades\Crypt::encryptString(json_encode($payload));
 
         // Return the full URL that the student should visit
-        // Assuming the frontend student route is /student/attend?token=...
         $url = config('app.url') . '/student/attend?token=' . $token;
 
         return $this->successResponse([
             'qr_code_url' => $url,
-            'expires_at' => $lecture->qr_code_expires_at,
+            'expires_at' => Carbon::now()->addSeconds(10),
         ]);
     }
 

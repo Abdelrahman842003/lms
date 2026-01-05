@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\Teacher\TeacherResource;
 use App\Services\Admin\TeacherService;
 use App\Traits\ApiResponseTrait;
+use App\Http\Requests\Admin\Teacher\UpdateSubscriptionRequest;
+use App\Http\Requests\Admin\Teacher\GetSubscriptionRequest;
 use Illuminate\Http\Request;
 
 class TeacherController extends Controller
@@ -41,25 +43,17 @@ class TeacherController extends Controller
 
     public function loginAsTeacher($id)
     {
-        $teacher = \App\Models\Teacher::findOrFail($id);
-        
-        // Create token for the teacher
-        $token = $teacher->createToken('teacher_token', ['access-api'], now()->addMinutes(60))->plainTextToken;
+        $result = $this->teacherService->loginAsTeacher($id);
         
         return $this->successResponse([
-            'token' => $token,
-            'user' => new TeacherResource($teacher),
-            'role' => 'teacher'
+            'token' => $result['token'],
+            'user' => new TeacherResource($result['user']),
+            'role' => $result['role']
         ], 'تم تسجيل الدخول بنجاح');
     }
 
-    public function updateSubscription(Request $request, $id)
+    public function updateSubscription(UpdateSubscriptionRequest $request, $id)
     {
-        $request->validate([
-            'month' => 'required|date_format:Y-m',
-            'payment_amount' => 'nullable|numeric|min:0',
-        ]);
-
         $teacher = $this->teacherService->paySubscription(
             $id, 
             $request->month . '-01', 
@@ -72,12 +66,8 @@ class TeacherController extends Controller
         );
     }
 
-    public function getSubscription(Request $request, $id)
+    public function getSubscription(GetSubscriptionRequest $request, $id)
     {
-        $request->validate([
-            'month' => 'required|date_format:Y-m',
-        ]);
-
         $subscription = $this->teacherService->getSubscriptionForMonth($id, $request->month . '-01');
 
         return $this->successResponse($subscription);

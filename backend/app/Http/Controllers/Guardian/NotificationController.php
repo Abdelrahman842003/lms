@@ -7,76 +7,57 @@ use App\Models\Student;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
+use App\Services\Guardian\GuardianNotificationService;
+
 class NotificationController extends Controller
 {
+    protected $notificationService;
+
+    public function __construct(GuardianNotificationService $notificationService)
+    {
+        $this->notificationService = $notificationService;
+    }
     /**
      * Get all notifications for all children
      */
     public function index(Request $request)
     {
         $parent = $request->user();
-        
-        if (!$parent || !$parent->phone) {
-            return $this->errorResponse('غير مصرح', 401);
-        }
+        $perPage = $request->input('per_page', 20);
 
-        // Get all children
-        $children = Student::where('parent_phone', $parent->phone)->get();
+        $notifications = $this->notificationService->getNotifications($parent, $perPage);
+        $unreadCount = $this->notificationService->getUnreadCount($parent);
 
-        $allNotifications = [];
-
-        foreach ($children as $child) {
-            // Get received notifications (from teachers/admin)
-            $childNotifications = $child->notifications()
-                ->orderBy('created_at', 'desc')
-                ->get()
-                ->map(function ($notification) use ($child) {
-                    $data = $notification->data ?? [];
-                    return [
-                        'id' => $notification->id,
-                        'child_id' => $child->id,
-                        'child_name' => $child->name,
-                        'title' => $data['title'] ?? 'إشعار',
-                        'message' => $data['message'] ?? '',
-                        'type' => $data['type'] ?? 'general',
-                        'sender_name' => $data['sender_name'] ?? 'النظام',
-                        'created_at' => $notification->created_at,
-                        'read_at' => $notification->read_at,
-                    ];
-                });
-
-            $allNotifications = array_merge($allNotifications, $childNotifications->toArray());
-        }
-
-        // Sort by created_at descending
-        usort($allNotifications, function ($a, $b) {
-            return strtotime($b['created_at']) - strtotime($a['created_at']);
+        // Transform notifications
+        $formattedNotifications = $notifications->map(function ($notification) {
+            $data = $notification->data ?? [];
+            return [
+                'id' => (string)$notification->id,
+                'type' => $data['type'] ?? 'general',
+                'data' => [
+                    'title' => $data['title'] ?? 'إشعار',
+                    'message' => $data['message'] ?? '',
+                    'sender_name' => $data['sender_name'] ?? 'النظام',
+                    'child_name' => $data['child_name'] ?? null, // Might need to fetch if not in data
+                ],
+                'read_at' => $notification->read_at,
+                'created_at' => $notification->created_at,
+            ];
         });
 
-        // Calculate stats
-        $totalCount = count($allNotifications);
-        $unreadCount = count(array_filter($allNotifications, fn($n) => $n['read_at'] === null));
-
         return $this->successResponse([
-            'notifications' => [],
-            'received_notifications' => array_map(function ($n) {
-                return [
-                    'id' => (string)$n['id'],
-                    'type' => $n['type'] ?? 'general',
-                    'data' => [
-                        'title' => $n['title'],
-                        'message' => $n['message'],
-                        'sender_name' => $n['sender_name'],
-                        'child_name' => $n['child_name'] ?? null,
-                    ],
-                    'read_at' => $n['read_at'],
-                    'created_at' => $n['created_at'],
-                ];
-            }, $allNotifications),
+            'notifications' => [], // Legacy format if needed
+            'received_notifications' => $formattedNotifications,
             'stats' => [
-                'total' => $totalCount,
+                'total' => $notifications->total(),
                 'unread' => $unreadCount,
             ],
+            'pagination' => [
+                'current_page' => $notifications->currentPage(),
+                'last_page' => $notifications->lastPage(),
+                'per_page' => $notifications->perPage(),
+                'total' => $notifications->total(),
+            ]
         ]);
     }
 
@@ -86,31 +67,13 @@ class NotificationController extends Controller
     public function markAsRead(Request $request, string $id)
     {
         $parent = $request->user();
-        
-        if (!$parent || !$parent->phone) {
-            return $this->errorResponse('غير مصرح', 401);
-        }
 
-        // Get all children
-        $children = Student::where('parent_phone', $parent->phone)->get();
-        $childIds = $children->pluck('id')->toArray();
-
-        // Find the notification in any child's notifications
-        $notification = null;
-        foreach ($children as $child) {
-            $found = $child->notifications()->where('id', $id)->first();
-            if ($found) {
-                $notification = $found;
-                break;
-            }
-        }
-
-        if ($notification) {
-            $notification->markAsRead();
+        try {
+            $this->notificationService->markAsRead($parent, $id);
             return $this->successResponse(null, 'تم تحديد الإشعار كمقروء');
+        } catch (\Exception $e) {
+            return $this->errorResponse($e->getMessage(), 404);
         }
-
-        return $this->errorResponse('الإشعار غير موجود', 404);
     }
 
     /**
@@ -119,17 +82,7 @@ class NotificationController extends Controller
     public function markAllAsRead(Request $request)
     {
         $parent = $request->user();
-        
-        if (!$parent || !$parent->parent_phone) {
-            return $this->errorResponse('غير مصرح', 401);
-        }
-
-        // Get all children
-        $children = Student::where('parent_phone', $parent->parent_phone)->get();
-
-        foreach ($children as $child) {
-            $child->unreadNotifications->markAsRead();
-        }
+        $this->notificationService->markAllAsRead($parent);
 
         return $this->successResponse(null, 'تم تحديد جميع الإشعارات كمقروءة');
     }

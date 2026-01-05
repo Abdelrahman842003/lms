@@ -6,12 +6,21 @@ use App\Http\Controllers\Controller;
 use App\Models\PaymentLog;
 use App\Models\Enrollment;
 use App\Models\SyncError;
+use App\Services\Teacher\PaymentLogService;
+use App\Http\Requests\Teacher\PaymentLog\StorePaymentRequest;
+use App\Http\Requests\Teacher\PaymentLog\SyncPaymentRequest;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class PaymentLogController extends Controller
 {
     use \App\Traits\ResolvesTeacher;
+    
+    protected $paymentService;
+
+    public function __construct(PaymentLogService $paymentService)
+    {
+        $this->paymentService = $paymentService;
+    }
     /**
      * List all payments for the teacher
      */
@@ -19,29 +28,9 @@ class PaymentLogController extends Controller
     {
         $teacher = $this->getTeacherFromRequest($request);
         $perPage = $request->input('per_page', 20);
+        $filters = $request->only(['status', 'search']);
 
-        $query = PaymentLog::forTeacher($teacher->id)
-            ->with('student:id,name,phone');
-
-        // Filter by status
-        if ($request->filled('status')) {
-            if ($request->status === 'expired') {
-                $query->expired();
-            } else {
-                $query->where('status', $request->status);
-            }
-        }
-
-        // Search by student name or phone
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->whereHas('student', function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('phone', 'like', "%{$search}%");
-            });
-        }
-
-        $payments = $query->latest()->paginate($perPage);
+        $payments = $this->paymentService->getPayments($teacher, $perPage, $filters);
 
         return $this->successResponse([
             'payments' => $payments,
@@ -54,12 +43,7 @@ class PaymentLogController extends Controller
     public function pending(Request $request)
     {
         $teacher = $this->getTeacherFromRequest($request);
-
-        $payments = PaymentLog::pending()
-            ->forTeacher($teacher->id)
-            ->with('student:id,name,phone')
-            ->latest()
-            ->get();
+        $payments = $this->paymentService->getPending($teacher);
 
         return $this->successResponse([
             'payments' => $payments,
@@ -69,139 +53,34 @@ class PaymentLogController extends Controller
     /**
      * Record a new payment (single)
      */
-    public function store(Request $request)
+    public function store(StorePaymentRequest $request)
     {
-        $validated = $request->validate([
-            'student_id' => 'required|uuid|exists:students,id',
-            'amount' => 'required|numeric|min:1',
-            'notes' => 'nullable|string|max:500',
-            'client_side_uuid' => 'required|uuid',
-        ]);
+        $validated = $request->validated();
 
         $teacher = $this->getTeacherFromRequest($request);
 
-        // Idempotency check
-        $existing = PaymentLog::where('client_side_uuid', $validated['client_side_uuid'])->first();
-        if ($existing) {
-            return $this->successResponse([
-                'payment' => $existing,
-                'confirmation_code' => $existing->confirmation_code,
-                'message' => 'الدفعة مسجلة مسبقاً',
-                'is_duplicate' => true,
-            ]);
+        try {
+            $result = $this->paymentService->createPayment($teacher, $validated);
+            
+            if ($result['is_duplicate'] ?? false) {
+                return $this->successResponse($result);
+            }
+
+            return $this->successResponse($result, 'تم تسجيل الدفعة بنجاح', 201);
+        } catch (\Exception $e) {
+            return $this->errorResponse($e->getMessage(), 400);
         }
-
-        // Find enrollment
-        $enrollment = Enrollment::where('student_id', $validated['student_id'])
-            ->where('teacher_id', $teacher->id)
-            ->first();
-
-        if (!$enrollment) {
-            return $this->errorResponse('الطالب غير مسجل معك', 404);
-        }
-
-        // Generate unique code for this student
-        $code = PaymentLog::generateCode($validated['student_id']);
-
-        $payment = PaymentLog::create([
-            'client_side_uuid' => $validated['client_side_uuid'],
-            'enrollment_id' => $enrollment->id,
-            'student_id' => $validated['student_id'],
-            'teacher_id' => $teacher->id,
-            'amount' => $validated['amount'],
-            'confirmation_code' => $code,
-            'status' => 'pending',
-            'received_by_id' => $teacher->id,
-            'received_by_type' => get_class($teacher),
-            'expires_at' => now()->addDays(7),
-            'notes' => $validated['notes'] ?? null,
-        ]);
-
-        return $this->successResponse([
-            'payment' => $payment,
-            'confirmation_code' => $code,
-            'message' => 'تم تسجيل الدفعة - أعط الكود للطالب',
-        ], 201);
     }
 
     /**
      * Batch sync offline payments (max 50 per request)
      */
-    public function syncBatch(Request $request)
+    public function syncBatch(SyncPaymentRequest $request)
     {
-        $validated = $request->validate([
-            'payments' => 'required|array|max:50',
-            'payments.*.client_side_uuid' => 'required|uuid',
-            'payments.*.student_id' => 'required|uuid',
-            'payments.*.amount' => 'required|numeric|min:1',
-            'payments.*.confirmation_code' => 'required|string|max:20',
-            'payments.*.created_at' => 'required|date',
-            'payments.*.notes' => 'nullable|string|max:500',
-        ]);
+        $validated = $request->validated();
 
         $teacher = $this->getTeacherFromRequest($request);
-        $results = ['success' => [], 'errors' => []];
-
-        foreach ($validated['payments'] as $paymentData) {
-            try {
-                // Idempotency check
-                $existing = PaymentLog::where('client_side_uuid', $paymentData['client_side_uuid'])->first();
-                if ($existing) {
-                    $results['success'][] = [
-                        'client_side_uuid' => $paymentData['client_side_uuid'],
-                        'status' => 'duplicate',
-                        'payment_id' => $existing->id,
-                    ];
-                    continue;
-                }
-
-                // Find enrollment
-                $enrollment = Enrollment::where('student_id', $paymentData['student_id'])
-                    ->where('teacher_id', $teacher->id)
-                    ->first();
-
-                if (!$enrollment) {
-                    throw new \Exception('الطالب غير مسجل معك');
-                }
-
-                // Create payment
-                $payment = PaymentLog::create([
-                    'client_side_uuid' => $paymentData['client_side_uuid'],
-                    'enrollment_id' => $enrollment->id,
-                    'student_id' => $paymentData['student_id'],
-                    'teacher_id' => $teacher->id,
-                    'amount' => $paymentData['amount'],
-                    'confirmation_code' => $paymentData['confirmation_code'],
-                    'status' => 'pending',
-                    'received_by_id' => $teacher->id,
-                    'received_by_type' => get_class($teacher),
-                    'expires_at' => now()->addDays(7),
-                    'notes' => $paymentData['notes'] ?? null,
-                ]);
-
-                $results['success'][] = [
-                    'client_side_uuid' => $paymentData['client_side_uuid'],
-                    'status' => 'created',
-                    'payment_id' => $payment->id,
-                ];
-
-            } catch (\Exception $e) {
-                $results['errors'][] = [
-                    'client_side_uuid' => $paymentData['client_side_uuid'],
-                    'error' => $e->getMessage(),
-                ];
-
-                // Log to sync_errors table
-                SyncError::create([
-                    'client_side_uuid' => $paymentData['client_side_uuid'],
-                    'operation_type' => 'payment',
-                    'payload' => $paymentData,
-                    'error_message' => $e->getMessage(),
-                    'user_id' => $teacher->id,
-                    'user_type' => get_class($teacher),
-                ]);
-            }
-        }
+        $results = $this->paymentService->syncBatch($teacher, $validated['payments']);
 
         return $this->successResponse($results);
     }
@@ -229,15 +108,14 @@ class PaymentLogController extends Controller
     {
         $teacher = $this->getTeacherFromRequest($request);
 
-        $payment = PaymentLog::forTeacher($teacher->id)
-            ->where('status', 'pending')
-            ->findOrFail($id);
-
-        $payment->update(['status' => 'cancelled']);
-
-        return $this->successResponse([
-            'message' => 'تم إلغاء الدفعة بنجاح',
-        ]);
+        try {
+            $this->paymentService->cancel($teacher, $id);
+            return $this->successResponse([
+                'message' => 'تم إلغاء الدفعة بنجاح',
+            ]);
+        } catch (\Exception $e) {
+            return $this->errorResponse('Failed to cancel payment', 400);
+        }
     }
 
     /**
@@ -246,15 +124,7 @@ class PaymentLogController extends Controller
     public function statistics(Request $request)
     {
         $teacher = $this->getTeacherFromRequest($request);
-
-        $stats = [
-            'total' => PaymentLog::forTeacher($teacher->id)->count(),
-            'pending' => PaymentLog::forTeacher($teacher->id)->pending()->count(),
-            'confirmed' => PaymentLog::forTeacher($teacher->id)->confirmed()->count(),
-            'expired' => PaymentLog::forTeacher($teacher->id)->expired()->count(),
-            'total_amount' => PaymentLog::forTeacher($teacher->id)->confirmed()->sum('amount'),
-            'pending_amount' => PaymentLog::forTeacher($teacher->id)->pending()->sum('amount'),
-        ];
+        $stats = $this->paymentService->getStatistics($teacher);
 
         return $this->successResponse($stats);
     }

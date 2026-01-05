@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\UpdateStudentRequest;
+use App\Http\Requests\Admin\Student\StoreStudentRequest;
 use App\Http\Resources\Student\StudentResource;
 use App\Models\Student;
 use App\Services\Admin\StudentService;
@@ -32,16 +33,9 @@ class StudentController extends Controller
         );
     }
 
-    public function store(Request $request)
+    public function store(StoreStudentRequest $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'phone' => 'required|string|unique:students,phone',
-            'password' => 'required|string|min:6|confirmed',
-            'teacher_id' => 'nullable|exists:teachers,id',
-        ]);
-
-        $student = $this->studentService->createStudent($validated);
+        $student = $this->studentService->createStudent($request->validated());
         
         return $this->successResponse([
             'student' => new StudentResource($student)
@@ -59,17 +53,8 @@ class StudentController extends Controller
 
     public function statistics()
     {
-        $totalStudents = \App\Models\Student::count();
-        $activeStudents = \App\Models\Student::count(); // Assuming all are active for now
-        $joinedThisMonth = \App\Models\Student::whereMonth('created_at', now()->month)
-            ->whereYear('created_at', now()->year)
-            ->count();
+        $stats = $this->studentService->getStatistics();
 
-        return $this->successResponse([
-            'total_students' => $totalStudents,
-            'active_students' => $activeStudents,
-            'suspended_accounts' => 0,
-            'joined_this_month' => $joinedThisMonth,
-        ]);
+        return $this->successResponse($stats);
     }
 }

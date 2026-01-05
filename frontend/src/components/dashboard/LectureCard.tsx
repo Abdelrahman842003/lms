@@ -42,6 +42,11 @@ export const LectureCard: React.FC<LectureCardProps> = ({
     }
 
     const calculateTimeLeft = () => {
+      if (!isActive || !lecture.current_session_end_time) {
+        setTimeLeft('');
+        return;
+      }
+
       const end = new Date(lecture.current_session_end_time!).getTime();
       const now = new Date().getTime();
       const difference = end - now;

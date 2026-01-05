@@ -15,6 +15,59 @@ use Illuminate\Support\Collection;
 class ReportService
 {
     /**
+     * Get list of teachers for report selection
+     */
+    public function getTeachersList(): Collection
+    {
+        return Teacher::select('id', 'name', 'phone', 'is_suspended', 'created_at')
+            ->withCount(['enrollments', 'secretaries'])
+            ->orderBy('name')
+            ->get()
+            ->map(function ($teacher) {
+                return [
+                    'id' => $teacher->id,
+                    'name' => $teacher->name,
+                    'phone' => $teacher->phone,
+                    'status' => $teacher->is_suspended ? 'معلق' : 'نشط',
+                    'students_count' => $teacher->enrollments_count,
+                    'secretaries_count' => $teacher->secretaries_count,
+                    'joined' => $teacher->created_at->format('Y-m-d'),
+                ];
+            });
+    }
+
+    /**
+     * Generate PDF using mPDF with Arabic support
+     */
+    public function generatePdf(array $report, string $type, string $title): string
+    {
+        $mpdf = new \Mpdf\Mpdf([
+            'mode' => 'utf-8',
+            'format' => 'A4',
+            'default_font_size' => 11,
+            'default_font' => 'xbriyaz',
+            'margin_left' => 15,
+            'margin_right' => 15,
+            'margin_top' => 15,
+            'margin_bottom' => 15,
+            'tempDir' => storage_path('app/mpdf'),
+        ]);
+
+        $mpdf->SetDirectionality('rtl');
+        $mpdf->autoScriptToLang = true;
+        $mpdf->autoLangToFont = true;
+
+        $html = view('pdf.report', [
+            'report' => $report,
+            'type' => $type,
+            'title' => $title,
+        ])->render();
+
+        $mpdf->WriteHTML($html);
+
+        return $mpdf->Output('', 'S');
+    }
+    /**
      * Get report data for a specific teacher
      */
     public function getTeacherReport(Teacher $teacher, Carbon $startDate, Carbon $endDate): array

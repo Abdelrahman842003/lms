@@ -114,6 +114,20 @@ class TeacherService
         return $subscription;
     }
 
+    public function loginAsTeacher(string $teacherId): array
+    {
+        $teacher = Teacher::findOrFail($teacherId);
+        
+        // Create token for the teacher
+        $token = $teacher->createToken('teacher_token', ['access-api'], now()->addMinutes(60))->plainTextToken;
+        
+        return [
+            'token' => $token,
+            'user' => $teacher,
+            'role' => 'teacher'
+        ];
+    }
+
     private function calculateAmountDue(Teacher $teacher, ?string $month = null): float
     {
         $query = $teacher->students();
@@ -125,7 +139,6 @@ class TeacherService
             $query->wherePivot('created_at', '<=', $endOfMonth);
         }
 
-        $count = $query->count();
         $count = $query->count();
         $price = \App\Services\HelperService::getPricePerStudent();
         

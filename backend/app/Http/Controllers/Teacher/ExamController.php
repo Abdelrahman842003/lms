@@ -32,6 +32,8 @@ class ExamController extends Controller
 
     public function results(Exam $exam)
     {
+        \Illuminate\Support\Facades\Log::info('Results endpoint hit', ['exam_id' => $exam->id]);
+        
         try {
             if ($exam->teacher_id !== $this->getTeacherFromRequest(request())->id) {
                 return $this->errorResponse('Unauthorized', 403);
@@ -178,7 +180,8 @@ class ExamController extends Controller
         }
 
         try {
-            $newExam = $this->examService->copyExam($exam);
+            $title = request()->input('title');
+            $newExam = $this->examService->copyExam($exam, $title);
             return $this->successResponse(['exam' => $newExam], 'تم نسخ الامتحان بنجاح');
         } catch (\Exception $e) {
             return $this->errorResponse('Failed to copy exam: ' . $e->getMessage(), 500);
@@ -187,126 +190,31 @@ class ExamController extends Controller
 
     public function toggleStatus(Exam $exam)
     {
-        $isActive = !$exam->is_active;
-        
-        // التحقق من التعارضات قبل التفعيل
-        if ($isActive) {
-            $conflict = $this->examService->checkActiveConflicts($exam);
-            
-            if ($conflict) {
-                $teacherNames = $conflict['conflicting_exams']
-                    ->pluck('teacher.name')
-                    ->unique()
-                    ->implode('، ');
-                    
-                return $this->errorResponse(
-                    "لا يمكن تفعيل الامتحان. يوجد امتحان فعال الآن للمدرس: {$teacherNames}. سيؤثر على {$conflict['affected_students_count']} طالب مشترك.",
-                    409
-                );
-            }
-        }
-        
-        $updateData = ['is_active' => $isActive];
-        
-        if ($isActive) {
-            $updateData['activated_at'] = now();
-            $updateData['ended_at'] = null;
-        }
+        $result = $this->examService->toggleStatus($exam);
 
-        $exam->update($updateData);
-
-        if ($isActive) {
-            // Notify students
-            $this->notifyStudents($exam, new ExamActivatedNotification($exam));
+        if (!$result['success']) {
+            return $this->errorResponse($result['message'], $result['code'] ?? 400);
         }
 
         return $this->successResponse(
-            new ExamResource($exam),
-            $isActive ? 'تم تفعيل الامتحان بنجاح وإشعار الطلاب' : 'تم إلغاء تفعيل الامتحان بنجاح'
+            new ExamResource($result['exam']),
+            $result['message']
         );
     }
 
     public function endExam(Exam $exam)
     {
-        if (!$exam->is_active) {
-            return $this->errorResponse('الامتحان غير مفعل بالفعل', 400);
-        }
-
-        $exam->update([
-            'is_active' => false,
-            'ended_at' => now()
-        ]);
-
-        // Process results for all students
-        $this->processExamResults($exam);
-
-        return $this->successResponse(
-            new ExamResource($exam),
-            'تم إنهاء الامتحان بنجاح واحتساب النتائج'
-        );
-    }
-
-    private function notifyStudents(Exam $exam, $notification)
-    {
-        $query = Student::whereHas('enrollments', function ($q) use ($exam) {
-            $q->where('teacher_id', $exam->teacher_id);
-        });
-
-        if ($exam->grade_id) {
-            $query->whereHas('enrollments', function ($q) use ($exam) {
-                $q->where('grade_id', $exam->grade_id);
-            });
-        }
-
-        if ($exam->group_id) {
-            $query->whereHas('enrollments', function ($q) use ($exam) {
-                $q->where('group_id', $exam->group_id);
-            });
-        }
-
-        $students = $query->get();
-        
-        if ($students->count() > 0) {
-            Notification::send($students, $notification);
+        try {
+            $exam = $this->examService->endExam($exam);
+            
+            return $this->successResponse(
+                new ExamResource($exam),
+                'تم إنهاء الامتحان بنجاح واحتساب النتائج'
+            );
+        } catch (\Exception $e) {
+            return $this->errorResponse($e->getMessage(), 400);
         }
     }
 
-    private function processExamResults(Exam $exam)
-    {
-        // Get all eligible students
-        $query = Student::whereHas('enrollments', function ($q) use ($exam) {
-            $q->where('teacher_id', $exam->teacher_id);
-        });
 
-        if ($exam->grade_id) {
-            $query->whereHas('enrollments', function ($q) use ($exam) {
-                $q->where('grade_id', $exam->grade_id);
-            });
-        }
-
-        $students = $query->get();
-        $examService = app(\App\Services\Student\StudentExamService::class);
-
-        foreach ($students as $student) {
-            $attempt = $exam->attempts()->where('student_id', $student->id)->first();
-
-            if ($attempt) {
-                if ($attempt->status === 'in_progress') {
-                    // Force submit
-                    $examService->terminateExam($attempt, 'time_limit_exceeded');
-                }
-            } else {
-                // Mark as absent
-                ExamResult::create([
-                    'exam_id' => $exam->id,
-                    'student_id' => $student->id,
-                    'score' => 0,
-                    'percentage' => 0,
-                    'status' => 'absent'
-                ]);
-
-                $student->notify(new ExamAbsentNotification($exam));
-            }
-        }
-    }
 }

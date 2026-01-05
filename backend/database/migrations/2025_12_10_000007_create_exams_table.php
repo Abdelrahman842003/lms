@@ -19,7 +19,7 @@ return new class extends Migration
             $table->boolean('is_active')->default(false);
             $table->timestamp('activated_at')->nullable();
             $table->timestamp('ended_at')->nullable();
-            $table->date('date');
+            $table->dateTime('date');
             $table->integer('duration'); // Duration in minutes
             $table->foreignUuid('grade_id')->nullable()->constrained('grades')->onDelete('set null');
             $table->foreignUuid('group_id')->nullable()->constrained('groups')->onDelete('set null');

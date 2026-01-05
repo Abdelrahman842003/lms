@@ -12,7 +12,10 @@ Artisan::command('inspire', function () {
 \Illuminate\Support\Facades\Schedule::command('lectures:end-expired')->everyMinute();
 \Illuminate\Support\Facades\Schedule::command('exams:end-expired')->everyMinute();
 \Illuminate\Support\Facades\Schedule::command('payments:expire')->daily();
-\Illuminate\Support\Facades\Schedule::command('lectures:check-status')->everyMinute();
+
+// Disabled: Lectures now use pure Queue-based scheduling via LectureObserver
+// The CheckLectureStatus command is still available for manual recovery: php artisan lectures:check-status
+// \Illuminate\Support\Facades\Schedule::command('lectures:check-status')->everyMinute();
 
 Artisan::command('debug:pdf', function () {
     try {

@@ -55,4 +55,19 @@ class StudentService
 
         return $student->fresh(['teacher']);
     }
+    public function getStatistics(): array
+    {
+        $totalStudents = Student::count();
+        $activeStudents = Student::count(); // Assuming all are active for now
+        $joinedThisMonth = Student::whereMonth('created_at', now()->month)
+            ->whereYear('created_at', now()->year)
+            ->count();
+
+        return [
+            'total_students' => $totalStudents,
+            'active_students' => $activeStudents,
+            'suspended_accounts' => 0,
+            'joined_this_month' => $joinedThisMonth,
+        ];
+    }
 }

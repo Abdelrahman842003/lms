@@ -34,13 +34,30 @@ class StudentAttendanceController extends Controller
     }
     public function markAttendance(MarkAttendanceRequest $request)
     {
-        $lecture = Lecture::where('qr_code', $request->token)->first();
+        $token = $request->token;
+        $lecture = null;
+
+        try {
+            $decrypted = \Illuminate\Support\Facades\Crypt::decryptString($token);
+            $payload = json_decode($decrypted, true);
+            
+            if (is_array($payload) && isset($payload['lecture_id']) && isset($payload['expires_at'])) {
+                if (Carbon::now()->timestamp > $payload['expires_at']) {
+                    return $this->errorResponse('QR code has expired', 400);
+                }
+                $lecture = Lecture::find($payload['lecture_id']);
+            }
+        } catch (\Exception $e) {
+            // Fallback to legacy static QR code
+            $lecture = Lecture::where('qr_code', $token)->first();
+        }
 
         if (!$lecture) {
             return $this->errorResponse('Invalid QR code', 404);
         }
 
-        if (Carbon::now()->greaterThan($lecture->qr_code_expires_at)) {
+        // For legacy codes, check expiration from DB
+        if ($lecture->qr_code === $token && $lecture->qr_code_expires_at && Carbon::now()->greaterThan($lecture->qr_code_expires_at)) {
             return $this->errorResponse('QR code has expired', 400);
         }
 

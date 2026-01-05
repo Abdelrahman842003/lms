@@ -7,6 +7,9 @@ use App\Models\Guardian;
 use App\Models\Student;
 use App\Services\Auth\LoginAttemptService;
 use App\Services\Media\ImageService;
+use App\Http\Requests\Guardian\Auth\GuardianLoginRequest;
+use App\Http\Requests\Guardian\Auth\UpdateGuardianProfileRequest;
+use App\Http\Requests\Guardian\Auth\ChangeGuardianPasswordRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
@@ -14,114 +17,63 @@ class AuthController extends Controller
 {
     protected $loginAttemptService;
     protected $imageService;
+    protected $authService;
 
     public function __construct(
         LoginAttemptService $loginAttemptService,
-        ImageService $imageService
+        ImageService $imageService,
+        \App\Services\Guardian\GuardianAuthService $authService
     ) {
         $this->loginAttemptService = $loginAttemptService;
         $this->imageService = $imageService;
+        $this->authService = $authService;
     }
 
     /**
      * Login with guardian phone + guardian password (separate from student)
      */
-    public function login(Request $request)
+    public function login(GuardianLoginRequest $request)
     {
-        $request->validate([
-            'phone' => ['required', 'regex:/^01[0125][0-9]{8}$/'],
-            'password' => 'required|string|min:6',
-        ], [
-            'phone.required' => 'رقم الهاتف مطلوب',
-            'phone.regex' => 'رقم الهاتف يجب أن يكون رقم مصري صحيح',
-            'password.required' => 'كلمة المرور مطلوبة',
-            'password.min' => 'كلمة المرور يجب أن تكون 6 أحرف على الأقل',
-        ]);
+        // Validation handled by FormRequest
 
-        // Try to find guardian by phone
-        $guardian = Guardian::where('phone', $request->phone)->first();
-
-        if (!$guardian) {
-            // Migration fallback: check if parent_phone exists in students (legacy system)
-            $students = Student::where('parent_phone', $request->phone)->get();
-
-            if ($students->isEmpty()) {
-                $attemptResult = $this->loginAttemptService->recordFailedAttempt(
-                    $request->phone,
-                    $request->ip()
-                );
-
-                $message = 'رقم الهاتف غير مسجل كولي أمر';
-                if (isset($attemptResult['attempts_remaining'])) {
-                    $message .= ' - متبقي ' . $attemptResult['attempts_remaining'] . ' محاولات';
-                }
-
-                return $this->errorResponse($message, 401, null, $attemptResult);
-            }
-
-            // Migrate to new system: create guardian from first student
-            $firstStudent = $students->first();
-            if (Hash::check($request->password, $firstStudent->password)) {
-                $guardian = Guardian::create([
-                    'phone' => $request->phone,
-                    'name' => $this->extractParentName($firstStudent->name),
-                    'password' => Hash::make($request->password),
-                ]);
-
-                // Link all students to this guardian
-                $students->each(function ($student) use ($guardian) {
-                    $student->update(['guardian_id' => $guardian->id]);
-                });
-            } else {
-                $attemptResult = $this->loginAttemptService->recordFailedAttempt(
-                    $request->phone,
-                    $request->ip()
-                );
-
-                $message = 'كلمة المرور غير صحيحة';
-                if (isset($attemptResult['attempts_remaining'])) {
-                    $message .= ' - متبقي ' . $attemptResult['attempts_remaining'] . ' محاولات';
-                }
-
-                return $this->errorResponse($message, 401, null, $attemptResult);
-            }
-        }
-
-        // Authenticate with guardian password
-        if (!Hash::check($request->password, $guardian->password)) {
-            $attemptResult = $this->loginAttemptService->recordFailedAttempt(
-                $request->phone,
-                $request->ip()
+        try {
+            $result = $this->authService->login(
+                $request->phone, 
+                $request->password, 
+                $request->ip(),
+                $request->userAgent() ?? 'Unknown'
             );
 
-            $message = 'كلمة المرور غير صحيحة';
-            if (isset($attemptResult['attempts_remaining'])) {
-                $message .= ' - متبقي ' . $attemptResult['attempts_remaining'] . ' محاولات';
-            }
+            // Format children avatars
+            $children = $result['children']->map(function ($child) {
+                $child['avatar'] = $child['avatar_key'] ? $this->imageService->getUrl($child['avatar_key']) : null;
+                unset($child['avatar_key']);
+                
+                $child['teachers'] = collect($child['teachers'])->map(function ($teacher) {
+                    $teacher['avatar'] = $teacher['avatar_key'] ? $this->imageService->getUrl($teacher['avatar_key']) : null;
+                    unset($teacher['avatar_key']);
+                    return $teacher;
+                });
+                
+                return $child;
+            });
 
-            return $this->errorResponse($message, 401, null, $attemptResult);
+            return $this->successResponse([
+                'token' => $result['token'],
+                'user' => [
+                    'id' => $result['guardian']->id,
+                    'name' => $result['guardian']->name,
+                    'phone' => $result['guardian']->phone,
+                    'avatar' => $result['guardian']->avatar_key ? $this->imageService->getUrl($result['guardian']->avatar_key) : null,
+                ],
+                'parent_phone' => $result['guardian']->phone,
+                'children' => $children,
+                'role' => 'parent',
+            ]);
+
+        } catch (\Exception $e) {
+            return $this->errorResponse($e->getMessage(), $e->getCode() ?: 401);
         }
-
-        // Clear failed attempts on successful login
-        $this->loginAttemptService->clearAttempts($request->phone, $request->ip());
-
-        // Generate tokens using guardian
-        $accessToken = $guardian->createToken('guardian_access_token', ['parent-api'], now()->addMinutes(60))->plainTextToken;
-        $refreshToken = $guardian->createToken('guardian_refresh_token', ['issue-access-token'], now()->addDays(30))->plainTextToken;
-
-        return $this->successResponse([
-            'token' => $accessToken,
-            'refresh_token' => $refreshToken,
-            'user' => [
-                'id' => $guardian->id,
-                'name' => $guardian->name,
-                'phone' => $guardian->phone,
-                'avatar' => $guardian->avatar_key ? $this->imageService->getUrl($guardian->avatar_key) : null,
-            ],
-            'parent_phone' => $guardian->phone,
-            'children' => $this->getChildrenData($guardian->students),
-            'role' => 'parent',
-        ]);
     }
 
     /**
@@ -147,11 +99,27 @@ class AuthController extends Controller
      */
     public function me(Request $request)
     {
-        $guardian = $request->user(); // Now returns Guardian model
+        $guardian = $request->user();
         
         if (!$guardian) {
             return $this->errorResponse('غير مصرح', 401);
         }
+
+        $childrenData = $this->authService->getChildrenData($guardian->students);
+        
+        // Format children avatars
+        $children = $childrenData->map(function ($child) {
+            $child['avatar'] = $child['avatar_key'] ? $this->imageService->getUrl($child['avatar_key']) : null;
+            unset($child['avatar_key']);
+            
+            $child['teachers'] = collect($child['teachers'])->map(function ($teacher) {
+                $teacher['avatar'] = $teacher['avatar_key'] ? $this->imageService->getUrl($teacher['avatar_key']) : null;
+                unset($teacher['avatar_key']);
+                return $teacher;
+            });
+            
+            return $child;
+        });
 
         return $this->successResponse([
             'user' => [
@@ -161,7 +129,7 @@ class AuthController extends Controller
                 'avatar' => $guardian->avatar_key ? $this->imageService->getUrl($guardian->avatar_key) : null,
             ],
             'parent_phone' => $guardian->phone,
-            'children' => $this->getChildrenData($guardian->students),
+            'children' => $children,
             'role' => 'parent',
         ]);
     }
@@ -169,14 +137,12 @@ class AuthController extends Controller
     /**
      * Update guardian profile
      */
-    public function updateProfile(Request $request)
+    public function updateProfile(UpdateGuardianProfileRequest $request)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-        ]);
+        // Validation handled by FormRequest
 
         $guardian = $request->user();
-        $guardian->update(['name' => $request->name]);
+        $this->authService->updateProfile($guardian, $request->only(['name']));
 
         return $this->successResponse([
             'user' => [
@@ -191,17 +157,9 @@ class AuthController extends Controller
     /**
      * Change guardian password (independent from students)
      */
-    public function changePassword(Request $request)
+    public function changePassword(ChangeGuardianPasswordRequest $request)
     {
-        $request->validate([
-            'current_password' => 'required|string',
-            'new_password' => 'required|string|min:6|confirmed',
-        ], [
-            'current_password.required' => 'كلمة المرور الحالية مطلوبة',
-            'new_password.required' => 'كلمة المرور الجديدة مطلوبة',
-            'new_password.min' => 'كلمة المرور يجب أن تكون 6 أحرف على الأقل',
-            'new_password.confirmed' => 'كلمة المرور الجديدة غير متطابقة',
-        ]);
+        // Validation handled by FormRequest
 
         $guardian = $request->user();
 
@@ -225,72 +183,29 @@ class AuthController extends Controller
             return $this->errorResponse('غير مصرح', 401);
         }
 
+        $childrenData = $this->authService->getChildrenData($guardian->students);
+        
+        // Format children avatars
+        $children = $childrenData->map(function ($child) {
+            $child['avatar'] = $child['avatar_key'] ? $this->imageService->getUrl($child['avatar_key']) : null;
+            unset($child['avatar_key']);
+            
+            $child['teachers'] = collect($child['teachers'])->map(function ($teacher) {
+                $teacher['avatar'] = $teacher['avatar_key'] ? $this->imageService->getUrl($teacher['avatar_key']) : null;
+                unset($teacher['avatar_key']);
+                return $teacher;
+            });
+            
+            return $child;
+        });
+
         return $this->successResponse([
-            'children' => $this->getChildrenData($guardian->students),
+            'children' => $children,
         ]);
     }
 
     /**
      * Format children data for response
      */
-    private function getChildrenData($students)
-    {
-        return $students->map(function ($student) {
-            // Get active enrollments with teachers
-            $enrollments = $student->enrollments()
-                ->where('is_active', true)
-                ->with(['teacher' => function ($q) {
-                    $q->where('is_suspended', false);
-                }, 'grade', 'group'])
-                ->get();
 
-            $teachers = $enrollments
-                ->filter(fn($e) => $e->teacher !== null)
-                ->map(function ($enrollment) {
-                    return [
-                        'id' => $enrollment->teacher->id,
-                        'name' => $enrollment->teacher->name,
-                        'avatar' => $enrollment->teacher->avatar_key 
-                            ? $this->imageService->getUrl($enrollment->teacher->avatar_key) 
-                            : null,
-                        'grade' => $enrollment->grade?->name,
-                        'group' => $enrollment->group?->name,
-                    ];
-                })->values();
-
-            return [
-                'id' => $student->id,
-                'name' => $student->name,
-                'phone' => $student->phone,
-                'avatar' => $student->avatar_key 
-                    ? $this->imageService->getUrl($student->avatar_key) 
-                    : null,
-                'teachers' => $teachers,
-            ];
-        });
-    }
-
-    /**
-     * Extract parent name from student name (helper for migration)
-     */
-    private function extractParentName(string $studentName): string
-    {
-        $trimmedName = trim($studentName);
-        if (empty($trimmedName)) {
-            return 'ولي الأمر';
-        }
-        
-        $words = preg_split('/\s+/', $trimmedName);
-        
-        if (count($words) === 1) {
-            return $words[0];
-        }
-        
-        if (count($words) === 2) {
-            return $words[1];
-        }
-        
-        // Take last 2 words for names with 3+ words
-        return implode(' ', array_slice($words, -2));
-    }
 }

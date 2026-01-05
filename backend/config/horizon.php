@@ -202,7 +202,7 @@ return [
             'queue' => ['default'],
             'balance' => 'auto',
             'autoScalingStrategy' => 'time',
-            'maxProcesses' => 1,
+            'maxProcesses' => 5,  // Increased from 1 to 5 for parallel job execution
             'maxTime' => 0,
             'maxJobs' => 0,
             'memory' => 128,

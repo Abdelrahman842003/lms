@@ -107,4 +107,9 @@ class Teacher extends Authenticatable
     {
         return $this->hasMany(TeacherSubscription::class);
     }
+
+    public function receivesBroadcastNotificationsOn(): string
+    {
+        return 'notifications.teacher.' . $this->id;
+    }
 }

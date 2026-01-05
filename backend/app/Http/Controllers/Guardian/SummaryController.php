@@ -11,6 +11,7 @@ use App\Models\Attendance;
 use App\Models\StudentPoint;
 use App\Services\Media\ImageService;
 use App\Services\MistakesService;
+use App\Http\Requests\Guardian\Summary\GuardianSummaryRequest;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -18,13 +19,14 @@ class SummaryController extends Controller
 {
     public function __construct(
         private MistakesService $mistakesService,
-        private ImageService $imageService
+        private ImageService $imageService,
+        private \App\Services\Guardian\GuardianSummaryService $summaryService
     ) {}
 
     /**
      * Get summary for a specific child across all teachers or a specific teacher
      */
-    public function index(Request $request, string $studentId)
+    public function index(GuardianSummaryRequest $request, string $studentId)
     {
         $parent = $request->user();
         
@@ -41,11 +43,7 @@ class SummaryController extends Controller
             return $this->errorResponse('الطالب غير موجود أو غير مسموح لك بعرض بياناته', 403);
         }
 
-        $validated = $request->validate([
-            'date' => 'nullable|date',
-            'period' => 'nullable|in:day,month',
-            'teacher_id' => 'nullable|uuid',
-        ]);
+        $validated = $request->validated();
 
         $date = Carbon::parse($validated['date'] ?? now());
         $period = $validated['period'] ?? 'day';
@@ -83,75 +81,10 @@ class SummaryController extends Controller
                 $endDate = $date->copy()->endOfMonth();
             }
 
-            // 1. Attendance Data
-            $lecturesInPeriod = Lecture::where('teacher_id', $currentTeacherId)
-                ->whereBetween('start_time', [$startDate, $endDate])
-                ->get();
-
-            $lectureIds = $lecturesInPeriod->pluck('id');
-
-            $attendanceRecords = Attendance::whereIn('lecture_id', $lectureIds)
-                ->where('student_id', $student->id)
-                ->get()
-                ->keyBy('lecture_id');
-
-            // Build lecture list with attendance status
-            $lectureList = $lecturesInPeriod->map(function ($lecture) use ($attendanceRecords) {
-                $attendance = $attendanceRecords->get($lecture->id);
-                return [
-                    'id' => $lecture->id,
-                    'title' => $lecture->title,
-                    'date' => $lecture->start_time->format('Y-m-d'),
-                    'time' => $lecture->start_time->format('H:i'),
-                    'status' => $attendance ? $attendance->status : 'not_recorded',
-                ];
-            });
-
-            $presentCount = $lectureList->where('status', 'present')->count();
-            $absentCount = $lectureList->where('status', 'absent')->count();
-            $totalLectures = $lectureList->count();
-            $attendanceRate = $totalLectures > 0 ? round(($presentCount / $totalLectures) * 100) : 0;
-
-            // 2. Exams Data
-            $examsInPeriod = Exam::where('teacher_id', $currentTeacherId)
-                ->whereBetween('created_at', [$startDate, $endDate])
-                ->with(['results' => function ($q) use ($student) {
-                    $q->where('student_id', $student->id);
-                }])
-                ->get()
-                ->map(function ($exam) {
-                    $result = $exam->results->first();
-                    return [
-                        'id' => $exam->id,
-                        'title' => $exam->title,
-                        'subject' => $exam->subject,
-                        'score' => $result ? $result->score : null,
-                        'max_score' => $exam->max_score,
-                        'percentage' => $result && $exam->max_score > 0 
-                            ? round(($result->score / $exam->max_score) * 100) 
-                            : null,
-                        'status' => $result ? $result->status : 'not_taken',
-                        'date' => $exam->created_at->format('Y-m-d'),
-                    ];
-                });
-
-            $examsTaken = $examsInPeriod->whereNotNull('score')->count();
-            $examAverage = $examsInPeriod->whereNotNull('percentage')->avg('percentage') ?? 0;
-
-            // 4. Leaderboard Ranking
-            $allStudentPoints = StudentPoint::where('teacher_id', $currentTeacherId)
-                ->orderByDesc('total_points')
-                ->get();
-            
-            $totalStudentsInLeaderboard = $allStudentPoints->count();
-            $studentRank = null;
-            
-            foreach ($allStudentPoints as $index => $sp) {
-                if ($sp->student_id === $student->id) {
-                    $studentRank = $index + 1;
-                    break;
-                }
-            }
+            // Use service to get data
+            $attendanceData = $this->summaryService->getAttendanceData($currentTeacherId, $student->id, $startDate, $endDate);
+            $examsData = $this->summaryService->getExamsData($currentTeacherId, $student->id, $startDate, $endDate);
+            $rankingData = $this->summaryService->getRankingData($currentTeacherId, $student->id);
 
             // 6. Subscription Status
             $subscriptionEnd = $enrollment->subscription_end;
@@ -172,21 +105,21 @@ class SummaryController extends Controller
                     'end' => $endDate->format('Y-m-d'),
                 ],
                 'attendance' => [
-                    'total_lectures' => $totalLectures,
-                    'present' => $presentCount,
-                    'absent' => $absentCount,
-                    'rate' => $attendanceRate,
-                    'list' => $lectureList->values(),
+                    'total_lectures' => $attendanceData['total'],
+                    'present' => $attendanceData['present'],
+                    'absent' => $attendanceData['absent'],
+                    'rate' => $attendanceData['percentage'],
+                    'list' => $attendanceData['details'],
                 ],
                 'exams' => [
-                    'list' => $examsInPeriod->values(),
-                    'total' => $examsInPeriod->count(),
-                    'taken' => $examsTaken,
-                    'average' => round($examAverage, 1),
+                    'list' => $examsData['details'],
+                    'total' => $examsData['total'],
+                    'taken' => $examsData['attended'],
+                    'average' => $examsData['average_score'],
                 ],
                 'ranking' => [
-                    'position' => $studentRank,
-                    'total' => $totalStudentsInLeaderboard,
+                    'position' => $rankingData['rank'],
+                    'total' => $rankingData['total_students'],
                 ],
                 'subscription' => [
                     'is_active' => $isActive,

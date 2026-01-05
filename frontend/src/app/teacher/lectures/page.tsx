@@ -147,10 +147,39 @@ export default function TeacherLecturesPage() {
     const echo = initializeEcho(token);
     
     // Subscribe to teacher's private channel
-    const channel = echo.private(`lectures.${user.id}`);
+    const privateChannel = echo.private(`lectures.${user.id}`);
     
-    channel.listen('.LectureUpdated', (event: any) => {
+    const handleEvent = (event: any) => {
       console.log('Lecture updated event received:', event);
+      
+      // Show toast notification
+      if (event.lecture) {
+        const statusText = event.lecture.is_active ? 'بدأت الآن' : 'انتهت الآن';
+        toast.success(`محاضرة ${event.lecture.title} ${statusText}`, {
+          duration: 4000,
+          position: 'top-center',
+          icon: event.lecture.is_active ? '🟢' : '🔴',
+        });
+
+        // Optimistic Update: Update UI immediately without waiting for API
+        console.log('Attempting Optimistic Update for lecture:', event.lecture.id);
+        
+        setLectures((prevLectures) => {
+          const updated = prevLectures.map((lecture) => {
+            // Ensure we compare strings to avoid type mismatches
+            if (String(lecture.id) === String(event.lecture.id)) {
+              console.log('Optimistic Update: Found lecture to update', lecture.id);
+              return {
+                ...lecture,
+                is_active: event.lecture.is_active,
+                status: event.lecture.is_active ? 'جاري الآن' : 'منتهية'
+              };
+            }
+            return lecture;
+          });
+          return updated;
+        });
+      }
       
       // Refresh lectures list
       getLectures(currentPage, itemsPerPage, { 
@@ -162,12 +191,100 @@ export default function TeacherLecturesPage() {
         setTotalPages(response.meta.last_page);
         setTotalItems(response.meta.total);
       }).catch(console.error);
+    };
+
+    privateChannel.listen('.LectureUpdated', handleEvent);
+
+    // Subscribe to public channel (fallback)
+    const publicChannel = echo.channel('lectures');
+    publicChannel.listen('.LectureUpdated', handleEvent);
+
+    // Subscribe to teacher notifications channel
+    const notificationChannel = echo.private(`notifications.teacher.${user.id}`);
+    notificationChannel.notification((notification: any) => {
+      console.log('Notification received:', notification);
+      if (notification.type === 'lecture_status') {
+        // Immediately update the UI when lecture_status notification is received
+        const isActive = notification.status === 'active';
+        const lectureId = notification.lecture_id;
+        
+        console.log('Updating lecture status from notification:', lectureId, isActive);
+        
+        // Show toast notification
+        const statusText = isActive ? 'بدأت الآن' : 'انتهت الآن';
+        toast.success(`${notification.message || `محاضرة ${statusText}`}`, {
+          duration: 4000,
+          position: 'top-center',
+          icon: isActive ? '🟢' : '🔴',
+        });
+        
+        // Optimistic Update: Update UI immediately
+        setLectures((prevLectures) => {
+          return prevLectures.map((lecture) => {
+            if (String(lecture.id) === String(lectureId)) {
+              console.log('Notification Update: Found lecture to update', lecture.id);
+              return {
+                ...lecture,
+                is_active: isActive,
+                status: isActive ? 'جاري الآن' : 'منتهية'
+              };
+            }
+            return lecture;
+          });
+        });
+        
+        // Also refresh from API to get complete data
+        getLectures(currentPage, itemsPerPage, { 
+          search: searchQuery,
+          group_id: selectedGroupId || undefined,
+          status: selectedStatus || undefined
+        }).then(response => {
+          setLectures(response.data);
+        }).catch(console.error);
+      }
     });
+
+    // Polling fallback (every 30 seconds)
+    const pollInterval = setInterval(() => {
+      getLectures(currentPage, itemsPerPage, { 
+        search: searchQuery,
+        group_id: selectedGroupId || undefined,
+        status: selectedStatus || undefined
+      }).then(response => {
+        setLectures(response.data);
+      }).catch(console.error);
+    }, 30000);
 
     return () => {
       echo.leave(`lectures.${user.id}`);
+      echo.leave('lectures');
+      clearInterval(pollInterval);
     };
   }, [user?.id, currentPage, searchQuery, selectedGroupId, selectedStatus]);
+
+  // Poll for dynamic QR code every 5 seconds
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    
+    if (showQRModal && selectedLectureForQR) {
+      const fetchQR = async () => {
+        try {
+          const response = await generateQrCode(selectedLectureForQR.id);
+          setQrCodeUrl(response.qr_code_url);
+          setQrCodeExpiresAt(response.expires_at);
+        } catch (error) {
+          console.error('Failed to refresh QR code:', error);
+        }
+      };
+
+      // Initial fetch is done on click, so we just set interval
+      interval = setInterval(fetchQR, 5000);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [showQRModal, selectedLectureForQR]);
 
   const handleAddClick = () => {
     setIsEditing(false);

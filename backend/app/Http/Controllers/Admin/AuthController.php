@@ -38,15 +38,9 @@ class AuthController extends Controller
     {
         $data = $this->adminService->login($request->username, $request->password);
 
-        // Generate Access Token (Short-lived - 30 mins by config)
-        $accessToken = $data['user']->createToken('access_token', ['access-api'], now()->addMinutes(60))->plainTextToken;
-        
-        // Generate Refresh Token (Long-lived - 30 days)
-        $refreshToken = $data['user']->createToken('refresh_token', ['issue-access-token'], now()->addDays(30))->plainTextToken;
-
         return $this->successResponse([
-            'access_token' => $accessToken,
-            'refresh_token' => $refreshToken,
+            'access_token' => $data['access_token'],
+            'refresh_token' => $data['refresh_token'],
             'token_type' => 'Bearer',
             'user' => new AdminResource($data['user']),
             'role' => 'admin'
@@ -67,18 +61,7 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
-        // Delete FCM token if provided
-        if ($request->has('fcm_token')) {
-            \App\Models\DeviceToken::where('tokenable_id', $request->user()->id)
-                ->where('tokenable_type', get_class($request->user()))
-                ->where('token', $request->fcm_token)
-                ->delete();
-        }
-
-        // Delete current token
-        if ($request->user()) {
-            $request->user()->currentAccessToken()->delete();
-        }
+        $this->adminService->logout($request->user(), $request->fcm_token);
 
         return $this->successResponse(null, 'تم تسجيل الخروج بنجاح');
     }

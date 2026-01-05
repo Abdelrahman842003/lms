@@ -15,18 +15,18 @@ use App\Services\MistakesService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use App\Http\Requests\Student\Dashboard\StudentDashboardRequest;
 
 class StudentDashboardController extends Controller
 {
     public function __construct(
-        private MistakesService $mistakesService
+        private MistakesService $mistakesService,
+        private \App\Services\Student\StudentDashboardService $dashboardService
     ) {}
 
-    public function getDashboard(Request $request): JsonResponse
+    public function getDashboard(StudentDashboardRequest $request): JsonResponse
     {
-        $request->validate([
-            'teacher_id' => 'required|exists:teachers,id',
-        ]);
+        // Validation handled by FormRequest
 
         $student = $request->user();
         $teacherId = $request->teacher_id;
@@ -56,27 +56,8 @@ class StudentDashboardController extends Controller
             ->first();
         $totalPoints = $pointsRecord ? $pointsRecord->total_points : 0;
 
-        // 4. Attendance Rate
-        $totalLectures = Lecture::where('teacher_id', $teacherId)->count();
-        $attendedLectures = $student->attendances()
-            ->whereHas('lecture', function ($q) use ($teacherId) {
-                $q->where('teacher_id', $teacherId);
-            })
-            ->where('status', 'present')
-            ->count();
-            
-        $attendanceRate = $totalLectures > 0 ? round(($attendedLectures / $totalLectures) * 100) : 0;
-
-        // 5. Exam Average
-        $examResults = ExamResult::where('student_id', $student->id)
-            ->whereHas('exam', function ($q) use ($teacherId) {
-                $q->where('teacher_id', $teacherId);
-            })
-            ->get();
-            
-        $examAverage = $examResults->avg('score') ?? 0;
-
-
+        // Use service for stats
+        $teacherStats = $this->dashboardService->getTeacherStats($student, $teacherId);
 
         // 7. Upcoming Lectures (Keep for now as it might be used elsewhere, or just return empty if frontend removes it)
         $upcomingLectures = Lecture::where('teacher_id', $teacherId)
@@ -148,8 +129,8 @@ class StudentDashboardController extends Controller
                 'walletBalance' => $enrollment ? $enrollment->balance : 0,
                 'mistakesCount' => $mistakesCount,
                 'totalPoints' => $totalPoints,
-                'attendanceRate' => $attendanceRate,
-                'examAverage' => round($examAverage, 1),
+                'attendanceRate' => $teacherStats['attendance_rate'],
+                'examAverage' => round($teacherStats['exam_average'], 1),
             ],
             'upcomingLectures' => $upcomingLectures,
             'latestNews' => $latestNews,

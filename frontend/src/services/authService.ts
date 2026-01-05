@@ -987,9 +987,10 @@ export async function deleteExam(id: string): Promise<any> {
 /**
  * Copy an exam
  */
-export async function copyExam(id: string): Promise<any> {
+export async function copyExam(id: string, title?: string): Promise<any> {
   const res = await fetchApi(`/teacher/exams/${id}/copy`, {
     method: 'POST',
+    body: title ? JSON.stringify({ title }) : undefined,
   });
   return res.exam;
 }
