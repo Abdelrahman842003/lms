@@ -18,6 +18,14 @@ Route::middleware('auth:sanctum')->post('/broadcasting/auth',
 );
 
 // ============================================
+// Media Proxy Routes (Stream files from R2)
+// ============================================
+Route::get('/media/voice/{path}', [\App\Http\Controllers\Api\MediaProxyController::class, 'voice'])
+    ->where('path', '.*');
+Route::get('/media/{path}', [\App\Http\Controllers\Api\MediaProxyController::class, 'media'])
+    ->where('path', '.*');
+
+// ============================================
 // Admin Authentication Routes (Central DB)
 // ============================================
 Route::prefix('admin')->name('admin.')->group(function () {
@@ -54,6 +62,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/notifications', [\App\Http\Controllers\Admin\NotificationController::class, 'index']);
         Route::post('/notifications', [\App\Http\Controllers\Admin\NotificationController::class, 'store']);
         Route::post('/notifications/{id}/read', [\App\Http\Controllers\Admin\NotificationController::class, 'markAsRead']);
+        Route::get('/notifications/voice-limit', [\App\Http\Controllers\Admin\NotificationController::class, 'checkVoiceLimit']);
+        Route::post('/notifications/voice', [\App\Http\Controllers\Admin\NotificationController::class, 'storeVoice']);
 
         // Settings
         Route::get('/settings', [\App\Http\Controllers\Admin\SettingsController::class, 'index']);
@@ -110,6 +120,8 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureTeacherNotSuspende
     Route::post('/lectures/{lecture}/cancel-session', [\App\Http\Controllers\Teacher\LectureController::class, 'cancelSession']);
     Route::get('/lectures/{lecture}/attendees', [\App\Http\Controllers\Teacher\LectureController::class, 'getAttendees']);
     Route::get('/lectures/{lecture}/attendees/export', [\App\Http\Controllers\Teacher\LectureController::class, 'exportAttendees']);
+    Route::get('/lectures/{lecture}/sessions', [\App\Http\Controllers\Api\LectureSessionController::class, 'index']);
+    Route::post('/lectures/{lecture}/sessions', [\App\Http\Controllers\Api\LectureSessionController::class, 'store']);
     
     // Secretary Management
     Route::post('secretaries/check-phone', [\App\Http\Controllers\Teacher\SecretaryController::class, 'checkPhone']);
@@ -121,6 +133,8 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureTeacherNotSuspende
     Route::get('/notifications', [\App\Http\Controllers\Teacher\NotificationController::class, 'index']);
     Route::post('/notifications', [\App\Http\Controllers\Teacher\NotificationController::class, 'store']);
     Route::post('/notifications/{id}/read', [\App\Http\Controllers\Teacher\NotificationController::class, 'markAsRead']);
+    Route::get('/notifications/voice-limit', [\App\Http\Controllers\Teacher\NotificationController::class, 'checkVoiceLimit']);
+    Route::post('/notifications/voice', [\App\Http\Controllers\Teacher\NotificationController::class, 'storeVoice']);
 
     // Roles and Permissions
     Route::apiResource('permissions', \App\Http\Controllers\Teacher\PermissionController::class);

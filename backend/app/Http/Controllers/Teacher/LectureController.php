@@ -38,6 +38,7 @@ class LectureController extends Controller
         $perPage = (int) $request->input('per_page', 10);
         $filters = $request->only(['search', 'date_from', 'date_to', 'group_id', 'status']);
         $lectures = $this->lectureService->getLectures($teacher, $perPage, $filters);
+        $lectures->load('current_session');
         
         return $this->successResponse(
             LectureResource::collection($lectures)->response()->getData(true)

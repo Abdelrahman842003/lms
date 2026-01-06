@@ -25,6 +25,7 @@ import QRCodeModal from '@/components/dashboard/QRCodeModal';
 import QRScannerModal from '@/components/dashboard/QRScannerModal';
 import { LectureCard } from '@/components/dashboard/LectureCard';
 import { ManualAttendanceModal } from '@/components/dashboard/ManualAttendanceModal';
+import { LectureSessionsModal } from '@/components/dashboard/LectureSessionsModal';
 import { Filter } from '@/components/Filter';
 
 import toast from 'react-hot-toast';
@@ -104,6 +105,9 @@ export default function TeacherLecturesPage() {
   // Cancel Session State
   const [showCancelSessionModal, setShowCancelSessionModal] = useState(false);
   const [selectedLectureForCancel, setSelectedLectureForCancel] = useState<Lecture | null>(null);
+  // Sessions Modal State
+  const [showSessionsModal, setShowSessionsModal] = useState(false);
+  const [selectedLectureForSessions, setSelectedLectureForSessions] = useState<Lecture | null>(null);
 
   const handleViewAttendees = (lectureId: string) => {
     const queryParams = selectedGroupId ? `?group_id=${selectedGroupId}` : '';
@@ -508,6 +512,11 @@ export default function TeacherLecturesPage() {
     setShowCancelSessionModal(true);
   };
 
+  const handleManageSessionsClick = (lecture: Lecture) => {
+    setSelectedLectureForSessions(lecture);
+    setShowSessionsModal(true);
+  };
+
   const confirmCancelSession = async () => {
     if (!selectedLectureForCancel) return;
     try {
@@ -690,6 +699,10 @@ export default function TeacherLecturesPage() {
                 handleCancelSessionClick(lecture);
                 setOpenMenuId(null);
               }}
+              onManageSessions={() => {
+                handleManageSessionsClick(lecture);
+                setOpenMenuId(null);
+              }}
             />
             );
           })}
@@ -724,6 +737,14 @@ export default function TeacherLecturesPage() {
         <div 
           className="fixed inset-0 z-[5]" 
           onClick={() => setOpenMenuId(null)}
+        />
+      )}
+
+      {/* Sessions Modal */}
+      {showSessionsModal && selectedLectureForSessions && (
+        <LectureSessionsModal
+          lecture={selectedLectureForSessions}
+          onClose={() => setShowSessionsModal(false)}
         />
       )}
 

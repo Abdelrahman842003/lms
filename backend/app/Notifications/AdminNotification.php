@@ -19,16 +19,18 @@ class AdminNotification extends Notification implements ShouldBroadcast
     public $message;
     public $senderName;
     public $senderRole;
+    public $data;
 
     /**
      * Create a new notification instance.
      */
-    public function __construct($title, $message, $senderName, $senderRole)
+    public function __construct($title, $message, $senderName, $senderRole, $data = [])
     {
         $this->title = $title;
         $this->message = $message;
         $this->senderName = $senderName;
         $this->senderRole = $senderRole;
+        $this->data = $data;
     }
 
     public function via(object $notifiable): array
@@ -43,12 +45,12 @@ class AdminNotification extends Notification implements ShouldBroadcast
      */
     public function toArray(object $notifiable): array
     {
-        return [
+        return array_merge([
             'title' => $this->title,
             'message' => $this->message,
             'sender_name' => $this->senderName,
             'sender_role' => $this->senderRole,
-        ];
+        ], $this->data);
     }
 
     /**

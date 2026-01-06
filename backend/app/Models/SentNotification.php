@@ -19,6 +19,14 @@ class SentNotification extends Model
         'message',
         'recipient_type',
         'recipient_count',
+        'is_voice',
+        'voice_path',
+        'voice_duration',
+    ];
+
+    protected $casts = [
+        'is_voice' => 'boolean',
+        'voice_duration' => 'integer',
     ];
 
     public function teacher()

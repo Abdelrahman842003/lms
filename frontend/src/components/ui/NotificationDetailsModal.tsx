@@ -1,4 +1,5 @@
 import React from 'react';
+import VoicePlayer from '@/components/notifications/VoicePlayer';
 
 interface NotificationDetailsModalProps {
   isOpen: boolean;
@@ -9,6 +10,9 @@ interface NotificationDetailsModalProps {
     created_at: string;
     sender_name?: string;
     recipient_type?: string;
+    is_voice?: boolean;
+    voice_url?: string;
+    voice_duration?: number;
     [key: string]: any;
   } | null;
 }
@@ -21,6 +25,39 @@ export default function NotificationDetailsModal({
   const [isExpanded, setIsExpanded] = React.useState(false);
 
   if (!isOpen || !notification) return null;
+
+  // Robustly check for voice properties
+  // Check if it's explicitly marked as voice, OR has voice data, OR message indicates it
+  const hasVoiceData = Boolean(
+    notification.voice_url || 
+    notification.data?.voice_url || 
+    notification.voice_path || 
+    notification.data?.voice_path
+  );
+
+  const isVoice = Boolean(
+    notification.is_voice || 
+    notification.data?.is_voice || 
+    (notification.message && notification.message.includes('[رسالة صوتية]')) ||
+    hasVoiceData
+  );
+  
+  let voiceUrl = notification.voice_url || notification.data?.voice_url;
+  // Fallback: construct URL from voice_path if available and voiceUrl is missing
+  if (!voiceUrl) {
+    const voicePath = notification.voice_path || notification.data?.voice_path;
+    if (voicePath) {
+      // If path starts with http, use it as is (R2/S3 URL)
+      if (voicePath.startsWith('http')) {
+        voiceUrl = voicePath;
+      } else {
+        // Otherwise assume local storage and ensure path starts with /storage/
+        voiceUrl = voicePath.startsWith('/storage') ? voicePath : `/storage/${voicePath}`;
+      }
+    }
+  }
+
+  const voiceDuration = Number(notification.voice_duration || notification.data?.voice_duration || 0);
 
   return (
     <div 
@@ -72,22 +109,38 @@ export default function NotificationDetailsModal({
                 {notification.recipient_type === 'admin' ? 'الدعم الفني' : notification.recipient_type}
               </div>
             )}
-          </div>
 
-          {/* Message Body */}
-          <div className="bg-[#151521] p-3 rounded-lg border border-white/5">
-            <p className={`text-gray-300 leading-relaxed whitespace-pre-wrap text-sm transition-all duration-300 ${!isExpanded ? 'line-clamp-2' : ''}`}>
-              {notification.message}
-            </p>
-            {notification.message.length > 100 && (
-              <button 
-                onClick={() => setIsExpanded(!isExpanded)}
-                className="mt-1.5 text-primary text-xs hover:underline focus:outline-none"
-              >
-                {isExpanded ? 'عرض أقل' : 'عرض المزيد'}
-              </button>
+            {isVoice && (
+              <div className="px-2.5 py-0.5 rounded-full bg-red-500/10 text-red-400 text-xs font-medium border border-red-500/20">
+                <i className="fas fa-microphone mr-1.5"></i>
+                رسالة صوتية
+              </div>
             )}
           </div>
+
+          {/* Voice Player for voice notifications */}
+          {isVoice && voiceUrl && (
+            <div className="bg-[#151521] p-3 rounded-lg border border-white/5">
+              <VoicePlayer voiceUrl={voiceUrl} duration={voiceDuration} />
+            </div>
+          )}
+
+          {/* Message Body - show if NOT voice, OR if voice but missing URL (fallback) */}
+          {(!isVoice || (isVoice && !voiceUrl)) && (
+            <div className="bg-[#151521] p-3 rounded-lg border border-white/5">
+              <p className={`text-gray-300 leading-relaxed whitespace-pre-wrap text-sm transition-all duration-300 ${!isExpanded ? 'line-clamp-2' : ''}`}>
+                {notification.message}
+              </p>
+              {notification.message.length > 100 && (
+                <button 
+                  onClick={() => setIsExpanded(!isExpanded)}
+                  className="mt-1.5 text-primary text-xs hover:underline focus:outline-none"
+                >
+                  {isExpanded ? 'عرض أقل' : 'عرض المزيد'}
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Footer */}

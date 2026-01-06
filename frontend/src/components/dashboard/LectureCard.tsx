@@ -15,6 +15,7 @@ interface LectureCardProps {
   onEnd: () => void;
   onManualAttendance: () => void;
   onCancelSession?: () => void;
+  onManageSessions?: () => void;
 }
 
 export const LectureCard: React.FC<LectureCardProps> = ({
@@ -31,6 +32,7 @@ export const LectureCard: React.FC<LectureCardProps> = ({
   onEnd,
   onManualAttendance,
   onCancelSession,
+  onManageSessions,
 }) => {
   const isActive = lecture.is_active;
   const [timeLeft, setTimeLeft] = React.useState<string>('');
@@ -168,6 +170,19 @@ export const LectureCard: React.FC<LectureCardProps> = ({
                 <span>حذف</span>
               </button>
 
+              {lecture.is_recurring && (
+                <button
+                  className="actions-menu-item w-full"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onManageSessions?.();
+                  }}
+                >
+                  <i className="fas fa-calendar-alt"></i>
+                  <span>إدارة الجلسات</span>
+                </button>
+              )}
+
               {lecture.is_recurring && !isActive && lecture.status !== 'منتهية' && (
                 <button
                   className="actions-menu-item danger w-full"
@@ -192,14 +207,38 @@ export const LectureCard: React.FC<LectureCardProps> = ({
 
       {/* Description */}
       <p className="text-sm text-gray-light/80 mb-6 line-clamp-2 min-h-[40px]">
-        {lecture.description || 'New topic'}
+        {lecture.current_session?.description || lecture.description || 'New topic'}
       </p>
 
       {/* Lecture Info */}
       <div className="grid gap-3.5 mb-6">
         <div className="flex items-center gap-3 text-sm text-gray-light">
           <i className="fas fa-calendar w-5 text-primary text-base"></i>
-          <span>{lecture.date}</span>
+          {lecture.is_recurring && lecture.recurrence_days && lecture.recurrence_days.length > 0 ? (
+            <div className="flex flex-wrap gap-1">
+              {lecture.recurrence_days.map((day, index) => {
+                const dayLabels: Record<string, string> = {
+                  'Sunday': 'الأحد',
+                  'Monday': 'الاثنين',
+                  'Tuesday': 'الثلاثاء',
+                  'Wednesday': 'الأربعاء',
+                  'Thursday': 'الخميس',
+                  'Friday': 'الجمعة',
+                  'Saturday': 'السبت',
+                };
+                return (
+                  <div key={day} className="flex items-center">
+                    {index > 0 && <span className="mx-1 text-gray-500">-</span>}
+                    <span className="text-sm">
+                      {dayLabels[day] || day}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <span>{lecture.date}</span>
+          )}
         </div>
         {lecture.grade && (
           <div className="flex items-center gap-3 text-sm text-gray-light">
@@ -217,29 +256,7 @@ export const LectureCard: React.FC<LectureCardProps> = ({
           <i className="fas fa-clock w-5 text-primary text-base"></i>
           <span>{lecture.time} ({lecture.duration})</span>
         </div>
-        {lecture.is_recurring && lecture.recurrence_days && lecture.recurrence_days.length > 0 && (
-          <div className="flex items-center gap-3 text-sm text-gray-light">
-            <i className="fas fa-redo w-5 text-primary text-base"></i>
-            <div className="flex flex-wrap gap-1">
-              {lecture.recurrence_days.map((day) => {
-                const dayLabels: Record<string, string> = {
-                  'Sunday': 'الأحد',
-                  'Monday': 'الاثنين',
-                  'Tuesday': 'الثلاثاء',
-                  'Wednesday': 'الأربعاء',
-                  'Thursday': 'الخميس',
-                  'Friday': 'الجمعة',
-                  'Saturday': 'السبت',
-                };
-                return (
-                  <span key={day} className="px-2 py-0.5 rounded bg-primary/20 text-primary text-xs">
-                    {dayLabels[day] || day}
-                  </span>
-                );
-              })}
-            </div>
-          </div>
-        )}
+
         <div className="flex items-center gap-3 text-sm text-gray-light">
           <i className="fas fa-user-check w-5 text-primary text-base"></i>
           <span>{lecture.enrolled} طالب مسجل</span>

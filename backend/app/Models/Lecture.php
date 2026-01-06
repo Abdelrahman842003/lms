@@ -69,6 +69,16 @@ class Lecture extends Model
         return $this->hasMany(Lecture::class, 'parent_id');
     }
 
+    public function sessions()
+    {
+        return $this->hasMany(LectureSession::class);
+    }
+
+    public function current_session()
+    {
+        return $this->hasOne(LectureSession::class)->where('date', now()->toDateString());
+    }
+
     public function scopeFilter($query, array $filters)
     {
         if ($search = $filters['search'] ?? null) {

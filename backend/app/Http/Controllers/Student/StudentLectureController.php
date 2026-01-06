@@ -24,6 +24,13 @@ class StudentLectureController extends Controller
             
         $gradeIds = $enrollments->pluck('grade_id')->filter()->unique()->values();
 
+        \Illuminate\Support\Facades\Log::info('Student Lectures Query', [
+            'student_id' => $student->id,
+            'teacher_id' => $request->teacher_id,
+            'enrollments_count' => $enrollments->count(),
+            'grade_ids' => $gradeIds->toArray(),
+        ]);
+
         $lectures = Lecture::where('teacher_id', $request->teacher_id)
             ->where(function($query) use ($gradeIds) {
                 $query->whereIn('grade_id', $gradeIds)
@@ -34,6 +41,11 @@ class StudentLectureController extends Controller
             }])
             ->latest()
             ->paginate(10);
+
+        \Illuminate\Support\Facades\Log::info('Student Lectures Result', [
+            'total_lectures' => $lectures->total(),
+            'lectures_count' => $lectures->count(),
+        ]);
 
         $lectures->getCollection()->transform(function ($lecture) {
             $attendance = $lecture->attendances->first();

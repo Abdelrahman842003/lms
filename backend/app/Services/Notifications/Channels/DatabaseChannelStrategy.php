@@ -18,7 +18,8 @@ class DatabaseChannelStrategy implements NotificationChannelInterface
             $title,
             $message,
             $senderName,
-            $senderRole
+            $senderRole,
+            $data
         ));
     }
 }

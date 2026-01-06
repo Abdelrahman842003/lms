@@ -62,12 +62,12 @@ return [
 
         'r2' => [
             'driver' => 's3',
-            'key' => env('CLOUDFLARE_R2_ACCESS_KEY_ID') ?? (env('CLOUDFLARE_R2_ACCESS_KEY_ID_FILE') ? trim(file_get_contents(env('CLOUDFLARE_R2_ACCESS_KEY_ID_FILE'))) : null),
-            'secret' => env('CLOUDFLARE_R2_SECRET_ACCESS_KEY') ?? (env('CLOUDFLARE_R2_SECRET_ACCESS_KEY_FILE') ? trim(file_get_contents(env('CLOUDFLARE_R2_SECRET_ACCESS_KEY_FILE'))) : null),
+            'key' => env('R2_ACCESS_KEY_ID'),
+            'secret' => env('R2_SECRET_ACCESS_KEY'),
             'region' => 'auto',
-            'bucket' => env('CLOUDFLARE_R2_BUCKET') ?? (env('CLOUDFLARE_R2_BUCKET_FILE') ? trim(file_get_contents(env('CLOUDFLARE_R2_BUCKET_FILE'))) : null),
-            'endpoint' => env('CLOUDFLARE_R2_ENDPOINT') ?? (env('CLOUDFLARE_R2_ENDPOINT_FILE') ? trim(file_get_contents(env('CLOUDFLARE_R2_ENDPOINT_FILE'))) : null),
-            'url' => env('CLOUDFLARE_R2_PUBLIC_URL') ?? (env('CLOUDFLARE_R2_PUBLIC_URL_FILE') ? trim(file_get_contents(env('CLOUDFLARE_R2_PUBLIC_URL_FILE'))) : null),
+            'bucket' => env('R2_BUCKET_NAME'),
+            'endpoint' => 'https://' . env('R2_ACCOUNT_ID') . '.r2.cloudflarestorage.com',
+            'url' => env('R2_PUBLIC_DOMAIN'),
             'use_path_style_endpoint' => false,
             'throw' => true,
         ],

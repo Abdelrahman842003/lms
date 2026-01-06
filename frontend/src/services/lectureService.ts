@@ -365,3 +365,52 @@ export const cancelSession = async (id: string, date: string): Promise<{ message
   const res: ApiResponse<{ message: string; lecture: Lecture }> = await response.json();
   return res.data;
 };
+
+export interface LectureSession {
+  id: string;
+  lecture_id: string;
+  date: string;
+  title?: string;
+  description?: string;
+  is_cancelled: boolean;
+}
+
+export const getLectureSessions = async (lectureId: string, params?: { date_from?: string; date_to?: string }): Promise<LectureSession[]> => {
+  const token = localStorage.getItem('token');
+  const queryParams = new URLSearchParams(params as any);
+  
+  const response = await fetch(`${API_BASE_URL}/api/teacher/lectures/${lectureId}/sessions?${queryParams}`, {
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch lecture sessions');
+  }
+
+  const res: ApiResponse<LectureSession[]> = await response.json();
+  return res.data;
+};
+
+export const updateLectureSession = async (lectureId: string, data: { date: string; title?: string; description?: string; is_cancelled?: boolean }): Promise<LectureSession> => {
+  const token = localStorage.getItem('token');
+  const response = await fetch(`${API_BASE_URL}/api/teacher/lectures/${lectureId}/sessions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to update lecture session');
+  }
+
+  const res: ApiResponse<LectureSession> = await response.json();
+  return res.data;
+};
