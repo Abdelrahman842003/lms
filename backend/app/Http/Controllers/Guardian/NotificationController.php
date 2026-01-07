@@ -38,7 +38,10 @@ class NotificationController extends Controller
                     'title' => $data['title'] ?? 'إشعار',
                     'message' => $data['message'] ?? '',
                     'sender_name' => $data['sender_name'] ?? 'النظام',
-                    'child_name' => $data['child_name'] ?? null, // Might need to fetch if not in data
+                    'child_name' => $data['child_name'] ?? null,
+                    'is_voice' => $data['is_voice'] ?? false,
+                    'voice_url' => $data['voice_url'] ?? null,
+                    'voice_duration' => $data['voice_duration'] ?? null,
                 ],
                 'read_at' => $notification->read_at,
                 'created_at' => $notification->created_at,
