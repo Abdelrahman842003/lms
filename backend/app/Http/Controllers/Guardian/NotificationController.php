@@ -9,13 +9,17 @@ use Illuminate\Support\Facades\Auth;
 
 use App\Services\Guardian\GuardianNotificationService;
 
+use App\Services\VoiceNotificationService;
+
 class NotificationController extends Controller
 {
+    protected $voiceService;
     protected $notificationService;
 
-    public function __construct(GuardianNotificationService $notificationService)
+    public function __construct(GuardianNotificationService $notificationService, VoiceNotificationService $voiceService)
     {
         $this->notificationService = $notificationService;
+        $this->voiceService = $voiceService;
     }
     /**
      * Get all notifications for all children
@@ -31,6 +35,12 @@ class NotificationController extends Controller
         // Transform notifications
         $formattedNotifications = $notifications->map(function ($notification) {
             $data = $notification->data ?? [];
+            
+            $voiceUrl = $data['voice_url'] ?? null;
+            if (!$voiceUrl && isset($data['voice_path'])) {
+                $voiceUrl = $this->voiceService->getVoiceUrl($data['voice_path']);
+            }
+
             return [
                 'id' => (string)$notification->id,
                 'type' => $data['type'] ?? 'general',
@@ -40,7 +50,7 @@ class NotificationController extends Controller
                     'sender_name' => $data['sender_name'] ?? 'النظام',
                     'child_name' => $data['child_name'] ?? null,
                     'is_voice' => $data['is_voice'] ?? false,
-                    'voice_url' => $data['voice_url'] ?? null,
+                    'voice_url' => $voiceUrl,
                     'voice_path' => $data['voice_path'] ?? null,
                     'voice_duration' => $data['voice_duration'] ?? null,
                 ],

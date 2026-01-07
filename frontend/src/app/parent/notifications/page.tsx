@@ -105,7 +105,18 @@ function ParentNotificationsContent() {
       key: 'message',
       label: 'الرسالة',
       sortable: false,
-      render: (value: string) => value.length > 50 ? value.substring(0, 50) + '...' : value,
+      render: (value: string, row: any) => {
+        const isVoice = row.data?.is_voice || value.includes('[رسالة صوتية]');
+        if (isVoice) {
+          return (
+            <span className="inline-flex items-center gap-2 text-primary">
+              <i className="fas fa-microphone"></i>
+              <span>رسالة صوتية</span>
+            </span>
+          );
+        }
+        return value.length > 50 ? value.substring(0, 50) + '...' : value;
+      },
     },
     {
       key: 'sender_name',
