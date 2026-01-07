@@ -73,9 +73,9 @@ class GuardianAuthService
         }
 
         // Check device limit
-        $deviceCheck = $this->deviceLimitService->checkDevice($guardian, $userAgent);
+        $deviceCheck = $this->deviceLimitService->checkAndManageDevices($guardian);
         if (!$deviceCheck['allowed']) {
-            throw new \Exception($deviceCheck['message'], 403);
+            throw new \Exception('تم الوصول للحد الأقصى من الأجهزة المسموح بها', 403);
         }
 
         $this->loginAttemptService->clearAttempts($phone, $ip);
