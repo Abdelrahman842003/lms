@@ -52,7 +52,7 @@ class NotificationService
                         $teacher->name,
                         $student->name,
                         'general',
-                        ['sender_name' => $teacher->name]
+                        array_merge($data, ['sender_name' => $teacher->name])
                     ));
                 } catch (\Exception $e) {
                     // Log error but continue sending to others
