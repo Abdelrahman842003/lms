@@ -10,7 +10,7 @@ import { ImageCropModal, ConfirmationModal, Skeleton } from '@/components/ui';
 import { toast } from 'react-hot-toast';
 
 export default function TeacherProfile() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, updateUser } = useAuth();
   const [isEditing, setIsEditing] = React.useState(false);
   const [avatarUrl, setAvatarUrl] = React.useState<string | null>(null);
   const [isUploadingAvatar, setIsUploadingAvatar] = React.useState(false);
@@ -121,6 +121,8 @@ export default function TeacherProfile() {
       const response = await uploadAvatar(file);
       if (response.success && response.data?.url) {
         setAvatarUrl(response.data.url);
+        // Update user avatar in AuthContext so it shows in navbar
+        updateUser({ avatar: response.data.url });
         toast.success('تم تحديث الصورة الشخصية بنجاح');
       }
     } catch (err: any) {
@@ -144,6 +146,8 @@ export default function TeacherProfile() {
     try {
       await deleteAvatar();
       setAvatarUrl(null);
+      // Update user avatar in AuthContext so it clears from navbar
+      updateUser({ avatar: undefined });
       setShowDeleteModal(false);
       toast.success('تم حذف الصورة الشخصية بنجاح');
     } catch (err: any) {
