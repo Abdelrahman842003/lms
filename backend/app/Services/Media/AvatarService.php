@@ -5,6 +5,7 @@ namespace App\Services\Media;
 use App\Models\Teacher;
 use App\Models\Student;
 use App\Models\Secretary;
+use App\Models\Guardian;
 use Illuminate\Http\UploadedFile;
 
 class AvatarService
@@ -19,8 +20,8 @@ class AvatarService
     /**
      * Upload avatar for a user
      * 
-     * @param mixed $user (Teacher|Student|Secretary)
-     * @param string $type (teacher|student|secretary)
+     * @param mixed $user (Teacher|Student|Secretary|Guardian)
+     * @param string $type (teacher|student|secretary|parent)
      * @param UploadedFile $file
      * @return array
      */
@@ -54,8 +55,8 @@ class AvatarService
     /**
      * Delete avatar for a user
      * 
-     * @param mixed $user (Teacher|Student|Secretary)
-     * @param string $type (teacher|student|secretary)
+     * @param mixed $user (Teacher|Student|Secretary|Guardian)
+     * @param string $type (teacher|student|secretary|parent)
      * @return bool
      */
     public function deleteAvatar($user, string $type): bool
@@ -79,8 +80,8 @@ class AvatarService
     /**
      * Get avatar URL for a user
      * 
-     * @param mixed $user (Teacher|Student|Secretary)
-     * @param string $type (teacher|student|secretary)
+     * @param mixed $user (Teacher|Student|Secretary|Guardian)
+     * @param string $type (teacher|student|secretary|parent)
      * @return string|null
      */
     public function getAvatarUrl($user, string $type): ?string
@@ -107,6 +108,8 @@ class AvatarService
             return 'student';
         } elseif ($user instanceof Secretary) {
             return 'secretary';
+        } elseif ($user instanceof Guardian) {
+            return 'parent';
         }
 
         throw new \Exception('Invalid user type');
