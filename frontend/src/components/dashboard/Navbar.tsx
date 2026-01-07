@@ -296,10 +296,13 @@ const filterNavItemsByPermissions = (items: SidebarItem[], permissions: string[]
   });
 };
 
-export const Navbar: React.FC<NavbarProps> = ({ role, user, onMenuClick }) => {
+export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClick }) => {
   const pathname = usePathname();
   const router = useRouter();
   const { logout, user: authUser } = useAuth();
+  
+  // Use authUser from context if available, otherwise fall back to prop
+  const user = authUser || userProp;
   
   // Get nav items and filter for secretary
   let items = role === 'parent' ? getParentNavItems() : getNavItems(role);
