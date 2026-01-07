@@ -511,7 +511,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
             
             <div style={{ padding: '0.75rem', borderTop: '1px solid var(--glass-border)', textAlign: 'center' }}>
               <Link 
-                href={`/${role}/notifications`}
+                href={role === 'parent' ? '/parent/children' : `/${role}/notifications`}
                 style={{ fontSize: '0.85rem', color: '#ffffff', textDecoration: 'none', fontWeight: '600' }}
                 onClick={() => setIsOpen(false)}
               >
