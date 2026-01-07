@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { DashboardCard } from './DashboardCard';
 import { fetchApi } from '@/services/authService';
 import NotificationDetailsModal from '@/components/ui/NotificationDetailsModal';
+import { sendNotification } from '@/services/notificationService';
+import { toast } from 'react-hot-toast';
 
 interface Notification {
   id: string;
@@ -24,6 +26,15 @@ export const NotificationsSection = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
+  
+  // Support Modal State
+  const [showSupportModal, setShowSupportModal] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  const [formData, setFormData] = useState({
+    title: '',
+    message: '',
+    recipient_type: 'admin',
+  });
 
   useEffect(() => {
     // Get token from localStorage on mount
@@ -31,48 +42,48 @@ export const NotificationsSection = () => {
     setToken(storedToken);
   }, []);
 
-  useEffect(() => {
-    const fetchNotifications = async () => {
-      try {
-        const data = await fetchApi('/parent/notifications');
-        
-        // Handle different response structures
-        let fetchedNotifications: Notification[] = [];
-        
-        const mapNotification = (n: any): Notification => {
-          const notificationData = n.data || {};
-          return {
-            id: n.id,
-            title: notificationData.title || n.title || 'إشعار',
-            message: notificationData.message || n.message || '',
-            created_at: n.created_at,
-            read_at: n.read_at,
-            type: n.type || 'general',
-            sender_name: notificationData.sender_name || n.sender_name || 'النظام',
-            child_name: notificationData.child_name || n.child_name || '',
-            data: notificationData,
-            is_voice: notificationData.is_voice || n.is_voice || false,
-            voice_url: notificationData.voice_url || n.voice_url,
-            voice_path: notificationData.voice_path || n.voice_path,
-            voice_duration: notificationData.voice_duration || n.voice_duration
-          };
+  const fetchNotifications = async () => {
+    try {
+      const data = await fetchApi('/parent/notifications');
+      
+      // Handle different response structures
+      let fetchedNotifications: Notification[] = [];
+      
+      const mapNotification = (n: any): Notification => {
+        const notificationData = n.data || {};
+        return {
+          id: n.id,
+          title: notificationData.title || n.title || 'إشعار',
+          message: notificationData.message || n.message || '',
+          created_at: n.created_at,
+          read_at: n.read_at,
+          type: n.type || 'general',
+          sender_name: notificationData.sender_name || n.sender_name || 'النظام',
+          child_name: notificationData.child_name || n.child_name || '',
+          data: notificationData,
+          is_voice: notificationData.is_voice || n.is_voice || false,
+          voice_url: notificationData.voice_url || n.voice_url,
+          voice_path: notificationData.voice_path || n.voice_path,
+          voice_duration: notificationData.voice_duration || n.voice_duration
         };
+      };
 
-        if (data.received_notifications) {
-          fetchedNotifications = data.received_notifications.map(mapNotification);
-        } else if (data.data && data.data.received_notifications) {
-          fetchedNotifications = data.data.received_notifications.map(mapNotification);
-        } else if (data.notifications) {
-           fetchedNotifications = data.notifications.map(mapNotification);
-        }
-        setNotifications(fetchedNotifications);
-      } catch (error) {
-        console.error('Failed to fetch notifications:', error);
-      } finally {
-        setIsLoading(false);
+      if (data.received_notifications) {
+        fetchedNotifications = data.received_notifications.map(mapNotification);
+      } else if (data.data && data.data.received_notifications) {
+        fetchedNotifications = data.data.received_notifications.map(mapNotification);
+      } else if (data.notifications) {
+         fetchedNotifications = data.notifications.map(mapNotification);
       }
-    };
+      setNotifications(fetchedNotifications);
+    } catch (error) {
+      console.error('Failed to fetch notifications:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  useEffect(() => {
     if (token) {
       fetchNotifications();
       
@@ -135,6 +146,31 @@ export const NotificationsSection = () => {
     }
   };
 
+  const handleSupportSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSending(true);
+    try {
+      await sendNotification({
+        title: formData.title,
+        message: formData.message,
+        recipient_type: 'admin',
+      });
+      toast.success('تم إرسال الرسالة بنجاح');
+      setShowSupportModal(false);
+      setFormData({
+        title: '',
+        message: '',
+        recipient_type: 'admin',
+      });
+      // Optionally refresh notifications if we want to show sent messages (but this section shows received)
+    } catch (error) {
+      console.error('Failed to send notification:', error);
+      toast.error('فشل إرسال الرسالة');
+    } finally {
+      setIsSending(false);
+    }
+  };
+
   if (isLoading) return (
     <DashboardCard title="الإشعارات" icon="fas fa-bell">
       <div className="animate-pulse space-y-4">
@@ -146,7 +182,22 @@ export const NotificationsSection = () => {
 
   return (
     <>
-      <DashboardCard title="الإشعارات" icon="fas fa-bell">
+      <DashboardCard 
+        title="الإشعارات" 
+        icon="fas fa-bell"
+        action={
+          <button 
+            onClick={() => {
+              setFormData(prev => ({ ...prev, recipient_type: 'admin' }));
+              setShowSupportModal(true);
+            }} 
+            className="px-3 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+          >
+            <i className="fas fa-headset"></i>
+            <span>تواصل مع الدعم</span>
+          </button>
+        }
+      >
         <div className="space-y-4 max-h-[500px] overflow-y-auto custom-scrollbar">
           {notifications.length === 0 ? (
             <div className="text-center py-8 text-gray-400">
@@ -209,6 +260,64 @@ export const NotificationsSection = () => {
         onClose={() => setSelectedNotification(null)}
         notification={selectedNotification}
       />
+
+      {/* Support Modal */}
+      {showSupportModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowSupportModal(false)}>
+          <div className="bg-[#1e1e2d] rounded-xl w-full max-w-[600px] shadow-xl border border-white/10" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-center p-6 border-b border-white/10">
+              <h3 className="text-xl font-bold text-white m-0">إرسال رسالة للدعم الفني / المطور</h3>
+              <button className="text-gray-400 hover:text-white transition-colors bg-transparent border-none cursor-pointer text-xl" onClick={() => setShowSupportModal(false)}>
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            <form onSubmit={handleSupportSubmit}>
+              <div className="p-6">
+                <div className="mb-4">
+                  <label htmlFor="title" className="block text-gray-light text-sm mb-2 font-medium">الموضوع</label>
+                  <input
+                    type="text"
+                    id="title"
+                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                    value={formData.title}
+                    onChange={(e) => setFormData({...formData, title: e.target.value})}
+                    required
+                    placeholder="مثال: استفسار عن درجات الطالب"
+                  />
+                </div>
+                
+                <div className="mb-4">
+                  <label htmlFor="message" className="block text-gray-light text-sm mb-2 font-medium">تفاصيل الرسالة</label>
+                  <textarea
+                    id="message"
+                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                    value={formData.message}
+                    onChange={(e) => setFormData({...formData, message: e.target.value})}
+                    required
+                    rows={6}
+                    placeholder="اكتب تفاصيل الرسالة هنا..."
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end gap-3 p-6 border-t border-white/10 bg-white/5 rounded-b-xl">
+                <button type="button" className="btn btn-secondary" onClick={() => setShowSupportModal(false)} disabled={isSending}>
+                  إلغاء
+                </button>
+                <button type="submit" className="btn btn-primary" disabled={isSending}>
+                  {isSending ? (
+                    <span>جاري الإرسال...</span>
+                  ) : (
+                    <>
+                      <i className="fas fa-paper-plane"></i>
+                      <span>إرسال الرسالة</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </>
   );
 };
