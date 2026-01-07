@@ -26,10 +26,11 @@ class GuardianAuthService
 
     public function login(string $phone, string $password, string $ip, string $userAgent): array
     {
-        // Check for too many attempts
-        if ($this->loginAttemptService->hasTooManyAttempts($phone, $ip, 'guardian')) {
-            $seconds = $this->loginAttemptService->availableIn($phone, $ip, 'guardian');
-            throw new \Exception("محاولات دخول كثيرة جداً. يرجى المحاولة بعد {$seconds} ثانية.", 429);
+        // Check if blocked
+        if ($this->loginAttemptService->isBlocked($phone, $ip)) {
+            $seconds = $this->loginAttemptService->getRemainingBanTime($phone, $ip);
+            $minutes = ceil($seconds / 60);
+            throw new \Exception("محاولات دخول كثيرة جداً. يرجى المحاولة بعد {$minutes} دقيقة.", 429);
         }
 
         $guardian = Guardian::where('phone', $phone)->first();
@@ -62,8 +63,13 @@ class GuardianAuthService
         }
 
         if (!$guardian || !Hash::check($password, $guardian->password)) {
-            $this->loginAttemptService->incrementAttempts($phone, $ip, 'guardian');
-            throw new \Exception('بيانات الدخول غير صحيحة', 401);
+            $result = $this->loginAttemptService->recordFailedAttempt($phone, $ip);
+            
+            if ($result['banned']) {
+                throw new \Exception("تم حظرك مؤقتاً لمدة {$result['ban_duration_minutes']} دقيقة بسبب محاولات دخول فاشلة متعددة.", 429);
+            }
+            
+            throw new \Exception("بيانات الدخول غير صحيحة. المحاولات المتبقية: {$result['attempts_remaining']}", 401);
         }
 
         // Check device limit
@@ -72,7 +78,7 @@ class GuardianAuthService
             throw new \Exception($deviceCheck['message'], 403);
         }
 
-        $this->loginAttemptService->clearAttempts($phone, $ip, 'guardian');
+        $this->loginAttemptService->clearAttempts($phone, $ip);
 
         $token = $guardian->createToken('guardian-token')->plainTextToken;
 
