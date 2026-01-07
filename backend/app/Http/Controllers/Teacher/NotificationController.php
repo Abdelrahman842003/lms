@@ -186,6 +186,7 @@ class NotificationController extends Controller
                 'message' => '[رسالة صوتية]',
                 'is_voice' => true,
                 'voice_url' => $voiceUrl,
+                'voice_path' => $voicePath,
                 'voice_duration' => (int) $request->input('duration'),
             ]);
 

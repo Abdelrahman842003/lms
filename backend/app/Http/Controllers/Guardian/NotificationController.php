@@ -41,6 +41,7 @@ class NotificationController extends Controller
                     'child_name' => $data['child_name'] ?? null,
                     'is_voice' => $data['is_voice'] ?? false,
                     'voice_url' => $data['voice_url'] ?? null,
+                    'voice_path' => $data['voice_path'] ?? null,
                     'voice_duration' => $data['voice_duration'] ?? null,
                 ],
                 'read_at' => $notification->read_at,
