@@ -13,6 +13,7 @@ export default function TeacherProfile() {
   const { user, isLoading, updateUser } = useAuth();
   const [isEditing, setIsEditing] = React.useState(false);
   const [avatarUrl, setAvatarUrl] = React.useState<string | null>(null);
+  const [avatarPreview, setAvatarPreview] = React.useState<string | null>(null);
   const [isUploadingAvatar, setIsUploadingAvatar] = React.useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   
@@ -57,10 +58,16 @@ export default function TeacherProfile() {
     }
   }, [user]);
 
-  // Load avatar on mount
+  // Load avatar on mount and when user changes
   React.useEffect(() => {
-    loadAvatar();
-  }, []);
+    // If user has avatar in context, use it
+    if (user?.avatar) {
+      setAvatarUrl(user.avatar);
+    } else {
+      // Otherwise, try to load from API
+      loadAvatar();
+    }
+  }, [user?.avatar]);
 
   const loadAvatar = async () => {
     try {
@@ -76,7 +83,6 @@ export default function TeacherProfile() {
       }
     } catch (err) {
       // Silently handle - it's ok if no avatar exists
-      // No avatar found - silently handle
     }
   };
 
@@ -112,6 +118,13 @@ export default function TeacherProfile() {
   const handleCropComplete = async (croppedBlob: Blob) => {
     setShowCropModal(false);
     setSelectedImage(null);
+    
+    // Show preview immediately
+    const previewUrl = URL.createObjectURL(croppedBlob);
+    setAvatarPreview(previewUrl);
+    
+    // Update navbar immediately with preview
+    updateUser({ avatar: previewUrl });
     setIsUploadingAvatar(true);
 
     try {
@@ -120,12 +133,18 @@ export default function TeacherProfile() {
       
       const response = await uploadAvatar(file);
       if (response.success && response.data?.url) {
+        // Clear preview and set actual URL
+        setAvatarPreview(null);
         setAvatarUrl(response.data.url);
-        // Update user avatar in AuthContext so it shows in navbar
+        // Update user avatar in AuthContext with actual URL
         updateUser({ avatar: response.data.url });
         toast.success('تم تحديث الصورة الشخصية بنجاح');
       }
     } catch (err: any) {
+      // Clear preview on error
+      setAvatarPreview(null);
+      // Revert to previous avatar on error
+      updateUser({ avatar: avatarUrl || undefined });
       toast.error(err.message || 'فشل رفع الصورة');
     } finally {
       setIsUploadingAvatar(false);
@@ -146,6 +165,7 @@ export default function TeacherProfile() {
     try {
       await deleteAvatar();
       setAvatarUrl(null);
+      setAvatarPreview(null);
       // Update user avatar in AuthContext so it clears from navbar
       updateUser({ avatar: undefined });
       setShowDeleteModal(false);
@@ -324,11 +344,11 @@ export default function TeacherProfile() {
             {/* Profile Avatar */}
             <div className="flex items-center gap-6 mb-8">
               <div
-                className={`w-[120px] h-[120px] rounded-full flex items-center justify-center text-5xl font-bold text-white relative overflow-hidden ${!avatarUrl ? 'bg-gradient-to-br from-primary to-secondary' : ''}`}
+                className={`w-[120px] h-[120px] rounded-full flex items-center justify-center text-5xl font-bold text-white relative overflow-hidden ${(avatarPreview || avatarUrl) ? '' : 'bg-gradient-to-br from-primary to-secondary'}`}
               >
-                {avatarUrl ? (
+                {(avatarPreview || avatarUrl) ? (
                   <img 
-                    src={avatarUrl} 
+                    src={avatarPreview || avatarUrl || ''} 
                     alt="Avatar" 
                     className="w-full h-full object-cover"
                   />
