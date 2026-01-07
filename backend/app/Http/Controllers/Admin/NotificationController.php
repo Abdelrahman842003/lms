@@ -162,6 +162,7 @@ class NotificationController extends Controller
                 'sender_role' => 'admin',
                 'is_voice' => true,
                 'voice_url' => $voiceUrl,
+                'voice_path' => $voicePath,
                 'voice_duration' => (int) $request->input('duration'),
             ]);
 
