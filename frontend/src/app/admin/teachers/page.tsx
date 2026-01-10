@@ -806,7 +806,7 @@ export default function AdminTeachersPage() {
             actions={tableActions}
             searchable={true}
             onSearch={setSearchQuery}
-            pagination={true}
+            pagination={false}
             itemsPerPage={itemsPerPage}
             isLoading={false}
             currentPage={currentPage}

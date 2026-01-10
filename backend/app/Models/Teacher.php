@@ -108,6 +108,32 @@ class Teacher extends Authenticatable
         return $this->hasMany(TeacherSubscription::class);
     }
 
+    /**
+     * Academies this teacher belongs to
+     */
+    public function academies()
+    {
+        return $this->belongsToMany(Academy::class, 'academy_teacher')
+            ->withPivot('is_active', 'joined_at')
+            ->withTimestamps();
+    }
+
+    /**
+     * Active academies
+     */
+    public function activeAcademies()
+    {
+        return $this->academies()->wherePivot('is_active', true);
+    }
+
+    /**
+     * Attendance logs for this teacher
+     */
+    public function attendanceLogs()
+    {
+        return $this->hasMany(TeacherAttendanceLog::class);
+    }
+
     public function receivesBroadcastNotificationsOn(): string
     {
         return 'notifications.teacher.' . $this->id;

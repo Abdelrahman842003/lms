@@ -11,6 +11,11 @@ export interface Group {
   price: number | null;
   students_count: number;
   created_at: string;
+  teacher?: {
+    id: string;
+    name: string;
+    avatar: string;
+  };
 }
 
 export interface CreateGroupData {

@@ -12,7 +12,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->string('name');
             $table->decimal('price', 8, 2)->default(0);
-            $table->foreignUuid('teacher_id')->constrained('teachers')->onDelete('cascade');
+            $table->foreignUuid('teacher_id')->nullable()->constrained('teachers')->onDelete('cascade');
             $table->timestamps();
         });
     }

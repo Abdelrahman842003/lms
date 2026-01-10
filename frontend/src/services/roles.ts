@@ -76,6 +76,10 @@ export const getTeacherPermissions = async () => {
   return fetchApi<Permission[]>('/api/teacher/permissions');
 };
 
+export const getAcademyPermissions = async () => {
+  return fetchApi<Permission[]>('/api/academy/permissions');
+};
+
 export const createPermission = async (data: { name: string }) => {
   return fetchApi<Permission>('/api/admin/permissions', {
     method: 'POST',

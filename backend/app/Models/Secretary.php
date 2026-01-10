@@ -38,11 +38,30 @@ class Secretary extends Authenticatable
         ];
     }
 
+
     public function teachers()
     {
         return $this->belongsToMany(Teacher::class, 'secretary_teacher')
             ->withPivot('permissions')
             ->withTimestamps();
+    }
+
+    /**
+     * Academies this secretary manages
+     */
+    public function academies()
+    {
+        return $this->belongsToMany(Academy::class, 'academy_secretary')
+            ->withPivot('permissions', 'is_active')
+            ->withTimestamps();
+    }
+
+    /**
+     * Active academies
+     */
+    public function activeAcademies()
+    {
+        return $this->academies()->wherePivot('is_active', true);
     }
 
     public function scopeFilter($query, array $filters)

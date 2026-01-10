@@ -65,6 +65,11 @@ return [
             'driver' => 'session',
             'provider' => 'guardians',
         ],
+
+        'academy' => [
+            'driver' => 'session',
+            'provider' => 'academies',
+        ],
     ],
 
     /*
@@ -85,10 +90,6 @@ return [
     */
 
     'providers' => [
-        'users' => [
-            'driver' => 'eloquent',
-            'model' => env('AUTH_MODEL', App\Models\User::class),
-        ],
 
         'admins' => [
             'driver' => 'eloquent',
@@ -113,6 +114,11 @@ return [
         'guardians' => [
             'driver' => 'eloquent',
             'model' => App\Models\Guardian::class,
+        ],
+
+        'academies' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\Academy::class,
         ],
     ],
 

@@ -4,7 +4,7 @@ export interface User {
     name: string
     username?: string
     avatar?: string
-    userType: 'admin' | 'teacher' | 'student' | 'secretary' | 'parent'
+    userType: 'admin' | 'teacher' | 'student' | 'secretary' | 'parent' | 'academy'
     createdAt: string
     updatedAt: string
     phone?: string
@@ -35,5 +35,5 @@ export interface Student {
 export interface AuthResponse {
     token: string
     user: Teacher | Student
-    role: 'teacher' | 'student' | 'parent'
+    role: 'teacher' | 'student' | 'parent' | 'academy'
 }

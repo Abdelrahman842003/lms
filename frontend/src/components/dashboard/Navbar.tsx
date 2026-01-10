@@ -9,7 +9,7 @@ import { NotificationDropdown } from './NotificationDropdown';
 import { TeacherSelectionDropdown } from './TeacherSelectionDropdown';
 
 interface NavbarProps {
-  role: 'admin' | 'teacher' | 'student' | 'secretary' | 'parent';
+  role: 'admin' | 'teacher' | 'student' | 'secretary' | 'parent' | 'academy';
   user?: {
     name: string;
     avatar?: string;
@@ -42,12 +42,23 @@ const getNavItems = (role: string): SidebarItem[] => {
             icon: 'fas fa-chalkboard-teacher',
             href: '/admin/teachers',
           },
-
           {
             id: 'students',
             label: 'الطلاب',
             icon: 'fas fa-user-graduate',
             href: '/admin/students',
+          },
+          {
+            id: 'academies_list',
+            label: 'الأكاديميات',
+            icon: 'fas fa-building',
+            href: '/admin/academies',
+          },
+          {
+            id: 'academy_billing',
+            label: 'الفواتير',
+            icon: 'fas fa-file-invoice-dollar',
+            href: '/admin/academy-billings',
           },
         ],
       },
@@ -62,7 +73,21 @@ const getNavItems = (role: string): SidebarItem[] => {
         id: 'reports',
         label: 'التقارير',
         icon: 'fas fa-chart-bar',
-        href: '/admin/reports',
+        href: '#',
+        children: [
+          {
+            id: 'teacher_reports',
+            label: 'تقارير المدرسين',
+            icon: 'fas fa-chalkboard-teacher',
+            href: '/admin/reports/teachers',
+          },
+          {
+            id: 'academy_reports',
+            label: 'تقارير الأكاديميات',
+            icon: 'fas fa-building',
+            href: '/admin/reports/academies',
+          },
+        ],
       },
       {
         id: 'users',
@@ -89,6 +114,68 @@ const getNavItems = (role: string): SidebarItem[] => {
         label: 'الإعدادات',
         icon: 'fas fa-cogs',
         href: '/admin/settings',
+      },
+    ];
+  }
+
+  if (role === 'academy') {
+    return [
+      ...commonItems,
+      {
+        id: 'teachers',
+        label: 'المدرسين',
+        icon: 'fas fa-chalkboard-teacher',
+        href: '/academy/teachers',
+      },
+      {
+        id: 'secretaries',
+        label: 'السكرتيرات',
+        icon: 'fas fa-user-tie',
+        href: '/academy/secretaries',
+      },
+      {
+        id: 'academics',
+        label: 'الدراسة',
+        icon: 'fas fa-school',
+        href: '#',
+        children: [
+          {
+            id: 'groups',
+            label: 'المجموعات',
+            icon: 'fas fa-layer-group',
+            href: '/academy/groups',
+          },
+          {
+            id: 'grades',
+            label: 'الصفوف',
+            icon: 'fas fa-graduation-cap',
+            href: '/academy/grades',
+          },
+        ],
+      },
+      {
+        id: 'attendance',
+        label: 'الحضور والانصراف',
+        icon: 'fas fa-calendar-check',
+        href: '/academy/attendance',
+      },
+      {
+        id: 'student_lectures',
+        label: 'محاضرات الطلاب',
+        icon: 'fas fa-book-open',
+        href: '/academy/lectures',
+      },
+      {
+        id: 'notifications_academy',
+        label: 'الإشعارات',
+        icon: 'fas fa-bell',
+        href: '/academy/notifications',
+      },
+      {
+        id: 'reports_academy',
+        label: 'التقارير',
+        icon: 'fas fa-chart-bar',
+        href: '/academy/reports',
       },
     ];
   }
@@ -219,6 +306,7 @@ const getRoleLabel = (role: string): string => {
     student: 'طالب',
     secretary: 'سكرتير',
     parent: 'ولي أمر',
+    academy: 'الأكاديمية',
   };
   return labels[role] || role;
 };

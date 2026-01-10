@@ -16,11 +16,26 @@ class SecretaryService
             return false;
         }
 
-        // Check if the secretary is linked to any active (non-suspended) teachers
+        // Check if the secretary is linked to any active (non-suspended) teachers OR active academies
         $teachers = $secretary->teachers()->get();
+        $academies = $secretary->academies()->where('academies.is_active', true)->get();
+        
+        // Secretary can login if:
+        // 1. Linked to at least one active academy, OR
+        // 2. Linked to at least one teacher (and not all teachers are suspended)
+        
+        if ($academies->isNotEmpty()) {
+            // Secretary is linked to active academy - allow login
+            $token = $secretary->createToken('secretary_token', ['access-api'], now()->addMinutes(60))->plainTextToken;
+
+            return [
+                'token' => $token,
+                'user' => $secretary->load(['teachers', 'academies']),
+            ];
+        }
         
         if ($teachers->isEmpty()) {
-            // No teachers linked - cannot login
+            // No teachers and no academies linked - cannot login
             throw ValidationException::withMessages([
                 'phone' => ['عذراً، لا يمكن الدخول للنظام حالياً. يرجى التواصل مع الإدارة للمساعدة.'],
             ]);
@@ -39,7 +54,7 @@ class SecretaryService
 
         return [
             'token' => $token,
-            'user' => $secretary->load('teachers'),
+            'user' => $secretary->load(['teachers', 'academies']),
         ];
     }
 }

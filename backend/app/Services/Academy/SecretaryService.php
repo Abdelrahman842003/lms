@@ -1,0 +1,157 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Services\Academy;
+
+use App\Models\Academy;
+use App\Models\Secretary;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Hash;
+
+class SecretaryService
+{
+    /**
+     * Get paginated secretaries for academy
+     */
+    public function getSecretaries(Academy $academy, int $perPage, ?string $search = null): LengthAwarePaginator
+    {
+        return $academy->secretaries()
+            ->when($search, function ($query) use ($search) {
+                $query->where('name', 'like', "%{$search}%")
+                      ->orWhere('phone', 'like', "%{$search}%");
+            })
+            ->withPivot('permissions', 'is_active')
+            ->paginate($perPage);
+    }
+
+    /**
+     * Create and add secretary to academy
+     */
+    /**
+     * Create and add secretary to academy
+     */
+    public function createSecretary(Academy $academy, \App\DTOs\Academy\SecretaryData $data): Secretary
+    {
+        // Check if phone already exists
+        $existing = Secretary::where('phone', $data->phone)->first();
+        
+        if ($existing) {
+            // If secretary exists, just attach to academy
+            if ($academy->secretaries()->where('secretary_id', $existing->id)->exists()) {
+                throw new \Exception('السكرتير موجود بالفعل في الأكاديمية');
+            }
+
+            $academy->secretaries()->attach($existing->id, [
+                'permissions' => $data->permissions ?? [],
+                'is_active' => true,
+            ]);
+
+            return $existing;
+        }
+
+        // Create new secretary
+        $secretary = Secretary::create([
+            'name' => $data->name,
+            'phone' => $data->phone,
+            'password' => Hash::make($data->password),
+            'avatar_key' => $data->avatar_key,
+            'is_active' => true,
+        ]);
+
+        // Attach to academy
+        $academy->secretaries()->attach($secretary->id, [
+            'permissions' => $data->permissions ?? [],
+            'is_active' => true,
+        ]);
+
+        return $secretary;
+    }
+
+    /**
+     * Update secretary
+     */
+    /**
+     * Update secretary
+     */
+    public function updateSecretary(Secretary $secretary, \App\DTOs\Academy\SecretaryData $data): Secretary
+    {
+        $updateData = [];
+
+        if ($data->name) {
+            $updateData['name'] = $data->name;
+        }
+
+        if ($data->phone) {
+            // Check if phone is already taken by another secretary
+            $exists = Secretary::where('phone', $data->phone)
+                ->where('id', '!=', $secretary->id)
+                ->exists();
+            
+            if ($exists) {
+                throw new \Exception('رقم الهاتف مستخدم بالفعل');
+            }
+
+            $updateData['phone'] = $data->phone;
+        }
+
+        if ($data->password) {
+            $updateData['password'] = Hash::make($data->password);
+        }
+
+        if ($data->avatar_key) {
+            $updateData['avatar_key'] = $data->avatar_key;
+        }
+
+        $secretary->update($updateData);
+
+        return $secretary->fresh();
+    }
+
+    /**
+     * Update secretary permissions in academy
+     */
+    public function updatePermissions(Academy $academy, string $secretaryId, array $permissions): void
+    {
+        $academy->secretaries()->updateExistingPivot($secretaryId, [
+            'permissions' => $permissions,
+        ]);
+    }
+
+    /**
+     * Toggle secretary status in academy
+     */
+    public function toggleStatus(Academy $academy, string $secretaryId): bool
+    {
+        $secretary = $academy->secretaries()->findOrFail($secretaryId);
+        $currentStatus = $secretary->pivot->is_active;
+
+        $academy->secretaries()->updateExistingPivot($secretaryId, [
+            'is_active' => !$currentStatus,
+        ]);
+
+        return !$currentStatus;
+    }
+
+    /**
+     * Remove secretary from academy
+     */
+    public function removeSecretary(Academy $academy, string $secretaryId): void
+    {
+        $academy->secretaries()->detach($secretaryId);
+    }
+
+    /**
+     * Check if phone is available
+     */
+    public function isPhoneAvailable(string $phone, ?string $excludeId = null): bool
+    {
+        $query = Secretary::where('phone', $phone);
+
+        if ($excludeId) {
+            $query->where('id', '!=', $excludeId);
+        }
+
+        return !$query->exists();
+    }
+}

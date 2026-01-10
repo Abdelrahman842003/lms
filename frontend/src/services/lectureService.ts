@@ -19,6 +19,10 @@ export interface Lecture {
   qr_code?: string;
   qr_code_expires_at?: string;
   is_active?: boolean;
+  teacher?: {
+    id: string;
+    name: string;
+  } | null;
   grade_id?: string | null;
   grade?: {
     id: string;

@@ -58,6 +58,68 @@ class StudentService
     }
 
     /**
+     * Get list of teachers grouped by academy
+     */
+    public function getEnrolledTeachersGrouped(Student $student): array
+    {
+        $enrollments = $student->enrollments()
+            ->with([
+                'teacher:id,name,avatar_key,is_suspended',
+                'teacher.academies:id,name',
+                'grade:id,name',
+                'group:id,name'
+            ])
+            ->get();
+
+        $grouped = [
+            'academies' => [],
+            'independent' => []
+        ];
+
+        foreach ($enrollments as $enrollment) {
+            $teacherData = [
+                'enrollment_id' => $enrollment->id,
+                'teacher_id' => $enrollment->teacher_id,
+                'teacher_name' => $enrollment->teacher->name,
+                'teacher_avatar' => $enrollment->teacher->avatar_key 
+                    ? config('filesystems.disks.r2.url') . '/' . $enrollment->teacher->avatar_key 
+                    : null,
+                'is_suspended' => (bool) $enrollment->teacher->is_suspended,
+                'grade_name' => $enrollment->grade?->name,
+                'group_name' => $enrollment->group?->name,
+                'balance' => $enrollment->balance,
+                'status' => $enrollment->status,
+                'days_left' => $enrollment->days_left,
+                'enrolled_at' => $enrollment->created_at,
+            ];
+
+            // Check if teacher belongs to any academy
+            $academies = $enrollment->teacher->academies;
+            
+            if ($academies->isNotEmpty()) {
+                foreach ($academies as $academy) {
+                    if (!isset($grouped['academies'][$academy->id])) {
+                        $grouped['academies'][$academy->id] = [
+                            'academy_id' => $academy->id,
+                            'academy_name' => $academy->name,
+                            'teachers' => []
+                        ];
+                    }
+                    $grouped['academies'][$academy->id]['teachers'][] = $teacherData;
+                }
+            } else {
+                // Independent teacher
+                $grouped['independent'][] = $teacherData;
+            }
+        }
+
+        // Convert academies to indexed array
+        $grouped['academies'] = array_values($grouped['academies']);
+
+        return $grouped;
+    }
+
+    /**
      * Get student dashboard for a specific teacher
      */
     public function getTeacherDashboard(Student $student, string $teacherId): array

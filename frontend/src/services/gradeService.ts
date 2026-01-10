@@ -7,6 +7,12 @@ export interface Grade {
   students_count: number;
   price: number;
   created_at: string;
+  teacher_id?: string | null;
+  teacher?: {
+    id: string;
+    name: string;
+    avatar: string;
+  };
 }
 
 export interface CreateGradeData {

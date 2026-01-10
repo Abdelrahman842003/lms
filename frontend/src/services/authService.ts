@@ -8,16 +8,19 @@ const ENDPOINTS = {
   LOGIN_STUDENT: '/api/login/student',
   LOGIN_SECRETARY: '/api/login/secretary',
   LOGIN_PARENT: '/api/login/parent',
+  LOGIN_ACADEMY: '/api/academy/login', // Direct academy login
   LOGOUT_ADMIN: '/api/admin/logout',
   LOGOUT_TEACHER: '/api/teacher/logout',
   LOGOUT_STUDENT: '/api/student/logout',
   LOGOUT_SECRETARY: '/api/secretary/logout',
   LOGOUT_PARENT: '/api/parent/logout',
+  LOGOUT_ACADEMY: '/api/academy/logout',
   ME_TEACHER: '/api/teacher/me',
   ME_STUDENT: '/api/student/me',
   ME_SECRETARY: '/api/secretary/me',
   ME_ADMIN: '/api/admin/me',
   ME_PARENT: '/api/parent/me',
+  ME_ACADEMY: '/api/academy/me',
   UPDATE_ADMIN_PROFILE: '/api/admin/profile',
   CHANGE_ADMIN_PASSWORD: '/api/admin/change-password',
   TEACHER_DASHBOARD_STATS: '/api/teacher/dashboard/stats',
@@ -32,7 +35,7 @@ export interface AuthResponse {
   token: string;
   refresh_token?: string;
   user: any;
-  role: 'teacher' | 'student' | 'secretary' | 'admin' | 'parent';
+  role: 'teacher' | 'student' | 'secretary' | 'admin' | 'parent' | 'academy';
   teachers?: TeacherInfo[]; // For student login - list of enrolled teachers
   children?: ChildInfo[]; // For parent login - list of children
   parent_phone?: string; // For parent login
@@ -435,10 +438,30 @@ export async function loginParent(
 }
 
 /**
- * Logout user (admin, teacher, student, secretary, or parent)
+ * Login as academy (direct academy login)
+ */
+export async function loginAcademy(
+  phone: string,
+  password: string
+): Promise<AuthResponse> {
+  const data = await fetchApi(ENDPOINTS.LOGIN_ACADEMY, {
+    method: 'POST',
+    body: JSON.stringify({ phone, password }),
+  }, true); // skipAuthEvent: true
+  
+  return {
+    token: data.token,
+    refresh_token: data.refresh_token,
+    user: data.user,
+    role: data.role, // Should be 'academy' from backend
+  };
+}
+
+/**
+ * Logout user (admin, teacher, student, secretary, parent, or academy)
  */
 export async function logout(
-  userType: 'admin' | 'teacher' | 'student' | 'secretary' | 'parent',
+  userType: 'admin' | 'teacher' | 'student' | 'secretary' | 'parent' | 'academy',
   fcmToken?: string | null
 ): Promise<{ message: string }> {
   const endpoint = userType === 'admin'
@@ -449,7 +472,9 @@ export async function logout(
         ? ENDPOINTS.LOGOUT_STUDENT
         : userType === 'parent'
           ? ENDPOINTS.LOGOUT_PARENT
-          : ENDPOINTS.LOGOUT_SECRETARY;
+          : userType === 'academy'
+            ? ENDPOINTS.LOGOUT_ACADEMY
+            : ENDPOINTS.LOGOUT_SECRETARY;
 
   await fetchApi(endpoint, {
     method: 'POST',
@@ -463,7 +488,7 @@ export async function logout(
  * Get current user data
  */
 export async function getCurrentUser(
-  userType: 'teacher' | 'student' | 'secretary' | 'admin' | 'parent'
+  userType: 'teacher' | 'student' | 'secretary' | 'admin' | 'parent' | 'academy'
 ): Promise<AuthResponse> {
   const endpoint = userType === 'teacher' 
     ? ENDPOINTS.ME_TEACHER 
@@ -473,7 +498,9 @@ export async function getCurrentUser(
         ? ENDPOINTS.ME_ADMIN
         : userType === 'parent'
           ? ENDPOINTS.ME_PARENT
-          : ENDPOINTS.ME_SECRETARY;
+          : userType === 'academy'
+            ? ENDPOINTS.ME_ACADEMY
+            : ENDPOINTS.ME_SECRETARY;
 
   return await fetchApi(endpoint, {
     method: 'GET',
@@ -676,6 +703,96 @@ export async function getTeacherUpcomingLectures(limit: number = 3): Promise<any
 export async function getTeacherStudentStatistics(): Promise<any> {
   return await fetchApi('/teacher/students/statistics');
 }
+
+/**
+ * Get all academies (Admin only)
+ */
+export async function getAcademies(
+  page = 1,
+  perPage = 10,
+  filters?: { search?: string; status?: string }
+): Promise<any> {
+  const queryParams = new URLSearchParams({
+    page: page.toString(),
+    per_page: perPage.toString(),
+    ...(filters?.search && { search: filters.search }),
+    ...(filters?.status && { status: filters.status }),
+  });
+  return await fetchApi(`/admin/academies?${queryParams}`);
+}
+
+/**
+ * Create a new academy (Admin only)
+ */
+export async function createAcademy(data: any): Promise<any> {
+  const res = await fetchApi('/admin/academies', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+  return res.academy;
+}
+
+/**
+ * Update academy (Admin only)
+ */
+export async function updateAcademy(id: string, data: any): Promise<any> {
+  const res = await fetchApi(`/admin/academies/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+  return res.academy;
+}
+
+/**
+ * Get academy details (Admin only)
+ */
+export async function getAcademyDetails(id: string): Promise<any> {
+  const res = await fetchApi(`/admin/academies/${id}`);
+  return res.academy;
+}
+
+/**
+ * Toggle academy status (activate/deactivate)
+ */
+export async function toggleAcademyStatus(id: string): Promise<any> {
+  const res = await fetchApi(`/admin/academies/${id}/toggle-status`, {
+    method: 'PUT',
+  });
+  return res;
+}
+
+/**
+ * Get academy billing for a specific month (Admin only)
+ */
+export async function getAcademyBilling(academyId: string, month: string, year: string): Promise<any> {
+  const res = await fetchApi(`/admin/academy-billings?academy_id=${academyId}&month=${month}&year=${year}`, {
+    method: 'GET',
+  });
+  return res.billings;
+}
+
+/**
+ * Generate academy billing (Admin only)
+ */
+export async function generateAcademyBilling(academyId: string, month: string, year: string): Promise<any> {
+  const res = await fetchApi('/admin/academy-billings/generate', {
+    method: 'POST',
+    body: JSON.stringify({ academy_id: academyId, month, year }),
+  });
+  return res.billing;
+}
+
+/**
+ * Update academy billing status (Admin only)
+ */
+export async function updateAcademyBillingStatus(billingId: string, status: string, notes?: string): Promise<any> {
+  const res = await fetchApi(`/admin/academy-billings/${billingId}/status`, {
+    method: 'PUT',
+    body: JSON.stringify({ status, notes }),
+  });
+  return res.billing;
+}
+
 
 /**
  * Get all students for teacher (with pagination)

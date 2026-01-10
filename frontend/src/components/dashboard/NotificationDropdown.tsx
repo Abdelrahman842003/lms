@@ -41,11 +41,21 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
       if (data.received_notifications) {
         fetchedNotifications = data.received_notifications;
       } else if (data.notifications) {
-        // If backend returns 'notifications' (sent style), we might need to map them or treat them as received
-        // For now assuming they are compatible or casting
-        fetchedNotifications = data.notifications as unknown as AppNotification[];
+        // Handle paginated response { notifications: { data: [...] } }
+        if (data.notifications.data && Array.isArray(data.notifications.data)) {
+          fetchedNotifications = data.notifications.data;
+        } else if (Array.isArray(data.notifications)) {
+          fetchedNotifications = data.notifications;
+        }
       } else if (data.data && data.data.received_notifications) {
         fetchedNotifications = data.data.received_notifications;
+      } else if (data.data && data.data.notifications) {
+         // Handle nested data structure
+         if (data.data.notifications.data && Array.isArray(data.data.notifications.data)) {
+            fetchedNotifications = data.data.notifications.data;
+         } else if (Array.isArray(data.data.notifications)) {
+            fetchedNotifications = data.data.notifications;
+         }
       }
 
       const newUnreadCount = (fetchedNotifications || []).filter(n => !n.read_at).length;

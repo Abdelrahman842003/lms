@@ -26,6 +26,10 @@ class LectureResource extends JsonResource
             'present_count' => $this->present_count ?? 0,
             'status' => $this->getStatus(),
             'is_active' => $this->is_active,
+            'teacher' => $this->whenLoaded('teacher', fn() => [
+                'id' => $this->teacher->id,
+                'name' => $this->teacher->name,
+            ]),
             'grade' => $this->whenLoaded('grade', fn() => [
                 'id' => $this->grade->id,
                 'name' => $this->grade->name,
@@ -39,7 +43,6 @@ class LectureResource extends JsonResource
             'created_at' => $this->created_at,
             'is_recurring' => $this->is_recurring,
             'recurrence_days' => $this->recurrence_days,
-            'cancelled_dates' => $this->cancelled_dates,
             'cancelled_dates' => $this->cancelled_dates,
             'current_session_end_time' => $this->getCurrentSessionEndTime(),
             'current_session' => $this->whenLoaded('current_session', fn() => [

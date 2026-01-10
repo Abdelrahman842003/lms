@@ -291,18 +291,7 @@ export default function TeacherLecturesPage() {
   }, [showQRModal, selectedLectureForQR]);
 
   const handleAddClick = () => {
-    setIsEditing(false);
-    setFormData({
-      title: '',
-      description: '',
-      grade_id: '',
-      date: '',
-      is_recurring: false,
-      recurrence_days: [],
-      recurrence_time: '',
-      duration_minutes: 120,
-    });
-    setShowModal(true);
+    router.push('/teacher/lectures/create');
   };
 
   const handleEditClick = (lecture: Lecture) => {

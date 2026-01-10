@@ -47,6 +47,38 @@ const getSidebarItems = (role: string): SidebarItem[] => {
             icon: 'fas fa-user-graduate',
             href: '/admin/students',
           },
+          {
+            id: 'academies_list',
+            label: 'الأكاديميات',
+            icon: 'fas fa-building',
+            href: '/admin/academies',
+          },
+          {
+            id: 'academy_billing',
+            label: 'الفواتير',
+            icon: 'fas fa-file-invoice-dollar',
+            href: '/admin/academy-billings',
+          },
+        ],
+      },
+      {
+        id: 'reports',
+        label: 'التقارير',
+        icon: 'fas fa-chart-line',
+        href: '#',
+        children: [
+          {
+            id: 'teacher_reports',
+            label: 'تقارير المدرسين',
+            icon: 'fas fa-chalkboard-teacher',
+            href: '/admin/reports/teachers',
+          },
+          {
+            id: 'academy_reports',
+            label: 'تقارير الأكاديميات',
+            icon: 'fas fa-building',
+            href: '/admin/reports/academies',
+          },
         ],
       },
       {

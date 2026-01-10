@@ -122,16 +122,14 @@ class AuthController extends Controller
     }
 
     /**
-     * Get list of enrolled teachers
+     * Get list of enrolled teachers (grouped by academy)
      */
     public function teachers(Request $request)
     {
         $student = $request->user();
-        $teachers = $this->studentService->getEnrolledTeachers($student);
+        $teachers = $this->studentService->getEnrolledTeachersGrouped($student);
 
-        return $this->successResponse([
-            'teachers' => $teachers
-        ]);
+        return $this->successResponse($teachers);
     }
 
     /**

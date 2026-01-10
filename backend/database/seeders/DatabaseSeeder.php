@@ -8,7 +8,7 @@ use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
 {
-    use WithoutModelEvents;
+    // use WithoutModelEvents;
 
     /**
      * Seed the application's database.
@@ -35,7 +35,10 @@ class DatabaseSeeder extends Seeder
             RolesAndPermissionsSeeder::class,
             SuperAdminSeeder::class,
             AdminSeeder::class,
+            AcademySeeder::class,
             CompleteSeeder::class,
+            AttachTeachersToAcademySeeder::class,
+            AcademyTestDataSeeder::class,
         ]);
     }
 }

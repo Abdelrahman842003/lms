@@ -12,6 +12,7 @@ class Lecture extends Model
 
     protected $fillable = [
         'teacher_id',
+        'academy_id',
         'grade_id',
         'group_id',
         'title',
@@ -42,6 +43,11 @@ class Lecture extends Model
     public function teacher()
     {
         return $this->belongsTo(Teacher::class);
+    }
+
+    public function academy()
+    {
+        return $this->belongsTo(Academy::class);
     }
 
     public function grade()
@@ -130,5 +136,20 @@ class Lecture extends Model
                     break;
             }
         }
+    }
+
+    public function scopeForAcademy($query, $academyId)
+    {
+        return $query->where('academy_id', $academyId);
+    }
+
+    public function scopeForAcademyTeachers($query, $academyId)
+    {
+        // Get lectures from teachers belonging to this academy
+        return $query->whereHas('teacher', function ($q) use ($academyId) {
+            $q->whereHas('academies', function ($aq) use ($academyId) {
+                $aq->where('academy_id', $academyId)->where('is_active', true);
+            });
+        });
     }
 }

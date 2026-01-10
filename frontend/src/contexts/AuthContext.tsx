@@ -35,7 +35,7 @@ interface AuthContextType {
   login: (
     phone: string,
     password: string,
-    userType?: "teacher" | "student" | "secretary" | "admin" | "parent"
+    userType?: "teacher" | "student" | "secretary" | "admin" | "parent" | "academy"
   ) => Promise<void>;
   logout: () => void;
   register: (userData: RegisterData) => Promise<void>;
@@ -112,6 +112,8 @@ export function AuthProvider({
           | "student"
           | "secretary"
           | "admin"
+          | "academy"
+          | "parent"
           | null;
 
         if (userType) {
@@ -336,7 +338,8 @@ export function AuthProvider({
       | "student"
       | "secretary"
       | "admin"
-      | "parent" = "teacher"
+      | "parent"
+      | "academy" = "teacher"
   ) => {
     try {
       setIsLoading(true);
@@ -352,6 +355,9 @@ export function AuthProvider({
         response = await loginAdmin(phone, password);
       } else if (userType === "parent") {
         response = await loginParent(phone, password);
+      } else if (userType === "academy") {
+        const { loginAcademy } = await import("@/services/authService");
+        response = await loginAcademy(phone, password);
       } else {
         response = await loginSecretary(phone, password);
       }
@@ -504,6 +510,8 @@ export function AuthProvider({
         | "student"
         | "secretary"
         | "admin"
+        | "academy"
+        | "parent"
         | null;
 
       // 1. Get current FCM token to send to backend

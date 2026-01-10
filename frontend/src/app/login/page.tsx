@@ -18,7 +18,7 @@ interface ValidationErrors {
 export default function LoginPage() {
   const router = useRouter();
   const { login, user, isLoading: authLoading } = useAuth();
-  const [userType, setUserType] = useState<'teacher' | 'student' | 'secretary' | 'parent'>('teacher');
+  const [userType, setUserType] = useState<'teacher' | 'student' | 'secretary' | 'parent' | 'academy'>('teacher');
   const [formData, setFormData] = useState({
     phone: '',
     password: '',
@@ -43,9 +43,11 @@ export default function LoginPage() {
         ? '/admin/dashboard'
         : user.userType === 'secretary' 
           ? '/teacher/dashboard'
-          : user.userType === 'parent'
-            ? '/parent/children'
-            : `/${user.userType}/dashboard`;
+          : user.userType === 'academy'
+            ? '/academy/dashboard'
+            : user.userType === 'parent'
+              ? '/parent/children'
+              : `/${user.userType}/dashboard`;
       router.replace(dashboardPath);
     }
   }, [user, authLoading, router]);
@@ -144,6 +146,8 @@ export default function LoginPage() {
         router.push('/student/teachers');
       } else if (userType === 'parent') {
         router.push('/parent/children');
+      } else if (userType === 'academy') {
+        router.push('/academy/dashboard');
       } else {
         const dashboardPath = userType === 'secretary' ? '/teacher/dashboard' : `/${userType}/dashboard`;
         router.push(dashboardPath);
@@ -263,6 +267,7 @@ export default function LoginPage() {
               title={
                 userType === 'teacher' ? 'مرحبا بك مدرسي العزيز' :
                 userType === 'student' ? 'مرحبا بك طالبي العزيز' :
+                userType === 'academy' ? 'مرحبا بك في الأكاديمية' :
                 userType === 'parent' ? 'مرحبا بك ولي الأمر العزيز' :
                 'مرحبا بك سكرتيري العزيز'
               }

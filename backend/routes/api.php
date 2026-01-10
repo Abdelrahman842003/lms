@@ -75,7 +75,93 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/reports/teacher/{teacher}/pdf', [\App\Http\Controllers\Admin\ReportController::class, 'teacherReportPdf']);
         Route::get('/reports/admin', [\App\Http\Controllers\Admin\ReportController::class, 'adminReport']);
         Route::get('/reports/admin/pdf', [\App\Http\Controllers\Admin\ReportController::class, 'adminReportPdf']);
+
+        // Academy Management
+        Route::apiResource('academies', \App\Http\Controllers\Admin\AcademyController::class);
+        Route::put('/academies/{academy}/toggle-status', [\App\Http\Controllers\Admin\AcademyController::class, 'toggleStatus']);
+        Route::get('/academies/{academy}/secretaries', [\App\Http\Controllers\Admin\AcademyController::class, 'secretaries']);
+        Route::post('/academies/{academy}/secretaries', [\App\Http\Controllers\Admin\AcademyController::class, 'addSecretary']);
+        Route::delete('/academies/{academy}/secretaries/{secretary}', [\App\Http\Controllers\Admin\AcademyController::class, 'removeSecretary']);
+        Route::post('/academies/{academy}/regenerate-qr', [\App\Http\Controllers\Admin\AcademyController::class, 'regenerateQrCodes']);
+
+        // Academy Billing
+        Route::get('/academy-billings', [\App\Http\Controllers\Admin\AcademyBillingController::class, 'index']);
+        Route::post('/academy-billings/generate', [\App\Http\Controllers\Admin\AcademyBillingController::class, 'generate']);
+        Route::get('/academy-billings/statistics', [\App\Http\Controllers\Admin\AcademyBillingController::class, 'statistics']);
+        Route::get('/academy-billings/{billing}', [\App\Http\Controllers\Admin\AcademyBillingController::class, 'show']);
+        Route::put('/academy-billings/{billing}/status', [\App\Http\Controllers\Admin\AcademyBillingController::class, 'updateStatus']);
+        Route::delete('/academy-billings/{billing}', [\App\Http\Controllers\Admin\AcademyBillingController::class, 'destroy']);
     });
+});
+
+// ============================================
+// Academy Authentication Routes
+// ============================================
+Route::prefix('academy')->name('academy.')->group(function () {
+    Route::post('/login', [App\Http\Controllers\Academy\AuthController::class, 'login']);
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::post('/logout', [App\Http\Controllers\Academy\AuthController::class, 'logout']);
+        Route::get('/me', [App\Http\Controllers\Academy\AuthController::class, 'me']);
+    });
+});
+
+// ============================================
+// Academy Routes (Secretary Access)
+// ============================================
+Route::middleware('auth:sanctum')->prefix('academy')->name('academy.')->group(function () {
+    // Dashboard
+    Route::get('/dashboard', [\App\Http\Controllers\Academy\DashboardController::class, 'getStats']);
+    
+    // Teachers Management
+    Route::apiResource('teachers', \App\Http\Controllers\Academy\TeacherController::class);
+    // Route::get('teachers', function() {
+    //     \Illuminate\Support\Facades\Log::info('Debug Route Hit');
+    //     return response()->json(['message' => 'Debug Route']);
+    // });
+    Route::put('/teachers/{teacher}/toggle-status', [\App\Http\Controllers\Academy\TeacherController::class, 'toggleStatus']);
+    
+    // Secretaries Management
+    Route::post('secretaries/check-phone', [\App\Http\Controllers\Academy\SecretaryController::class, 'checkPhone']);
+    Route::put('secretaries/{secretary}/permissions', [\App\Http\Controllers\Academy\SecretaryController::class, 'updatePermissions']);
+    Route::put('secretaries/{secretary}/toggle-status', [\App\Http\Controllers\Academy\SecretaryController::class, 'toggleStatus']);
+    Route::apiResource('secretaries', \App\Http\Controllers\Academy\SecretaryController::class);
+    
+    // Attendance Management
+    Route::get('attendance', [\App\Http\Controllers\Academy\AttendanceController::class, 'index']);
+    Route::get('attendance/today', [\App\Http\Controllers\Academy\AttendanceController::class, 'todayAttendance']);
+    Route::post('attendance/mark-absent', [\App\Http\Controllers\Academy\AttendanceController::class, 'markAbsent']);
+    Route::put('attendance/{log}/notes', [\App\Http\Controllers\Academy\AttendanceController::class, 'updateNotes']);
+    Route::get('attendance/stats', [\App\Http\Controllers\Academy\AttendanceController::class, 'stats']);
+    
+    // Notifications
+    Route::get('notifications', [\App\Http\Controllers\Academy\NotificationController::class, 'index']);
+    Route::post('notifications', [\App\Http\Controllers\Academy\NotificationController::class, 'store']);
+    Route::post('notifications/{id}/read', [\App\Http\Controllers\Academy\NotificationController::class, 'markAsRead']);
+    Route::post('notifications/send-to-teachers', [\App\Http\Controllers\Academy\NotificationController::class, 'sendToTeachers']);
+    Route::get('notifications/unread-count', [\App\Http\Controllers\Academy\NotificationController::class, 'unreadCount']);
+    
+    // Reports
+    Route::get('reports/attendance', [\App\Http\Controllers\Academy\ReportController::class, 'attendanceReport']);
+    Route::get('reports/teachers', [\App\Http\Controllers\Academy\ReportController::class, 'teachersReport']);
+    Route::get('reports/monthly', [\App\Http\Controllers\Academy\ReportController::class, 'monthlyReport']);
+    Route::get('reports/export-pdf', [\App\Http\Controllers\Academy\ReportController::class, 'exportPDF']);
+
+    // Permissions
+    Route::get('permissions', [\App\Http\Controllers\Academy\PermissionController::class, 'index']);
+
+    // Lectures Management (Student Attendance)
+    Route::get('lectures/teachers', [\App\Http\Controllers\Academy\LectureController::class, 'getTeachers']);
+    Route::apiResource('lectures', \App\Http\Controllers\Academy\LectureController::class);
+    Route::put('lectures/{lecture}/toggle-active', [\App\Http\Controllers\Academy\LectureController::class, 'toggleActive']);
+    Route::post('lectures/{lecture}/end', [\App\Http\Controllers\Academy\LectureController::class, 'endLecture']);
+    Route::post('lectures/{lecture}/qr-code', [\App\Http\Controllers\Academy\LectureController::class, 'generateQrCode']);
+    Route::get('lectures/{lecture}/attendees', [\App\Http\Controllers\Academy\LectureController::class, 'getAttendees']);
+
+    // Grades & Groups Management
+    Route::put('grades/bulk-update-name', [\App\Http\Controllers\Academy\GradeController::class, 'bulkUpdateName']);
+    Route::post('grades/bulk-delete', [\App\Http\Controllers\Academy\GradeController::class, 'bulkDelete']);
+    Route::apiResource('grades', \App\Http\Controllers\Academy\GradeController::class);
+    Route::apiResource('groups', \App\Http\Controllers\Academy\GroupController::class);
 });
 
 // ============================================
@@ -165,6 +251,11 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureTeacherNotSuspende
     // Reports
     Route::get('reports/my-report', [\App\Http\Controllers\Teacher\TeacherReportController::class, 'myReport']);
     Route::get('reports/my-report/pdf', [\App\Http\Controllers\Teacher\TeacherReportController::class, 'myReportPdf']);
+
+    // QR Code Attendance Scanning
+    Route::post('/scan/checkin', [\App\Http\Controllers\Teacher\ScanController::class, 'checkin']);
+    Route::post('/scan/checkout', [\App\Http\Controllers\Teacher\ScanController::class, 'checkout']);
+    Route::get('/scan/today-status', [\App\Http\Controllers\Teacher\ScanController::class, 'todayStatus']);
 
 });
 
