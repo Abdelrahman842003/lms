@@ -35,6 +35,28 @@ class TeacherController extends Controller
     }
 
     /**
+     * Check if teacher exists by phone number
+     */
+    public function checkPhone(\App\Http\Requests\Academy\CheckTeacherPhoneRequest $request): JsonResponse
+    {
+        $phone = $request->validated('phone');
+        $teacherData = $this->teacherService->checkTeacherByPhone($phone);
+
+        if (!$teacherData) {
+            return $this->successResponse([
+                'exists' => false,
+                'teacher' => null,
+            ]);
+        }
+
+        return $this->successResponse([
+            'exists' => true,
+            'teacher' => $teacherData,
+        ]);
+    }
+
+
+    /**
      * Add teacher to academy
      */
     public function store(StoreTeacherRequest $request): JsonResponse

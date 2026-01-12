@@ -15,10 +15,17 @@ class EnsureTeacherNotSuspended
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if ($request->user() && $request->user()->is_suspended) {
+        if ($request->user() && $request->user()->status === 'suspended') {
             return response()->json([
-                'message' => 'عفواً، تم تعليق حسابك. يرجى التواصل مع الإدارة.',
+                'message' => 'Your account is suspended.',
                 'error' => 'ACCOUNT_SUSPENDED'
+            ], 403);
+        }
+
+        if ($request->user() && !$request->user()->is_approved) {
+            return response()->json([
+                'message' => 'حسابك قيد المراجعة ولم تتم الموافقة عليه بعد.',
+                'error' => 'ACCOUNT_NOT_APPROVED'
             ], 403);
         }
 

@@ -16,9 +16,15 @@ class TeacherService
             return false;
         }
 
-        if ($teacher->is_suspended) {
+        if ($teacher->status === 'suspended') {
             throw ValidationException::withMessages([
                 'phone' => ['عفواً، تم تعليق حسابك. يرجى التواصل مع الإدارة.'],
+            ]);
+        }
+
+        if ($teacher->status === 'pending') {
+            throw ValidationException::withMessages([
+                'phone' => ['عفواً، حسابك في انتظار الموافقة. يرجى التواصل مع الإدارة.'],
             ]);
         }
 
@@ -36,6 +42,7 @@ class TeacherService
             'name' => $data['name'],
             'phone' => $data['phone'],
             'password' => Hash::make($data['password']),
+            'status' => $data['status'] ?? 'pending',
         ]);
     }
 

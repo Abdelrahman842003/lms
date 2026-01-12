@@ -11,17 +11,39 @@ class TeacherResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        // Safely get values with null coalescing
+        $isApproved = $this->status !== 'pending';
+        $isSuspended = $this->status === 'suspended';
+        $isActive = $this->pivot?->is_active ?? true;
+        
+        // Safely get students count
+        try {
+            $studentsCount = $this->activeEnrollments()->count();
+        } catch (\Exception $e) {
+            $studentsCount = 0;
+        }
+        
+        // Determine status based on approval and active state
+        $status = 'نشط';
+        if ($this->status === 'pending') {
+            $status = 'في انتظار الموافقة';
+        } elseif ($this->status === 'suspended') {
+            $status = 'معلق';
+        } elseif (!$isActive) {
+            $status = 'غير نشط';
+        }
+        
         return [
             'id' => $this->id,
             'name' => $this->name,
             'phone' => $this->phone,
             'avatar' => $this->avatar_url,
-            'students_count' => $this->activeEnrollments()->count(),
-            'status' => $this->pivot->is_active ? 'نشط' : 'غير نشط',
-            'is_active' => (bool) $this->pivot->is_active,
-            'joined_at' => $this->whenPivotLoaded('academy_teacher', function () {
-                return $this->pivot->joined_at;
-            }),
+            'students_count' => $studentsCount,
+            'status' => $status,
+            'is_active' => (bool) $isActive,
+            'is_approved' => (bool) $isApproved,
+            'is_suspended' => (bool) $isSuspended,
+            'joined_at' => $this->pivot?->joined_at ?? $this->created_at,
             'created_at' => $this->created_at->toIso8601String(),
         ];
     }

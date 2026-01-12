@@ -17,7 +17,7 @@ class EnsureSecretaryTeacherNotSuspended
     {
         $user = $request->user();
 
-        if ($user && $user->teacher && $user->teacher->is_suspended) {
+        if ($user && $user->teacher && $user->teacher->status === 'suspended') {
             return response()->json([
                 'message' => 'عذراً، لا يمكن الدخول للنظام حالياً. يرجى التواصل مع الإدارة للمساعدة.',
                 'error' => 'TEACHER_SUSPENDED'

@@ -19,7 +19,7 @@ class ReportService
      */
     public function getTeachersList(): Collection
     {
-        return Teacher::select('id', 'name', 'phone', 'is_suspended', 'created_at')
+        return Teacher::select('id', 'name', 'phone', 'status', 'created_at')
             ->withCount(['enrollments', 'secretaries'])
             ->orderBy('name')
             ->get()
@@ -28,7 +28,12 @@ class ReportService
                     'id' => $teacher->id,
                     'name' => $teacher->name,
                     'phone' => $teacher->phone,
-                    'status' => $teacher->is_suspended ? 'معلق' : 'نشط',
+                    'status' => match($teacher->status) {
+                        'active' => 'نشط',
+                        'suspended' => 'معلق',
+                        'pending' => 'في انتظار الموافقة',
+                        default => 'غير معروف'
+                    },
                     'students_count' => $teacher->enrollments_count,
                     'secretaries_count' => $teacher->secretaries_count,
                     'joined' => $teacher->created_at->format('Y-m-d'),
@@ -126,7 +131,12 @@ class ReportService
                 'name' => $teacher->name,
                 'phone' => $teacher->phone,
                 'joined' => $teacher->created_at->format('Y-m-d'),
-                'status' => $teacher->is_suspended ? 'معلق' : 'نشط',
+                'status' => match($teacher->status) {
+                    'active' => 'نشط',
+                    'suspended' => 'معلق',
+                    'pending' => 'في انتظار الموافقة',
+                    default => 'غير معروف'
+                },
             ],
             'period' => [
                 'start' => $startDate->format('Y-m-d'),
@@ -325,8 +335,8 @@ class ReportService
 
         // Overall counts
         $totalTeachers = Teacher::count();
-        $activeTeachers = Teacher::where('is_suspended', false)->count();
-        $suspendedTeachers = Teacher::where('is_suspended', true)->count();
+        $activeTeachers = Teacher::where('status', 'active')->count();
+        $suspendedTeachers = Teacher::where('status', 'suspended')->count();
         
         $totalStudents = Student::count();
         $totalSecretaries = Secretary::count();
@@ -393,7 +403,12 @@ class ReportService
             return [
                 'id' => $teacher->id,
                 'name' => $teacher->name,
-                'status' => $teacher->is_suspended ? 'معلق' : 'نشط',
+                'status' => match($teacher->status) {
+                    'active' => 'نشط',
+                    'suspended' => 'معلق',
+                    'pending' => 'في انتظار الموافقة',
+                    default => 'غير معروف'
+                },
                 'total_students' => $totalStudents,
                 'active_students' => $activeStudents,
                 'secretaries' => $secretariesCount,

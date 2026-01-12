@@ -18,6 +18,7 @@ class TeacherService
     public function getTeachers(Academy $academy, int $perPage, ?string $search = null): LengthAwarePaginator
     {
         return $academy->teachers()
+            ->select('teachers.*')
             ->when($search, function ($query) use ($search) {
                 $query->where('name', 'like', "%{$search}%")
                       ->orWhere('phone', 'like', "%{$search}%");
@@ -25,6 +26,26 @@ class TeacherService
             ->withPivot('is_active', 'joined_at')
             ->paginate($perPage);
     }
+
+    /**
+     * Check if teacher exists by phone number
+     */
+    public function checkTeacherByPhone(string $phone): ?array
+    {
+        $teacher = Teacher::where('phone', $phone)->first();
+
+        if (!$teacher) {
+            return null;
+        }
+
+        return [
+            'id' => $teacher->id,
+            'name' => $teacher->name,
+            'phone' => $teacher->phone,
+            'is_approved' => $teacher->status !== 'pending',
+        ];
+    }
+
 
     /**
      * Add teacher to academy
@@ -41,7 +62,12 @@ class TeacherService
             'joined_at' => Carbon::now(),
         ]);
 
-        return Teacher::findOrFail($teacherId);
+        // Reload teacher with pivot data and all columns
+        return $academy->teachers()
+            ->select('teachers.*')
+            ->withPivot('is_active', 'joined_at')
+            ->where('teacher_id', $teacherId)
+            ->first();
     }
 
     /**
@@ -58,7 +84,7 @@ class TeacherService
             'name' => $data->name,
             'phone' => $data->phone,
             'password' => $data->password,
-            'is_suspended' => false,
+            'status' => 'pending', // New teachers need admin approval
         ]);
 
         $academy->teachers()->attach($teacher->id, [
@@ -66,7 +92,12 @@ class TeacherService
             'joined_at' => Carbon::now(),
         ]);
 
-        return $teacher;
+        // Reload teacher with pivot data and all columns
+        return $academy->teachers()
+            ->select('teachers.*')
+            ->withPivot('is_active', 'joined_at')
+            ->where('teacher_id', $teacher->id)
+            ->first();
     }
 
     /**

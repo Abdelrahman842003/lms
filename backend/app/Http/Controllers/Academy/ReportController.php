@@ -58,14 +58,14 @@ class ReportController extends Controller
         $academy = $request->user();
 
         $validated = $request->validate([
-            'month' => 'required|integer|min:1|max:12',
+            'month' => 'required|integer|min:0|max:12',
             'year' => 'required|integer|min:2020',
         ]);
 
         $report = $this->reportService->generateMonthlyReport(
             $academy,
-            $validated['month'],
-            $validated['year']
+            (int) $validated['month'],
+            (int) $validated['year']
         );
 
         return $this->successResponse($report);
@@ -82,7 +82,7 @@ class ReportController extends Controller
             'report_type' => 'required|in:attendance,teachers,monthly',
             'date_from' => 'required_if:report_type,attendance|date',
             'date_to' => 'required_if:report_type,attendance|date',
-            'month' => 'required_if:report_type,monthly|integer|min:1|max:12',
+            'month' => 'required_if:report_type,monthly|integer|min:0|max:12',
             'year' => 'required_if:report_type,monthly|integer|min:2020',
             'teacher_id' => 'nullable|exists:teachers,id',
         ]);
@@ -107,8 +107,8 @@ class ReportController extends Controller
             case 'monthly':
                 $reportData = $this->reportService->generateMonthlyReport(
                     $academy,
-                    $validated['month'],
-                    $validated['year']
+                    (int) $validated['month'],
+                    (int) $validated['year']
                 );
                 break;
         }

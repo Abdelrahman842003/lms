@@ -33,7 +33,7 @@ class StudentDashboardController extends Controller
 
         // 0. Validate Teacher & Enrollment Status
         $teacher = Teacher::find($teacherId);
-        if (!$teacher || $teacher->is_suspended) {
+        if (!$teacher || $teacher->status === 'suspended') {
              return $this->errorResponse('Teacher is suspended or not found', 403);
         }
 

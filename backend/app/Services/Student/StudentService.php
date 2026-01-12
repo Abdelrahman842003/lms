@@ -35,7 +35,7 @@ class StudentService
     public function getEnrolledTeachers(Student $student): array
     {
         return $student->enrollments()
-            ->with(['teacher:id,name,avatar_key,is_suspended', 'grade:id,name', 'group:id,name'])
+            ->with(['teacher:id,name,avatar_key,status', 'grade:id,name', 'group:id,name'])
             ->get()
             ->map(function ($enrollment) {
                 return [
@@ -45,7 +45,7 @@ class StudentService
                     'teacher_avatar' => $enrollment->teacher->avatar_key 
                         ? config('filesystems.disks.r2.url') . '/' . $enrollment->teacher->avatar_key 
                         : null,
-                    'is_suspended' => (bool) $enrollment->teacher->is_suspended,
+                    'is_suspended' => $enrollment->teacher->status === 'suspended',
                     'grade_name' => $enrollment->grade?->name,
                     'group_name' => $enrollment->group?->name,
                     'balance' => $enrollment->balance,
@@ -64,7 +64,7 @@ class StudentService
     {
         $enrollments = $student->enrollments()
             ->with([
-                'teacher:id,name,avatar_key,is_suspended',
+                'teacher:id,name,avatar_key,status',
                 'teacher.academies:id,name',
                 'grade:id,name',
                 'group:id,name'
@@ -84,7 +84,7 @@ class StudentService
                 'teacher_avatar' => $enrollment->teacher->avatar_key 
                     ? config('filesystems.disks.r2.url') . '/' . $enrollment->teacher->avatar_key 
                     : null,
-                'is_suspended' => (bool) $enrollment->teacher->is_suspended,
+                'is_suspended' => $enrollment->teacher->status === 'suspended',
                 'grade_name' => $enrollment->grade?->name,
                 'group_name' => $enrollment->group?->name,
                 'balance' => $enrollment->balance,
@@ -130,7 +130,7 @@ class StudentService
             ->where('is_active', true)
             ->firstOrFail();
 
-        if ($enrollment->teacher->is_suspended) {
+        if ($enrollment->teacher->status === 'suspended') {
             abort(403, "ممنوع الدخول علي المدرس {$enrollment->teacher->name} في الوقت الحالي");
         }
 

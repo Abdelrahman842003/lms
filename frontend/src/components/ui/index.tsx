@@ -246,3 +246,4 @@ export function Skeleton({ className, style }: SkeletonProps) {
 export { default as AvatarUpload } from './AvatarUpload'
 export { default as ConfirmationModal } from './ConfirmationModal'
 export { default as ImageCropModal } from './ImageCropModal'
+export { MonthDropdown } from './MonthDropdown'

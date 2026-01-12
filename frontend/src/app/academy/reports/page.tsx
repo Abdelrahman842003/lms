@@ -5,12 +5,28 @@ import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { DataTable } from '@/components/dashboard/DataTable';
 import { CreativeDatePicker } from '@/components/ui/CreativeDatePicker';
+import { MonthDropdown } from '@/components/ui';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import * as academyService from '@/services/academyService';
 import toast from 'react-hot-toast';
 
 type PeriodPreset = 'today' | 'last_month' | 'last_3_months' | 'last_6_months' | 'last_year' | 'custom';
+
+const translateSummaryKey = (key: string): string => {
+  const translations: Record<string, string> = {
+    'total_teachers': 'إجمالي المدرسين',
+    'total_students': 'إجمالي الطلاب',
+    'total_attendance_logs': 'إجمالي سجلات الحضور',
+    'total_days': 'إجمالي الأيام',
+    'total_present': 'إجمالي الحضور',
+    'total_absent': 'إجمالي الغياب',
+    'total_checked_in': 'حاضر حالياً',
+    'total_duration_minutes': 'إجمالي المدة (دقيقة)',
+    'average_duration_minutes': 'متوسط المدة (دقيقة)',
+  };
+  return translations[key] || key.replace(/_/g, ' ');
+};
 
 export default function ReportsPage() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
@@ -21,7 +37,7 @@ export default function ReportsPage() {
   const [periodPreset, setPeriodPreset] = useState<PeriodPreset>('last_month');
   const [customStartDate, setCustomStartDate] = useState('');
   const [customEndDate, setCustomEndDate] = useState('');
-  const [month, setMonth] = useState(new Date().getMonth() + 1);
+  const [month, setMonth] = useState(0);
   const [year, setYear] = useState(new Date().getFullYear());
   const [report, setReport] = useState<any>(null);
 
@@ -269,23 +285,11 @@ export default function ReportsPage() {
             {/* Month/Year Selection for Monthly Report */}
             {reportType === 'monthly' && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-gray-300 mb-2 font-semibold">
-                    <i className="fas fa-calendar ml-2 text-primary"></i>
-                    الشهر
-                  </label>
-                  <select
-                    value={month}
-                    onChange={(e) => setMonth(parseInt(e.target.value))}
-                    className="w-full p-3 bg-dark-lighter border-2 border-gray-700 rounded-lg text-white hover:border-primary transition-all"
-                  >
-                    {[...Array(12)].map((_, i) => (
-                      <option key={i} value={i + 1}>
-                        {new Date(2000, i).toLocaleDateString('ar-EG', { month: 'long' })}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <MonthDropdown
+                  value={month}
+                  onChange={setMonth}
+                  label="الشهر"
+                />
                 <div>
                   <label className="block text-gray-300 mb-2 font-semibold">
                     <i className="fas fa-calendar ml-2 text-primary"></i>
@@ -358,7 +362,7 @@ export default function ReportsPage() {
                   {Object.entries(report.summary).map(([key, value]: any) => (
                     <div key={key} className="p-4 bg-white/5 rounded-xl border border-white/10">
                       <h4 className="text-gray-400 text-sm mb-1">
-                        {key.replace(/_/g, ' ')}
+                        {translateSummaryKey(key)}
                       </h4>
                       <p className="text-white text-2xl font-bold">{value}</p>
                     </div>
@@ -446,49 +450,25 @@ export default function ReportsPage() {
                 </div>
               )}
 
-              {/* Monthly Report - Show both if available */}
-              {reportType === 'monthly' && (
-                <>
-                  {report.attendance_logs && Array.isArray(report.attendance_logs) && (
-                    <div className="mt-6">
-                      <h3 className="text-white text-lg font-semibold mb-4">سجلات الحضور الشهرية</h3>
-                      <DataTable
-                        columns={[
-                          {
-                            key: 'teacher.name',
-                            label: 'المدرس',
-                            sortable: true,
-                            render: (_: any, row: any) => row.teacher?.name || '-',
-                          },
-                          {
-                            key: 'date',
-                            label: 'التاريخ',
-                            sortable: true,
-                          },
-                          {
-                            key: 'checked_in_at',
-                            label: 'الحضور',
-                            render: (value: string) => value ? new Date(value).toLocaleTimeString('ar-EG') : '-',
-                          },
-                          {
-                            key: 'checked_out_at',
-                            label: 'الانصراف',
-                            render: (value: string) => value ? new Date(value).toLocaleTimeString('ar-EG') : '-',
-                          },
-                          {
-                            key: 'duration_formatted',
-                            label: 'المدة',
-                          },
-                        ]}
-                        data={report.attendance_logs}
-                        isLoading={false}
-                        searchable={true}
-                        pagination={true}
-                        itemsPerPage={10}
-                      />
+              {/* Monthly Report - Financial Details */}
+              {reportType === 'monthly' && report.financial_details && (
+                <div className="mt-6">
+                  <h3 className="text-white text-lg font-semibold mb-4">التفاصيل المالية</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="p-4 bg-success/10 rounded-xl border border-success/20">
+                      <h4 className="text-success text-sm mb-1">إجمالي الإيرادات</h4>
+                      <p className="text-white text-2xl font-bold">{report.financial_details.total_revenue || 0} جنيه</p>
                     </div>
-                  )}
-                </>
+                    <div className="p-4 bg-danger/10 rounded-xl border border-danger/20">
+                      <h4 className="text-danger text-sm mb-1">رسوم المنصة</h4>
+                      <p className="text-white text-2xl font-bold">{report.financial_details.platform_fees || 0} جنيه</p>
+                    </div>
+                    <div className="p-4 bg-primary/10 rounded-xl border border-primary/20">
+                      <h4 className="text-primary text-sm mb-1">صافي الإيرادات</h4>
+                      <p className="text-white text-2xl font-bold">{report.financial_details.net_revenue || 0} جنيه</p>
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
           </DashboardCard>

@@ -7,8 +7,6 @@ import { LectureCard } from '@/components/dashboard/LectureCard';
 import { Filter } from '@/components/Filter';
 import { Lecture } from '@/services/lectureService';
 import * as academyService from '@/services/academyService';
-import { getGrades } from '@/services/gradeService';
-import { getGroups, Group } from '@/services/groupService';
 import toast from 'react-hot-toast';
 import QRCode from 'react-qr-code';
 
@@ -66,8 +64,8 @@ export default function StudentAttendanceSection() {
       try {
         const [teachersResponse, gradesResponse, groupsResponse] = await Promise.all([
           academyService.getLectureTeachers(),
-          getGrades(1, 100),
-          getGroups(1, 100)
+          academyService.getGrades(1, 100),
+          academyService.getGroups(1, 100)
         ]);
         setTeachers(teachersResponse.data?.teachers || []);
         setGrades(gradesResponse.data || []);

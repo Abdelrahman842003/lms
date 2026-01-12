@@ -24,8 +24,19 @@ class TeacherResource extends JsonResource
                 $price = is_numeric($setting) ? (float) $setting : 0;
                 return $count * $price;
             })(),
-            'status' => $this->is_suspended ? 'معلق' : 'نشط',
-            'is_suspended' => (bool) $this->is_suspended,
+            'status' => (function () {
+                if ($this->status === 'pending') {
+                    return 'في انتظار الموافقة';
+                } elseif ($this->status === 'suspended') {
+                    return 'معلق';
+                } elseif ($this->status === 'active') {
+                    return 'نشط';
+                }
+                return 'غير معروف';
+            })(),
+            'status_key' => $this->status,
+            'is_approved' => $this->status !== 'pending',
+            'is_suspended' => $this->status === 'suspended',
             'joined' => $this->created_at->format('Y-m-d'),
             'created_at' => $this->created_at->toIso8601String(),
             'subscription_fee' => (float) $this->subscription_fee,

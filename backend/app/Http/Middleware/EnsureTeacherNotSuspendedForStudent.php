@@ -32,7 +32,7 @@ class EnsureTeacherNotSuspendedForStudent
         if ($teacherId) {
             $teacher = Teacher::find($teacherId);
             
-            if ($teacher && $teacher->is_suspended) {
+            if ($teacher && $teacher->status === 'suspended') {
                 return response()->json([
                     'message' => "عفواً، هذا المدرس ({$teacher->name}) معلق حالياً ولا يمكن الوصول لبياناته.",
                     'error' => 'TEACHER_SUSPENDED'

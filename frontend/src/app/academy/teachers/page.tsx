@@ -33,11 +33,123 @@ export default function AcademyTeachersPage() {
 
   // Add Teacher Modal State
   const [showAddModal, setShowAddModal] = useState(false);
+  const [addStep, setAddStep] = useState<'phone' | 'link' | 'create'>('phone');
+  const [phoneToCheck, setPhoneToCheck] = useState('');
+  const [existingTeacher, setExistingTeacher] = useState<any>(null);
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
     password: '',
   });
+
+  const handleCheckPhone = React.useCallback(async () => {
+    if (!phoneToCheck || phoneToCheck.length < 11) {
+      return;
+    }
+
+    try {
+      setIsProcessing(true);
+      const response = await academyService.checkTeacherPhone(phoneToCheck);
+      
+      if (response.data.exists) {
+        const teacher = response.data.teacher;
+        
+        // Check if teacher is already in this academy
+        const isAlreadyLinked = teachers.some(t => t.id === teacher.id);
+        
+        if (isAlreadyLinked) {
+          toast.error('هذا المدرس موجود بالفعل في الأكاديمية');
+          setPhoneToCheck('');
+          return;
+        }
+        
+        // Teacher exists - show link option
+        setExistingTeacher(teacher);
+        setAddStep('link');
+      } else {
+        // Teacher doesn't exist - show create form
+        setFormData(prev => ({ ...prev, phone: phoneToCheck }));
+        setAddStep('create');
+      }
+    } catch (error: any) {
+      console.error('Failed to check phone', error);
+      toast.error(error.response?.data?.message || 'فشل التحقق من رقم الهاتف');
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [phoneToCheck, teachers]);
+
+  // Auto-check phone when user types 11 digits
+  useEffect(() => {
+    if (phoneToCheck.length === 11 && addStep === 'phone') {
+      const timer = setTimeout(() => {
+        handleCheckPhone();
+      }, 500); // Debounce 500ms
+      
+      return () => clearTimeout(timer);
+    }
+  }, [phoneToCheck, addStep, handleCheckPhone]);
+
+  const handleLinkTeacher = async () => {
+    if (!existingTeacher) return;
+    
+    try {
+      setIsProcessing(true);
+      const response = await academyService.addTeacher(existingTeacher.id);
+      toast.success('تم ربط المدرس بنجاح');
+      setShowAddModal(false);
+      resetAddModal();
+      
+      // Add the linked teacher to the list directly from response
+      if (response.data?.teacher) {
+        setTeachers(prev => [response.data.teacher, ...prev]);
+      } else {
+        // Fallback to refetch if no teacher in response
+        fetchTeachers();
+      }
+    } catch (error: any) {
+      console.error('Failed to link teacher', error);
+      const errorMessage = error.response?.data?.message || error.response?.data?.error || 'فشل ربط المدرس';
+      toast.error(errorMessage);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleAddTeacher = async () => {
+    if (!formData.name || !formData.phone || !formData.password) {
+      toast.error('يرجى ملء جميع الحقول');
+      return;
+    }
+    
+    try {
+      setIsProcessing(true);
+      const response = await academyService.addTeacher(formData);
+      toast.success('تم إضافة المدرس بنجاح - في انتظار موافقة الإدارة');
+      setShowAddModal(false);
+      resetAddModal();
+      
+      // Add the new teacher to the list directly from response
+      if (response.data?.teacher) {
+        setTeachers(prev => [response.data.teacher, ...prev]);
+      } else {
+        // Fallback to refetch if no teacher in response
+        fetchTeachers();
+      }
+    } catch (error: any) {
+      console.error('Failed to add teacher', error);
+      toast.error(error.response?.data?.message || 'فشل إضافة المدرس');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const resetAddModal = () => {
+    setAddStep('phone');
+    setPhoneToCheck('');
+    setExistingTeacher(null);
+    setFormData({ name: '', phone: '', password: '' });
+  };
 
   // Redirect if not authenticated or not academy
   useEffect(() => {
@@ -71,9 +183,12 @@ export default function AcademyTeachersPage() {
       
       // Client-side filtering for status if backend doesn't support it directly in this endpoint
       if (statusFilter) {
-        data = data.filter((t: any) => 
-          statusFilter === 'active' ? t.status === 'نشط' : t.status !== 'نشط'
-        );
+        data = data.filter((t: any) => {
+          if (statusFilter === 'active') return t.status === 'نشط';
+          if (statusFilter === 'suspended') return t.status === 'معلق';
+          if (statusFilter === 'pending') return t.status === 'في انتظار الموافقة';
+          return true;
+        });
       }
       
       setTeachers(data);
@@ -84,26 +199,6 @@ export default function AcademyTeachersPage() {
     }
   };
 
-  const handleAddTeacher = async () => {
-    if (!formData.name || !formData.phone || !formData.password) {
-      toast.error('يرجى ملء جميع الحقول');
-      return;
-    }
-    
-    try {
-      setIsProcessing(true);
-      await academyService.addTeacher(formData);
-      toast.success('تم إضافة المدرس بنجاح');
-      setShowAddModal(false);
-      setFormData({ name: '', phone: '', password: '' });
-      fetchTeachers();
-    } catch (error: any) {
-      console.error('Failed to add teacher', error);
-      toast.error(error.response?.data?.message || 'فشل إضافة المدرس');
-    } finally {
-      setIsProcessing(false);
-    }
-  };
 
   const handleDelete = (teacher: any) => {
     setModalConfig({
@@ -198,11 +293,22 @@ export default function AcademyTeachersPage() {
       key: 'status',
       label: 'الحالة',
       sortable: true,
-      render: (value: string) => (
-        <span className={`badge ${value === 'نشط' ? 'badge-success' : 'badge-danger'}`}>
-          {value}
-        </span>
-      ),
+      render: (value: string) => {
+        let badgeClass = 'badge-success';
+        if (value === 'في انتظار الموافقة') {
+          badgeClass = 'badge-warning';
+        } else if (value === 'غير نشط') {
+          badgeClass = 'badge-danger';
+        } else if (value === 'معلق') {
+          badgeClass = 'badge-danger';
+        }
+        
+        return (
+          <span className={`badge ${badgeClass}`}>
+            {value}
+          </span>
+        );
+      },
     },
   ];
 
@@ -247,7 +353,8 @@ export default function AcademyTeachersPage() {
                 options={[
                   { value: '', label: 'الكل' },
                   { value: 'active', label: 'نشط' },
-                  { value: 'inactive', label: 'غير نشط' }
+                  { value: 'suspended', label: 'معلق' },
+                  { value: 'pending', label: 'ننتظر الموافقة' }
                 ]}
                 value={statusFilter}
                 onChange={(value) => setStatusFilter(value)}
@@ -281,65 +388,180 @@ export default function AcademyTeachersPage() {
       {showAddModal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[1000] p-4">
           <div className="bg-[#1a1f37] p-5 rounded-2xl w-full max-w-md border border-white/10">
-            <h2 className="text-white mb-4 text-xl font-bold">
-              إضافة مدرس جديد
-            </h2>
-            
-            <form onSubmit={(e) => { e.preventDefault(); handleAddTeacher(); }}>
-              <div className="mb-4">
-                <label className="block text-gray-300 mb-1.5 text-sm">الاسم</label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  className="w-full p-2.5 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm"
-                  placeholder="أدخل اسم المدرس"
-                  required
-                />
-              </div>
+            {/* Step 1: Phone Check */}
+            {addStep === 'phone' && (
+              <>
+                <h2 className="text-white mb-4 text-xl font-bold">
+                  إضافة مدرس
+                </h2>
+                
+                <div className="mb-6">
+                  <label className="block text-gray-300 mb-1.5 text-sm">رقم الهاتف</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={phoneToCheck}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, ''); // Only numbers
+                        setPhoneToCheck(value);
+                      }}
+                      className="w-full p-2.5 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm pr-10"
+                      placeholder="01xxxxxxxxx"
+                      maxLength={11}
+                      autoFocus
+                    />
+                    {isProcessing && (
+                      <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                        <i className="fas fa-spinner fa-spin text-primary"></i>
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1">
+                    {phoneToCheck.length === 11 
+                      ? isProcessing 
+                        ? 'جاري التحقق من الرقم...' 
+                        : 'سيتم التحقق تلقائياً'
+                      : 'أدخل رقم هاتف المدرس (11 رقم)'}
+                  </p>
+                </div>
 
-              <div className="mb-4">
-                <label className="block text-gray-300 mb-1.5 text-sm">رقم الهاتف</label>
-                <input
-                  type="text"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                  className="w-full p-2.5 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm"
-                  placeholder="01xxxxxxxxx"
-                  required
-                />
-              </div>
+                <div className="flex gap-3 justify-end pt-3 border-t border-white/10">
+                  <button
+                    type="button"
+                    className="px-4 py-1.5 rounded-lg border border-white/10 text-gray-300 hover:bg-white/5 transition-all text-sm"
+                    onClick={() => { setShowAddModal(false); resetAddModal(); }}
+                    disabled={isProcessing}
+                  >
+                    إلغاء
+                  </button>
+                </div>
+              </>
+            )}
 
-              <div className="mb-6">
-                <label className="block text-gray-300 mb-1.5 text-sm">كلمة المرور</label>
-                <input
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) => setFormData({...formData, password: e.target.value})}
-                  className="w-full p-2.5 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm"
-                  placeholder="******"
-                  required
-                />
-              </div>
+            {/* Step 2: Link Existing Teacher */}
+            {addStep === 'link' && existingTeacher && (
+              <>
+                <h2 className="text-white mb-4 text-xl font-bold">
+                  ربط مدرس موجود
+                </h2>
+                
+                <div className="mb-6 p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
+                  <div className="flex items-center gap-3 mb-2">
+                    <i className="fas fa-check-circle text-green-400 text-2xl"></i>
+                    <div>
+                      <p className="text-white font-semibold">{existingTeacher.name}</p>
+                      <p className="text-sm text-gray-400">{existingTeacher.phone}</p>
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-300 mt-2">
+                    المدرس موجود في النظام. يمكنك ربطه بالأكاديمية مباشرة.
+                  </p>
+                  {existingTeacher.is_approved === false && (
+                    <div className="mt-2 p-2 bg-yellow-500/10 border border-yellow-500/30 rounded text-xs text-yellow-300">
+                      <i className="fas fa-exclamation-triangle mr-1"></i>
+                      هذا المدرس في انتظار موافقة الإدارة
+                    </div>
+                  )}
+                </div>
 
-              <div className="flex gap-3 justify-end pt-3 border-t border-white/10">
-                <button
-                  type="button"
-                  className="px-4 py-1.5 rounded-lg border border-white/10 text-gray-300 hover:bg-white/5 transition-all text-sm"
-                  onClick={() => setShowAddModal(false)}
-                  disabled={isProcessing}
-                >
-                  إلغاء
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-1.5 rounded-lg bg-primary text-white hover:bg-primary/90 transition-all flex items-center gap-2 text-sm"
-                  disabled={!formData.name || !formData.phone || !formData.password || isProcessing}
-                >
-                  {isProcessing ? 'جاري الحفظ...' : 'إضافة المدرس'}
-                </button>
-              </div>
-            </form>
+                <div className="flex gap-3 justify-end pt-3 border-t border-white/10">
+                  <button
+                    type="button"
+                    className="px-4 py-1.5 rounded-lg border border-white/10 text-gray-300 hover:bg-white/5 transition-all text-sm"
+                    onClick={() => { setShowAddModal(false); resetAddModal(); }}
+                    disabled={isProcessing}
+                  >
+                    إلغاء
+                  </button>
+                  <button
+                    type="button"
+                    className="px-4 py-1.5 rounded-lg bg-green-600 text-white hover:bg-green-700 transition-all flex items-center gap-2 text-sm"
+                    onClick={handleLinkTeacher}
+                    disabled={isProcessing}
+                  >
+                    {isProcessing ? 'جاري الربط...' : (
+                      <>
+                        <i className="fas fa-link"></i>
+                        <span>ربط المدرس</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* Step 3: Create New Teacher */}
+            {addStep === 'create' && (
+              <>
+                <h2 className="text-white mb-4 text-xl font-bold">
+                  إنشاء مدرس جديد
+                </h2>
+                
+                <div className="mb-4 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg text-sm text-blue-300">
+                  <i className="fas fa-info-circle mr-1"></i>
+                  المدرس سيتم إضافته بحالة "في انتظار الموافقة" ولن يتمكن من الدخول حتى تتم الموافقة عليه من الإدارة
+                </div>
+
+                <form onSubmit={(e) => { e.preventDefault(); handleAddTeacher(); }}>
+                  <div className="mb-4">
+                    <label className="block text-gray-300 mb-1.5 text-sm">الاسم</label>
+                    <input
+                      type="text"
+                      value={formData.name}
+                      onChange={(e) => setFormData({...formData, name: e.target.value})}
+                      className="w-full p-2.5 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm"
+                      placeholder="أدخل اسم المدرس"
+                      required
+                    />
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="block text-gray-300 mb-1.5 text-sm">رقم الهاتف</label>
+                    <input
+                      type="text"
+                      value={formData.phone}
+                      readOnly
+                      className="w-full p-2.5 bg-white/5 border border-white/10 rounded-lg text-gray-400 outline-none text-sm cursor-not-allowed"
+                    />
+                  </div>
+
+                  <div className="mb-6">
+                    <label className="block text-gray-300 mb-1.5 text-sm">كلمة المرور</label>
+                    <input
+                      type="password"
+                      value={formData.password}
+                      onChange={(e) => setFormData({...formData, password: e.target.value})}
+                      className="w-full p-2.5 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm"
+                      placeholder="******"
+                      required
+                    />
+                  </div>
+
+                  <div className="flex gap-3 justify-end pt-3 border-t border-white/10">
+                    <button
+                      type="button"
+                      className="px-4 py-1.5 rounded-lg border border-white/10 text-gray-300 hover:bg-white/5 transition-all text-sm"
+                      onClick={() => { setShowAddModal(false); resetAddModal(); }}
+                      disabled={isProcessing}
+                    >
+                      إلغاء
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-1.5 rounded-lg bg-primary text-white hover:bg-primary/90 transition-all flex items-center gap-2 text-sm"
+                      disabled={!formData.name || !formData.password || isProcessing}
+                    >
+                      {isProcessing ? 'جاري الحفظ...' : (
+                        <>
+                          <i className="fas fa-plus"></i>
+                          <span>إضافة المدرس</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </>
+            )}
           </div>
         </div>
       )}

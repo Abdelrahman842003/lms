@@ -42,7 +42,7 @@ class SecretaryService
         }
 
         // Check if all teachers are suspended
-        $allSuspended = $teachers->every(fn ($teacher) => $teacher->is_suspended);
+        $allSuspended = $teachers->every(fn ($teacher) => $teacher->status === 'suspended');
         
         if ($allSuspended) {
             throw ValidationException::withMessages([

@@ -1,16 +1,18 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { DataTable } from '@/components/dashboard/DataTable';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { useAuth } from '@/contexts/AuthContext';
-import { getTeachers, createTeacher, updateTeacher, toggleTeacherStatus, loginAsTeacher, getDashboardStats, updateTeacherSubscription, getTeacherSubscription } from '@/services/authService';
+import { getTeachers, createTeacher, updateTeacher, toggleTeacherStatus, loginAsTeacher, getDashboardStats, updateTeacherSubscription, getTeacherSubscription, approveTeacher } from '@/services/authService';
 import { toast } from 'react-hot-toast';
 
 import { Avatar } from '@/components/ui';
+import { Filter } from '@/components/Filter';
+
 
 // Subscription Modal Component
 
@@ -260,17 +262,7 @@ export default function AdminTeachersPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
   const [selectedTeacher, setSelectedTeacher] = useState<any>(null);
-  const [confirmModal, setConfirmModal] = useState<{
-    isOpen: boolean;
-    teacherId: string | null;
-    teacherName: string;
-    isSuspended: boolean;
-  }>({
-    isOpen: false,
-    teacherId: null,
-    teacherName: '',
-    isSuspended: false
-  });
+
   const [editingTeacher, setEditingTeacher] = useState<any>(null);
   const [formData, setFormData] = useState({
     name: '',
@@ -297,7 +289,7 @@ export default function AdminTeachersPage() {
     password: false,
     password_confirmation: false,
   });
-  const [showFilter, setShowFilter] = useState(false);
+
   const [filters, setFilters] = useState({
     status: 'all',
     dateFrom: '',
@@ -312,9 +304,9 @@ export default function AdminTeachersPage() {
   const [totalItems, setTotalItems] = useState(0);
   const [totalRevenue, setTotalRevenue] = useState(0);
   const [totalStudents, setTotalStudents] = useState(0);
+  const [pendingTeachers, setPendingTeachers] = useState(0);
   const itemsPerPage = 10;
 
-  const filterRef = useRef<HTMLDivElement>(null);
 
   // Real-time validation function
   const validateField = (name: string, value: string): string | undefined => {
@@ -362,19 +354,6 @@ export default function AdminTeachersPage() {
   };
 
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (filterRef.current && !filterRef.current.contains(event.target as Node)) {
-        setShowFilter(false);
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
-
-  useEffect(() => {
     setIsFiltering(true);
     const timer = setTimeout(() => {
       fetchTeachers(1);
@@ -386,12 +365,18 @@ export default function AdminTeachersPage() {
   const fetchTeachers = async (page = 1) => {
     try {
       setIsLoading(true);
-      const activeFilters = {
+      const activeFilters: any = {
         search: searchQuery,
-        status: filters.status !== 'all' ? filters.status : undefined,
         date_from: filters.dateFrom || undefined,
         date_to: filters.dateTo || undefined
       };
+      
+      // Don't send status filter to backend, we'll filter client-side
+      // if (filters.status && filters.status !== 'all') {
+      //   activeFilters.status = filters.status;
+      // }
+      
+      console.log('Active Filters:', activeFilters);
       
       const [teachersRes, statsRes] = await Promise.all([
         getTeachers(page, itemsPerPage, activeFilters),
@@ -399,7 +384,19 @@ export default function AdminTeachersPage() {
       ]);
 
       console.log('Fetched teachers:', teachersRes.data);
-      setTeachers(teachersRes.data);
+      
+      // Apply client-side status filtering
+      let filteredTeachers = teachersRes.data;
+      if (filters.status && filters.status !== 'all') {
+        filteredTeachers = teachersRes.data.filter((t: any) => {
+          if (filters.status === 'active') return t.status_key === 'active';
+          if (filters.status === 'suspended') return t.status_key === 'suspended';
+          if (filters.status === 'pending') return t.status_key === 'pending';
+          return true;
+        });
+      }
+      
+      setTeachers(filteredTeachers);
       setTotalPages(teachersRes.meta.last_page);
       setTotalItems(teachersRes.meta.total);
       setCurrentPage(teachersRes.meta.current_page);
@@ -407,10 +404,11 @@ export default function AdminTeachersPage() {
       // Set stats
       if (statsRes) {
         setTotalStudents(statsRes.students_count || 0);
+        setPendingTeachers(statsRes.pending_teachers_count || 0);
         
         // Calculate total revenue by summing each teacher's revenue
         // This ensures accurate calculation: sum of (each teacher's students × price)
-        const sumOfTeacherRevenues = teachersRes.data.reduce((sum: number, teacher: any) => {
+        const sumOfTeacherRevenues = filteredTeachers.reduce((sum: number, teacher: any) => {
           return sum + (teacher.revenue || 0);
         }, 0);
         
@@ -461,24 +459,7 @@ export default function AdminTeachersPage() {
     setValidationErrors(prev => ({ ...prev, [name]: fieldError }));
   };
 
-  const openAddModal = () => {
-    setEditingTeacher(null);
-    setFormData({ name: '', phone: '', password: '', password_confirmation: '' });
-    setError('');
-    setIsModalOpen(true);
-  };
 
-  const openEditModal = (teacher: any) => {
-    setEditingTeacher(teacher);
-    setFormData({
-      name: teacher.name,
-      phone: teacher.phone || '',
-      password: '',
-      password_confirmation: '',
-    });
-    setError('');
-    setIsModalOpen(true);
-  };
 
   const openSubscriptionModal = (teacher: any) => {
     setSelectedTeacher(teacher);
@@ -516,28 +497,36 @@ export default function AdminTeachersPage() {
     }
   };
 
-  const handleToggleStatus = (teacher: any) => {
-    setConfirmModal({
-      isOpen: true,
-      teacherId: teacher.id,
-      teacherName: teacher.name,
-      isSuspended: teacher.is_suspended
-    });
+
+
+  const handleFilterChange = (key: string, value: any) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+    setCurrentPage(1);
   };
 
-  const confirmToggleStatus = async () => {
-    if (!confirmModal.teacherId) return;
 
+
+  const handleToggleStatus = async (teacher: any) => {
     try {
-      await toggleTeacherStatus(confirmModal.teacherId);
-      toast.success(`تم ${confirmModal.isSuspended ? 'تفعيل' : 'تعليق'} حساب المدرس بنجاح`);
+      await toggleTeacherStatus(teacher.id);
+      toast.success('تم تغيير حالة المدرس بنجاح');
       await fetchTeachers(currentPage);
-      setConfirmModal(prev => ({ ...prev, isOpen: false }));
     } catch (error) {
       console.error('Failed to toggle teacher status', error);
       toast.error('فشل تغيير حالة المدرس');
     }
   };
+  const handleApprove = async (teacher: any) => {
+    try {
+      await approveTeacher(teacher.id);
+      toast.success('تمت الموافقة على المدرس بنجاح');
+      await fetchTeachers(currentPage);
+    } catch (error) {
+      console.error('Failed to approve teacher', error);
+      toast.error('فشل الموافقة على المدرس');
+    }
+  };
+
   const tableColumns = [{
       key: 'id',
       label: '#',
@@ -591,15 +580,39 @@ export default function AdminTeachersPage() {
       key: 'status',
       label: 'الحالة',
       sortable: true,
-      render: (_: string, row: any) => (
-        <span className={!row.is_suspended ? 'badge badge-success' : 'badge badge-danger'}>
-          {!row.is_suspended ? 'نشط' : 'معلق'}
-        </span>
-      ),
+      render: (_: string, row: any) => {
+        // Determine badge class based on status
+        let badgeClass = 'badge-success';
+        let statusText = 'نشط';
+        
+        if (row.status_key === 'pending') {
+          badgeClass = 'badge-warning';
+          statusText = 'في انتظار الموافقة';
+        } else if (row.status_key === 'suspended') {
+          badgeClass = 'badge-danger'; // Red color
+          statusText = 'معلق';
+        } else if (row.status_key === 'active') {
+          badgeClass = 'badge-success';
+          statusText = 'نشط';
+        }
+        
+        return (
+          <span className={`badge ${badgeClass}`}>
+            {statusText}
+          </span>
+        );
+      },
     },
   ];
 
   const tableActions = [
+    {
+      label: 'موافقة',
+      icon: 'fas fa-check',
+      variant: 'success' as const,
+      onClick: (row: any) => handleApprove(row),
+      hidden: (row: any) => row.status_key !== 'pending',
+    },
     {
       label: 'دفع الاشتراك',
       icon: 'fas fa-money-bill-wave',
@@ -642,15 +655,20 @@ export default function AdminTeachersPage() {
       },
     },
     {
-      label: 'تعديل البيانات',
-      icon: 'fas fa-edit',
-      onClick: (row: any) => openEditModal(row),
+      label: (row: any) => row.status_key === 'suspended' ? 'تنشيط' : 'تعليق',
+      icon: (row: any) => row.status_key === 'suspended' ? 'fas fa-play' : 'fas fa-pause',
+      variant: (row: any) => row.status_key === 'suspended' ? 'success' : 'warning',
+      onClick: (row: any) => handleToggleStatus(row),
+      hidden: (row: any) => row.status_key === 'pending',
     },
     {
-      label: (row: any) => row.is_suspended ? 'تفعيل الحساب' : 'تعليق الحساب',
-      icon: (row: any) => row.is_suspended ? 'fas fa-check-circle' : 'fas fa-ban',
-      variant: (row: any) => row.is_suspended ? 'success' : 'danger',
-      onClick: (row: any) => handleToggleStatus(row),
+      label: 'تعديل',
+      icon: 'fas fa-edit',
+      variant: 'default' as const,
+      onClick: (row: any) => {
+        setSelectedTeacher(row);
+        setIsModalOpen(true);
+      },
     },
   ];
 
@@ -661,341 +679,262 @@ export default function AdminTeachersPage() {
       role="admin"
       user={user || undefined}
     >
-      {/* Stats Grid */}
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-6 mb-8">
-        <StatCard
-          title="إجمالي المدرسين"
-          value={teachers.length}
-          icon="fas fa-chalkboard-teacher"
-          color="primary"
-          variant="centered"
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold text-white mb-2">المدرسين</h1>
+            <p className="text-gray-400">إدارة المدرسين وحساباتهم</p>
+          </div>
+          <button
+            onClick={() => {
+              setSelectedTeacher(null);
+              setIsModalOpen(true);
+            }}
+            className="btn btn-primary"
+          >
+            <i className="fas fa-plus ml-2"></i>
+            إضافة مدرس جديد
+          </button>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <StatCard
+            title="إجمالي المدرسين"
+            value={totalItems}
+            icon="fas fa-chalkboard-teacher"
+            color="primary"
+            variant="centered"
+          />
+          <StatCard
+            title="في انتظار الموافقة"
+            value={pendingTeachers}
+            icon="fas fa-clock"
+            color="warning"
+            variant="centered"
+          />
+          <StatCard
+            title="إجمالي الطلاب"
+            value={totalStudents}
+            icon="fas fa-users"
+            color="success"
+            variant="centered"
+          />
+          <StatCard
+            title="إجمالي الإيرادات"
+            value={`$${totalRevenue.toLocaleString()}`}
+            icon="fas fa-dollar-sign"
+            color="danger"
+            variant="centered"
+          />
+        </div>
+
+        <DashboardCard title="قائمة المدرسين" icon="fas fa-table">
+          <div className="mb-6 w-full sm:w-auto">
+            <Filter
+              options={[
+                { value: 'all', label: 'الكل' },
+                { value: 'active', label: 'نشط' },
+                { value: 'suspended', label: 'معلق' },
+                { value: 'pending', label: 'ننتظر الموافقة' },
+              ]}
+              value={filters.status || 'all'}
+              onChange={(value) => handleFilterChange('status', value)}
+              className="w-full sm:w-[200px]"
+            />
+          </div>
+          
+          {isLoading || isFiltering ? (
+            <div className="data-table-wrapper overflow-x-auto">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    {tableColumns.map((col) => (
+                      <th key={col.key}>{col.label}</th>
+                    ))}
+                    <th>الإجراءات</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <tr key={i}>
+                      {tableColumns.map((_, index) => (
+                        <td key={index}>
+                          <div className={`skeleton-item ${index === 0 ? 'w-10' : index === 1 ? 'w-[120px]' : 'w-20'}`}></div>
+                        </td>
+                      ))}
+                      <td>
+                        <div className="skeleton-item w-20"></div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <DataTable
+              columns={tableColumns}
+              data={teachers}
+              actions={tableActions}
+              searchable={true}
+              onSearch={setSearchQuery}
+              pagination={false}
+              itemsPerPage={itemsPerPage}
+              isLoading={false}
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              onPageChange={(page) => fetchTeachers(page)}
+            />
+          )}
+        </DashboardCard>
+
+        {/* Subscription Modal */}
+        <SubscriptionModal
+          isOpen={isSubscriptionModalOpen}
+          onClose={() => {
+            setIsSubscriptionModalOpen(false);
+            setSelectedTeacher(null);
+          }}
+          teacher={selectedTeacher}
+          onSuccess={() => fetchTeachers(currentPage)}
         />
 
-        <StatCard
-          title="مدرسين نشطين"
-          value={teachers.length}
-          icon="fas fa-user-check"
-          color="success"
-          variant="centered"
-        />
-
-        <StatCard
-          title="إجمالي الطلاب"
-          value={totalStudents}
-          icon="fas fa-users"
-          color="warning"
-          variant="centered"
-        />
-
-        <StatCard
-          title="إجمالي الإيرادات"
-          value={totalRevenue}
-          icon="fas fa-dollar-sign"
-          color="danger"
-          prefix="$"
-          variant="centered"
-        />
-      </div>
-
-      {/* Teachers Table */}
-      <DashboardCard
-        title="قائمة المدرسين"
-        icon="fas fa-table"
-        action={
-          <div className="flex gap-3 flex-wrap">
-            <button className="btn btn-primary" onClick={openAddModal}>
-              <i className="fas fa-plus"></i>
-              <span>إضافة مدرس جديد</span>
-            </button>
-
-            <div className="relative" ref={filterRef}>
-              <button 
-                className={`btn btn-sm ${showFilter ? 'btn-primary' : 'btn-outline'}`}
-                onClick={() => setShowFilter(!showFilter)}
-              >
-                <i className="fas fa-filter"></i>
-                <span>تصفية</span>
-              </button>
+        {/* Add/Edit Teacher Modal */}
+        {isModalOpen && (
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[1000] p-4">
+            <div className="bg-[#1a1f37] p-5 rounded-2xl w-full max-w-md border border-white/10">
+              <h2 className="text-white mb-4 text-xl font-bold">
+                {editingTeacher ? 'تعديل بيانات المدرس' : 'إضافة مدرس جديد'}
+              </h2>
               
-              {showFilter && (
-                <div className="absolute top-full left-0 mt-2 bg-[#1a1f37] border border-white/10 rounded-xl p-5 z-[100] w-[320px] shadow-[0_10px_25px_rgba(0,0,0,0.5)] backdrop-blur-md">
-                  <div className="mb-4">
-                    <label className="block text-gray-light mb-2 text-[0.9rem]">الحالة</label>
-                    <select 
-                      value={filters.status}
-                      onChange={(e) => setFilters({...filters, status: e.target.value})}
-                      className="w-full p-2.5 bg-white/5 border border-white/10 rounded-lg text-white outline-none"
-                    >
-                      <option value="all" className="bg-[#1a1f37]">الكل</option>
-                      <option value="نشط" className="bg-[#1a1f37]">نشط</option>
-                      <option value="غير نشط" className="bg-[#1a1f37]">غير نشط</option>
-                    </select>
-                  </div>
-
-                  <div className="mb-4">
-                    <label className="block text-gray-light mb-2 text-[0.9rem]">تاريخ الانضمام (من)</label>
-                    <input 
-                      type="date"
-                      value={filters.dateFrom}
-                      onChange={(e) => setFilters({...filters, dateFrom: e.target.value})}
-                      className="w-full p-2.5 bg-white/5 border border-white/10 rounded-lg text-white color-scheme-dark"
-                    />
-                  </div>
-
-                  <div className="mb-5">
-                    <label className="block text-gray-light mb-2 text-[0.9rem]">تاريخ الانضمام (إلى)</label>
-                    <input 
-                      type="date"
-                      value={filters.dateTo}
-                      onChange={(e) => setFilters({...filters, dateTo: e.target.value})}
-                      className="w-full p-2.5 bg-white/5 border border-white/10 rounded-lg text-white color-scheme-dark"
-                    />
-                  </div>
-
-                  <div className="flex gap-2.5">
-                    <button 
-                      className="btn btn-primary btn-sm flex-1"
-                      onClick={() => setShowFilter(false)}
-                    >
-                      تطبيق
-                    </button>
-                    <button 
-                      className="btn btn-outline btn-sm flex-1"
-                      onClick={() => setFilters({ status: 'all', dateFrom: '', dateTo: '' })}
-                    >
-                      إعادة تعيين
-                    </button>
-                  </div>
+              {error && (
+                <div className="bg-danger/10 text-danger p-2.5 rounded-lg mb-4 text-sm">
+                  {error}
                 </div>
               )}
+
+              <form onSubmit={handleSubmit}>
+                <div className="mb-4">
+                  <label className="block text-gray-300 mb-1.5 text-sm">الاسم</label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    onBlur={handleBlur}
+                    className={`w-full p-2.5 bg-white/5 border rounded-lg text-white outline-none focus:ring-1 transition-all text-sm ${
+                      touched.name && validationErrors.name 
+                        ? 'border-danger focus:border-danger focus:ring-danger' 
+                        : 'border-white/10 focus:border-primary focus:ring-primary'
+                    }`}
+                    required
+                  />
+                  {touched.name && validationErrors.name && (
+                    <p className="text-danger text-xs mt-1 flex items-center gap-1">
+                      <i className="fas fa-exclamation-circle"></i>
+                      {validationErrors.name}
+                    </p>
+                  )}
+                </div>
+
+                <div className="mb-4">
+                  <label className="block text-gray-300 mb-1.5 text-sm">رقم الهاتف</label>
+                  <input
+                    type="text"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    onBlur={handleBlur}
+                    className={`w-full p-2.5 bg-white/5 border rounded-lg text-white outline-none focus:ring-1 transition-all text-sm ${
+                      touched.phone && validationErrors.phone 
+                        ? 'border-danger focus:border-danger focus:ring-danger' 
+                        : 'border-white/10 focus:border-primary focus:ring-primary'
+                    }`}
+                    placeholder="01xxxxxxxxx"
+                    inputMode="numeric"
+                    required
+                  />
+                  {touched.phone && validationErrors.phone && (
+                    <p className="text-danger text-xs mt-1 flex items-center gap-1">
+                      <i className="fas fa-exclamation-circle"></i>
+                      {validationErrors.phone}
+                    </p>
+                  )}
+                </div>
+
+                <div className="mb-4">
+                  <label className="block text-gray-300 mb-1.5 text-sm">
+                    {editingTeacher ? 'كلمة المرور (اتركها فارغة إذا لم ترد التغيير)' : 'كلمة المرور'}
+                  </label>
+                  <input
+                    type="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    onBlur={handleBlur}
+                    className={`w-full p-2.5 bg-white/5 border rounded-lg text-white outline-none focus:ring-1 transition-all text-sm ${
+                      touched.password && validationErrors.password 
+                        ? 'border-danger focus:border-danger focus:ring-danger' 
+                        : 'border-white/10 focus:border-primary focus:ring-primary'
+                    }`}
+                    required={!editingTeacher}
+                    minLength={6}
+                  />
+                  {touched.password && validationErrors.password && (
+                    <p className="text-danger text-xs mt-1 flex items-center gap-1">
+                      <i className="fas fa-exclamation-circle"></i>
+                      {validationErrors.password}
+                    </p>
+                  )}
+                </div>
+
+                <div className="mb-6">
+                  <label className="block text-gray-300 mb-1.5 text-sm">تأكيد كلمة المرور</label>
+                  <input
+                    type="password"
+                    name="password_confirmation"
+                    value={formData.password_confirmation}
+                    onChange={handleInputChange}
+                    onBlur={handleBlur}
+                    className={`w-full p-2.5 bg-white/5 border rounded-lg text-white outline-none focus:ring-1 transition-all text-sm ${
+                      touched.password_confirmation && validationErrors.password_confirmation 
+                        ? 'border-danger focus:border-danger focus:ring-danger' 
+                        : 'border-white/10 focus:border-primary focus:ring-primary'
+                    }`}
+                    required={!editingTeacher}
+                    minLength={6}
+                  />
+                  {touched.password_confirmation && validationErrors.password_confirmation && (
+                    <p className="text-danger text-xs mt-1 flex items-center gap-1">
+                      <i className="fas fa-exclamation-circle"></i>
+                      {validationErrors.password_confirmation}
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex gap-3 justify-end pt-3 border-t border-white/10">
+                  <button
+                    type="button"
+                    className="px-4 py-1.5 rounded-lg border border-white/10 text-gray-300 hover:bg-white/5 transition-all text-sm"
+                    onClick={() => setIsModalOpen(false)}
+                    disabled={submitLoading}
+                  >
+                    إلغاء
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-1.5 rounded-lg bg-primary text-white hover:bg-primary/90 transition-all flex items-center gap-2 text-sm"
+                    disabled={submitLoading}
+                  >
+                    {submitLoading ? 'جاري الحفظ...' : (editingTeacher ? 'حفظ التغييرات' : 'إضافة المدرس')}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
-        }>
-        
-        {isLoading || isFiltering ? (
-          <div className="data-table-wrapper overflow-x-auto">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  {tableColumns.map((col) => (
-                    <th key={col.key}>{col.label}</th>
-                  ))}
-                  <th>الإجراءات</th>
-                </tr>
-              </thead>
-              <tbody>
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <tr key={i}>
-                    {tableColumns.map((_, index) => (
-                      <td key={index}>
-                        <div className={`skeleton-item ${index === 0 ? 'w-10' : index === 1 ? 'w-[120px]' : 'w-20'}`}></div>
-                      </td>
-                    ))}
-                    <td>
-                      <div className="skeleton-item w-20"></div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <DataTable
-            columns={tableColumns}
-            data={teachers}
-            actions={tableActions}
-            searchable={true}
-            onSearch={setSearchQuery}
-            pagination={false}
-            itemsPerPage={itemsPerPage}
-            isLoading={false}
-            currentPage={currentPage}
-            totalPages={totalPages}
-            totalItems={totalItems}
-            onPageChange={(page) => fetchTeachers(page)}
-          />
         )}
-      </DashboardCard>
-
-      {/* Add/Edit Teacher Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[1000] p-4">
-          <div className="bg-[#1a1f37] p-5 rounded-2xl w-full max-w-md border border-white/10">
-            <h2 className="text-white mb-4 text-xl font-bold">
-              {editingTeacher ? 'تعديل بيانات المدرس' : 'إضافة مدرس جديد'}
-            </h2>
-            
-            {error && (
-              <div className="bg-danger/10 text-danger p-2.5 rounded-lg mb-4 text-sm">
-                {error}
-              </div>
-            )}
-
-            <form onSubmit={handleSubmit}>
-              <div className="mb-4">
-                <label className="block text-gray-300 mb-1.5 text-sm">الاسم</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  onBlur={handleBlur}
-                  className={`w-full p-2.5 bg-white/5 border rounded-lg text-white outline-none focus:ring-1 transition-all text-sm ${
-                    touched.name && validationErrors.name 
-                      ? 'border-danger focus:border-danger focus:ring-danger' 
-                      : 'border-white/10 focus:border-primary focus:ring-primary'
-                  }`}
-                  required
-                />
-                {touched.name && validationErrors.name && (
-                  <p className="text-danger text-xs mt-1 flex items-center gap-1">
-                    <i className="fas fa-exclamation-circle"></i>
-                    {validationErrors.name}
-                  </p>
-                )}
-              </div>
-
-              <div className="mb-4">
-                <label className="block text-gray-300 mb-1.5 text-sm">رقم الهاتف</label>
-                <input
-                  type="text"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  onBlur={handleBlur}
-                  className={`w-full p-2.5 bg-white/5 border rounded-lg text-white outline-none focus:ring-1 transition-all text-sm ${
-                    touched.phone && validationErrors.phone 
-                      ? 'border-danger focus:border-danger focus:ring-danger' 
-                      : 'border-white/10 focus:border-primary focus:ring-primary'
-                  }`}
-                  placeholder="01xxxxxxxxx"
-                  inputMode="numeric"
-                  required
-                />
-                {touched.phone && validationErrors.phone && (
-                  <p className="text-danger text-xs mt-1 flex items-center gap-1">
-                    <i className="fas fa-exclamation-circle"></i>
-                    {validationErrors.phone}
-                  </p>
-                )}
-              </div>
-
-              <div className="mb-4">
-                <label className="block text-gray-300 mb-1.5 text-sm">
-                  {editingTeacher ? 'كلمة المرور (اتركها فارغة إذا لم ترد التغيير)' : 'كلمة المرور'}
-                </label>
-                <input
-                  type="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  onBlur={handleBlur}
-                  className={`w-full p-2.5 bg-white/5 border rounded-lg text-white outline-none focus:ring-1 transition-all text-sm ${
-                    touched.password && validationErrors.password 
-                      ? 'border-danger focus:border-danger focus:ring-danger' 
-                      : 'border-white/10 focus:border-primary focus:ring-primary'
-                  }`}
-                  required={!editingTeacher}
-                  minLength={6}
-                />
-                {touched.password && validationErrors.password && (
-                  <p className="text-danger text-xs mt-1 flex items-center gap-1">
-                    <i className="fas fa-exclamation-circle"></i>
-                    {validationErrors.password}
-                  </p>
-                )}
-              </div>
-
-              <div className="mb-6">
-                <label className="block text-gray-300 mb-1.5 text-sm">تأكيد كلمة المرور</label>
-                <input
-                  type="password"
-                  name="password_confirmation"
-                  value={formData.password_confirmation}
-                  onChange={handleInputChange}
-                  onBlur={handleBlur}
-                  className={`w-full p-2.5 bg-white/5 border rounded-lg text-white outline-none focus:ring-1 transition-all text-sm ${
-                    touched.password_confirmation && validationErrors.password_confirmation 
-                      ? 'border-danger focus:border-danger focus:ring-danger' 
-                      : 'border-white/10 focus:border-primary focus:ring-primary'
-                  }`}
-                  required={!editingTeacher}
-                  minLength={6}
-                />
-                {touched.password_confirmation && validationErrors.password_confirmation && (
-                  <p className="text-danger text-xs mt-1 flex items-center gap-1">
-                    <i className="fas fa-exclamation-circle"></i>
-                    {validationErrors.password_confirmation}
-                  </p>
-                )}
-              </div>
-
-              <div className="flex gap-3 justify-end pt-3 border-t border-white/10">
-                <button
-                  type="button"
-                  className="px-4 py-1.5 rounded-lg border border-white/10 text-gray-300 hover:bg-white/5 transition-all text-sm"
-                  onClick={() => setIsModalOpen(false)}
-                  disabled={submitLoading}
-                >
-                  إلغاء
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-1.5 rounded-lg bg-primary text-white hover:bg-primary/90 transition-all flex items-center gap-2 text-sm"
-                  disabled={submitLoading}
-                >
-                  {submitLoading ? 'جاري الحفظ...' : (editingTeacher ? 'حفظ التغييرات' : 'إضافة المدرس')}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Subscription Modal */}
-      <SubscriptionModal
-        isOpen={isSubscriptionModalOpen}
-        onClose={() => {
-          setIsSubscriptionModalOpen(false);
-          setSelectedTeacher(null);
-        }}
-        teacher={selectedTeacher}
-        onSuccess={() => fetchTeachers(currentPage)}
-      />
-
-      {/* Confirmation Modal */}
-      {confirmModal.isOpen && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[1000] p-4">
-          <div className="bg-[#1a1f37] p-6 rounded-2xl w-full max-w-sm border border-white/10 text-center">
-            <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${confirmModal.isSuspended ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'}`}>
-              <i className={`fas ${confirmModal.isSuspended ? 'fa-check' : 'fa-ban'} text-3xl`}></i>
-            </div>
-            
-            <h3 className="text-white text-xl font-bold mb-2">
-              {confirmModal.isSuspended ? 'تفعيل حساب المدرس' : 'تعليق حساب المدرس'}
-            </h3>
-            
-            <p className="text-gray-400 mb-6">
-              هل أنت متأكد من {confirmModal.isSuspended ? 'تفعيل' : 'تعليق'} حساب المدرس <span className="text-white font-bold">{confirmModal.teacherName}</span>؟
-            </p>
-
-            <div className="flex gap-3 justify-center">
-              <button
-                className="px-6 py-2 rounded-lg border border-white/10 text-gray-300 hover:bg-white/5 transition-all"
-                onClick={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
-              >
-                إلغاء
-              </button>
-              <button
-                className={`px-6 py-2 rounded-lg text-white transition-all ${confirmModal.isSuspended ? 'bg-success hover:bg-success/90' : 'bg-danger hover:bg-danger/90'}`}
-                onClick={confirmToggleStatus}
-              >
-                تأكيد
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      </div>
     </DashboardLayout>
   );
 }

@@ -74,6 +74,15 @@ export const toggleTeacherStatus = async (id: string) => {
   return response.data;
 };
 
+export const checkTeacherPhone = async (phone: string) => {
+  const response = await axios.post(
+    `${API_BASE_URL}/academy/check-teacher-phone`,
+    { phone },
+    { headers: getAuthHeaders() }
+  );
+  return response.data;
+};
+
 // ========== Secretaries Management ==========
 export const getSecretaries = async (page = 1, perPage = 10, search = '') => {
   const response = await axios.get(`${API_BASE_URL}/academy/secretaries`, {
@@ -521,6 +530,7 @@ export default {
   addTeacher,
   removeTeacher,
   toggleTeacherStatus,
+  checkTeacherPhone,
   
   // Secretaries
   getSecretaries,

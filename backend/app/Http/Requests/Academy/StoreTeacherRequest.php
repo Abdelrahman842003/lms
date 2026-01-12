@@ -17,13 +17,13 @@ class StoreTeacherRequest extends FormRequest
     {
         if ($this->has('teacher_id')) {
             return [
-                'teacher_id' => ['required', 'exists:teachers,id'],
+                'teacher_id' => ['required', 'string', 'exists:teachers,id'],
             ];
         }
 
         return [
             'name' => ['required', 'string', 'min:3'],
-            'phone' => ['required', 'string', 'unique:teachers,phone'],
+            'phone' => ['required', 'string', 'regex:/^01[0-9]{9}$/', 'unique:teachers,phone'],
             'password' => ['required', 'string', 'min:6'],
         ];
     }

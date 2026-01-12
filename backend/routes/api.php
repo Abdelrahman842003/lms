@@ -46,6 +46,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/teachers/{teacher}/subscription', [\App\Http\Controllers\Admin\TeacherController::class, 'getSubscription']);
         Route::post('/teachers/{teacher}/subscription', [\App\Http\Controllers\Admin\TeacherController::class, 'updateSubscription']);
         Route::put('/teachers/{teacher}/toggle-status', [\App\Http\Controllers\Admin\TeacherController::class, 'toggleStatus']);
+        Route::post('/teachers/{teacher}/approve', [\App\Http\Controllers\Admin\TeacherController::class, 'approve']);
         Route::get('/students/statistics', [\App\Http\Controllers\Admin\StudentController::class, 'statistics']);
         Route::get('/students', [\App\Http\Controllers\Admin\StudentController::class, 'index']);
         Route::post('/students', [\App\Http\Controllers\Admin\StudentController::class, 'store']);
@@ -112,13 +113,12 @@ Route::middleware('auth:sanctum')->prefix('academy')->name('academy.')->group(fu
     // Dashboard
     Route::get('/dashboard', [\App\Http\Controllers\Academy\DashboardController::class, 'getStats']);
     
+    
     // Teachers Management
+    Route::post('/check-teacher-phone', [\App\Http\Controllers\Academy\TeacherController::class, 'checkPhone']);
     Route::apiResource('teachers', \App\Http\Controllers\Academy\TeacherController::class);
-    // Route::get('teachers', function() {
-    //     \Illuminate\Support\Facades\Log::info('Debug Route Hit');
-    //     return response()->json(['message' => 'Debug Route']);
-    // });
     Route::put('/teachers/{teacher}/toggle-status', [\App\Http\Controllers\Academy\TeacherController::class, 'toggleStatus']);
+    
     
     // Secretaries Management
     Route::post('secretaries/check-phone', [\App\Http\Controllers\Academy\SecretaryController::class, 'checkPhone']);

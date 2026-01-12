@@ -101,8 +101,21 @@ class ReportService
      */
     public function generateMonthlyReport(Academy $academy, int $month, int $year): array
     {
-        $startDate = Carbon::createFromDate($year, $month, 1)->startOfMonth();
-        $endDate = Carbon::createFromDate($year, $month, 1)->endOfMonth();
+        // If month is 0, show full year report
+        if ($month === 0) {
+            $startDate = Carbon::createFromDate($year, 1, 1)->startOfYear();
+            $endDate = Carbon::createFromDate($year, 12, 31)->endOfYear();
+        } else {
+            $startDate = Carbon::createFromDate($year, $month, 1)->startOfMonth();
+            $endDate = Carbon::createFromDate($year, $month, 1)->endOfMonth();
+        }
+
+        // Get attendance logs for the period
+        $attendanceLogs = TeacherAttendanceLog::forAcademy($academy->id)
+            ->with('teacher')
+            ->dateRange($startDate->toDateString(), $endDate->toDateString())
+            ->orderBy('date', 'desc')
+            ->get();
 
         $attendanceStats = $this->attendanceService->getStats(
             $academy,
@@ -117,11 +130,34 @@ class ReportService
             $totalStudents += $teacher->activeEnrollments()->count();
         }
 
-        // Get billing for this month if exists
-        $billing = $academy->billings()
-            ->where('month', $month)
-            ->where('year', $year)
-            ->first();
+        // Calculate financial details
+        // Get revenue from active enrollments through academy's teachers
+        $totalRevenue = 0;
+        foreach ($teachers as $teacher) {
+            // Get active enrollments for this teacher in the period
+            $teacherRevenue = \DB::table('enrollments')
+                ->join('grades', 'enrollments.grade_id', '=', 'grades.id')
+                ->where('enrollments.teacher_id', $teacher->id)
+                ->whereBetween('enrollments.created_at', [$startDate, $endDate])
+                ->where('enrollments.is_active', 1)
+                ->sum('grades.price');
+            
+            $totalRevenue += $teacherRevenue;
+        }
+
+        // Platform fee is typically 10% (you can adjust this)
+        $platformFeePercentage = 0.10;
+        $platformFees = $totalRevenue * $platformFeePercentage;
+        $netRevenue = $totalRevenue - $platformFees;
+
+        // Get billing for this month if exists (only if specific month selected)
+        $billing = null;
+        if ($month > 0) {
+            $billing = $academy->billings()
+                ->where('month', $month)
+                ->where('year', $year)
+                ->first();
+        }
 
         return [
             'academy' => [
@@ -134,11 +170,20 @@ class ReportService
                 'from' => $startDate->toDateString(),
                 'to' => $endDate->toDateString(),
             ],
-            'overview' => [
+            'summary' => [
                 'total_teachers' => $teachers->count(),
                 'total_students' => $totalStudents,
+                'total_attendance_logs' => $attendanceLogs->count(),
+                ...$attendanceStats['summary'] ?? [],
             ],
-            'attendance' => $attendanceStats,
+            'financial_details' => [
+                'total_revenue' => round($totalRevenue, 2),
+                'platform_fees' => round($platformFees, 2),
+                'net_revenue' => round($netRevenue, 2),
+                'platform_fee_percentage' => $platformFeePercentage * 100,
+            ],
+            'attendance_logs' => $attendanceLogs,
+            'attendance_stats' => $attendanceStats,
             'billing' => $billing ? [
                 'total_cost' => $billing->total_cost,
                 'status' => $billing->status,
@@ -151,7 +196,25 @@ class ReportService
      */
     public function exportToPDF(string $reportType, array $reportData): \Illuminate\Http\Response
     {
-        $pdf = Pdf::loadView("reports.academy.{$reportType}", $reportData);
+        // Render the view to HTML
+        $html = view("reports.academy.{$reportType}", $reportData)->render();
+        
+        // Create mPDF instance with Arabic support
+        $mpdf = new \Mpdf\Mpdf([
+            'mode' => 'utf-8',
+            'format' => 'A4',
+            'orientation' => 'P',
+            'margin_left' => 10,
+            'margin_right' => 10,
+            'margin_top' => 10,
+            'margin_bottom' => 10,
+            'default_font' => 'dejavusans',
+            'autoScriptToLang' => true,
+            'autoLangToFont' => true,
+        ]);
+        
+        // Write HTML to PDF
+        $mpdf->WriteHTML($html);
         
         $filename = sprintf(
             '%s_report_%s.pdf',
@@ -159,6 +222,9 @@ class ReportService
             now()->format('Y-m-d_His')
         );
 
-        return $pdf->download($filename);
+        // Output PDF for download
+        return response($mpdf->Output($filename, 'D'))
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
     }
 }

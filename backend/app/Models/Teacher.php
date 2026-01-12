@@ -21,7 +21,7 @@ class Teacher extends Authenticatable
         'phone',
         'password',
         'avatar_key',
-        'is_suspended',
+        'status',
         'subscription_fee',
         'paid_amount',
     ];
@@ -35,8 +35,23 @@ class Teacher extends Authenticatable
     {
         return [
             'password' => 'hashed',
-            'is_suspended' => 'boolean',
         ];
+    }
+
+    // Accessors for backward compatibility
+    public function getIsApprovedAttribute(): bool
+    {
+        return $this->status !== 'pending';
+    }
+
+    public function getIsSuspendedAttribute(): bool
+    {
+        return $this->status === 'suspended';
+    }
+
+    public function getIsActiveAttribute(): bool
+    {
+        return $this->status === 'active';
     }
 
     // Many-to-Many Relationships via Enrollment

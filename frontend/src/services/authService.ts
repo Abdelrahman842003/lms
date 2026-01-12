@@ -594,6 +594,16 @@ export async function toggleTeacherStatus(id: string): Promise<any> {
 }
 
 /**
+ * Approve teacher (Admin only)
+ */
+export async function approveTeacher(id: string): Promise<any> {
+  const res = await fetchApi(`/admin/teachers/${id}/approve`, {
+    method: 'POST',
+  });
+  return res.teacher;
+}
+
+/**
  * Login as a teacher (Admin only)
  */
 export async function loginAsTeacher(id: string): Promise<any> {

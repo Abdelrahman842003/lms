@@ -9,21 +9,81 @@ class TeacherService
 {
     public function getTeachers(int $perPage = 10, array $filters = []): LengthAwarePaginator
     {
-        return Teacher::withCount(['students', 'secretaries'])
+        \Illuminate\Support\Facades\Log::info('getTeachers filters:', $filters);
+        
+        \DB::enableQueryLog();
+        
+        $result = Teacher::withCount(['students', 'secretaries'])
+            ->when(isset($filters['status']) && $filters['status'] !== 'all', function ($query) use ($filters) {
+                \Illuminate\Support\Facades\Log::info('Applying status filter:', ['status' => $filters['status']]);
+                $query->where('status', $filters['status']);
+            })
+            // Backward compatibility for old filters if needed, or remove them
+            ->when(isset($filters['is_approved']), function ($query) use ($filters) {
+                $isApproved = filter_var($filters['is_approved'], FILTER_VALIDATE_BOOLEAN);
+                if (!$isApproved) {
+                    $query->where('status', 'pending');
+                } else {
+                    $query->where('status', '!=', 'pending');
+                }
+            })
+            ->when(isset($filters['is_suspended']), function ($query) use ($filters) {
+                $isSuspended = filter_var($filters['is_suspended'], FILTER_VALIDATE_BOOLEAN);
+                if ($isSuspended) {
+                    $query->where('status', 'suspended');
+                } else {
+                    $query->where('status', '!=', 'suspended');
+                }
+            })
             ->latest()
             ->filter($filters)
             ->paginate($perPage);
+            
+        \Illuminate\Support\Facades\Log::info('Executed queries:', \DB::getQueryLog());
+        \DB::disableQueryLog();
+        
+        return $result;
     }
 
     public function toggleStatus(string $teacherId): Teacher
     {
         $teacher = Teacher::findOrFail($teacherId);
-        \Illuminate\Support\Facades\Log::info("Toggling status for teacher {$teacherId}. Current status: " . ($teacher->is_suspended ? 'Suspended' : 'Active'));
+        \Illuminate\Support\Facades\Log::info("Toggling status for teacher {$teacherId}. Current status: {$teacher->status}");
         
-        $teacher->is_suspended = ! $teacher->is_suspended;
+        if ($teacher->status === 'active') {
+            $teacher->status = 'suspended';
+        } elseif ($teacher->status === 'suspended') {
+            $teacher->status = 'active';
+        }
+        // If pending, maybe we shouldn't toggle? Or toggle to active?
+        // Let's assume toggle is only for active/suspended.
+        
         $teacher->save();
         
-        \Illuminate\Support\Facades\Log::info("New status for teacher {$teacherId}: " . ($teacher->is_suspended ? 'Suspended' : 'Active'));
+        \Illuminate\Support\Facades\Log::info("New status for teacher {$teacherId}: {$teacher->status}");
+        
+        return $teacher;
+    }
+
+    public function approveTeacher(string $teacherId): Teacher
+    {
+        $teacher = Teacher::findOrFail($teacherId);
+        $teacher->status = 'active';
+        $teacher->save();
+        
+        return $teacher;
+    }
+
+    public function rejectTeacher(string $teacherId): Teacher
+    {
+        $teacher = Teacher::findOrFail($teacherId);
+        // Rejecting usually means remaining pending or deleting? 
+        // Or maybe setting to 'suspended'?
+        // For now, let's keep it as pending or maybe we need a 'rejected' status?
+        // But user removed 'inactive'. Let's assume reject means stay pending or delete.
+        // But the previous code set is_approved = false.
+        $teacher->status = 'pending';
+        $teacher->save();
         
         return $teacher;
     }

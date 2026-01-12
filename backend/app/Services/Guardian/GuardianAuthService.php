@@ -117,7 +117,7 @@ class GuardianAuthService
             $enrollments = $student->enrollments()
                 ->where('is_active', true)
                 ->with(['teacher' => function ($q) {
-                    $q->where('is_suspended', false);
+                    $q->where('status', '!=', 'suspended');
                 }, 'grade', 'group'])
                 ->get();
 

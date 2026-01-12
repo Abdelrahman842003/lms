@@ -14,7 +14,7 @@ return new class extends Migration
             $table->string('phone')->unique();
             $table->string('password');
             $table->string('avatar_key')->nullable();
-            $table->boolean('is_suspended')->default(false);
+            $table->enum('status', ['active', 'suspended', 'pending'])->default('pending');
             $table->decimal('subscription_fee', 10, 2)->default(0);
             $table->decimal('paid_amount', 10, 2)->default(0);
             $table->rememberToken();

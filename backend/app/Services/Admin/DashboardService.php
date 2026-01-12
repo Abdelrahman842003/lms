@@ -20,6 +20,7 @@ class DashboardService
         
         return [
             'teachers_count' => Teacher::count(),
+            'pending_teachers_count' => Teacher::where('status', 'pending')->count(),
             'students_count' => Student::count(),
             'secretaries_count' => Secretary::count(),
             'total_revenue' => $totalStudentsAcrossTeachers * $pricePerStudent,
