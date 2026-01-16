@@ -17,10 +17,8 @@ class GroupController extends Controller
         $perPage = $request->input('per_page', 10);
         
         $groups = Group::whereHas('teacher', function ($query) use ($academy) {
-            $query->where('teachers.status', 'active')
-                  ->whereHas('academies', function ($q) use ($academy) {
-                      $q->where('academy_id', $academy->id)
-                        ->where('academy_teacher.is_active', true);
+            $query->whereHas('academies', function ($q) use ($academy) {
+                      $q->where('academy_id', $academy->id);
                   });
         })
         ->when($request->search, function ($query, $search) {

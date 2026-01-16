@@ -16,13 +16,16 @@ class GradeController extends Controller
         $academy = Auth::user();
         $perPage = $request->input('per_page', 10);
         
-        // Base query: Grades for all ACTIVE teachers belonging to this academy
-        $query = Grade::whereHas('teacher', function ($q) use ($academy) {
-            $q->where('teachers.status', 'active')
-              ->whereHas('academies', function ($q2) use ($academy) {
-                  $q2->where('academy_id', $academy->id)
-                     ->where('academy_teacher.is_active', true);
-              });
+        // Base query: Grades for all teachers belonging to this academy OR grades created by the academy directly
+        $query = Grade::where(function($q) use ($academy) {
+            // Grades linked to academy's teachers
+            $q->whereHas('teacher', function ($q2) use ($academy) {
+                $q2->whereHas('academies', function ($q3) use ($academy) {
+                    $q3->where('academy_id', $academy->id);
+                });
+            })
+            // OR grades linked directly to the academy
+            ->orWhere('academy_id', $academy->id);
         });
 
         // Filter by teacher_id if provided
@@ -56,7 +59,7 @@ class GradeController extends Controller
         $grouped = $grades->groupBy('name')->map(function ($group, $name) {
             return [
                 'name' => $name,
-                'teachers_count' => $group->pluck('teacher_id')->unique()->count(),
+                'teachers_count' => $group->pluck('teacher_id')->filter()->unique()->count(),
                 'groups_count' => $group->sum('groups_count'),
                 'students_count' => $group->sum('enrollments_count'),
                 'created_at' => $group->first()->created_at,
@@ -101,16 +104,16 @@ class GradeController extends Controller
             $grade = $teacher->grades()->create([
                 'name' => $request->name,
                 'price' => $request->price,
+                'academy_id' => $academy->id, // Also link to academy for easier querying
             ]);
         } else {
-            // Create a global grade (no teacher)
-            // Note: We need to ensure the Grade model allows this.
-            // Since Grade belongsTo Teacher, we might need to adjust the relationship or just create it with null teacher_id.
+            // Create a global grade for this academy
             $grade = new Grade();
             $grade->id = \Illuminate\Support\Str::uuid();
             $grade->name = $request->name;
             $grade->price = $request->price;
             $grade->teacher_id = null;
+            $grade->academy_id = $academy->id; // Link to academy
             $grade->save();
         }
 
@@ -124,11 +127,19 @@ class GradeController extends Controller
     {
         $academy = Auth::user();
 
-        // Verify grade belongs to a teacher in this academy
-        if ($grade->teacher) {
-            if (!$grade->teacher->academies()->where('academy_id', $academy->id)->exists()) {
-                return $this->errorResponse('Unauthorized', 403);
+        // Verify grade belongs to this academy (either via teacher or directly)
+        $isOwnedByAcademy = false;
+        
+        if ($grade->academy_id === $academy->id) {
+            $isOwnedByAcademy = true;
+        } elseif ($grade->teacher) {
+            if ($grade->teacher->academies()->where('academy_id', $academy->id)->exists()) {
+                $isOwnedByAcademy = true;
             }
+        }
+
+        if (!$isOwnedByAcademy) {
+            return $this->errorResponse('Unauthorized', 403);
         }
 
         $request->validate([
@@ -151,36 +162,20 @@ class GradeController extends Controller
     {
         $academy = Auth::user();
 
-        // Verify grade belongs to a teacher in this academy OR is a global grade for this academy (if we track academy_id on grades, but we don't seem to?)
-        // Wait, grades don't have academy_id directly? They are linked via teacher.
-        // If teacher_id is null, how do we know which academy it belongs to?
-        // We might need to check if the grade is associated with any group/enrollment of this academy?
-        // OR, if we allowed creating global grades, we must have a way to own them.
-        // Checking migration: grades table has: id, teacher_id, name, price. No academy_id.
-        // This is a design flaw if we want global grades per academy.
-        // However, the current task is to fix the crash.
+        // Verify grade belongs to this academy
+        $isOwnedByAcademy = false;
         
-        // If teacher exists, check ownership.
-        if ($grade->teacher) {
-            if (!$grade->teacher->academies()->where('academy_id', $academy->id)->exists()) {
-                return $this->errorResponse('Unauthorized', 403);
+        if ($grade->academy_id === $academy->id) {
+            $isOwnedByAcademy = true;
+        } elseif ($grade->teacher) {
+            if ($grade->teacher->academies()->where('academy_id', $academy->id)->exists()) {
+                $isOwnedByAcademy = true;
             }
-        } else {
-            // If no teacher, it's a global grade. 
-            // Ideally we should check if it was created by this academy, but we don't store that.
-            // For now, allow deletion if the user is an academy admin?
-            // Or maybe we should only allow if it's NOT linked to another academy's teacher (which is covered by the first check).
-            // But a global grade has no links. So effectively any academy could delete any global grade?
-            // That's risky but for now let's just fix the crash.
-            // A better approach: Check if the grade has any groups belonging to this academy?
-            // Groups have `grade_id` and `teacher_id`.
-            // Let's just allow it for now to unblock the user, assuming they only see their own grades.
         }
 
-        // Check if grade has groups or students before deleting? 
-        // For now, let's assume standard delete logic (or cascade if set in DB)
-        // But usually we want to prevent deleting if it has dependencies.
-        // Teacher service does simple delete, so we follow suit.
+        if (!$isOwnedByAcademy) {
+            return $this->errorResponse('Unauthorized', 403);
+        }
         
         $grade->delete();
 

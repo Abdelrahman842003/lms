@@ -16,6 +16,7 @@ class Grade extends Model
         'name',
         'price',
         'teacher_id',
+        'academy_id',
     ];
 
     public function teacher()
