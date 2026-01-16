@@ -70,9 +70,6 @@ export default function GradeDetailsPage() {
   const totalTeachers = grades.length;
   const totalGroups = grades.reduce((sum, grade) => sum + (grade.groups_count || 0), 0);
   const totalStudents = grades.reduce((sum, grade) => sum + (grade.students_count || 0), 0);
-  const avgPrice = grades.length > 0 
-    ? Math.round(grades.reduce((sum, grade) => sum + (grade.price || 0), 0) / grades.length) 
-    : 0;
 
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -180,7 +177,57 @@ export default function GradeDetailsPage() {
     },
   ];
 
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editFormData, setEditFormData] = useState({ name: '', price: 0 });
+
+  const handleEditClick = (grade: Grade) => {
+    setSelectedGrade(grade);
+    setEditFormData({
+      name: grade.name,
+      price: grade.price || 0
+    });
+    setShowEditModal(true);
+  };
+
+  const handleUpdateGrade = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedGrade) return;
+
+    setIsSubmitting(true);
+    try {
+      await academyService.updateGrade(selectedGrade.id, editFormData);
+      
+      // Show success message
+      if (typeof window !== 'undefined') {
+        const toast = await import('react-hot-toast');
+        toast.default.success('تم تحديث بيانات الصف بنجاح');
+      }
+
+      setShowEditModal(false);
+      fetchGrades(currentPage);
+      
+      // If name changed, we might need to redirect or refresh parent
+      if (editFormData.name !== gradeName) {
+        router.push(`/academy/grades/${encodeURIComponent(editFormData.name)}`);
+      }
+    } catch (error: any) {
+      console.error('Failed to update grade:', error);
+      if (typeof window !== 'undefined') {
+        const toast = await import('react-hot-toast');
+        toast.default.error(error.response?.data?.message || 'فشل تحديث بيانات الصف');
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const tableActions = [
+    {
+      label: 'تعديل',
+      icon: 'fas fa-edit',
+      variant: 'primary' as const,
+      onClick: (row: Grade) => handleEditClick(row),
+    },
     {
       label: 'حذف',
       icon: 'fas fa-trash',
@@ -231,12 +278,6 @@ export default function GradeDetailsPage() {
           icon="fas fa-user-graduate"
           color="warning"
         />
-        <StatCard
-          title="متوسط السعر"
-          value={`${avgPrice} ج.م`}
-          icon="fas fa-tag"
-          color="info"
-        />
       </div>
 
       {/* Teachers Table */}
@@ -264,6 +305,76 @@ export default function GradeDetailsPage() {
           onPageChange={(page) => fetchGrades(page)}
         />
       </DashboardCard>
+
+      {/* Edit Grade Modal */}
+      {showEditModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setShowEditModal(false)}>
+          <div className="w-full max-w-[500px] bg-[#1e1e2d] rounded-xl shadow-2xl border border-white/10 animate-scaleIn" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-6 border-b border-white/10">
+              <h3 className="text-xl font-bold text-white m-0">تعديل بيانات الصف</h3>
+              <button 
+                className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors" 
+                onClick={() => setShowEditModal(false)}
+              >
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            
+            <form onSubmit={handleUpdateGrade}>
+              <div className="p-6 space-y-4">
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-300">اسم الصف</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      className="w-full p-3 bg-[#151521]/50 border border-white/5 rounded-lg text-gray-400 cursor-not-allowed outline-none"
+                      value={editFormData.name}
+                      disabled
+                    />
+                    <i className="fas fa-lock absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"></i>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-300">سعر الاشتراك</label>
+                  <input
+                    type="number"
+                    className="w-full p-3 bg-[#151521] border border-white/10 rounded-lg text-white focus:border-primary focus:ring-primary outline-none transition-all"
+                    value={editFormData.price}
+                    onChange={(e) => setEditFormData({...editFormData, price: Number(e.target.value)})}
+                    min="0"
+                    required
+                  />
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-end gap-3 p-6 border-t border-white/10 bg-black/20 rounded-b-xl">
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  className="px-4 py-2 text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+                  disabled={isSubmitting}
+                >
+                  إلغاء
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg transition-colors flex items-center gap-2"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                      <span>جاري الحفظ...</span>
+                    </>
+                  ) : (
+                    <span>حفظ التغييرات</span>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Add Teacher Modal */}
       {showModal && (

@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { SidebarItem } from '@/types/dashboard';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface SidebarProps {
   role: 'admin' | 'teacher' | 'student' | 'secretary';
@@ -53,33 +54,14 @@ const getSidebarItems = (role: string): SidebarItem[] => {
             icon: 'fas fa-building',
             href: '/admin/academies',
           },
-          {
-            id: 'academy_billing',
-            label: 'الفواتير',
-            icon: 'fas fa-file-invoice-dollar',
-            href: '/admin/academy-billings',
-          },
+
         ],
       },
       {
         id: 'reports',
         label: 'التقارير',
         icon: 'fas fa-chart-line',
-        href: '#',
-        children: [
-          {
-            id: 'teacher_reports',
-            label: 'تقارير المدرسين',
-            icon: 'fas fa-chalkboard-teacher',
-            href: '/admin/reports/teachers',
-          },
-          {
-            id: 'academy_reports',
-            label: 'تقارير الأكاديميات',
-            icon: 'fas fa-building',
-            href: '/admin/reports/academies',
-          },
-        ],
+        href: '/admin/reports',
       },
       {
         id: 'access_control',
@@ -285,17 +267,43 @@ const filterItemsByPermissions = (items: SidebarItem[], permissions: string[]): 
   });
 };
 
+
+
 export const Sidebar: React.FC<SidebarProps> = ({ role, user, isOpen, onClose, permissions = [] }) => {
   const pathname = usePathname();
+  const { selectedAcademy, isLoading } = useAuth();
   
   // Get items based on role, then filter by permissions for secretary
   let items = getSidebarItems(role === 'secretary' ? 'teacher' : role);
+  
   if (role === 'secretary' && permissions.length > 0) {
     items = filterItemsByPermissions(items, permissions);
   } else if (role === 'secretary') {
     // No permissions = only dashboard
     items = items.filter(item => item.id === 'dashboard');
   }
+
+  // Filter items for Academy mode (Teacher only)
+  // If selectedAcademy has an ID, it means the teacher is in "Academy Dashboard" mode
+  // OR if we are still loading (isLoading is true), we default to "Restricted" mode to prevent flicker
+  // In this mode, they should NOT see: Secretary, Grades (Classes), Reports
+  if (role === 'teacher' && (selectedAcademy?.id || isLoading)) {
+    items = items
+      .filter(item => item.id !== 'reports') // Remove Reports
+      .map(item => {
+        if (item.children) {
+          return {
+            ...item,
+            children: item.children.filter(child => 
+              child.id !== 'secretaries' && // Remove Secretary
+              child.id !== 'grades'         // Remove Grades (Classes)
+            )
+          };
+        }
+        return item;
+      });
+  }
+
   const [expandedItems, setExpandedItems] = React.useState<string[]>([]);
 
   const toggleExpand = (id: string, e: React.MouseEvent) => {

@@ -20,6 +20,7 @@ function SettingsPage() {
     siteDescription: 'منصة تعليمية متكاملة',
     maintenanceMode: false,
     pricePerStudent: '0',
+    academyPricePerStudent: '0',
     whatsappNumber: '',
   });
 
@@ -77,6 +78,7 @@ function SettingsPage() {
         if (data.siteDescription) setGeneralSettings(prev => ({ ...prev, siteDescription: data.siteDescription }));
         if (data.maintenanceMode) setGeneralSettings(prev => ({ ...prev, maintenanceMode: data.maintenanceMode === 'true' }));
         if (data.pricePerStudent) setGeneralSettings(prev => ({ ...prev, pricePerStudent: data.pricePerStudent }));
+        if (data.academy_student_price) setGeneralSettings(prev => ({ ...prev, academyPricePerStudent: data.academy_student_price }));
         if (data.whatsappNumber) setGeneralSettings(prev => ({ ...prev, whatsappNumber: data.whatsappNumber }));
 
         // Update SEO Settings
@@ -117,6 +119,7 @@ function SettingsPage() {
       { key: 'siteDescription', value: generalSettings.siteDescription, group: 'general' },
       { key: 'maintenanceMode', value: String(generalSettings.maintenanceMode), group: 'general' },
       { key: 'pricePerStudent', value: generalSettings.pricePerStudent, group: 'general' },
+      { key: 'academy_student_price', value: generalSettings.academyPricePerStudent, group: 'general' },
       { key: 'whatsappNumber', value: generalSettings.whatsappNumber, group: 'general' },
       // SEO
       { key: 'seo_title', value: seoSettings.seo_title, group: 'seo' },
@@ -216,6 +219,24 @@ function SettingsPage() {
                       </div>
                     </div>
                     <p className="text-xs text-gray-500 mt-1">يستخدم هذا السعر لحساب الإيرادات المتوقعة من كل طالب</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-gray-300 mb-2 text-sm">سعر الطالب للأكاديمية (شهرياً)</label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={generalSettings.academyPricePerStudent}
+                        onChange={(e) => setGeneralSettings({...generalSettings, academyPricePerStudent: e.target.value})}
+                        className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all pl-10"
+                      />
+                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                        ج.م
+                      </div>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">يستخدم هذا السعر لحساب عمولة المنصة من الأكاديميات</p>
                   </div>
 
                   <div>

@@ -10,7 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 
 
 export default function TeacherDashboard() {
-  const { user } = useAuth();
+  const { user, selectedAcademy } = useAuth();
 
   const [stats, setStats] = React.useState({
     totalStudents: 0,
@@ -31,9 +31,11 @@ export default function TeacherDashboard() {
         setIsLoading(true);
         const { getTeacherDashboardStats, getTeacherRecentStudents } = await import('@/services/authService');
         
+        const academyId = selectedAcademy?.id || null;
+        
         const [statsData, studentsData] = await Promise.all([
-          getTeacherDashboardStats(),
-          getTeacherRecentStudents(5),
+          getTeacherDashboardStats(academyId),
+          getTeacherRecentStudents(5, academyId),
         ]);
 
         setStats({
@@ -65,7 +67,7 @@ export default function TeacherDashboard() {
     };
 
     fetchDashboardData();
-  }, []);
+  }, [selectedAcademy]); // Re-fetch when academy changes
   
   const tableColumns = [
     {

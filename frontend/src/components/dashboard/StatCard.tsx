@@ -71,6 +71,10 @@ export const StatCard: React.FC<StatCardProps> = ({
     success: { bg: 'bg-success/10', text: 'text-success' },
     danger: { bg: 'bg-danger/10', text: 'text-danger' },
     info: { bg: 'bg-blue-500/10', text: 'text-blue-500' },
+    blue: { bg: 'bg-blue-500/10', text: 'text-blue-500' },
+    green: { bg: 'bg-green-500/10', text: 'text-green-500' },
+    red: { bg: 'bg-red-500/10', text: 'text-red-500' },
+    purple: { bg: 'bg-purple-500/10', text: 'text-purple-500' },
   };
 
   const theme = colorMap[color] || colorMap.primary;
@@ -112,7 +116,7 @@ export const StatCard: React.FC<StatCardProps> = ({
         <div className="flex items-center gap-2 text-[0.85rem]">
           <span className={`${trend.isPositive ? 'text-emerald-400' : 'text-rose-400'} flex items-center gap-1 font-medium`}>
             <i className={`fas fa-arrow-${trend.isPositive ? 'up' : 'down'}`}></i>
-            <span>{Math.abs(trend.value)}%</span>
+            <span>{Math.abs(trend.value)}</span>
           </span>
           <span className="text-gray-500">{trend.label}</span>
         </div>

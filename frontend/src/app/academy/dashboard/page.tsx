@@ -17,7 +17,9 @@ function AcademyDashboard() {
   const [stats, setStats] = React.useState({
     teachers_count: 0,
     students_count: 0,
-    total_revenue: 0,
+    total_enrollments: 0,
+    expected_revenue: 0,
+    actual_revenue: 0,
   });
   const [isLoading, setIsLoading] = React.useState(true);
 
@@ -97,16 +99,7 @@ function AcademyDashboard() {
       sortable: true,
       className: 'hidden sm:table-cell',
     },
-    {
-      key: 'status',
-      label: 'الحالة',
-      sortable: true,
-      render: (value: string) => (
-        <span className={value === 'نشط' ? 'badge badge-success' : 'badge badge-danger'}>
-          {value}
-        </span>
-      ),
-    },
+
   ];
 
   return (
@@ -139,11 +132,12 @@ function AcademyDashboard() {
           color="secondary"
         />
         <StatCard
-          title="الإيرادات المتوقعة"
-          value={stats.total_revenue || 0}
-          icon="fas fa-wallet"
-          color="success"
+          title="إجمالي الارتباطات"
+          value={stats.total_enrollments || 0}
+          icon="fas fa-link"
+          color="info"
         />
+
       </div>
 
       {/* Charts */}

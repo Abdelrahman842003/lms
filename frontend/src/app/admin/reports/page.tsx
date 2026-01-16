@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { DataTable } from '@/components/dashboard/DataTable';
@@ -9,14 +10,16 @@ import { withAdminAuth } from '@/components/auth/withAdminAuth';
 import { toast } from 'react-hot-toast';
 import {
   getReportTeachers,
+  getReportAcademies,
   getTeacherReport,
+  getAcademyReport,
   getAdminReport,
   downloadTeacherReportPdf,
   downloadAdminReportPdf,
   ReportParams,
 } from '@/services/authService';
 
-type ReportType = 'admin' | 'teacher';
+type ReportType = 'admin' | 'teacher' | 'academy';
 type PeriodPreset = 'last_month' | 'last_3_months' | 'last_6_months' | 'last_year' | 'custom';
 
 interface Teacher {
@@ -29,17 +32,37 @@ interface Teacher {
   joined: string;
 }
 
+interface Academy {
+  id: string;
+  name: string;
+  phone: string;
+  status: string;
+  teachers_count: number;
+  students_count: number;
+  joined: string;
+}
+
 function ReportsPage() {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const searchParams = useSearchParams();
   const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [academies, setAcademies] = useState<Academy[]>([]);
   const [selectedTeacherId, setSelectedTeacherId] = useState<string>('');
+  const [selectedAcademyId, setSelectedAcademyId] = useState<string>('');
   const [reportType, setReportType] = useState<ReportType>('admin');
   const [periodPreset, setPeriodPreset] = useState<PeriodPreset>('last_month');
   const [customStartDate, setCustomStartDate] = useState('');
   const [customEndDate, setCustomEndDate] = useState('');
   const [report, setReport] = useState<any>(null);
+
+  useEffect(() => {
+    const type = searchParams.get('type');
+    if (type === 'teacher' || type === 'admin' || type === 'academy') {
+      setReportType(type as ReportType);
+    }
+  }, [searchParams]);
 
   // Fetch teachers list on mount
   useEffect(() => {
@@ -60,6 +83,26 @@ function ReportsPage() {
       }
     };
     fetchTeachers();
+  }, []);
+
+  // Fetch academies list on mount
+  useEffect(() => {
+    const fetchAcademies = async () => {
+      try {
+        const data = await getReportAcademies();
+        if (Array.isArray(data)) {
+          setAcademies(data);
+        } else if (data && typeof data === 'object') {
+          setAcademies((data as any).academies || []);
+        } else {
+          setAcademies([]);
+        }
+      } catch (error) {
+        console.error('Failed to fetch academies:', error);
+        toast.error('فشل تحميل قائمة الأكاديميات');
+      }
+    };
+    fetchAcademies();
   }, []);
 
   // Calculate date range based on preset
@@ -115,6 +158,11 @@ function ReportsPage() {
       return;
     }
 
+    if (reportType === 'academy' && !selectedAcademyId) {
+      toast.error('يرجى اختيار أكاديمية');
+      return;
+    }
+
     if (periodPreset === 'custom' && (!customStartDate || !customEndDate)) {
       toast.error('يرجى تحديد تاريخ البداية والنهاية');
       return;
@@ -128,6 +176,9 @@ function ReportsPage() {
       
       if (reportType === 'admin') {
         const data = await getAdminReport(params);
+        setReport(data);
+      } else if (reportType === 'academy') {
+        const data = await getAcademyReport(selectedAcademyId, params);
         setReport(data);
       } else {
         const data = await getTeacherReport(selectedTeacherId, params);
@@ -181,7 +232,6 @@ function ReportsPage() {
   // Monthly breakdown table columns
   const monthlyColumns = [
     { key: 'month_name', label: 'الشهر', sortable: true },
-    { key: 'new_enrollments', label: 'اشتراكات جديدة', sortable: true },
     {
       key: 'confirmed_payments',
       label: 'المدفوعات المؤكدة',
@@ -277,6 +327,21 @@ function ReportsPage() {
                   <i className="fas fa-chalkboard-teacher"></i>
                   تقرير مدرس
                 </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setReportType('academy');
+                    setReport(null);
+                  }}
+                  className={`px-6 py-3 rounded-xl transition-all flex items-center gap-2 ${
+                    reportType === 'academy'
+                      ? 'bg-primary text-white shadow-lg shadow-primary/30'
+                      : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                  }`}
+                >
+                  <i className="fas fa-building"></i>
+                  تقرير أكاديمية
+                </button>
               </div>
             </div>
 
@@ -298,6 +363,30 @@ function ReportsPage() {
                   {teachers.map((teacher) => (
                     <option key={teacher.id} value={teacher.id} className="bg-[#1a1f37] text-white">
                       {teacher.name} ({teacher.students_count} طالب)
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Academy Selection (if academy report) */}
+            {reportType === 'academy' && (
+              <div>
+                <label className="block text-gray-300 mb-2 text-sm font-medium">اختر الأكاديمية</label>
+                <select
+                  value={selectedAcademyId}
+                  onChange={(e) => {
+                    setSelectedAcademyId(e.target.value);
+                    setReport(null);
+                  }}
+                  className="w-full md:w-1/2 p-3 bg-[#1a1f37] border border-white/10 rounded-lg text-white outline-none focus:border-primary transition-all"
+                  disabled={!academies || academies.length === 0}
+                  style={{ colorScheme: 'dark' }}
+                >
+                  <option value="" className="bg-[#1a1f37] text-white">-- اختر أكاديمية --</option>
+                  {academies.map((academy) => (
+                    <option key={academy.id} value={academy.id} className="bg-[#1a1f37] text-white">
+                      {academy.name} ({academy.teachers_count} مدرس)
                     </option>
                   ))}
                 </select>
@@ -401,9 +490,21 @@ function ReportsPage() {
         {report && (
           <>
             {/* Summary Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-              {reportType === 'admin' ? (
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+              {reportType === 'admin' && (
                 <>
+                  <div className="p-4 bg-white/5 rounded-xl border border-white/10">
+                    <div className="text-3xl font-bold text-white mb-1">
+                      {report.summary.total_academies}
+                    </div>
+                    <div className="text-gray-400 text-sm">عدد الأكاديميات</div>
+                  </div>
+                  <div className="p-4 bg-white/5 rounded-xl border border-white/10">
+                    <div className="text-3xl font-bold text-white mb-1">
+                      {report.summary.independent_teachers_count}
+                    </div>
+                    <div className="text-gray-400 text-sm">مدرسين مستقلين</div>
+                  </div>
                   <div className="p-4 bg-white/5 rounded-xl border border-white/10">
                     <div className="text-3xl font-bold text-white mb-1">
                       {report.summary.total_teachers}
@@ -418,18 +519,50 @@ function ReportsPage() {
                   </div>
                   <div className="p-4 bg-white/5 rounded-xl border border-white/10">
                     <div className="text-3xl font-bold text-white mb-1">
-                      {report.summary.active_enrollments}
+                      {report.summary.total_enrollments}
                     </div>
-                    <div className="text-gray-400 text-sm">الاشتراكات النشطة</div>
-                  </div>
-                  <div className="p-4 bg-secondary/20 rounded-xl border border-secondary/30">
-                    <div className="text-3xl font-bold text-secondary mb-1">
-                      {report.summary.total_revenue?.toLocaleString()} ج.م
-                    </div>
-                    <div className="text-gray-400 text-sm">إجمالي الإيرادات</div>
+                    <div className="text-gray-400 text-sm">إجمالي الارتباطات</div>
                   </div>
                 </>
-              ) : (
+              )}
+
+              {reportType === 'academy' && (
+                <>
+                  {/* Total Teachers */}
+                  <div className="p-4 bg-white/5 rounded-xl border border-white/10">
+                    <div className="text-3xl font-bold text-white mb-1">
+                      {report.summary.active_teachers}
+                    </div>
+                    <div className="text-gray-400 text-sm">إجمالي المدرسين</div>
+                  </div>
+
+                  {/* Total Students */}
+                  <div className="p-4 bg-white/5 rounded-xl border border-white/10">
+                    <div className="text-3xl font-bold text-white mb-1">
+                      {report.summary.total_academy_students}
+                    </div>
+                    <div className="text-gray-400 text-sm">إجمالي الطلاب</div>
+                  </div>
+
+                  {/* Total Enrollments */}
+                  <div className="p-4 bg-white/5 rounded-xl border border-white/10">
+                    <div className="text-3xl font-bold text-white mb-1">
+                      {report.summary.total_enrollments}
+                    </div>
+                    <div className="text-gray-400 text-sm">إجمالي الارتباطات</div>
+                  </div>
+
+                  {/* Expected Revenue */}
+                  <div className="p-4 bg-white/5 rounded-xl border border-white/10">
+                    <div className="text-3xl font-bold text-white mb-1">
+                      {report.summary.expected_revenue?.toLocaleString()} ج.م
+                    </div>
+                    <div className="text-gray-400 text-sm">الإيرادات المتوقعة</div>
+                  </div>
+                </>
+              )}
+
+              {reportType === 'teacher' && (
                 <>
                   <div className="p-4 bg-white/5 rounded-xl border border-white/10">
                     <div className="text-3xl font-bold text-white mb-1">
@@ -485,6 +618,32 @@ function ReportsPage() {
               </DashboardCard>
             )}
 
+            {/* Academy Info (for academy report) */}
+            {reportType === 'academy' && report.academy && (
+              <DashboardCard title="معلومات الأكاديمية" icon="fas fa-building" className="mb-6">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div>
+                    <div className="text-gray-400 text-sm mb-1">الاسم</div>
+                    <div className="text-white font-medium">{report.academy.name}</div>
+                  </div>
+                  <div>
+                    <div className="text-gray-400 text-sm mb-1">الهاتف</div>
+                    <div className="text-white font-medium">{report.academy.phone}</div>
+                  </div>
+                  <div>
+                    <div className="text-gray-400 text-sm mb-1">تاريخ الانضمام</div>
+                    <div className="text-white font-medium">{report.academy.joined}</div>
+                  </div>
+                  <div>
+                    <div className="text-gray-400 text-sm mb-1">الحالة</div>
+                    <span className={`badge ${report.academy.status === 'نشط' ? 'badge-success' : 'badge-danger'}`}>
+                      {report.academy.status}
+                    </span>
+                  </div>
+                </div>
+              </DashboardCard>
+            )}
+
             {/* Financial Summary */}
             <DashboardCard title="الملخص المالي" icon="fas fa-coins" className="mb-6">
               <div className="overflow-x-auto">
@@ -496,47 +655,76 @@ function ReportsPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    <tr className="border-b border-white/5">
-                      <td className="py-3 px-4 text-white">المدفوعات المؤكدة</td>
-                      <td className="py-3 px-4 text-secondary font-semibold">
-                        {report.summary.confirmed_payments?.toLocaleString()} ج.م
-                      </td>
-                    </tr>
-                    {reportType === 'teacher' && (
-                      <tr className="border-b border-white/5">
-                        <td className="py-3 px-4 text-white">المدفوعات المعلقة</td>
-                        <td className="py-3 px-4 text-warning font-semibold">
-                          {report.summary.pending_payments?.toLocaleString()} ج.م
-                        </td>
-                      </tr>
+                    {reportType === 'admin' ? (
+                      <>
+                        {/* Independent */}
+                        <tr className="border-b border-white/5 bg-white/5">
+                          <td className="py-3 px-4 text-white font-bold" colSpan={2}>المدرسين المستقلين</td>
+                        </tr>
+                        <tr className="border-b border-white/5">
+                          <td className="py-3 px-4 text-gray-300 pr-8">عمولة المنصة</td>
+                          <td className="py-3 px-4 text-success">
+                            {report.summary.independent_commission?.toLocaleString()} ج.م
+                          </td>
+                        </tr>
+
+                        {/* Academies */}
+                        <tr className="border-b border-white/5 bg-white/5">
+                          <td className="py-3 px-4 text-white font-bold" colSpan={2}>الأكاديميات</td>
+                        </tr>
+                        <tr className="border-b border-white/5">
+                          <td className="py-3 px-4 text-gray-300 pr-8">إيرادات الأكاديميات (للمنصة)</td>
+                          <td className="py-3 px-4 text-success">
+                            {report.summary.academy_revenue?.toLocaleString()} ج.م
+                          </td>
+                        </tr>
+
+                        {/* Platform Totals */}
+                        <tr className="border-b border-white/5 bg-primary/10">
+                          <td className="py-3 px-4 text-white font-bold" colSpan={2}>إجماليات المنصة</td>
+                        </tr>
+                        <tr>
+                          <td className="py-3 px-4 text-gray-300 pr-8">صافي ربح المنصة</td>
+                          <td className="py-3 px-4 text-secondary font-bold text-lg">
+                            {report.summary.total_profit?.toLocaleString()} ج.م
+                          </td>
+                        </tr>
+                      </>
+                    ) : (
+                      <>
+                        <tr className="border-b border-white/5">
+                          <td className="py-3 px-4 text-white">المدفوعات المؤكدة</td>
+                          <td className="py-3 px-4 text-secondary font-semibold">
+                            {report.summary.confirmed_payments?.toLocaleString()} ج.م
+                          </td>
+                        </tr>
+                        {reportType === 'teacher' && (
+                          <tr className="border-b border-white/5">
+                            <td className="py-3 px-4 text-white">المدفوعات المعلقة</td>
+                            <td className="py-3 px-4 text-warning font-semibold">
+                              {report.summary.pending_payments?.toLocaleString()} ج.م
+                            </td>
+                          </tr>
+                        )}
+                        <tr>
+                          <td className="py-3 px-4 text-white">
+                            الإيرادات المحسوبة
+                            <span className="text-gray-500 text-sm mr-2">
+                              ({reportType === 'admin' ? report.summary.active_enrollments : report.summary.active_students} × {report.summary.price_per_student} ج.م)
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 text-secondary font-bold text-lg">
+                            {(reportType === 'admin' ? report.summary.total_revenue : report.summary.calculated_revenue)?.toLocaleString()} ج.م
+                          </td>
+                        </tr>
+                      </>
                     )}
-                    <tr>
-                      <td className="py-3 px-4 text-white">
-                        الإيرادات المحسوبة
-                        <span className="text-gray-500 text-sm mr-2">
-                          ({reportType === 'admin' ? report.summary.active_enrollments : report.summary.active_students} × {report.summary.price_per_student} ج.م)
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-secondary font-bold text-lg">
-                        {(reportType === 'admin' ? report.summary.total_revenue : report.summary.calculated_revenue)?.toLocaleString()} ج.م
-                      </td>
-                    </tr>
                   </tbody>
                 </table>
               </div>
             </DashboardCard>
 
-            {/* Teachers Breakdown (for admin report) */}
-            {reportType === 'admin' && report.teachers_breakdown?.length > 0 && (
-              <DashboardCard title="تفاصيل المدرسين" icon="fas fa-users" className="mb-6" noPadding>
-                <DataTable
-                  columns={teachersColumns}
-                  data={report.teachers_breakdown}
-                  searchable={false}
-                  pagination={false}
-                />
-              </DashboardCard>
-            )}
+            {/* Teachers Breakdown (REMOVED) */}
 
             {/* Monthly Breakdown */}
             {report.monthly_breakdown?.length > 0 && (

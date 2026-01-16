@@ -26,6 +26,7 @@ const ENDPOINTS = {
   TEACHER_DASHBOARD_STATS: '/api/teacher/dashboard/stats',
   TEACHER_DASHBOARD_STUDENTS: '/api/teacher/dashboard/students',
   TEACHER_DASHBOARD_LECTURES: '/api/teacher/dashboard/lectures',
+  TEACHER_DASHBOARD_ACADEMIES: '/api/teacher/dashboard/academies',
   // Student endpoints
   STUDENT_TEACHERS: '/api/student/teachers',
   STUDENT_TEACHER_DASHBOARD: '/api/student/teachers', // + /{teacherId}/dashboard
@@ -67,6 +68,15 @@ export interface TeacherInfo {
   status?: 'active' | 'grace_period' | 'expired' | 'inactive';
   days_left?: number;
   is_suspended?: boolean;
+  academy_id?: string | null;
+  academy_name?: string | null;
+}
+
+export interface AcademyInfo {
+  id: string | null;
+  name: string;
+  logo: string | null;
+  is_active: boolean;
 }
 
 export interface AdminAuthResponse {
@@ -195,7 +205,10 @@ async function refreshAccessToken(): Promise<string | null> {
 /**
  * Generic API fetch wrapper
  */
-export async function fetchApi(endpoint: string, options: RequestInit = {}, skipAuthEvent: boolean = false): Promise<any> {
+/**
+ * Get auth headers including token and academy context
+ */
+export function getAuthHeaders(additionalHeaders: Record<string, string> = {}): Record<string, string> {
   const xsrfToken = getCookie('XSRF-TOKEN');
   
   // Get token from localStorage only on client side
@@ -209,8 +222,35 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}, skip
     'Accept': 'application/json',
     ...(xsrfToken && { 'X-XSRF-TOKEN': xsrfToken }),
     ...(token && { 'Authorization': `Bearer ${token}` }),
-    ...(options.headers as Record<string, string>),
+    ...additionalHeaders,
   };
+
+  // Inject Academy Context Header
+  if (typeof window !== 'undefined') {
+    const selectedAcademyStr = localStorage.getItem('selectedAcademy');
+    if (selectedAcademyStr) {
+      try {
+        const selectedAcademy = JSON.parse(selectedAcademyStr);
+        if (selectedAcademy && selectedAcademy.id) {
+          headers['X-Academy-Id'] = selectedAcademy.id;
+        } else {
+           // Explicitly set to 'independent' or 'null' if selected but has no ID (Independent mode)
+           headers['X-Academy-Id'] = 'independent';
+        }
+      } catch (e) {
+        // Ignore parse error
+      }
+    }
+  }
+
+  return headers;
+}
+
+/**
+ * Generic API fetch wrapper
+ */
+export async function fetchApi(endpoint: string, options: RequestInit = {}, skipAuthEvent: boolean = false): Promise<any> {
+  const headers = getAuthHeaders(options.headers as Record<string, string>);
 
   // Ensure API_BASE_URL does not end with /api or /
   const cleanBaseUrl = API_BASE_URL.replace(/\/api\/?$/, '').replace(/\/$/, '');
@@ -279,17 +319,20 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}, skip
       errorWithStatus.errors = error.errors;
       errorWithStatus.data = error.data; // Include data for attempts_remaining, retry_after, etc.
       
-      // Only dispatch auth:unauthorized for non-login 401 errors or 403 (Forbidden/Suspended)
-      // BUT ignore TEACHER_SUSPENDED error (let the UI handle it)
-      if ((response.status === 401 || response.status === 403) && !skipAuthEvent) {
-        const isTeacherSuspended = error?.error === 'TEACHER_SUSPENDED';
-        
-        if (!isTeacherSuspended) {
+      // Only dispatch auth:unauthorized for non-login 401 errors
+      // 403 errors should NOT trigger logout (unless it's a specific suspension case handled below)
+      if (response.status === 401 && !skipAuthEvent) {
           // Dispatch event for AuthContext to handle logout
           if (typeof window !== 'undefined') {
             window.dispatchEvent(new Event('auth:unauthorized'));
           }
-        } else {
+      }
+      
+      // Handle Teacher Suspension (usually 403)
+      if (response.status === 403 && !skipAuthEvent) {
+        const isTeacherSuspended = error?.error === 'TEACHER_SUSPENDED';
+        
+        if (isTeacherSuspended) {
           // Dispatch event for AuthContext to handle teacher suspension (switch teacher)
           if (typeof window !== 'undefined') {
             window.dispatchEvent(new Event('auth:teacher_suspended'));
@@ -689,15 +732,19 @@ export async function getStudentStatistics(): Promise<any> {
 /**
  * Get teacher dashboard stats
  */
-export async function getTeacherDashboardStats(): Promise<any> {
-  return await fetchApi(ENDPOINTS.TEACHER_DASHBOARD_STATS);
+export async function getTeacherDashboardStats(academyId?: string | null): Promise<any> {
+  const params = academyId ? `?academy_id=${academyId}` : '';
+  return await fetchApi(`${ENDPOINTS.TEACHER_DASHBOARD_STATS}${params}`);
 }
 
 /**
  * Get teacher's recent students
  */
-export async function getTeacherRecentStudents(limit: number = 5): Promise<any> {
-  return await fetchApi(`${ENDPOINTS.TEACHER_DASHBOARD_STUDENTS}?limit=${limit}`);
+export async function getTeacherRecentStudents(limit: number = 5, academyId?: string | null): Promise<any> {
+  const params = new URLSearchParams();
+  params.append('limit', limit.toString());
+  if (academyId) params.append('academy_id', academyId);
+  return await fetchApi(`${ENDPOINTS.TEACHER_DASHBOARD_STUDENTS}?${params}`);
 }
 
 /**
@@ -705,6 +752,13 @@ export async function getTeacherRecentStudents(limit: number = 5): Promise<any> 
  */
 export async function getTeacherUpcomingLectures(limit: number = 3): Promise<any> {
   return await fetchApi(`${ENDPOINTS.TEACHER_DASHBOARD_LECTURES}?limit=${limit}`);
+}
+
+/**
+ * Get teacher's academies
+ */
+export async function getTeacherAcademies(): Promise<{ academies: AcademyInfo[] }> {
+  return await fetchApi(ENDPOINTS.TEACHER_DASHBOARD_ACADEMIES);
 }
 
 /**
@@ -1227,6 +1281,13 @@ export async function getReportTeachers(): Promise<any[]> {
 }
 
 /**
+ * Get list of academies for report selection
+ */
+export async function getReportAcademies(): Promise<any[]> {
+  return await fetchApi('/admin/reports/academies');
+}
+
+/**
  * Get teacher report data (JSON)
  */
 export async function getTeacherReport(teacherId: string, params: ReportParams): Promise<any> {
@@ -1235,6 +1296,17 @@ export async function getTeacherReport(teacherId: string, params: ReportParams):
     end_date: params.end_date,
   });
   return await fetchApi(`/admin/reports/teacher/${teacherId}?${queryParams}`);
+}
+
+/**
+ * Get academy report data (JSON)
+ */
+export async function getAcademyReport(academyId: string, params: ReportParams): Promise<any> {
+  const queryParams = new URLSearchParams({
+    start_date: params.start_date,
+    end_date: params.end_date,
+  });
+  return await fetchApi(`/admin/reports/academy/${academyId}?${queryParams}`);
 }
 
 /**
@@ -1252,7 +1324,6 @@ export async function getAdminReport(params: ReportParams): Promise<any> {
  * Download teacher report as PDF
  */
 export async function downloadTeacherReportPdf(teacherId: string, params: ReportParams): Promise<void> {
-  const token = getAuthToken();
   const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
   const cleanBaseUrl = API_BASE.replace(/\/api\/?$/, '').replace(/\/$/, '');
   
@@ -1261,12 +1332,13 @@ export async function downloadTeacherReportPdf(teacherId: string, params: Report
     end_date: params.end_date,
   });
   
+  const headers = getAuthHeaders({
+    'Accept': 'application/pdf',
+  });
+  
   const response = await fetch(`${cleanBaseUrl}/api/admin/reports/teacher/${teacherId}/pdf?${queryParams}`, {
     method: 'GET',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Accept': 'application/pdf',
-    },
+    headers,
   });
 
   if (!response.ok) {
@@ -1288,7 +1360,6 @@ export async function downloadTeacherReportPdf(teacherId: string, params: Report
  * Download admin report as PDF
  */
 export async function downloadAdminReportPdf(params: ReportParams): Promise<void> {
-  const token = getAuthToken();
   const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
   const cleanBaseUrl = API_BASE.replace(/\/api\/?$/, '').replace(/\/$/, '');
   
@@ -1297,12 +1368,13 @@ export async function downloadAdminReportPdf(params: ReportParams): Promise<void
     end_date: params.end_date,
   });
   
+  const headers = getAuthHeaders({
+    'Accept': 'application/pdf',
+  });
+  
   const response = await fetch(`${cleanBaseUrl}/api/admin/reports/admin/pdf?${queryParams}`, {
     method: 'GET',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Accept': 'application/pdf',
-    },
+    headers,
   });
 
   if (!response.ok) {
@@ -1339,7 +1411,6 @@ export async function getMyTeacherReport(params: ReportParams): Promise<any> {
  * Download teacher's own report as PDF
  */
 export async function downloadMyTeacherReportPdf(params: ReportParams): Promise<void> {
-  const token = getAuthToken();
   const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
   const cleanBaseUrl = API_BASE.replace(/\/api\/?$/, '').replace(/\/$/, '');
   
@@ -1348,12 +1419,13 @@ export async function downloadMyTeacherReportPdf(params: ReportParams): Promise<
     end_date: params.end_date,
   });
   
+  const headers = getAuthHeaders({
+    'Accept': 'application/pdf',
+  });
+  
   const response = await fetch(`${cleanBaseUrl}/api/teacher/reports/my-report/pdf?${queryParams}`, {
     method: 'GET',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Accept': 'application/pdf',
-    },
+    headers,
   });
 
   if (!response.ok) {

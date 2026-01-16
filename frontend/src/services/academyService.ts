@@ -33,10 +33,10 @@ export const getDashboardStats = async () => {
 };
 
 // ========== Teachers Management ==========
-export const getTeachers = async (page = 1, perPage = 10, search = '') => {
+export const getTeachers = async (page = 1, perPage = 10, search = '', status = '') => {
   const response = await axios.get(`${API_BASE_URL}/academy/teachers`, {
     headers: getAuthHeaders(),
-    params: { page, per_page: perPage, search },
+    params: { page, per_page: perPage, search, status },
   });
   return response.data;
 };
@@ -163,7 +163,7 @@ export const checkPhoneAvailability = async (phone: string, excludeId?: string) 
 };
 
 // ========== Grades Management ==========
-export const getGrades = async (page = 1, perPage = 10, filters: string | { search?: string; name?: string } = '') => {
+export const getGrades = async (page = 1, perPage = 10, filters: string | { search?: string; name?: string; teacher_id?: string } = '') => {
   const params: any = { page, per_page: perPage };
   
   if (typeof filters === 'string') {
@@ -171,6 +171,7 @@ export const getGrades = async (page = 1, perPage = 10, filters: string | { sear
   } else {
     if (filters.search) params.search = filters.search;
     if (filters.name) params.name = filters.name;
+    if (filters.teacher_id) params.teacher_id = filters.teacher_id;
   }
 
   const response = await axios.get(`${API_BASE_URL}/academy/grades`, {
@@ -364,8 +365,8 @@ export const getUnreadNotificationsCount = async () => {
 
 // ========== Reports ==========
 export const getAttendanceReport = async (params: {
-  date_from: string;
-  date_to: string;
+  month: number;
+  year: number;
   teacher_id?: string;
 }) => {
   const response = await axios.get(`${API_BASE_URL}/academy/reports/attendance`, {
@@ -375,12 +376,7 @@ export const getAttendanceReport = async (params: {
   return response.data;
 };
 
-export const getTeachersReport = async () => {
-  const response = await axios.get(`${API_BASE_URL}/academy/reports/teachers`, {
-    headers: getAuthHeaders(),
-  });
-  return response.data;
-};
+
 
 export const getMonthlyReport = async (month: number, year: number) => {
   const response = await axios.get(`${API_BASE_URL}/academy/reports/monthly`, {
@@ -390,12 +386,32 @@ export const getMonthlyReport = async (month: number, year: number) => {
   return response.data;
 };
 
-export const exportReportToPDF = async (params: {
-  report_type: 'attendance' | 'teachers' | 'monthly';
+export const getStudentsReport = async (params: {
   date_from?: string;
   date_to?: string;
-  month?: number;
-  year?: number;
+}) => {
+  const response = await axios.get(`${API_BASE_URL}/academy/reports/students`, {
+    headers: getAuthHeaders(),
+    params,
+  });
+  return response.data;
+};
+
+export const getFinancialReport = async (params: {
+  date_from?: string;
+  date_to?: string;
+}) => {
+  const response = await axios.get(`${API_BASE_URL}/academy/reports/financial`, {
+    headers: getAuthHeaders(),
+    params,
+  });
+  return response.data;
+};
+
+export const exportReportToPDF = async (params: {
+  report_type: 'attendance' | 'teachers' | 'monthly' | 'students' | 'financial';
+  month: number;
+  year: number;
   teacher_id?: string;
 }) => {
   const response = await axios.get(`${API_BASE_URL}/academy/reports/export-pdf`, {
@@ -520,6 +536,241 @@ export const getLectureAttendees = async (id: string, filters: {
   return response.data;
 };
 
+export const exportAttendeesPDF = async (lectureId: string) => {
+  const response = await axios.get(`${API_BASE_URL}/academy/lectures/${lectureId}/attendees/export`, {
+    headers: getAuthHeaders(),
+    responseType: 'blob',
+  });
+  
+  const url = window.URL.createObjectURL(new Blob([response.data]));
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', `attendance_report_${lectureId}.pdf`);
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+};
+
+export const cancelLectureSession = async (id: string, date: string) => {
+  const response = await axios.post(
+    `${API_BASE_URL}/academy/lectures/${id}/cancel-session`,
+    { date },
+    { headers: getAuthHeaders() }
+  );
+  return response.data;
+};
+
+export const recordManualAttendance = async (lectureId: string, studentId: string) => {
+  const response = await axios.post(
+    `${API_BASE_URL}/academy/lectures/${lectureId}/attendance`,
+    { student_id: studentId },
+    { headers: getAuthHeaders() }
+  );
+  return response.data;
+};
+
+export const getLectureSessions = async (lectureId: string, params?: { date_from?: string; date_to?: string }) => {
+  const response = await axios.get(`${API_BASE_URL}/academy/lectures/${lectureId}/sessions`, {
+    headers: getAuthHeaders(),
+    params: params
+  });
+  return response.data;
+};
+
+export const updateLectureSession = async (lectureId: string, data: { date: string; title?: string; description?: string }) => {
+  const response = await axios.post(
+    `${API_BASE_URL}/academy/lectures/${lectureId}/sessions`,
+    data,
+    { headers: getAuthHeaders() }
+  );
+  return response.data;
+};
+
+// ========== Students Management ==========
+export const getAcademyStudents = async (page = 1, perPage = 10, search = '', status = '') => {
+  const response = await axios.get(`${API_BASE_URL}/academy/students`, {
+    headers: getAuthHeaders(),
+    params: { page, per_page: perPage, search, status },
+  });
+  return response.data;
+};
+
+export const getAcademyStudentStatistics = async () => {
+  const response = await axios.get(`${API_BASE_URL}/academy/students/statistics`, {
+    headers: getAuthHeaders(),
+  });
+  return response.data;
+};
+
+export const getAcademyStudentDetails = async (id: string, teacherId?: string) => {
+  const response = await axios.get(`${API_BASE_URL}/academy/students/${id}`, {
+    headers: getAuthHeaders(),
+    params: { teacher_id: teacherId },
+  });
+  return { ...response.data.data.student, subscription_history: response.data.data.subscription_history, enrolled_teachers: response.data.data.enrolled_teachers };
+};
+
+export const deleteAcademyStudent = async (id: string) => {
+  const response = await axios.delete(`${API_BASE_URL}/academy/students/${id}`, {
+    headers: getAuthHeaders(),
+  });
+  return response.data;
+};
+
+export const toggleAcademyStudentStatus = async (id: string) => {
+  const response = await axios.put(`${API_BASE_URL}/academy/students/${id}/toggle-status`, {}, {
+    headers: getAuthHeaders(),
+  });
+  return response.data;
+};
+
+export const createAcademyStudent = async (data: any) => {
+  const response = await axios.post(
+    `${API_BASE_URL}/academy/students`,
+    data,
+    { headers: getAuthHeaders() }
+  );
+  return response.data;
+};
+
+export const updateAcademyStudent = async (id: string, data: any) => {
+  const response = await axios.put(
+    `${API_BASE_URL}/academy/students/${id}`,
+    data,
+    { headers: getAuthHeaders() }
+  );
+  return response.data;
+};
+
+export const searchAcademyStudentByPhone = async (phone: string) => {
+  const response = await axios.get(`${API_BASE_URL}/academy/students/search-phone`, {
+    headers: getAuthHeaders(),
+    params: { phone },
+  });
+  return response.data;
+};
+
+// ========== Exams Management ==========
+export const getAcademyExams = async (page = 1, perPage = 10, filters: {
+  search?: string;
+  teacher_id?: string;
+  date_from?: string;
+  date_to?: string;
+} = {}) => {
+  const response = await axios.get(`${API_BASE_URL}/academy/exams`, {
+    headers: getAuthHeaders(),
+    params: { page, per_page: perPage, ...filters },
+  });
+  return response.data.data;
+};
+
+export const getAcademyExam = async (id: string) => {
+  const response = await axios.get(`${API_BASE_URL}/academy/exams/${id}`, {
+    headers: getAuthHeaders(),
+  });
+  return response.data.data.exam;
+};
+
+export const createAcademyExam = async (data: {
+  teacher_id: string;
+  title: string;
+  subject: string;
+  grade_id: string;
+  group_id?: string;
+  date: string;
+  duration: number;
+  total_marks: number;
+  actual_question_count: number;
+  time_per_question?: number;
+  questions: {
+    text: string;
+    options: string[];
+    correct_answer: string;
+    duration?: number;
+  }[];
+}) => {
+  const response = await axios.post(
+    `${API_BASE_URL}/academy/exams`,
+    data,
+    { headers: getAuthHeaders() }
+  );
+  return response.data.data;
+};
+
+export const updateAcademyExam = async (id: string, data: {
+  teacher_id?: string;
+  title: string;
+  subject: string;
+  grade_id: string;
+  group_id?: string;
+  date: string;
+  duration: number;
+  total_marks: number;
+  actual_question_count: number;
+  time_per_question?: number;
+  questions: {
+    text: string;
+    options: string[];
+    correct_answer: string;
+    duration?: number;
+  }[];
+}) => {
+  const response = await axios.put(
+    `${API_BASE_URL}/academy/exams/${id}`,
+    data,
+    { headers: getAuthHeaders() }
+  );
+  return response.data.data;
+};
+
+export const deleteAcademyExam = async (id: string) => {
+  const response = await axios.delete(`${API_BASE_URL}/academy/exams/${id}`, {
+    headers: getAuthHeaders(),
+  });
+  return response.data;
+};
+
+export const copyAcademyExam = async (id: string, title?: string) => {
+  const response = await axios.post(
+    `${API_BASE_URL}/academy/exams/${id}/copy`,
+    title ? { title } : {},
+    { headers: getAuthHeaders() }
+  );
+  return response.data.data.exam;
+};
+
+export const toggleAcademyExamStatus = async (id: string) => {
+  const response = await axios.put(
+    `${API_BASE_URL}/academy/exams/${id}/toggle-status`,
+    {},
+    { headers: getAuthHeaders() }
+  );
+  return response.data;
+};
+
+export const endAcademyExam = async (id: string) => {
+  const response = await axios.put(
+    `${API_BASE_URL}/academy/exams/${id}/end`,
+    {},
+    { headers: getAuthHeaders() }
+  );
+  return response.data;
+};
+
+export const getAcademyExamResults = async (id: string) => {
+  const response = await axios.get(`${API_BASE_URL}/academy/exams/${id}/results`, {
+    headers: getAuthHeaders(),
+  });
+  return response.data.data;
+};
+
+export const getExamTeachers = async () => {
+  const response = await axios.get(`${API_BASE_URL}/academy/exams/teachers`, {
+    headers: getAuthHeaders(),
+  });
+  return response.data.data.teachers;
+};
+
 export default {
   // Dashboard
   getDashboardStats,
@@ -558,8 +809,10 @@ export default {
   
   // Reports
   getAttendanceReport,
-  getTeachersReport,
+
   getMonthlyReport,
+  getStudentsReport,
+  getFinancialReport,
   exportReportToPDF,
   
   // Lectures
@@ -573,4 +826,26 @@ export default {
   endLecture,
   generateLectureQrCode,
   getLectureAttendees,
+  
+  // Students
+  getAcademyStudents,
+  getAcademyStudentStatistics,
+  getAcademyStudentDetails,
+  deleteAcademyStudent,
+  toggleAcademyStudentStatus,
+  createAcademyStudent,
+  updateAcademyStudent,
+  searchAcademyStudentByPhone,
+
+  // Exams
+  getAcademyExams,
+  getAcademyExam,
+  createAcademyExam,
+  updateAcademyExam,
+  deleteAcademyExam,
+  copyAcademyExam,
+  toggleAcademyExamStatus,
+  endAcademyExam,
+  getAcademyExamResults,
+  getExamTeachers,
 };

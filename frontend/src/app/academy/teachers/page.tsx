@@ -314,6 +314,12 @@ export default function AcademyTeachersPage() {
 
   const actions = [
     {
+      label: 'التفاصيل',
+      icon: 'fas fa-eye',
+      variant: 'default' as 'default',
+      onClick: (row: any) => router.push(`/academy/teachers/${row.id}`),
+    },
+    {
       label: (row: any) => row.status === 'نشط' ? 'تعطيل' : 'تفعيل',
       icon: (row: any) => row.status === 'نشط' ? 'fas fa-ban' : 'fas fa-check',
       variant: (row: any) => row.status === 'نشط' ? 'danger' : 'success',

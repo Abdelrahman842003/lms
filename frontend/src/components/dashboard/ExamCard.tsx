@@ -6,6 +6,7 @@ interface Exam {
   subject: string;
   grade?: { id: string; name: string };
   group?: { id: string; name: string };
+  teacher?: { id: string; name: string };
   date: string;
   duration: number;
   max_score: number;
@@ -120,10 +121,17 @@ export const ExamCard: React.FC<ExamCardProps> = ({
       {/* Top Section: Menu and Status */}
       <div className="flex justify-between items-start mb-6">
         {/* Status Badge */}
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <span className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${status.className}`}>
             {status.text}
           </span>
+
+          {exam.teacher && (
+            <span className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center gap-1.5">
+              <i className="fas fa-chalkboard-teacher text-[10px]"></i>
+              {exam.teacher.name}
+            </span>
+          )}
           
           {isActive && timeLeft && (
             <span className="px-3 py-1.5 rounded-lg text-xs font-mono font-bold bg-red-500/20 text-red-400 border border-red-500/30 animate-pulse">
@@ -225,6 +233,12 @@ export const ExamCard: React.FC<ExamCardProps> = ({
           <i className="fas fa-clock w-5 text-primary text-base"></i>
           <span>{examDate.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })} ({exam.duration} دقيقة)</span>
         </div>
+        {exam.teacher && (
+          <div className="flex items-center gap-3 text-sm text-gray-light">
+            <i className="fas fa-chalkboard-teacher w-5 text-primary text-base"></i>
+            <span>{exam.teacher.name}</span>
+          </div>
+        )}
         {exam.grade && (
           <div className="flex items-center gap-3 text-sm text-gray-light">
             <i className="fas fa-graduation-cap w-5 text-primary text-base"></i>

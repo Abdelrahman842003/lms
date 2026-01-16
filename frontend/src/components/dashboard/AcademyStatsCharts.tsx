@@ -13,7 +13,7 @@ import {
 
 interface AcademyStatsChartsProps {
   stats: {
-    total_revenue: number;
+    actual_revenue?: number;
     students_count: number;
     revenue_trend?: Array<{ date: string; amount: number }>;
   };
@@ -56,7 +56,7 @@ export const AcademyStatsCharts: React.FC<AcademyStatsChartsProps> = ({ stats })
             <p className="text-gray-400 text-xs">تطور الإيرادات خلال الأشهر الأخيرة</p>
           </div>
           <div className="text-left">
-            <span className="text-2xl font-bold text-emerald-400">{stats.total_revenue} ج.م</span>
+            <span className="text-2xl font-bold text-emerald-400">{stats.actual_revenue || 0} ج.م</span>
             <p className="text-emerald-500/60 text-[10px] font-medium">الإجمالي</p>
           </div>
         </div>

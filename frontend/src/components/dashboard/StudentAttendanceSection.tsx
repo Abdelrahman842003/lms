@@ -6,7 +6,9 @@ import { StatCard } from '@/components/dashboard/StatCard';
 import { LectureCard } from '@/components/dashboard/LectureCard';
 import { Filter } from '@/components/Filter';
 import { Lecture } from '@/services/lectureService';
+import { AcademyLectureSessionsModal } from '@/components/dashboard/AcademyLectureSessionsModal';
 import * as academyService from '@/services/academyService';
+import { Group } from '@/services/groupService';
 import toast from 'react-hot-toast';
 import QRCode from 'react-qr-code';
 
@@ -27,6 +29,9 @@ export default function StudentAttendanceSection() {
   // Modal States
   const [showModal, setShowModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showCancelSessionModal, setShowCancelSessionModal] = useState(false);
+  const [showSessionsModal, setShowSessionsModal] = useState(false);
+  const [selectedLectureForSessions, setSelectedLectureForSessions] = useState<Lecture | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [selectedLecture, setSelectedLecture] = useState<Lecture | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -68,8 +73,8 @@ export default function StudentAttendanceSection() {
           academyService.getGroups(1, 100)
         ]);
         setTeachers(teachersResponse.data?.teachers || []);
-        setGrades(gradesResponse.data || []);
-        setGroups(groupsResponse.data || []);
+        setGrades(gradesResponse.data?.data || []);
+        setGroups(groupsResponse.data?.data || []);
       } catch (error) {
         console.error('Failed to fetch data:', error);
       }
@@ -114,6 +119,23 @@ export default function StudentAttendanceSection() {
   const handleEditClick = (lecture: Lecture) => {
     setIsEditing(true);
     setSelectedLecture(lecture);
+    
+    // Extract time from start_time if available
+    let time = '';
+    if (lecture.start_time) {
+      const date = new Date(lecture.start_time);
+      // Format to HH:mm
+      time = date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
+    }
+
+    // Calculate duration if start and end time are available
+    let duration = 120;
+    if (lecture.start_time && lecture.end_time) {
+      const start = new Date(lecture.start_time);
+      const end = new Date(lecture.end_time);
+      duration = Math.round((end.getTime() - start.getTime()) / (1000 * 60));
+    }
+
     setFormData({
       teacher_id: lecture.teacher?.id || '',
       title: lecture.title,
@@ -123,8 +145,8 @@ export default function StudentAttendanceSection() {
       date: lecture.date || '',
       is_recurring: lecture.is_recurring || false,
       recurrence_days: lecture.recurrence_days || [],
-      recurrence_time: '',
-      duration_minutes: 120,
+      recurrence_time: time,
+      duration_minutes: duration,
     });
     setShowModal(true);
   };
@@ -216,6 +238,21 @@ export default function StudentAttendanceSection() {
     } catch (error: any) {
       console.error('Failed to end lecture:', error);
       toast.error(error.response?.data?.message || 'فشل إنهاء المحاضرة');
+    }
+  };
+
+  const confirmCancelSession = async () => {
+    if (!selectedLecture) return;
+
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      await academyService.cancelLectureSession(selectedLecture.id, today);
+      setShowCancelSessionModal(false);
+      toast.success('تم إلغاء محاضرة اليوم');
+      fetchLectures(currentPage);
+    } catch (error: any) {
+      console.error('Failed to cancel session:', error);
+      toast.error(error.response?.data?.message || 'فشل إلغاء المحاضرة');
     }
   };
 
@@ -360,7 +397,7 @@ export default function StudentAttendanceSection() {
                   setOpenMenuId(isMenuOpen ? null : lecture.id);
                 }}
                 onViewAttendees={() => {
-                  // TODO: Navigate to attendees page
+                  router.push(`/academy/lectures/${lecture.id}/attendees`);
                   setOpenMenuId(null);
                 }}
                 onEdit={() => {
@@ -368,13 +405,32 @@ export default function StudentAttendanceSection() {
                   setOpenMenuId(null);
                 }}
                 onCopy={() => {
-                  // Copy lecture
+                  // Extract time from start_time if available
+                  let time = '';
+                  if (lecture.start_time) {
+                    const date = new Date(lecture.start_time);
+                    time = date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
+                  }
+
+                  // Calculate duration
+                  let duration = 120;
+                  if (lecture.start_time && lecture.end_time) {
+                    const start = new Date(lecture.start_time);
+                    const end = new Date(lecture.end_time);
+                    duration = Math.round((end.getTime() - start.getTime()) / (1000 * 60));
+                  }
+
                   setFormData({
-                    ...formData,
                     teacher_id: lecture.teacher?.id || '',
                     title: `${lecture.title} (نسخة)`,
                     description: lecture.description || '',
                     grade_id: lecture.grade?.id || '',
+                    group_id: lecture.group?.id || '',
+                    date: lecture.date || '',
+                    is_recurring: lecture.is_recurring || false,
+                    recurrence_days: lecture.recurrence_days || [],
+                    recurrence_time: time,
+                    duration_minutes: duration,
                   });
                   setIsEditing(false);
                   setShowModal(true);
@@ -388,7 +444,20 @@ export default function StudentAttendanceSection() {
                 onScan={() => {/* Scanner handled by teacher */}}
                 onQRCode={() => handleQRCodeClick(lecture)}
                 onEnd={() => handleEndLectureClick(lecture)}
-                onManualAttendance={() => {/* Manual attendance */}}
+                onManualAttendance={() => {
+                  router.push(`/academy/lectures/${lecture.id}/manual-attendance`);
+                  setOpenMenuId(null);
+                }}
+                onCancelSession={() => {
+                  setSelectedLecture(lecture);
+                  setShowCancelSessionModal(true);
+                  setOpenMenuId(null);
+                }}
+                onManageSessions={() => {
+                  setSelectedLectureForSessions(lecture);
+                  setShowSessionsModal(true);
+                  setOpenMenuId(null);
+                }}
               />
             );
           })}
@@ -736,6 +805,38 @@ export default function StudentAttendanceSection() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Cancel Session Modal */}
+      {showCancelSessionModal && selectedLecture && (
+        <div className="modal-overlay" onClick={() => setShowCancelSessionModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>إلغاء محاضرة اليوم</h3>
+            </div>
+            <div className="modal-body">
+              <p className="text-gray-300">
+                هل تريد إلغاء محاضرة اليوم من "{selectedLecture.title}"؟
+              </p>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-ghost" onClick={() => setShowCancelSessionModal(false)}>
+                إلغاء
+              </button>
+              <button className="btn btn-danger" onClick={confirmCancelSession}>
+                تأكيد الإلغاء
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Sessions Modal */}
+      {showSessionsModal && selectedLectureForSessions && (
+        <AcademyLectureSessionsModal
+          lecture={selectedLectureForSessions}
+          onClose={() => setShowSessionsModal(false)}
+        />
       )}
     </div>
   );

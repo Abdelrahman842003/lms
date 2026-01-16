@@ -13,6 +13,9 @@ export interface SelectProps {
   className?: string;
   icon?: string;
   disabled?: boolean;
+  searchable?: boolean;
+  onSearchChange?: (value: string) => void;
+  disableLocalFilter?: boolean;
 }
 
 export function Select({
@@ -22,10 +25,15 @@ export function Select({
   placeholder = 'اختر...',
   className = '',
   icon,
-  disabled = false
+  disabled = false,
+  searchable = false,
+  onSearchChange,
+  disableLocalFilter = false
 }: SelectProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const selectedOption = options.find(opt => opt.value === value);
 
@@ -42,10 +50,36 @@ export function Select({
     };
   }, []);
 
+  useEffect(() => {
+    if (isOpen && searchable && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+    if (!isOpen) {
+      setSearchTerm('');
+      if (onSearchChange) onSearchChange('');
+    }
+  }, [isOpen, searchable]);
+
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+    if (onSearchChange) {
+      onSearchChange(value);
+    }
+  };
+
   const handleSelect = (optionValue: string) => {
     onChange(optionValue);
     setIsOpen(false);
+    setSearchTerm('');
+    if (onSearchChange) onSearchChange('');
   };
+
+  const filteredOptions = disableLocalFilter 
+    ? options 
+    : options.filter(option =>
+        option.label.toLowerCase().includes(searchTerm.toLowerCase())
+      );
 
   return (
     <div className={`relative ${className}`} ref={dropdownRef}>
@@ -71,8 +105,24 @@ export function Select({
 
       {isOpen && (
         <div className="absolute top-full left-0 right-0 mt-2 z-50 overflow-hidden bg-[#1e1e2d] border border-white/10 rounded-lg shadow-xl animate-in fade-in zoom-in-95 duration-100">
+          {searchable && (
+            <div className="p-2 border-b border-white/10">
+              <div className="relative">
+                <i className="fas fa-search absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  className="w-full bg-white/5 border border-white/10 rounded-md py-1.5 pr-8 pl-3 text-sm text-white focus:outline-none focus:border-primary/50 placeholder:text-gray-500"
+                  placeholder="بحث..."
+                  value={searchTerm}
+                  onChange={handleSearch}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </div>
+            </div>
+          )}
           <div className="max-h-[240px] overflow-y-auto py-1 custom-scrollbar">
-            {options.map((option) => (
+            {filteredOptions.map((option) => (
               <div
                 key={option.value}
                 className={`
@@ -86,9 +136,9 @@ export function Select({
                 {option.value === value && <i className="fas fa-check text-xs"></i>}
               </div>
             ))}
-            {options.length === 0 && (
+            {filteredOptions.length === 0 && (
               <div className="px-4 py-3 text-sm text-gray-500 text-center">
-                لا توجد خيارات
+                {searchTerm ? 'لا توجد نتائج' : 'لا توجد خيارات'}
               </div>
             )}
           </div>

@@ -7,6 +7,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { SidebarItem } from '@/types/dashboard';
 import { NotificationDropdown } from './NotificationDropdown';
 import { TeacherSelectionDropdown } from './TeacherSelectionDropdown';
+import { AcademySelector } from './AcademySelector';
+import ScanAttendanceModal from './ScanAttendanceModal';
+
 
 interface NavbarProps {
   role: 'admin' | 'teacher' | 'student' | 'secretary' | 'parent' | 'academy';
@@ -54,15 +57,8 @@ const getNavItems = (role: string): SidebarItem[] => {
             icon: 'fas fa-building',
             href: '/admin/academies',
           },
-          {
-            id: 'academy_billing',
-            label: 'الفواتير',
-            icon: 'fas fa-file-invoice-dollar',
-            href: '/admin/academy-billings',
-          },
         ],
       },
-
       {
         id: 'notifications',
         label: 'الإخطارات',
@@ -73,21 +69,7 @@ const getNavItems = (role: string): SidebarItem[] => {
         id: 'reports',
         label: 'التقارير',
         icon: 'fas fa-chart-bar',
-        href: '#',
-        children: [
-          {
-            id: 'teacher_reports',
-            label: 'تقارير المدرسين',
-            icon: 'fas fa-chalkboard-teacher',
-            href: '/admin/reports/teachers',
-          },
-          {
-            id: 'academy_reports',
-            label: 'تقارير الأكاديميات',
-            icon: 'fas fa-building',
-            href: '/admin/reports/academies',
-          },
-        ],
+        href: '/admin/reports',
       },
       {
         id: 'users',
@@ -122,16 +104,30 @@ const getNavItems = (role: string): SidebarItem[] => {
     return [
       ...commonItems,
       {
-        id: 'teachers',
-        label: 'المدرسين',
-        icon: 'fas fa-chalkboard-teacher',
-        href: '/academy/teachers',
-      },
-      {
-        id: 'secretaries',
-        label: 'السكرتيرات',
-        icon: 'fas fa-user-tie',
-        href: '/academy/secretaries',
+        id: 'persons',
+        label: 'الأشخاص',
+        icon: 'fas fa-users',
+        href: '#',
+        children: [
+          {
+            id: 'teachers',
+            label: 'المدرسين',
+            icon: 'fas fa-chalkboard-teacher',
+            href: '/academy/teachers',
+          },
+          {
+            id: 'students',
+            label: 'الطلاب',
+            icon: 'fas fa-user-graduate',
+            href: '/academy/students',
+          },
+          {
+            id: 'secretaries',
+            label: 'السكرتيرات',
+            icon: 'fas fa-user-tie',
+            href: '/academy/secretaries',
+          },
+        ],
       },
       {
         id: 'academics',
@@ -164,6 +160,12 @@ const getNavItems = (role: string): SidebarItem[] => {
         label: 'محاضرات الطلاب',
         icon: 'fas fa-book-open',
         href: '/academy/lectures',
+      },
+      {
+        id: 'exams',
+        label: 'الامتحانات',
+        icon: 'fas fa-file-alt',
+        href: '/academy/exams',
       },
       {
         id: 'notifications_academy',
@@ -230,7 +232,12 @@ const getNavItems = (role: string): SidebarItem[] => {
         icon: 'fas fa-book-open',
         href: '/teacher/lectures',
       },
-
+      {
+        id: 'attendance',
+        label: 'الحضور والانصراف',
+        icon: 'fas fa-calendar-check',
+        href: '/teacher/attendance',
+      },
       {
         id: 'exams',
         label: 'الامتحانات',
@@ -387,7 +394,7 @@ const filterNavItemsByPermissions = (items: SidebarItem[], permissions: string[]
 export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClick }) => {
   const pathname = usePathname();
   const router = useRouter();
-  const { logout, user: authUser } = useAuth();
+  const { logout, user: authUser, selectedAcademy, isLoading } = useAuth();
   
   // Use authUser from context if available, otherwise fall back to prop
   const user = authUser || userProp;
@@ -400,11 +407,38 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
     // No permissions = only dashboard
     items = items.filter(item => item.id === 'dashboard');
   }
+
+  // Filter items for Academy mode (Teacher only)
+  // If selectedAcademy has an ID, it means the teacher is in "Academy Dashboard" mode
+  // OR if we are still loading (isLoading is true), we default to "Restricted" mode to prevent flicker
+  // In this mode, they should NOT see: Secretary, Grades (Classes), Reports
+  // They SHOULD see: Attendance (only in Academy Mode)
+  if (role === 'teacher' && (selectedAcademy?.id || isLoading)) {
+    items = items
+      .filter(item => item.id !== 'reports') // Remove Reports
+      .map(item => {
+        if (item.children) {
+          return {
+            ...item,
+            children: item.children.filter(child => 
+              child.id !== 'secretaries' && // Remove Secretary
+              child.id !== 'grades'         // Remove Grades (Classes)
+            )
+          };
+        }
+        return item;
+      });
+  } else if (role === 'teacher' && !selectedAcademy?.id && !isLoading) {
+    // Independent teacher mode - remove attendance
+    items = items.filter(item => item.id !== 'attendance');
+  }
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [activeSubMenu, setActiveSubMenu] = useState<string | null>(null);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [mobileExpandedItems, setMobileExpandedItems] = useState<string[]>([]);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isAcademyModalOpen, setIsAcademyModalOpen] = useState(false);
+  const [isScanAttendanceModalOpen, setIsScanAttendanceModalOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -534,6 +568,18 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
               <TeacherSelectionDropdown />
             )}
 
+            {/* Scan Attendance Button (Teacher in Academy Mode Only) */}
+            {role === 'teacher' && selectedAcademy?.id && (
+              <button
+                onClick={() => setIsScanAttendanceModalOpen(true)}
+                className="navbar-scan-btn"
+                title="تسجيل الحضور والانصراف"
+              >
+                <i className="fas fa-qrcode"></i>
+                <span className="hidden lg:inline">تسجيل الحضور</span>
+              </button>
+            )}
+
             {/* Notification Dropdown */}
             <NotificationDropdown role={role} />
 
@@ -552,6 +598,11 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
                 </div>
                 <div className="navbar-user-info">
                   <p className="navbar-user-name">{user?.name || ''}</p>
+                  {role === 'teacher' && selectedAcademy && (
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {selectedAcademy.name}
+                    </p>
+                  )}
                 </div>
                 <i className={`fas fa-chevron-down navbar-user-chevron`} style={{ 
                   transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)'
@@ -569,6 +620,25 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
                     <i className="fas fa-user"></i>
                     <span>الملف الشخصي</span>
                   </Link>
+                  
+                  {/* Academy Selector for Teachers */}
+                  {role === 'teacher' && (
+                    <>
+                      <div className="navbar-dropdown-divider"></div>
+                      <button 
+                        className="navbar-dropdown-item"
+                        onClick={() => {
+                          console.log('Opening academy modal');
+                          setIsAcademyModalOpen(true);
+                          setIsDropdownOpen(false);
+                        }}
+                      >
+                        <i className="fas fa-building"></i>
+                        <span>تغيير الأكاديمية</span>
+                      </button>
+                    </>
+                  )}
+                  
                   <div className="navbar-dropdown-divider"></div>
                   <button 
                     className="navbar-dropdown-item logout-item navbar-logout-btn"
@@ -690,6 +760,18 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
           </button>
         </div>
       </div>
+
+      {/* Academy Selector Modal */}
+      <AcademySelector 
+        isOpen={isAcademyModalOpen}
+        onClose={() => setIsAcademyModalOpen(false)}
+      />
+
+      {/* Scan Attendance Modal */}
+      <ScanAttendanceModal
+        isOpen={isScanAttendanceModalOpen}
+        onClose={() => setIsScanAttendanceModalOpen(false)}
+      />
     </>
   );
 };

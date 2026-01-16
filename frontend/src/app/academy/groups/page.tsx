@@ -66,9 +66,10 @@ export default function AcademyGroupsPage() {
     const fetchTeachers = async () => {
       try {
         const response = await academyService.getLectureTeachers();
-        setTeachers(response.data);
+        setTeachers(response.data?.teachers || []);
       } catch (error) {
         console.error('Failed to fetch teachers:', error);
+        setTeachers([]);
       }
     };
     fetchTeachers();
@@ -80,7 +81,7 @@ export default function AcademyGroupsPage() {
       const fetchTeacherGrades = async () => {
         try {
           const response = await academyService.getTeacher(formData.teacher_id);
-          setGrades(response.grades || []);
+          setGrades(response.data?.grades || []);
         } catch (error) {
           console.error('Failed to fetch teacher grades:', error);
           setGrades([]);

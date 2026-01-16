@@ -86,7 +86,7 @@ export const LectureCard: React.FC<LectureCardProps> = ({
       {/* Top Section: Menu and Status */}
       <div className="flex justify-between items-start mb-6">
         {/* Status Badge */}
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <span className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${
             lecture.status === 'جاري الآن' ? 'bg-[#2ecc71]/20 text-[#2ecc71] border border-[#2ecc71]/30' : 
             lecture.status === 'اليوم' ? 'bg-[#f39c12]/20 text-[#f39c12] border border-[#f39c12]/30' : 
@@ -95,6 +95,13 @@ export const LectureCard: React.FC<LectureCardProps> = ({
           }`}>
             {lecture.status}
           </span>
+
+          {lecture.teacher && (
+            <span className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center gap-1.5">
+              <i className="fas fa-chalkboard-teacher text-[10px]"></i>
+              {lecture.teacher.name}
+            </span>
+          )}
           
           {isActive && timeLeft && (
             <span className="px-3 py-1.5 rounded-lg text-xs font-mono font-bold bg-red-500/20 text-red-400 border border-red-500/30 animate-pulse">
@@ -240,6 +247,12 @@ export const LectureCard: React.FC<LectureCardProps> = ({
             <span>{lecture.date}</span>
           )}
         </div>
+        {lecture.teacher && (
+          <div className="flex items-center gap-3 text-sm text-gray-light">
+            <i className="fas fa-user-tie w-5 text-primary text-base"></i>
+            <span>{lecture.teacher.name}</span>
+          </div>
+        )}
         {lecture.grade && (
           <div className="flex items-center gap-3 text-sm text-gray-light">
             <i className="fas fa-graduation-cap w-5 text-primary text-base"></i>

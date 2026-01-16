@@ -18,6 +18,7 @@ interface CreateGradeData {
 // Interface for Grouped Grade from API
 interface GroupedGrade {
   name: string;
+  price: number;
   teachers_count: number;
   groups_count: number;
   students_count: number;
@@ -41,7 +42,6 @@ export default function AcademyGradesPage() {
   const [formData, setFormData] = useState<CreateGradeData>({
     name: '',
     price: 0,
-    teacher_id: '',
   });
   const [validationErrors, setValidationErrors] = useState<{
     name?: string;
@@ -152,13 +152,32 @@ export default function AcademyGradesPage() {
     setIsSubmitting(true);
 
     try {
-      await academyService.createGrade(formData);
+      const response = await academyService.createGrade(formData);
+      console.log('Grade created successfully:', response);
+      
+      // Show success message
+      if (typeof window !== 'undefined') {
+        const toast = await import('react-hot-toast');
+        toast.default.success('تم إضافة الصف الدراسي بنجاح');
+      }
+      
       setShowModal(false);
       setTouched({ name: false, price: false });
       setValidationErrors({});
-      fetchGrades(currentPage);
-    } catch (error) {
+      setFormData({ name: '', price: 0 });
+      
+      // Refresh from page 1 to see the new grade
+      fetchGrades(1);
+    } catch (error: any) {
       console.error('Failed to save grade:', error);
+      console.error('Error response:', error.response?.data);
+      
+      // Show error message
+      if (typeof window !== 'undefined') {
+        const toast = await import('react-hot-toast');
+        const errorMessage = error.response?.data?.message || 'فشل إضافة الصف الدراسي';
+        toast.default.error(errorMessage);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -348,30 +367,7 @@ export default function AcademyGradesPage() {
                     </p>
                   )}
                 </div>
-                <div className="space-y-2">
-                  <label htmlFor="price" className="block text-sm font-medium text-gray-300">سعر الاشتراك الشهري</label>
-                  <input
-                    type="number"
-                    id="price"
-                    className={`w-full p-3 bg-[#151521] border rounded-lg text-white focus:ring-1 outline-none transition-all ${
-                      touched.price && validationErrors.price 
-                        ? 'border-danger focus:border-danger focus:ring-danger' 
-                        : 'border-white/10 focus:border-primary focus:ring-primary'
-                    }`}
-                    value={formData.price}
-                    onChange={(e) => handleInputChange('price', Number(e.target.value))}
-                    onBlur={() => handleBlur('price')}
-                    min="0"
-                    required
-                    placeholder="0"
-                  />
-                  {touched.price && validationErrors.price && (
-                    <p className="text-danger text-xs mt-1 flex items-center gap-1">
-                      <i className="fas fa-exclamation-circle"></i>
-                      {validationErrors.price}
-                    </p>
-                  )}
-                </div>
+                {/* Price field removed as per user request - defaults to 0 */}
               </div>
               <div className="flex items-center justify-end gap-3 p-6 border-t border-white/10 bg-black/20 rounded-b-xl">
                 <button

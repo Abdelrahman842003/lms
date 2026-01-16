@@ -1,0 +1,440 @@
+'use client';
+
+import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
+import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
+import { DataTable } from '@/components/dashboard/DataTable';
+import { DashboardCard } from '@/components/dashboard/DashboardCard';
+import { StatCard } from '@/components/dashboard/StatCard';
+import { Filter } from '@/components/Filter';
+import { useAuth } from '@/contexts/AuthContext';
+import { getAcademyStudents, getAcademyStudentStatistics, deleteAcademyStudent, toggleAcademyStudentStatus } from '@/services/academyService';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import toast from 'react-hot-toast';
+import { ConfirmationModal } from '@/components/ui';
+
+import { LinkTeacherModal } from './LinkTeacherModal';
+
+export default function AcademyStudentsPage() {
+  const { user } = useAuth();
+  const router = useRouter();
+  const [students, setStudents] = useState<any[]>([]);
+  const [stats, setStats] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  
+  // Modal State
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalConfig, setModalConfig] = useState({
+    title: '',
+    message: '',
+    confirmText: '',
+    variant: 'danger' as 'danger' | 'success',
+    onConfirm: async () => {},
+    showCancel: true,
+  });
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  // Link Teacher Modal State
+  const [linkTeacherModalOpen, setLinkTeacherModalOpen] = useState(false);
+  const [selectedStudentForLink, setSelectedStudentForLink] = useState<any>(null);
+
+  // Teachers Popup State
+  const [activeTeacherPopup, setActiveTeacherPopup] = useState<string | null>(null);
+  const [popupPosition, setPopupPosition] = useState({ top: 0, left: 0 });
+  const popupRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (popupRef.current && !popupRef.current.contains(event.target as Node)) {
+        setActiveTeacherPopup(null);
+      }
+    }
+
+    if (activeTeacherPopup) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [activeTeacherPopup]);
+
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
+  useEffect(() => {
+    fetchStudents();
+  }, [currentPage, searchQuery, statusFilter]);
+
+  const fetchStats = async () => {
+    try {
+      const response = await getAcademyStudentStatistics();
+      setStats(response.data);
+    } catch (error) {
+      console.error('Failed to fetch stats:', error);
+    }
+  };
+
+
+
+  const fetchStudents = async () => {
+    try {
+      setIsLoading(true);
+      const response = await getAcademyStudents(currentPage, 10, searchQuery, statusFilter);
+      console.log('FULL API RESPONSE:', response);
+      
+      // Robust data extraction
+      let studentsData = [];
+      let metaData: any = {};
+
+      if (response?.data?.data && Array.isArray(response.data.data)) {
+         studentsData = response.data.data;
+         metaData = response.data.meta || {};
+      } else if (response?.data && Array.isArray(response.data)) {
+         studentsData = response.data;
+      } else if (Array.isArray(response)) {
+         studentsData = response;
+      }
+      
+      console.log('Extracted Students:', studentsData);
+      setStudents(studentsData);
+      setTotalPages(metaData.last_page || response.data?.last_page || 1);
+      setTotalItems(metaData.total || response.data?.total || 0);
+    } catch (error: any) {
+      console.error('Failed to fetch students:', error);
+      toast.error(`Failed to load students: ${error.message || 'Unknown error'}`);
+      if (error.response) {
+        console.error('Error Response:', error.response);
+        toast.error(`Status: ${error.response.status}`);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDelete = (student: any) => {
+    setModalConfig({
+      title: 'إلغاء ربط الطالب',
+      message: `هل أنت متأكد من إلغاء ربط الطالب "${student.name}" من الأكاديمية؟ (لن يتم حذف حساب الطالب نهائياً)`,
+      confirmText: 'إلغاء الربط',
+      variant: 'danger',
+      onConfirm: async () => {
+        try {
+          setIsProcessing(true);
+          await deleteAcademyStudent(student.id);
+          setModalOpen(false);
+          fetchStudents();
+          fetchStudents();
+          fetchStats();
+          toast.success('تم إلغاء ربط الطالب بنجاح');
+        } catch (error) {
+          console.error('Failed to delete student:', error);
+          toast.error('فشل إلغاء ربط الطالب');
+        } finally {
+          setIsProcessing(false);
+        }
+      },
+      showCancel: true,
+    });
+    setModalOpen(true);
+  };
+
+  const handleToggleStatus = (student: any) => {
+    const isDisabling = student.is_active;
+    setModalConfig({
+      title: isDisabling ? 'تعطيل الحساب' : 'تفعيل الحساب',
+      message: `هل أنت متأكد من ${isDisabling ? 'تعطيل' : 'تفعيل'} حساب الطالب "${student.name}"؟`,
+      confirmText: isDisabling ? 'تعطيل' : 'تفعيل',
+      variant: isDisabling ? 'danger' : 'success',
+      onConfirm: async () => {
+        try {
+          setIsProcessing(true);
+          await toggleAcademyStudentStatus(student.id);
+          setModalOpen(false);
+          fetchStudents();
+          fetchStats();
+          toast.success(`تم ${isDisabling ? 'تعطيل' : 'تفعيل'} الحساب بنجاح`);
+        } catch (error) {
+          console.error('Failed to toggle student status:', error);
+          toast.error(`فشل ${isDisabling ? 'تعطيل' : 'تفعيل'} الحساب`);
+        } finally {
+          setIsProcessing(false);
+        }
+      },
+      showCancel: true,
+    });
+    setModalOpen(true);
+  };
+
+  const columns = [
+    {
+      key: 'name',
+      label: 'الاسم',
+      sortable: true,
+      render: (_: string, row: any) => (
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#4263EB] to-[#3730A3] flex items-center justify-center overflow-hidden shrink-0">
+            {row.avatar ? (
+              <img src={row.avatar} alt={row.name} className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-white font-bold text-[0.9rem]">
+                {row.name?.charAt(0) || '?'}
+              </span>
+            )}
+          </div>
+          <div className="flex flex-col">
+            <span className={`font-semibold ${row.is_active ? '' : 'text-gray-light'}`}>
+              {row.name}
+            </span>
+            <div className="flex items-center gap-2 text-xs">
+              {row.is_active ? (
+                <span className="text-success">نشط</span>
+              ) : (
+                <span className="text-gray-400">غير مفعل</span>
+              )}
+            </div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'teachers',
+      label: 'المدرسين',
+      render: (_: any, row: any) => (
+        <div className="flex items-center gap-2">
+          <button 
+            className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition-colors ${
+              (row.teachers && row.teachers.length > 0) 
+                ? 'bg-blue-100 text-blue-600 hover:bg-blue-200 cursor-pointer' 
+                : 'bg-gray-100 text-gray-400 cursor-default'
+            }`}
+            onClick={(e) => {
+              if (!row.teachers || row.teachers.length === 0) return;
+              e.stopPropagation();
+              const rect = e.currentTarget.getBoundingClientRect();
+              setPopupPosition({
+                top: rect.bottom + window.scrollY + 5,
+                left: rect.left + window.scrollX,
+              });
+              setActiveTeacherPopup(row.id);
+            }}
+          >
+            {row.teachers_count || 0}
+          </button>
+        </div>
+      ),
+    },
+    {
+      key: 'phone',
+      label: 'رقم الطالب',
+      render: (_: any, row: any) => row.phone || '-',
+      className: 'd-none-md',
+    },
+    {
+      key: 'grade',
+      label: 'الصف الدراسي',
+      render: (_: any, row: any) => row.grade_name || '-',
+      className: 'd-none-lg',
+    },
+    {
+      key: 'group',
+      label: 'المجموعة',
+      render: (_: any, row: any) => row.group_name || '-',
+      className: 'd-none-md',
+    },
+  ];
+
+  const actions = [
+    {
+      label: 'عرض التفاصيل',
+      icon: 'fas fa-eye',
+      onClick: (row: any) => router.push(`/academy/students/${row.id}`),
+    },
+    {
+      label: 'ربط مدرس',
+      icon: 'fas fa-link',
+      onClick: (row: any) => {
+        setSelectedStudentForLink(row);
+        setLinkTeacherModalOpen(true);
+      },
+    },
+    {
+      label: 'تسجيل دفعة',
+      icon: 'fas fa-money-bill-wave',
+      onClick: (row: any) => router.push(`/academy/students/${row.id}/payment`),
+    },
+    {
+      label: 'تعديل',
+      icon: 'fas fa-edit',
+      onClick: (row: any) => router.push(`/academy/students/${row.id}/edit`),
+    },
+    {
+      label: (row: any) => row.is_active ? 'تعطيل الحساب' : 'تفعيل الحساب',
+      icon: (row: any) => row.is_active ? 'fas fa-ban' : 'fas fa-check-circle',
+      variant: (row: any) => row.is_active ? 'danger' : 'success',
+      onClick: (row: any) => handleToggleStatus(row),
+    },
+    {
+      label: 'إلغاء ربط',
+      icon: 'fas fa-trash-alt',
+      variant: 'danger' as 'danger',
+      onClick: (row: any) => handleDelete(row),
+    },
+  ];
+
+  return (
+    <DashboardLayout
+      role="academy"
+      user={{
+        name: user?.name || 'الأكاديمية',
+        avatar: user?.avatar || '',
+      }}
+    >
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <StatCard
+          title="إجمالي التسجيلات"
+          icon="fas fa-users"
+          value={stats?.total_enrollments || 0}
+          trend={{ 
+            value: Math.abs(stats?.total_enrollments_trend || 0), 
+            label: 'طالب', 
+            isPositive: (stats?.total_enrollments_trend || 0) >= 0 
+          }}
+          color="info"
+        />
+        <StatCard
+          title="الطلاب النشطين"
+          icon="fas fa-user-check"
+          value={stats?.active_enrollments || 0}
+          trend={{ 
+            value: Math.abs(stats?.active_enrollments_trend || 0), 
+            label: 'طالب', 
+            isPositive: (stats?.active_enrollments_trend || 0) >= 0 
+          }}
+          color="success"
+        />
+        <StatCard
+          title="الطلاب غير النشطين"
+          icon="fas fa-user-times"
+          value={stats?.inactive_enrollments || 0}
+          trend={{ 
+            value: Math.abs(stats?.inactive_enrollments_trend || 0), 
+            label: 'طالب', 
+            isPositive: (stats?.inactive_enrollments_trend || 0) >= 0 
+          }}
+          color="danger"
+        />
+      </div>
+
+      <DashboardCard
+        title="قائمة الطلاب"
+        icon="fas fa-table"
+      >
+        <DataTable
+          columns={columns}
+          data={students}
+          actions={actions}
+          isLoading={isLoading}
+          pagination={true}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          totalItems={totalItems}
+          onSearch={setSearchQuery}
+          headerActions={
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+              <Filter
+                options={[
+                  { value: '', label: 'كل الطلاب' },
+                  { value: 'active', label: 'الطلاب النشطين' },
+                  { value: 'inactive', label: 'الطلاب المعطلين' }
+                ]}
+                value={statusFilter}
+                onChange={(value) => setStatusFilter(value)}
+                className="w-full sm:w-auto min-w-[150px]"
+              />
+
+              <Link href="/academy/students/add" className="btn btn-primary w-full sm:w-auto justify-center">
+                <i className="fas fa-plus"></i>
+                <span>إضافة طالب جديد</span>
+              </Link>
+            </div>
+          }
+          rowClassName={(row) => row.is_active ? '' : 'bg-red-500/5 text-gray-500'}
+        />
+      </DashboardCard>
+
+      <ConfirmationModal
+        isOpen={modalOpen}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        confirmText={modalConfig.confirmText}
+        variant={modalConfig.variant}
+        onConfirm={modalConfig.onConfirm}
+        onCancel={() => setModalOpen(false)}
+        isProcessing={isProcessing}
+        showCancel={modalConfig.showCancel}
+      />
+
+      {/* Link Teacher Modal */}
+      {selectedStudentForLink && (
+        <LinkTeacherModal
+          isOpen={linkTeacherModalOpen}
+          onClose={() => setLinkTeacherModalOpen(false)}
+          student={selectedStudentForLink}
+          onSuccess={() => {
+            fetchStudents();
+            fetchStats();
+          }}
+        />
+      )}
+
+      {/* Teachers Popup */}
+      {activeTeacherPopup && typeof document !== 'undefined' && createPortal(
+        <div
+          ref={popupRef}
+          className="absolute z-[9999] bg-[#1E1E2D] border border-white/10 rounded-xl shadow-xl p-4 min-w-[250px] animate-in fade-in zoom-in-95 duration-200"
+          style={{
+            top: popupPosition.top,
+            left: popupPosition.left,
+          }}
+        >
+          <div className="flex items-center justify-between mb-3 pb-2 border-b border-white/10">
+            <h4 className="text-sm font-bold text-white">المدرسين المرتبطين</h4>
+            <button 
+              onClick={() => setActiveTeacherPopup(null)}
+              className="text-gray-400 hover:text-white transition-colors"
+            >
+              <i className="fas fa-times"></i>
+            </button>
+          </div>
+          <div className="space-y-2 max-h-[300px] overflow-y-auto custom-scrollbar">
+            {students.find(s => s.id === activeTeacherPopup)?.teachers?.map((teacher: any) => (
+              <div key={teacher.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold">
+                  {teacher.name?.charAt(0) || '?'}
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-sm text-white font-medium">{teacher.name}</span>
+                  <div className="flex items-center gap-2 text-[10px] text-gray-400">
+                    <span>{teacher.grade_name || '-'}</span>
+                    <span>•</span>
+                    <span>{teacher.group_name || '-'}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>,
+        document.body
+      )}
+    </DashboardLayout>
+  );
+}

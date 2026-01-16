@@ -54,11 +54,10 @@ export default function CreateLecturePage() {
       try {
         // Get teacher details which includes grades and groups
         const teacherResponse = await academyService.getTeacher(formData.teacher_id);
-        const teacherData = teacherResponse.data?.teacher || teacherResponse.data;
         
-        // Extract grades and groups from teacher data
-        setGrades(teacherData?.grades || []);
-        setGroups(teacherData?.groups || []);
+        // Extract grades and groups from the response (they are at the top level, not inside teacher)
+        setGrades(teacherResponse.data?.grades || []);
+        setGroups(teacherResponse.data?.groups || []);
         
         // Reset grade and group selection when teacher changes
         setFormData(prev => ({ ...prev, grade_id: '', group_id: '' }));
@@ -76,7 +75,12 @@ export default function CreateLecturePage() {
     setIsSubmitting(true);
 
     try {
-      await academyService.createLecture(formData);
+      const payload = { ...formData };
+      if (payload.is_recurring) {
+        delete payload.date;
+      }
+      
+      await academyService.createLecture(payload);
       toast.success('تم إضافة المحاضرة بنجاح');
       router.push('/academy/attendance');
     } catch (error: any) {

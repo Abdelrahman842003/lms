@@ -18,6 +18,7 @@ import {
   getCurrentUser,
   TeacherInfo,
   ChildInfo,
+  AcademyInfo,
 } from "@/services/authService";
 import { User } from "@/types";
 import toast from "react-hot-toast";
@@ -29,9 +30,11 @@ interface AuthContextType {
   isLoading: boolean;
   selectedTeacher: TeacherInfo | null;
   selectedChild: ChildInfo | null;
+  selectedAcademy: AcademyInfo | null;
   children: ChildInfo[];
   selectTeacher: (teacher: TeacherInfo) => void;
   selectChild: (child: ChildInfo) => void;
+  selectAcademy: (academy: AcademyInfo) => void;
   login: (
     phone: string,
     password: string,
@@ -63,6 +66,7 @@ export function AuthProvider({
     null
   );
   const [selectedChild, setSelectedChild] = useState<ChildInfo | null>(null);
+  const [selectedAcademy, setSelectedAcademy] = useState<AcademyInfo | null>(null);
   const [childrenList, setChildrenList] = useState<ChildInfo[]>([]);
   const { isLoading: isSettingsLoading } = useSettings();
 
@@ -87,6 +91,12 @@ export function AuthProvider({
       const storedTeacher = localStorage.getItem("selectedTeacher");
       if (storedTeacher) {
         setSelectedTeacher(JSON.parse(storedTeacher));
+      }
+
+      // Load selected academy
+      const storedAcademy = localStorage.getItem("selectedAcademy");
+      if (storedAcademy) {
+        setSelectedAcademy(JSON.parse(storedAcademy));
       }
 
       // Load parent children
@@ -473,6 +483,13 @@ export function AuthProvider({
     localStorage.setItem("selectedChild", JSON.stringify(child));
   };
 
+  const selectAcademy = (academy: AcademyInfo) => {
+    setSelectedAcademy(academy);
+    localStorage.setItem("selectedAcademy", JSON.stringify(academy));
+    // Reload the page to fetch new data
+    window.location.reload();
+  };
+
   const register = async (userData: RegisterData) => {
     try {
       setIsLoading(true);
@@ -635,9 +652,11 @@ export function AuthProvider({
     isLoading,
     selectedTeacher,
     selectedChild,
+    selectedAcademy,
     children: childrenList,
     selectTeacher,
     selectChild,
+    selectAcademy,
     login,
     logout,
     register,

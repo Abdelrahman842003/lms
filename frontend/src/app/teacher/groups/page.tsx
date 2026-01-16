@@ -9,10 +9,12 @@ import { DataTable } from '@/components/dashboard/DataTable';
 import { useAuth } from '@/contexts/AuthContext';
 import { getGroups, createGroup, updateGroup, deleteGroup, Group, CreateGroupData } from '@/services/groupService';
 import { getGrades, Grade as GradeType } from '@/services/gradeService';
+import { Select } from '@/components/ui/Select';
+import toast from 'react-hot-toast';
 
 export default function GroupsPage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, selectedAcademy, isLoading: authLoading } = useAuth();
   const [groups, setGroups] = useState<Group[]>([]);
   const [grades, setGrades] = useState<GradeType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -111,8 +113,11 @@ export default function GroupsPage() {
   }, [searchQuery]);
 
   useEffect(() => {
-    fetchGrades();
-  }, []);
+    // Fetch grades when auth is ready, regardless of academy mode
+    if (!authLoading) {
+      fetchGrades();
+    }
+  }, [selectedAcademy?.id, authLoading]);
 
   const fetchGroups = async (page = 1) => {
     try {
@@ -165,9 +170,11 @@ export default function GroupsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('handleSubmit called', formData);
     setTouched({ name: true, price: true });
     
     if (!validateForm()) {
+      console.log('Validation failed', validationErrors);
       return;
     }
     
@@ -176,15 +183,19 @@ export default function GroupsPage() {
     try {
       if (isEditing && selectedGroup) {
         await updateGroup(selectedGroup.id, formData);
+        toast.success('تم تحديث المجموعة بنجاح');
       } else {
+        console.log('Creating group with data:', formData);
         await createGroup(formData);
+        toast.success('تم إضافة المجموعة بنجاح');
       }
       setShowModal(false);
       setTouched({ name: false, price: false });
       setValidationErrors({});
       fetchGroups(currentPage);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to save group:', error);
+      toast.error(error.message || 'فشل حفظ المجموعة');
     } finally {
       setIsSubmitting(false);
     }
@@ -356,19 +367,16 @@ export default function GroupsPage() {
                 </div>
                 <div>
                   <label htmlFor="grade_id" className="block text-gray-light mb-2 text-sm">الصف الدراسي (اختياري)</label>
-                  <select
-                    id="grade_id"
-                    className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                  <Select
+                    options={[
+                      { value: '', label: 'لا يوجد' },
+                      ...grades.map(g => ({ value: g.id, label: g.name }))
+                    ]}
                     value={formData.grade_id || ''}
-                    onChange={(e) => setFormData({ ...formData, grade_id: e.target.value || null })}
-                  >
-                    <option value="" className="bg-[#1a1f37]">لا يوجد</option>
-                    {grades.map((grade) => (
-                      <option key={grade.id} value={grade.id} className="bg-[#1a1f37]">
-                        {grade.name}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(value) => setFormData({ ...formData, grade_id: value || null })}
+                    placeholder="اختر الصف الدراسي"
+                    className="w-full"
+                  />
                 </div>
                 <div>
                   <label htmlFor="time" className="block text-gray-light mb-2 text-sm">الموعد (اختياري)</label>
@@ -383,15 +391,16 @@ export default function GroupsPage() {
                 </div>
                 <div>
                   <label htmlFor="type" className="block text-gray-light mb-2 text-sm">نوع المجموعة</label>
-                  <select
-                    id="type"
-                    className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                  <Select
+                    options={[
+                      { value: 'general', label: 'عامة (سعر الصف)' },
+                      { value: 'private', label: 'خاصة (سعر مخصص)' }
+                    ]}
                     value={formData.type}
-                    onChange={(e) => setFormData({ ...formData, type: e.target.value as 'general' | 'private' })}
-                  >
-                    <option value="general" className="bg-[#1a1f37]">عامة (سعر الصف)</option>
-                    <option value="private" className="bg-[#1a1f37]">خاصة (سعر مخصص)</option>
-                  </select>
+                    onChange={(value) => setFormData({ ...formData, type: value as 'general' | 'private' })}
+                    placeholder="اختر نوع المجموعة"
+                    className="w-full"
+                  />
                 </div>
                 {formData.type === 'private' && (
                   <div>

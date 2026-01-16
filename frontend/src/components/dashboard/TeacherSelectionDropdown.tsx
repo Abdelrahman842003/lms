@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 
 import { ConfirmationModal } from '@/components/ui';
@@ -170,50 +170,11 @@ export const TeacherSelectionDropdown: React.FC = () => {
                   لا يوجد مدرسين مشترك معهم حالياً
                 </div>
               ) : (
-                user.teachers.map((teacher: any) => (
-                  <div 
-                    key={teacher.teacher_id}
-                    style={{ 
-                      padding: '1rem', 
-                      borderBottom: '1px solid rgba(255, 255, 255, 0.05)', 
-                      cursor: 'pointer',
-                      backgroundColor: selectedTeacher?.teacher_id === teacher.teacher_id ? 'rgba(66, 99, 235, 0.1)' : 'transparent',
-                      transition: 'background-color 0.2s',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '12px',
-                      opacity: teacher.status === 'expired' || teacher.status === 'inactive' ? 0.7 : 1
-                    }}
-                    onClick={() => handleTeacherSelect(teacher)}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)'}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = selectedTeacher?.teacher_id === teacher.teacher_id ? 'rgba(66, 99, 235, 0.1)' : 'transparent'}
-                  >
-                    <div style={{ width: '40px', height: '40px', borderRadius: '50%', overflow: 'hidden', background: '#333', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        {teacher.teacher_avatar ? (
-                            <img src={teacher.teacher_avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        ) : (
-                            <i className="fas fa-chalkboard-teacher" style={{ fontSize: '18px', color: '#aaa' }}></i>
-                        )}
-                    </div>
-                    <div style={{ flex: 1 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <h4 style={{ margin: 0, fontSize: '1rem', color: 'white' }}>{teacher.teacher_name}</h4>
-                            {teacher.status === 'grace_period' && (
-                                <span className="text-warning text-xs px-2 py-0.5 bg-warning/10 rounded-full">فترة سماح</span>
-                            )}
-                            {teacher.status === 'expired' && (
-                                <span className="text-danger text-xs px-2 py-0.5 bg-danger/10 rounded-full">منتهي</span>
-                            )}
-                        </div>
-                        <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: '#aaa' }}>
-                            {teacher.grade_name} - {teacher.group_name}
-                        </p>
-                    </div>
-                    {selectedTeacher?.teacher_id === teacher.teacher_id && (
-                        <i className="fas fa-check-circle" style={{ color: 'var(--primary)' }}></i>
-                    )}
-                  </div>
-                ))
+                <TeacherList 
+                  teachers={user.teachers} 
+                  selectedTeacher={selectedTeacher} 
+                  onSelect={handleTeacherSelect} 
+                />
               )}
             </div>
           </div>
@@ -233,3 +194,133 @@ export const TeacherSelectionDropdown: React.FC = () => {
     </div>
   );
 };
+
+const TeacherList = ({ teachers, selectedTeacher, onSelect }: { teachers: any[], selectedTeacher: any, onSelect: (t: any) => void }) => {
+  const [expandedAcademy, setExpandedAcademy] = useState<string | null>(null);
+
+  const grouped = useMemo(() => {
+    const academies: Record<string, { id: string, name: string, teachers: any[] }> = {};
+    const independent: any[] = [];
+
+    teachers.forEach(teacher => {
+      if (teacher.academy_id) {
+        if (!academies[teacher.academy_id]) {
+          academies[teacher.academy_id] = {
+            id: teacher.academy_id,
+            name: teacher.academy_name || 'أكاديمية غير معروفة',
+            teachers: []
+          };
+        }
+        academies[teacher.academy_id].teachers.push(teacher);
+      } else {
+        independent.push(teacher);
+      }
+    });
+
+    return { academies: Object.values(academies), independent };
+  }, [teachers]);
+
+  const toggleAcademy = (id: string) => {
+    setExpandedAcademy(expandedAcademy === id ? null : id);
+  };
+
+  return (
+    <>
+      {/* Academies */}
+      {grouped.academies.map(academy => (
+        <div key={academy.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
+          <div 
+            onClick={() => toggleAcademy(academy.id)}
+            style={{
+              padding: '1rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              backgroundColor: expandedAcademy === academy.id ? 'rgba(255, 255, 255, 0.03)' : 'transparent',
+              transition: 'background-color 0.2s'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = expandedAcademy === academy.id ? 'rgba(255, 255, 255, 0.03)' : 'transparent'}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: '8px', background: 'rgba(66, 99, 235, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#4263eb' }}>
+                <i className="fas fa-university"></i>
+              </div>
+              <span style={{ color: 'white', fontWeight: 500 }}>{academy.name}</span>
+            </div>
+            <i className={`fas fa-chevron-down ${expandedAcademy === academy.id ? 'fa-rotate-180' : ''}`} style={{ color: '#aaa', transition: 'transform 0.2s' }}></i>
+          </div>
+
+          {expandedAcademy === academy.id && (
+            <div style={{ backgroundColor: 'rgba(0, 0, 0, 0.2)' }}>
+              {academy.teachers.map(teacher => (
+                <TeacherItem 
+                  key={teacher.teacher_id} 
+                  teacher={teacher} 
+                  selectedTeacher={selectedTeacher} 
+                  onSelect={onSelect} 
+                  isNested={true}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
+
+      {/* Independent Teachers */}
+      {grouped.independent.map(teacher => (
+        <TeacherItem 
+          key={teacher.teacher_id} 
+          teacher={teacher} 
+          selectedTeacher={selectedTeacher} 
+          onSelect={onSelect} 
+        />
+      ))}
+    </>
+  );
+};
+
+const TeacherItem = ({ teacher, selectedTeacher, onSelect, isNested = false }: { teacher: any, selectedTeacher: any, onSelect: (t: any) => void, isNested?: boolean }) => (
+  <div 
+    style={{ 
+      padding: isNested ? '0.75rem 1rem 0.75rem 3.5rem' : '1rem', 
+      borderBottom: '1px solid rgba(255, 255, 255, 0.05)', 
+      cursor: 'pointer',
+      backgroundColor: selectedTeacher?.teacher_id === teacher.teacher_id ? 'rgba(66, 99, 235, 0.1)' : 'transparent',
+      transition: 'background-color 0.2s',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '12px',
+      opacity: teacher.status === 'expired' || teacher.status === 'inactive' ? 0.7 : 1
+    }}
+    onClick={() => onSelect(teacher)}
+    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)'}
+    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = selectedTeacher?.teacher_id === teacher.teacher_id ? 'rgba(66, 99, 235, 0.1)' : 'transparent'}
+  >
+    <div style={{ width: '40px', height: '40px', borderRadius: '50%', overflow: 'hidden', background: '#333', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {teacher.teacher_avatar ? (
+            <img src={teacher.teacher_avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        ) : (
+            <i className="fas fa-chalkboard-teacher" style={{ fontSize: '18px', color: '#aaa' }}></i>
+        )}
+    </div>
+    <div style={{ flex: 1 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h4 style={{ margin: 0, fontSize: '1rem', color: 'white' }}>{teacher.teacher_name}</h4>
+            {teacher.status === 'grace_period' && (
+                <span className="text-warning text-xs px-2 py-0.5 bg-warning/10 rounded-full">فترة سماح</span>
+            )}
+            {teacher.status === 'expired' && (
+                <span className="text-danger text-xs px-2 py-0.5 bg-danger/10 rounded-full">منتهي</span>
+            )}
+        </div>
+        <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: '#aaa' }}>
+            {teacher.grade_name} - {teacher.group_name}
+        </p>
+    </div>
+    {selectedTeacher?.teacher_id === teacher.teacher_id && (
+        <i className="fas fa-check-circle" style={{ color: 'var(--primary)' }}></i>
+    )}
+  </div>
+);
