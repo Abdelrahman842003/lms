@@ -25,9 +25,13 @@ class ScanService
             throw new \Exception('رمز QR غير صحيح أو الأكاديمية غير مفعلة');
         }
 
-        // Check if teacher belongs to this academy
-        if (!$academy->teachers()->where('teacher_id', $teacher->id)->exists()) {
-            throw new \Exception('أنت غير مسجل في هذه الأكاديمية');
+        // Check if teacher belongs to this academy and is active
+        $isActiveTeacher = $academy->activeTeachers()
+            ->where('teachers.id', $teacher->id)
+            ->exists();
+            
+        if (!$isActiveTeacher) {
+            throw new \Exception('أنت غير مسجل في هذه الأكاديمية أو حسابك غير نشط');
         }
 
         $today = Carbon::today();
@@ -75,9 +79,13 @@ class ScanService
             throw new \Exception('رمز QR غير صحيح أو الأكاديمية غير مفعلة');
         }
 
-        // Check if teacher belongs to this academy
-        if (!$academy->teachers()->where('teacher_id', $teacher->id)->exists()) {
-            throw new \Exception('أنت غير مسجل في هذه الأكاديمية');
+        // Check if teacher belongs to this academy and is active
+        $isActiveTeacher = $academy->activeTeachers()
+            ->where('teachers.id', $teacher->id)
+            ->exists();
+            
+        if (!$isActiveTeacher) {
+            throw new \Exception('أنت غير مسجل في هذه الأكاديمية أو حسابك غير نشط');
         }
 
         $today = Carbon::today();

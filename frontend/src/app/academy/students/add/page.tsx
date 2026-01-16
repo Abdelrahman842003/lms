@@ -5,7 +5,7 @@ import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { Filter } from '@/components/Filter';
 import { useAuth } from '@/contexts/AuthContext';
-import { createAcademyStudent, searchAcademyStudentByPhone, getGrades, getGroups, getExamTeachers } from '@/services/academyService';
+import { createAcademyStudent, searchAcademyStudentByPhone, getGrades, getGroups, getTeachers } from '@/services/academyService';
 import { useRouter } from 'next/navigation';
 
 interface Grade {
@@ -98,8 +98,10 @@ export default function AddStudentPage() {
   useEffect(() => {
     const fetchTeachers = async () => {
       try {
-        const teachersData = await getExamTeachers();
-        setTeachers(teachersData || []);
+        const response = await getTeachers();
+        // Extract teachers from response
+        const teachersData = response?.data?.data || response?.data || [];
+        setTeachers(teachersData);
       } catch (error) {
         console.error('Error fetching teachers:', error);
       }
@@ -684,7 +686,7 @@ export default function AddStudentPage() {
 
               <label htmlFor="grade_id" className="block text-gray-light mb-2 text-[0.95rem]">الصف الدراسي {!existingStudentFound && <span className="text-red-500">*</span>}</label>
               <Filter
-                options={grades.map(g => ({ value: g.id.toString(), label: g.name }))}
+                options={grades.filter(g => g?.id).map(g => ({ value: g.id.toString(), label: g.name }))}
                 value={formData.grade_id}
                 onChange={(value) => setFormData({ ...formData, grade_id: value, group_id: '' })}
                 placeholder={!formData.teacher_id ? 'اختر المدرس أولاً' : 'اختر الصف الدراسي'}
@@ -698,7 +700,7 @@ export default function AddStudentPage() {
 
               <label htmlFor="group_id" className="block text-gray-light mb-2 text-[0.95rem]">المجموعة {!existingStudentFound && <span className="text-red-500">*</span>}</label>
               <Filter
-                options={filteredGroups.map(g => ({ value: g.id.toString(), label: g.name }))}
+                options={filteredGroups.filter(g => g?.id).map(g => ({ value: g.id.toString(), label: g.name }))}
                 value={formData.group_id}
                 onChange={(value) => setFormData({ ...formData, group_id: value })}
                 placeholder={!formData.grade_id 

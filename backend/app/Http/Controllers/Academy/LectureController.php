@@ -312,6 +312,7 @@ class LectureController extends Controller
 
         $teachers = $academy->teachers()
             ->wherePivot('is_active', true)
+            ->where('teachers.status', 'active')
             ->select('teachers.id', 'teachers.name', 'teachers.phone')
             ->get();
 

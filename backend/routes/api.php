@@ -162,6 +162,15 @@ Route::middleware('auth:sanctum')->prefix('academy')->name('academy.')->group(fu
     Route::post('grades/bulk-delete', [\App\Http\Controllers\Academy\GradeController::class, 'bulkDelete']);
     Route::apiResource('grades', \App\Http\Controllers\Academy\GradeController::class);
     Route::apiResource('groups', \App\Http\Controllers\Academy\GroupController::class);
+
+    // Students Management
+    Route::get('students/statistics', [\App\Http\Controllers\Academy\StudentController::class, 'statistics']);
+    Route::get('students/search-phone', [\App\Http\Controllers\Academy\StudentController::class, 'searchByPhone']);
+    Route::put('students/{student}/toggle-status', [\App\Http\Controllers\Academy\StudentController::class, 'toggleStatus']);
+    Route::apiResource('students', \App\Http\Controllers\Academy\StudentController::class);
+
+    // Payments
+    Route::post('payments', [\App\Http\Controllers\Academy\PaymentController::class, 'store']);
 });
 
 // ============================================

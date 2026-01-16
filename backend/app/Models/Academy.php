@@ -76,7 +76,9 @@ class Academy extends Model implements AuthenticatableContract
      */
     public function activeTeachers()
     {
-        return $this->teachers()->wherePivot('is_active', true);
+        return $this->teachers()
+            ->wherePivot('is_active', true)
+            ->where('teachers.status', 'active');
     }
 
     /**

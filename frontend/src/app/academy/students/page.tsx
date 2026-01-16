@@ -242,12 +242,6 @@ export default function AcademyStudentsPage() {
       render: (_: any, row: any) => row.grade_name || '-',
       className: 'd-none-lg',
     },
-    {
-      key: 'group',
-      label: 'المجموعة',
-      render: (_: any, row: any) => row.group_name || '-',
-      className: 'd-none-md',
-    },
   ];
 
   const actions = [

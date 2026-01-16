@@ -55,15 +55,13 @@ export const LinkTeacherModal: React.FC<LinkTeacherModalProps> = ({
       // toast.loading('جاري تحميل الصفوف...', { id: 'loading-grades' });
       console.log('Fetching grades for teacher:', teacherId);
       
-      const gradesData = await getGrades(1, 100, { teacher_id: teacherId });
-      console.log('Grades response:', gradesData);
+      const [gradesData, groupsData] = await Promise.all([
+        getGrades(1, 100, { teacher_id: teacherId }),
+        getGroups(1, 100, { teacher_id: teacherId })
+      ]);
       
       // Robust extraction for grades
       let gradesList = [];
-      // The service returns response.data, which is { status: true, data: { data: [...], meta: ... } }
-      // So gradesData is that object.
-      // gradesData.data is { data: [...], meta: ... }
-      
       if (gradesData?.data?.data && Array.isArray(gradesData.data.data)) {
         gradesList = gradesData.data.data;
       } else if (gradesData?.data && Array.isArray(gradesData.data)) {
@@ -71,11 +69,22 @@ export const LinkTeacherModal: React.FC<LinkTeacherModalProps> = ({
       } else if (Array.isArray(gradesData)) {
         gradesList = gradesData;
       }
+
+      // Robust extraction for groups
+      let groupsList = [];
+      if (groupsData?.data?.data && Array.isArray(groupsData.data.data)) {
+        groupsList = groupsData.data.data;
+      } else if (groupsData?.data && Array.isArray(groupsData.data)) {
+        groupsList = groupsData.data;
+      } else if (Array.isArray(groupsData)) {
+        groupsList = groupsData;
+      }
       
       toast.dismiss('loading-grades');
-      toast.success(`تم العثور على ${gradesList.length} صف دراسي`);
+      // toast.success(`تم العثور على ${gradesList.length} صف دراسي و ${groupsList.length} مجموعة`);
       
       setGrades(gradesList);
+      setGroups(groupsList);
     } catch (error) {
       console.error('Failed to fetch grades:', error);
       toast.error('فشل تحميل الصفوف الدراسية');
@@ -211,7 +220,9 @@ export const LinkTeacherModal: React.FC<LinkTeacherModalProps> = ({
               <div>
                 <label className="block text-sm text-gray-400 mb-1">الصف الدراسي <span className="text-red-500">*</span></label>
                 <Filter
-                  options={grades.map(g => ({ value: g.id.toString(), label: g.name }))}
+                  options={grades
+                    .filter(g => g?.id)
+                    .map(g => ({ value: g.id.toString(), label: g.name || 'Unknown' }))}
                   value={formData.grade_id}
                   onChange={(val) => setFormData({ ...formData, grade_id: val, group_id: '' })}
                   placeholder="اختر الصف"

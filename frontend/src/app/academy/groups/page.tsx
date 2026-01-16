@@ -80,8 +80,8 @@ export default function AcademyGroupsPage() {
     if (formData.teacher_id) {
       const fetchTeacherGrades = async () => {
         try {
-          const response = await academyService.getTeacher(formData.teacher_id);
-          setGrades(response.data?.grades || []);
+          const response = await academyService.getGrades(1, 100, { teacher_id: formData.teacher_id });
+          setGrades(response.data?.data || []);
         } catch (error) {
           console.error('Failed to fetch teacher grades:', error);
           setGrades([]);

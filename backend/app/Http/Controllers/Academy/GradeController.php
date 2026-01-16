@@ -16,12 +16,25 @@ class GradeController extends Controller
         $academy = Auth::user();
         $perPage = $request->input('per_page', 10);
         
-        // Base query: Grades for all teachers belonging to this academy
+        // Base query: Grades for all ACTIVE teachers belonging to this academy
         $query = Grade::whereHas('teacher', function ($q) use ($academy) {
-            $q->whereHas('academies', function ($q2) use ($academy) {
-                $q2->where('academy_id', $academy->id);
-            });
+            $q->where('teachers.status', 'active')
+              ->whereHas('academies', function ($q2) use ($academy) {
+                  $q2->where('academy_id', $academy->id)
+                     ->where('academy_teacher.is_active', true);
+              });
         });
+
+        // Filter by teacher_id if provided
+        if ($request->has('teacher_id') && $request->teacher_id) {
+            $grades = $query->where('teacher_id', $request->teacher_id)
+                ->select('id', 'name', 'price', 'teacher_id')
+                ->get();
+                
+            return $this->successResponse([
+                'data' => $grades
+            ]);
+        }
 
         // 1. Detail View: If filtering by specific grade name
         if ($request->has('name') && $request->name !== null && $request->name !== '') {
@@ -76,11 +89,13 @@ class GradeController extends Controller
 
         $academy = Auth::user();
         
-        // If teacher_id is provided, verify it belongs to academy
+        // If teacher_id is provided, verify it belongs to academy and is active
         if ($request->teacher_id) {
             $teacher = Teacher::where('id', $request->teacher_id)
+                ->where('teachers.status', 'active')
                 ->whereHas('academies', function ($q) use ($academy) {
-                    $q->where('academy_id', $academy->id);
+                    $q->where('academy_id', $academy->id)
+                      ->where('academy_teacher.is_active', true);
                 })->firstOrFail();
 
             $grade = $teacher->grades()->create([
@@ -182,12 +197,14 @@ class GradeController extends Controller
 
         $academy = Auth::user();
 
-        // Update all grades with old_name belonging to teachers in this academy
+        // Update all grades with old_name belonging to ACTIVE teachers in this academy
         $count = Grade::where('name', $request->old_name)
             ->whereHas('teacher', function ($q) use ($academy) {
-                $q->whereHas('academies', function ($q2) use ($academy) {
-                    $q2->where('academy_id', $academy->id);
-                });
+                $q->where('teachers.status', 'active')
+                  ->whereHas('academies', function ($q2) use ($academy) {
+                      $q2->where('academy_id', $academy->id)
+                         ->where('academy_teacher.is_active', true);
+                  });
             })
             ->update(['name' => $request->new_name]);
 
@@ -204,12 +221,14 @@ class GradeController extends Controller
 
         $academy = Auth::user();
 
-        // Delete all grades with name belonging to teachers in this academy
+        // Delete all grades with name belonging to ACTIVE teachers in this academy
         $count = Grade::where('name', $request->name)
             ->whereHas('teacher', function ($q) use ($academy) {
-                $q->whereHas('academies', function ($q2) use ($academy) {
-                    $q2->where('academy_id', $academy->id);
-                });
+                $q->where('teachers.status', 'active')
+                  ->whereHas('academies', function ($q2) use ($academy) {
+                      $q2->where('academy_id', $academy->id)
+                         ->where('academy_teacher.is_active', true);
+                  });
             })
             ->delete();
 

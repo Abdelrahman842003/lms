@@ -15,7 +15,8 @@ interface AcademyStatsChartsProps {
   stats: {
     actual_revenue?: number;
     students_count: number;
-    revenue_trend?: Array<{ date: string; amount: number }>;
+    revenue_chart?: Array<{ label: string; revenue: number; month: string }>;
+    revenue_trend?: Array<{ date: string; amount: number }>; // Keep for backward compatibility if needed
   };
 }
 
@@ -34,8 +35,11 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 export const AcademyStatsCharts: React.FC<AcademyStatsChartsProps> = ({ stats }) => {
-  // Mock data if trend is missing
-  const data = stats.revenue_trend || [
+  // Map backend data to chart format
+  const data = stats.revenue_chart?.map(item => ({
+    date: item.label, // Use Arabic label
+    amount: Number(item.revenue) // Ensure number
+  })) || stats.revenue_trend || [
     { date: 'يناير', amount: 0 },
     { date: 'فبراير', amount: 0 },
     { date: 'مارس', amount: 0 },

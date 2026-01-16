@@ -30,7 +30,7 @@ class TeacherResource extends JsonResource
         } elseif ($this->status === 'suspended') {
             $status = 'معلق';
         } elseif (!$isActive) {
-            $status = 'غير نشط';
+            $status = 'معلق';
         }
         
         return [

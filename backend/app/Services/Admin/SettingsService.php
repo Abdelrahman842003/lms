@@ -55,6 +55,7 @@ class SettingsService
             'siteDescription', 
             'maintenanceMode', 
             'whatsappNumber',
+            'academy_student_price',
             'seo_title',
             'seo_description',
             'seo_keywords',

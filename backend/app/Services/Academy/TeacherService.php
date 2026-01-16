@@ -15,13 +15,28 @@ class TeacherService
     /**
      * Get paginated teachers for academy
      */
-    public function getTeachers(Academy $academy, int $perPage, ?string $search = null): LengthAwarePaginator
+    public function getTeachers(Academy $academy, int $perPage, ?string $search = null, ?string $status = null): LengthAwarePaginator
     {
         return $academy->teachers()
             ->select('teachers.*')
+            ->when($status, function ($query) use ($status) {
+                if ($status === 'active') {
+                    $query->where('academy_teacher.is_active', true)
+                          ->where('teachers.status', 'active');
+                } elseif ($status === 'pending') {
+                    $query->where('teachers.status', 'pending');
+                } elseif ($status === 'inactive') {
+                    $query->where('academy_teacher.is_active', false);
+                }
+            }, function ($query) {
+                // Default: show all teachers linked to academy regardless of status
+                // No default filter needed as we want to see all teachers
+            })
             ->when($search, function ($query) use ($search) {
-                $query->where('name', 'like', "%{$search}%")
-                      ->orWhere('phone', 'like', "%{$search}%");
+                $query->where(function($q) use ($search) {
+                    $q->where('teachers.name', 'like', "%{$search}%")
+                      ->orWhere('teachers.phone', 'like', "%{$search}%");
+                });
             })
             ->withPivot('is_active', 'joined_at')
             ->paginate($perPage);
@@ -52,11 +67,30 @@ class TeacherService
      */
     public function addTeacher(Academy $academy, string $teacherId): Teacher
     {
-        // Check if teacher already exists
-        if ($academy->teachers()->where('teacher_id', $teacherId)->exists()) {
+        // Check if teacher already exists in academy
+        $existingPivot = $academy->teachers()->where('teacher_id', $teacherId)->first();
+        
+        if ($existingPivot) {
+            // If teacher exists but is inactive, reactivate them
+            if (!$existingPivot->pivot->is_active) {
+                $academy->teachers()->updateExistingPivot($teacherId, [
+                    'is_active' => true,
+                    'joined_at' => Carbon::now(),
+                ]);
+                
+                // Reload teacher with updated pivot data
+                return $academy->teachers()
+                    ->select('teachers.*')
+                    ->withPivot('is_active', 'joined_at')
+                    ->where('teacher_id', $teacherId)
+                    ->first();
+            }
+            
+            // Teacher is already active in this academy
             throw new \Exception('المدرس موجود بالفعل في الأكاديمية');
         }
 
+        // Teacher doesn't exist in academy, add them
         $academy->teachers()->attach($teacherId, [
             'is_active' => true,
             'joined_at' => Carbon::now(),
@@ -83,8 +117,8 @@ class TeacherService
         $teacher = Teacher::create([
             'name' => $data->name,
             'phone' => $data->phone,
-            'password' => $data->password,
-            'status' => 'pending', // New teachers need admin approval
+            'password' => \Illuminate\Support\Facades\Hash::make($data->password),
+            'status' => 'pending', // Default to pending for new teachers
         ]);
 
         $academy->teachers()->attach($teacher->id, [

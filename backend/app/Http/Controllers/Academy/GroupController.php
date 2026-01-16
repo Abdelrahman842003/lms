@@ -17,15 +17,20 @@ class GroupController extends Controller
         $perPage = $request->input('per_page', 10);
         
         $groups = Group::whereHas('teacher', function ($query) use ($academy) {
-            $query->whereHas('academies', function ($q) use ($academy) {
-                $q->where('academy_id', $academy->id);
-            });
+            $query->where('teachers.status', 'active')
+                  ->whereHas('academies', function ($q) use ($academy) {
+                      $q->where('academy_id', $academy->id)
+                        ->where('academy_teacher.is_active', true);
+                  });
         })
         ->when($request->search, function ($query, $search) {
             $query->where('name', 'like', "%{$search}%");
         })
         ->when($request->grade_id, function ($query, $gradeId) {
             $query->where('grade_id', $gradeId);
+        })
+        ->when($request->teacher_id, function ($query, $teacherId) {
+            $query->where('teacher_id', $teacherId);
         })
         ->with(['teacher', 'grade'])
         ->latest()
@@ -50,10 +55,12 @@ class GroupController extends Controller
 
         $academy = Auth::user();
         
-        // Verify teacher belongs to academy
+        // Verify teacher belongs to academy and is active
         $teacher = Teacher::where('id', $request->teacher_id)
+            ->where('teachers.status', 'active')
             ->whereHas('academies', function ($q) use ($academy) {
-                $q->where('academy_id', $academy->id);
+                $q->where('academy_id', $academy->id)
+                  ->where('academy_teacher.is_active', true);
             })->firstOrFail();
 
         // If grade_id is provided, verify it belongs to the teacher

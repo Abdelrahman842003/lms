@@ -28,8 +28,9 @@ class TeacherController extends Controller
 
         $perPage = (int) $request->input('per_page', 10);
         $search = $request->input('search');
+        $status = $request->input('status');
 
-        $teachers = $this->teacherService->getTeachers($academy, $perPage, $search);
+        $teachers = $this->teacherService->getTeachers($academy, $perPage, $search, $status);
 
         return $this->successResponse(TeacherResource::collection($teachers));
     }
@@ -66,8 +67,14 @@ class TeacherController extends Controller
         // If teacher_id is provided, we link existing teacher
         if ($request->has('teacher_id')) {
             try {
-                $teacher = $this->teacherService->addTeacher($academy, $request->validated('teacher_id'));
-                return $this->successResponse(new TeacherResource($teacher), 'تم إضافة المدرس بنجاح', 201);
+                $teacherId = $request->validated('teacher_id');
+                
+                $teacher = $this->teacherService->addTeacher($academy, $teacherId);
+                
+                // Check if this was a reactivation or new addition
+                $message = 'تم إضافة المدرس بنجاح';
+                
+                return $this->successResponse(new TeacherResource($teacher), $message, 201);
             } catch (\Exception $e) {
                 return $this->errorResponse($e->getMessage(), 400);
             }
