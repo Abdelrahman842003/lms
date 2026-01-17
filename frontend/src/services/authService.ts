@@ -671,6 +671,12 @@ export async function removeFromAcademy(teacherId: string, academyId: string): P
   });
 }
 
+export async function deleteTeacher(id: string): Promise<any> {
+  return await fetchApi(`/admin/teachers/${id}`, {
+    method: 'DELETE',
+  });
+}
+
 /**
  * Login as a teacher (Admin only)
  */

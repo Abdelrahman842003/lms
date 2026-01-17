@@ -254,4 +254,10 @@ class TeacherService
         
         return $teacher->load('academies');
     }
+
+    public function deleteTeacher(string $teacherId): void
+    {
+        $teacher = Teacher::findOrFail($teacherId);
+        $teacher->delete();
+    }
 }

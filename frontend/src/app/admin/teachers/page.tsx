@@ -7,11 +7,12 @@ import { DataTable } from '@/components/dashboard/DataTable';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { useAuth } from '@/contexts/AuthContext';
-import { getTeachers, createTeacher, updateTeacher, toggleTeacherStatus, loginAsTeacher, getDashboardStats, updateTeacherSubscription, getTeacherSubscription, approveTeacher, enableIndependent, disableIndependent, addToAcademy, removeFromAcademy } from '@/services/authService';
+import { getTeachers, createTeacher, updateTeacher, toggleTeacherStatus, loginAsTeacher, getDashboardStats, updateTeacherSubscription, getTeacherSubscription, approveTeacher, enableIndependent, disableIndependent, addToAcademy, removeFromAcademy, deleteTeacher } from '@/services/authService';
 import { toast } from 'react-hot-toast';
 import { Avatar } from '@/components/ui';
 import { Filter } from '@/components/Filter';
 import AffiliationModal from '@/components/admin/teachers/AffiliationModal';
+import ConfirmationModal from '@/components/ui/ConfirmationModal';
 
 // Subscription Modal Component
 const SubscriptionModal = ({ 
@@ -220,6 +221,11 @@ export default function AdminTeachersPage() {
   const [totalStudents, setTotalStudents] = useState(0);
   const [pendingTeachers, setPendingTeachers] = useState(0);
   const itemsPerPage = 10;
+  
+  // Delete Confirmation State
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [teacherToDelete, setTeacherToDelete] = useState<any>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
 
   // Real-time validation function
@@ -546,6 +552,29 @@ export default function AdminTeachersPage() {
     setAffiliationModalOpen(true);
   };
 
+  const handleDelete = (teacher: any) => {
+    setTeacherToDelete(teacher);
+    setDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!teacherToDelete) return;
+    
+    setIsDeleting(true);
+    try {
+      await deleteTeacher(teacherToDelete.id);
+      toast.success('تم حذف المدرس بنجاح');
+      fetchTeachers(currentPage);
+      setDeleteModalOpen(false);
+      setTeacherToDelete(null);
+    } catch (error) {
+      console.error('Failed to delete teacher', error);
+      toast.error('فشل حذف المدرس');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const tableActions = [
     {
       label: 'موافقة',
@@ -617,6 +646,13 @@ export default function AdminTeachersPage() {
         setIsModalOpen(true);
       },
     },
+    {
+      label: 'حذف',
+      icon: 'fas fa-trash-alt',
+      variant: 'danger' as const,
+      onClick: (row: any) => handleDelete(row),
+    },
+
   ];
 
 
@@ -645,7 +681,7 @@ export default function AdminTeachersPage() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <StatCard
             title="إجمالي المدرسين"
             value={totalItems}
@@ -750,6 +786,22 @@ export default function AdminTeachersPage() {
           }}
           teacher={selectedTeacherForAffiliation}
           onSuccess={() => fetchTeachers(currentPage)}
+        />
+
+        {/* Delete Confirmation Modal */}
+        <ConfirmationModal
+          isOpen={deleteModalOpen}
+          onCancel={() => {
+            setDeleteModalOpen(false);
+            setTeacherToDelete(null);
+          }}
+          onConfirm={confirmDelete}
+          title="حذف المدرس"
+          message={`هل أنت متأكد من حذف المدرس "${teacherToDelete?.name}"؟ هذا الإجراء لا يمكن التراجع عنه.`}
+          confirmText="حذف"
+          cancelText="إلغاء"
+          variant="danger"
+          isProcessing={isDeleting}
         />
 
         {/* Add/Edit Teacher Modal */}
