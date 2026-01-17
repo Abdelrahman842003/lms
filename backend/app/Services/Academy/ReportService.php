@@ -6,8 +6,13 @@ namespace App\Services\Academy;
 
 use App\Models\Academy;
 use App\Models\TeacherAttendanceLog;
+use App\Models\Lecture;
+use App\Models\Exam;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Models\Setting;
+use App\Models\PaymentLog;
+use Illuminate\Support\Facades\DB;
 
 class ReportService
 {
@@ -124,6 +129,7 @@ class ReportService
         );
 
         $teachers = $academy->activeTeachers()->get();
+        $teacherIds = $teachers->pluck('id')->toArray();
         $totalStudents = 0;
 
         foreach ($teachers as $teacher) {
@@ -132,10 +138,13 @@ class ReportService
 
         // Calculate financial details
         // Get revenue from active enrollments through academy's teachers
+
+        $teachersDetails = [];
         $totalRevenue = 0;
+
         foreach ($teachers as $teacher) {
             // Get active enrollments for this teacher in the period
-            $teacherRevenue = \DB::table('enrollments')
+            $teacherRevenue = DB::table('enrollments')
                 ->join('grades', 'enrollments.grade_id', '=', 'grades.id')
                 ->where('enrollments.teacher_id', $teacher->id)
                 ->whereBetween('enrollments.created_at', [$startDate, $endDate])
@@ -143,11 +152,65 @@ class ReportService
                 ->sum('grades.price');
             
             $totalRevenue += $teacherRevenue;
+
+            $teachersDetails[] = [
+                'name' => $teacher->name,
+                'status' => $teacher->is_active ? 'نشط' : 'غير نشط',
+                'total_students' => $teacher->activeEnrollments()->count(),
+                'active_subscriptions' => $teacher->activeEnrollments()
+                    ->whereBetween('created_at', [$startDate, $endDate])
+                    ->count(),
+                'secretaries_count' => $teacher->secretaries()->count(),
+                'total_revenue' => $teacherRevenue,
+            ];
         }
 
-        // Platform fee is typically 10% (you can adjust this)
-        $platformFeePercentage = 0.10;
-        $platformFees = $totalRevenue * $platformFeePercentage;
+        // Calculate monthly breakdown
+        $monthlyBreakdown = [];
+        if ($month === 0) {
+            // Group by month for the whole year
+            $monthlyStats = DB::table('enrollments')
+                ->join('grades', 'enrollments.grade_id', '=', 'grades.id')
+                ->whereIn('enrollments.teacher_id', $teacherIds)
+                ->whereYear('enrollments.created_at', $year)
+                ->where('enrollments.is_active', 1)
+                ->select(
+                    DB::raw('MONTH(enrollments.created_at) as month'),
+                    DB::raw('COUNT(*) as new_subscriptions_count'),
+                    DB::raw('SUM(grades.price) as confirmed_payments_total')
+                )
+                ->groupBy('month')
+                ->get();
+
+            foreach ($monthlyStats as $stat) {
+                $monthlyBreakdown[] = [
+                    'month_name' => Carbon::createFromDate($year, $stat->month, 1)->locale('ar')->monthName . ' ' . $year,
+                    'new_subscriptions_count' => $stat->new_subscriptions_count,
+                    'confirmed_payments_total' => $stat->confirmed_payments_total,
+                ];
+            }
+        } else {
+            // Single month breakdown (just one row)
+            $monthlyBreakdown[] = [
+                'month_name' => Carbon::createFromDate($year, $month, 1)->locale('ar')->monthName . ' ' . $year,
+                'new_subscriptions_count' => DB::table('enrollments')
+                    ->whereIn('teacher_id', $teacherIds)
+                    ->whereBetween('created_at', [$startDate, $endDate])
+                    ->where('is_active', 1)
+                    ->count(),
+                'confirmed_payments_total' => $totalRevenue,
+            ];
+        }
+
+        // Platform fee calculation
+        $academyStudentPrice = (float) Setting::getValue('academy_student_price', 0);
+        
+        $totalMonthsPaid = PaymentLog::whereIn('teacher_id', $teacherIds)
+            ->whereBetween('confirmed_at', [$startDate, $endDate])
+            ->where('status', 'confirmed')
+            ->sum('months');
+
+        $platformFees = $totalMonthsPaid * $academyStudentPrice;
         $netRevenue = $totalRevenue - $platformFees;
 
         // Get billing for this month if exists (only if specific month selected)
@@ -158,6 +221,27 @@ class ReportService
                 ->where('year', $year)
                 ->first();
         }
+
+        // Calculate additional stats
+        
+        // Linked students count (Total active enrollments)
+        $linkedStudentsCount = \DB::table('enrollments')
+            ->whereIn('teacher_id', $teacherIds)
+            ->where('is_active', true)
+            ->count();
+
+        // Total lectures in the period
+        $totalLecturesCount = Lecture::where('academy_id', $academy->id)
+            ->whereBetween('start_time', [$startDate, $endDate])
+            ->count();
+
+        // Total exams in the period
+        $totalExamsCount = Exam::whereIn('teacher_id', $teacherIds)
+            ->whereBetween('date', [$startDate, $endDate])
+            ->count();
+
+        // Total secretaries
+        $totalSecretariesCount = $academy->secretaries()->count();
 
         return [
             'academy' => [
@@ -172,16 +256,19 @@ class ReportService
             ],
             'summary' => [
                 'total_teachers' => $teachers->count(),
-                'total_students' => $totalStudents,
-                'total_attendance_logs' => $attendanceLogs->count(),
+                'linked_students_count' => $linkedStudentsCount,
+                'total_lectures_count' => $totalLecturesCount,
+                'total_exams_count' => $totalExamsCount,
+                'total_secretaries_count' => $totalSecretariesCount,
                 ...$attendanceStats['summary'] ?? [],
             ],
             'financial_details' => [
-                'total_revenue' => round($totalRevenue, 2),
-                'platform_fees' => round($platformFees, 2),
-                'net_revenue' => round($netRevenue, 2),
-                'platform_fee_percentage' => $platformFeePercentage * 100,
+                'net_payments_to_academy' => round($netRevenue, 2),
+                'payments_due_to_platform' => round($platformFees, 2),
+                'payment_status' => $billing ? $billing->status : 'unpaid',
             ],
+            'teachers_details' => $teachersDetails,
+            'monthly_breakdown' => $monthlyBreakdown,
             'attendance_logs' => $attendanceLogs,
             'attendance_stats' => $attendanceStats,
             'billing' => $billing ? [

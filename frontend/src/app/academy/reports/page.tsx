@@ -17,6 +17,10 @@ const translateSummaryKey = (key: string): string => {
   const translations: Record<string, string> = {
     'total_teachers': 'إجمالي المدرسين',
     'total_students': 'إجمالي الطلاب',
+    'linked_students_count': 'الطلاب المرتبطين',
+    'total_lectures_count': 'إجمالي المحاضرات',
+    'total_exams_count': 'إجمالي الامتحانات',
+    'total_secretaries_count': 'إجمالي السكيرتيرات',
     'total_enrollments': 'إجمالي الارتباطات',
     'total_attendance_logs': 'إجمالي سجلات الحضور',
     'total_days': 'إجمالي الأيام',
@@ -31,6 +35,9 @@ const translateSummaryKey = (key: string): string => {
     'total_revenue': 'إجمالي الإيرادات',
     'platform_fees': 'رسوم المنصة',
     'net_revenue': 'صافي الإيرادات',
+    'net_payments_to_academy': 'المدفوعات الصافيه للاكاديميه',
+    'payments_due_to_platform': 'المدفوعات المستحقه للمنصه',
+    'payment_status': 'حاله الدفع',
   };
   return translations[key] || key.replace(/_/g, ' ');
 };
@@ -61,11 +68,24 @@ export default function ReportsPage() {
 
     try {
       let response;
-      const params = { month, year };
+
 
       switch (reportType) {
         case 'attendance':
-          response = await academyService.getAttendanceReport(params);
+          let dateFrom, dateTo;
+          if (month === 0) {
+            dateFrom = `${year}-01-01`;
+            dateTo = `${year}-12-31`;
+          } else {
+            const lastDay = new Date(year, month, 0).getDate();
+            dateFrom = `${year}-${month.toString().padStart(2, '0')}-01`;
+            dateTo = `${year}-${month.toString().padStart(2, '0')}-${lastDay}`;
+          }
+          
+          response = await academyService.getAttendanceReport({
+            date_from: dateFrom,
+            date_to: dateTo
+          });
           break;
 
         case 'monthly':
@@ -92,11 +112,25 @@ export default function ReportsPage() {
     setIsDownloading(true);
 
     try {
-      const params = {
+      let params: any = {
         report_type: reportType,
         month,
         year,
       };
+
+      if (reportType === 'attendance') {
+        let dateFrom, dateTo;
+        if (month === 0) {
+          dateFrom = `${year}-01-01`;
+          dateTo = `${year}-12-31`;
+        } else {
+          const lastDay = new Date(year, month, 0).getDate();
+          dateFrom = `${year}-${month.toString().padStart(2, '0')}-01`;
+          dateTo = `${year}-${month.toString().padStart(2, '0')}-${lastDay}`;
+        }
+        params.date_from = dateFrom;
+        params.date_to = dateTo;
+      }
 
       await academyService.exportReportToPDF(params);
       toast.success('تم تحميل التقرير بنجاح');
@@ -236,12 +270,15 @@ export default function ReportsPage() {
 
         {/* Report Results */}
         {report && (
+          console.log('Report Data:', report),
           <DashboardCard title="نتائج التقرير" icon="fas fa-chart-bar">
             <div className="space-y-6">
               {/* Summary Stats */}
               {report.summary && (
                 <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4">
-                  {Object.entries(report.summary).map(([key, value]: any) => (
+                  {Object.entries(report.summary)
+                    .filter(([key]) => !['total_days', 'average_duration_minutes', 'total_duration_minutes', 'total_checked_in', 'total_attendance_logs'].includes(key))
+                    .map(([key, value]: any) => (
                     <div key={key} className="p-4 bg-white/5 rounded-xl border border-white/10">
                       <h4 className="text-gray-400 text-sm mb-1">
                         {translateSummaryKey(key)}
@@ -253,7 +290,7 @@ export default function ReportsPage() {
               )}
 
               {/* Financial Summary Detailed */}
-              {report.financial_summary_detailed && (
+              {report.financial_details && (
                 <div className="mt-6">
                   <h3 className="text-white text-lg font-semibold mb-4 flex items-center gap-2">
                     <i className="fas fa-coins text-primary"></i>
@@ -268,12 +305,22 @@ export default function ReportsPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-white/5 text-white">
-                        {report.financial_summary_detailed.items.map((item: any, index: number) => (
-                          <tr key={index} className="hover:bg-white/5 transition-colors">
-                            <td className="p-4">{item.label}</td>
-                            <td className="p-4 font-bold text-primary">{item.value}</td>
-                          </tr>
-                        ))}
+                        <tr className="hover:bg-white/5 transition-colors">
+                          <td className="p-4">المدفوعات الصافيه للاكاديميه</td>
+                          <td className="p-4 font-bold text-primary">{report.financial_details.net_payments_to_academy} ج.م</td>
+                        </tr>
+                        <tr className="hover:bg-white/5 transition-colors">
+                          <td className="p-4">المدفوعات المستحقه للمنصه</td>
+                          <td className="p-4 font-bold text-warning">{report.financial_details.payments_due_to_platform} ج.م</td>
+                        </tr>
+                        <tr className="hover:bg-white/5 transition-colors">
+                          <td className="p-4">حاله الدفع</td>
+                          <td className="p-4">
+                            <span className={`badge ${report.financial_details.payment_status === 'paid' ? 'badge-success' : 'badge-danger'}`}>
+                              {report.financial_details.payment_status === 'paid' ? 'مدفوع' : 'غير مدفوع'}
+                            </span>
+                          </td>
+                        </tr>
                       </tbody>
                     </table>
                   </div>
@@ -310,7 +357,7 @@ export default function ReportsPage() {
                     ]}
                     data={report.teachers_details}
                     isLoading={false}
-                    searchable={true}
+                    searchable={false}
                     pagination={true}
                     itemsPerPage={5}
                   />

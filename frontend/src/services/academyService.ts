@@ -365,8 +365,8 @@ export const getUnreadNotificationsCount = async () => {
 
 // ========== Reports ==========
 export const getAttendanceReport = async (params: {
-  month: number;
-  year: number;
+  date_from: string;
+  date_to: string;
   teacher_id?: string;
 }) => {
   const response = await axios.get(`${API_BASE_URL}/academy/reports/attendance`, {
@@ -410,8 +410,10 @@ export const getFinancialReport = async (params: {
 
 export const exportReportToPDF = async (params: {
   report_type: 'attendance' | 'teachers' | 'monthly' | 'students' | 'financial';
-  month: number;
-  year: number;
+  month?: number;
+  year?: number;
+  date_from?: string;
+  date_to?: string;
   teacher_id?: string;
 }) => {
   const response = await axios.get(`${API_BASE_URL}/academy/reports/export-pdf`, {
