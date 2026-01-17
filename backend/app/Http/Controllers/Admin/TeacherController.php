@@ -91,4 +91,48 @@ class TeacherController extends Controller
 
         return $this->successResponse($subscription);
     }
+
+    public function enableIndependent($id)
+    {
+        $teacher = $this->teacherService->enableIndependent($id);
+        
+        return $this->successResponse(
+            new TeacherResource($teacher),
+            'تم تفعيل حالة المستقل للمدرس بنجاح'
+        );
+    }
+
+    public function disableIndependent($id)
+    {
+        $teacher = $this->teacherService->disableIndependent($id);
+        
+        return $this->successResponse(
+            new TeacherResource($teacher),
+            'تم إلغاء حالة المستقل للمدرس بنجاح'
+        );
+    }
+
+    public function addToAcademy(Request $request, $id)
+    {
+        $request->validate([
+            'academy_id' => 'required|exists:academies,id'
+        ]);
+
+        $teacher = $this->teacherService->addToAcademy($id, $request->academy_id);
+        
+        return $this->successResponse(
+            new TeacherResource($teacher),
+            'تم إضافة المدرس للأكاديمية بنجاح'
+        );
+    }
+
+    public function removeFromAcademy($id, $academyId)
+    {
+        $teacher = $this->teacherService->removeFromAcademy($id, $academyId);
+        
+        return $this->successResponse(
+            new TeacherResource($teacher),
+            'تم إزالة المدرس من الأكاديمية بنجاح'
+        );
+    }
 }

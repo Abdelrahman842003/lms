@@ -9,7 +9,6 @@ use App\Models\TeacherAttendanceLog;
 use App\Models\Lecture;
 use App\Models\Exam;
 use Carbon\Carbon;
-use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\Setting;
 use App\Models\PaymentLog;
 use Illuminate\Support\Facades\DB;
@@ -243,6 +242,14 @@ class ReportService
         // Total secretaries
         $totalSecretariesCount = $academy->secretaries()->count();
 
+        // Calculate remaining balance
+        $totalConfirmedPayments = PaymentLog::whereIn('teacher_id', $teacherIds)
+            ->whereBetween('confirmed_at', [$startDate, $endDate])
+            ->where('status', 'confirmed')
+            ->sum('amount');
+
+        $remainingBalance = $totalRevenue - $totalConfirmedPayments;
+
         return [
             'academy' => [
                 'id' => $academy->id,
@@ -263,6 +270,9 @@ class ReportService
                 ...$attendanceStats['summary'] ?? [],
             ],
             'financial_details' => [
+                'total_revenue' => round($totalRevenue, 2),
+                'total_confirmed_payments' => round($totalConfirmedPayments, 2),
+                'remaining_balance' => round($remainingBalance, 2),
                 'net_payments_to_academy' => round($netRevenue, 2),
                 'payments_due_to_platform' => round($platformFees, 2),
                 'payment_status' => $billing ? $billing->status : 'unpaid',

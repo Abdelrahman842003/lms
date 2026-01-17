@@ -10,6 +10,7 @@ use App\Models\PaymentLog;
 use App\Models\Setting;
 use App\Models\TeacherSubscription;
 use Carbon\Carbon;
+use App\Models\Academy;
 use Illuminate\Support\Collection;
 
 class ReportService
@@ -20,6 +21,13 @@ class ReportService
     public function getTeachersList(): Collection
     {
         return Teacher::select('id', 'name', 'phone', 'status', 'created_at')
+            ->where(function($query) {
+                $query->whereDoesntHave('academies')
+                      ->orWhereHas('enrollments', function($q) {
+                          $q->whereNull('academy_id');
+                      })
+                      ->orWhere('subscription_fee', '>', 0);
+            })
             ->withCount(['enrollments', 'secretaries'])
             ->orderBy('name')
             ->get()
@@ -37,6 +45,28 @@ class ReportService
                     'students_count' => $teacher->enrollments_count,
                     'secretaries_count' => $teacher->secretaries_count,
                     'joined' => $teacher->created_at->format('Y-m-d'),
+                ];
+            });
+    }
+
+    /**
+     * Get list of academies for report selection
+     */
+    public function getAcademiesList(): Collection
+    {
+        return Academy::select('id', 'name', 'phone', 'is_active', 'created_at')
+            ->withCount(['teachers'])
+            ->orderBy('name')
+            ->get()
+            ->map(function ($academy) {
+                return [
+                    'id' => $academy->id,
+                    'name' => $academy->name,
+                    'phone' => $academy->phone,
+                    'status' => $academy->is_active ? 'نشط' : 'غير نشط',
+                    'teachers_count' => $academy->teachers_count,
+                    'students_count' => $academy->total_students_count,
+                    'joined' => $academy->created_at->format('Y-m-d'),
                 ];
             });
     }
@@ -166,8 +196,119 @@ class ReportService
     }
 
     /**
-     * Get monthly subscription details for teacher
+     * Get report data for a specific academy
      */
+    public function getAcademyReport(Academy $academy, Carbon $startDate, Carbon $endDate): array
+    {
+        $pricePerStudent = \App\Services\HelperService::getAcademyStudentPrice();
+
+        // Teachers data
+        $teachersQuery = $academy->teachers();
+        $totalTeachers = (clone $teachersQuery)->count();
+        $activeTeachers = (clone $teachersQuery)->wherePivot('is_active', true)->count();
+
+        // Students data (via teachers)
+        // Since we don't have a direct relationship, we iterate over teachers
+        $academyTeachers = $academy->teachers()->with('enrollments')->get();
+        
+        $totalEnrollments = 0;
+        $activeEnrollments = 0;
+        $uniqueStudentIds = [];
+
+        foreach ($academyTeachers as $teacher) {
+            foreach ($teacher->enrollments as $enrollment) {
+                $totalEnrollments++;
+                if ($enrollment->is_active) {
+                    $activeEnrollments++;
+                }
+                $uniqueStudentIds[] = $enrollment->student_id;
+            }
+        }
+        
+        $totalAcademyStudents = count(array_unique($uniqueStudentIds));
+
+        // Calculate expected revenue (Total Enrollments * Price Per Student)
+        // Note: This is platform revenue from this academy's students
+        $expectedRevenue = $totalEnrollments * $pricePerStudent;
+
+        // Confirmed payments in period (from academy's teachers)
+        $confirmedPayments = PaymentLog::whereIn('teacher_id', $academyTeachers->pluck('id'))
+            ->where('status', 'confirmed')
+            ->whereBetween('confirmed_at', [$startDate, $endDate])
+            ->sum('amount');
+
+        // Monthly breakdown
+        // We can reuse getMonthlyBreakdown but we need to pass teacher IDs
+        // For now, let's just get overall monthly breakdown for these teachers
+        $monthlyData = $this->getMonthlyBreakdownForAcademy($academyTeachers->pluck('id')->toArray(), $startDate, $endDate);
+
+        return [
+            'academy' => [
+                'id' => $academy->id,
+                'name' => $academy->name,
+                'phone' => $academy->phone,
+                'joined' => $academy->created_at->format('Y-m-d'),
+                'status' => $academy->is_active ? 'نشط' : 'غير نشط',
+            ],
+            'period' => [
+                'start' => $startDate->format('Y-m-d'),
+                'end' => $endDate->format('Y-m-d'),
+                'duration_months' => $startDate->diffInMonths($endDate) + 1,
+            ],
+            'summary' => [
+                'total_teachers' => $totalTeachers,
+                'active_teachers' => $activeTeachers,
+                'total_academy_students' => $totalAcademyStudents,
+                'total_enrollments' => $totalEnrollments,
+                'active_enrollments' => $activeEnrollments,
+                'expected_revenue' => $expectedRevenue,
+                'confirmed_payments' => (float) $confirmedPayments,
+                'remaining_balance' => $expectedRevenue - $confirmedPayments,
+                'payment_status' => $confirmedPayments == 0 ? 'لم يدفع' : ($expectedRevenue - $confirmedPayments <= 0 ? 'مدفوع' : 'متبقي دفعات'),
+                'price_per_student' => $pricePerStudent,
+            ],
+            'monthly_breakdown' => $monthlyData,
+            'generated_at' => now()->format('Y-m-d H:i:s'),
+        ];
+    }
+
+    /**
+     * Get monthly breakdown for academy (list of teachers)
+     */
+    private function getMonthlyBreakdownForAcademy(array $teacherIds, Carbon $startDate, Carbon $endDate): array
+    {
+        $months = [];
+        $currentMonth = $startDate->copy()->startOfMonth();
+        $lastMonth = $endDate->copy()->startOfMonth();
+        
+        while ($currentMonth <= $lastMonth) {
+            $monthStart = $currentMonth->copy()->startOfMonth();
+            $monthEnd = $currentMonth->copy()->endOfMonth();
+            
+            $queryStart = $monthStart->lt($startDate) ? $startDate->copy()->startOfDay() : $monthStart;
+            $queryEnd = $monthEnd->gt($endDate) ? $endDate->copy()->endOfDay() : $monthEnd->endOfDay();
+            
+            $newEnrollments = Enrollment::whereIn('teacher_id', $teacherIds)
+                ->whereBetween('created_at', [$queryStart, $queryEnd])
+                ->count();
+                
+            $payments = PaymentLog::whereIn('teacher_id', $teacherIds)
+                ->where('status', 'confirmed')
+                ->whereBetween('confirmed_at', [$queryStart, $queryEnd])
+                ->sum('amount');
+            
+            $months[] = [
+                'month' => $currentMonth->format('Y-m'),
+                'month_name' => \App\Services\HelperService::getArabicMonthName($currentMonth->month) . ' ' . $currentMonth->year,
+                'new_enrollments' => $newEnrollments,
+                'confirmed_payments' => (float) $payments,
+            ];
+            
+            $currentMonth->addMonth();
+        }
+        
+        return $months;
+    }
     private function getMonthlySubscriptions(Teacher $teacher, Carbon $startDate, Carbon $endDate, float $pricePerStudent): array
     {
         $months = [];

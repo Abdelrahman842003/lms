@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Teacher;
+use App\Models\Academy;
 use App\Services\Admin\ReportService;
 use App\Http\Requests\Admin\Report\ReportRequest;
 use Carbon\Carbon;
@@ -27,6 +28,16 @@ class ReportController extends Controller
     }
 
     /**
+     * Get list of academies for report selection
+     */
+    public function academiesList(): JsonResponse
+    {
+        $academies = $this->reportService->getAcademiesList();
+
+        return $this->successResponse($academies);
+    }
+
+    /**
      * Get teacher report data (JSON)
      */
     public function teacherReport(ReportRequest $request, Teacher $teacher): JsonResponse
@@ -41,7 +52,41 @@ class ReportController extends Controller
         return $this->successResponse($report);
     }
 
+    /**
+     * Get academy report data (JSON)
+     */
+    public function academyReport(ReportRequest $request, Academy $academy): JsonResponse
+    {
+        $validated = $request->validated();
 
+        $startDate = Carbon::parse($validated['start_date'])->startOfDay();
+        $endDate = Carbon::parse($validated['end_date'])->endOfDay();
+
+        $report = $this->reportService->getAcademyReport($academy, $startDate, $endDate);
+
+        return $this->successResponse($report);
+    }
+
+    /**
+     * Download academy report as PDF
+     */
+    public function academyReportPdf(ReportRequest $request, Academy $academy)
+    {
+        $validated = $request->validated();
+
+        $startDate = Carbon::parse($validated['start_date'])->startOfDay();
+        $endDate = Carbon::parse($validated['end_date'])->endOfDay();
+
+        $report = $this->reportService->getAcademyReport($academy, $startDate, $endDate);
+
+        $pdfContent = $this->reportService->generatePdf($report, 'academy', 'تقرير الأكاديمية: ' . $academy->name);
+        
+        $filename = 'academy-report-' . $academy->id . '-' . $startDate->format('Y-m-d') . '-to-' . $endDate->format('Y-m-d') . '.pdf';
+
+        return response($pdfContent)
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
+    }
 
     /**
      * Download teacher report as PDF

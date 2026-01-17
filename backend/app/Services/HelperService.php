@@ -56,6 +56,16 @@ class HelperService
     }
 
     /**
+     * Get academy student price from settings (Cached)
+     */
+    public static function getAcademyStudentPrice(): float
+    {
+        // Use CacheService to get the setting, fallback to DB
+        // Default to 20 as per user request if not set
+        return (float) Setting::getValue('academy_student_price', 20);
+    }
+
+    /**
      * Calculate rank for paginated results
      */
     public static function calculatePaginationRank(int $index, LengthAwarePaginator $paginator): int

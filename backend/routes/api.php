@@ -47,6 +47,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/teachers/{teacher}/subscription', [\App\Http\Controllers\Admin\TeacherController::class, 'updateSubscription']);
         Route::put('/teachers/{teacher}/toggle-status', [\App\Http\Controllers\Admin\TeacherController::class, 'toggleStatus']);
         Route::post('/teachers/{teacher}/approve', [\App\Http\Controllers\Admin\TeacherController::class, 'approve']);
+        Route::post('/teachers/{teacher}/enable-independent', [\App\Http\Controllers\Admin\TeacherController::class, 'enableIndependent']);
+        Route::post('/teachers/{teacher}/disable-independent', [\App\Http\Controllers\Admin\TeacherController::class, 'disableIndependent']);
+        Route::post('/teachers/{teacher}/academies', [\App\Http\Controllers\Admin\TeacherController::class, 'addToAcademy']);
+        Route::delete('/teachers/{teacher}/academies/{academy}', [\App\Http\Controllers\Admin\TeacherController::class, 'removeFromAcademy']);
         Route::get('/students/statistics', [\App\Http\Controllers\Admin\StudentController::class, 'statistics']);
         Route::get('/students', [\App\Http\Controllers\Admin\StudentController::class, 'index']);
         Route::post('/students', [\App\Http\Controllers\Admin\StudentController::class, 'store']);
@@ -72,10 +76,13 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         // Reports
         Route::get('/reports/teachers', [\App\Http\Controllers\Admin\ReportController::class, 'teachersList']);
+        Route::get('/reports/academies', [\App\Http\Controllers\Admin\ReportController::class, 'academiesList']);
         Route::get('/reports/teacher/{teacher}', [\App\Http\Controllers\Admin\ReportController::class, 'teacherReport']);
         Route::get('/reports/teacher/{teacher}/pdf', [\App\Http\Controllers\Admin\ReportController::class, 'teacherReportPdf']);
         Route::get('/reports/admin', [\App\Http\Controllers\Admin\ReportController::class, 'adminReport']);
         Route::get('/reports/admin/pdf', [\App\Http\Controllers\Admin\ReportController::class, 'adminReportPdf']);
+        Route::get('/reports/academy/{academy}', [\App\Http\Controllers\Admin\ReportController::class, 'academyReport']);
+        Route::get('/reports/academy/{academy}/pdf', [\App\Http\Controllers\Admin\ReportController::class, 'academyReportPdf']);
 
         // Academy Management
         Route::apiResource('academies', \App\Http\Controllers\Admin\AcademyController::class);
@@ -367,3 +374,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
 // Public Settings
 Route::get('/public-settings', [\App\Http\Controllers\Admin\SettingsController::class, 'getPublicSettings']);
+
+// Fallback login route for unauthenticated API requests
+Route::get('/login', function () {
+    return response()->json(['message' => 'Unauthenticated.'], 401);
+})->name('login');

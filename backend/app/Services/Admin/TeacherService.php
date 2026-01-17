@@ -14,6 +14,10 @@ class TeacherService
         \DB::enableQueryLog();
         
         $result = Teacher::withCount(['students', 'secretaries'])
+            ->withCount(['enrollments as independent_enrollments_count' => function ($query) {
+                $query->whereNull('academy_id');
+            }])
+            ->with(['academies:id,name'])
             ->when(isset($filters['status']) && $filters['status'] !== 'all', function ($query) use ($filters) {
                 \Illuminate\Support\Facades\Log::info('Applying status filter:', ['status' => $filters['status']]);
                 $query->where('status', $filters['status']);
@@ -203,5 +207,51 @@ class TeacherService
         $price = \App\Services\HelperService::getPricePerStudent();
         
         return $count * $price;
+    }
+
+    public function enableIndependent(string $teacherId): Teacher
+    {
+        $teacher = Teacher::findOrFail($teacherId);
+        
+        // Set subscription fee to default price per student (usually 100)
+        // This marks the teacher as independent in our logic
+        $defaultPrice = \App\Services\HelperService::getPricePerStudent();
+        $teacher->subscription_fee = $defaultPrice > 0 ? $defaultPrice : 100;
+        
+        $teacher->save();
+        
+        return $teacher;
+    }
+
+    public function disableIndependent(string $teacherId): Teacher
+    {
+        $teacher = Teacher::findOrFail($teacherId);
+        
+        // Set subscription fee to 0 to disable independent status
+        $teacher->subscription_fee = 0;
+        $teacher->save();
+        
+        return $teacher;
+    }
+
+    public function addToAcademy(string $teacherId, string $academyId): Teacher
+    {
+        $teacher = Teacher::findOrFail($teacherId);
+        
+        // Check if already attached
+        if (!$teacher->academies()->where('academy_id', $academyId)->exists()) {
+            $teacher->academies()->attach($academyId, ['is_active' => true, 'joined_at' => now()]);
+        }
+        
+        return $teacher->load('academies');
+    }
+
+    public function removeFromAcademy(string $teacherId, string $academyId): Teacher
+    {
+        $teacher = Teacher::findOrFail($teacherId);
+        
+        $teacher->academies()->detach($academyId);
+        
+        return $teacher->load('academies');
     }
 }

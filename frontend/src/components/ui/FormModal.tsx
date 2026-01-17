@@ -55,14 +55,16 @@ export default function FormModal({
 
           {/* Footer */}
           <div className="flex items-center justify-end gap-3 p-6 border-t border-white/10 bg-black/20 rounded-b-xl">
-            <button
-              type="button"
-              className="px-6 py-2.5 rounded-lg border border-white/10 text-white hover:bg-white/5 transition-all duration-200 font-medium"
-              onClick={onClose}
-              disabled={isLoading}
-            >
-              {cancelText}
-            </button>
+            {cancelText && (
+              <button
+                type="button"
+                className="px-6 py-2.5 rounded-lg border border-white/10 text-white hover:bg-white/5 transition-all duration-200 font-medium"
+                onClick={onClose}
+                disabled={isLoading}
+              >
+                {cancelText}
+              </button>
+            )}
             <button 
               type="submit" 
               className="px-6 py-2.5 rounded-lg bg-primary text-white hover:bg-primary-dark shadow-lg shadow-primary/20 transition-all duration-200 font-medium disabled:opacity-70 disabled:cursor-not-allowed" 

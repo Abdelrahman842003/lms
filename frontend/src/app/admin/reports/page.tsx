@@ -490,7 +490,11 @@ function ReportsPage() {
         {report && (
           <>
             {/* Summary Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+            <div className={`grid grid-cols-2 gap-4 mb-6 ${
+              reportType === 'admin' ? 'md:grid-cols-5' :
+              reportType === 'teacher' ? 'md:grid-cols-4' :
+              'md:grid-cols-3'
+            }`}>
               {reportType === 'admin' && (
                 <>
                   <div className="p-4 bg-white/5 rounded-xl border border-white/10">
@@ -552,13 +556,9 @@ function ReportsPage() {
                     <div className="text-gray-400 text-sm">إجمالي الارتباطات</div>
                   </div>
 
-                  {/* Expected Revenue */}
-                  <div className="p-4 bg-white/5 rounded-xl border border-white/10">
-                    <div className="text-3xl font-bold text-white mb-1">
-                      {report.summary.expected_revenue?.toLocaleString()} ج.م
-                    </div>
-                    <div className="text-gray-400 text-sm">الإيرادات المتوقعة</div>
-                  </div>
+
+
+                  {/* Remaining Balance removed from here */}
                 </>
               )}
 
@@ -640,6 +640,7 @@ function ReportsPage() {
                       {report.academy.status}
                     </span>
                   </div>
+
                 </div>
               </DashboardCard>
             )}
@@ -706,17 +707,52 @@ function ReportsPage() {
                             </td>
                           </tr>
                         )}
-                        <tr>
-                          <td className="py-3 px-4 text-white">
-                            الإيرادات المحسوبة
-                            <span className="text-gray-500 text-sm mr-2">
-                              ({reportType === 'admin' ? report.summary.active_enrollments : report.summary.active_students} × {report.summary.price_per_student} ج.م)
-                            </span>
-                          </td>
-                          <td className="py-3 px-4 text-secondary font-bold text-lg">
-                            {(reportType === 'admin' ? report.summary.total_revenue : report.summary.calculated_revenue)?.toLocaleString()} ج.م
-                          </td>
-                        </tr>
+                        {reportType !== 'academy' && (
+                          <tr>
+                            <td className="py-3 px-4 text-white">
+                              الإيرادات المحسوبة
+                              <span className="text-gray-500 text-sm mr-2">
+                                ({reportType === 'admin' ? report.summary.active_enrollments : report.summary.active_students} × {report.summary.price_per_student} ج.م)
+                              </span>
+                            </td>
+                            <td className="py-3 px-4 text-secondary font-bold text-lg">
+                              {(reportType === 'admin' ? report.summary.total_revenue : report.summary.calculated_revenue)?.toLocaleString()} ج.م
+                            </td>
+                          </tr>
+                        )}
+                        {reportType === 'academy' && (
+                          <>
+                            <tr className="border-b border-white/5">
+                              <td className="py-3 px-4 text-white">المدفوعات المعلقة</td>
+                              <td className="py-3 px-4 text-warning font-semibold">
+                                {report.summary.remaining_balance?.toLocaleString()} ج.م
+                              </td>
+                            </tr>
+                            <tr className="border-b border-white/5">
+                              <td className="py-3 px-4 text-white">
+                                الإيرادات المحسوبة
+                                <span className="text-gray-500 text-sm mr-2">
+                                  ({report.summary.total_enrollments} × {report.summary.price_per_student} ج.م)
+                                </span>
+                              </td>
+                              <td className="py-3 px-4 text-secondary font-bold text-lg">
+                                {report.summary.expected_revenue?.toLocaleString()} ج.م
+                              </td>
+                            </tr>
+                            <tr className="border-b border-white/5">
+                              <td className="py-3 px-4 text-white">حالة الدفع</td>
+                              <td className="py-3 px-4">
+                                <span className={`badge ${
+                                  report.summary.payment_status === 'مدفوع' ? 'badge-success' :
+                                  report.summary.payment_status === 'متبقي دفعات' ? 'badge-warning' :
+                                  'badge-danger'
+                                }`}>
+                                  {report.summary.payment_status}
+                                </span>
+                              </td>
+                            </tr>
+                          </>
+                        )}
                       </>
                     )}
                   </tbody>

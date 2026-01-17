@@ -646,6 +646,31 @@ export async function approveTeacher(id: string): Promise<any> {
   return res.teacher;
 }
 
+export async function enableIndependent(id: string): Promise<any> {
+  return await fetchApi(`/admin/teachers/${id}/enable-independent`, {
+    method: 'POST',
+  });
+}
+
+export async function disableIndependent(id: string): Promise<any> {
+  return await fetchApi(`/admin/teachers/${id}/disable-independent`, {
+    method: 'POST',
+  });
+}
+
+export async function addToAcademy(teacherId: string, academyId: string): Promise<any> {
+  return await fetchApi(`/admin/teachers/${teacherId}/academies`, {
+    method: 'POST',
+    body: JSON.stringify({ academy_id: academyId }),
+  });
+}
+
+export async function removeFromAcademy(teacherId: string, academyId: string): Promise<any> {
+  return await fetchApi(`/admin/teachers/${teacherId}/academies/${academyId}`, {
+    method: 'DELETE',
+  });
+}
+
 /**
  * Login as a teacher (Admin only)
  */

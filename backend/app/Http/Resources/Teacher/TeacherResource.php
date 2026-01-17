@@ -42,6 +42,21 @@ class TeacherResource extends JsonResource
             'subscription_fee' => (float) $this->subscription_fee,
             'paid_amount' => (float) $this->paid_amount,
             'avatar' => $this->avatar_key ? app(\App\Services\Media\ImageService::class)->getUrl($this->avatar_key) : null,
+            'academies' => $this->whenLoaded('academies'),
+            'independent_enrollments_count' => $this->independent_enrollments_count ?? 0,
+            'affiliation' => (function() {
+                $academies = $this->whenLoaded('academies');
+                // If academies not loaded or empty, assume independent (or check logic)
+                // But here we want to be explicit.
+                if ($academies instanceof \Illuminate\Database\Eloquent\Collection && $academies->isNotEmpty()) {
+                     $isIndependent = $this->subscription_fee > 0 || ($this->independent_enrollments_count ?? 0) > 0;
+                     if ($isIndependent) {
+                         return 'both';
+                     }
+                     return 'academy';
+                }
+                return 'independent';
+            })(),
         ];
     }
 }

@@ -314,6 +314,10 @@ export default function ReportsPage() {
                           <td className="p-4 font-bold text-warning">{report.financial_details.payments_due_to_platform} ج.م</td>
                         </tr>
                         <tr className="hover:bg-white/5 transition-colors">
+                          <td className="p-4">الباقي من التسديد</td>
+                          <td className="p-4 font-bold text-info">{report.financial_details.remaining_balance} ج.م</td>
+                        </tr>
+                        <tr className="hover:bg-white/5 transition-colors">
                           <td className="p-4">حاله الدفع</td>
                           <td className="p-4">
                             <span className={`badge ${report.financial_details.payment_status === 'paid' ? 'badge-success' : 'badge-danger'}`}>
