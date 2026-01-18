@@ -9,6 +9,7 @@ import { NotificationDropdown } from './NotificationDropdown';
 import { TeacherSelectionDropdown } from './TeacherSelectionDropdown';
 import { AcademySelector } from './AcademySelector';
 import ScanAttendanceModal from './ScanAttendanceModal';
+import { getTeacherAcademies } from '@/services/authService';
 
 
 interface NavbarProps {
@@ -447,8 +448,27 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
   const [isScrolled, setIsScrolled] = useState(false);
   const [isAcademyModalOpen, setIsAcademyModalOpen] = useState(false);
   const [isScanAttendanceModalOpen, setIsScanAttendanceModalOpen] = useState(false);
+  const [hasAcademies, setHasAcademies] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const checkAcademies = async () => {
+      if (role === 'teacher') {
+        try {
+          const response = await getTeacherAcademies();
+          const data = (response as any).data || response;
+          const academiesList = data.academies || [];
+          setHasAcademies(academiesList.length > 0);
+        } catch (error) {
+          console.error('Failed to check academies:', error);
+          setHasAcademies(false);
+        }
+      }
+    };
+
+    checkAcademies();
+  }, [role]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -664,7 +684,7 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
                   </Link>
                   
                   {/* Academy Selector for Teachers */}
-                  {role === 'teacher' && (
+                  {role === 'teacher' && hasAcademies && (
                     <>
                       <div className="navbar-dropdown-divider"></div>
                       <button 

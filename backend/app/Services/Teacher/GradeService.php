@@ -3,16 +3,23 @@
 namespace App\Services\Teacher;
 
 use App\Models\Grade;
+use App\Traits\HasAcademyFilter;
 
 class GradeService
 {
-    public function getGrades($teacher, int $perPage = 10, array $filters = [])
+    use HasAcademyFilter;
+
+    public function getGrades($teacher, int $perPage = 10, array $filters = [], ?string $academyId = null)
     {
-        return $teacher->grades()
+        $query = $teacher->grades()
             ->withCount(['groups', 'enrollments'])
             ->latest()
-            ->filter($filters)
-            ->paginate($perPage);
+            ->filter($filters);
+
+        // Apply direct academy filter (grades have academy_id column)
+        $query = $this->applyDirectAcademyFilter($query, $academyId);
+
+        return $query->paginate($perPage);
     }
 
     public function createGrade($teacher, array $data)

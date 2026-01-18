@@ -74,10 +74,17 @@ class CacheService
 
     // ==================== Teacher Cache (General) ====================
     
-    public static function getTeacherDashboardStats(string|int $teacherId, callable $callback): array
+    public static function getTeacherDashboardStats(string|int $teacherId, callable $callback, ?string $academyId = null): array
     {
+        $key = "teacher:{$teacherId}:dashboard:stats";
+        if ($academyId) {
+            $key .= ":academy:{$academyId}";
+        } elseif ($academyId === 'independent') {
+            $key .= ":independent";
+        }
+        
         return Cache::tags(['teacher_' . $teacherId])->remember(
-            "teacher:{$teacherId}:dashboard:stats",
+            $key,
             self::TTL_SHORT,
             $callback
         );

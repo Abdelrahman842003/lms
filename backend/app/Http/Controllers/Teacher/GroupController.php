@@ -25,7 +25,9 @@ class GroupController extends Controller
         $teacher = $this->getTeacherFromRequest($request);
         $perPage = $request->input('per_page', 10);
         $filters = $request->only(['search', 'grade_id']);
-        $groups = $this->groupService->getGroups($teacher, $perPage, $filters);
+        $academyId = $request->header('X-Academy-Id');
+        
+        $groups = $this->groupService->getGroups($teacher, $perPage, $filters, $academyId);
         
         return $this->successResponse(
             GroupResource::collection($groups)->response()->getData(true)

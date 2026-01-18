@@ -14,23 +14,77 @@ class DashboardController extends Controller
     public function getStats(Request $request)
     {
         $teacher = $this->getTeacherFromRequest($request);
+        $academyId = $request->header('X-Academy-Id');
+        \Illuminate\Support\Facades\Log::info("getStats: Teacher {$teacher->id}, AcademyId: " . ($academyId ?? 'NULL'));
 
-        $stats = CacheService::getTeacherDashboardStats($teacher->id, function () use ($teacher) {
+        // Helper to apply academy filter
+        $applyAcademyFilter = function ($query) use ($academyId) {
+            // If no academy selected, return empty results (require explicit selection)
+            if (!$academyId) {
+                $query->whereRaw('1 = 0');
+                return;
+            }
+
+            if ($academyId === 'independent') {
+                $query->where(function ($q) {
+                    $q->whereDoesntHave('grade')
+                      ->orWhereHas('grade', function ($g) {
+                          $g->whereNull('academy_id');
+                      });
+                });
+            } else {
+                $query->whereHas('grade', function ($q) use ($academyId) {
+                    $q->where('academy_id', $academyId);
+                });
+            }
+        };
+
+        $stats = CacheService::getTeacherDashboardStats($teacher->id, function () use ($teacher, $academyId, $applyAcademyFilter) {
             // Get total students
-            $totalStudents = $teacher->students()->count();
+            $studentsQuery = $teacher->students();
+            // Filter students based on their enrollment's grade
+            $studentsQuery->whereHas('enrollments', function ($q) use ($academyId) {
+                 // If no academy selected, return empty results
+                 if (!$academyId) {
+                     $q->whereRaw('1 = 0');
+                     return;
+                 }
+                 if ($academyId === 'independent') {
+                     $q->where(function ($sub) {
+                         $sub->whereDoesntHave('grade')
+                             ->orWhereHas('grade', function ($g) {
+                                 $g->whereNull('academy_id');
+                             });
+                     });
+                 } else {
+                     $q->whereHas('grade', function ($g) use ($academyId) {
+                         $g->where('academy_id', $academyId);
+                     });
+                 }
+            });
+            $totalStudents = $studentsQuery->count();
+            \Illuminate\Support\Facades\Log::info("getStats: Total Students: {$totalStudents}");
 
             // Get active students (students who have logged in recently or have activity)
+            // For now, same as total
             $activeStudents = $totalStudents;
 
             // Get total groups
-            $totalGroups = $teacher->groups()->count();
+            $groupsQuery = $teacher->groups();
+            $applyAcademyFilter($groupsQuery);
+            $totalGroups = $groupsQuery->count();
 
             // Get total exams
-            $totalExams = \App\Models\Exam::where('teacher_id', $teacher->id)->count();
+            $examsQuery = \App\Models\Exam::where('teacher_id', $teacher->id);
+            $applyAcademyFilter($examsQuery);
+            $totalExams = $examsQuery->count();
 
             // Calculate Average Attendance
             // Total Present / Total Attendance Records * 100
-            $teacherLecturesIds = $teacher->lectures()->pluck('id');
+            $lecturesQuery = $teacher->lectures();
+            $applyAcademyFilter($lecturesQuery);
+            $teacherLecturesIds = $lecturesQuery->pluck('id');
+            
             $totalAttendanceRecords = \App\Models\Attendance::whereIn('lecture_id', $teacherLecturesIds)->count();
             $totalPresent = \App\Models\Attendance::whereIn('lecture_id', $teacherLecturesIds)
                 ->where('status', 'present')
@@ -41,9 +95,13 @@ class DashboardController extends Controller
                 : 0;
 
             // Attendance Trend (Last 7 Lectures)
-            $attendanceTrend = $teacher->lectures()
+            $trendLecturesQuery = $teacher->lectures()
                 ->where('start_time', '<=', now())
-                ->orderBy('start_time', 'desc')
+                ->orderBy('start_time', 'desc');
+            
+            $applyAcademyFilter($trendLecturesQuery);
+            
+            $attendanceTrend = $trendLecturesQuery
                 ->take(7)
                 ->get()
                 ->map(function ($lecture) {
@@ -63,7 +121,7 @@ class DashboardController extends Controller
                 'average_attendance' => $averageAttendance,
                 'attendance_trend' => $attendanceTrend,
             ];
-        });
+        }, $academyId);
 
         return $this->successResponse($stats);
     }
@@ -72,12 +130,31 @@ class DashboardController extends Controller
     {
         $teacher = $this->getTeacherFromRequest($request);
         $limit = $request->input('limit', 5);
+        $academyId = $request->header('X-Academy-Id');
 
-        $enrollments = \App\Models\Enrollment::where('teacher_id', $teacher->id)
-            ->with(['student', 'grade', 'group', 'student.examResults.exam', 'student.attendances.lecture'])
-            ->latest()
+        $query = \App\Models\Enrollment::where('teacher_id', $teacher->id)
+            ->with(['student', 'grade', 'group', 'student.examResults.exam', 'student.attendances.lecture']);
+
+        if ($academyId) {
+            if ($academyId === 'independent') {
+                $query->where(function ($q) {
+                    $q->whereDoesntHave('grade')
+                      ->orWhereHas('grade', function ($g) {
+                          $g->whereNull('academy_id');
+                      });
+                });
+            } else {
+                $query->whereHas('grade', function ($q) use ($academyId) {
+                    $q->where('academy_id', $academyId);
+                });
+            }
+        }
+
+        $enrollments = $query->latest()
             ->limit($limit)
             ->get();
+        
+        \Illuminate\Support\Facades\Log::info("getRecentStudents: Count: " . $enrollments->count());
 
         return $this->successResponse([
             'students' => \App\Http\Resources\Teacher\EnrollmentResource::collection($enrollments),
@@ -88,11 +165,28 @@ class DashboardController extends Controller
     {
         $teacher = $this->getTeacherFromRequest($request);
         $limit = $request->input('limit', 4);
+        $academyId = $request->header('X-Academy-Id');
 
-        $lectures = $teacher->lectures()
+        $query = $teacher->lectures()
             ->where('start_time', '>', now())
-            ->orderBy('start_time', 'asc')
-            ->limit($limit)
+            ->orderBy('start_time', 'asc');
+
+        if ($academyId) {
+            if ($academyId === 'independent') {
+                $query->where(function ($q) {
+                    $q->whereDoesntHave('grade')
+                      ->orWhereHas('grade', function ($g) {
+                          $g->whereNull('academy_id');
+                      });
+                });
+            } else {
+                $query->whereHas('grade', function ($q) use ($academyId) {
+                    $q->where('academy_id', $academyId);
+                });
+            }
+        }
+
+        $lectures = $query->limit($limit)
             ->get()
             ->map(function ($lecture) use ($teacher) {
                 // Arabic day names mapping
@@ -118,6 +212,46 @@ class DashboardController extends Controller
 
         return $this->successResponse([
             'lectures' => $lectures,
+        ]);
+    }
+
+    public function getTeacherAcademies(Request $request)
+    {
+        $teacher = $this->getTeacherFromRequest($request);
+        
+        $academies = $teacher->academies()
+            ->get()
+            ->map(function ($academy) {
+                return [
+                    'id' => $academy->id,
+                    'name' => $academy->name,
+                    'logo' => $academy->logo_key ? url("/api/media/{$academy->logo_key}") : null,
+                    'is_active' => $academy->is_active,
+                ];
+            });
+
+        // Check if teacher is independent
+        // A teacher is independent if they have a subscription fee set or have independent enrollments
+        // We can also check the 'independent_enrollments_count' if available, but checking subscription_fee > 0 is a good proxy for "enabled as independent"
+        // Or we can check if they have any students not associated with an academy (which is harder to check efficiently here without eager loading)
+        // Based on TeacherResource logic:
+        $isIndependent = $teacher->subscription_fee > 0 || $teacher->enrollments()->whereNull('academy_id')->exists();
+        
+        // Actually, checking subscription_fee is usually how we enable "Independent" mode in admin.
+        // Let's check the Admin/TeacherController logic for "enableIndependent".
+        // It sets subscription_fee.
+        
+        if ($teacher->subscription_fee > 0) {
+            $academies->push([
+                'id' => null,
+                'name' => 'مدرس مستقل',
+                'logo' => null,
+                'is_active' => true,
+            ]);
+        }
+
+        return $this->successResponse([
+            'academies' => $academies,
         ]);
     }
 }

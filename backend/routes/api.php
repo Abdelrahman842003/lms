@@ -206,6 +206,7 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureTeacherNotSuspende
     Route::get('/dashboard/stats', [\App\Http\Controllers\Teacher\DashboardController::class, 'getStats']);
     Route::get('/dashboard/students', [\App\Http\Controllers\Teacher\DashboardController::class, 'getRecentStudents']);
     Route::get('/dashboard/lectures', [\App\Http\Controllers\Teacher\DashboardController::class, 'getUpcomingLectures']);
+    Route::get('/dashboard/academies', [\App\Http\Controllers\Teacher\DashboardController::class, 'getTeacherAcademies']);
     
     // Student Management
     Route::get('students/statistics', [\App\Http\Controllers\Teacher\StudentController::class, 'statistics']);

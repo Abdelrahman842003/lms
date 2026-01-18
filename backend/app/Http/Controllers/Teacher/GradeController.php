@@ -25,7 +25,9 @@ class GradeController extends Controller
         $teacher = $this->getTeacherFromRequest($request);
         $perPage = $request->input('per_page', 10);
         $filters = $request->only(['search']);
-        $grades = $this->gradeService->getGrades($teacher, $perPage, $filters);
+        $academyId = $request->header('X-Academy-Id');
+        
+        $grades = $this->gradeService->getGrades($teacher, $perPage, $filters, $academyId);
         
         return $this->successResponse(
             GradeResource::collection($grades)->response()->getData(true)

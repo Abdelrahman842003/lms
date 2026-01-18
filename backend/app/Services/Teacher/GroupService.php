@@ -3,17 +3,24 @@
 namespace App\Services\Teacher;
 
 use App\Models\Group;
+use App\Traits\HasAcademyFilter;
 
 class GroupService
 {
-    public function getGroups($teacher, int $perPage = 10, array $filters = [])
+    use HasAcademyFilter;
+
+    public function getGroups($teacher, int $perPage = 10, array $filters = [], ?string $academyId = null)
     {
-        return $teacher->groups()
+        $query = $teacher->groups()
             ->with(['grade'])
             ->withCount('enrollments')
             ->latest()
-            ->filter($filters)
-            ->paginate($perPage);
+            ->filter($filters);
+
+        // Apply academy filter via grade relationship
+        $query = $this->applyAcademyFilter($query, $academyId, 'grade');
+
+        return $query->paginate($perPage);
     }
 
     public function createGroup($teacher, array $data)

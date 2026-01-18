@@ -6,19 +6,26 @@ use App\Models\Exam;
 use App\Models\Enrollment;
 use App\Models\Question;
 use App\Models\Teacher;
+use App\Traits\HasAcademyFilter;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class ExamService
 {
-    public function getExams(Teacher $teacher, int $perPage = 10, array $filters = [])
+    use HasAcademyFilter;
+
+    public function getExams(Teacher $teacher, int $perPage = 10, array $filters = [], ?string $academyId = null)
     {
-        return Exam::where('teacher_id', $teacher->id)
+        $query = Exam::where('teacher_id', $teacher->id)
             ->with(['grade', 'group', 'results.student'])
             ->orderBy('is_active', 'desc')
             ->latest()
-            ->filter($filters)
-            ->paginate($perPage);
+            ->filter($filters);
+
+        // Apply academy filter via grade relationship
+        $query = $this->applyAcademyFilter($query, $academyId, 'grade');
+
+        return $query->paginate($perPage);
     }
 
     public function createExam(Teacher $teacher, array $data): Exam

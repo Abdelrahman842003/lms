@@ -10,12 +10,14 @@ use App\Models\PointTransaction;
 use App\Models\Student;
 use App\Models\StudentPoint;
 use App\Models\Teacher;
+use App\Traits\HasAcademyFilter;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class PointService
 {
+    use HasAcademyFilter;
     /**
      * Award points for attendance
      */
@@ -146,7 +148,7 @@ class PointService
     /**
      * Get weekly leaderboard for a teacher (paginated)
      */
-    public function getWeeklyLeaderboardPaginated(string $teacherId, int $perPage = 15): \Illuminate\Contracts\Pagination\LengthAwarePaginator
+    public function getWeeklyLeaderboardPaginated(string $teacherId, int $perPage = 15, ?string $academyId = null): \Illuminate\Contracts\Pagination\LengthAwarePaginator
     {
         $query = PointTransaction::where('teacher_id', $teacherId)
             ->where('created_at', '>=', now()->startOfWeek())
@@ -154,6 +156,22 @@ class PointService
             ->groupBy('student_id')
             ->orderByDesc('weekly_points')
             ->with('student:id,name,avatar_key');
+
+        // Filter by academy via student's enrollment
+        // If no academy selected, return empty results (require explicit selection)
+        if ($academyId === null) {
+            $query->whereRaw('1 = 0'); // Always false - returns empty
+        } elseif ($academyId === 'independent') {
+            $query->whereHas('student.enrollments', function ($q) use ($teacherId) {
+                $q->where('teacher_id', $teacherId)
+                  ->whereHas('grade', fn($gq) => $gq->whereNull('academy_id'));
+            });
+        } else {
+            $query->whereHas('student.enrollments', function ($q) use ($teacherId, $academyId) {
+                $q->where('teacher_id', $teacherId)
+                  ->whereHas('grade', fn($gq) => $gq->where('academy_id', $academyId));
+            });
+        }
 
         $paginator = $query->paginate($perPage);
         
@@ -238,11 +256,27 @@ class PointService
     /**
      * Get all-time leaderboard for a teacher (paginated)
      */
-    public function getAllTimeLeaderboardPaginated(string $teacherId, int $perPage = 15): \Illuminate\Contracts\Pagination\LengthAwarePaginator
+    public function getAllTimeLeaderboardPaginated(string $teacherId, int $perPage = 15, ?string $academyId = null): \Illuminate\Contracts\Pagination\LengthAwarePaginator
     {
         $query = StudentPoint::where('teacher_id', $teacherId)
             ->orderByDesc('total_points')
             ->with('student:id,name,avatar_key');
+
+        // Filter by academy via student's enrollment
+        // If no academy selected, return empty results (require explicit selection)
+        if ($academyId === null) {
+            $query->whereRaw('1 = 0'); // Always false - returns empty
+        } elseif ($academyId === 'independent') {
+            $query->whereHas('student.enrollments', function ($q) use ($teacherId) {
+                $q->where('teacher_id', $teacherId)
+                  ->whereHas('grade', fn($gq) => $gq->whereNull('academy_id'));
+            });
+        } else {
+            $query->whereHas('student.enrollments', function ($q) use ($teacherId, $academyId) {
+                $q->where('teacher_id', $teacherId)
+                  ->whereHas('grade', fn($gq) => $gq->where('academy_id', $academyId));
+            });
+        }
             
         $paginator = $query->paginate($perPage);
         

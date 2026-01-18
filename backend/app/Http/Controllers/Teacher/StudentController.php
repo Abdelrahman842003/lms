@@ -50,8 +50,9 @@ class StudentController extends Controller
         $perPage = $request->input('per_page', 10);
         $search = $request->input('search');
         $status = $request->input('status');
+        $academyId = $request->header('X-Academy-Id');
 
-        $enrollments = $this->studentService->getStudents($teacher, $perPage, $search, $status);
+        $enrollments = $this->studentService->getStudents($teacher, $perPage, $search, $status, $academyId);
 
         return $this->successResponse([
             'students' => EnrollmentResource::collection($enrollments)->response()->getData(true)

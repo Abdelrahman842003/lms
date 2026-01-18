@@ -155,6 +155,27 @@ export function AuthProvider({
             setUser(userData);
             localStorage.setItem("user", JSON.stringify(userData));
 
+            // Auto-select academy for teachers if none selected
+            if (userType === 'teacher') {
+              try {
+                const { getTeacherAcademies } = await import('@/services/authService');
+                const academyRes = await getTeacherAcademies();
+                const academyData = (academyRes as any).data || academyRes;
+                const academies = academyData.academies || [];
+                
+                const currentSelected = localStorage.getItem("selectedAcademy");
+                
+                if (academies.length > 0 && !currentSelected) {
+                  // If teacher has academies and none is selected, select the first one
+                  const firstAcademy = academies[0];
+                  setSelectedAcademy(firstAcademy);
+                  localStorage.setItem("selectedAcademy", JSON.stringify(firstAcademy));
+                }
+              } catch (e) {
+                console.error("Failed to auto-select academy:", e);
+              }
+            }
+
             // If parent, update children list
             if (userType === "parent" && response.children) {
               setChildrenList(response.children);
@@ -435,6 +456,25 @@ export function AuthProvider({
           // If all are inactive/expired, don't select any (dashboard will handle this)
           setSelectedTeacher(null);
           localStorage.removeItem("selectedTeacher");
+        }
+      }
+
+      // Auto-select academy for teachers
+      if (userType === 'teacher') {
+        try {
+          const { getTeacherAcademies } = await import('@/services/authService');
+          const academyRes = await getTeacherAcademies();
+          const academyData = (academyRes as any).data || academyRes;
+          const academies = academyData.academies || [];
+          
+          if (academies.length > 0) {
+            // Always select the first academy on fresh login
+            const firstAcademy = academies[0];
+            setSelectedAcademy(firstAcademy);
+            localStorage.setItem("selectedAcademy", JSON.stringify(firstAcademy));
+          }
+        } catch (e) {
+          console.error("Failed to auto-select academy on login:", e);
         }
       }
 

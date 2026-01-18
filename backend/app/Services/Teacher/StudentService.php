@@ -6,20 +6,26 @@ use App\Models\Student;
 use App\Models\Enrollment;
 use App\Models\StudentActivityLog;
 use App\Models\Teacher;
+use App\Traits\HasAcademyFilter;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 
 class StudentService
 {
+    use HasAcademyFilter;
+
     /**
      * Get students for a teacher (via enrollments)
      */
-    public function getStudents($teacher, $perPage = 10, $search = null, $status = null)
+    public function getStudents($teacher, $perPage = 10, $search = null, $status = null, ?string $academyId = null)
     {
         $query = Enrollment::with(['student', 'grade', 'group'])
             ->where('teacher_id', $teacher->id)
             ->filter(['search' => $search, 'status' => $status])
             ->latest();
+
+        // Apply academy filter via grade relationship
+        $query = $this->applyAcademyFilter($query, $academyId, 'grade');
 
         return $query->paginate($perPage);
     }

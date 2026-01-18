@@ -4,12 +4,15 @@ namespace App\Services\Teacher;
 
 use App\Models\Lecture;
 use App\Events\LectureUpdated;
+use App\Traits\HasAcademyFilter;
 
 class LectureService
 {
-    public function getLectures($teacher, int $perPage = 10, array $filters = [])
+    use HasAcademyFilter;
+
+    public function getLectures($teacher, int $perPage = 10, array $filters = [], ?string $academyId = null)
     {
-        return $teacher->lectures()
+        $query = $teacher->lectures()
             ->with(['grade', 'group'])
             ->withCount('attendances')
             ->orderByRaw("
@@ -20,8 +23,12 @@ class LectureService
                 END ASC
             ")
             ->orderBy('start_time', 'DESC')
-            ->filter($filters)
-            ->paginate($perPage);
+            ->filter($filters);
+
+        // Apply academy filter via grade relationship
+        $query = $this->applyAcademyFilter($query, $academyId, 'grade');
+
+        return $query->paginate($perPage);
     }
 
     public function createLecture($teacher, array $data)

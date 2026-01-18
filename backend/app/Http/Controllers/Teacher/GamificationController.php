@@ -28,9 +28,10 @@ class GamificationController extends Controller
     {
         $teacher = $this->getTeacherFromRequest($request);
         $perPage = (int) $request->input('per_page', 15);
+        $academyId = $request->header('X-Academy-Id');
         
-        $weeklyLeaderboard = $this->pointService->getWeeklyLeaderboardPaginated($teacher->id, $perPage);
-        $allTimeLeaderboard = $this->pointService->getAllTimeLeaderboardPaginated($teacher->id, $perPage);
+        $weeklyLeaderboard = $this->pointService->getWeeklyLeaderboardPaginated($teacher->id, $perPage, $academyId);
+        $allTimeLeaderboard = $this->pointService->getAllTimeLeaderboardPaginated($teacher->id, $perPage, $academyId);
 
         return $this->successResponse([
             'weekly' => $weeklyLeaderboard,

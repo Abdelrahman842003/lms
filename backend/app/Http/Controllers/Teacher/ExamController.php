@@ -67,7 +67,9 @@ class ExamController extends Controller
     {
         $perPage = (int) $request->input('per_page', 10);
         $filters = $request->only(['search', 'date_from', 'date_to']);
-        $exams = $this->examService->getExams($this->getTeacherFromRequest(request()), $perPage, $filters);
+        $academyId = $request->header('X-Academy-Id');
+        
+        $exams = $this->examService->getExams($this->getTeacherFromRequest(request()), $perPage, $filters, $academyId);
 
         return $this->successResponse(
             \App\Http\Resources\Teacher\ExamResource::collection($exams)->response()->getData(true)
