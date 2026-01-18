@@ -32,6 +32,10 @@ class Academy extends Model implements AuthenticatableContract
         'is_active' => 'boolean',
     ];
 
+    protected $appends = [
+        'total_enrollments_count',
+    ];
+
     protected static function boot()
     {
         parent::boot();
@@ -98,7 +102,7 @@ class Academy extends Model implements AuthenticatableContract
     }
 
     /**
-     * Get total students count across all teachers
+     * Get total students count across all teachers (Active only)
      */
     public function getTotalStudentsCountAttribute()
     {
@@ -107,6 +111,18 @@ class Academy extends Model implements AuthenticatableContract
             ->sum(function ($teacher) {
                 return $teacher->activeEnrollments()->count();
             });
+    }
+
+    /**
+     * Get total enrollments count across all teachers (All enrollments)
+     */
+    public function getTotalEnrollmentsCountAttribute()
+    {
+        $teacherIds = $this->teachers()->pluck('teachers.id')->toArray();
+        
+        return \Illuminate\Support\Facades\DB::table('enrollments')
+            ->whereIn('teacher_id', $teacherIds)
+            ->count();
     }
 
     /**

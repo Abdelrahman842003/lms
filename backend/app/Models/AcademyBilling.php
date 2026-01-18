@@ -17,6 +17,7 @@ class AcademyBilling extends Model
         'total_students',
         'cost_per_student',
         'total_cost',
+        'amount_paid',
         'status',
         'paid_at',
         'notes',
@@ -28,6 +29,7 @@ class AcademyBilling extends Model
         'total_students' => 'integer',
         'cost_per_student' => 'decimal:2',
         'total_cost' => 'decimal:2',
+        'amount_paid' => 'decimal:2',
         'paid_at' => 'date',
     ];
 

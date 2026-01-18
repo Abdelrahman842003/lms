@@ -25,7 +25,7 @@ class TeacherController extends Controller
     {
         \Illuminate\Support\Facades\Log::info('TeacherController index request:', $request->all());
         $perPage = $request->input('per_page', 10);
-        $filters = $request->only(['search', 'date_from', 'date_to', 'status']);
+        $filters = $request->only(['search', 'date_from', 'date_to', 'status', 'type', 'payment_status']);
         $teachers = $this->teacherService->getTeachers($perPage, $filters);
         
         return $this->successResponse(
@@ -133,6 +133,16 @@ class TeacherController extends Controller
         return $this->successResponse(
             new TeacherResource($teacher),
             'تم إزالة المدرس من الأكاديمية بنجاح'
+        );
+    }
+
+    public function destroy($id)
+    {
+        $this->teacherService->deleteTeacher($id);
+        
+        return $this->successResponse(
+            null,
+            'تم حذف المدرس بنجاح'
         );
     }
 }

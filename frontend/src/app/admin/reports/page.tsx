@@ -282,6 +282,62 @@ function ReportsPage() {
     },
   ];
 
+
+  // Teacher monthly breakdown columns
+  const teacherMonthlyColumns = [
+    { key: 'month_name', label: 'الشهر', sortable: true },
+    { key: 'student_count', label: 'عدد الطلاب', sortable: true },
+    {
+      key: 'amount_due',
+      label: 'المبلغ المستحق',
+      sortable: true,
+      render: (value: number) => (
+        <span className="text-white font-medium">
+          {value.toLocaleString()} ج.م
+        </span>
+      ),
+    },
+    {
+      key: 'amount_paid',
+      label: 'المدفوع',
+      sortable: true,
+      render: (value: number) => (
+        <span className="text-success font-medium">
+          {value.toLocaleString()} ج.م
+        </span>
+      ),
+    },
+    {
+      key: 'amount_remaining',
+      label: 'المتبقي',
+      sortable: true,
+      render: (value: number) => (
+        <span className="text-danger font-medium">
+          {value.toLocaleString()} ج.م
+        </span>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'حالة الدفع',
+      sortable: true,
+      render: (value: string) => {
+        let badgeClass = 'badge-danger';
+        let text = 'غير مدفوع';
+
+        if (value === 'paid') {
+          badgeClass = 'badge-success';
+          text = 'مدفوع';
+        } else if (value === 'partial') {
+          badgeClass = 'badge-warning';
+          text = 'مدفوع جزئياً';
+        }
+
+        return <span className={`badge ${badgeClass}`}>{text}</span>;
+      },
+    },
+  ];
+
   return (
     <DashboardLayout role="admin" user={user || undefined}>
       <div className="max-w-7xl mx-auto">
@@ -693,64 +749,68 @@ function ReportsPage() {
                       </>
                     ) : (
                       <>
-                        <tr className="border-b border-white/5">
-                          <td className="py-3 px-4 text-white">المدفوعات المؤكدة</td>
-                          <td className="py-3 px-4 text-secondary font-semibold">
-                            {report.summary.confirmed_payments?.toLocaleString()} ج.م
-                          </td>
-                        </tr>
-                        {reportType === 'teacher' && (
-                          <tr className="border-b border-white/5">
-                            <td className="py-3 px-4 text-white">المدفوعات المعلقة</td>
-                            <td className="py-3 px-4 text-warning font-semibold">
-                              {report.summary.pending_payments?.toLocaleString()} ج.م
-                            </td>
-                          </tr>
-                        )}
-                        {reportType !== 'academy' && (
-                          <tr>
-                            <td className="py-3 px-4 text-white">
-                              الإيرادات المحسوبة
-                              <span className="text-gray-500 text-sm mr-2">
-                                ({reportType === 'admin' ? report.summary.active_enrollments : report.summary.active_students} × {report.summary.price_per_student} ج.م)
-                              </span>
-                            </td>
-                            <td className="py-3 px-4 text-secondary font-bold text-lg">
-                              {(reportType === 'admin' ? report.summary.total_revenue : report.summary.calculated_revenue)?.toLocaleString()} ج.م
-                            </td>
-                          </tr>
-                        )}
-                        {reportType === 'academy' && (
+                        {reportType === 'teacher' ? (
                           <>
                             <tr className="border-b border-white/5">
-                              <td className="py-3 px-4 text-white">المدفوعات المعلقة</td>
-                              <td className="py-3 px-4 text-warning font-semibold">
-                                {report.summary.remaining_balance?.toLocaleString()} ج.م
+                              <td className="py-3 px-4 text-white">إجمالي المستحق</td>
+                              <td className="py-3 px-4 text-white font-semibold">
+                                {report.summary.total_due?.toLocaleString()} ج.م
                               </td>
                             </tr>
                             <tr className="border-b border-white/5">
-                              <td className="py-3 px-4 text-white">
-                                الإيرادات المحسوبة
-                                <span className="text-gray-500 text-sm mr-2">
-                                  ({report.summary.total_enrollments} × {report.summary.price_per_student} ج.م)
-                                </span>
-                              </td>
-                              <td className="py-3 px-4 text-secondary font-bold text-lg">
-                                {report.summary.expected_revenue?.toLocaleString()} ج.م
+                              <td className="py-3 px-4 text-white">إجمالي المدفوع</td>
+                              <td className="py-3 px-4 text-success font-semibold">
+                                {report.summary.total_paid?.toLocaleString()} ج.م
                               </td>
                             </tr>
                             <tr className="border-b border-white/5">
-                              <td className="py-3 px-4 text-white">حالة الدفع</td>
-                              <td className="py-3 px-4">
-                                <span className={`badge ${
-                                  report.summary.payment_status === 'مدفوع' ? 'badge-success' :
-                                  report.summary.payment_status === 'متبقي دفعات' ? 'badge-warning' :
-                                  'badge-danger'
-                                }`}>
-                                  {report.summary.payment_status}
-                                </span>
+                              <td className="py-3 px-4 text-white">المبلغ المتبقي</td>
+                              <td className="py-3 px-4 text-danger font-semibold">
+                                {report.summary.total_remaining?.toLocaleString()} ج.م
                               </td>
                             </tr>
+                          </>
+                        ) : (
+                          <>
+                            <tr className="border-b border-white/5">
+                              <td className="py-3 px-4 text-white">المدفوعات المؤكدة</td>
+                              <td className="py-3 px-4 text-secondary font-semibold">
+                                {report.summary.confirmed_payments?.toLocaleString()} ج.م
+                              </td>
+                            </tr>
+                            {reportType === 'academy' && (
+                              <>
+                                <tr className="border-b border-white/5">
+                                  <td className="py-3 px-4 text-white">المدفوعات المعلقة</td>
+                                  <td className="py-3 px-4 text-warning font-semibold">
+                                    {report.summary.remaining_balance?.toLocaleString()} ج.م
+                                  </td>
+                                </tr>
+                                <tr className="border-b border-white/5">
+                                  <td className="py-3 px-4 text-white">
+                                    الإيرادات المحسوبة
+                                    <span className="text-gray-500 text-sm mr-2">
+                                      ({report.summary.total_enrollments} × {report.summary.price_per_student} ج.م)
+                                    </span>
+                                  </td>
+                                  <td className="py-3 px-4 text-secondary font-bold text-lg">
+                                    {report.summary.expected_revenue?.toLocaleString()} ج.م
+                                  </td>
+                                </tr>
+                                <tr className="border-b border-white/5">
+                                  <td className="py-3 px-4 text-white">حالة الدفع</td>
+                                  <td className="py-3 px-4">
+                                    <span className={`badge ${
+                                      report.summary.payment_status === 'مدفوع' ? 'badge-success' :
+                                      report.summary.payment_status === 'متبقي دفعات' ? 'badge-warning' :
+                                      'badge-danger'
+                                    }`}>
+                                      {report.summary.payment_status}
+                                    </span>
+                                  </td>
+                                </tr>
+                              </>
+                            )}
                           </>
                         )}
                       </>
@@ -763,11 +823,11 @@ function ReportsPage() {
             {/* Teachers Breakdown (REMOVED) */}
 
             {/* Monthly Breakdown */}
-            {report.monthly_breakdown?.length > 0 && (
+            {(report.monthly_breakdown?.length > 0 || report.subscription_breakdown?.length > 0) && (
               <DashboardCard title="التفصيل الشهري" icon="fas fa-calendar-alt" noPadding>
                 <DataTable
-                  columns={monthlyColumns}
-                  data={report.monthly_breakdown}
+                  columns={reportType === 'teacher' ? teacherMonthlyColumns : monthlyColumns}
+                  data={reportType === 'teacher' ? report.subscription_breakdown : report.monthly_breakdown}
                   searchable={false}
                   pagination={false}
                 />

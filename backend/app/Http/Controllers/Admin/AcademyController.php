@@ -14,7 +14,8 @@ use Illuminate\Http\JsonResponse;
 class AcademyController extends Controller
 {
     public function __construct(
-        private AcademyService $academyService
+        private AcademyService $academyService,
+        private \App\Services\Admin\AcademyBillingService $academyBillingService
     ) {}
 
     /**
@@ -153,5 +154,50 @@ class AcademyController extends Controller
             'academy' => $academy,
             'message' => 'تم تجديد رموز QR بنجاح',
         ]);
+    }
+
+    /**
+     * Get academy subscription details (mapped from billing)
+     */
+    public function getSubscription(Request $request, string $id): JsonResponse
+    {
+        $month = $request->input('month'); // YYYY-MM
+        if (!$month) {
+            return $this->errorResponse('الشهر مطلوب', 400);
+        }
+
+        try {
+            $date = \Carbon\Carbon::parse($month . '-01');
+            $billing = $this->academyBillingService->getSubscriptionDetails($id, $date->month, $date->year);
+            return $this->successResponse($billing);
+        } catch (\Exception $e) {
+            return $this->errorResponse($e->getMessage(), 400);
+        }
+    }
+
+    /**
+     * Update academy subscription (payment)
+     */
+    public function updateSubscription(Request $request, string $id): JsonResponse
+    {
+        $request->validate([
+            'month' => 'required|date_format:Y-m',
+            'amount' => 'required|numeric|min:0',
+        ]);
+
+        try {
+            $date = \Carbon\Carbon::parse($request->month . '-01');
+            
+            $billing = $this->academyBillingService->paySubscription(
+                $id, 
+                $date->month, 
+                $date->year, 
+                (float) $request->amount
+            );
+
+            return $this->successResponse($billing, 'تم تحديث الاشتراك بنجاح');
+        } catch (\Exception $e) {
+            return $this->errorResponse($e->getMessage(), 400);
+        }
     }
 }

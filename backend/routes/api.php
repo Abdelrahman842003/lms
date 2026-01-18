@@ -10,6 +10,12 @@ use App\Http\Controllers\Teacher\TeacherController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
+
+
+
+
+
+
 // ============================================
 // Broadcasting Authentication Route
 // ============================================
@@ -37,7 +43,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/me', [AdminAuthController::class, 'me']);
         Route::put('/profile', [AdminAuthController::class, 'updateProfile']);
         Route::post('/change-password', [AdminAuthController::class, 'changePassword']);
-        Route::get('/teachers', [AdminAuthController::class, 'getTeachers']);
+        Route::get('/teachers', [\App\Http\Controllers\Admin\TeacherController::class, 'index']);
         Route::post('/teachers', [\App\Http\Controllers\Teacher\TeacherController::class, 'store']);
         Route::put('/teachers/{teacher}', [\App\Http\Controllers\Teacher\TeacherController::class, 'update']);
         Route::get('/teachers/{teacher}', [\App\Http\Controllers\Teacher\TeacherController::class, 'show']);
@@ -92,6 +98,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/academies/{academy}/secretaries', [\App\Http\Controllers\Admin\AcademyController::class, 'addSecretary']);
         Route::delete('/academies/{academy}/secretaries/{secretary}', [\App\Http\Controllers\Admin\AcademyController::class, 'removeSecretary']);
         Route::post('/academies/{academy}/regenerate-qr', [\App\Http\Controllers\Admin\AcademyController::class, 'regenerateQrCodes']);
+        Route::get('/academies/{academy}/subscription', [\App\Http\Controllers\Admin\AcademyController::class, 'getSubscription']);
+        Route::post('/academies/{academy}/subscription', [\App\Http\Controllers\Admin\AcademyController::class, 'updateSubscription']);
 
         // Academy Billing
         Route::get('/academy-billings', [\App\Http\Controllers\Admin\AcademyBillingController::class, 'index']);

@@ -13,15 +13,16 @@ import {
   updateAcademy, 
   toggleAcademyStatus,
   getDashboardStats,
-  getAcademyBilling,
-  generateAcademyBilling,
-  updateAcademyBillingStatus
+  getAcademySubscription,
+  updateAcademySubscription
 } from '@/services/authService';
 import { toast } from 'react-hot-toast';
 import { Avatar } from '@/components/ui';
 
+
+
 // Billing Modal Component
-const BillingModal = ({ 
+const AcademyBillingModal = ({ 
   isOpen, 
   onClose, 
   academy, 
@@ -33,174 +34,154 @@ const BillingModal = ({
   onSuccess: () => void; 
 }) => {
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7)); // YYYY-MM
-  const [billingData, setBillingData] = useState<any>(null);
+  const [subscriptionData, setSubscriptionData] = useState<any>(null);
+  const [paymentAmount, setPaymentAmount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(false);
   const [fetchError, setFetchError] = useState('');
 
   useEffect(() => {
     if (academy && isOpen) {
-      fetchBilling();
+      fetchSubscription();
     }
   }, [academy, selectedMonth, isOpen]);
 
-  const fetchBilling = async () => {
+  const fetchSubscription = async () => {
     setFetching(true);
     setFetchError('');
     try {
-      const [month, year] = selectedMonth.split('-');
-      const response = await getAcademyBilling(academy.id, month, year);
-      setBillingData(response[0] || null);
+      const response = await getAcademySubscription(academy.id, selectedMonth);
+      setSubscriptionData(response);
+      setPaymentAmount(0);
     } catch (error: any) {
-      console.error('Failed to fetch billing', error);
-      setFetchError(error.message || 'فشل جلب البيانات');
+      console.error('Failed to fetch subscription', error);
+      setFetchError(error.message || 'فشل جلب البيانات. تأكد من تشغيل الترحيل (Migration) لقاعدة البيانات.');
+      if (!error.message) {
+          toast.error('فشل جلب بيانات الاشتراك');
+      }
     } finally {
       setFetching(false);
     }
   };
 
-  const handleGenerateBilling = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     setLoading(true);
     try {
-      const [month, year] = selectedMonth.split('-');
-      await generateAcademyBilling(academy.id, month, year);
-      toast.success('تم توليد الفاتورة بنجاح');
-      await fetchBilling();
+      await updateAcademySubscription(academy.id, {
+        month: selectedMonth,
+        amount: paymentAmount
+      });
+      toast.success('تم تحديث الاشتراك بنجاح');
       onSuccess();
+      onClose();
     } catch (error) {
-      console.error('Failed to generate billing', error);
-      toast.error('فشل توليد الفاتورة');
+      console.error('Failed to update subscription', error);
+      toast.error('فشل تحديث الاشتراك');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleUpdateStatus = async (status: string) => {
-    if (!billingData) return;
-    setLoading(true);
-    try {
-      await updateAcademyBillingStatus(billingData.id, status);
-      toast.success('تم تحديث حالة الفاتورة بنجاح');
-      await fetchBilling();
-      onSuccess();
-    } catch (error) {
-      console.error('Failed to update billing status', error);
-      toast.error('فشل تحديث حالة الفاتورة');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (!isOpen || !academy) return null;
+  if (!isOpen) return null;
 
   return (
-    <div 
-      className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[1000] p-4"
-      onClick={onClose}
-    >
-      <div 
-        className="bg-[#1a1f37] p-6 rounded-2xl w-full max-w-md border border-white/10"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h2 className="text-white mb-6 text-xl font-bold flex items-center gap-3">
-          <i className="fas fa-file-invoice-dollar text-success"></i>
-          <span>فاتورة الأكاديمية</span>
-        </h2>
-
-        <div className="mb-6">
-          <label className="block text-gray-300 mb-2 text-sm">اختر الشهر</label>
-          <input
-            type="month"
-            value={selectedMonth}
-            onChange={(e) => setSelectedMonth(e.target.value)}
-            className="w-full p-2.5 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm"
-          />
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <div className="bg-[#1e1e2d] rounded-xl border border-white/10 w-full max-w-md p-6 shadow-xl">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-xl font-bold text-white">اشتراك الأكاديمية</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-white">
+            <i className="fas fa-times"></i>
+          </button>
         </div>
 
-        {fetching ? (
-          <div className="text-center py-8 text-gray-400">جاري التحميل...</div>
-        ) : fetchError ? (
-          <div className="text-center py-8">
-            <div className="text-danger mb-2">
-              <i className="fas fa-exclamation-circle text-2xl"></i>
-            </div>
-            <p className="text-danger text-sm">{fetchError}</p>
-            <button 
-              onClick={fetchBilling}
-              className="mt-4 px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-sm text-white transition-colors"
-            >
-              إعادة المحاولة
-            </button>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-400 mb-1">الشهر</label>
+            <input
+              type="month"
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(e.target.value)}
+              className="w-full bg-[#151521] border border-white/10 rounded-lg px-4 py-2 text-white focus:border-primary focus:outline-none"
+            />
           </div>
-        ) : billingData ? (
-          <>
-            <div className="bg-white/5 rounded-xl p-4 mb-6 border border-white/10">
-              <div className="flex items-center gap-3 mb-4 pb-4 border-b border-white/10">
-                <Avatar name={academy.name} src={academy.logo} size="md" />
-                <div>
-                  <h3 className="text-white font-bold">{academy.name}</h3>
-                  <p className="text-gray-400 text-sm">{academy.phone}</p>
+
+          {fetching ? (
+            <div className="text-center py-4 text-gray-400">جاري جلب البيانات...</div>
+          ) : fetchError ? (
+            <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 text-red-400 text-sm">
+              {fetchError}
+            </div>
+          ) : subscriptionData ? (
+            <>
+              <div className="bg-white/5 rounded-lg p-4 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-400">عدد الارتباطات:</span>
+                  <span className="text-white font-medium">{subscriptionData.student_count}</span>
                 </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4 text-sm mb-3">
-                <div>
-                  <span className="block text-gray-400 mb-1">عدد المدرسين</span>
-                  <span className="text-white font-bold">{billingData.teachers_count || 0}</span>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-400">حالة الدفع:</span>
+                  <span className={`font-medium ${
+                    subscriptionData.status === 'paid' ? 'text-green-400' : 
+                    subscriptionData.status === 'partial' ? 'text-yellow-400' : 'text-red-400'
+                  }`}>
+                    {subscriptionData.status === 'paid' ? 'مدفوع' : 
+                     subscriptionData.status === 'partial' ? 'مدفوع جزئياً' : 'غير مدفوع'}
+                  </span>
                 </div>
-                <div>
-                  <span className="block text-gray-400 mb-1">المبلغ المستحق</span>
-                  <span className="text-primary font-bold">${billingData.amount_due || 0}</span>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-400">المبلغ المستحق:</span>
+                  <span className="text-white font-medium">${subscriptionData.amount_due}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-400">المبلغ المدفوع:</span>
+                  <span className="text-green-400 font-medium">${subscriptionData.amount_paid}</span>
+                </div>
+                <div className="flex justify-between text-sm pt-2 border-t border-white/10">
+                  <span className="text-gray-400">المتبقي:</span>
+                  <span className="text-red-400 font-medium">${subscriptionData.remaining}</span>
                 </div>
               </div>
 
-              <div className="mt-3 pt-3 border-t border-white/10 text-center">
-                <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                  billingData.status === 'paid' ? 'bg-success/20 text-success' : 
-                  billingData.status === 'pending' ? 'bg-warning/20 text-warning' : 
-                  'bg-danger/20 text-danger'
-                }`}>
-                  {billingData.status === 'paid' ? 'مدفوعة' : 
-                   billingData.status === 'pending' ? 'قيد الانتظار' : 
-                   'ملغاة'}
-                </span>
-              </div>
-            </div>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-1">مبلغ الدفع</label>
+                  <input
+                    type="number"
+                    value={paymentAmount}
+                    onChange={(e) => setPaymentAmount(Number(e.target.value))}
+                    min="0"
+                    max={subscriptionData.remaining}
+                    className="w-full bg-[#151521] border border-white/10 rounded-lg px-4 py-2 text-white focus:border-primary focus:outline-none"
+                    placeholder="أدخل المبلغ..."
+                  />
+                </div>
 
-            {billingData.status !== 'paid' && (
-              <div className="flex gap-3 justify-end pt-3 border-t border-white/10">
-                <button
-                  onClick={() => handleUpdateStatus('paid')}
-                  className="px-4 py-2 rounded-lg bg-success text-white hover:bg-success/90 transition-all text-sm"
-                  disabled={loading}
-                >
-                  {loading ? 'جاري الحفظ...' : 'تأكيد الدفع'}
-                </button>
-                <button
-                  onClick={onClose}
-                  className="px-4 py-2 rounded-lg border border-white/10 text-gray-300 hover:bg-white/5 transition-all text-sm"
-                >
-                  إغلاق
-                </button>
-              </div>
-            )}
-          </>
-        ) : (
-          <div className="text-center py-8">
-            <p className="text-gray-400 mb-4">لا توجد فاتورة لهذا الشهر</p>
-            <button
-              onClick={handleGenerateBilling}
-              className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-all text-sm"
-              disabled={loading}
-            >
-              {loading ? 'جاري التوليد...' : 'توليد فاتورة'}
-            </button>
-          </div>
-        )}
+                <div className="flex justify-end gap-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="px-4 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
+                  >
+                    إلغاء
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={loading || paymentAmount <= 0}
+                    className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {loading ? 'جاري الحفظ...' : 'تأكيد الدفع'}
+                  </button>
+                </div>
+              </form>
+            </>
+          ) : null}
+        </div>
       </div>
     </div>
   );
 };
+
 
 export default function AdminAcademiesPage() {
   const { user } = useAuth();
@@ -210,6 +191,7 @@ export default function AdminAcademiesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isBillingModalOpen, setIsBillingModalOpen] = useState(false);
   const [selectedAcademy, setSelectedAcademy] = useState<any>(null);
+
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
     academyId: string | null;
@@ -425,6 +407,8 @@ export default function AdminAcademiesPage() {
     setIsBillingModalOpen(true);
   };
 
+
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -506,6 +490,12 @@ export default function AdminAcademiesPage() {
       className: 'hidden sm:table-cell',
     },
     {
+      key: 'total_enrollments_count',
+      label: 'عدد الارتباطات',
+      sortable: true,
+      className: 'hidden sm:table-cell',
+    },
+    {
       key: 'secretaries_count',
       label: 'عدد السكرتارية',
       sortable: true,
@@ -544,12 +534,7 @@ export default function AdminAcademiesPage() {
         router.push(`/admin/academies/${row.id}`);
       },
     },
-    {
-      label: 'إدارة الفواتير',
-      icon: 'fas fa-file-invoice-dollar',
-      variant: 'success' as const,
-      onClick: (row: any) => openBillingModal(row),
-    },
+
     {
       label: 'تعديل البيانات',
       icon: 'fas fa-edit',
@@ -560,6 +545,12 @@ export default function AdminAcademiesPage() {
       icon: (row: any) => row.is_active ? 'fas fa-ban' : 'fas fa-check-circle',
       variant: (row: any) => row.is_active ? 'danger' : 'success',
       onClick: (row: any) => handleToggleStatus(row),
+    },
+    {
+      label: 'دفع الاشتراك',
+      icon: 'fas fa-money-bill-wave',
+      variant: 'success' as const,
+      onClick: (row: any) => openBillingModal(row),
     },
   ];
 
@@ -851,8 +842,8 @@ export default function AdminAcademiesPage() {
         </div>
       )}
 
-      {/* Billing Modal */}
-      <BillingModal
+      {/* Billing Modal Component*/}
+      <AcademyBillingModal
         isOpen={isBillingModalOpen}
         onClose={() => {
           setIsBillingModalOpen(false);
@@ -861,6 +852,9 @@ export default function AdminAcademiesPage() {
         academy={selectedAcademy}
         onSuccess={() => fetchAcademies(currentPage)}
       />
+
+{/* Billing Modal */}
+
 
       {/* Confirmation Modal */}
       {confirmModal.isOpen && (

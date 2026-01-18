@@ -344,7 +344,7 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}, skip
     }
 
   const res: ApiResponse<any> = await response.json();
-  return res.data;
+  return res.data !== undefined ? res.data : res;
 }
 
 /**
@@ -583,7 +583,7 @@ export async function changeAdminPassword(
 export async function getTeachers(
   page = 1, 
   perPage = 10, 
-  filters?: { search?: string; date_from?: string; date_to?: string; status?: string }
+  filters?: { search?: string; date_from?: string; date_to?: string; status?: string; type?: string; payment_status?: string }
 ): Promise<any> {
   const queryParams = new URLSearchParams({
     page: page.toString(),
@@ -592,7 +592,10 @@ export async function getTeachers(
     ...(filters?.date_from && { date_from: filters.date_from }),
     ...(filters?.date_to && { date_to: filters.date_to }),
     ...(filters?.status && { status: filters.status }),
+    ...(filters?.type && { type: filters.type }),
+    ...(filters?.payment_status && { payment_status: filters.payment_status }),
   });
+  console.log('getTeachers queryParams:', queryParams.toString()); // Debug log to verify type is sent
   return await fetchApi(`/admin/teachers?${queryParams}`);
 }
 
@@ -703,6 +706,27 @@ export async function updateTeacherSubscription(id: string, data: any): Promise<
  */
 export async function getTeacherSubscription(id: string, month: string): Promise<any> {
   const res = await fetchApi(`/admin/teachers/${id}/subscription?month=${month}`, {
+    method: 'GET',
+  });
+  return res;
+}
+
+/**
+ * Update academy subscription (Admin only)
+ */
+export async function updateAcademySubscription(id: string, data: any): Promise<any> {
+  const res = await fetchApi(`/admin/academies/${id}/subscription`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+  return res;
+}
+
+/**
+ * Get academy subscription for a month (Admin only)
+ */
+export async function getAcademySubscription(id: string, month: string): Promise<any> {
+  const res = await fetchApi(`/admin/academies/${id}/subscription?month=${month}`, {
     method: 'GET',
   });
   return res;
@@ -860,10 +884,20 @@ export async function toggleAcademyStatus(id: string): Promise<any> {
  * Get academy billing for a specific month (Admin only)
  */
 export async function getAcademyBilling(academyId: string, month: string, year: string): Promise<any> {
-  const res = await fetchApi(`/admin/academy-billings?academy_id=${academyId}&month=${month}&year=${year}`, {
+  const res = await fetchApi(`/admin/academy-billings?academy_id=${academyId}&month=${parseInt(month)}&year=${parseInt(year)}`, {
     method: 'GET',
   });
-  return res.billings;
+  
+  if (Array.isArray(res)) return res;
+  if (res.billings && Array.isArray(res.billings)) return res.billings;
+  if (res.billing) return [res.billing]; // Handle singular billing object
+  if (res.data) {
+    if (Array.isArray(res.data)) return res.data;
+    return [res.data]; // Handle singular data object
+  }
+  if (res.id) return [res]; // Handle direct object response
+  
+  return [];
 }
 
 /**
@@ -872,7 +906,11 @@ export async function getAcademyBilling(academyId: string, month: string, year: 
 export async function generateAcademyBilling(academyId: string, month: string, year: string): Promise<any> {
   const res = await fetchApi('/admin/academy-billings/generate', {
     method: 'POST',
-    body: JSON.stringify({ academy_id: academyId, month, year }),
+    body: JSON.stringify({ 
+      academy_id: academyId, 
+      month: parseInt(month), 
+      year: parseInt(year) 
+    }),
   });
   return res.billing;
 }
@@ -884,6 +922,17 @@ export async function updateAcademyBillingStatus(billingId: string, status: stri
   const res = await fetchApi(`/admin/academy-billings/${billingId}/status`, {
     method: 'PUT',
     body: JSON.stringify({ status, notes }),
+  });
+  return res.billing;
+}
+
+/**
+ * Pay academy billing (Admin only)
+ */
+export async function payAcademyBilling(billingId: string, amount: number): Promise<any> {
+  const res = await fetchApi(`/admin/academy-billings/${billingId}/pay`, {
+    method: 'POST',
+    body: JSON.stringify({ amount }),
   });
   return res.billing;
 }

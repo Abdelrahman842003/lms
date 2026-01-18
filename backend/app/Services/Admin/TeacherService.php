@@ -4,20 +4,25 @@ namespace App\Services\Admin;
 
 use App\Models\Teacher;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class TeacherService
 {
     public function getTeachers(int $perPage = 10, array $filters = []): LengthAwarePaginator
     {
-        \Illuminate\Support\Facades\Log::info('getTeachers filters:', $filters);
+        Log::info('getTeachers filters:', $filters);
         
-        \DB::enableQueryLog();
+        DB::enableQueryLog();
         
         $result = Teacher::withCount(['students', 'secretaries'])
             ->withCount(['enrollments as independent_enrollments_count' => function ($query) {
                 $query->whereNull('academy_id');
             }])
-            ->with(['academies:id,name'])
+            ->with(['academies:id,name', 'subscriptions' => function($q) {
+                $q->where('month', now()->startOfMonth()->format('Y-m-d'));
+            }])
             ->when(isset($filters['status']) && $filters['status'] !== 'all', function ($query) use ($filters) {
                 \Illuminate\Support\Facades\Log::info('Applying status filter:', ['status' => $filters['status']]);
                 $query->where('status', $filters['status']);
@@ -39,9 +44,56 @@ class TeacherService
                     $query->where('status', '!=', 'suspended');
                 }
             })
+            ->when(isset($filters['type']) && $filters['type'] !== 'all', function ($query) use ($filters) {
+                if ($filters['type'] === 'independent') {
+                    $query->where(function($q) {
+                        $q->whereDoesntHave('academies')
+                          ->orWhere(function($q2) {
+                              $q2->whereHas('academies')
+                                 ->whereHas('enrollments', function($sub) {
+                                     $sub->whereNull('academy_id');
+                                 });
+                          });
+                    });
+                } elseif ($filters['type'] === 'academy') {
+                    $query->whereHas('academies')
+                          ->where('subscription_fee', '<=', 0)
+                          ->whereDoesntHave('enrollments', function($sub) {
+                              $sub->whereNull('academy_id');
+                          });
+                }
+            })
+            ->when(isset($filters['payment_status']) && $filters['payment_status'] !== 'all', function ($query) use ($filters) {
+                $status = $filters['payment_status'];
+                $currentMonth = now()->startOfMonth()->format('Y-m-d');
+
+                if ($status === 'paid') {
+                    $query->whereHas('subscriptions', function($q) use ($currentMonth) {
+                        $q->where('month', $currentMonth)
+                          ->where('status', 'paid');
+                    });
+                } elseif ($status === 'partial') {
+                    $query->whereHas('subscriptions', function($q) use ($currentMonth) {
+                        $q->where('month', $currentMonth)
+                          ->where('status', 'partial');
+                    });
+                } elseif ($status === 'unpaid') {
+                    $query->where(function($q) use ($currentMonth) {
+                        $q->whereDoesntHave('subscriptions', function($sub) use ($currentMonth) {
+                            $sub->where('month', $currentMonth);
+                        })->orWhereHas('subscriptions', function($sub) use ($currentMonth) {
+                            $sub->where('month', $currentMonth)
+                                ->where('status', 'pending'); // Assuming 'pending' means unpaid
+                        });
+                    });
+                }
+            })
             ->latest()
-            ->filter($filters)
-            ->paginate($perPage);
+            ->filter($filters);
+            
+        \Illuminate\Support\Facades\Log::info('SQL Query:', ['sql' => $result->toSql(), 'bindings' => $result->getBindings()]);
+        
+        $result = $result->paginate($perPage);
             
         \Illuminate\Support\Facades\Log::info('Executed queries:', \DB::getQueryLog());
         \DB::disableQueryLog();
@@ -122,6 +174,7 @@ class TeacherService
             ['month' => $monthDate],
             [
                 'student_count' => $teacher->students()
+                    ->wherePivot('academy_id', null)
                     ->wherePivot('created_at', '<=', $date->copy()->endOfMonth())
                     ->count(),
                 'amount_due' => $this->calculateAmountDue($teacher, $monthDate),
@@ -135,6 +188,7 @@ class TeacherService
             // Calculate count for that specific month
             $endOfMonth = \Carbon\Carbon::parse($monthDate)->endOfMonth();
             $currentCount = $teacher->students()
+                ->wherePivot('academy_id', null)
                 ->wherePivot('created_at', '<=', $endOfMonth)
                 ->count();
                 
@@ -195,6 +249,9 @@ class TeacherService
     private function calculateAmountDue(Teacher $teacher, ?string $month = null): float
     {
         $query = $teacher->students();
+        
+        // Only count independent students (where academy_id is null)
+        $query->wherePivot('academy_id', null);
         
         if ($month) {
             $endOfMonth = \Carbon\Carbon::parse($month)->endOfMonth();

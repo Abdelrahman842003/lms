@@ -396,6 +396,14 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
   const router = useRouter();
   const { logout, user: authUser, selectedAcademy, isLoading } = useAuth();
   
+  const [isAdminImpersonating, setIsAdminImpersonating] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setIsAdminImpersonating(!!localStorage.getItem('adminToken'));
+    }
+  }, []);
+  
   // Use authUser from context if available, otherwise fall back to prop
   const user = authUser || userProp;
   
@@ -562,6 +570,40 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
 
           {/* Right Side Group: Notifications + User + Mobile Toggle */}
           <div className="navbar-right-group">
+
+          {/* Return to Admin Button */}
+          {isAdminImpersonating && (
+              <button
+                onClick={() => {
+                  const adminToken = localStorage.getItem('adminToken');
+                  const adminUser = localStorage.getItem('adminUser');
+                  const adminUserType = localStorage.getItem('adminUserType');
+
+                  if (adminToken && adminUser && adminUserType) {
+                    // Restore admin session
+                    localStorage.setItem('token', adminToken);
+                    localStorage.setItem('user', adminUser);
+                    localStorage.setItem('userType', adminUserType);
+
+                    // Clear admin backup
+                    localStorage.removeItem('adminToken');
+                    localStorage.removeItem('adminUser');
+                    localStorage.removeItem('adminUserType');
+
+                    // Set cookies
+                    document.cookie = "auth_state=true; path=/; max-age=2592000; SameSite=Lax";
+                    document.cookie = `user_role=${adminUserType}; path=/; max-age=2592000; SameSite=Lax`;
+
+                    // Redirect
+                    window.location.href = '/admin/teachers';
+                  }
+                }}
+                className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-lg transition-colors border border-red-500/20 text-sm font-medium ml-2"
+              >
+                <i className="fas fa-user-shield"></i>
+                <span>العودة للأدمن</span>
+              </button>
+            )}
             
             {/* Teacher Selector (Student Only) */}
             {role === 'student' && (

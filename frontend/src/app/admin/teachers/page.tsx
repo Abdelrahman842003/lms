@@ -63,7 +63,7 @@ const SubscriptionModal = ({
     try {
       await updateTeacherSubscription(teacher.id, {
         month: selectedMonth,
-        amount: paymentAmount
+        payment_amount: paymentAmount
       });
       toast.success('تم تحديث الاشتراك بنجاح');
       onSuccess();
@@ -120,9 +120,19 @@ const SubscriptionModal = ({
                   <span className="text-gray-400">المبلغ المدفوع:</span>
                   <span className="text-green-400 font-medium">${subscriptionData.amount_paid}</span>
                 </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-400">حالة الدفع:</span>
+                  <span className={`font-medium ${
+                    subscriptionData.status === 'paid' ? 'text-green-400' : 
+                    subscriptionData.status === 'partial' ? 'text-yellow-400' : 'text-red-400'
+                  }`}>
+                    {subscriptionData.status === 'paid' ? 'مدفوع' : 
+                     subscriptionData.status === 'partial' ? 'مدفوع جزئياً' : 'غير مدفوع'}
+                  </span>
+                </div>
                 <div className="flex justify-between text-sm pt-2 border-t border-white/10">
                   <span className="text-gray-400">المتبقي:</span>
-                  <span className="text-red-400 font-medium">${subscriptionData.remaining}</span>
+                  <span className="text-red-400 font-medium">${(subscriptionData.amount_due - subscriptionData.amount_paid).toFixed(2)}</span>
                 </div>
               </div>
 
@@ -134,7 +144,7 @@ const SubscriptionModal = ({
                     value={paymentAmount}
                     onChange={(e) => setPaymentAmount(Number(e.target.value))}
                     min="0"
-                    max={subscriptionData.remaining}
+                    max={subscriptionData.amount_due - subscriptionData.amount_paid}
                     className="w-full bg-[#151521] border border-white/10 rounded-lg px-4 py-2 text-white focus:border-primary focus:outline-none"
                     placeholder="أدخل المبلغ..."
                   />
@@ -207,6 +217,8 @@ export default function AdminTeachersPage() {
 
   const [filters, setFilters] = useState({
     status: 'all',
+    type: 'all',
+    payment_status: 'all',
     dateFrom: '',
     dateTo: ''
   });
@@ -288,7 +300,9 @@ export default function AdminTeachersPage() {
       const activeFilters: any = {
         search: searchQuery,
         date_from: filters.dateFrom || undefined,
-        date_to: filters.dateTo || undefined
+        date_to: filters.dateTo || undefined,
+        type: filters.type !== 'all' ? filters.type : undefined,
+        payment_status: filters.payment_status !== 'all' ? filters.payment_status : undefined
       };
       
       // Don't send status filter to backend, we'll filter client-side
@@ -296,7 +310,7 @@ export default function AdminTeachersPage() {
       //   activeFilters.status = filters.status;
       // }
       
-      console.log('Active Filters:', activeFilters);
+      console.log('Active Filters:', activeFilters); // Debug log
       
       const [teachersRes, statsRes] = await Promise.all([
         getTeachers(page, itemsPerPage, activeFilters),
@@ -495,10 +509,12 @@ export default function AdminTeachersPage() {
       label: 'التبعية',
       sortable: false,
       render: (_: any, row: any) => {
+
+
         if (row.affiliation === 'independent') {
           return <span className="badge badge-info">مستقل</span>;
         }
-        
+
         const academies = row.academies || [];
         const academyBadges = academies.map((academy: any) => (
           <span key={academy.id} className="badge badge-primary ml-1">
@@ -516,6 +532,29 @@ export default function AdminTeachersPage() {
         }
 
         return <div className="flex flex-wrap gap-1">{academyBadges}</div>;
+      },
+    },
+    {
+      key: 'subscription_status',
+      label: 'حالة الدفع (الشهر الحالي)',
+      sortable: false,
+      render: (_: any, row: any) => {
+        // Only show for independent or both, OR if filtering by independent
+        if (filters.type !== 'independent' && row.affiliation === 'academy') return <span className="text-gray-400">-</span>;
+
+        const status = row.subscription_status || 'pending';
+        let badgeClass = 'badge-danger';
+        let text = 'غير مدفوع';
+
+        if (status === 'paid') {
+          badgeClass = 'badge-success';
+          text = 'مدفوع';
+        } else if (status === 'partial') {
+          badgeClass = 'badge-warning';
+          text = 'مدفوع جزئياً';
+        }
+
+        return <span className={`badge ${badgeClass}`}>{text}</span>;
       },
     },
     {
@@ -594,6 +633,7 @@ export default function AdminTeachersPage() {
       icon: 'fas fa-money-bill-wave',
       variant: 'success' as const,
       onClick: (row: any) => openSubscriptionModal(row),
+      hidden: (row: any) => row.affiliation === 'academy',
     },
     {
       label: 'عرض التفاصيل',
@@ -609,8 +649,15 @@ export default function AdminTeachersPage() {
         try {
           const response = await loginAsTeacher(row.id);
           
-          // Clear admin session
-          localStorage.clear();
+          // Store admin session
+          localStorage.setItem('adminToken', localStorage.getItem('token') || '');
+          localStorage.setItem('adminUser', localStorage.getItem('user') || '');
+          localStorage.setItem('adminUserType', localStorage.getItem('userType') || '');
+
+          // Clear current session
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          localStorage.removeItem('userType');
           
           // Set teacher session
           localStorage.setItem('token', response.token);
@@ -707,19 +754,7 @@ export default function AdminTeachersPage() {
         </div>
 
         <DashboardCard title="قائمة المدرسين" icon="fas fa-table">
-          <div className="mb-6 w-full sm:w-auto">
-            <Filter
-              options={[
-                { value: 'all', label: 'الكل' },
-                { value: 'active', label: 'نشط' },
-                { value: 'suspended', label: 'معلق' },
-                { value: 'pending', label: 'ننتظر الموافقة' },
-              ]}
-              value={filters.status || 'all'}
-              onChange={(value) => handleFilterChange('status', value)}
-              className="w-full sm:w-[200px]"
-            />
-          </div>
+
           
           {isLoading || isFiltering ? (
             <div className="data-table-wrapper overflow-x-auto">
@@ -755,6 +790,42 @@ export default function AdminTeachersPage() {
               actions={tableActions}
               searchable={true}
               onSearch={setSearchQuery}
+              headerActions={
+                <div className="flex flex-wrap gap-2">
+                  <Filter
+                    options={[
+                      { value: 'all', label: 'الكل' },
+                      { value: 'active', label: 'نشط' },
+                      { value: 'suspended', label: 'معلق' },
+                      { value: 'pending', label: 'ننتظر الموافقة' },
+                    ]}
+                    value={filters.status || 'all'}
+                    onChange={(value) => handleFilterChange('status', value)}
+                    className="w-full sm:w-[150px]"
+                  />
+                  <Filter
+                    options={[
+                      { value: 'all', label: 'كل الأنواع' },
+                      { value: 'independent', label: 'مستقل' },
+                      { value: 'academy', label: 'أكاديمية' },
+                    ]}
+                    value={filters.type || 'all'}
+                    onChange={(value) => handleFilterChange('type', value)}
+                    className="w-full sm:w-[150px]"
+                  />
+                  <Filter
+                    options={[
+                      { value: 'all', label: 'حالة الدفع' },
+                      { value: 'paid', label: 'مدفوع' },
+                      { value: 'partial', label: 'مدفوع جزئياً' },
+                      { value: 'unpaid', label: 'غير مدفوع' },
+                    ]}
+                    value={filters.payment_status || 'all'}
+                    onChange={(value) => handleFilterChange('payment_status', value)}
+                    className="w-full sm:w-[180px]"
+                  />
+                </div>
+              }
               pagination={false}
               itemsPerPage={itemsPerPage}
               isLoading={false}

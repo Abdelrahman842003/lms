@@ -231,11 +231,31 @@ class ReportService
         // Note: This is platform revenue from this academy's students
         $expectedRevenue = $totalEnrollments * $pricePerStudent;
 
-        // Confirmed payments in period (from academy's teachers)
-        $confirmedPayments = PaymentLog::whereIn('teacher_id', $academyTeachers->pluck('id'))
-            ->where('status', 'confirmed')
-            ->whereBetween('confirmed_at', [$startDate, $endDate])
-            ->sum('amount');
+        // Confirmed payments in period (from AcademyBilling)
+        // We sum amount_paid from billings that fall within the selected months
+        $startMonth = $startDate->month;
+        $startYear = $startDate->year;
+        $endMonth = $endDate->month;
+        $endYear = $endDate->year;
+
+        $confirmedPayments = \App\Models\AcademyBilling::where('academy_id', $academy->id)
+            ->where(function($q) use ($startMonth, $startYear, $endMonth, $endYear) {
+                if ($startYear === $endYear) {
+                    $q->where('year', $startYear)
+                      ->whereBetween('month', [$startMonth, $endMonth]);
+                } else {
+                    $q->where(function($sub) use ($startMonth, $startYear) {
+                        $sub->where('year', $startYear)
+                            ->where('month', '>=', $startMonth);
+                    })->orWhere(function($sub) use ($endMonth, $endYear) {
+                        $sub->where('year', $endYear)
+                            ->where('month', '<=', $endMonth);
+                    })->orWhere(function($sub) use ($startYear, $endYear) {
+                        $sub->whereBetween('year', [$startYear + 1, $endYear - 1]);
+                    });
+                }
+            })
+            ->sum('amount_paid');
 
         // Monthly breakdown
         // We can reuse getMonthlyBreakdown but we need to pass teacher IDs
@@ -292,10 +312,12 @@ class ReportService
                 ->whereBetween('created_at', [$queryStart, $queryEnd])
                 ->count();
                 
-            $payments = PaymentLog::whereIn('teacher_id', $teacherIds)
-                ->where('status', 'confirmed')
-                ->whereBetween('confirmed_at', [$queryStart, $queryEnd])
-                ->sum('amount');
+            $payments = \App\Models\AcademyBilling::whereIn('academy_id', \App\Models\Academy::whereHas('teachers', function($q) use ($teacherIds) {
+                    $q->whereIn('teachers.id', $teacherIds);
+                })->pluck('id'))
+                ->where('month', $currentMonth->month)
+                ->where('year', $currentMonth->year)
+                ->sum('amount_paid');
             
             $months[] = [
                 'month' => $currentMonth->format('Y-m'),

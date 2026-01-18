@@ -42,13 +42,15 @@ class AcademyBillingService
         }
 
         // Get cost per student from settings
-        $costPerStudent = (float) Setting::getValue('academy_cost_per_student', 0);
+        $costPerStudent = \App\Services\HelperService::getAcademyStudentPrice();
 
-        // Calculate total students
-        $totalStudents = 0;
-        foreach ($academy->activeTeachers as $teacher) {
-            $totalStudents += $teacher->activeEnrollments()->count();
-        }
+        // Calculate total enrollments (All Enrollments)
+        // We use the same logic as in ReportService: All enrollments of all teachers
+        $teacherIds = $academy->teachers()->pluck('teachers.id')->toArray();
+        
+        $totalStudents = \Illuminate\Support\Facades\DB::table('enrollments')
+            ->whereIn('teacher_id', $teacherIds)
+            ->count();
 
         $totalCost = $totalStudents * $costPerStudent;
 
@@ -113,5 +115,111 @@ class AcademyBillingService
     public function delete(AcademyBilling $billing): void
     {
         $billing->delete();
+    }
+
+    /**
+     * Get subscription details for a specific month
+     */
+    public function getSubscriptionDetails(string $academyId, int $month, int $year): array
+    {
+        $academy = Academy::findOrFail($academyId);
+        
+        // Check if billing exists
+        $billing = AcademyBilling::where('academy_id', $academy->id)
+            ->where('month', $month)
+            ->where('year', $year)
+            ->first();
+
+        if ($billing) {
+            // If pending, refresh calculation to ensure it matches current data
+            if ($billing->status === 'pending') {
+                $costPerStudent = \App\Services\HelperService::getAcademyStudentPrice();
+                $teacherIds = $academy->teachers()->pluck('teachers.id')->toArray();
+                
+                $currentTotalStudents = \Illuminate\Support\Facades\DB::table('enrollments')
+                    ->whereIn('teacher_id', $teacherIds)
+                    ->count();
+                
+                $currentTotalCost = $currentTotalStudents * $costPerStudent;
+
+                if ($billing->total_students !== $currentTotalStudents || $billing->total_cost != $currentTotalCost) {
+                    $billing->total_students = $currentTotalStudents;
+                    $billing->total_cost = $currentTotalCost;
+                    $billing->cost_per_student = $costPerStudent;
+                    $billing->save();
+                }
+            }
+
+            return [
+                'student_count' => $billing->total_students,
+                'amount_due' => $billing->total_cost,
+                'amount_paid' => $billing->amount_paid,
+                'status' => $billing->status,
+                'remaining' => max(0, $billing->total_cost - $billing->amount_paid),
+            ];
+        }
+
+        // If not exists, calculate potential
+        $costPerStudent = \App\Services\HelperService::getAcademyStudentPrice();
+        $totalStudents = 0;
+        
+        // We need to calculate students active in that month
+        // This is an approximation using current active teachers
+        $teacherIds = $academy->teachers()->pluck('teachers.id')->toArray();
+        
+        $totalStudents = \Illuminate\Support\Facades\DB::table('enrollments')
+            ->whereIn('teacher_id', $teacherIds)
+            ->count();
+
+        $totalCost = $totalStudents * $costPerStudent;
+
+        return [
+            'student_count' => $totalStudents,
+            'amount_due' => $totalCost,
+            'amount_paid' => 0,
+            'status' => 'pending',
+            'remaining' => $totalCost,
+        ];
+    }
+
+    /**
+     * Pay subscription
+     */
+    public function paySubscription(string $academyId, int $month, int $year, float $amount): array
+    {
+        $academy = Academy::findOrFail($academyId);
+
+        // Find or create billing
+        $billing = AcademyBilling::where('academy_id', $academy->id)
+            ->where('month', $month)
+            ->where('year', $year)
+            ->first();
+
+        if (!$billing) {
+            $billing = $this->generate($academyId, $month, $year);
+        }
+
+        // Update status if fully paid
+        if ($amount > 0) {
+            $billing->amount_paid += $amount;
+            
+            // If amount covers the cost, mark as paid
+            if ($billing->amount_paid >= $billing->total_cost) {
+                $billing->status = 'paid';
+                $billing->paid_at = Carbon::now();
+            } else {
+                $billing->status = 'partial';
+            }
+            
+            $billing->save();
+        }
+
+        return [
+            'student_count' => $billing->total_students,
+            'amount_due' => $billing->total_cost,
+            'amount_paid' => $billing->amount_paid,
+            'status' => $billing->status,
+            'remaining' => max(0, $billing->total_cost - $billing->amount_paid),
+        ];
     }
 }
