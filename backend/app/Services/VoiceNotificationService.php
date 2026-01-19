@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
 use App\Models\DailyVoiceLimit;
@@ -87,9 +89,6 @@ class VoiceNotificationService
         }
     }
 
-    /**
-     * Store voice file and return the path
-     */
     /**
      * Store voice file and return the path
      */

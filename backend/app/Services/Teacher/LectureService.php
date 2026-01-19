@@ -1,16 +1,29 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Teacher;
 
-use App\Models\Lecture;
 use App\Events\LectureUpdated;
+use App\Models\Attendance;
+use App\Models\Lecture;
+use App\Models\Student;
+use App\Notifications\LectureActivatedNotification;
+use App\Notifications\LectureCancelledNotification;
+use App\Notifications\StudentAttendanceNotification;
 use App\Traits\HasAcademyFilter;
+use Carbon\Carbon;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Str;
 
 class LectureService
 {
     use HasAcademyFilter;
 
-    public function getLectures($teacher, int $perPage = 10, array $filters = [], ?string $academyId = null)
+    public function getLectures($teacher, int $perPage = 10, array $filters = [], ?string $academyId = null): LengthAwarePaginator
     {
         $query = $teacher->lectures()
             ->with(['grade', 'group'])
@@ -31,7 +44,7 @@ class LectureService
         return $query->paginate($perPage);
     }
 
-    public function createLecture($teacher, array $data)
+    public function createLecture($teacher, array $data): Lecture
     {
         $lecture = $teacher->lectures()->create($data);
         
@@ -41,7 +54,7 @@ class LectureService
         return $lecture;
     }
 
-    public function updateLecture(Lecture $lecture, array $data)
+    public function updateLecture(Lecture $lecture, array $data): Lecture
     {
         $lecture->update($data);
         
@@ -51,7 +64,7 @@ class LectureService
         return $lecture;
     }
 
-    public function deleteLecture(Lecture $lecture)
+    public function deleteLecture(Lecture $lecture): ?bool
     {
         // Store teacher_id before deletion for broadcasting
         $teacherId = $lecture->teacher_id;
@@ -75,13 +88,13 @@ class LectureService
         return $result;
     }
 
-    public function endLecture(Lecture $lecture)
+    public function endLecture(Lecture $lecture): Lecture
     {
         // 1. Update lecture status
         $updateData = ['is_active' => false];
         
         if (!$lecture->is_recurring) {
-            $updateData['end_time'] = \Carbon\Carbon::now();
+            $updateData['end_time'] = Carbon::now();
         }
 
         $lecture->update($updateData);
@@ -92,7 +105,7 @@ class LectureService
         return $lecture;
     }
 
-    public function toggleActive(Lecture $lecture)
+    public function toggleActive(Lecture $lecture): Lecture
     {
         $lecture->update([
             'is_active' => !$lecture->is_active
@@ -107,9 +120,9 @@ class LectureService
                     ->get();
 
                 if ($students->count() > 0) {
-                    \Illuminate\Support\Facades\Notification::send(
+                    Notification::send(
                         $students, 
-                        new \App\Notifications\LectureActivatedNotification(
+                        new LectureActivatedNotification(
                             $lecture->title, 
                             $lecture->teacher->name, 
                             $lecture->id
@@ -117,7 +130,7 @@ class LectureService
                     );
                 }
             } catch (\Exception $e) {
-                \Illuminate\Support\Facades\Log::error('Failed to send lecture activation notification: ' . $e->getMessage());
+                Log::error('Failed to send lecture activation notification: ' . $e->getMessage());
             }
         }
 
@@ -126,7 +139,7 @@ class LectureService
         return $lecture;
     }
 
-    public function getAttendees(Lecture $lecture, array $filters = [])
+    public function getAttendees(Lecture $lecture, array $filters = []): array
     {
         // Get all active students for this teacher in this grade/group
         $query = $lecture->teacher->students()
@@ -172,7 +185,7 @@ class LectureService
         ];
     }
 
-    public function getAvailableDates(Lecture $lecture)
+    public function getAvailableDates(Lecture $lecture): array
     {
         $availableDates = [];
         
@@ -251,7 +264,7 @@ class LectureService
         return $availableDates;
     }
 
-    public function cancelSession(Lecture $lecture, string $date)
+    public function cancelSession(Lecture $lecture, string $date): Lecture
     {
         $cancelledDates = $lecture->cancelled_dates ?? [];
 
@@ -267,19 +280,70 @@ class LectureService
                     ->get();
 
                 if ($students->count() > 0) {
-                    \Illuminate\Support\Facades\Notification::send(
+                    Notification::send(
                         $students, 
-                        new \App\Notifications\LectureCancelledNotification(
+                        new LectureCancelledNotification(
                             $lecture->title . ' (' . $date . ')', 
                             $lecture->teacher->name
                         )
                     );
                 }
             } catch (\Exception $e) {
-                \Illuminate\Support\Facades\Log::error('Failed to send session cancellation notification: ' . $e->getMessage());
+                Log::error('Failed to send session cancellation notification: ' . $e->getMessage());
             }
         }
 
         return $lecture;
+    }
+
+    public function generateQrCode(Lecture $lecture): array
+    {
+        // Generate a signed token valid for 10 seconds (5s refresh + 5s buffer)
+        $payload = [
+            'lecture_id' => $lecture->id,
+            'expires_at' => Carbon::now()->addSeconds(10)->timestamp,
+            'salt' => Str::random(8)
+        ];
+        
+        $token = Crypt::encryptString(json_encode($payload));
+
+        // Return the full URL that the student should visit
+        $url = config('app.url') . '/student/attend?token=' . $token;
+
+        return [
+            'qr_code_url' => $url,
+            'expires_at' => Carbon::now()->addSeconds(10),
+        ];
+    }
+
+    public function recordAttendance(Lecture $lecture, string $studentId): array
+    {
+        // Check if student is already attended
+        $existingAttendance = Attendance::where('lecture_id', $lecture->id)
+            ->where('student_id', $studentId)
+            ->first();
+
+        if ($existingAttendance) {
+            return [
+                'message' => 'الطالب مسجل حضور بالفعل',
+                'status' => 'already_attended'
+            ];
+        }
+
+        Attendance::create([
+            'lecture_id' => $lecture->id,
+            'student_id' => $studentId,
+            'status' => 'present',
+        ]);
+
+        $student = Student::find($studentId);
+        if ($student) {
+            $student->notify(new StudentAttendanceNotification($lecture->title, $lecture->teacher->name));
+        }
+
+        return [
+            'message' => 'تم تسجيل الحضور بنجاح',
+            'status' => 'attended'
+        ];
     }
 }

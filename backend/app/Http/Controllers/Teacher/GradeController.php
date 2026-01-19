@@ -1,43 +1,49 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Teacher;
 
+use App\DTOs\Teacher\GradeData;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Teacher\Grade\StoreGradeRequest;
 use App\Http\Requests\Teacher\Grade\UpdateGradeRequest;
 use App\Http\Resources\Teacher\GradeResource;
 use App\Models\Grade;
 use App\Services\Teacher\GradeService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class GradeController extends Controller
 {
     use \App\Traits\ResolvesTeacher;
-    protected $gradeService;
 
-    public function __construct(GradeService $gradeService)
-    {
-        $this->gradeService = $gradeService;
-    }
+    public function __construct(
+        private GradeService $service
+    ) {}
 
-    public function index(Request $request)
+    public function index(Request $request): JsonResponse
     {
         $teacher = $this->getTeacherFromRequest($request);
-        $perPage = $request->input('per_page', 10);
+        $perPage = (int) $request->input('per_page', 10);
         $filters = $request->only(['search']);
         $academyId = $request->header('X-Academy-Id');
         
-        $grades = $this->gradeService->getGrades($teacher, $perPage, $filters, $academyId);
+        $grades = $this->service->getGrades($teacher, $perPage, $filters, $academyId);
         
         return $this->successResponse(
             GradeResource::collection($grades)->response()->getData(true)
         );
     }
 
-    public function store(StoreGradeRequest $request)
+    public function store(StoreGradeRequest $request): JsonResponse
     {
         $teacher = $this->getTeacherFromRequest($request);
         $academyId = $request->header('X-Academy-Id');
+        
+        // We can't use GradeData::fromRequest directly here because we need to manipulate academy_id logic first
+        // Or we can modify the request input before creating DTO
         
         $data = $request->validated();
         
@@ -45,24 +51,25 @@ class GradeController extends Controller
         // Don't set it based on just the dropdown selection
         if ($academyId && $academyId !== 'independent') {
             // Check if teacher belongs to this academy using the pivot table
-            $teacherBelongsToAcademy = \Illuminate\Support\Facades\DB::table('academy_teacher')
+            $teacherBelongsToAcademy = DB::table('academy_teacher')
                 ->where('teacher_id', $teacher->id)
                 ->where('academy_id', $academyId)
                 ->where('is_active', true)
                 ->exists();
             
             if ($teacherBelongsToAcademy) {
-                $data['academy_id'] = $academyId;
+                $request->merge(['academy_id' => $academyId]);
             } else {
                 // Teacher doesn't belong to this academy, keep it independent
-                $data['academy_id'] = null;
+                $request->merge(['academy_id' => null]);
             }
         } else {
             // Independent mode
-            $data['academy_id'] = null;
+            $request->merge(['academy_id' => null]);
         }
         
-        $grade = $this->gradeService->createGrade($teacher, $data);
+        $gradeData = GradeData::fromRequest($request);
+        $grade = $this->service->createGrade($teacher, $gradeData);
 
         return $this->successResponse([
             'grade' => new GradeResource($grade),
@@ -70,13 +77,14 @@ class GradeController extends Controller
         ], 201);
     }
 
-    public function update(UpdateGradeRequest $request, Grade $grade)
+    public function update(UpdateGradeRequest $request, Grade $grade): JsonResponse
     {
         if ($grade->teacher_id !== $this->getTeacherFromRequest($request)->id) {
             return $this->errorResponse('Unauthorized', 403);
         }
 
-        $grade = $this->gradeService->updateGrade($grade, $request->validated());
+        $gradeData = GradeData::fromRequest($request);
+        $grade = $this->service->updateGrade($grade, $gradeData);
 
         return $this->successResponse([
             'grade' => new GradeResource($grade),
@@ -84,13 +92,13 @@ class GradeController extends Controller
         ]);
     }
 
-    public function destroy(Request $request, Grade $grade)
+    public function destroy(Request $request, Grade $grade): JsonResponse
     {
         if ($grade->teacher_id !== $this->getTeacherFromRequest($request)->id) {
             return $this->errorResponse('Unauthorized', 403);
         }
 
-        $this->gradeService->deleteGrade($grade);
+        $this->service->deleteGrade($grade);
 
         return $this->successResponse([
             'message' => 'تم حذف الصف الدراسي بنجاح'

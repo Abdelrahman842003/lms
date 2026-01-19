@@ -4,24 +4,21 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Academy;
 
+use App\DTOs\Academy\AttendanceData;
 use App\Http\Controllers\Controller;
-use App\Services\Academy\AttendanceService;
 use App\Http\Requests\Academy\MarkAbsentRequest;
 use App\Http\Requests\Academy\UpdateAttendanceNotesRequest;
-use App\DTOs\Academy\AttendanceData;
 use App\Http\Resources\Academy\AttendanceLogResource;
-use Illuminate\Http\Request;
+use App\Services\Academy\AttendanceService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class AttendanceController extends Controller
 {
     public function __construct(
-        private AttendanceService $attendanceService
+        private AttendanceService $service
     ) {}
 
-    /**
-     * Get attendance logs with filtering
-     */
     public function index(Request $request): JsonResponse
     {
         $academy = $request->user();
@@ -32,7 +29,7 @@ class AttendanceController extends Controller
         $dateTo = $request->input('date_to');
         $status = $request->input('status');
 
-        $logs = $this->attendanceService->getAttendanceLogs(
+        $logs = $this->service->getAttendanceLogs(
             $academy,
             $perPage,
             $teacherId,
@@ -44,28 +41,22 @@ class AttendanceController extends Controller
         return $this->successResponse(AttendanceLogResource::collection($logs));
     }
 
-    /**
-     * Get today's attendance
-     */
     public function todayAttendance(Request $request): JsonResponse
     {
         $academy = $request->user();
 
-        $logs = $this->attendanceService->getTodayAttendance($academy);
+        $logs = $this->service->getTodayAttendance($academy);
 
         return $this->successResponse(AttendanceLogResource::collection($logs));
     }
 
-    /**
-     * Mark teacher as absent
-     */
     public function markAbsent(MarkAbsentRequest $request): JsonResponse
     {
         $academy = $request->user();
 
         try {
             $data = AttendanceData::fromRequest($request);
-            $log = $this->attendanceService->markAbsent($academy, $data);
+            $log = $this->service->markAbsent($academy, $data);
 
             return $this->successResponse(
                 new AttendanceLogResource($log),
@@ -76,15 +67,10 @@ class AttendanceController extends Controller
         }
     }
 
-    /**
-     * Update notes for attendance log
-     */
     public function updateNotes(UpdateAttendanceNotesRequest $request, string $logId): JsonResponse
     {
-        $academy = $request->user();
-
         try {
-            $log = $this->attendanceService->updateNotes($logId, $request->validated('notes'));
+            $log = $this->service->updateNotes($logId, $request->validated('notes'));
 
             return $this->successResponse(
                 new AttendanceLogResource($log),
@@ -95,9 +81,6 @@ class AttendanceController extends Controller
         }
     }
 
-    /**
-     * Get attendance statistics
-     */
     public function stats(Request $request): JsonResponse
     {
         $academy = $request->user();
@@ -107,7 +90,7 @@ class AttendanceController extends Controller
             'date_to' => 'required|date',
         ]);
 
-        $stats = $this->attendanceService->getStats(
+        $stats = $this->service->getStats(
             $academy,
             $validated['date_from'],
             $validated['date_to']

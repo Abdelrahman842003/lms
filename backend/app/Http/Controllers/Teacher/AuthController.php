@@ -1,39 +1,39 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Teacher;
 
+use App\DTOs\Auth\LoginData;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\ChangePasswordRequest;
 use App\Http\Requests\Auth\TeacherLoginRequest;
+use App\Http\Requests\Teacher\Auth\UpdateProfileRequest;
 use App\Http\Resources\Teacher\TeacherResource;
 use App\Services\Auth\DeviceLimitService;
 use App\Services\Auth\LoginAttemptService;
 use App\Services\Teacher\TeacherService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
-    protected $teacherService;
-    protected $loginAttemptService;
-    protected $deviceLimitService;
-
     public function __construct(
-        TeacherService $teacherService,
-        LoginAttemptService $loginAttemptService,
-        DeviceLimitService $deviceLimitService
-    ) {
-        $this->teacherService = $teacherService;
-        $this->loginAttemptService = $loginAttemptService;
-        $this->deviceLimitService = $deviceLimitService;
-    }
+        private TeacherService $teacherService,
+        private LoginAttemptService $loginAttemptService,
+        private DeviceLimitService $deviceLimitService
+    ) {}
 
-    public function login(TeacherLoginRequest $request)
+    public function login(TeacherLoginRequest $request): JsonResponse
     {
-        $data = $this->teacherService->login($request->phone, $request->password);
+        $data = LoginData::fromRequest($request);
+        $result = $this->teacherService->login($data);
 
-        if (!$data) {
+        if (!$result) {
             // Record failed attempt
             $attemptResult = $this->loginAttemptService->recordFailedAttempt(
-                $request->phone,
+                $data->phone,
                 $request->ip()
             );
 
@@ -46,33 +46,33 @@ class AuthController extends Controller
         }
 
         // Clear failed attempts on successful login
-        $this->loginAttemptService->clearAttempts($request->phone, $request->ip());
+        $this->loginAttemptService->clearAttempts($data->phone, $request->ip());
 
         // Manage device limits (auto-removes oldest if at limit)
-        $deviceResult = $this->deviceLimitService->checkAndManageDevices($data['user']);
+        $deviceResult = $this->deviceLimitService->checkAndManageDevices($result['user']);
         
         // Generate Access Token (Short-lived - 30 mins by config)
-        $accessToken = $data['user']->createToken('access_token', ['access-api'], now()->addMinutes(60))->plainTextToken;
+        $accessToken = $result['user']->createToken('access_token', ['access-api'], now()->addMinutes(60))->plainTextToken;
         
         // Generate Refresh Token (Long-lived - 30 days)
-        $refreshToken = $data['user']->createToken('refresh_token', ['issue-access-token'], now()->addDays(30))->plainTextToken;
+        $refreshToken = $result['user']->createToken('refresh_token', ['issue-access-token'], now()->addDays(30))->plainTextToken;
 
         return $this->successResponse([
             'token' => $accessToken,
             'refresh_token' => $refreshToken,
-            'user' => new TeacherResource($data['user']),
+            'user' => new TeacherResource($result['user']),
             'role' => 'teacher',
             'device_removed' => $deviceResult['removed_device'] ?? false,
         ]);
     }
 
-    public function logout(Request $request)
+    public function logout(Request $request): JsonResponse
     {
         // Delete FCM token if provided
         if ($request->has('fcm_token')) {
             \App\Models\DeviceToken::where('tokenable_id', $request->user()->id)
                 ->where('tokenable_type', get_class($request->user()))
-                ->where('token', $request->fcm_token)
+                ->where('token', $request->input('fcm_token'))
                 ->delete();
         }
 
@@ -84,7 +84,7 @@ class AuthController extends Controller
         return $this->successResponse(null, 'تم تسجيل الخروج بنجاح');
     }
 
-    public function me(Request $request)
+    public function me(Request $request): JsonResponse
     {
         return $this->successResponse([
             'user' => new TeacherResource($request->user()),
@@ -92,28 +92,25 @@ class AuthController extends Controller
         ]);
     }
 
-    public function changePassword(\App\Http\Requests\Auth\ChangePasswordRequest $request)
+    public function changePassword(ChangePasswordRequest $request): JsonResponse
     {
         $user = $request->user();
 
-        if (!\Illuminate\Support\Facades\Hash::check($request->current_password, $user->password)) {
+        if (!Hash::check($request->validated('current_password'), $user->password)) {
             return $this->errorResponse('كلمة المرور الحالية غير صحيحة', 422);
         }
 
         $user->update([
-            'password' => \Illuminate\Support\Facades\Hash::make($request->new_password)
+            'password' => Hash::make($request->validated('new_password'))
         ]);
 
         return $this->successResponse(null, 'تم تغيير كلمة المرور بنجاح');
     }
 
-    public function updateProfile(Request $request)
+    public function updateProfile(UpdateProfileRequest $request): JsonResponse
     {
         $user = $request->user();
-
-        $validated = $request->validate([
-            'name' => 'sometimes|required|string|max:255',
-        ]);
+        $validated = $request->validated();
 
         $user->update($validated);
 

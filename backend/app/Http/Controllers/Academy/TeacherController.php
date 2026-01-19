@@ -4,24 +4,22 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Academy;
 
-use App\Http\Controllers\Controller;
-use App\Services\Academy\TeacherService;
-use App\Http\Requests\Academy\StoreTeacherRequest;
 use App\DTOs\Academy\TeacherData;
+use App\Http\Controllers\Controller;
+use App\Http\Requests\Academy\CheckTeacherPhoneRequest;
+use App\Http\Requests\Academy\StoreTeacherRequest;
 use App\Http\Resources\Academy\TeacherResource;
-use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
+use App\Services\Academy\TeacherService;
 use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class TeacherController extends Controller
 {
     public function __construct(
-        private TeacherService $teacherService
+        private TeacherService $service
     ) {}
 
-    /**
-     * Get list of teachers in academy
-     */
     public function index(Request $request): JsonResponse
     {
         $academy = $request->user();
@@ -30,18 +28,15 @@ class TeacherController extends Controller
         $search = $request->input('search');
         $status = $request->input('status');
 
-        $teachers = $this->teacherService->getTeachers($academy, $perPage, $search, $status);
+        $teachers = $this->service->getTeachers($academy, $perPage, $search, $status);
 
         return $this->successResponse(TeacherResource::collection($teachers));
     }
 
-    /**
-     * Check if teacher exists by phone number
-     */
-    public function checkPhone(\App\Http\Requests\Academy\CheckTeacherPhoneRequest $request): JsonResponse
+    public function checkPhone(CheckTeacherPhoneRequest $request): JsonResponse
     {
         $phone = $request->validated('phone');
-        $teacherData = $this->teacherService->checkTeacherByPhone($phone);
+        $teacherData = $this->service->checkTeacherByPhone($phone);
 
         if (!$teacherData) {
             return $this->successResponse([
@@ -56,10 +51,6 @@ class TeacherController extends Controller
         ]);
     }
 
-
-    /**
-     * Add teacher to academy
-     */
     public function store(StoreTeacherRequest $request): JsonResponse
     {
         $academy = $request->user();
@@ -69,12 +60,9 @@ class TeacherController extends Controller
             try {
                 $teacherId = $request->validated('teacher_id');
                 
-                $teacher = $this->teacherService->addTeacher($academy, $teacherId);
+                $teacher = $this->service->addTeacher($academy, $teacherId);
                 
-                // Check if this was a reactivation or new addition
-                $message = 'تم إضافة المدرس بنجاح';
-                
-                return $this->successResponse(new TeacherResource($teacher), $message, 201);
+                return $this->successResponse(new TeacherResource($teacher), 'تم إضافة المدرس بنجاح', 201);
             } catch (\Exception $e) {
                 return $this->errorResponse($e->getMessage(), 400);
             }
@@ -83,16 +71,13 @@ class TeacherController extends Controller
         // Otherwise we create a new teacher
         try {
             $data = TeacherData::fromRequest($request);
-            $teacher = $this->teacherService->createTeacher($academy, $data);
+            $teacher = $this->service->createTeacher($academy, $data);
             return $this->successResponse(new TeacherResource($teacher), 'تم إنشاء المدرس وإضافته بنجاح', 201);
         } catch (\Exception $e) {
             return $this->errorResponse($e->getMessage(), 400);
         }
     }
 
-    /**
-     * Get teacher details with attendance logs
-     */
     public function show(Request $request, string $id): JsonResponse
     {
         $academy = $request->user();
@@ -100,19 +85,16 @@ class TeacherController extends Controller
         $dateFrom = $request->input('date_from', Carbon::now()->startOfMonth()->toDateString());
         $dateTo = $request->input('date_to', Carbon::now()->endOfMonth()->toDateString());
 
-        $data = $this->teacherService->getTeacherWithLogs($academy, $id, $dateFrom, $dateTo);
+        $data = $this->service->getTeacherWithLogs($academy, $id, $dateFrom, $dateTo);
 
         return $this->successResponse($data);
     }
 
-    /**
-     * Toggle teacher status in academy
-     */
     public function toggleStatus(Request $request, string $id): JsonResponse
     {
         $academy = $request->user();
 
-        $isActive = $this->teacherService->toggleStatus($academy, $id);
+        $isActive = $this->service->toggleStatus($academy, $id);
 
         return $this->successResponse([
             'message' => $isActive ? 'تم تفعيل المدرس' : 'تم تعطيل المدرس',
@@ -120,14 +102,11 @@ class TeacherController extends Controller
         ]);
     }
 
-    /**
-     * Remove teacher from academy
-     */
     public function destroy(Request $request, string $id): JsonResponse
     {
         $academy = $request->user();
 
-        $this->teacherService->removeTeacher($academy, $id);
+        $this->service->removeTeacher($academy, $id);
 
         return $this->successResponse([
             'message' => 'تم حذف المدرس من الأكاديمية بنجاح',

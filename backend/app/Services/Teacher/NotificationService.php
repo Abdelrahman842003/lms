@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Teacher;
 
 use App\Models\Admin;
@@ -7,12 +9,12 @@ use App\Models\SentNotification;
 use App\Models\Student;
 use App\Models\Teacher;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 
 class NotificationService
 {
     public function getRecipients(Teacher $teacher, string $recipientType, ?string $gradeId = null, ?string $groupId = null): Collection
     {
-
         return match ($recipientType) {
             'all' => Student::whereHas('enrollments', function ($q) use ($teacher) {
                 $q->where('teacher_id', $teacher->id);
@@ -56,7 +58,7 @@ class NotificationService
                     ));
                 } catch (\Exception $e) {
                     // Log error but continue sending to others
-                    \Illuminate\Support\Facades\Log::error('Failed to send parent notification', [
+                    Log::error('Failed to send parent notification', [
                         'guardian_id' => $student->guardian->id,
                         'error' => $e->getMessage()
                     ]);

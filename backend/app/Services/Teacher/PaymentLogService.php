@@ -1,16 +1,20 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Teacher;
 
 use App\Models\PaymentLog;
 use App\Models\Enrollment;
 use App\Models\SyncError;
 use App\Models\Teacher;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
 class PaymentLogService
 {
-    public function getPayments(Teacher $teacher, int $perPage = 20, array $filters = [])
+    public function getPayments(Teacher $teacher, int $perPage = 20, array $filters = []): LengthAwarePaginator
     {
         $query = PaymentLog::forTeacher($teacher->id)
             ->with('student:id,name,phone');
@@ -36,7 +40,7 @@ class PaymentLogService
         return $query->latest()->paginate($perPage);
     }
 
-    public function getPending(Teacher $teacher)
+    public function getPending(Teacher $teacher): Collection
     {
         return PaymentLog::pending()
             ->forTeacher($teacher->id)
@@ -45,7 +49,7 @@ class PaymentLogService
             ->get();
     }
 
-    public function createPayment(Teacher $teacher, array $data)
+    public function createPayment(Teacher $teacher, array $data): array
     {
         // Idempotency check
         $existing = PaymentLog::where('client_side_uuid', $data['client_side_uuid'])->first();
@@ -92,7 +96,7 @@ class PaymentLogService
         ];
     }
 
-    public function syncBatch(Teacher $teacher, array $payments)
+    public function syncBatch(Teacher $teacher, array $payments): array
     {
         $results = ['success' => [], 'errors' => []];
 
@@ -160,7 +164,7 @@ class PaymentLogService
         return $results;
     }
 
-    public function cancel(Teacher $teacher, string $id)
+    public function cancel(Teacher $teacher, string $id): void
     {
         $payment = PaymentLog::forTeacher($teacher->id)
             ->where('status', 'pending')
@@ -169,7 +173,7 @@ class PaymentLogService
         $payment->update(['status' => 'cancelled']);
     }
 
-    public function getStatistics(Teacher $teacher)
+    public function getStatistics(Teacher $teacher): array
     {
         return [
             'total' => PaymentLog::forTeacher($teacher->id)->count(),

@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Teacher;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Teacher\Gamification\AwardBonusRequest;
+use App\Http\Requests\Teacher\Gamification\UpdateGamificationSettingsRequest;
 use App\Models\GamificationSetting;
 use App\Models\Student;
 use App\Services\PointService;
 use App\Traits\ResolvesTeacher;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 
 class GamificationController extends Controller
 {
@@ -53,25 +54,12 @@ class GamificationController extends Controller
     /**
      * Update gamification settings
      */
-    public function updateSettings(Request $request): JsonResponse
+    public function updateSettings(UpdateGamificationSettingsRequest $request): JsonResponse
     {
-        $teacher = $request->user();
+        $teacher = $this->getTeacherFromRequest($request);
         
-        $validated = $request->validate([
-            'attendance_points' => 'sometimes|integer|min:0|max:100',
-            'perfect_month_bonus' => 'sometimes|integer|min:0|max:200',
-            'exam_max_points' => 'sometimes|integer|min:0|max:100',
-            'exam_retake_bonus' => 'sometimes|integer|min:0|max:100',
-            'exam_first_place_bonus' => 'sometimes|integer|min:0|max:100',
-            'streak_5_bonus' => 'sometimes|integer|min:0|max:100',
-            'streak_10_bonus' => 'sometimes|integer|min:0|max:100',
-            'is_enabled' => 'sometimes|boolean',
-            'show_leaderboard' => 'sometimes|boolean',
-            'leaderboard_size' => 'sometimes|integer|min:3|max:20',
-        ]);
-
         $settings = GamificationSetting::getOrCreate($teacher->id);
-        $settings->update($validated);
+        $settings->update($request->validated());
 
         return $this->successResponse($settings->fresh(), 'تم تحديث إعدادات النقاط');
     }
@@ -79,17 +67,12 @@ class GamificationController extends Controller
     /**
      * Award manual bonus points to a student
      */
-    public function awardBonus(Request $request): JsonResponse
+    public function awardBonus(AwardBonusRequest $request): JsonResponse
     {
-        $teacher = $request->user();
-        
-        $validated = $request->validate([
-            'student_id' => ['required', 'uuid', Rule::exists('students', 'id')],
-            'points' => 'required|integer|min:1|max:1000',
-            'description' => 'required|string|max:255',
-        ]);
+        $teacher = $this->getTeacherFromRequest($request);
+        $data = $request->validated();
 
-        $student = Student::findOrFail($validated['student_id']);
+        $student = Student::findOrFail($data['student_id']);
         
         $enrollment = $student->enrollmentFor($teacher);
         if (!$enrollment) {
@@ -99,11 +82,11 @@ class GamificationController extends Controller
         $transaction = $this->pointService->awardManualBonus(
             $student,
             $teacher,
-            $validated['points'],
-            $validated['description']
+            (int) $data['points'],
+            $data['description']
         );
 
-        return $this->successResponse($transaction, "تم منح {$validated['points']} نقطة للطالب {$student->name}");
+        return $this->successResponse($transaction, "تم منح {$data['points']} نقطة للطالب {$student->name}");
     }
 
     /**
@@ -111,7 +94,7 @@ class GamificationController extends Controller
      */
     public function studentPoints(Request $request, string $studentId): JsonResponse
     {
-        $teacher = $request->user();
+        $teacher = $this->getTeacherFromRequest($request);
         
         $stats = $this->pointService->getStudentStats($studentId, $teacher->id);
 

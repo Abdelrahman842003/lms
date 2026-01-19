@@ -1,39 +1,36 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Academy;
 
+use App\DTOs\Auth\LoginData;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\AcademyLoginRequest;
 use App\Http\Resources\Academy\AcademyResource;
 use App\Services\Academy\AcademyAuthService;
 use App\Services\Auth\DeviceLimitService;
 use App\Services\Auth\LoginAttemptService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class AuthController extends Controller
 {
-    protected $academyAuthService;
-    protected $loginAttemptService;
-    protected $deviceLimitService;
-
     public function __construct(
-        AcademyAuthService $academyAuthService,
-        LoginAttemptService $loginAttemptService,
-        DeviceLimitService $deviceLimitService
-    ) {
-        $this->academyAuthService = $academyAuthService;
-        $this->loginAttemptService = $loginAttemptService;
-        $this->deviceLimitService = $deviceLimitService;
-    }
+        private AcademyAuthService $authService,
+        private LoginAttemptService $loginAttemptService,
+        private DeviceLimitService $deviceLimitService
+    ) {}
 
-    public function login(AcademyLoginRequest $request)
+    public function login(AcademyLoginRequest $request): JsonResponse
     {
-        $data = $this->academyAuthService->login($request->phone, $request->password);
+        $data = LoginData::fromRequest($request);
+        $result = $this->authService->login($data);
 
-        if (!$data) {
+        if (!$result) {
             // Record failed attempt
             $attemptResult = $this->loginAttemptService->recordFailedAttempt(
-                $request->phone,
+                $data->phone,
                 $request->ip()
             );
 
@@ -46,33 +43,33 @@ class AuthController extends Controller
         }
 
         // Clear failed attempts on successful login
-        $this->loginAttemptService->clearAttempts($request->phone, $request->ip());
+        $this->loginAttemptService->clearAttempts($data->phone, $request->ip());
 
         // Manage device limits (auto-removes oldest if at limit)
-        $deviceResult = $this->deviceLimitService->checkAndManageDevices($data['user']);
+        $deviceResult = $this->deviceLimitService->checkAndManageDevices($result['user']);
         
         // Generate Access Token (Short-lived - 60 mins)
-        $accessToken = $data['user']->createToken('access_token', ['access-api'], now()->addMinutes(60))->plainTextToken;
+        $accessToken = $result['user']->createToken('access_token', ['access-api'], now()->addMinutes(60))->plainTextToken;
         
         // Generate Refresh Token (Long-lived - 30 days)
-        $refreshToken = $data['user']->createToken('refresh_token', ['issue-access-token'], now()->addDays(30))->plainTextToken;
+        $refreshToken = $result['user']->createToken('refresh_token', ['issue-access-token'], now()->addDays(30))->plainTextToken;
 
         return $this->successResponse([
             'token' => $accessToken,
             'refresh_token' => $refreshToken,
-            'user' => new AcademyResource($data['user']),
+            'user' => new AcademyResource($result['user']),
             'role' => 'academy',
             'device_removed' => $deviceResult['removed_device'] ?? false,
         ]);
     }
 
-    public function logout(Request $request)
+    public function logout(Request $request): JsonResponse
     {
         // Delete FCM token if provided
         if ($request->has('fcm_token')) {
             \App\Models\DeviceToken::where('tokenable_id', $request->user()->id)
                 ->where('tokenable_type', get_class($request->user()))
-                ->where('token', $request->fcm_token)
+                ->where('token', $request->input('fcm_token'))
                 ->delete();
         }
 
@@ -84,7 +81,7 @@ class AuthController extends Controller
         return $this->successResponse(null, 'تم تسجيل الخروج بنجاح');
     }
 
-    public function me(Request $request)
+    public function me(Request $request): JsonResponse
     {
         return $this->successResponse([
             'user' => new AcademyResource($request->user()->load(['secretaries', 'teachers'])),

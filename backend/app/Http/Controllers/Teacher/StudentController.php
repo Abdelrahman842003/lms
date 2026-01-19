@@ -4,55 +4,38 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Teacher;
 
-use App\Actions\Teacher\GenerateStudentPassword;
-use App\Actions\Teacher\ValidateGroupGrade;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Teacher\Student\StoreStudentRequest;
 use App\Http\Requests\Teacher\Student\UpdatePermissionsRequest;
 use App\Http\Requests\Teacher\Student\UpdateStudentRequest;
 use App\Http\Resources\Teacher\EnrollmentResource;
 use App\Models\Enrollment;
-use App\Models\Student;
 use App\Services\Teacher\StudentService;
-use App\Traits\ResolvesTeacher;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 class StudentController extends Controller
 {
-    use ResolvesTeacher;
-
-    protected $studentService;
-    protected $generatePassword;
-    protected $validateGroupGrade;
+    use \App\Traits\ResolvesTeacher;
 
     public function __construct(
-        StudentService $studentService,
-        GenerateStudentPassword $generatePassword,
-        ValidateGroupGrade $validateGroupGrade
-    ) {
-        $this->studentService = $studentService;
-        $this->generatePassword = $generatePassword;
-        $this->validateGroupGrade = $validateGroupGrade;
-    }
+        private StudentService $service
+    ) {}
 
     /**
      * List all students (via enrollments)
      */
-    public function index(Request $request)
+    public function index(Request $request): JsonResponse
     {
         $teacher = $this->getTeacherFromRequest($request);
         
-        if (!$teacher) {
-            return $this->errorResponse('Teacher not found', 404);
-        }
-
-        $perPage = $request->input('per_page', 10);
+        $perPage = (int) $request->input('per_page', 10);
         $search = $request->input('search');
         $status = $request->input('status');
         $academyId = $request->header('X-Academy-Id');
 
-        $enrollments = $this->studentService->getStudents($teacher, $perPage, $search, $status, $academyId);
+        $enrollments = $this->service->getStudents($teacher, $perPage, $search, $status, $academyId);
 
         return $this->successResponse([
             'students' => EnrollmentResource::collection($enrollments)->response()->getData(true)
@@ -62,11 +45,11 @@ class StudentController extends Controller
     /**
      * Search for existing student by phone (for smart enrollment)
      */
-    public function searchByPhone(Request $request)
+    public function searchByPhone(Request $request): JsonResponse
     {
         $request->validate(['phone' => 'required|string']);
         
-        $student = $this->studentService->searchByPhone($request->phone);
+        $student = $this->service->searchByPhone($request->input('phone'));
         
         if ($student) {
             // Check if already enrolled with this teacher
@@ -97,25 +80,18 @@ class StudentController extends Controller
         ]);
     }
 
-
-
     /**
      * Create new student or attach existing
      */
-    public function store(StoreStudentRequest $request)
+    public function store(StoreStudentRequest $request): JsonResponse
     {
         try {
             $teacher = $this->getTeacherFromRequest($request);
             $validated = $request->validated();
 
-            if (!$this->validateGroupGrade->execute($validated['group_id'] ?? null, $validated['grade_id'] ?? null)) {
-                return $this->errorResponse('المجموعة المختارة لا تنتمي للصف الدراسي المحدد', 422);
-            }
+            // Validation for group/grade is handled in StoreStudentRequest
 
-            // Password is now provided by the frontend for new students
-            // For existing students, password is not required/used
-            
-            $result = $this->studentService->createStudent($teacher, $validated);
+            $result = $this->service->createStudent($teacher, $validated);
 
             $message = $result['is_new_student'] 
                 ? 'تم إضافة الطالب بنجاح'
@@ -130,7 +106,7 @@ class StudentController extends Controller
                 'message' => $message
             ], 201);
         } catch (\Exception $e) {
-            \Log::error('Student creation failed: ' . $e->getMessage(), [
+            Log::error('Student creation failed: ' . $e->getMessage(), [
                 'line' => $e->getLine(),
                 'file' => $e->getFile(),
                 'trace' => $e->getTraceAsString()
@@ -142,9 +118,9 @@ class StudentController extends Controller
     /**
      * Show enrollment details
      */
-    public function show(string $id)
+    public function show(Request $request, string $id): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest(request());
+        $teacher = $this->getTeacherFromRequest($request);
         
         // Find enrollment by student_id
         $enrollment = Enrollment::with(['student', 'grade', 'group'])
@@ -155,7 +131,7 @@ class StudentController extends Controller
         // Load student relations for stats
         $enrollment->student->load(['examResults.exam', 'attendances.lecture']);
 
-        $subscriptionHistory = $this->studentService->getSubscriptionHistory($enrollment);
+        $subscriptionHistory = $this->service->getSubscriptionHistory($enrollment);
 
         return $this->successResponse([
             'student' => new EnrollmentResource($enrollment),
@@ -166,7 +142,7 @@ class StudentController extends Controller
     /**
      * Update student/enrollment
      */
-    public function update(UpdateStudentRequest $request, string $id)
+    public function update(UpdateStudentRequest $request, string $id): JsonResponse
     {
         $teacher = $this->getTeacherFromRequest($request);
         
@@ -177,17 +153,14 @@ class StudentController extends Controller
             
         $validated = $request->validated();
 
-        $gradeId = $validated['grade_id'] ?? $enrollment->grade_id;
-        if (!$this->validateGroupGrade->execute($validated['group_id'] ?? null, $gradeId)) {
-            return $this->errorResponse('المجموعة المختارة لا تنتمي للصف الدراسي المحدد', 422);
-        }
+        // Validation for group/grade is handled in UpdateStudentRequest
 
         // Update student data (shared)
         $studentData = array_intersect_key($validated, array_flip([
             'name', 'phone', 'parent_phone', 'gender', 'education_type', 'location', 'password'
         ]));
         if (!empty($studentData)) {
-            $this->studentService->updateStudent($enrollment->student, $studentData);
+            $this->service->updateStudent($enrollment->student, $studentData);
         }
 
         // Update enrollment data (teacher-specific)
@@ -195,7 +168,7 @@ class StudentController extends Controller
             'grade_id', 'group_id', 'balance', 'subscription_start', 'subscription_end', 'teacher_notes'
         ]));
         if (!empty($enrollmentData)) {
-            $this->studentService->updateEnrollment($enrollment, $enrollmentData);
+            $this->service->updateEnrollment($enrollment, $enrollmentData);
         }
 
         $enrollment->refresh();
@@ -210,15 +183,15 @@ class StudentController extends Controller
     /**
      * Remove enrollment (soft delete)
      */
-    public function destroy(string $id)
+    public function destroy(Request $request, string $id): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest(request());
+        $teacher = $this->getTeacherFromRequest($request);
         
         $enrollment = Enrollment::where('teacher_id', $teacher->id)
             ->where('student_id', $id)
             ->firstOrFail();
         
-        $this->studentService->deleteEnrollment($enrollment);
+        $this->service->deleteEnrollment($enrollment);
 
         return $this->successResponse([
             'message' => 'تم إلغاء تسجيل الطالب بنجاح'
@@ -228,10 +201,10 @@ class StudentController extends Controller
     /**
      * Get statistics
      */
-    public function statistics(Request $request)
+    public function statistics(Request $request): JsonResponse
     {
         $teacher = $this->getTeacherFromRequest($request);
-        $stats = $this->studentService->getStatistics($teacher);
+        $stats = $this->service->getStatistics($teacher);
 
         return $this->successResponse($stats);
     }
@@ -239,7 +212,7 @@ class StudentController extends Controller
     /**
      * Update student permissions
      */
-    public function updatePermissions(UpdatePermissionsRequest $request, string $id)
+    public function updatePermissions(UpdatePermissionsRequest $request, string $id): JsonResponse
     {
         $teacher = $this->getTeacherFromRequest($request);
         
@@ -259,7 +232,7 @@ class StudentController extends Controller
     /**
      * Toggle enrollment status
      */
-    public function toggleStatus(Request $request, string $id)
+    public function toggleStatus(Request $request, string $id): JsonResponse
     {
         $teacher = $this->getTeacherFromRequest($request);
         
@@ -267,7 +240,7 @@ class StudentController extends Controller
             ->where('student_id', $id)
             ->firstOrFail();
 
-        $this->studentService->toggleStatus($enrollment);
+        $this->service->toggleStatus($enrollment);
 
         return $this->successResponse([
             'message' => $enrollment->is_active ? 'تم تفعيل حساب الطالب بنجاح' : 'تم تعطيل حساب الطالب بنجاح',
@@ -278,7 +251,7 @@ class StudentController extends Controller
     /**
      * Get activation details
      */
-    public function activationDetails(Request $request, string $id)
+    public function activationDetails(Request $request, string $id): JsonResponse
     {
         $teacher = $this->getTeacherFromRequest($request);
         
@@ -287,7 +260,7 @@ class StudentController extends Controller
             ->where('student_id', $id)
             ->firstOrFail();
 
-        $details = $this->studentService->getActivationDetails($enrollment);
+        $details = $this->service->getActivationDetails($enrollment);
 
         return $this->successResponse($details);
     }
@@ -295,7 +268,7 @@ class StudentController extends Controller
     /**
      * Activate student subscription (1 month)
      */
-    public function activate(Request $request, string $id)
+    public function activate(Request $request, string $id): JsonResponse
     {
         $teacher = $this->getTeacherFromRequest($request);
         
@@ -303,7 +276,7 @@ class StudentController extends Controller
             ->where('student_id', $id)
             ->firstOrFail();
 
-        $result = $this->studentService->activate($enrollment, $request->all());
+        $result = $this->service->activate($enrollment, $request->all());
 
         return $this->successResponse(array_merge(
             ['message' => 'تم تفعيل اشتراك الطالب لمدة شهر بنجاح'],

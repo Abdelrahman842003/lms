@@ -1,9 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Requests\Teacher\Secretary;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class StoreSecretaryRequest extends FormRequest
 {
@@ -19,7 +20,18 @@ class StoreSecretaryRequest extends FormRequest
             'phone' => 'required|string|max:20',
             'password' => 'required|string|min:6',
             'permissions' => 'array',
-            'permissions.*' => 'exists:permissions,name',
+            'permissions.*' => 'string', // Assuming permissions are strings, not IDs checking against a table for now as per service logic
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'name.required' => 'اسم السكرتير مطلوب',
+            'phone.required' => 'رقم الهاتف مطلوب',
+            'password.required' => 'كلمة المرور مطلوبة',
+            'password.min' => 'كلمة المرور يجب أن تكون 6 أحرف على الأقل',
+            'permissions.array' => 'صيغة الصلاحيات غير صحيحة',
         ];
     }
 

@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Teacher;
 
+use App\DTOs\Teacher\ExamData;
 use App\Models\Exam;
 use App\Models\Enrollment;
 use App\Models\Question;
@@ -28,46 +31,46 @@ class ExamService
         return $query->paginate($perPage);
     }
 
-    public function createExam(Teacher $teacher, array $data): Exam
+    public function createExam(Teacher $teacher, ExamData $data): Exam
     {
         return DB::transaction(function () use ($teacher, $data) {
             $exam = Exam::create([
                 'teacher_id' => $teacher->id,
-                'title' => $data['title'],
-                'subject' => $data['subject'],
-                'grade_id' => $data['grade_id'],
-                'group_id' => $data['group_id'] ?? null,
-                'date' => Carbon::parse($data['date'], 'Africa/Cairo')->setTimezone('UTC'),
-                'duration' => $data['duration'],
-                'max_score' => $data['total_marks'],
-                'actual_question_count' => $data['actual_question_count'],
-                'time_per_question' => $data['time_per_question'] ?? 60, // Default or global setting
+                'title' => $data->title,
+                'subject' => $data->subject,
+                'grade_id' => $data->grade_id,
+                'group_id' => $data->group_id,
+                'date' => Carbon::parse($data->date, 'Africa/Cairo')->setTimezone('UTC'),
+                'duration' => $data->duration,
+                'max_score' => $data->total_marks,
+                'actual_question_count' => $data->actual_question_count,
+                'time_per_question' => $data->time_per_question,
             ]);
 
-            $this->createQuestions($exam, $data['questions']);
+            $this->createQuestions($exam, $data->questions);
 
             return $exam->load('questions');
         });
     }
 
-    public function updateExam(Exam $exam, array $data): Exam
+    public function updateExam(Exam $exam, ExamData $data): Exam
     {
         return DB::transaction(function () use ($exam, $data) {
             // Standard update
             $exam->update([
-                'title' => $data['title'],
-                'subject' => $data['subject'],
-                'grade_id' => $data['grade_id'],
-                'group_id' => $data['group_id'] ?? null,
-                'date' => ($data['date'] instanceof Carbon ? $data['date'] : Carbon::parse($data['date'], 'Africa/Cairo'))->setTimezone('UTC'),
-                'duration' => $data['duration'],
-                'max_score' => $data['total_marks'],
-                'actual_question_count' => $data['actual_question_count'],
-                'time_per_question' => $data['time_per_question'] ?? 60,
+                'title' => $data->title,
+                'subject' => $data->subject,
+                'grade_id' => $data->grade_id,
+                'group_id' => $data->group_id,
+                'date' => Carbon::parse($data->date, 'Africa/Cairo')->setTimezone('UTC'),
+                'duration' => $data->duration,
+                'max_score' => $data->total_marks,
+                'actual_question_count' => $data->actual_question_count,
+                'time_per_question' => $data->time_per_question,
             ]);
 
             $exam->questions()->delete();
-            $this->createQuestions($exam, $data['questions']);
+            $this->createQuestions($exam, $data->questions);
 
             return $exam->load('questions');
         });
@@ -192,9 +195,6 @@ class ExamService
     /**
      * جلب معرفات الطلاب المستهدفين بالامتحان
      */
-    /**
-     * جلب معرفات الطلاب المستهدفين بالامتحان
-     */
     private function getTargetStudentIds(Exam $exam): array
     {
         $query = Enrollment::where('teacher_id', $exam->teacher_id)
@@ -257,7 +257,7 @@ class ExamService
         ];
     }
 
-    public function endExam(Exam $exam)
+    public function endExam(Exam $exam): Exam
     {
         if (!$exam->is_active) {
             throw new \Exception('الامتحان غير مفعل بالفعل');
@@ -280,7 +280,7 @@ class ExamService
         return $exam;
     }
 
-    public function notifyStudents(Exam $exam, $notification)
+    public function notifyStudents(Exam $exam, $notification): void
     {
         $query = \App\Models\Student::whereHas('enrollments', function ($q) use ($exam) {
             $q->where('teacher_id', $exam->teacher_id);
@@ -305,7 +305,7 @@ class ExamService
         }
     }
 
-    public function processExamResults(Exam $exam)
+    public function processExamResults(Exam $exam): void
     {
         // Get all eligible students
         $query = \App\Models\Student::whereHas('enrollments', function ($q) use ($exam) {

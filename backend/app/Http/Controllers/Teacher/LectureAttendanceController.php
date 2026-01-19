@@ -1,79 +1,45 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Teacher;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Teacher\Lecture\RecordAttendanceRequest;
 use App\Models\Lecture;
-use App\Models\Attendance;
+use App\Services\Teacher\LectureService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
-use Carbon\Carbon;
 
 class LectureAttendanceController extends Controller
 {
     use \App\Traits\ResolvesTeacher;
-    public function generateQrCode(Request $request, Lecture $lecture)
-    {
-        // Ensure the user is the teacher of this lecture
-        if ($lecture->teacher_id !== $this->getTeacherFromRequest($request)->id) {
-            abort(403, 'Unauthorized');
-        }
 
-        // Generate a signed token valid for 10 seconds (5s refresh + 5s buffer)
-        $payload = [
-            'lecture_id' => $lecture->id,
-            'expires_at' => Carbon::now()->addSeconds(10)->timestamp,
-            'salt' => Str::random(8)
-        ];
-        
-        $token = \Illuminate\Support\Facades\Crypt::encryptString(json_encode($payload));
+    public function __construct(
+        private LectureService $service
+    ) {}
 
-        // Return the full URL that the student should visit
-        $url = config('app.url') . '/student/attend?token=' . $token;
-
-        return $this->successResponse([
-            'qr_code_url' => $url,
-            'expires_at' => Carbon::now()->addSeconds(10),
-        ]);
-    }
-
-    public function recordAttendance(Request $request, Lecture $lecture)
+    public function generateQrCode(Request $request, Lecture $lecture): JsonResponse
     {
         // Ensure the user is the teacher of this lecture
         if ($lecture->teacher_id !== $this->getTeacherFromRequest($request)->id) {
             return $this->errorResponse('Unauthorized', 403);
         }
 
-        $request->validate([
-            'student_id' => 'required|exists:students,id',
-        ]);
+        $result = $this->service->generateQrCode($lecture);
 
-        $studentId = $request->input('student_id');
+        return $this->successResponse($result);
+    }
 
-        // Check if student is already attended
-        $existingAttendance = Attendance::where('lecture_id', $lecture->id)
-            ->where('student_id', $studentId)
-            ->first();
-
-        if ($existingAttendance) {
-            return $this->successResponse([
-                'message' => 'الطالب مسجل حضور بالفعل',
-                'status' => 'already_attended'
-            ]);
+    public function recordAttendance(RecordAttendanceRequest $request, Lecture $lecture): JsonResponse
+    {
+        // Ensure the user is the teacher of this lecture
+        if ($lecture->teacher_id !== $this->getTeacherFromRequest($request)->id) {
+            return $this->errorResponse('Unauthorized', 403);
         }
 
-        Attendance::create([
-            'lecture_id' => $lecture->id,
-            'student_id' => $studentId,
-            'status' => 'present', // You might want to use an enum or constant
-        ]);
+        $result = $this->service->recordAttendance($lecture, $request->validated('student_id'));
 
-        $student = \App\Models\Student::find($studentId);
-        $student->notify(new \App\Notifications\StudentAttendanceNotification($lecture->title, $this->getTeacherFromRequest($request)->name));
-
-        return $this->successResponse([
-            'message' => 'تم تسجيل الحضور بنجاح',
-            'status' => 'attended'
-        ]);
+        return $this->successResponse($result);
     }
 }

@@ -1,32 +1,31 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Teacher;
 
 use App\Factories\NotificationFactory;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Teacher\Notification\SendNotificationRequest;
+use App\Http\Requests\Teacher\Notification\StoreVoiceNotificationRequest;
 use App\Models\SentNotification;
 use App\Services\Teacher\NotificationService;
 use App\Services\VoiceNotificationService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
 
 class NotificationController extends Controller
 {
     use \App\Traits\ResolvesTeacher;
-    protected $notificationService;
-    protected $voiceService;
 
-    public function __construct(NotificationService $notificationService, VoiceNotificationService $voiceService)
-    {
-        $this->notificationService = $notificationService;
-        $this->voiceService = $voiceService;
-    }
+    public function __construct(
+        private NotificationService $notificationService,
+        private VoiceNotificationService $voiceService
+    ) {}
 
-    public function index()
+    public function index(Request $request): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest(request());
+        $teacher = $this->getTeacherFromRequest($request);
         
         $notifications = SentNotification::where('teacher_id', $teacher->id)
             ->orderBy('created_at', 'desc')
@@ -57,9 +56,9 @@ class NotificationController extends Controller
         ]);
     }
 
-    public function store(SendNotificationRequest $request)
+    public function store(SendNotificationRequest $request): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest(request());
+        $teacher = $this->getTeacherFromRequest($request);
         $validated = $request->validated();
 
         $recipients = $this->notificationService->getRecipients(
@@ -68,8 +67,6 @@ class NotificationController extends Controller
             $validated['grade_id'] ?? null,
             $validated['group_id'] ?? null
         );
-
-
 
         if ($recipients->isEmpty()) {
             return $this->errorResponse('No recipients found', 404);
@@ -99,9 +96,9 @@ class NotificationController extends Controller
     /**
      * Check if teacher can send voice notification today
      */
-    public function checkVoiceLimit()
+    public function checkVoiceLimit(Request $request): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest(request());
+        $teacher = $this->getTeacherFromRequest($request);
         $canSend = $this->voiceService->canUserSendVoice($teacher);
 
         return $this->successResponse([
@@ -113,24 +110,14 @@ class NotificationController extends Controller
     /**
      * Store a voice notification
      */
-    public function storeVoice(Request $request)
+    public function storeVoice(StoreVoiceNotificationRequest $request): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest(request());
+        $teacher = $this->getTeacherFromRequest($request);
 
         // Check daily limit
         if (!$this->voiceService->canUserSendVoice($teacher)) {
             return $this->errorResponse('لقد استنفدت الحصة اليومية للرسائل الصوتية. حاول مرة أخرى غداً.', 429);
         }
-
-        // Validate request
-        $request->validate([
-            'title' => 'required|string|max:255',
-            'voice' => 'required|file|max:2048', // max 2MB
-            'duration' => 'required|integer|min:1|max:' . VoiceNotificationService::MAX_DURATION,
-            'recipient_type' => 'required|in:all,grade,group,admin',
-            'grade_id' => 'required_if:recipient_type,grade|exists:grades,id',
-            'group_id' => 'required_if:recipient_type,group|exists:groups,id',
-        ]);
 
         try {
             // Validate audio file
@@ -202,9 +189,9 @@ class NotificationController extends Controller
         }
     }
 
-    public function markAsRead($id)
+    public function markAsRead(Request $request, $id): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest(request());
+        $teacher = $this->getTeacherFromRequest($request);
         $notification = $teacher->notifications()->where('id', $id)->first();
 
         if ($notification) {

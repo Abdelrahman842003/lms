@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Requests\Teacher\Secretary;
 
 use Illuminate\Foundation\Http\FormRequest;
@@ -15,7 +17,14 @@ class UpdatePermissionsRequest extends FormRequest
     {
         return [
             'permissions' => 'array',
-            'permissions.*' => 'exists:permissions,name',
+            'permissions.*' => 'string',
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'permissions.array' => 'صيغة الصلاحيات غير صحيحة',
         ];
     }
 }

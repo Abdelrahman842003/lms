@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Teacher;
 
 use App\Http\Controllers\Controller;
@@ -8,18 +10,15 @@ use App\Http\Requests\Teacher\UpdateTeacherRequest;
 use App\Http\Resources\Teacher\TeacherResource;
 use App\Models\Teacher;
 use App\Services\Teacher\TeacherService;
-use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 
 class TeacherController extends Controller
 {
-    protected $teacherService;
+    public function __construct(
+        private TeacherService $teacherService
+    ) {}
 
-    public function __construct(TeacherService $teacherService)
-    {
-        $this->teacherService = $teacherService;
-    }
-
-    public function register(StoreTeacherRequest $request)
+    public function register(StoreTeacherRequest $request): JsonResponse
     {
         $teacher = $this->teacherService->createTeacher($request->validated());
 
@@ -27,7 +26,8 @@ class TeacherController extends Controller
             'teacher' => new TeacherResource($teacher)
         ], 'Teacher registered successfully');
     }
-    public function store(StoreTeacherRequest $request)
+
+    public function store(StoreTeacherRequest $request): JsonResponse
     {
         $teacher = $this->teacherService->createTeacher($request->validated());
 
@@ -35,7 +35,8 @@ class TeacherController extends Controller
             'teacher' => new TeacherResource($teacher)
         ], 'تم إضافة المدرس بنجاح');
     }
-    public function show($id)
+
+    public function show(string $id): JsonResponse
     {
         $teacher = $this->teacherService->getTeacherDetails($id);
 
@@ -44,7 +45,7 @@ class TeacherController extends Controller
         ], 'Teacher details retrieved successfully');
     }
 
-    public function update(UpdateTeacherRequest $request, Teacher $teacher)
+    public function update(UpdateTeacherRequest $request, Teacher $teacher): JsonResponse
     {
         $teacher = $this->teacherService->updateTeacher($teacher, $request->validated());
 

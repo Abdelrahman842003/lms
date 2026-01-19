@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Requests\Teacher\Student;
 
 use Illuminate\Foundation\Http\FormRequest;
@@ -49,5 +51,17 @@ class StoreStudentRequest extends FormRequest
             'name' => strip_tags($this->input('name')),
             'phone' => strip_tags($this->input('phone')),
         ]);
+    }
+
+    public function withValidator($validator)
+    {
+        $validator->after(function ($validator) {
+            if ($this->group_id && $this->grade_id) {
+                $group = \App\Models\Group::find($this->group_id);
+                if ($group && $group->grade_id != $this->grade_id) {
+                    $validator->errors()->add('group_id', 'المجموعة المختارة لا تنتمي للصف الدراسي المحدد');
+                }
+            }
+        });
     }
 }

@@ -4,66 +4,52 @@ declare(strict_types=1);
 
 namespace App\DTOs\Teacher;
 
-use App\Http\Requests\Teacher\Exam\StoreExamRequest;
-use Carbon\Carbon;
+use Illuminate\Http\Request;
 
-/**
- * Data Transfer Object for Exam creation/update operations.
- */
-final readonly class ExamData
+class ExamData
 {
     public function __construct(
-        public string $title,
-        public ?string $subject,
-        public string $gradeId,
-        public ?string $groupId,
-        public Carbon $date,
-        public int $duration,
-        public int $maxScore,
-        public array $questions,
+        public readonly string $title,
+        public readonly string $subject,
+        public readonly string $grade_id,
+        public readonly string $date,
+        public readonly int $duration,
+        public readonly int $total_marks,
+        public readonly int $actual_question_count,
+        public readonly array $questions,
+        public readonly ?string $group_id = null,
+        public readonly int $time_per_question = 60,
     ) {}
 
-    /**
-     * Create an ExamData instance from a validated request.
-     */
-    public static function fromRequest(StoreExamRequest $request): self
+    public static function fromRequest(Request $request): self
     {
-        $validated = $request->validated();
-        
         return new self(
-            title: $validated['title'],
-            subject: $validated['subject'] ?? null,
-            gradeId: $validated['grade_id'],
-            groupId: $validated['group_id'] ?? null,
-            date: Carbon::parse($validated['date']),
-            duration: (int) $validated['duration'],
-            maxScore: (int) ($validated['max_score'] ?? 100),
-            questions: $validated['questions'] ?? [],
+            title: $request->validated('title'),
+            subject: $request->validated('subject'),
+            grade_id: $request->validated('grade_id'),
+            date: $request->validated('date'),
+            duration: (int) $request->validated('duration'),
+            total_marks: (int) $request->validated('total_marks'),
+            actual_question_count: (int) $request->validated('actual_question_count'),
+            questions: $request->validated('questions'),
+            group_id: $request->validated('group_id'),
+            time_per_question: (int) ($request->validated('time_per_question') ?? 60),
         );
     }
 
-    /**
-     * Convert to array for model creation.
-     */
     public function toArray(): array
     {
         return [
             'title' => $this->title,
             'subject' => $this->subject,
-            'grade_id' => $this->gradeId,
-            'group_id' => $this->groupId,
+            'grade_id' => $this->grade_id,
+            'group_id' => $this->group_id,
             'date' => $this->date,
             'duration' => $this->duration,
-            'max_score' => $this->maxScore,
-            'is_active' => false,
+            'total_marks' => $this->total_marks,
+            'actual_question_count' => $this->actual_question_count,
+            'questions' => $this->questions,
+            'time_per_question' => $this->time_per_question,
         ];
-    }
-
-    /**
-     * Get questions array for separate creation.
-     */
-    public function getQuestions(): array
-    {
-        return $this->questions;
     }
 }

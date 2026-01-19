@@ -1,18 +1,21 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Teacher;
 
+use App\DTOs\Auth\LoginData;
 use App\Models\Teacher;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
 class TeacherService
 {
-    public function login(string $phone, string $password): array|false
+    public function login(LoginData $data): array|false
     {
-        $teacher = Teacher::where('phone', $phone)->first();
+        $teacher = Teacher::where('phone', $data->phone)->first();
 
-        if (! $teacher || ! Hash::check($password, $teacher->password)) {
+        if (! $teacher || ! Hash::check($data->password, $teacher->password)) {
             return false;
         }
 
@@ -28,10 +31,7 @@ class TeacherService
             ]);
         }
 
-        $token = $teacher->createToken('teacher_token', ['access-api'], now()->addMinutes(60))->plainTextToken;
-
         return [
-            'token' => $token,
             'user' => $teacher,
         ];
     }

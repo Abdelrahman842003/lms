@@ -1,15 +1,18 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Teacher;
 
 use App\Models\Secretary;
 use App\Models\Teacher;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 
 class SecretaryService
 {
-    public function getSecretaries(Teacher $teacher, int $perPage = 10, array $filters = [])
+    public function getSecretaries(Teacher $teacher, int $perPage = 10, array $filters = []): LengthAwarePaginator
     {
         $query = $teacher->secretaries()
             ->latest();

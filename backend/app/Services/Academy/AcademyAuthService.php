@@ -1,18 +1,21 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Academy;
 
+use App\DTOs\Auth\LoginData;
 use App\Models\Academy;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
 class AcademyAuthService
 {
-    public function login(string $phone, string $password): array|false
+    public function login(LoginData $data): array|false
     {
-        $academy = Academy::where('phone', $phone)->first();
+        $academy = Academy::where('phone', $data->phone)->first();
 
-        if (! $academy || ! Hash::check($password, $academy->password)) {
+        if (! $academy || ! Hash::check($data->password, $academy->password)) {
             return false;
         }
 
@@ -22,10 +25,7 @@ class AcademyAuthService
             ]);
         }
 
-        $token = $academy->createToken('academy_token', ['access-api'], now()->addMinutes(60))->plainTextToken;
-
         return [
-            'token' => $token,
             'user' => $academy->load(['secretaries', 'teachers']),
         ];
     }

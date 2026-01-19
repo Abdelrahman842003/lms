@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Requests\Teacher\Exam;
 
 use Illuminate\Foundation\Http\FormRequest;
@@ -28,6 +30,29 @@ class UpdateExamRequest extends FormRequest
             'questions.*.options' => 'required_with:questions|array|min:4|max:4',
             'questions.*.correct_answer' => 'required_with:questions|string',
             'questions.*.duration' => 'required_with:questions|integer|min:10|max:600',
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'title.required' => 'عنوان الامتحان مطلوب',
+            'subject.required' => 'المادة مطلوبة',
+            'grade_id.required' => 'الصف الدراسي مطلوب',
+            'grade_id.exists' => 'الصف الدراسي غير موجود',
+            'date.required' => 'تاريخ الامتحان مطلوب',
+            'date.date' => 'تاريخ الامتحان غير صحيح',
+            'duration.required' => 'مدة الامتحان مطلوبة',
+            'duration.min' => 'مدة الامتحان يجب أن تكون دقيقة واحدة على الأقل',
+            'total_marks.required' => 'الدرجة الكلية مطلوبة',
+            'total_marks.min' => 'الدرجة الكلية يجب أن تكون 1 على الأقل',
+            'actual_question_count.min' => 'عدد الأسئلة يجب أن يكون 1 على الأقل',
+            'time_per_question.min' => 'مدة السؤال يجب أن تكون 10 ثوانٍ على الأقل',
+            'time_per_question.max' => 'مدة السؤال يجب ألا تتجاوز 10 دقائق',
+            'questions.required_with' => 'الأسئلة مطلوبة عند تحديثها',
+            'questions.*.text.required_with' => 'نص السؤال مطلوب',
+            'questions.*.options.required_with' => 'خيارات السؤال مطلوبة',
+            'questions.*.correct_answer.required_with' => 'الإجابة الصحيحة مطلوبة',
         ];
     }
 

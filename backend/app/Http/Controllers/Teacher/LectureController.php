@@ -4,42 +4,34 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Teacher;
 
-use App\Http\Controllers\Controller;
 use App\DTOs\Teacher\LectureData;
+use App\Http\Controllers\Controller;
 use App\Http\Requests\Teacher\Lecture\CancelSessionRequest;
 use App\Http\Requests\Teacher\Lecture\StoreLectureRequest;
 use App\Http\Requests\Teacher\Lecture\UpdateLectureRequest;
 use App\Http\Resources\Teacher\LectureResource;
 use App\Models\Lecture;
 use App\Services\Teacher\LectureService;
-use App\Traits\ResolvesTeacher;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Notification;
-use Carbon\Carbon;
 
 class LectureController extends Controller
 {
-    use ResolvesTeacher;
-    protected $lectureService;
+    use \App\Traits\ResolvesTeacher;
 
-    public function __construct(LectureService $lectureService)
-    {
-        $this->lectureService = $lectureService;
-    }
+    public function __construct(
+        private LectureService $service
+    ) {}
 
-    public function index(Request $request)
+    public function index(Request $request): JsonResponse
     {
         $teacher = $this->getTeacherFromRequest($request);
-        if (!$teacher) {
-            return $this->errorResponse('Unauthorized', 403);
-        }
-        
         $perPage = (int) $request->input('per_page', 10);
         $filters = $request->only(['search', 'date_from', 'date_to', 'group_id', 'status']);
         $academyId = $request->header('X-Academy-Id');
         
-        $lectures = $this->lectureService->getLectures($teacher, $perPage, $filters, $academyId);
+        $lectures = $this->service->getLectures($teacher, $perPage, $filters, $academyId);
         $lectures->load('current_session');
         
         return $this->successResponse(
@@ -47,31 +39,27 @@ class LectureController extends Controller
         );
     }
 
-    public function store(StoreLectureRequest $request)
+    public function store(StoreLectureRequest $request): JsonResponse
     {
         try {
             $teacher = $this->getTeacherFromRequest($request);
-            if (!$teacher) {
-                return $this->errorResponse('Unauthorized', 403);
-            }
-
+            
             $lectureData = LectureData::fromRequest($request);
-            $lecture = $this->lectureService->createLecture($teacher, $lectureData->toArray());
+            $lecture = $this->service->createLecture($teacher, $lectureData->toArray());
 
             return $this->successResponse([
                 'lecture' => new LectureResource($lecture),
                 'message' => 'تم إضافة المحاضرة بنجاح'
-            ], 'تم إضافة المحاضرة بنجاح', 201);
+            ], 201);
         } catch (\Exception $e) {
             Log::error('Lecture creation failed: ' . $e->getMessage());
             return $this->errorResponse($e->getMessage(), 500);
         }
     }
     
-    public function show(Request $request, Lecture $lecture)
+    public function show(Request $request, Lecture $lecture): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
-        if (!$teacher || $lecture->teacher_id !== $teacher->id) {
+        if ($lecture->teacher_id !== $this->getTeacherFromRequest($request)->id) {
             return $this->errorResponse('Unauthorized', 403);
         }
 
@@ -80,33 +68,14 @@ class LectureController extends Controller
         ]);
     }
 
-    public function update(UpdateLectureRequest $request, Lecture $lecture)
+    public function update(UpdateLectureRequest $request, Lecture $lecture): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
-        if (!$teacher || $lecture->teacher_id !== $teacher->id) {
+        if ($lecture->teacher_id !== $this->getTeacherFromRequest($request)->id) {
             return $this->errorResponse('Unauthorized', 403);
         }
 
-        $data = $request->validated();
-        \Illuminate\Support\Facades\Log::info('Update Lecture Data:', $data);
-
-        if (isset($data['date']) && $data['date']) {
-            $date = \Carbon\Carbon::parse($data['date']);
-            
-            if (isset($data['recurrence_time']) && isset($data['duration_minutes'])) {
-                // Parse time in Cairo and convert to UTC
-                $data['start_time'] = \Carbon\Carbon::parse($date->format('Y-m-d') . ' ' . $data['recurrence_time'], 'Africa/Cairo')
-                    ->setTimezone('UTC');
-                $data['end_time'] = $data['start_time']->copy()->addMinutes($data['duration_minutes']);
-            } else {
-                // Full day in Cairo converted to UTC
-                $data['start_time'] = $date->copy()->setTimezone('Africa/Cairo')->startOfDay()->setTimezone('UTC');
-                $data['end_time'] = $date->copy()->setTimezone('Africa/Cairo')->addHours(24)->setTimezone('UTC');
-            }
-            unset($data['date']);
-        }
-
-        $lecture = $this->lectureService->updateLecture($lecture, $data);
+        $lectureData = LectureData::fromRequest($request);
+        $lecture = $this->service->updateLecture($lecture, $lectureData->toArray());
         
         return $this->successResponse([
             'lecture' => new LectureResource($lecture),
@@ -114,54 +83,26 @@ class LectureController extends Controller
         ]);
     }
 
-    public function destroy(Request $request, Lecture $lecture)
+    public function destroy(Request $request, Lecture $lecture): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
-        if (!$teacher || $lecture->teacher_id !== $teacher->id) {
+        if ($lecture->teacher_id !== $this->getTeacherFromRequest($request)->id) {
             return $this->errorResponse('Unauthorized', 403);
         }
 
-        if ($lecture->start_time > now() || $lecture->is_active) {
-            // Send cancellation notification to enrolled students
-            try {
-                $students = $lecture->teacher->students()
-                    ->wherePivot('grade_id', $lecture->grade_id)
-                    ->wherePivot('is_active', true)
-                    ->get();
-
-                if ($students->count() > 0) {
-                    \Illuminate\Support\Facades\Notification::send(
-                        $students, 
-                        new \App\Notifications\LectureCancelledNotification(
-                            $lecture->title, 
-                            $lecture->teacher->name
-                        )
-                    );
-
-                    // Also notify guardians if needed (assuming relationship exists)
-                    // $guardians = ...
-                }
-            } catch (\Exception $e) {
-                \Illuminate\Support\Facades\Log::error('Failed to send lecture cancellation notification: ' . $e->getMessage());
-            }
-        }
-
-        // Dispatch event before deletion if the event handler needs the model's data
-        $this->lectureService->deleteLecture($lecture);
+        $this->service->deleteLecture($lecture);
 
         return $this->successResponse([
             'message' => 'تم حذف المحاضرة بنجاح'
         ]);
     }
 
-    public function toggleActive(Request $request, Lecture $lecture)
+    public function toggleActive(Request $request, Lecture $lecture): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
-        if (!$teacher || $lecture->teacher_id !== $teacher->id) {
+        if ($lecture->teacher_id !== $this->getTeacherFromRequest($request)->id) {
             return $this->errorResponse('Unauthorized', 403);
         }
 
-        $lecture = $this->lectureService->toggleActive($lecture);
+        $lecture = $this->service->toggleActive($lecture);
 
         return $this->successResponse([
             'message' => $lecture->is_active ? 'تم تفعيل المحاضرة' : 'تم إلغاء تفعيل المحاضرة',
@@ -169,17 +110,13 @@ class LectureController extends Controller
         ]);
     }
 
-    public function endLecture(Request $request, Lecture $lecture)
+    public function endLecture(Request $request, Lecture $lecture): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
-        if (!$teacher || $lecture->teacher_id !== $teacher->id) {
+        if ($lecture->teacher_id !== $this->getTeacherFromRequest($request)->id) {
             return $this->errorResponse('Unauthorized', 403);
         }
 
-        // Allow re-activation of ended lectures (removed the is_active check)
-        $this->lectureService->endLecture($lecture);
-
-        \App\Events\LectureUpdated::dispatch($lecture);
+        $this->service->endLecture($lecture);
 
         return $this->successResponse([
             'message' => 'تم إنهاء المحاضرة وتسجيل الغياب للطلاب المتغيبين',
@@ -187,17 +124,9 @@ class LectureController extends Controller
         ]);
     }
 
-    /**
-     * Get attendees for a specific lecture
-     */
-    /**
-     * Get attendees for a specific lecture
-     */
-    public function getAttendees(Request $request, Lecture $lecture)
+    public function getAttendees(Request $request, Lecture $lecture): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
-        
-        if (!$teacher || $lecture->teacher_id !== $teacher->id) {
+        if ($lecture->teacher_id !== $this->getTeacherFromRequest($request)->id) {
             return $this->errorResponse('Unauthorized', 403);
         }
 
@@ -206,8 +135,8 @@ class LectureController extends Controller
             'date_to' => $request->input('date_to'),
         ];
 
-        $data = $this->lectureService->getAttendees($lecture, $filters);
-        $availableDates = $this->lectureService->getAvailableDates($lecture);
+        $data = $this->service->getAttendees($lecture, $filters);
+        $availableDates = $this->service->getAvailableDates($lecture);
 
         return $this->successResponse([
             'lecture' => [
@@ -226,6 +155,10 @@ class LectureController extends Controller
 
     public function exportAttendees(Request $request, Lecture $lecture)
     {
+        if ($lecture->teacher_id !== $this->getTeacherFromRequest($request)->id) {
+            abort(403, 'Unauthorized');
+        }
+
         // Same logic as getAttendees to ensure consistency
         $query = $lecture->teacher->students()
             ->wherePivot('grade_id', $lecture->grade_id)
@@ -299,15 +232,15 @@ class LectureController extends Controller
         
         return $mpdf->Output("attendance_report_{$lecture->id}.pdf", 'D');
     }
-    public function cancelSession(CancelSessionRequest $request, Lecture $lecture)
+
+    public function cancelSession(CancelSessionRequest $request, Lecture $lecture): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
-        if (!$teacher || $lecture->teacher_id !== $teacher->id) {
+        if ($lecture->teacher_id !== $this->getTeacherFromRequest($request)->id) {
             return $this->errorResponse('Unauthorized', 403);
         }
 
         $validated = $request->validated();
-        $this->lectureService->cancelSession($lecture, $validated['date']);
+        $this->service->cancelSession($lecture, $validated['date']);
 
         return $this->successResponse([
             'message' => 'تم إلغاء المحاضرة لهذا اليوم وإرسال الإشعارات',

@@ -4,24 +4,21 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Academy;
 
-use App\Http\Controllers\Controller;
-use App\Services\Academy\NotificationService;
-use App\Http\Requests\Academy\StoreNotificationRequest;
-use App\Http\Requests\Academy\SendToTeachersRequest;
 use App\DTOs\Academy\NotificationData;
+use App\Http\Controllers\Controller;
+use App\Http\Requests\Academy\SendToTeachersRequest;
+use App\Http\Requests\Academy\StoreNotificationRequest;
 use App\Http\Resources\Academy\NotificationResource;
-use Illuminate\Http\Request;
+use App\Services\Academy\NotificationService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class NotificationController extends Controller
 {
     public function __construct(
-        private NotificationService $notificationService
+        private NotificationService $service
     ) {}
 
-    /**
-     * Get academy notifications
-     */
     public function index(Request $request): JsonResponse
     {
         $academy = $request->user();
@@ -29,7 +26,7 @@ class NotificationController extends Controller
         $perPage = (int) $request->input('per_page', 15);
         $targetType = $request->input('target_type');
 
-        $notifications = $this->notificationService->getNotifications(
+        $notifications = $this->service->getNotifications(
             $academy,
             $perPage,
             null, // We don't filter by userId for academy view
@@ -39,16 +36,13 @@ class NotificationController extends Controller
         return $this->successResponse(NotificationResource::collection($notifications));
     }
 
-    /**
-     * Create notification
-     */
     public function store(StoreNotificationRequest $request): JsonResponse
     {
         $academy = $request->user();
 
         $data = NotificationData::fromRequest($request);
 
-        $notification = $this->notificationService->createNotification(
+        $notification = $this->service->createNotification(
             $academy,
             $data,
             null
@@ -60,15 +54,12 @@ class NotificationController extends Controller
         );
     }
 
-    /**
-     * Mark notification as read
-     */
     public function markAsRead(Request $request, string $id): JsonResponse
     {
         $academy = $request->user();
 
         try {
-            $notification = $this->notificationService->markAsRead($id, $academy->id);
+            $notification = $this->service->markAsRead($id, $academy->id);
 
             return $this->successResponse([
                 'notification' => $notification,
@@ -79,14 +70,11 @@ class NotificationController extends Controller
         }
     }
 
-    /**
-     * Send notification to all teachers
-     */
     public function sendToTeachers(SendToTeachersRequest $request): JsonResponse
     {
         $academy = $request->user();
 
-        $notification = $this->notificationService->sendToTeachers(
+        $notification = $this->service->sendToTeachers(
             $academy,
             $request->validated('title'),
             $request->validated('message'),
@@ -99,14 +87,11 @@ class NotificationController extends Controller
         ], 'تم إرسال الإشعار لجميع المدرسين', 201);
     }
 
-    /**
-     * Get unread count
-     */
     public function unreadCount(Request $request): JsonResponse
     {
         $academy = $request->user();
 
-        $count = $this->notificationService->getUnreadCount(
+        $count = $this->service->getUnreadCount(
             $academy,
             $academy->id,
             'academy'

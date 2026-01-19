@@ -1,52 +1,56 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Teacher;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Teacher\Permission\StorePermissionRequest;
 use App\Http\Requests\Teacher\Permission\UpdatePermissionRequest;
+use App\Services\Teacher\PermissionService;
+use Illuminate\Http\JsonResponse;
 use Spatie\Permission\Models\Permission;
 
 class PermissionController extends Controller
 {
-    public function index()
+    public function __construct(
+        private PermissionService $service
+    ) {}
+
+    public function index(): JsonResponse
     {
-        $permissions = Permission::whereIn('guard_name', ['student', 'secretary'])->get();
+        $permissions = $this->service->getPermissions();
         return $this->successResponse($permissions);
     }
 
-    public function store(StorePermissionRequest $request)
+    public function store(StorePermissionRequest $request): JsonResponse
     {
-        if (Permission::where('name', $request->name)->where('guard_name', $request->guard_name)->exists()) {
-             return $this->errorResponse('The permission name has already been taken for this guard.', 422);
+        try {
+            $permission = $this->service->createPermission($request->validated());
+            return $this->successResponse(['data' => $permission, 'message' => 'تم إنشاء الصلاحية بنجاح'], 201);
+        } catch (\Exception $e) {
+            return $this->errorResponse($e->getMessage(), 422);
         }
-
-        $permission = Permission::create(['name' => $request->name, 'guard_name' => $request->guard_name]);
-
-        return $this->successResponse(['data' => $permission, 'message' => 'Permission created successfully'], 201);
     }
 
-    public function show(Permission $permission)
+    public function show(Permission $permission): JsonResponse
     {
         return $this->successResponse(['data' => $permission]);
     }
 
-    public function update(UpdatePermissionRequest $request, Permission $permission)
+    public function update(UpdatePermissionRequest $request, Permission $permission): JsonResponse
     {
-        if ($permission->name !== $request->name) {
-            if (Permission::where('name', $request->name)->where('guard_name', $permission->guard_name)->exists()) {
-                 return $this->errorResponse('The permission name has already been taken for this guard.', 422);
-            }
+        try {
+            $permission = $this->service->updatePermission($permission, $request->validated());
+            return $this->successResponse(['data' => $permission, 'message' => 'تم تحديث الصلاحية بنجاح']);
+        } catch (\Exception $e) {
+            return $this->errorResponse($e->getMessage(), 422);
         }
-
-        $permission->update(['name' => $request->name]);
-
-        return $this->successResponse(['data' => $permission, 'message' => 'Permission updated successfully']);
     }
 
-    public function destroy(Permission $permission)
+    public function destroy(Permission $permission): JsonResponse
     {
-        $permission->delete();
-        return $this->successResponse(['message' => 'Permission deleted successfully']);
+        $this->service->deletePermission($permission);
+        return $this->successResponse(['message' => 'تم حذف الصلاحية بنجاح']);
     }
 }

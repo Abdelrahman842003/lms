@@ -1,15 +1,20 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Teacher;
 
+use App\DTOs\Teacher\GradeData;
 use App\Models\Grade;
+use App\Models\Teacher;
 use App\Traits\HasAcademyFilter;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class GradeService
 {
     use HasAcademyFilter;
 
-    public function getGrades($teacher, int $perPage = 10, array $filters = [], ?string $academyId = null)
+    public function getGrades(Teacher $teacher, int $perPage = 10, array $filters = [], ?string $academyId = null): LengthAwarePaginator
     {
         $query = $teacher->grades()
             ->withCount(['groups', 'enrollments'])
@@ -22,18 +27,18 @@ class GradeService
         return $query->paginate($perPage);
     }
 
-    public function createGrade($teacher, array $data)
+    public function createGrade(Teacher $teacher, GradeData $data): Grade
     {
-        return $teacher->grades()->create($data);
+        return $teacher->grades()->create($data->toArray());
     }
 
-    public function updateGrade(Grade $grade, array $data)
+    public function updateGrade(Grade $grade, GradeData $data): Grade
     {
-        $grade->update($data);
+        $grade->update($data->toArray());
         return $grade;
     }
 
-    public function deleteGrade(Grade $grade)
+    public function deleteGrade(Grade $grade): ?bool
     {
         return $grade->delete();
     }

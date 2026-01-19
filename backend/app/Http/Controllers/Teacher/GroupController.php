@@ -1,40 +1,44 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Teacher;
 
+use App\DTOs\Teacher\GroupData;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Teacher\Group\StoreGroupRequest;
 use App\Http\Requests\Teacher\Group\UpdateGroupRequest;
 use App\Http\Resources\Teacher\GroupResource;
+use App\Http\Resources\Teacher\StudentResource;
 use App\Models\Group;
 use App\Services\Teacher\GroupService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class GroupController extends Controller
 {
     use \App\Traits\ResolvesTeacher;
-    protected $groupService;
 
-    public function __construct(GroupService $groupService)
-    {
-        $this->groupService = $groupService;
-    }
+    public function __construct(
+        private GroupService $service
+    ) {}
 
-    public function index(Request $request)
+    public function index(Request $request): JsonResponse
     {
         $teacher = $this->getTeacherFromRequest($request);
-        $perPage = $request->input('per_page', 10);
+        $perPage = (int) $request->input('per_page', 10);
         $filters = $request->only(['search', 'grade_id']);
         $academyId = $request->header('X-Academy-Id');
         
-        $groups = $this->groupService->getGroups($teacher, $perPage, $filters, $academyId);
+        $groups = $this->service->getGroups($teacher, $perPage, $filters, $academyId);
         
         return $this->successResponse(
             GroupResource::collection($groups)->response()->getData(true)
         );
     }
 
-    public function show(Request $request, Group $group)
+    public function show(Request $request, Group $group): JsonResponse
     {
         if ($group->teacher_id !== $this->getTeacherFromRequest($request)->id) {
             return $this->errorResponse('Unauthorized', 403);
@@ -53,36 +57,35 @@ class GroupController extends Controller
 
         return $this->successResponse([
             'group' => new GroupResource($group),
-            'students' => \App\Http\Resources\Teacher\StudentResource::collection($students)
+            'students' => StudentResource::collection($students)
         ]);
     }
 
-    public function store(StoreGroupRequest $request)
+    public function store(StoreGroupRequest $request): JsonResponse
     {
         $teacher = $this->getTeacherFromRequest($request);
         $academyId = $request->header('X-Academy-Id');
         
-        $data = $request->validated();
-        
         // Set academy_id based on context
         if ($academyId && $academyId !== 'independent') {
             // Check if teacher belongs to this academy
-            $teacherBelongsToAcademy = \Illuminate\Support\Facades\DB::table('academy_teacher')
+            $teacherBelongsToAcademy = DB::table('academy_teacher')
                 ->where('teacher_id', $teacher->id)
                 ->where('academy_id', $academyId)
                 ->where('is_active', true)
                 ->exists();
             
             if ($teacherBelongsToAcademy) {
-                $data['academy_id'] = $academyId;
+                $request->merge(['academy_id' => $academyId]);
             } else {
-                $data['academy_id'] = null;
+                $request->merge(['academy_id' => null]);
             }
         } else {
-            $data['academy_id'] = null;
+            $request->merge(['academy_id' => null]);
         }
         
-        $group = $this->groupService->createGroup($teacher, $data);
+        $groupData = GroupData::fromRequest($request);
+        $group = $this->service->createGroup($teacher, $groupData);
 
         return $this->successResponse([
             'group' => new GroupResource($group),
@@ -90,13 +93,14 @@ class GroupController extends Controller
         ], 201);
     }
 
-    public function update(UpdateGroupRequest $request, Group $group)
+    public function update(UpdateGroupRequest $request, Group $group): JsonResponse
     {
         if ($group->teacher_id !== $this->getTeacherFromRequest($request)->id) {
             return $this->errorResponse('Unauthorized', 403);
         }
 
-        $group = $this->groupService->updateGroup($group, $request->validated());
+        $groupData = GroupData::fromRequest($request);
+        $group = $this->service->updateGroup($group, $groupData);
 
         return $this->successResponse([
             'group' => new GroupResource($group),
@@ -104,13 +108,13 @@ class GroupController extends Controller
         ]);
     }
 
-    public function destroy(Request $request, Group $group)
+    public function destroy(Request $request, Group $group): JsonResponse
     {
         if ($group->teacher_id !== $this->getTeacherFromRequest($request)->id) {
             return $this->errorResponse('Unauthorized', 403);
         }
 
-        $this->groupService->deleteGroup($group);
+        $this->service->deleteGroup($group);
 
         return $this->successResponse([
             'message' => 'تم حذف المجموعة بنجاح'

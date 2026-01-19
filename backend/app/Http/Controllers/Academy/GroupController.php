@@ -1,129 +1,99 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Academy;
 
+use App\DTOs\Academy\GroupData;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Academy\Group\StoreGroupRequest;
+use App\Http\Requests\Academy\Group\UpdateGroupRequest;
 use App\Http\Resources\Teacher\GroupResource;
 use App\Models\Group;
-use App\Models\Teacher;
+use App\Services\Academy\GroupService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class GroupController extends Controller
 {
-    public function index(Request $request)
+    public function __construct(
+        private GroupService $service
+    ) {}
+
+    public function index(Request $request): JsonResponse
     {
         $academy = Auth::user();
-        $perPage = $request->input('per_page', 10);
+        $perPage = (int) $request->input('per_page', 10);
+        $filters = $request->only(['search', 'grade_id', 'teacher_id']);
         
-        $groups = Group::whereHas('teacher', function ($query) use ($academy) {
-            $query->whereHas('academies', function ($q) use ($academy) {
-                      $q->where('academy_id', $academy->id);
-                  });
-        })
-        ->when($request->search, function ($query, $search) {
-            $query->where('name', 'like', "%{$search}%");
-        })
-        ->when($request->grade_id, function ($query, $gradeId) {
-            $query->where('grade_id', $gradeId);
-        })
-        ->when($request->teacher_id, function ($query, $teacherId) {
-            $query->where('teacher_id', $teacherId);
-        })
-        ->with(['teacher', 'grade'])
-        ->latest()
-        ->paginate($perPage);
+        $groups = $this->service->getGroups($academy, $filters, $perPage);
         
         return $this->successResponse(
             GroupResource::collection($groups)->response()->getData(true)
         );
     }
 
-    public function store(Request $request)
+    public function store(StoreGroupRequest $request): JsonResponse
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'teacher_id' => 'required|exists:teachers,id',
-            'grade_id' => 'nullable|exists:grades,id',
-            'time' => 'nullable|string',
-            'days' => 'nullable|string',
-            'type' => 'required|in:general,private',
-            'price' => 'nullable|numeric|min:0',
-        ]);
-
         $academy = Auth::user();
+        $data = GroupData::fromRequest($request);
         
-        // Verify teacher belongs to academy and is active
-        $teacher = Teacher::where('id', $request->teacher_id)
-            ->where('teachers.status', 'active')
-            ->whereHas('academies', function ($q) use ($academy) {
-                $q->where('academy_id', $academy->id)
-                  ->where('academy_teacher.is_active', true);
-            })->firstOrFail();
-
-        // If grade_id is provided, verify it belongs to the teacher
-        if ($request->grade_id) {
-            $grade = $teacher->grades()->where('id', $request->grade_id)->first();
-            if (!$grade) {
-                return $this->errorResponse('الصف الدراسي غير تابع للمدرس المختار', 422);
-            }
+        try {
+            $group = $this->service->createGroup($academy, $data);
+            
+            return $this->successResponse([
+                'group' => new GroupResource($group),
+                'message' => 'تم إضافة المجموعة بنجاح'
+            ], 201);
+        } catch (\Exception $e) {
+            return $this->errorResponse($e->getMessage(), 422);
         }
-
-        $group = $teacher->groups()->create($request->all());
-
-        return $this->successResponse([
-            'group' => new GroupResource($group),
-            'message' => 'تم إضافة المجموعة بنجاح'
-        ], 201);
     }
 
-    public function update(Request $request, Group $group)
+    public function update(UpdateGroupRequest $request, Group $group): JsonResponse
     {
         $academy = Auth::user();
 
         // Verify group belongs to a teacher in this academy
-        if (!$group->teacher->academies()->where('academy_id', $academy->id)->exists()) {
+        if (!$this->isOwnedByAcademy($academy, $group)) {
             return $this->errorResponse('Unauthorized', 403);
         }
 
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'grade_id' => 'nullable|exists:grades,id',
-            'time' => 'nullable|string',
-            'days' => 'nullable|string',
-            'type' => 'required|in:general,private',
-            'price' => 'nullable|numeric|min:0',
-        ]);
+        $data = GroupData::fromRequest($request);
 
-        // If grade_id is changing, verify it belongs to the SAME teacher
-        if ($request->grade_id && $request->grade_id !== $group->grade_id) {
-            $grade = $group->teacher->grades()->where('id', $request->grade_id)->first();
-            if (!$grade) {
-                return $this->errorResponse('الصف الدراسي غير تابع لمدرس المجموعة', 422);
-            }
+        try {
+            $group = $this->service->updateGroup($academy, $group, $data);
+
+            return $this->successResponse([
+                'group' => new GroupResource($group),
+                'message' => 'تم تحديث المجموعة بنجاح'
+            ]);
+        } catch (\Exception $e) {
+            return $this->errorResponse($e->getMessage(), 422);
         }
-
-        $group->update($request->all());
-
-        return $this->successResponse([
-            'group' => new GroupResource($group),
-            'message' => 'تم تحديث المجموعة بنجاح'
-        ]);
     }
 
-    public function destroy(Group $group)
+    public function destroy(Group $group): JsonResponse
     {
         $academy = Auth::user();
 
         // Verify group belongs to a teacher in this academy
-        if (!$group->teacher->academies()->where('academy_id', $academy->id)->exists()) {
+        if (!$this->isOwnedByAcademy($academy, $group)) {
             return $this->errorResponse('Unauthorized', 403);
         }
 
-        $group->delete();
+        $this->service->deleteGroup($group);
 
         return $this->successResponse([
             'message' => 'تم حذف المجموعة بنجاح'
         ]);
+    }
+
+    private function isOwnedByAcademy($academy, Group $group): bool
+    {
+        return $group->teacher->academies()
+            ->where('academy_id', $academy->id)
+            ->exists();
     }
 }

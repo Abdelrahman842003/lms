@@ -4,35 +4,29 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Teacher;
 
+use App\DTOs\Teacher\ExamData;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Teacher\Exam\StoreExamRequest;
 use App\Http\Requests\Teacher\Exam\UpdateExamRequest;
 use App\Http\Resources\Teacher\ExamResource;
 use App\Http\Resources\Teacher\ExamResultDetailResource;
 use App\Models\Exam;
-use App\Models\ExamResult;
-use App\Models\Student;
-use App\Notifications\ExamAbsentNotification;
-use App\Notifications\ExamActivatedNotification;
 use App\Services\Teacher\ExamService;
-use App\Traits\ResolvesTeacher;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Notification;
 
 class ExamController extends Controller
 {
-    use ResolvesTeacher;
-    protected $examService;
+    use \App\Traits\ResolvesTeacher;
 
-    public function __construct(ExamService $examService)
-    {
-        $this->examService = $examService;
-    }
+    public function __construct(
+        private ExamService $service
+    ) {}
 
-    public function results(Exam $exam)
+    public function results(Exam $exam): JsonResponse
     {
-        \Illuminate\Support\Facades\Log::info('Results endpoint hit', ['exam_id' => $exam->id]);
+        Log::info('Results endpoint hit', ['exam_id' => $exam->id]);
         
         try {
             if ($exam->teacher_id !== $this->getTeacherFromRequest(request())->id) {
@@ -57,36 +51,36 @@ class ExamController extends Controller
                 'results' => ExamResultDetailResource::collection($results)
             ]);
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Error fetching exam results: ' . $e->getMessage());
-            \Illuminate\Support\Facades\Log::error($e->getTraceAsString());
+            Log::error('Error fetching exam results: ' . $e->getMessage());
+            Log::error($e->getTraceAsString());
             return $this->errorResponse('An error occurred while fetching results', 500);
         }
     }
 
-    public function index(\Illuminate\Http\Request $request)
+    public function index(Request $request): JsonResponse
     {
         $perPage = (int) $request->input('per_page', 10);
         $filters = $request->only(['search', 'date_from', 'date_to']);
         $academyId = $request->header('X-Academy-Id');
         
-        $exams = $this->examService->getExams($this->getTeacherFromRequest(request()), $perPage, $filters, $academyId);
+        $exams = $this->service->getExams($this->getTeacherFromRequest($request), $perPage, $filters, $academyId);
 
         return $this->successResponse(
-            \App\Http\Resources\Teacher\ExamResource::collection($exams)->response()->getData(true)
+            ExamResource::collection($exams)->response()->getData(true)
         );
     }
 
-    public function store(StoreExamRequest $request)
+    public function store(StoreExamRequest $request): JsonResponse
     {
         try {
-            $teacher = $this->getTeacherFromRequest(request());
-            $data = $request->validated();
+            $teacher = $this->getTeacherFromRequest($request);
+            $data = ExamData::fromRequest($request);
             
             // التحقق من تعارض التواريخ كتحذير مبكر
             $warning = null;
-            $dateConflict = $this->examService->checkDateConflicts(
-                $data['grade_id'],
-                $data['date'],
+            $dateConflict = $this->service->checkDateConflicts(
+                $data->grade_id,
+                $data->date,
                 $teacher->id
             );
             
@@ -98,7 +92,7 @@ class ExamController extends Controller
                 $warning = "تنبيه: يوجد امتحان في نفس التاريخ للمدرس: {$teacherNames}. قد يؤثر على {$dateConflict['affected_students_count']} طالب مشترك.";
             }
             
-            $exam = $this->examService->createExam($teacher, $data);
+            $exam = $this->service->createExam($teacher, $data);
 
             $response = [
                 'exam' => $exam
@@ -114,7 +108,7 @@ class ExamController extends Controller
         }
     }
 
-    public function show(Exam $exam)
+    public function show(Exam $exam): JsonResponse
     {
         if ($exam->teacher_id !== $this->getTeacherFromRequest(request())->id) {
             return $this->errorResponse('Unauthorized', 403);
@@ -125,22 +119,22 @@ class ExamController extends Controller
         ]);
     }
 
-    public function update(UpdateExamRequest $request, Exam $exam)
+    public function update(UpdateExamRequest $request, Exam $exam): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest(request());
+        $teacher = $this->getTeacherFromRequest($request);
         
         if ($exam->teacher_id !== $teacher->id) {
             return $this->errorResponse('Unauthorized', 403);
         }
 
         try {
-            $data = $request->validated();
+            $data = ExamData::fromRequest($request);
             
             // التحقق من تعارض التواريخ كتحذير مبكر
             $warning = null;
-            $dateConflict = $this->examService->checkDateConflicts(
-                $data['grade_id'],
-                $data['date'],
+            $dateConflict = $this->service->checkDateConflicts(
+                $data->grade_id,
+                $data->date,
                 $teacher->id,
                 $exam->id
             );
@@ -153,7 +147,7 @@ class ExamController extends Controller
                 $warning = "تنبيه: يوجد امتحان في نفس التاريخ للمدرس: {$teacherNames}. قد يؤثر على {$dateConflict['affected_students_count']} طالب مشترك.";
             }
             
-            $exam = $this->examService->updateExam($exam, $data);
+            $exam = $this->service->updateExam($exam, $data);
 
             $response = [
                 'exam' => $exam
@@ -169,13 +163,13 @@ class ExamController extends Controller
         }
     }
 
-    public function destroy(Exam $exam)
+    public function destroy(Exam $exam): JsonResponse
     {
-        $this->examService->deleteExam($exam);
+        $this->service->deleteExam($exam);
         return $this->successResponse(null, 'تم حذف الامتحان بنجاح');
     }
 
-    public function copy(Exam $exam)
+    public function copy(Exam $exam): JsonResponse
     {
         if ($exam->teacher_id !== $this->getTeacherFromRequest(request())->id) {
             return $this->errorResponse('Unauthorized', 403);
@@ -183,16 +177,16 @@ class ExamController extends Controller
 
         try {
             $title = request()->input('title');
-            $newExam = $this->examService->copyExam($exam, $title);
+            $newExam = $this->service->copyExam($exam, $title);
             return $this->successResponse(['exam' => $newExam], 'تم نسخ الامتحان بنجاح');
         } catch (\Exception $e) {
             return $this->errorResponse('Failed to copy exam: ' . $e->getMessage(), 500);
         }
     }
 
-    public function toggleStatus(Exam $exam)
+    public function toggleStatus(Exam $exam): JsonResponse
     {
-        $result = $this->examService->toggleStatus($exam);
+        $result = $this->service->toggleStatus($exam);
 
         if (!$result['success']) {
             return $this->errorResponse($result['message'], $result['code'] ?? 400);
@@ -204,10 +198,10 @@ class ExamController extends Controller
         );
     }
 
-    public function endExam(Exam $exam)
+    public function endExam(Exam $exam): JsonResponse
     {
         try {
-            $exam = $this->examService->endExam($exam);
+            $exam = $this->service->endExam($exam);
             
             return $this->successResponse(
                 new ExamResource($exam),
@@ -217,6 +211,4 @@ class ExamController extends Controller
             return $this->errorResponse($e->getMessage(), 400);
         }
     }
-
-
 }

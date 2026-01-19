@@ -5,9 +5,10 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Teacher;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Teacher\Scan\ScanRequest;
 use App\Services\Teacher\ScanService;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class ScanController extends Controller
 {
@@ -18,13 +19,10 @@ class ScanController extends Controller
     /**
      * Handle check-in scan
      */
-    public function checkin(Request $request): JsonResponse
+    public function checkin(ScanRequest $request): JsonResponse
     {
         $teacher = $request->user();
-
-        $validated = $request->validate([
-            'qr_code' => 'required|string',
-        ]);
+        $validated = $request->validated();
 
         try {
             $result = $this->scanService->checkin($teacher, $validated['qr_code']);
@@ -45,13 +43,10 @@ class ScanController extends Controller
     /**
      * Handle check-out scan
      */
-    public function checkout(Request $request): JsonResponse
+    public function checkout(ScanRequest $request): JsonResponse
     {
         $teacher = $request->user();
-
-        $validated = $request->validate([
-            'qr_code' => 'required|string',
-        ]);
+        $validated = $request->validated();
 
         try {
             $result = $this->scanService->checkout($teacher, $validated['qr_code']);

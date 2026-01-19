@@ -6,13 +6,13 @@ namespace App\Http\Controllers\Academy;
 
 use App\Http\Controllers\Controller;
 use App\Services\Academy\DashboardService;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
     public function __construct(
-        private DashboardService $dashboardService
+        private DashboardService $service
     ) {}
 
     /**
@@ -22,7 +22,7 @@ class DashboardController extends Controller
     {
         $academy = $request->user();
 
-        $stats = $this->dashboardService->getStats($academy);
+        $stats = $this->service->getStats($academy);
 
         return $this->successResponse($stats);
     }

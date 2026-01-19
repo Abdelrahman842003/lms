@@ -1,9 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Requests\Teacher\Secretary;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class UpdateSecretaryRequest extends FormRequest
 {
@@ -14,12 +15,19 @@ class UpdateSecretaryRequest extends FormRequest
 
     public function rules(): array
     {
-        $secretary = $this->route('secretary');
-        
         return [
             'name' => 'sometimes|required|string|max:255',
             'phone' => 'sometimes|required|string|max:20',
             'password' => 'nullable|string|min:6',
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'name.required' => 'اسم السكرتير مطلوب',
+            'phone.required' => 'رقم الهاتف مطلوب',
+            'password.min' => 'كلمة المرور يجب أن تكون 6 أحرف على الأقل',
         ];
     }
 

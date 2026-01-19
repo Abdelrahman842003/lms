@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Requests\Auth;
 
 use Illuminate\Foundation\Http\FormRequest;
@@ -16,6 +18,7 @@ class TeacherLoginRequest extends FormRequest
         return [
             'phone' => ['required', 'regex:/^01[0125][0-9]{8}$/'],
             'password' => 'required|min:6',
+            'fcm_token' => 'sometimes|nullable|string',
         ];
     }
 

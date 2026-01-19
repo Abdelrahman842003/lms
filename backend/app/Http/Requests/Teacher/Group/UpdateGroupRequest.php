@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Requests\Teacher\Group;
 
 use Illuminate\Foundation\Http\FormRequest;
@@ -20,6 +22,8 @@ class UpdateGroupRequest extends FormRequest
             'days' => 'nullable|string|max:255',
             'type' => 'nullable|in:general,private',
             'price' => 'nullable|numeric|min:0',
+            'description' => 'nullable|string',
+            'academy_id' => 'nullable|exists:academies,id',
         ];
     }
 
@@ -32,6 +36,17 @@ class UpdateGroupRequest extends FormRequest
             'type.in' => 'نوع المجموعة يجب أن يكون عام أو خاص',
             'price.numeric' => 'السعر يجب أن يكون رقماً',
             'price.min' => 'السعر يجب أن يكون أكبر من صفر',
+            'academy_id.exists' => 'الأكاديمية غير موجودة',
         ];
+    }
+
+    public function prepareForValidation()
+    {
+        $this->merge([
+            'name' => strip_tags($this->input('name')),
+            'description' => $this->input('description') ? strip_tags($this->input('description')) : null,
+            'time' => $this->input('time') ? strip_tags($this->input('time')) : null,
+            'days' => $this->input('days') ? strip_tags($this->input('days')) : null,
+        ]);
     }
 }
