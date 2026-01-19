@@ -60,7 +60,29 @@ class GroupController extends Controller
     public function store(StoreGroupRequest $request)
     {
         $teacher = $this->getTeacherFromRequest($request);
-        $group = $this->groupService->createGroup($teacher, $request->validated());
+        $academyId = $request->header('X-Academy-Id');
+        
+        $data = $request->validated();
+        
+        // Set academy_id based on context
+        if ($academyId && $academyId !== 'independent') {
+            // Check if teacher belongs to this academy
+            $teacherBelongsToAcademy = \Illuminate\Support\Facades\DB::table('academy_teacher')
+                ->where('teacher_id', $teacher->id)
+                ->where('academy_id', $academyId)
+                ->where('is_active', true)
+                ->exists();
+            
+            if ($teacherBelongsToAcademy) {
+                $data['academy_id'] = $academyId;
+            } else {
+                $data['academy_id'] = null;
+            }
+        } else {
+            $data['academy_id'] = null;
+        }
+        
+        $group = $this->groupService->createGroup($teacher, $data);
 
         return $this->successResponse([
             'group' => new GroupResource($group),

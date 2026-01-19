@@ -16,6 +16,7 @@ class Group extends Model
         'name',
         'grade_id',
         'teacher_id',
+        'academy_id',
         'time',
         'days',
         'type',
@@ -36,6 +37,11 @@ class Group extends Model
     public function enrollments()
     {
         return $this->hasMany(Enrollment::class);
+    }
+
+    public function academy()
+    {
+        return $this->belongsTo(Academy::class);
     }
 
     public function scopeFilter($query, array $filters)

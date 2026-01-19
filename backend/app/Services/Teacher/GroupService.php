@@ -17,8 +17,8 @@ class GroupService
             ->latest()
             ->filter($filters);
 
-        // Apply academy filter via grade relationship
-        $query = $this->applyAcademyFilter($query, $academyId, 'grade');
+        // Apply direct academy filter (groups now have academy_id column)
+        $query = $this->applyDirectAcademyFilter($query, $academyId);
 
         return $query->paginate($perPage);
     }

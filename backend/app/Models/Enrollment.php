@@ -16,6 +16,7 @@ class Enrollment extends Model
         'teacher_id',
         'grade_id',
         'group_id',
+        'academy_id',
         'balance',
         'is_active',
         'subscription_start',
@@ -95,6 +96,11 @@ class Enrollment extends Model
     public function group()
     {
         return $this->belongsTo(Group::class);
+    }
+
+    public function academy()
+    {
+        return $this->belongsTo(Academy::class);
     }
 
     public function activityLogs()

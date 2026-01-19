@@ -37,7 +37,32 @@ class GradeController extends Controller
     public function store(StoreGradeRequest $request)
     {
         $teacher = $this->getTeacherFromRequest($request);
-        $grade = $this->gradeService->createGrade($teacher, $request->validated());
+        $academyId = $request->header('X-Academy-Id');
+        
+        $data = $request->validated();
+        
+        // Only set academy_id if teacher is actually affiliated with that academy
+        // Don't set it based on just the dropdown selection
+        if ($academyId && $academyId !== 'independent') {
+            // Check if teacher belongs to this academy using the pivot table
+            $teacherBelongsToAcademy = \Illuminate\Support\Facades\DB::table('academy_teacher')
+                ->where('teacher_id', $teacher->id)
+                ->where('academy_id', $academyId)
+                ->where('is_active', true)
+                ->exists();
+            
+            if ($teacherBelongsToAcademy) {
+                $data['academy_id'] = $academyId;
+            } else {
+                // Teacher doesn't belong to this academy, keep it independent
+                $data['academy_id'] = null;
+            }
+        } else {
+            // Independent mode
+            $data['academy_id'] = null;
+        }
+        
+        $grade = $this->gradeService->createGrade($teacher, $data);
 
         return $this->successResponse([
             'grade' => new GradeResource($grade),

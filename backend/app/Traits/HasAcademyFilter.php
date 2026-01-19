@@ -9,34 +9,26 @@ namespace App\Traits;
 trait HasAcademyFilter
 {
     /**
-     * Apply academy filter to a query based on grade's academy_id
+     * Apply academy filter directly on academy_id column (for Enrollment queries)
      *
      * @param \Illuminate\Database\Eloquent\Builder $query
      * @param string|null $academyId - null (no filter), 'independent', or UUID
-     * @param string $gradeRelation - the name of the grade relationship
      * @return \Illuminate\Database\Eloquent\Builder
      */
     protected function applyAcademyFilter($query, ?string $academyId, string $gradeRelation = 'grade')
     {
         // If no academy selected, return empty results (require explicit selection)
         if (!$academyId) {
-            return $query->whereRaw('1 = 0'); // Always false - returns empty
+            return $query->whereRaw('1 = 0');
         }
 
         if ($academyId === 'independent') {
-            // Independent mode: grades with NULL academy_id or no grade at all
-            return $query->where(function ($q) use ($gradeRelation) {
-                $q->whereDoesntHave($gradeRelation)
-                  ->orWhereHas($gradeRelation, function ($g) {
-                      $g->whereNull('academy_id');
-                  });
-            });
+            // Independent mode: academy_id is NULL
+            return $query->whereNull('academy_id');
         }
 
-        // Specific academy: filter by grade's academy_id
-        return $query->whereHas($gradeRelation, function ($g) use ($academyId) {
-            $g->where('academy_id', $academyId);
-        });
+        // Specific academy: filter by academy_id
+        return $query->where('academy_id', $academyId);
     }
 
     /**

@@ -157,19 +157,18 @@ class PointService
             ->orderByDesc('weekly_points')
             ->with('student:id,name,avatar_key');
 
-        // Filter by academy via student's enrollment
-        // If no academy selected, return empty results (require explicit selection)
+        // Filter by academy via student's enrollment (direct academy_id)
         if ($academyId === null) {
-            $query->whereRaw('1 = 0'); // Always false - returns empty
+            $query->whereRaw('1 = 0'); // No selection = no data
         } elseif ($academyId === 'independent') {
             $query->whereHas('student.enrollments', function ($q) use ($teacherId) {
                 $q->where('teacher_id', $teacherId)
-                  ->whereHas('grade', fn($gq) => $gq->whereNull('academy_id'));
+                  ->whereNull('academy_id');
             });
         } else {
             $query->whereHas('student.enrollments', function ($q) use ($teacherId, $academyId) {
                 $q->where('teacher_id', $teacherId)
-                  ->whereHas('grade', fn($gq) => $gq->where('academy_id', $academyId));
+                  ->where('academy_id', $academyId);
             });
         }
 
@@ -262,19 +261,18 @@ class PointService
             ->orderByDesc('total_points')
             ->with('student:id,name,avatar_key');
 
-        // Filter by academy via student's enrollment
-        // If no academy selected, return empty results (require explicit selection)
+        // Filter by academy via student's enrollment (direct academy_id)
         if ($academyId === null) {
-            $query->whereRaw('1 = 0'); // Always false - returns empty
+            $query->whereRaw('1 = 0'); // No selection = no data
         } elseif ($academyId === 'independent') {
             $query->whereHas('student.enrollments', function ($q) use ($teacherId) {
                 $q->where('teacher_id', $teacherId)
-                  ->whereHas('grade', fn($gq) => $gq->whereNull('academy_id'));
+                  ->whereNull('academy_id');
             });
         } else {
             $query->whereHas('student.enrollments', function ($q) use ($teacherId, $academyId) {
                 $q->where('teacher_id', $teacherId)
-                  ->whereHas('grade', fn($gq) => $gq->where('academy_id', $academyId));
+                  ->where('academy_id', $academyId);
             });
         }
             

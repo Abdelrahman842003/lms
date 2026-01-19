@@ -99,12 +99,20 @@ class StudentService
                 }
             }
 
+            // Get academy_id from grade
+            $academyId = null;
+            if (!empty($data['grade_id'])) {
+                $grade = \App\Models\Grade::find($data['grade_id']);
+                $academyId = $grade?->academy_id;
+            }
+
             // Create enrollment
             $enrollment = Enrollment::create([
                 'student_id' => $student->id,
                 'teacher_id' => $teacher->id,
                 'grade_id' => $data['grade_id'] ?? null,
                 'group_id' => $data['group_id'] ?? null,
+                'academy_id' => $academyId,
                 'balance' => $data['balance'] ?? 0,
                 'is_active' => true,
             ]);
