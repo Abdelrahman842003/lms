@@ -402,7 +402,8 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
             overflow: 'hidden',
             boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
             zIndex: 999,
-            position: 'fixed'
+            position: 'fixed',
+            animation: 'none'
           }}>
             <div style={{ 
               padding: '1.25rem', 

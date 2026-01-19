@@ -8,17 +8,19 @@ class StudentAbsentNotification extends BaseNotification
 {
     public function __construct(
         private string $lectureTitle,
-        private string $teacherName
+        private string $teacherName,
+        private string $academyName
     ) {}
 
     protected function getData(): array
     {
         return [
             'title' => 'تسجيل غياب',
-            'message' => "لقد تم تسجيلك غائب في محاضرة: {$this->lectureTitle} للمدرس {$this->teacherName}",
+            'message' => "لقد تم تسجيلك غائب في محاضرة: {$this->lectureTitle} للمدرس {$this->teacherName} في أكاديمية {$this->academyName}",
             'type' => 'absent',
             'lecture_title' => $this->lectureTitle,
             'teacher_name' => $this->teacherName,
+            'academy_name' => $this->academyName,
         ];
     }
 

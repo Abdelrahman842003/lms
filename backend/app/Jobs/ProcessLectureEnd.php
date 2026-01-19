@@ -67,7 +67,8 @@ class ProcessLectureEnd implements ShouldQueue
                 try {
                     $student->notify(new StudentAbsentNotification(
                         $this->lecture->title,
-                        $teacher->name
+                        $teacher->name,
+                        $this->lecture->academy->name
                     ));
                 } catch (\Exception $e) {
                     Log::error("ProcessLectureEnd: Notification failed for student {$student->id}", [
