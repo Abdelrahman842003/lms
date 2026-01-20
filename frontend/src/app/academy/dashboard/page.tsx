@@ -7,6 +7,7 @@ import { StatCard } from '@/components/dashboard/StatCard';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { AcademyStatsCharts } from '@/components/dashboard/AcademyStatsCharts';
 import { useAuth } from '@/contexts/AuthContext';
+import academyService from '@/services/academyService';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -37,16 +38,19 @@ function AcademyDashboard() {
       try {
         setIsLoading(true);
         // Fetch academy dashboard stats
-        const response = await fetch('/api/academy/dashboard', {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          },
-        });
+        const response = await academyService.getDashboardStats();
 
-        if (response.ok) {
-          const data = await response.json();
-          setStats(data.data || {});
-          setTeachers(data.data?.teachers || []);
+        if (response) {
+          // The service returns response.data, so we use it directly or check structure
+          // Based on service implementation: return response.data
+          // And controller returns: { data: stats } or similar
+          // Let's look at the service again. 
+          // Service: return response.data
+          // Controller: return $this->successResponse($stats); -> { status: true, data: $stats }
+          
+          const data = response.data || response;
+          setStats(data || {});
+          setTeachers(data.teachers || []);
         }
       } catch (error) {
         console.error('Failed to fetch academy dashboard data', error);

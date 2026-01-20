@@ -40,6 +40,7 @@ export default function AcademyTeachersPage() {
     name: '',
     phone: '',
     password: '',
+    subject: '',
   });
 
   const handleCheckPhone = React.useCallback(async () => {
@@ -148,7 +149,7 @@ export default function AcademyTeachersPage() {
     setAddStep('phone');
     setPhoneToCheck('');
     setExistingTeacher(null);
-    setFormData({ name: '', phone: '', password: '' });
+    setFormData({ name: '', phone: '', password: '', subject: '' });
   };
 
   // Redirect if not authenticated or not academy
@@ -284,10 +285,20 @@ export default function AcademyTeachersPage() {
       ),
     },
     {
+      key: 'subject',
+      label: 'المادة',
+      sortable: true,
+      render: (value: string) => (
+        <span className="text-gray-300">
+          {value || '-'}
+        </span>
+      ),
+    },
+    {
       key: 'students_count',
       label: 'عدد الطلاب',
       sortable: true,
-      className: 'hidden md:table-cell',
+      // className: 'hidden md:table-cell',
     },
     {
       key: 'status',
@@ -367,7 +378,10 @@ export default function AcademyTeachersPage() {
                 className="w-full sm:w-auto min-w-[150px]"
               />
               <button 
-                onClick={() => setShowAddModal(true)}
+                onClick={() => {
+                  setAddStep('phone');
+                  setShowAddModal(true);
+                }}
                 className="btn btn-primary w-full sm:w-auto justify-center"
               >
                 <i className="fas fa-plus"></i>
@@ -392,36 +406,44 @@ export default function AcademyTeachersPage() {
 
       {/* Add Teacher Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[1000] p-4">
-          <div className="bg-[#1a1f37] p-5 rounded-2xl w-full max-w-md border border-white/10">
-            {/* Step 1: Phone Check */}
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-[#1e1e2d] rounded-xl border border-white/10 w-full max-w-md p-6 shadow-xl">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-white">
+                {addStep === 'phone' ? 'إضافة مدرس جديد' : 
+                 addStep === 'link' ? 'ربط مدرس موجود' : 
+                 'بيانات المدرس الجديد'}
+              </h2>
+              <button 
+                onClick={() => { setShowAddModal(false); resetAddModal(); }}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+
+            {/* Step 1: Check Phone (Only for Add) */}
             {addStep === 'phone' && (
               <>
-                <h2 className="text-white mb-4 text-xl font-bold">
-                  إضافة مدرس
-                </h2>
-                
-                <div className="mb-6">
+                <div className="mb-4">
                   <label className="block text-gray-300 mb-1.5 text-sm">رقم الهاتف</label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={phoneToCheck}
-                      onChange={(e) => {
-                        const value = e.target.value.replace(/\D/g, ''); // Only numbers
-                        setPhoneToCheck(value);
-                      }}
-                      className="w-full p-2.5 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm pr-10"
-                      placeholder="01xxxxxxxxx"
-                      maxLength={11}
-                      autoFocus
-                    />
-                    {isProcessing && (
-                      <div className="absolute left-3 top-1/2 -translate-y-1/2">
-                        <i className="fas fa-spinner fa-spin text-primary"></i>
-                      </div>
-                    )}
-                  </div>
+                  <input
+                    type="text"
+                    value={phoneToCheck}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, ''); // Only numbers
+                      setPhoneToCheck(value);
+                    }}
+                    className="w-full p-2.5 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm pr-10"
+                    placeholder="01xxxxxxxxx"
+                    maxLength={11}
+                    autoFocus
+                  />
+                  {isProcessing && (
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                      <i className="fas fa-spinner fa-spin text-primary"></i>
+                    </div>
+                  )}
                   <p className="text-xs text-gray-400 mt-1">
                     {phoneToCheck.length === 11 
                       ? isProcessing 
@@ -430,60 +452,45 @@ export default function AcademyTeachersPage() {
                       : 'أدخل رقم هاتف المدرس (11 رقم)'}
                   </p>
                 </div>
-
-                <div className="flex gap-3 justify-end pt-3 border-t border-white/10">
+                <div className="flex justify-end pt-2">
                   <button
-                    type="button"
-                    className="px-4 py-1.5 rounded-lg border border-white/10 text-gray-300 hover:bg-white/5 transition-all text-sm"
-                    onClick={() => { setShowAddModal(false); resetAddModal(); }}
-                    disabled={isProcessing}
+                    onClick={handleCheckPhone}
+                    disabled={phoneToCheck.length < 11 || isProcessing}
+                    className="btn btn-primary w-full justify-center"
                   >
-                    إلغاء
+                    {isProcessing ? 'جاري التحقق...' : 'تحقق ومتابعة'}
                   </button>
                 </div>
               </>
             )}
 
-            {/* Step 2: Link Existing Teacher */}
+            {/* Step 2: Link Existing Teacher (Only for Add) */}
             {addStep === 'link' && existingTeacher && (
               <>
-                <h2 className="text-white mb-4 text-xl font-bold">
-                  ربط مدرس موجود
-                </h2>
-                
-                <div className="mb-6 p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
-                  <div className="flex items-center gap-3 mb-2">
-                    <i className="fas fa-check-circle text-green-400 text-2xl"></i>
-                    <div>
-                      <p className="text-white font-semibold">{existingTeacher.name}</p>
-                      <p className="text-sm text-gray-400">{existingTeacher.phone}</p>
-                    </div>
+                <div className="text-center mb-6">
+                  <div className="w-16 h-16 rounded-full bg-primary/20 text-primary flex items-center justify-center mx-auto mb-3 text-2xl">
+                    <i className="fas fa-user-check"></i>
                   </div>
-                  <p className="text-sm text-gray-300 mt-2">
-                    المدرس موجود في النظام. يمكنك ربطه بالأكاديمية مباشرة.
-                  </p>
-                  {existingTeacher.is_approved === false && (
-                    <div className="mt-2 p-2 bg-yellow-500/10 border border-yellow-500/30 rounded text-xs text-yellow-300">
-                      <i className="fas fa-exclamation-triangle mr-1"></i>
-                      هذا المدرس في انتظار موافقة الإدارة
-                    </div>
-                  )}
+                  <h3 className="text-white font-bold text-lg mb-1">{existingTeacher.name}</h3>
+                  <p className="text-gray-400 text-sm">{existingTeacher.phone}</p>
+                </div>
+                
+                <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 mb-6 text-sm text-blue-300">
+                  <i className="fas fa-info-circle ml-2"></i>
+                  هذا المدرس مسجل بالفعل في النظام. هل تريد إضافته إلى الأكاديمية؟
                 </div>
 
-                <div className="flex gap-3 justify-end pt-3 border-t border-white/10">
+                <div className="flex gap-3">
                   <button
-                    type="button"
-                    className="px-4 py-1.5 rounded-lg border border-white/10 text-gray-300 hover:bg-white/5 transition-all text-sm"
-                    onClick={() => { setShowAddModal(false); resetAddModal(); }}
-                    disabled={isProcessing}
+                    onClick={() => { setAddStep('phone'); setExistingTeacher(null); }}
+                    className="btn btn-outline flex-1 justify-center"
                   >
-                    إلغاء
+                    رجوع
                   </button>
                   <button
-                    type="button"
-                    className="px-4 py-1.5 rounded-lg bg-green-600 text-white hover:bg-green-700 transition-all flex items-center gap-2 text-sm"
                     onClick={handleLinkTeacher}
                     disabled={isProcessing}
+                    className="btn btn-primary flex-1 justify-center"
                   >
                     {isProcessing ? 'جاري الربط...' : (
                       <>
@@ -499,16 +506,15 @@ export default function AcademyTeachersPage() {
             {/* Step 3: Create New Teacher */}
             {addStep === 'create' && (
               <>
-                <h2 className="text-white mb-4 text-xl font-bold">
-                  إنشاء مدرس جديد
-                </h2>
-                
                 <div className="mb-4 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg text-sm text-blue-300">
                   <i className="fas fa-info-circle mr-1"></i>
                   المدرس سيتم إضافته بحالة "في انتظار الموافقة" ولن يتمكن من الدخول حتى تتم الموافقة عليه من الإدارة
                 </div>
 
-                <form onSubmit={(e) => { e.preventDefault(); handleAddTeacher(); }}>
+                <form onSubmit={(e) => { 
+                  e.preventDefault(); 
+                  handleAddTeacher(); 
+                }}>
                   <div className="mb-4">
                     <label className="block text-gray-300 mb-1.5 text-sm">الاسم</label>
                     <input
@@ -526,20 +532,33 @@ export default function AcademyTeachersPage() {
                     <input
                       type="text"
                       value={formData.phone}
-                      readOnly
-                      className="w-full p-2.5 bg-white/5 border border-white/10 rounded-lg text-gray-400 outline-none text-sm cursor-not-allowed"
+                      readOnly={true}
+                      className={`w-full p-2.5 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm text-gray-400 cursor-not-allowed`}
+                    />
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="block text-gray-300 mb-1.5 text-sm">المادة</label>
+                    <input
+                      type="text"
+                      value={formData.subject}
+                      onChange={(e) => setFormData({...formData, subject: e.target.value})}
+                      className="w-full p-2.5 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm"
+                      placeholder="مثال: رياضيات، عربي، إنجليزي"
                     />
                   </div>
 
                   <div className="mb-6">
-                    <label className="block text-gray-300 mb-1.5 text-sm">كلمة المرور</label>
+                    <label className="block text-gray-300 mb-1.5 text-sm">
+                      كلمة المرور
+                    </label>
                     <input
                       type="password"
                       value={formData.password}
                       onChange={(e) => setFormData({...formData, password: e.target.value})}
                       className="w-full p-2.5 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm"
                       placeholder="******"
-                      required
+                      required={addStep === 'create'}
                     />
                   </div>
 

@@ -32,6 +32,33 @@ class TeacherController extends Controller
             TeacherResource::collection($teachers)->response()->getData(true)
         );
     }
+
+    public function store(\App\Http\Requests\Admin\StoreTeacherRequest $request)
+    {
+        $teacher = $this->teacherService->createTeacher($request->validated());
+        
+        return $this->successResponse(
+            new TeacherResource($teacher),
+            'تم إضافة المدرس بنجاح',
+            201
+        );
+    }
+
+    public function update(\App\Http\Requests\Admin\UpdateTeacherRequest $request, $id)
+    {
+        \Illuminate\Support\Facades\Log::info('Admin update teacher request', [
+            'id' => $id,
+            'data' => $request->all(),
+            'validated' => $request->validated()
+        ]);
+
+        $teacher = $this->teacherService->updateTeacher($id, $request->validated());
+        
+        return $this->successResponse(
+            new TeacherResource($teacher),
+            'تم تحديث بيانات المدرس بنجاح'
+        );
+    }
     public function toggleStatus($id)
     {
         $teacher = $this->teacherService->toggleStatus($id);

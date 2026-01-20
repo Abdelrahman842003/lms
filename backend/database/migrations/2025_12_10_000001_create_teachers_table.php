@@ -12,6 +12,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->string('name');
             $table->string('phone')->unique();
+            $table->string('subject')->nullable();
             $table->string('password');
             $table->string('avatar_key')->nullable();
             $table->enum('status', ['active', 'suspended', 'pending'])->default('pending');

@@ -17,6 +17,7 @@ class StoreTeacherRequest extends FormRequest
             'name' => 'required|string|min:3|max:255',
             'phone' => ['required', 'regex:/^01[0125][0-9]{8}$/', 'unique:teachers,phone'],
             'password' => 'required|string|min:6|confirmed',
+            'subject' => 'nullable|string|max:255',
         ];
     }
 

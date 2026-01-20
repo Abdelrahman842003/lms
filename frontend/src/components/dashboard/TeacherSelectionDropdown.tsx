@@ -317,6 +317,7 @@ const TeacherItem = ({ teacher, selectedTeacher, onSelect, isNested = false }: {
         </div>
         <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: '#aaa' }}>
             {teacher.grade_name} - {teacher.group_name}
+            {teacher.subject && ` • ${teacher.subject}`}
         </p>
     </div>
     {selectedTeacher?.teacher_id === teacher.teacher_id && (

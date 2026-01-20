@@ -13,7 +13,7 @@ return new class extends Migration
             $table->string('name');
             $table->decimal('price', 8, 2)->default(0);
             $table->foreignUuid('teacher_id')->nullable()->constrained('teachers')->onDelete('cascade');
-            $table->foreignUuid('academy_id')->nullable()->constrained('academies')->onDelete('cascade');
+            $table->uuid('academy_id')->nullable(); // Will add foreign key later
             $table->timestamps();
         });
     }

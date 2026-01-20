@@ -13,6 +13,7 @@ class TeacherResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'phone' => $this->phone,
+            'subject' => $this->subject,
             'role' => 'teacher',
             'students_count' => $this->resource->students_count ?? 0,
             'secretaries_count' => $this->resource->secretaries_count ?? 0,

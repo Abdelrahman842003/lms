@@ -12,6 +12,7 @@ readonly class TeacherData
         public string $name,
         public string $phone,
         public string $password,
+        public ?string $subject = null,
     ) {}
 
     public static function fromRequest(Request $request): self
@@ -20,6 +21,7 @@ readonly class TeacherData
             name: $request->validated('name'),
             phone: $request->validated('phone'),
             password: $request->validated('password'),
+            subject: $request->validated('subject'),
         );
     }
 
@@ -29,6 +31,7 @@ readonly class TeacherData
             'name' => $this->name,
             'phone' => $this->phone,
             'password' => $this->password,
+            'subject' => $this->subject,
         ];
     }
 }

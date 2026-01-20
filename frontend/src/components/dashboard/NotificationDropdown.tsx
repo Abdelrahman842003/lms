@@ -509,6 +509,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
                                 borderRadius: '0.35rem' 
                               }}>
                                 {notification.data.sender_name}
+                                {notification.data.sender_subject && ` - ${notification.data.sender_subject}`}
                               </span>
                             )}
                           </div>

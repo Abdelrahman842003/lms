@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignUuid('teacher_id')->constrained('teachers')->onDelete('cascade');
             $table->foreignUuid('grade_id')->nullable()->constrained('grades')->onDelete('set null');
             $table->foreignUuid('group_id')->nullable()->constrained('groups')->onDelete('set null');
-            $table->foreignUuid('academy_id')->nullable()->constrained('academies')->onDelete('cascade');
+            $table->uuid('academy_id')->nullable(); // Will add foreign key later
             
             // Enrollment-specific data (per teacher)
             $table->decimal('balance', 10, 2)->default(0);

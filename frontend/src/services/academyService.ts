@@ -48,11 +48,20 @@ export const getTeacher = async (id: string) => {
   return response.data;
 };
 
-export const addTeacher = async (data: string | { name: string; phone: string; password: string }) => {
+export const addTeacher = async (data: string | { name: string; phone: string; password: string; subject?: string }) => {
   const payload = typeof data === 'string' ? { teacher_id: data } : data;
   const response = await axios.post(
     `${API_BASE_URL}/academy/teachers`,
     payload,
+    { headers: getAuthHeaders() }
+  );
+  return response.data;
+};
+
+export const updateTeacher = async (id: string, data: { name: string; phone: string; password?: string; subject?: string }) => {
+  const response = await axios.put(
+    `${API_BASE_URL}/academy/teachers/${id}`,
+    data,
     { headers: getAuthHeaders() }
   );
   return response.data;

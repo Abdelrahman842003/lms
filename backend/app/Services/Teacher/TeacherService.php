@@ -42,6 +42,7 @@ class TeacherService
             'name' => $data['name'],
             'phone' => $data['phone'],
             'password' => Hash::make($data['password']),
+            'subject' => $data['subject'] ?? null,
             'status' => $data['status'] ?? 'pending',
         ]);
     }

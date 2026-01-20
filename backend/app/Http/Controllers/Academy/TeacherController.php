@@ -78,6 +78,20 @@ class TeacherController extends Controller
         }
     }
 
+    public function update(\App\Http\Requests\Academy\UpdateTeacherRequest $request, string $id): JsonResponse
+    {
+        $academy = $request->user();
+        
+        try {
+            $data = \App\DTOs\Academy\TeacherData::fromRequest($request);
+            $teacher = $this->service->updateTeacher($academy, $id, $data);
+            
+            return $this->successResponse(new TeacherResource($teacher), 'تم تحديث بيانات المدرس بنجاح');
+        } catch (\Exception $e) {
+            return $this->errorResponse($e->getMessage(), 400);
+        }
+    }
+
     public function show(Request $request, string $id): JsonResponse
     {
         $academy = $request->user();

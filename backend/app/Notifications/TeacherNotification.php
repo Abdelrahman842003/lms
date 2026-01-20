@@ -19,16 +19,18 @@ class TeacherNotification extends Notification implements ShouldBroadcast
     public $message;
     public $senderName;
     public $senderAvatar;
+    public $senderSubject;
 
     /**
      * Create a new notification instance.
      */
-    public function __construct($title, $message, $senderName, $senderAvatar)
+    public function __construct($title, $message, $senderName, $senderAvatar, $senderSubject = null)
     {
         $this->title = $title;
         $this->message = $message;
         $this->senderName = $senderName;
         $this->senderAvatar = $senderAvatar;
+        $this->senderSubject = $senderSubject;
     }
 
     public function via(object $notifiable): array
@@ -48,6 +50,7 @@ class TeacherNotification extends Notification implements ShouldBroadcast
             'message' => $this->message,
             'sender_name' => $this->senderName,
             'sender_avatar' => $this->senderAvatar,
+            'sender_subject' => $this->senderSubject,
         ];
     }
 

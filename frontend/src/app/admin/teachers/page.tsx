@@ -194,6 +194,7 @@ export default function AdminTeachersPage() {
     phone: '',
     password: '',
     password_confirmation: '',
+    subject: '',
   });
   const [submitLoading, setSubmitLoading] = useState(false);
   const [error, setError] = useState('');
@@ -202,17 +203,20 @@ export default function AdminTeachersPage() {
     phone?: string;
     password?: string;
     password_confirmation?: string;
+    subject?: string;
   }>({});
   const [touched, setTouched] = useState<{
     name: boolean;
     phone: boolean;
     password: boolean;
     password_confirmation: boolean;
+    subject: boolean;
   }>({
     name: false,
     phone: false,
     password: false,
     password_confirmation: false,
+    subject: false,
   });
 
   const [filters, setFilters] = useState({
@@ -293,6 +297,40 @@ export default function AdminTeachersPage() {
     }, 500);
     return () => clearTimeout(timer);
   }, [filters, searchQuery]);
+
+  // Populate form data when editing
+  useEffect(() => {
+    if (isModalOpen) {
+      if (selectedTeacher) {
+        setEditingTeacher(selectedTeacher);
+        setFormData({
+          name: selectedTeacher.name || '',
+          phone: selectedTeacher.phone || '',
+          password: '',
+          password_confirmation: '',
+          subject: selectedTeacher.subject || '',
+        });
+      } else {
+        setEditingTeacher(null);
+        setFormData({
+          name: '',
+          phone: '',
+          password: '',
+          password_confirmation: '',
+          subject: '',
+        });
+      }
+      // Reset validation state
+      setTouched({
+        name: false,
+        phone: false,
+        password: false,
+        password_confirmation: false,
+        subject: false,
+      });
+      setValidationErrors({});
+    }
+  }, [isModalOpen, selectedTeacher]);
 
   const fetchTeachers = async (page = 1) => {
     try {
@@ -405,7 +443,7 @@ export default function AdminTeachersPage() {
     setError('');
     
     // Mark all fields as touched
-    setTouched({ name: true, phone: true, password: true, password_confirmation: true });
+    setTouched({ name: true, phone: true, password: true, password_confirmation: true, subject: true });
     
     // Validate before submit
     if (!validateForm()) {
@@ -422,7 +460,7 @@ export default function AdminTeachersPage() {
       }
       await fetchTeachers(currentPage);
       setIsModalOpen(false);
-      setFormData({ name: '', phone: '', password: '', password_confirmation: '' });
+      setFormData({ name: '', phone: '', password: '', password_confirmation: '', subject: '' });
       setEditingTeacher(null);
     } catch (err: any) {
       setError(err.response?.data?.message || (editingTeacher ? 'فشل تحديث بيانات المدرس' : 'فشل إضافة المدرس'));
@@ -483,6 +521,16 @@ export default function AdminTeachersPage() {
             {value}
           </button>
         </div>
+      ),
+    },
+    {
+      key: 'subject',
+      label: 'المادة',
+      sortable: true,
+      render: (value: string) => (
+        <span className="text-gray-300">
+          {value || '-'}
+        </span>
       ),
     },
     {
@@ -936,6 +984,19 @@ export default function AdminTeachersPage() {
                       {validationErrors.phone}
                     </p>
                   )}
+                </div>
+
+                <div className="mb-4">
+                  <label className="block text-gray-300 mb-1.5 text-sm">المادة</label>
+                  <input
+                    type="text"
+                    name="subject"
+                    value={formData.subject}
+                    onChange={handleInputChange}
+                    onBlur={handleBlur}
+                    className="w-full p-2.5 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm"
+                    placeholder="مثال: رياضيات، عربي، إنجليزي"
+                  />
                 </div>
 
                 <div className="mb-4">

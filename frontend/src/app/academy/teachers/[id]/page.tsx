@@ -153,6 +153,9 @@ export default function TeacherDetailsPage() {
             <h1 className="text-2xl font-bold text-white mb-1">{teacher.name}</h1>
             <div className="flex items-center gap-3 text-gray-400 text-sm">
               <span><i className="fas fa-phone ml-1"></i>{teacher.phone}</span>
+              {teacher.subject && (
+                <span><i className="fas fa-book ml-1"></i>{teacher.subject}</span>
+              )}
               <span className={`px-2 py-0.5 rounded text-xs ${teacher.status === 'active' ? 'bg-green-500/20 text-green-300' : 'bg-red-500/20 text-red-300'}`}>
                 {teacher.status === 'active' ? 'نشط' : teacher.status}
               </span>

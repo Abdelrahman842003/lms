@@ -24,6 +24,7 @@ class UpdateTeacherRequest extends FormRequest
                 Rule::unique('teachers', 'phone')->ignore($teacherId)
             ],
             'password' => 'nullable|string|min:6|confirmed',
+            'subject' => 'nullable|string|max:255',
         ];
     }
 

@@ -115,6 +115,12 @@ export default function TeacherDetailsPage() {
           </div>
           <h3 className="text-white text-2xl mb-2 font-bold">{teacher.name}</h3>
           <p className="text-gray-400">{teacher.username}</p>
+          {teacher.subject && (
+            <p className="text-primary text-sm mt-1">
+              <i className="fas fa-book ml-1"></i>
+              {teacher.subject}
+            </p>
+          )}
         </DashboardCard>
 
         <StatCard

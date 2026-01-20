@@ -101,6 +101,43 @@ class TeacherService
         return $result;
     }
 
+    public function createTeacher(array $data): Teacher
+    {
+        $teacher = new Teacher();
+        $teacher->name = $data['name'];
+        $teacher->phone = $data['phone'];
+        $teacher->password = $data['password']; // Will be hashed by model caster
+        $teacher->subject = $data['subject'] ?? null;
+        $teacher->status = 'active'; // Admin created teachers are active by default
+        $teacher->save();
+
+        return $teacher;
+    }
+
+    public function updateTeacher(string $id, array $data): Teacher
+    {
+        \Illuminate\Support\Facades\Log::info('TeacherService updateTeacher', ['id' => $id, 'data' => $data]);
+        
+        $teacher = Teacher::findOrFail($id);
+        
+        $teacher->name = $data['name'];
+        $teacher->phone = $data['phone'];
+        if (isset($data['subject'])) {
+            \Illuminate\Support\Facades\Log::info('Updating subject', ['old' => $teacher->subject, 'new' => $data['subject']]);
+            $teacher->subject = $data['subject'];
+        } else {
+            \Illuminate\Support\Facades\Log::info('Subject not present in data');
+        }
+        
+        if (isset($data['password'])) {
+            $teacher->password = $data['password'];
+        }
+        
+        $teacher->save();
+
+        return $teacher;
+    }
+
     public function toggleStatus(string $teacherId): Teacher
     {
         $teacher = Teacher::findOrFail($teacherId);

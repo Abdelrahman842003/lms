@@ -20,10 +20,11 @@ class FullDashboardSeeder extends Seeder
     {
         // 1. Get or Create Main Teacher
         $teacher = Teacher::firstOrCreate(
-            ['username' => 'teacher'],
+            ['phone' => '01000000001'],
             [
                 'name' => 'Demo Teacher',
                 'password' => Hash::make('password'),
+                'status' => 'active',
             ]
         );
 
@@ -46,11 +47,19 @@ class FullDashboardSeeder extends Seeder
 
             foreach ($groups as $group) {
                 // Create 5 students per group
-                Student::factory(5)->create([
-                    'teacher_id' => $teacher->id,
-                    'grade_id' => $grade->id,
-                    'group_id' => $group->id,
-                ]);
+                $students = Student::factory(5)->create();
+                
+                foreach ($students as $student) {
+                    \App\Models\Enrollment::create([
+                        'student_id' => $student->id,
+                        'teacher_id' => $teacher->id,
+                        'grade_id' => $grade->id,
+                        'group_id' => $group->id,
+                        'is_active' => true,
+                        'subscription_start' => Carbon::now(),
+                        'subscription_end' => Carbon::now()->addMonth(),
+                    ]);
+                }
             }
         }
 
@@ -63,6 +72,7 @@ class FullDashboardSeeder extends Seeder
             
             $lecture = Lecture::create([
                 'teacher_id' => $teacher->id,
+                'grade_id' => $grades[0]->id,
                 'title' => "Lecture " . (8 - $i),
                 'description' => 'Covering important topics.',
                 'start_time' => $date->copy()->setHour(10),
@@ -85,8 +95,10 @@ class FullDashboardSeeder extends Seeder
             $exam = Exam::create([
                 'teacher_id' => $teacher->id,
                 'title' => "Monthly Exam $i",
+                'subject' => 'General',
                 'max_score' => 100,
                 'date' => Carbon::now()->subDays($i * 10),
+                'duration' => 60,
             ]);
 
             foreach ($students as $student) {

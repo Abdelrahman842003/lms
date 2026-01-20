@@ -118,6 +118,7 @@ class TeacherService
             'name' => $data->name,
             'phone' => $data->phone,
             'password' => \Illuminate\Support\Facades\Hash::make($data->password),
+            'subject' => $data->subject ?? null,
             'status' => 'pending', // Default to pending for new teachers
         ]);
 
@@ -132,6 +133,35 @@ class TeacherService
             ->withPivot('is_active', 'joined_at')
             ->where('teacher_id', $teacher->id)
             ->first();
+    }
+
+    /**
+     * Update teacher
+     */
+    public function updateTeacher(Academy $academy, string $teacherId, \App\DTOs\Academy\TeacherData $data): Teacher
+    {
+        // Ensure teacher is linked to this academy
+        $teacher = $academy->teachers()->findOrFail($teacherId);
+
+        // Check if phone exists for another teacher
+        if (Teacher::where('phone', $data->phone)->where('id', '!=', $teacherId)->exists()) {
+            throw new \Exception('رقم الهاتف مستخدم بالفعل');
+        }
+
+        $teacher->name = $data->name;
+        $teacher->phone = $data->phone;
+        
+        if ($data->password) {
+            $teacher->password = \Illuminate\Support\Facades\Hash::make($data->password);
+        }
+        
+        if ($data->subject !== null) {
+            $teacher->subject = $data->subject;
+        }
+
+        $teacher->save();
+
+        return $teacher;
     }
 
     /**
