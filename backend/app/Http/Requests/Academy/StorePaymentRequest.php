@@ -22,6 +22,7 @@ class StorePaymentRequest extends FormRequest
             'discount' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'notes' => ['nullable', 'string', 'max:500'],
             'client_side_uuid' => ['required', 'uuid'],
+            'start_date' => ['nullable', 'date'],
         ];
     }
 

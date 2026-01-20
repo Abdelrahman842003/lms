@@ -77,6 +77,10 @@ class StudentController extends Controller
                 'group_name' => $enrollments->pluck('group.name')->filter()->unique()->implode(', '),
                 'grade_name' => $enrollments->pluck('grade.name')->filter()->unique()->implode(', '),
                 'created_at' => $student->created_at,
+                'remaining_days' => $enrollments->where('is_active', true)
+                    ->filter(fn($e) => $e->subscription_end && $e->subscription_end->isFuture())
+                    ->map(fn($e) => now()->diffInDays($e->subscription_end))
+                    ->max() ?? 0,
             ];
         });
 
@@ -140,8 +144,31 @@ class StudentController extends Controller
                 'group_name' => $enrollment->group?->name,
                 'group_price' => $enrollment->group?->price ?? 0,
                 'is_active' => $enrollment->is_active,
+                'subscription_end' => $enrollment->subscription_end,
             ];
         });
+
+        $history = \App\Models\PaymentLog::where('student_id', $student->id)
+            ->with(['teacher:id,name'])
+            ->latest()
+            ->get()
+            ->map(function ($log) {
+                return [
+                    'id' => $log->id,
+                    'amount' => $log->amount,
+                    'months' => $log->months,
+                    'created_at' => $log->created_at,
+                    'payment_method' => $log->payment_method,
+                    'confirmation_code' => $log->confirmation_code,
+                    'start_date' => $log->start_date,
+                    'end_date' => $log->end_date,
+                    'teacher' => $log->teacher ? [
+                        'id' => $log->teacher->id,
+                        'name' => $log->teacher->name,
+                    ] : null,
+                    'notes' => $log->notes,
+                ];
+            });
 
         return $this->successResponse([
             'student' => [
@@ -154,7 +181,7 @@ class StudentController extends Controller
                 'education_type' => $student->education_type,
             ],
             'enrolled_teachers' => $enrolledTeachers,
-            'subscription_history' => [],
+            'subscription_history' => $history,
         ]);
     }
 

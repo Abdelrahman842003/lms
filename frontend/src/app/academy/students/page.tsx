@@ -194,7 +194,14 @@ export default function AcademyStudentsPage() {
             </span>
             <div className="flex items-center gap-2 text-xs">
               {row.is_active ? (
-                <span className="text-success">نشط</span>
+                <span className="text-success flex items-center gap-1">
+                  نشط
+                  {row.remaining_days > 0 && (
+                    <span className="text-xs bg-success/10 px-2 py-0.5 rounded-full font-medium">
+                      {Math.ceil(row.remaining_days / 30)} شهر
+                    </span>
+                  )}
+                </span>
               ) : (
                 <span className="text-gray-400">غير مفعل</span>
               )}

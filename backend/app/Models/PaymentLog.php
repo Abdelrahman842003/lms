@@ -21,6 +21,9 @@ class PaymentLog extends Model
         'months',
         'discount',
         'commission',
+        'base_price',
+        'teacher_amount',
+        'price_source',
         'confirmation_code',
         'status',
         'payment_method',
@@ -33,6 +36,8 @@ class PaymentLog extends Model
         'device_info',
         'notes',
         'meta',
+        'start_date',
+        'end_date',
     ];
 
     protected function casts(): array
@@ -42,6 +47,8 @@ class PaymentLog extends Model
             'confirmed_at' => 'datetime',
             'expires_at' => 'datetime',
             'meta' => 'array',
+            'start_date' => 'date',
+            'end_date' => 'date',
         ];
     }
 
