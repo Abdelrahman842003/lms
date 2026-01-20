@@ -18,6 +18,8 @@ return new class extends Migration
             // Performance indexes
             $table->index(['lecture_id', 'created_at'], 'attendances_lecture_date_index');
             $table->index(['student_id', 'created_at'], 'attendances_student_date_index');
+            $table->index(['lecture_id', 'status'], 'idx_attendance_lecture');
+            $table->index(['student_id', 'lecture_id'], 'idx_attendance_student');
         });
     }
 

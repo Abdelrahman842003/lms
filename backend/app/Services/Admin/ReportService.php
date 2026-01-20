@@ -555,36 +555,42 @@ class ReportService
     }
 
     /**
-     * Get teachers breakdown for admin report
+     * Get teachers breakdown for admin report - Optimized to avoid N+1
      */
     private function getTeachersBreakdown(float $pricePerStudent, Carbon $startDate, Carbon $endDate): array
     {
-        return Teacher::all()->map(function ($teacher) use ($pricePerStudent, $startDate, $endDate) {
-            $enrollments = Enrollment::where('teacher_id', $teacher->id);
-            $totalStudents = (clone $enrollments)->count();
-            $activeStudents = (clone $enrollments)->where('is_active', true)->count();
-            $secretariesCount = Secretary::where('teacher_id', $teacher->id)->count();
+        // Get payment totals per teacher in one query
+        $paymentsByTeacher = PaymentLog::where('status', 'confirmed')
+            ->whereBetween('confirmed_at', [$startDate, $endDate])
+            ->selectRaw('teacher_id, SUM(amount) as total_paid')
+            ->groupBy('teacher_id')
+            ->pluck('total_paid', 'teacher_id');
 
-            return [
-                'id' => $teacher->id,
-                'name' => $teacher->name,
-                'status' => match($teacher->status) {
-                    'active' => 'نشط',
-                    'suspended' => 'معلق',
-                    'pending' => 'في انتظار الموافقة',
-                    default => 'غير معروف'
-                },
-                'total_students' => $totalStudents,
-                'active_students' => $activeStudents,
-                'secretaries' => $secretariesCount,
-                'revenue' => $activeStudents * $pricePerStudent,
-                'paid' => PaymentLog::where('teacher_id', $teacher->id)
-                    ->where('status', 'confirmed')
-                    ->whereBetween('confirmed_at', [$startDate, $endDate])
-                    ->sum('amount'),
-                'joined' => $teacher->created_at->format('Y-m-d'),
-            ];
-        })->toArray();
+        return Teacher::select('id', 'name', 'status', 'created_at')
+            ->withCount([
+                'enrollments as total_students',
+                'enrollments as active_students' => fn($q) => $q->where('is_active', true),
+                'secretaries'
+            ])
+            ->get()
+            ->map(function ($teacher) use ($pricePerStudent, $paymentsByTeacher) {
+                return [
+                    'id' => $teacher->id,
+                    'name' => $teacher->name,
+                    'status' => match($teacher->status) {
+                        'active' => 'نشط',
+                        'suspended' => 'معلق',
+                        'pending' => 'في انتظار الموافقة',
+                        default => 'غير معروف'
+                    },
+                    'total_students' => $teacher->total_students,
+                    'active_students' => $teacher->active_students,
+                    'secretaries' => $teacher->secretaries_count,
+                    'revenue' => $teacher->active_students * $pricePerStudent,
+                    'paid' => (float) ($paymentsByTeacher[$teacher->id] ?? 0),
+                    'joined' => $teacher->created_at->format('Y-m-d'),
+                ];
+            })->toArray();
     }
 
     /**

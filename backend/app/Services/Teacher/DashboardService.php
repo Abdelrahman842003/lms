@@ -92,7 +92,7 @@ class DashboardService
                 ? round(($totalPresent / $totalAttendanceRecords) * 100) 
                 : 0;
 
-            // Attendance Trend (Last 7 Lectures)
+            // Attendance Trend (Last 7 Lectures) - Optimized with withCount to avoid N+1
             $trendLecturesQuery = $teacher->lectures()
                 ->where('start_time', '<=', now())
                 ->orderBy('start_time', 'desc');
@@ -100,11 +100,15 @@ class DashboardService
             $applyAcademyFilter($trendLecturesQuery);
             
             $attendanceTrend = $trendLecturesQuery
+                ->withCount([
+                    'attendances as total_attendances',
+                    'attendances as present_attendances' => fn($q) => $q->where('status', 'present')
+                ])
                 ->take(7)
                 ->get()
                 ->map(function ($lecture) {
-                    $total = $lecture->attendances()->count();
-                    $present = $lecture->attendances()->where('status', 'present')->count();
+                    $total = $lecture->total_attendances;
+                    $present = $lecture->present_attendances;
                     return [
                         'date' => $lecture->start_time->format('m/d'),
                         'rate' => $total > 0 ? round(($present / $total) * 100) : 0,

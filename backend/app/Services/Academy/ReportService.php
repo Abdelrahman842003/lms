@@ -127,41 +127,54 @@ class ReportService
             $endDate->toDateString()
         );
 
-        $teachers = $academy->activeTeachers()->get();
+        $teachers = $academy->activeTeachers()
+            ->withCount(['activeEnrollments', 'secretaries'])
+            ->get();
         $teacherIds = $teachers->pluck('id')->toArray();
-        $totalStudents = 0;
+        
+        // Calculate totals efficiently
+        $totalStudents = $teachers->sum('active_enrollments_count');
 
-        foreach ($teachers as $teacher) {
-            $totalStudents += $teacher->activeEnrollments()->count();
-        }
+        // Get teacher revenue breakdown in one query
+        $teacherRevenues = DB::table('enrollments')
+            ->join('grades', 'enrollments.grade_id', '=', 'grades.id')
+            ->whereIn('enrollments.teacher_id', $teacherIds)
+            ->whereBetween('enrollments.created_at', [$startDate, $endDate])
+            ->where('enrollments.is_active', 1)
+            ->selectRaw('enrollments.teacher_id, SUM(grades.price) as revenue')
+            ->groupBy('enrollments.teacher_id')
+            ->pluck('revenue', 'teacher_id');
 
-        // Calculate financial details
-        // Get revenue from active enrollments through academy's teachers
+        $totalRevenue = $teacherRevenues->sum();
 
         $teachersDetails = [];
-        $totalRevenue = 0;
 
         foreach ($teachers as $teacher) {
-            // Get active enrollments for this teacher in the period
-            $teacherRevenue = DB::table('enrollments')
-                ->join('grades', 'enrollments.grade_id', '=', 'grades.id')
-                ->where('enrollments.teacher_id', $teacher->id)
-                ->whereBetween('enrollments.created_at', [$startDate, $endDate])
-                ->where('enrollments.is_active', 1)
-                ->sum('grades.price');
-            
-            $totalRevenue += $teacherRevenue;
+            $teacherRevenue = $teacherRevenues[$teacher->id] ?? 0;
 
             $teachersDetails[] = [
                 'name' => $teacher->name,
                 'status' => $teacher->is_active ? 'نشط' : 'غير نشط',
-                'total_students' => $teacher->activeEnrollments()->count(),
-                'active_subscriptions' => $teacher->activeEnrollments()
-                    ->whereBetween('created_at', [$startDate, $endDate])
-                    ->count(),
-                'secretaries_count' => $teacher->secretaries()->count(),
+                'total_students' => $teacher->active_enrollments_count,
+                'active_subscriptions' => 0, // Will be calculated separately if needed
+                'secretaries_count' => $teacher->secretaries_count,
                 'total_revenue' => $teacherRevenue,
             ];
+        }
+
+        // Get active subscriptions count in one query
+        $activeSubscriptionCounts = DB::table('enrollments')
+            ->whereIn('teacher_id', $teacherIds)
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->where('is_active', 1)
+            ->selectRaw('teacher_id, COUNT(*) as count')
+            ->groupBy('teacher_id')
+            ->pluck('count', 'teacher_id');
+
+        // Update teachersDetails with subscription counts
+        foreach ($teachersDetails as $key => $detail) {
+            $teacherId = $teachers[$key]->id;
+            $teachersDetails[$key]['active_subscriptions'] = $activeSubscriptionCounts[$teacherId] ?? 0;
         }
 
         // Calculate monthly breakdown

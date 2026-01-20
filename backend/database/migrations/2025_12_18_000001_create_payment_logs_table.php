@@ -18,6 +18,9 @@ return new class extends Migration
             $table->uuid('student_id');
             $table->uuid('teacher_id');
             $table->decimal('amount', 10, 2);
+            $table->unsignedInteger('months')->default(1);
+            $table->decimal('discount', 5, 2)->default(0);
+            $table->decimal('commission', 10, 2)->default(0);
             $table->string('confirmation_code', 20)->index(); // XXXX-XXXX
             $table->enum('status', ['pending', 'confirmed', 'expired', 'cancelled'])
                   ->default('pending');
@@ -36,6 +39,8 @@ return new class extends Migration
             $table->index(['student_id', 'status']);
             $table->index(['teacher_id', 'status']);
             $table->index(['confirmation_code', 'student_id']); // Code lookup per student
+            $table->index(['teacher_id', 'status', 'confirmed_at'], 'idx_payment_logs_confirmed');
+            $table->index(['student_id', 'teacher_id', 'status'], 'idx_payment_logs_student');
 
             // Foreign keys
             $table->foreign('enrollment_id')->references('id')->on('enrollments')->onDelete('cascade');

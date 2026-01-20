@@ -19,6 +19,8 @@ return new class extends Migration
 
             // Performance indexes
             $table->index(['exam_id', 'student_id'], 'exam_results_exam_student_index');
+            $table->index(['exam_id', 'student_id'], 'idx_exam_results_lookup');
+            $table->index(['student_id', 'created_at'], 'idx_exam_results_student');
         });
     }
 

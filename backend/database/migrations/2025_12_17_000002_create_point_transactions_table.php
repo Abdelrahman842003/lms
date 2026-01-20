@@ -28,6 +28,8 @@ return new class extends Migration
             $table->timestamps();
 
             $table->index(['student_id', 'teacher_id']);
+            $table->index(['teacher_id', 'created_at'], 'idx_point_transactions_teacher_created');
+            $table->index(['student_id', 'teacher_id'], 'idx_point_transactions_student_teacher');
             $table->index('created_at'); // For weekly queries
         });
     }

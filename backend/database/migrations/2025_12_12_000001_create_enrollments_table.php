@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignUuid('teacher_id')->constrained('teachers')->onDelete('cascade');
             $table->foreignUuid('grade_id')->nullable()->constrained('grades')->onDelete('set null');
             $table->foreignUuid('group_id')->nullable()->constrained('groups')->onDelete('set null');
+            $table->foreignUuid('academy_id')->nullable()->constrained('academies')->onDelete('cascade');
             
             // Enrollment-specific data (per teacher)
             $table->decimal('balance', 10, 2)->default(0);
@@ -30,8 +31,10 @@ return new class extends Migration
             // Indexes for performance
             $table->index('student_id');
             $table->index('teacher_id');
+            $table->index('academy_id');
             $table->index(['teacher_id', 'is_active'], 'enrollments_teacher_active_index');
             $table->index(['grade_id', 'is_active'], 'enrollments_grade_active_index');
+            $table->index(['teacher_id', 'grade_id', 'is_active'], 'idx_enrollments_lookup');
             $table->unique(['student_id', 'teacher_id'], 'enrollment_unique');
         });
     }

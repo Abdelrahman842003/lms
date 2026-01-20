@@ -19,7 +19,8 @@ return new class extends Migration
             $table->integer('total_students')->default(0);
             $table->decimal('cost_per_student', 10, 2)->default(0);
             $table->decimal('total_cost', 10, 2)->default(0);
-            $table->enum('status', ['pending', 'paid', 'cancelled'])->default('pending');
+            $table->decimal('amount_paid', 10, 2)->default(0);
+            $table->enum('status', ['pending', 'partial', 'paid', 'cancelled'])->default('pending');
             $table->date('paid_at')->nullable();
             $table->text('notes')->nullable();
             $table->timestamps();

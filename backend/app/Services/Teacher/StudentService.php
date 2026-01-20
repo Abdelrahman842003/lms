@@ -421,7 +421,7 @@ class StudentService
     }
 
     /**
-     * Get subscription history for a student
+     * Get subscription history for a student - Optimized to avoid N+1
      */
     public function getSubscriptionHistory(Enrollment $enrollment): array
     {
@@ -429,11 +429,19 @@ class StudentService
         $startDate = $enrollment->created_at->startOfMonth();
         $endDate = now()->endOfMonth();
         
+        // Fetch all payments in one query instead of per-month
+        $payments = \App\Models\PaymentLog::where('teacher_id', $enrollment->teacher_id)
+            ->where('student_id', $enrollment->student_id)
+            ->where('status', 'confirmed')
+            ->whereBetween('confirmed_at', [$startDate, $endDate])
+            ->selectRaw("DATE_FORMAT(confirmed_at, '%Y-%m') as month, SUM(amount) as total")
+            ->groupBy('month')
+            ->pluck('total', 'month');
+        
         $currentMonth = $startDate->copy();
         
         while ($currentMonth <= $endDate) {
-            $monthStart = $currentMonth->copy()->startOfMonth();
-            $monthEnd = $currentMonth->copy()->endOfMonth();
+            $monthKey = $currentMonth->format('Y-m');
             
             // Calculate price for this month
             $price = 0;
@@ -443,12 +451,8 @@ class StudentService
                 $price = $enrollment->grade->price;
             }
 
-            // Calculate paid amount for this month
-            $amountPaid = \App\Models\PaymentLog::where('teacher_id', $enrollment->teacher_id)
-                ->where('student_id', $enrollment->student_id)
-                ->where('status', 'confirmed')
-                ->whereBetween('confirmed_at', [$monthStart, $monthEnd])
-                ->sum('amount');
+            // Get paid amount from pre-fetched data
+            $amountPaid = (float) ($payments[$monthKey] ?? 0);
 
             $amountRemaining = $price - $amountPaid;
 
@@ -460,10 +464,10 @@ class StudentService
             }
 
             $history[] = [
-                'month' => $currentMonth->format('Y-m'),
+                'month' => $monthKey,
                 'month_name' => \App\Services\HelperService::getArabicMonthName($currentMonth->month) . ' ' . $currentMonth->year,
                 'amount_due' => (float) $price,
-                'amount_paid' => (float) $amountPaid,
+                'amount_paid' => $amountPaid,
                 'amount_remaining' => (float) max(0, $amountRemaining),
                 'status' => $status,
                 'status_label' => \App\Services\HelperService::getStatusLabel($status),

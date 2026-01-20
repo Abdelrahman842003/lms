@@ -325,10 +325,16 @@ class ExamService
         }
 
         $students = $query->get();
+        
+        // Pre-load all attempts for this exam in one query (optimized)
+        $attempts = $exam->attempts()->get()->keyBy('student_id');
+        
         $examService = app(\App\Services\Student\StudentExamService::class);
+        $absentResults = [];
+        $absentStudents = [];
 
         foreach ($students as $student) {
-            $attempt = $exam->attempts()->where('student_id', $student->id)->first();
+            $attempt = $attempts->get($student->id);
 
             if ($attempt) {
                 if ($attempt->status === 'in_progress') {
@@ -336,17 +342,30 @@ class ExamService
                     $examService->terminateExam($attempt, 'time_limit_exceeded');
                 }
             } else {
-                // Mark as absent
-                \App\Models\ExamResult::create([
+                // Collect absent students for bulk insert
+                $absentResults[] = [
+                    'id' => \Illuminate\Support\Str::uuid()->toString(),
                     'exam_id' => $exam->id,
                     'student_id' => $student->id,
                     'score' => 0,
                     'percentage' => 0,
-                    'status' => 'absent'
-                ]);
-
-                $student->notify(new \App\Notifications\ExamAbsentNotification($exam));
+                    'status' => 'absent',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+                $absentStudents[] = $student;
             }
+        }
+
+        // Bulk insert absent results
+        if (!empty($absentResults)) {
+            \App\Models\ExamResult::insert($absentResults);
+            
+            // Batch notification for absent students
+            \Illuminate\Support\Facades\Notification::send(
+                collect($absentStudents),
+                new \App\Notifications\ExamAbsentNotification($exam)
+            );
         }
     }
 }
