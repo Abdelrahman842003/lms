@@ -11,6 +11,7 @@ return new class extends Migration
         Schema::create('exams', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('teacher_id')->constrained('teachers')->onDelete('cascade');
+            $table->foreignUuid('academy_id')->nullable()->constrained()->nullOnDelete();
             $table->string('title');
             $table->string('subject');
             $table->integer('max_score');

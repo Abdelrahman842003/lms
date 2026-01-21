@@ -11,6 +11,7 @@ return new class extends Migration
         Schema::create('lectures', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('teacher_id')->constrained('teachers')->onDelete('cascade');
+            $table->foreignUuid('academy_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignUuid('grade_id')->constrained('grades')->cascadeOnDelete();
             $table->uuid('group_id')->nullable();
             $table->foreign('group_id')->references('id')->on('groups')->nullOnDelete();

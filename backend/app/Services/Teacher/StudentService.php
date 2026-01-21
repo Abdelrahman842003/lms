@@ -25,7 +25,26 @@ class StudentService
             ->latest();
 
         // Apply academy filter via grade relationship
-        $query = $this->applyAcademyFilter($query, $academyId, 'grade');
+        if ($academyId === 'independent') {
+            // Strict independent filter: 
+            // 1. Enrollment has no academy_id (handled by applyAcademyFilter)
+            // 2. Grade has no academy_id
+            // 3. Group has no academy_id
+            $query->whereNull('academy_id')
+                  ->whereDoesntHave('grade', function($q) {
+                      $q->whereNotNull('academy_id');
+                  })
+                  ->whereDoesntHave('group', function($q) {
+                      $q->whereNotNull('academy_id');
+                  });
+        } elseif ($academyId) {
+            // Academy filter: Check Enrollment OR Grade OR Group
+            $query->where(function($q) use ($academyId) {
+                $q->where('academy_id', $academyId)
+                  ->orWhereHas('grade', fn($g) => $g->where('academy_id', $academyId))
+                  ->orWhereHas('group', fn($gr) => $gr->where('academy_id', $academyId));
+            });
+        }
 
         return $query->paginate($perPage);
     }

@@ -26,7 +26,18 @@ class ExamService
             ->filter($filters);
 
         // Apply academy filter via grade relationship
-        $query = $this->applyAcademyFilter($query, $academyId, 'grade');
+        // Apply academy filter
+        if ($academyId === 'independent') {
+            $query->whereNull('academy_id')
+                  ->whereDoesntHave('grade', fn($q) => $q->whereNotNull('academy_id'))
+                  ->whereDoesntHave('group', fn($q) => $q->whereNotNull('academy_id'));
+        } elseif ($academyId) {
+            $query->where(function($q) use ($academyId) {
+                $q->where('academy_id', $academyId)
+                  ->orWhereHas('grade', fn($g) => $g->where('academy_id', $academyId))
+                  ->orWhereHas('group', fn($gr) => $gr->where('academy_id', $academyId));
+            });
+        }
 
         return $query->paginate($perPage);
     }
