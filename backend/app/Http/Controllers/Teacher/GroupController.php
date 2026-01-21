@@ -29,7 +29,7 @@ class GroupController extends Controller
         $teacher = $this->getTeacherFromRequest($request);
         $perPage = (int) $request->input('per_page', 10);
         $filters = $request->only(['search', 'grade_id']);
-        $academyId = $request->header('X-Academy-Id');
+        $academyId = $request->header('X-Academy-Id') ?? $request->input('academy_id');
         
         $groups = $this->service->getGroups($teacher, $perPage, $filters, $academyId);
         

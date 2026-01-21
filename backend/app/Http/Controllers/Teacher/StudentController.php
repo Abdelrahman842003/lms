@@ -10,6 +10,7 @@ use App\Http\Requests\Teacher\Student\UpdatePermissionsRequest;
 use App\Http\Requests\Teacher\Student\UpdateStudentRequest;
 use App\Http\Resources\Teacher\EnrollmentResource;
 use App\Models\Enrollment;
+use App\Models\PaymentLog;
 use App\Services\Teacher\StudentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -33,7 +34,7 @@ class StudentController extends Controller
         $perPage = (int) $request->input('per_page', 10);
         $search = $request->input('search');
         $status = $request->input('status');
-        $academyId = $request->header('X-Academy-Id');
+        $academyId = $request->header('X-Academy-Id') ?? $request->input('academy_id');
 
         $enrollments = $this->service->getStudents($teacher, $perPage, $search, $status, $academyId);
 
@@ -133,9 +134,27 @@ class StudentController extends Controller
 
         $subscriptionHistory = $this->service->getSubscriptionHistory($enrollment);
 
+        // Get raw payment logs for detailed history
+        $paymentLogs = PaymentLog::forTeacher($teacher->id)
+            ->forStudent($id)
+            ->latest()
+            ->get()
+            ->map(fn ($log) => [
+                'id' => $log->id,
+                'amount' => $log->amount,
+                'months' => $log->months,
+                'start_date' => $log->start_date?->format('Y-m-d'),
+                'end_date' => $log->end_date?->format('Y-m-d'),
+                'notes' => $log->notes,
+                'confirmation_code' => $log->confirmation_code,
+                'payment_method' => $log->payment_method,
+                'created_at' => $log->created_at,
+            ]);
+
         return $this->successResponse([
             'student' => new EnrollmentResource($enrollment),
-            'subscription_history' => $subscriptionHistory
+            'subscription_history' => $subscriptionHistory,
+            'payment_logs' => $paymentLogs,
         ]);
     }
 

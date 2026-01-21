@@ -108,6 +108,10 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
             <i className="fas fa-arrow-right text-sm sm:text-base"></i>
             <span className="whitespace-nowrap">عودة</span>
           </button>
+          <Link href={`/teacher/students/${student.id}/payment`} className="btn btn-success w-full sm:w-auto text-sm sm:text-base px-4 sm:px-5 py-3 sm:py-2.5">
+            <i className="fas fa-money-bill-wave text-sm sm:text-base"></i>
+            <span className="whitespace-nowrap">تسجيل دفعة</span>
+          </Link>
           <Link href={`/teacher/students/${student.id}/edit`} className="btn btn-primary w-full sm:w-auto text-sm sm:text-base px-4 sm:px-5 py-3 sm:py-2.5">
             <i className="fas fa-edit text-sm sm:text-base"></i>
             <span className="whitespace-nowrap">تعديل الطالب</span>

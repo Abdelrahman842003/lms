@@ -33,8 +33,18 @@ class AttachTeachersToAcademySeeder extends Seeder
                     'joined_at' => now(),
                 ]);
             }
+            
+            // Update academy_id in grades and groups for this teacher
+            \App\Models\Grade::where('teacher_id', $teacher->id)
+                ->whereNull('academy_id')
+                ->update(['academy_id' => $academy->id]);
+                
+            \App\Models\Group::where('teacher_id', $teacher->id)
+                ->whereNull('academy_id')
+                ->update(['academy_id' => $academy->id]);
         }
 
         $this->command->info('Teachers attached successfully!');
+        $this->command->info('Updated grades and groups with academy_id!');
     }
 }

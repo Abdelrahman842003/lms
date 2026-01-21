@@ -995,7 +995,11 @@ export async function updateTeacherStudentPermissions(id: string, permissions: s
  */
 export async function getTeacherStudentDetails(id: string): Promise<any> {
   const res = await fetchApi(`/teacher/students/${id}`);
-  return { ...res.student, subscription_history: res.subscription_history };
+  return { 
+    ...res.student, 
+    subscription_history: res.subscription_history,
+    payment_logs: res.payment_logs 
+  };
 }
 
 /**
@@ -1054,6 +1058,29 @@ export async function createGrade(data: any): Promise<any> {
   });
   return res.grade;
 }
+
+/**
+ * Create payment for independent teacher
+ */
+export const createTeacherStudentPayment = async (
+  studentId: string,
+  data: {
+    months: number;
+    discount: number;
+    notes?: string;
+    client_side_uuid: string;
+    start_date?: string;
+  }
+) => {
+  const response = await fetchApi(
+    `/api/teacher/students/${studentId}/payments`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ ...data, student_id: studentId }),
+    }
+  );
+  return response;
+};
 
 /**
  * Update a grade

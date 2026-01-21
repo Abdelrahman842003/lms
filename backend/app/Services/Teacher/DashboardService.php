@@ -216,7 +216,7 @@ class DashboardService
 
         if ($teacher->subscription_fee > 0) {
             $academies->push([
-                'id' => null,
+                'id' => 'independent',
                 'name' => 'مدرس مستقل',
                 'logo' => null,
                 'is_active' => true,

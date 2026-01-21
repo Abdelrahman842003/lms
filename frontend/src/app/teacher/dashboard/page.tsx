@@ -31,7 +31,7 @@ export default function TeacherDashboard() {
         setIsLoading(true);
         const { getTeacherDashboardStats, getTeacherRecentStudents } = await import('@/services/authService');
         
-        const academyId = selectedAcademy?.id || null;
+        const academyId = selectedAcademy?.id || (selectedAcademy?.name === 'مدرس مستقل' ? 'independent' : null);
         
         const [statsData, studentsData] = await Promise.all([
           getTeacherDashboardStats(academyId),

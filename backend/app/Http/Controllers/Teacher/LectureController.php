@@ -29,7 +29,7 @@ class LectureController extends Controller
         $teacher = $this->getTeacherFromRequest($request);
         $perPage = (int) $request->input('per_page', 10);
         $filters = $request->only(['search', 'date_from', 'date_to', 'group_id', 'status']);
-        $academyId = $request->header('X-Academy-Id');
+        $academyId = $request->header('X-Academy-Id') ?? $request->input('academy_id');
         
         $lectures = $this->service->getLectures($teacher, $perPage, $filters, $academyId);
         $lectures->load('current_session');

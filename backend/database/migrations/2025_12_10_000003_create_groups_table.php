@@ -13,6 +13,7 @@ return new class extends Migration
             $table->string('name');
             $table->foreignUuid('grade_id')->nullable()->constrained('grades')->onDelete('set null');
             $table->foreignUuid('teacher_id')->constrained('teachers')->onDelete('cascade');
+            $table->uuid('academy_id')->nullable();
             $table->enum('type', ['general', 'private'])->default('general');
             $table->decimal('price', 8, 2)->nullable();
             $table->string('time')->nullable();

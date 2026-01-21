@@ -266,6 +266,9 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureTeacherNotSuspende
     Route::get('payments/{payment}', [\App\Http\Controllers\Teacher\PaymentLogController::class, 'show']);
     Route::post('payments/{payment}/cancel', [\App\Http\Controllers\Teacher\PaymentLogController::class, 'cancel']);
 
+    // Full Payment System for Independent Teacher
+    Route::post('students/{student}/payments', [\App\Http\Controllers\Teacher\PaymentController::class, 'store']);
+
     // Sync Errors
     Route::get('sync-errors', [\App\Http\Controllers\Teacher\SyncErrorController::class, 'index']);
     Route::get('sync-errors/count', [\App\Http\Controllers\Teacher\SyncErrorController::class, 'unresolvedCount']);

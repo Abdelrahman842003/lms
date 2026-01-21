@@ -72,6 +72,10 @@ class StudentController extends Controller
                         'grade_name' => $enrollment->grade?->name,
                         'group_name' => $enrollment->group?->name,
                         'is_active' => $enrollment->is_active,
+                        'subscription_end' => $enrollment->subscription_end,
+                        'remaining_days' => ($enrollment->is_active && $enrollment->subscription_end) 
+                            ? now()->startOfDay()->diffInDays(\Carbon\Carbon::parse($enrollment->subscription_end)->endOfDay(), false) 
+                            : 0,
                     ];
                 })->values(),
                 'group_name' => $enrollments->pluck('group.name')->filter()->unique()->implode(', '),

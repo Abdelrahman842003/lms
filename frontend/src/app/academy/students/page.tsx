@@ -196,11 +196,6 @@ export default function AcademyStudentsPage() {
               {row.is_active ? (
                 <span className="text-success flex items-center gap-1">
                   نشط
-                  {row.remaining_days > 0 && (
-                    <span className="text-xs bg-success/10 px-2 py-0.5 rounded-full font-medium">
-                      {Math.ceil(row.remaining_days / 30)} شهر
-                    </span>
-                  )}
                 </span>
               ) : (
                 <span className="text-gray-400">غير مفعل</span>
@@ -422,8 +417,20 @@ export default function AcademyStudentsPage() {
                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold">
                   {teacher.name?.charAt(0) || '?'}
                 </div>
-                <div className="flex flex-col">
-                  <span className="text-sm text-white font-medium">{teacher.name}</span>
+                <div className="flex flex-col flex-1">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-white font-medium">{teacher.name}</span>
+                    {teacher.is_active ? (
+                      <span className="text-[10px] bg-success/20 text-success px-1.5 py-0.5 rounded">
+                        نشط
+                        {teacher.remaining_days > 0 && ` (${Math.ceil(teacher.remaining_days / 30)} شهر)`}
+                      </span>
+                    ) : (
+                      <span className="text-[10px] bg-red-500/20 text-red-500 px-1.5 py-0.5 rounded">
+                        غير نشط
+                      </span>
+                    )}
+                  </div>
                   <div className="flex items-center gap-2 text-[10px] text-gray-400">
                     <span>{teacher.grade_name || '-'}</span>
                     <span>•</span>

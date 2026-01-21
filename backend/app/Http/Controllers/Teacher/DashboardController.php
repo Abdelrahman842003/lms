@@ -22,7 +22,7 @@ class DashboardController extends Controller
     public function getStats(Request $request): JsonResponse
     {
         $teacher = $this->getTeacherFromRequest($request);
-        $academyId = $request->header('X-Academy-Id');
+        $academyId = $request->header('X-Academy-Id') ?? $request->input('academy_id');
 
         $stats = $this->service->getStats($teacher, $academyId);
 
@@ -33,7 +33,7 @@ class DashboardController extends Controller
     {
         $teacher = $this->getTeacherFromRequest($request);
         $limit = (int) $request->input('limit', 5);
-        $academyId = $request->header('X-Academy-Id');
+        $academyId = $request->header('X-Academy-Id') ?? $request->input('academy_id');
 
         $enrollments = $this->service->getRecentStudents($teacher, $academyId, $limit);
 
@@ -46,7 +46,7 @@ class DashboardController extends Controller
     {
         $teacher = $this->getTeacherFromRequest($request);
         $limit = (int) $request->input('limit', 4);
-        $academyId = $request->header('X-Academy-Id');
+        $academyId = $request->header('X-Academy-Id') ?? $request->input('academy_id');
 
         $lectures = $this->service->getUpcomingLectures($teacher, $academyId, $limit);
 
