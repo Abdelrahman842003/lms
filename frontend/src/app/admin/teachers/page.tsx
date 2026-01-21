@@ -373,6 +373,14 @@ export default function AdminTeachersPage() {
       setTotalItems(teachersRes.meta.total);
       setCurrentPage(teachersRes.meta.current_page);
 
+      // Update selected teacher for affiliation modal if open
+      if (selectedTeacherForAffiliation) {
+        const updatedTeacher = filteredTeachers.find((t: any) => t.id === selectedTeacherForAffiliation.id);
+        if (updatedTeacher) {
+          setSelectedTeacherForAffiliation(updatedTeacher);
+        }
+      }
+
       // Set stats
       if (statsRes) {
         setTotalStudents(statsRes.students_count || 0);

@@ -50,7 +50,7 @@ class TeacherResource extends JsonResource
                 // If academies not loaded or empty, assume independent (or check logic)
                 // But here we want to be explicit.
                 if ($academies instanceof \Illuminate\Database\Eloquent\Collection && $academies->isNotEmpty()) {
-                     $isIndependent = $this->subscription_fee > 0 || ($this->resource->independent_enrollments_count ?? 0) > 0;
+                     $isIndependent = $this->subscription_fee > 0;
                      if ($isIndependent) {
                          return 'both';
                      }

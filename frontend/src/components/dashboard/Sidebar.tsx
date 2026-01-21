@@ -286,22 +286,31 @@ export const Sidebar: React.FC<SidebarProps> = ({ role, user, isOpen, onClose, p
   // Filter items for Academy mode (Teacher only)
   // If selectedAcademy has an ID, it means the teacher is in "Academy Dashboard" mode
   // OR if we are still loading (isLoading is true), we default to "Restricted" mode to prevent flicker
-  // In this mode, they should NOT see: Secretary, Grades (Classes), Reports
+  
   if (role === 'teacher' && (selectedAcademy?.id || isLoading)) {
-    items = items
-      .filter(item => item.id !== 'reports') // Remove Reports
-      .map(item => {
-        if (item.children) {
-          return {
-            ...item,
-            children: item.children.filter(child => 
-              child.id !== 'secretaries' && // Remove Secretary
-              child.id !== 'grades'         // Remove Grades (Classes)
-            )
-          };
-        }
-        return item;
-      });
+    if (selectedAcademy?.id === 'independent') {
+      // Independent Teacher Mode
+      // Remove Attendance (not needed for independent)
+      items = items.filter(item => item.id !== 'attendance');
+    } else {
+      // Academy Teacher Mode (or loading)
+      // They should NOT see: Secretary, Grades (Classes), Reports
+      // They SHOULD see: Attendance
+      items = items
+        .filter(item => item.id !== 'reports') // Remove Reports
+        .map(item => {
+          if (item.children) {
+            return {
+              ...item,
+              children: item.children.filter(child => 
+                child.id !== 'secretaries' && // Remove Secretary
+                child.id !== 'grades'         // Remove Grades (Classes)
+              )
+            };
+          }
+          return item;
+        });
+    }
   }
 
   const [expandedItems, setExpandedItems] = React.useState<string[]>([]);
