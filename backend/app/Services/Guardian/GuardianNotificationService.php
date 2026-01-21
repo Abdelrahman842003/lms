@@ -12,7 +12,9 @@ class GuardianNotificationService
         // Get notifications for the guardian (if they have a user account)
         // AND notifications for all their children
         
-        $studentIds = $guardian->students()->pluck('id');
+        $studentIds = $guardian->students()->pluck('id')
+            ->merge(\App\Models\Student::where('parent_phone', $guardian->phone)->pluck('id'))
+            ->unique();
         
         // This is tricky because notifications are polymorphic.
         // Usually notifications are stored for a User model.
@@ -58,7 +60,9 @@ class GuardianNotificationService
 
     public function markAllAsRead(Guardian $guardian)
     {
-        $studentIds = $guardian->students()->pluck('id');
+        $studentIds = $guardian->students()->pluck('id')
+            ->merge(\App\Models\Student::where('parent_phone', $guardian->phone)->pluck('id'))
+            ->unique();
 
         DatabaseNotification::where(function ($query) use ($guardian, $studentIds) {
             $query->where(function ($q) use ($guardian) {
@@ -73,7 +77,9 @@ class GuardianNotificationService
     
     public function getUnreadCount(Guardian $guardian): int
     {
-        $studentIds = $guardian->students()->pluck('id');
+        $studentIds = $guardian->students()->pluck('id')
+            ->merge(\App\Models\Student::where('parent_phone', $guardian->phone)->pluck('id'))
+            ->unique();
 
         return DatabaseNotification::where(function ($query) use ($guardian, $studentIds) {
             $query->where(function ($q) use ($guardian) {

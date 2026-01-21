@@ -211,7 +211,8 @@ class NotificationService
         string $title,
         string $message,
         array $data = [],
-        string $type = 'general'
+        string $type = 'general',
+        bool $skipDb = false
     ): void {
         $parentPhone = $student->parent_phone;
         
@@ -227,27 +228,33 @@ class NotificationService
         // Store notification in student's notifications (parent will aggregate from children)
         $notificationId = Str::uuid()->toString();
         
-        try {
-            $student->notifications()->create([
-                'id' => $notificationId,
-                'type' => 'App\\Notifications\\ParentNotification',
-                'data' => [
-                    'title' => $title,
-                    'message' => $message,
-                    'type' => $type,
-                    'for_parent' => true,
-                    ...$data,
-                ],
-                'read_at' => null,
-            ]);
-        } catch (\Exception $e) {
-            Log::error("Failed to store parent notification: " . $e->getMessage());
+        if (!$skipDb) {
+            try {
+                $student->notifications()->create([
+                    'id' => $notificationId,
+                    'type' => 'App\\Notifications\\ParentNotification',
+                    'data' => [
+                        'title' => $title,
+                        'message' => $message,
+                        'type' => $type,
+                        'for_parent' => true,
+                        ...$data,
+                    ],
+                    'read_at' => null,
+                ]);
+            } catch (\Exception $e) {
+                Log::error("Failed to store parent notification: " . $e->getMessage());
+            }
         }
 
         // Broadcast via Reverb for parent's channel
+        // Fix: Use Guardian ID if available, otherwise fallback to phone (though frontend expects ID)
+        $guardian = \App\Models\Guardian::where('phone', $parentPhone)->first();
+        $broadcastUserId = $guardian ? $guardian->id : $parentPhone;
+
         try {
             broadcast(new NewNotificationEvent(
-                userId: $parentPhone,
+                userId: $broadcastUserId,
                 userType: 'parent',
                 notificationId: $notificationId,
                 title: $title,

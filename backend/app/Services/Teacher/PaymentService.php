@@ -133,6 +133,74 @@ class PaymentService
             ]);
         });
 
+        // Send Notifications
+        try {
+            \Illuminate\Support\Facades\Log::info("Starting payment notification for payment: " . $payment->id);
+
+            $notificationService = app(\App\Services\NotificationService::class);
+            
+            // Calculate month names in Arabic
+            \Carbon\Carbon::setLocale('ar');
+            $monthNames = [];
+            $currentDate = $payment->start_date->copy();
+            for ($i = 0; $i < $months; $i++) {
+                $monthNames[] = $currentDate->translatedFormat('F');
+                $currentDate->addMonth();
+            }
+            $monthsString = implode('، ', $monthNames);
+            
+            \Illuminate\Support\Facades\Log::info("Months string calculated: " . $monthsString);
+
+            $title = "تم دفع اشتراك جديد";
+            $message = "تم دفع شهر {$monthsString} بنجاح";
+            
+            // Add user notes if exist (splitting from auto-generated notes)
+            if ($data->notes) {
+                $message .= "\nملاحظات: " . $data->notes;
+            }
+
+            // Determine Sender Name
+            $senderName = $teacher->name;
+            if ($enrollment->academy_id) {
+                $enrollment->load('academy');
+                if ($enrollment->academy) {
+                    $senderName = $teacher->name . ' - ' . $enrollment->academy->name;
+                }
+            }
+
+            // Notify Student
+            $notificationService->send(
+                $enrollment->student,
+                'student',
+                $title,
+                $message,
+                [
+                    'payment_id' => $payment->id,
+                    'sender_name' => $senderName
+                ],
+                'payment'
+            );
+            \Illuminate\Support\Facades\Log::info("Student notification sent");
+
+            // Notify Parent
+            $notificationService->sendToParent(
+                $enrollment->student,
+                $title,
+                $message,
+                [
+                    'payment_id' => $payment->id,
+                    'sender_name' => $senderName
+                ],
+                'payment',
+                true // Skip DB storage to avoid duplicates in parent view
+            );
+            \Illuminate\Support\Facades\Log::info("Parent notification sent");
+
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Payment notification failed: " . $e->getMessage());
+            \Illuminate\Support\Facades\Log::error($e->getTraceAsString());
+        }
+
         return [
             'payment' => $payment,
             'confirmation_code' => $code,
