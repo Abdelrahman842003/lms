@@ -782,6 +782,15 @@ export const getExamTeachers = async () => {
   return response.data.data.teachers;
 };
 
+// ========== Gamification ==========
+export const getLeaderboard = async (page = 1, perPage = 15, filters: { grade_name?: string; group_id?: string } = {}) => {
+  const response = await axios.get(`${API_BASE_URL}/academy/leaderboard`, {
+    headers: getAuthHeaders(),
+    params: { page, per_page: perPage, ...filters },
+  });
+  return response.data;
+};
+
 export default {
   // Dashboard
   getDashboardStats,

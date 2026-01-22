@@ -511,4 +511,114 @@ class PointService
             }
         }
     }
+    /**
+     * Get weekly leaderboard for an academy (paginated)
+     */
+    public function getAcademyWeeklyLeaderboardPaginated(string $academyId, int $perPage = 15, ?string $gradeId = null, ?string $groupId = null, ?string $gradeName = null): \Illuminate\Contracts\Pagination\LengthAwarePaginator
+    {
+        $query = PointTransaction::query()
+            ->join('enrollments', function ($join) {
+                $join->on('point_transactions.student_id', '=', 'enrollments.student_id')
+                     ->on('point_transactions.teacher_id', '=', 'enrollments.teacher_id');
+            })
+            ->where('enrollments.academy_id', $academyId)
+            ->where('point_transactions.created_at', '>=', now()->startOfWeek())
+            ->select(
+                'point_transactions.student_id',
+                DB::raw('SUM(point_transactions.points) as weekly_points')
+            )
+            ->groupBy('point_transactions.student_id')
+            ->orderByDesc('weekly_points')
+            ->with('student:id,name,avatar_key');
+
+        // Filter by grade ID
+        if ($gradeId) {
+            $query->where('enrollments.grade_id', $gradeId);
+        }
+
+        // Filter by grade Name
+        if ($gradeName) {
+            $query->join('grades', 'enrollments.grade_id', '=', 'grades.id')
+                  ->where('grades.name', $gradeName);
+        }
+
+        // Filter by group
+        if ($groupId) {
+            $query->where('enrollments.group_id', $groupId);
+        }
+
+        $paginator = $query->paginate($perPage);
+        
+        $paginator->getCollection()->transform(function ($item, $index) use ($paginator) {
+             $rank = HelperService::calculatePaginationRank($index, $paginator);
+             
+             return [
+                'rank' => $rank,
+                'student_id' => $item->student_id,
+                'student' => [
+                    'id' => $item->student->id,
+                    'name' => $item->student->name,
+                    'avatar_key' => $item->student->avatar_key ? app(\App\Services\Media\ImageService::class)->getUrl($item->student->avatar_key) : null,
+                ],
+                'weekly_points' => (int) $item->weekly_points,
+             ];
+        });
+        
+        return $paginator;
+    }
+
+    /**
+     * Get all-time leaderboard for an academy (paginated)
+     */
+    public function getAcademyAllTimeLeaderboardPaginated(string $academyId, int $perPage = 15, ?string $gradeId = null, ?string $groupId = null, ?string $gradeName = null): \Illuminate\Contracts\Pagination\LengthAwarePaginator
+    {
+        $query = StudentPoint::query()
+            ->join('enrollments', function ($join) {
+                $join->on('student_points.student_id', '=', 'enrollments.student_id')
+                     ->on('student_points.teacher_id', '=', 'enrollments.teacher_id');
+            })
+            ->where('enrollments.academy_id', $academyId)
+            ->select(
+                'student_points.student_id',
+                DB::raw('SUM(student_points.total_points) as total_points')
+            )
+            ->groupBy('student_points.student_id')
+            ->orderByDesc('total_points')
+            ->with('student:id,name,avatar_key');
+
+        // Filter by grade ID
+        if ($gradeId) {
+            $query->where('enrollments.grade_id', $gradeId);
+        }
+
+        // Filter by grade Name
+        if ($gradeName) {
+            $query->join('grades', 'enrollments.grade_id', '=', 'grades.id')
+                  ->where('grades.name', $gradeName);
+        }
+
+        // Filter by group
+        if ($groupId) {
+            $query->where('enrollments.group_id', $groupId);
+        }
+            
+        $paginator = $query->paginate($perPage);
+        
+        $paginator->getCollection()->transform(function ($item, $index) use ($paginator) {
+             $rank = HelperService::calculatePaginationRank($index, $paginator);
+             
+             return [
+                'rank' => $rank,
+                'student_id' => $item->student_id,
+                'student' => [
+                    'id' => $item->student->id,
+                    'name' => $item->student->name,
+                    'avatar_key' => $item->student->avatar_key ? app(\App\Services\Media\ImageService::class)->getUrl($item->student->avatar_key) : null,
+                ],
+                'total_points' => (int) $item->total_points,
+             ];
+        });
+        
+        return $paginator;
+    }
 }

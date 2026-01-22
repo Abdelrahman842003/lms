@@ -186,6 +186,9 @@ Route::middleware('auth:sanctum')->prefix('academy')->name('academy.')->group(fu
 
     // Payments
     Route::post('payments', [\App\Http\Controllers\Academy\PaymentController::class, 'store']);
+
+    // Gamification
+    Route::get('/leaderboard', [\App\Http\Controllers\Academy\GamificationController::class, 'leaderboard']);
 });
 
 // ============================================

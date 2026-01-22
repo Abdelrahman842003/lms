@@ -180,6 +180,12 @@ const getNavItems = (role: string): SidebarItem[] => {
         icon: 'fas fa-chart-bar',
         href: '/academy/reports',
       },
+      {
+        id: 'gamification',
+        label: 'لوحة الشرف',
+        icon: 'fas fa-trophy',
+        href: '/academy/gamification',
+      },
     ];
   }
 

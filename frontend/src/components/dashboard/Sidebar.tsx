@@ -169,6 +169,12 @@ const getSidebarItems = (role: string): SidebarItem[] => {
         href: '/teacher/attendance',
       },
       {
+        id: 'gamification',
+        label: 'لوحة الشرف',
+        icon: 'fas fa-trophy',
+        href: '/teacher/gamification',
+      },
+      {
         id: 'reports',
         label: 'التقارير',
         icon: 'fas fa-chart-line',
@@ -228,7 +234,9 @@ const permissionMap: Record<string, string[]> = {
   notifications: ['send notifications'],
   attendance: ['manage lecture attendance'],
   reports: ['view reports'],
+  reports: ['view reports'],
   dashboard: ['view dashboard'],
+  gamification: ['view dashboard'], // Everyone with dashboard access can see leaderboard
 };
 
 const filterItemsByPermissions = (items: SidebarItem[], permissions: string[]): SidebarItem[] => {
@@ -299,6 +307,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ role, user, isOpen, onClose, p
       items = items
         .filter(item => item.id !== 'reports') // Remove Reports
         .map(item => {
+          if (item.id === 'gamification') {
+            return { ...item, href: '/academy/gamification' };
+          }
           if (item.children) {
             return {
               ...item,
