@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\PointTransactionType;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,7 +12,7 @@ class PointTransaction extends Model
 {
     use HasUuids;
 
-    // Transaction types
+    // Keep constants for backward compatibility
     const TYPE_ATTENDANCE = 'attendance';
     const TYPE_PERFECT_MONTH = 'perfect_month';
     const TYPE_EXAM_SCORE = 'exam_score';
@@ -35,6 +36,37 @@ class PointTransaction extends Model
         'points' => 'integer',
     ];
 
+    protected static function boot()
+    {
+        parent::boot();
+
+        // Validate type before saving
+        static::saving(function ($transaction) {
+            if (!PointTransactionType::isValid($transaction->type)) {
+                throw new \InvalidArgumentException(
+                    "Invalid transaction type: {$transaction->type}. " .
+                    "Valid types are: " . implode(', ', PointTransactionType::values())
+                );
+            }
+        });
+    }
+
+    /**
+     * Get all valid transaction types
+     */
+    public static function getValidTypes(): array
+    {
+        return PointTransactionType::values();
+    }
+
+    /**
+     * Check if a type is valid
+     */
+    public static function isValidType(string $type): bool
+    {
+        return PointTransactionType::isValid($type);
+    }
+
     public function student(): BelongsTo
     {
         return $this->belongsTo(Student::class);
@@ -55,17 +87,13 @@ class PointTransaction extends Model
      */
     public function getTypeNameAttribute(): string
     {
-        return match ($this->type) {
-            self::TYPE_ATTENDANCE => 'حضور الحصة',
-            self::TYPE_PERFECT_MONTH => 'حضور شهر كامل',
-            self::TYPE_EXAM_SCORE => 'درجة الامتحان',
-            self::TYPE_EXAM_RETAKE_BONUS => 'بونص إعادة الامتحان',
-            self::TYPE_EXAM_FIRST_PLACE => 'أول الدفعة',
-            self::TYPE_STREAK_5 => 'سلسلة 5 حصص',
-            self::TYPE_STREAK_10 => 'سلسلة 10 حصص',
-            self::TYPE_MANUAL_BONUS => 'بونص من المدرس',
-            default => $this->type,
-        };
+        // Try to use enum label, fallback to old match for backward compatibility
+        try {
+            return PointTransactionType::from($this->type)->label();
+        } catch (\ValueError) {
+            // Fallback for any custom types not in enum
+            return $this->type;
+        }
     }
 
     protected $appends = ['type_name'];

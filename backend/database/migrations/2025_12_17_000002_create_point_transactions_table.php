@@ -12,16 +12,10 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->foreignUuid('student_id')->constrained()->cascadeOnDelete();
             $table->foreignUuid('teacher_id')->constrained()->cascadeOnDelete();
-            $table->enum('type', [
-                'attendance',           // حضور الحصة
-                'perfect_month',        // حضور شهر كامل
-                'exam_score',           // درجة الامتحان
-                'exam_retake_bonus',    // إعادة الامتحان بنجاح
-                'exam_first_place',     // أول الدفعة
-                'streak_5',             // سلسلة 5 حصص
-                'streak_10',            // سلسلة 10 حصص
-                'manual_bonus',         // بونص يدوي من المدرس
-            ]);
+            $table->string('type', 50)->index(); // نوع المعاملة
+            // Types: attendance, perfect_month, exam_score, exam_retake_bonus,
+            // exam_first_place, streak_5, streak_10, manual_bonus,
+            // ai_test_1, ai_test_2, ... (extensible for future types)
             $table->integer('points');
             $table->nullableUuidMorphs('reference'); // lecture_id, exam_id, etc.
             $table->text('description')->nullable();
