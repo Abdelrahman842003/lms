@@ -198,26 +198,30 @@ export default function AddStudentPage() {
     try {
       const result = await searchAcademyStudentByPhone(phone);
       
-      if (result.found) {
+      // The API returns { status: true, data: { found: true, ... } }
+      // So we need to check result.data.found
+      const searchData = result.data || {};
+      
+      if (searchData.found) {
         setExistingStudentFound(true);
-        setAlreadyEnrolled(result.already_enrolled);
+        setAlreadyEnrolled(searchData.already_enrolled);
         setIsPhoneChecked(true); // Valid check
         
         // Auto-fill data
         setFormData(prev => ({
           ...prev,
-          name: result.student.name,
-          parent_phone: result.student.parent_phone || '',
-          gender: result.student.gender || 'male',
-          education_type: result.student.education_type || '',
-          grade_id: result.student.grade_id || '', // Auto-fill grade
+          name: searchData.student.name,
+          parent_phone: searchData.student.parent_phone || '',
+          gender: searchData.student.gender || 'male',
+          education_type: searchData.student.education_type || '',
+          grade_id: searchData.student.grade_id || '', // Auto-fill grade
           teacher_id: '', // Reset teacher to force selection? Or try to deduce?
           group_id: '', // Always clear group for teacher to select
-          location: result.student.location || '',
+          location: searchData.student.location || '',
           phone: phone,
         }));
         
-        if (result.already_enrolled) {
+        if (searchData.already_enrolled) {
           setFormErrors({ phone: 'هذا الطالب مسجل بالفعل' });
         } else {
           setSuccessMessage('تم العثور على الطالب. يمكنك استكمال البيانات لإضافته.');
@@ -332,6 +336,7 @@ export default function AddStudentPage() {
       if (formData.parent_phone) submitData.parent_phone = formData.parent_phone;
       if (parentName) submitData.parent_name = parentName; // Send guardian name
       if (formData.education_type) submitData.education_type = formData.education_type;
+      if (formData.teacher_id) submitData.teacher_id = formData.teacher_id;
       if (formData.grade_id) submitData.grade_id = formData.grade_id;
       if (formData.group_id) submitData.group_id = formData.group_id;
       if (formData.location) submitData.location = formData.location;
@@ -677,7 +682,7 @@ export default function AddStudentPage() {
                 onChange={(value) => setFormData({ ...formData, teacher_id: value })}
                 placeholder="اختر المدرس"
                 className={formErrors.teacher_id ? 'border-red-500' : ''}
-                disabled={isSubmitting || !isPhoneChecked || existingStudentFound}
+                disabled={isSubmitting || !isPhoneChecked}
               />
               {formErrors.teacher_id && <span className="text-red-500 text-sm mt-1 block"><i className="fas fa-exclamation-circle ml-1"></i>{formErrors.teacher_id}</span>}
             </div>
@@ -691,7 +696,7 @@ export default function AddStudentPage() {
                 onChange={(value) => setFormData({ ...formData, grade_id: value, group_id: '' })}
                 placeholder={!formData.teacher_id ? 'اختر المدرس أولاً' : 'اختر الصف الدراسي'}
                 className={formErrors.grade_id ? 'border-red-500' : ''}
-                disabled={isSubmitting || !isPhoneChecked || !formData.teacher_id || (existingStudentFound && !!formData.grade_id)}
+                disabled={isSubmitting || !isPhoneChecked || !formData.teacher_id}
               />
               {formErrors.grade_id && <span className="text-red-500 text-sm mt-1 block"><i className="fas fa-exclamation-circle ml-1"></i>{formErrors.grade_id}</span>}
             </div>

@@ -21,9 +21,32 @@ class GradeController extends Controller
         private GradeService $service
     ) {}
 
+    /**
+     * Get the academy from the authenticated user or secretary
+     */
+    protected function getAcademy(Request $request): ?\App\Models\Academy
+    {
+        $user = Auth::user();
+        
+        if ($user instanceof \App\Models\Academy) {
+            return $user;
+        }
+        
+        // Secretary case - get academy via relationship
+        if ($user instanceof \App\Models\Secretary) {
+            return $user->academies()->first();
+        }
+        
+        return null;
+    }
+
     public function index(Request $request): JsonResponse
     {
-        $academy = Auth::user();
+        $academy = $this->getAcademy($request);
+        if (!$academy) {
+            return $this->errorResponse('Unauthorized', 403);
+        }
+
         $perPage = (int) $request->input('per_page', 10);
         $filters = $request->only(['teacher_id', 'name']);
         
@@ -57,7 +80,11 @@ class GradeController extends Controller
 
     public function store(StoreGradeRequest $request): JsonResponse
     {
-        $academy = Auth::user();
+        $academy = $this->getAcademy($request);
+        if (!$academy) {
+            return $this->errorResponse('Unauthorized', 403);
+        }
+
         $data = GradeData::fromRequest($request);
         
         $grade = $this->service->createGrade($academy, $data);
@@ -70,7 +97,10 @@ class GradeController extends Controller
 
     public function update(UpdateGradeRequest $request, Grade $grade): JsonResponse
     {
-        $academy = Auth::user();
+        $academy = $this->getAcademy($request);
+        if (!$academy) {
+            return $this->errorResponse('Unauthorized', 403);
+        }
 
         // Verify grade belongs to this academy
         if (!$this->isOwnedByAcademy($academy, $grade)) {
@@ -86,9 +116,12 @@ class GradeController extends Controller
         ]);
     }
 
-    public function destroy(Grade $grade): JsonResponse
+    public function destroy(Request $request, Grade $grade): JsonResponse
     {
-        $academy = Auth::user();
+        $academy = $this->getAcademy($request);
+        if (!$academy) {
+            return $this->errorResponse('Unauthorized', 403);
+        }
 
         if (!$this->isOwnedByAcademy($academy, $grade)) {
             return $this->errorResponse('Unauthorized', 403);
@@ -108,7 +141,11 @@ class GradeController extends Controller
             'new_name' => 'required|string|max:255',
         ]);
 
-        $academy = Auth::user();
+        $academy = $this->getAcademy($request);
+        if (!$academy) {
+            return $this->errorResponse('Unauthorized', 403);
+        }
+
         $count = $this->service->bulkUpdateName($academy, $request->old_name, $request->new_name);
 
         return $this->successResponse([
@@ -122,7 +159,11 @@ class GradeController extends Controller
             'name' => 'required|string',
         ]);
 
-        $academy = Auth::user();
+        $academy = $this->getAcademy($request);
+        if (!$academy) {
+            return $this->errorResponse('Unauthorized', 403);
+        }
+
         $count = $this->service->bulkDelete($academy, $request->name);
 
         return $this->successResponse([

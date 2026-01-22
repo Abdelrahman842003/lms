@@ -207,6 +207,7 @@ class StudentController extends Controller
                 'is_new_student' => $result['is_new_student'],
             ], $result['is_new_student'] ? 'تم إضافة الطالب بنجاح' : 'تم ربط الطالب بنجاح', 201);
         } catch (\Exception $e) {
+            Log::error('Create Student Error: ' . $e->getMessage());
             return $this->errorResponse($e->getMessage(), 422);
         }
     }
