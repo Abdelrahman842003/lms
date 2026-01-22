@@ -129,7 +129,7 @@ class StudentController extends Controller
         // Get all enrollments for this student within this academy
         $enrollments = Enrollment::with(['grade', 'group', 'teacher'])
             ->where('student_id', $student->id)
-            ->whereIn('teacher_id', $teacherIds)
+            ->where('academy_id', $academy->id)
             ->get();
 
         if ($enrollments->isEmpty()) {

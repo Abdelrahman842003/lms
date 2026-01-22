@@ -17,16 +17,8 @@ class GradeService
     public function getGrades(Academy $academy, array $filters = [], int $perPage = 10)
     {
         // Base query: Grades for all teachers belonging to this academy OR grades created by the academy directly
-        $query = Grade::where(function($q) use ($academy) {
-            // Grades linked to academy's teachers
-            $q->whereHas('teacher', function ($q2) use ($academy) {
-                $q2->whereHas('academies', function ($q3) use ($academy) {
-                    $q3->where('academy_id', $academy->id);
-                });
-            })
-            // OR grades linked directly to the academy
-            ->orWhere('academy_id', $academy->id);
-        });
+        // Filter strictly by academy_id to ensure only academy-specific grades are shown
+        $query = Grade::where('academy_id', $academy->id)->whereNotNull('academy_id');
 
         // Filter by teacher_id if provided
         if (isset($filters['teacher_id']) && $filters['teacher_id']) {

@@ -21,15 +21,7 @@ class StudentService
         $search = $filters['search'] ?? null;
 
         $query = Student::whereHas('enrollments', function ($q) use ($academy, $status) {
-            $q->where(function ($q) use ($academy) {
-                $q->where('academy_id', $academy->id)
-                  ->orWhereHas('group', function ($g) use ($academy) {
-                      $g->where('academy_id', $academy->id);
-                  })
-                  ->orWhereHas('grade', function ($g) use ($academy) {
-                      $g->where('academy_id', $academy->id);
-                  });
-            });
+            $q->where('academy_id', $academy->id);
             
             if ($status === 'active') {
                 $q->where('is_active', true);
@@ -38,15 +30,7 @@ class StudentService
             }
         })
         ->with(['enrollments' => function ($q) use ($academy) {
-            $q->where(function ($q) use ($academy) {
-                $q->where('academy_id', $academy->id)
-                  ->orWhereHas('group', function ($g) use ($academy) {
-                      $g->where('academy_id', $academy->id);
-                  })
-                  ->orWhereHas('grade', function ($g) use ($academy) {
-                      $g->where('academy_id', $academy->id);
-                  });
-            })
+            $q->where('academy_id', $academy->id)
             ->with(['teacher', 'grade', 'group']);
         }]);
 
@@ -95,15 +79,15 @@ class StudentService
                 $student = Student::create($studentData);
             }
 
-            // Check if already enrolled with this teacher (regardless of academy)
+            // Check if already enrolled with this teacher IN THIS ACADEMY
             $enrollment = Enrollment::where('student_id', $student->id)
                 ->where('teacher_id', $teacher->id)
+                ->where('academy_id', $academy->id)
                 ->first();
 
             if ($enrollment) {
-                // Update existing enrollment to be part of this academy
+                // Update existing enrollment
                 $enrollment->update([
-                    'academy_id' => $academy->id,
                     'grade_id' => $data->gradeId,
                     'group_id' => $data->groupId,
                     'is_active' => true,

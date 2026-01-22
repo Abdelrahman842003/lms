@@ -14,11 +14,7 @@ class GroupService
 {
     public function getGroups(Academy $academy, array $filters = [], int $perPage = 10): LengthAwarePaginator
     {
-        return Group::whereHas('teacher', function ($query) use ($academy) {
-            $query->whereHas('academies', function ($q) use ($academy) {
-                      $q->where('academy_id', $academy->id);
-                  });
-        })
+        return Group::where('academy_id', $academy->id)->whereNotNull('academy_id')
         ->when(isset($filters['search']), function ($query) use ($filters) {
             $query->where('name', 'like', "%{$filters['search']}%");
         })

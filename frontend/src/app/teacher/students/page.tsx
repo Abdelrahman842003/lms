@@ -149,14 +149,14 @@ export default function StudentsPage() {
       label: 'الصف الدراسي',
       sortable: true,
       className: 'd-none-lg',
-      render: (value: any) => value?.name || '-',
+      render: (value: any, row: any) => row.grade_name || '-',
     },
     {
       key: 'group',
       label: 'المجموعة',
       sortable: true,
       className: 'd-none-md',
-      render: (value: any) => value?.name || '-',
+      render: (value: any, row: any) => row.group_name || '-',
     },
     {
       key: 'attendance_stats',

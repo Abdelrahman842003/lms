@@ -5,6 +5,8 @@ import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { useAuth } from '@/contexts/AuthContext';
 import { fetchApi } from '@/services/authService';
+import { getGrades, getGroups } from '@/services/teacherService';
+import { Filter } from '@/components/Filter';
 import Link from 'next/link';
 
 interface LeaderboardEntry {
@@ -47,11 +49,56 @@ export default function TeacherGamificationPage() {
   const [leaderboardType, setLeaderboardType] = useState<'weekly' | 'all_time'>('weekly');
   const [loadingMore, setLoadingMore] = useState(false);
 
+  const [grades, setGrades] = useState<any[]>([]);
+  const [groups, setGroups] = useState<any[]>([]);
+  const [selectedGrade, setSelectedGrade] = useState<string>('');
+  const [selectedGroup, setSelectedGroup] = useState<string>('');
+
 
 
   useEffect(() => {
     loadData(1);
+    fetchGrades();
   }, []);
+
+  useEffect(() => {
+    loadData(1);
+  }, [selectedGrade, selectedGroup]);
+
+  useEffect(() => {
+    if (selectedGrade) {
+      fetchGroups(selectedGrade);
+    } else {
+      setGroups([]);
+    }
+    setSelectedGroup('');
+  }, [selectedGrade]);
+
+  const fetchGrades = async () => {
+    try {
+      const res = await getGrades();
+      if (res && res.data) {
+        setGrades(res.data);
+      } else if (Array.isArray(res)) {
+        setGrades(res);
+      }
+    } catch (error) {
+      console.error('Failed to fetch grades', error);
+    }
+  };
+
+  const fetchGroups = async (gradeId: string) => {
+    try {
+      const res = await getGroups(gradeId);
+      if (res && res.data) {
+        setGroups(res.data);
+      } else if (Array.isArray(res)) {
+        setGroups(res);
+      }
+    } catch (error) {
+      console.error('Failed to fetch groups', error);
+    }
+  };
 
   const loadData = async (pageNum = 1, append = false) => {
     try {
@@ -61,8 +108,15 @@ export default function TeacherGamificationPage() {
         setLoading(true);
       }
       
+      const queryParams = new URLSearchParams({
+        page: pageNum.toString(),
+        per_page: '10',
+        ...(selectedGrade && { grade_id: selectedGrade }),
+        ...(selectedGroup && { group_id: selectedGroup }),
+      });
+
       const [leaderboardRes, settingsRes] = await Promise.all([
-        fetchApi(`/teacher/leaderboard?page=${pageNum}&per_page=10`),
+        fetchApi(`/teacher/leaderboard?${queryParams.toString()}`),
         !append ? fetchApi('/teacher/gamification/settings') : Promise.resolve(null),
       ]);
       
@@ -134,6 +188,16 @@ export default function TeacherGamificationPage() {
     return 'from-white/5 to-transparent border-white/10';
   };
 
+  const gradeOptions = [
+    { value: '', label: 'كل الصفوف' },
+    ...grades.map(g => ({ value: g.id.toString(), label: g.name }))
+  ];
+
+  const groupOptions = [
+    { value: '', label: 'كل المجموعات' },
+    ...groups.map(g => ({ value: g.id.toString(), label: g.name }))
+  ];
+
   return (
     <DashboardLayout role={user?.userType as 'teacher' | 'secretary' || 'teacher'} user={mockUser}>
       <div className="max-w-[1200px] mx-auto">
@@ -178,54 +242,73 @@ export default function TeacherGamificationPage() {
           </button>
         </div>
 
-        {loading ? (
-          <div className="text-center py-16">
-            <i className="fas fa-spinner fa-spin text-4xl text-primary"></i>
-            <p className="text-gray-400 mt-4">جاري التحميل...</p>
-          </div>
-        ) : (
-          <>
-            {/* Leaderboard Tab */}
-            {activeTab === 'leaderboard' && (
-              <div className="space-y-6">
-                {/* Search Bar */}
-                <div className="relative">
-                  <input
-                    type="text"
-                    placeholder="ابحث عن طالب..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full p-3 pr-12 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
-                  />
-                  <i className="fas fa-search absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                </div>
+        {activeTab === 'leaderboard' && (
+          <div className="space-y-6">
+            {/* Search Bar */}
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="ابحث عن طالب..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full p-3 pr-12 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+              />
+              <i className="fas fa-search absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+            </div>
 
-                {/* Leaderboard Type Toggle */}
-                <div className="flex gap-2 justify-center">
-                  <button
-                    onClick={() => setLeaderboardType('weekly')}
-                    className={`px-6 py-3 rounded-xl font-semibold transition-all ${
-                      leaderboardType === 'weekly'
-                        ? 'bg-primary text-white shadow-lg shadow-primary/20'
-                        : 'bg-white/5 text-gray-400 hover:bg-white/10'
-                    }`}
-                  >
-                    <i className="fas fa-calendar-week ml-2"></i>
-                    أشطر الطلاب هذا الشهر
-                  </button>
-                  <button
-                    onClick={() => setLeaderboardType('all_time')}
-                    className={`px-6 py-3 rounded-xl font-semibold transition-all ${
-                      leaderboardType === 'all_time'
-                        ? 'bg-secondary text-white shadow-lg shadow-secondary/20'
-                        : 'bg-white/5 text-gray-400 hover:bg-white/10'
-                    }`}
-                  >
-                    <i className="fas fa-infinity ml-2"></i>
-                    أشطر الطلاب على الإطلاق
-                  </button>
-                </div>
+            {/* Filters */}
+            <div className="grid grid-cols-2 gap-4">
+              <Filter
+                options={gradeOptions}
+                value={selectedGrade}
+                onChange={setSelectedGrade}
+                placeholder="اختر الصف"
+                icon="fas fa-graduation-cap"
+              />
 
+              <Filter
+                options={groupOptions}
+                value={selectedGroup}
+                onChange={setSelectedGroup}
+                placeholder="اختر المجموعة"
+                icon="fas fa-users"
+                disabled={!selectedGrade}
+              />
+            </div>
+
+            {/* Leaderboard Type Toggle */}
+            <div className="flex gap-2 justify-center">
+              <button
+                onClick={() => setLeaderboardType('weekly')}
+                className={`px-6 py-3 rounded-xl font-semibold transition-all ${
+                  leaderboardType === 'weekly'
+                    ? 'bg-primary text-white shadow-lg shadow-primary/20'
+                    : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                }`}
+              >
+                <i className="fas fa-calendar-week ml-2"></i>
+                أشطر الطلاب هذا الشهر
+              </button>
+              <button
+                onClick={() => setLeaderboardType('all_time')}
+                className={`px-6 py-3 rounded-xl font-semibold transition-all ${
+                  leaderboardType === 'all_time'
+                    ? 'bg-secondary text-white shadow-lg shadow-secondary/20'
+                    : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                }`}
+              >
+                <i className="fas fa-infinity ml-2"></i>
+                أشطر الطلاب على الإطلاق
+              </button>
+            </div>
+
+            {loading ? (
+              <div className="text-center py-16">
+                <i className="fas fa-spinner fa-spin text-4xl text-primary"></i>
+                <p className="text-gray-400 mt-4">جاري التحميل...</p>
+              </div>
+            ) : (
+              <>
                 {/* Single Leaderboard */}
                 <DashboardCard 
                   title={leaderboardType === 'weekly' ? 'أشطر الطلاب هذا الشهر' : 'أشطر الطلاب على الإطلاق'} 
@@ -282,11 +365,19 @@ export default function TeacherGamificationPage() {
                     </button>
                   </div>
                 )}
-              </div>
+              </>
             )}
+          </div>
+        )}
 
-            {/* Settings Tab */}
-            {activeTab === 'settings' && settings && (
+        {activeTab === 'settings' && (
+          loading ? (
+            <div className="text-center py-16">
+              <i className="fas fa-spinner fa-spin text-4xl text-primary"></i>
+              <p className="text-gray-400 mt-4">جاري التحميل...</p>
+            </div>
+          ) : (
+            settings && (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* General Settings */}
                 <DashboardCard title="الإعدادات العامة" icon="fas fa-toggle-on">
@@ -367,8 +458,8 @@ export default function TeacherGamificationPage() {
                   </div>
                 </DashboardCard>
               </div>
-            )}
-          </>
+            )
+          )
         )}
 
         {saving && (

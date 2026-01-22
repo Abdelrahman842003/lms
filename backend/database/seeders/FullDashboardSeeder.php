@@ -55,6 +55,7 @@ class FullDashboardSeeder extends Seeder
                         'teacher_id' => $teacher->id,
                         'grade_id' => $grade->id,
                         'group_id' => $group->id,
+                        'academy_id' => $teacher->academies->first()?->id,
                         'is_active' => true,
                         'subscription_start' => Carbon::now(),
                         'subscription_end' => Carbon::now()->addMonth(),

@@ -148,7 +148,7 @@ class PointService
     /**
      * Get weekly leaderboard for a teacher (paginated)
      */
-    public function getWeeklyLeaderboardPaginated(string $teacherId, int $perPage = 15, ?string $academyId = null): \Illuminate\Contracts\Pagination\LengthAwarePaginator
+    public function getWeeklyLeaderboardPaginated(string $teacherId, int $perPage = 15, ?string $academyId = null, ?string $gradeId = null, ?string $groupId = null): \Illuminate\Contracts\Pagination\LengthAwarePaginator
     {
         $query = PointTransaction::where('teacher_id', $teacherId)
             ->where('created_at', '>=', now()->startOfWeek())
@@ -158,17 +158,32 @@ class PointService
             ->with('student:id,name,avatar_key');
 
         // Filter by academy via student's enrollment (direct academy_id)
-        if ($academyId === null) {
-            $query->whereRaw('1 = 0'); // No selection = no data
-        } elseif ($academyId === 'independent') {
+        // Filter by academy via student's enrollment (direct academy_id)
+        if ($academyId === 'independent') {
             $query->whereHas('student.enrollments', function ($q) use ($teacherId) {
                 $q->where('teacher_id', $teacherId)
                   ->whereNull('academy_id');
             });
-        } else {
+        } elseif ($academyId) {
             $query->whereHas('student.enrollments', function ($q) use ($teacherId, $academyId) {
                 $q->where('teacher_id', $teacherId)
                   ->where('academy_id', $academyId);
+            });
+        }
+
+        // Filter by grade
+        if ($gradeId) {
+            $query->whereHas('student.enrollments', function ($q) use ($teacherId, $gradeId) {
+                $q->where('teacher_id', $teacherId)
+                  ->where('grade_id', $gradeId);
+            });
+        }
+
+        // Filter by group
+        if ($groupId) {
+            $query->whereHas('student.enrollments', function ($q) use ($teacherId, $groupId) {
+                $q->where('teacher_id', $teacherId)
+                  ->where('group_id', $groupId);
             });
         }
 
@@ -255,24 +270,38 @@ class PointService
     /**
      * Get all-time leaderboard for a teacher (paginated)
      */
-    public function getAllTimeLeaderboardPaginated(string $teacherId, int $perPage = 15, ?string $academyId = null): \Illuminate\Contracts\Pagination\LengthAwarePaginator
+    public function getAllTimeLeaderboardPaginated(string $teacherId, int $perPage = 15, ?string $academyId = null, ?string $gradeId = null, ?string $groupId = null): \Illuminate\Contracts\Pagination\LengthAwarePaginator
     {
         $query = StudentPoint::where('teacher_id', $teacherId)
             ->orderByDesc('total_points')
             ->with('student:id,name,avatar_key');
 
         // Filter by academy via student's enrollment (direct academy_id)
-        if ($academyId === null) {
-            $query->whereRaw('1 = 0'); // No selection = no data
-        } elseif ($academyId === 'independent') {
+        if ($academyId === 'independent') {
             $query->whereHas('student.enrollments', function ($q) use ($teacherId) {
                 $q->where('teacher_id', $teacherId)
                   ->whereNull('academy_id');
             });
-        } else {
+        } elseif ($academyId) {
             $query->whereHas('student.enrollments', function ($q) use ($teacherId, $academyId) {
                 $q->where('teacher_id', $teacherId)
                   ->where('academy_id', $academyId);
+            });
+        }
+
+        // Filter by grade
+        if ($gradeId) {
+            $query->whereHas('student.enrollments', function ($q) use ($teacherId, $gradeId) {
+                $q->where('teacher_id', $teacherId)
+                  ->where('grade_id', $gradeId);
+            });
+        }
+
+        // Filter by group
+        if ($groupId) {
+            $query->whereHas('student.enrollments', function ($q) use ($teacherId, $groupId) {
+                $q->where('teacher_id', $teacherId)
+                  ->where('group_id', $groupId);
             });
         }
             
