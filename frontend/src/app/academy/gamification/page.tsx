@@ -72,7 +72,7 @@ export default function AcademyGamificationPage() {
 
   const fetchGroups = async (gradeId: string) => {
     try {
-      const res = await getGroups(1, 100, { grade_id: gradeId }); // Fetch more groups
+      const res = await getGroups(1, 100, { grade_name: gradeId }); // Fetch groups filtered by grade name
       if (res && res.data && res.data.data) {
         setGroups(res.data.data);
       } else if (res && res.data && Array.isArray(res.data)) {

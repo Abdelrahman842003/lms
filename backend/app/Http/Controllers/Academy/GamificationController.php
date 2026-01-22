@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Services\PointService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class GamificationController extends Controller
 {
@@ -16,9 +17,33 @@ class GamificationController extends Controller
         $this->pointService = $pointService;
     }
 
+    /**
+     * Get the academy from the authenticated user or secretary
+     */
+    protected function getAcademy(Request $request): ?\App\Models\Academy
+    {
+        $user = Auth::user();
+        
+        if ($user instanceof \App\Models\Academy) {
+            return $user;
+        }
+        
+        // Secretary case - get academy via relationship
+        if ($user instanceof \App\Models\Secretary) {
+            return $user->academies()->first();
+        }
+        
+        return null;
+    }
+
     public function leaderboard(Request $request): JsonResponse
     {
-        $academy = $request->user(); // Assuming authenticated as Academy
+        $academy = $this->getAcademy($request);
+        
+        if (!$academy) {
+            return $this->errorResponse('Unauthorized', 403);
+        }
+        
         $perPage = (int) $request->input('per_page', 15);
         $gradeId = $request->input('grade_id');
         $groupId = $request->input('group_id');

@@ -25,7 +25,7 @@ class GroupController extends Controller
     {
         $academy = Auth::user();
         $perPage = (int) $request->input('per_page', 10);
-        $filters = $request->only(['search', 'grade_id', 'teacher_id']);
+        $filters = $request->only(['search', 'grade_id', 'grade_name', 'teacher_id']);
         
         $groups = $this->service->getGroups($academy, $filters, $perPage);
         

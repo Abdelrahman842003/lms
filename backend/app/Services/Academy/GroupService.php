@@ -21,6 +21,11 @@ class GroupService
         ->when(isset($filters['grade_id']), function ($query) use ($filters) {
             $query->where('grade_id', $filters['grade_id']);
         })
+        ->when(isset($filters['grade_name']), function ($query) use ($filters) {
+            $query->whereHas('grade', function ($q) use ($filters) {
+                $q->where('name', $filters['grade_name']);
+            });
+        })
         ->when(isset($filters['teacher_id']), function ($query) use ($filters) {
             $query->where('teacher_id', $filters['teacher_id']);
         })
