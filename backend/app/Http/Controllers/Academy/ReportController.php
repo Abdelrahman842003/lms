@@ -11,6 +11,7 @@ use App\Http\Requests\Academy\MonthlyReportRequest;
 use App\Services\Academy\ReportService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class ReportController extends Controller
 {
@@ -18,9 +19,32 @@ class ReportController extends Controller
         private ReportService $service
     ) {}
 
+    /**
+     * Get the academy from the authenticated user or secretary
+     */
+    protected function getAcademy(Request $request): ?\App\Models\Academy
+    {
+        $user = Auth::user();
+        
+        if ($user instanceof \App\Models\Academy) {
+            return $user;
+        }
+        
+        // Secretary case - get academy via relationship
+        if ($user instanceof \App\Models\Secretary) {
+            return $user->academies()->first();
+        }
+        
+        return null;
+    }
+
     public function attendanceReport(AttendanceReportRequest $request): JsonResponse
     {
-        $academy = $request->user();
+        $academy = $this->getAcademy($request);
+        
+        if (!$academy) {
+            return $this->errorResponse('Unauthorized', 403);
+        }
 
         $report = $this->service->generateAttendanceReport(
             $academy,
@@ -34,7 +58,11 @@ class ReportController extends Controller
 
     public function teachersReport(Request $request): JsonResponse
     {
-        $academy = $request->user();
+        $academy = $this->getAcademy($request);
+        
+        if (!$academy) {
+            return $this->errorResponse('Unauthorized', 403);
+        }
 
         $report = $this->service->generateTeachersReport($academy);
 
@@ -43,7 +71,11 @@ class ReportController extends Controller
 
     public function monthlyReport(MonthlyReportRequest $request): JsonResponse
     {
-        $academy = $request->user();
+        $academy = $this->getAcademy($request);
+        
+        if (!$academy) {
+            return $this->errorResponse('Unauthorized', 403);
+        }
 
         $report = $this->service->generateMonthlyReport(
             $academy,
@@ -56,7 +88,12 @@ class ReportController extends Controller
 
     public function exportPDF(ExportReportRequest $request)
     {
-        $academy = $request->user();
+        $academy = $this->getAcademy($request);
+        
+        if (!$academy) {
+            return $this->errorResponse('Unauthorized', 403);
+        }
+        
         $reportType = $request->validated('report_type');
         $reportData = [];
 
