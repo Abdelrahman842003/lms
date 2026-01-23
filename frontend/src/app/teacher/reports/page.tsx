@@ -250,13 +250,21 @@ export default function TeacherReportsPage() {
                 <div className="text-3xl font-bold text-white mb-1">
                   {report.summary.new_enrollments}
                 </div>
-                <div className="text-gray-400 text-sm">اشتراكات جديدة</div>
+                <div className="text-gray-400 text-sm">عدد الاشتراكات</div>
               </div>
               <div className="p-4 bg-secondary/20 rounded-xl border border-secondary/30">
                 <div className="text-3xl font-bold text-secondary mb-1">
                   {report.summary.calculated_revenue?.toLocaleString()} ج.م
                 </div>
                 <div className="text-gray-400 text-sm">مستحقات المنصة</div>
+                <div className="text-gray-500 text-xs mt-1">
+                  {report.summary.new_enrollments} × {
+                    report.summary.teacher_student_price || 
+                    (report.summary.new_enrollments > 0 
+                      ? Math.round(report.summary.calculated_revenue / report.summary.new_enrollments) 
+                      : 0)
+                  } ج.م
+                </div>
               </div>
             </div>
 
@@ -310,6 +318,42 @@ export default function TeacherReportsPage() {
               </div>
             </DashboardCard>
 
+            {/* Financial Details */}
+            {report.financial_details && (
+              <DashboardCard title="الملخص المالي" icon="fas fa-coins" className="mb-6">
+                <div className="bg-white/5 rounded-xl border border-white/10 overflow-hidden">
+                  <table className="w-full text-right">
+                    <thead className="bg-white/5 text-gray-400">
+                      <tr>
+                        <th className="p-4 font-medium">البند</th>
+                        <th className="p-4 font-medium">القيمة</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5 text-white">
+                      <tr className="hover:bg-white/5 transition-colors">
+                        <td className="p-4">صافي الأرباح للمدرس</td>
+                        <td className="p-4 font-bold text-primary">
+                          {report.financial_details.net_payments_to_teacher?.toLocaleString()} ج.م
+                        </td>
+                      </tr>
+                      <tr className="hover:bg-white/5 transition-colors">
+                        <td className="p-4">المدفوعات المستحقة للمنصة</td>
+                        <td className="p-4 font-bold text-warning">
+                          {report.financial_details.payments_due_to_platform?.toLocaleString()} ج.م
+                        </td>
+                      </tr>
+                      <tr className="hover:bg-white/5 transition-colors">
+                        <td className="p-4">الباقي من التسديد</td>
+                        <td className="p-4 font-bold text-info">
+                          {report.financial_details.remaining_balance?.toLocaleString()} ج.م
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </DashboardCard>
+            )}
+
             {/* Subscription Summary */}
             {/* Subscription Summary removed as per request */}
             {/* <DashboardCard title="ملخص الاشتراكات" icon="fas fa-coins" className="mb-6">
@@ -343,7 +387,7 @@ export default function TeacherReportsPage() {
                     <thead>
                       <tr className="border-b border-white/10">
                         <th className="text-right py-3 px-4 text-gray-400 font-medium">الشهر</th>
-                        <th className="text-right py-3 px-4 text-gray-400 font-medium">عدد الطلاب</th>
+                        <th className="text-right py-3 px-4 text-gray-400 font-medium">عدد الاشتراكات</th>
                         <th className="text-right py-3 px-4 text-gray-400 font-medium">المستحق</th>
                         <th className="text-right py-3 px-4 text-gray-400 font-medium">المدفوع</th>
                         <th className="text-right py-3 px-4 text-gray-400 font-medium">المتبقي</th>

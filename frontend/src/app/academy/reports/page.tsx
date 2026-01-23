@@ -21,6 +21,7 @@ const translateSummaryKey = (key: string): string => {
     'total_lectures_count': 'إجمالي المحاضرات',
     'total_exams_count': 'إجمالي الامتحانات',
     'total_secretaries_count': 'إجمالي السكيرتيرات',
+    'total_payment_transactions': 'عمليات الدفع',
     'total_enrollments': 'إجمالي الارتباطات',
     'total_attendance_logs': 'إجمالي سجلات الحضور',
     'total_days': 'إجمالي الأيام',
@@ -277,7 +278,7 @@ export default function ReportsPage() {
               {report.summary && (
                 <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4">
                   {Object.entries(report.summary)
-                    .filter(([key]) => !['total_days', 'average_duration_minutes', 'total_duration_minutes', 'total_checked_in', 'total_attendance_logs'].includes(key))
+                    .filter(([key]) => !['total_days', 'average_duration_minutes', 'total_duration_minutes', 'total_checked_in', 'total_attendance_logs', 'total_present', 'total_absent'].includes(key))
                     .map(([key, value]: any) => (
                     <div key={key} className="p-4 bg-white/5 rounded-xl border border-white/10">
                       <h4 className="text-gray-400 text-sm mb-1">

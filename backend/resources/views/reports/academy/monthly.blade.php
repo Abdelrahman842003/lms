@@ -225,13 +225,13 @@
                 </td>
                 <td style="width: 3%;"></td>
                 <td class="financial-cell financial-fees" style="width: 31%;">
-                    <span class="stat-number">{{ number_format($financial_details['platform_fees'], 2) }}</span>
-                    <span class="stat-label">رسوم المنصة ({{ $financial_details['platform_fee_percentage'] }}%)</span>
+                    <span class="stat-number">{{ number_format($financial_details['payments_due_to_platform'], 2) }}</span>
+                    <span class="stat-label">المدفوعات المستحقة للمنصة (جنيه)</span>
                 </td>
                 <td style="width: 3%;"></td>
                 <td class="financial-cell financial-net" style="width: 31%;">
-                    <span class="stat-number">{{ number_format($financial_details['net_revenue'], 2) }}</span>
-                    <span class="stat-label">صافي الإيرادات (جنيه)</span>
+                    <span class="stat-number">{{ number_format($financial_details['net_payments_to_academy'], 2) }}</span>
+                    <span class="stat-label">المدفوعات الصافية للأكاديمية (جنيه)</span>
                 </td>
             </tr>
         </table>

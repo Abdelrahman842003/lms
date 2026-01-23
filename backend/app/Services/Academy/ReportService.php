@@ -162,7 +162,7 @@ class ReportService
             ];
         }
 
-        // Get active subscriptions count in one query
+        // Get active subscriptions count in one query (filtered by selected period)
         $activeSubscriptionCounts = DB::table('enrollments')
             ->whereIn('teacher_id', $teacherIds)
             ->whereBetween('created_at', [$startDate, $endDate])
@@ -217,6 +217,12 @@ class ReportService
         // Platform fee calculation
         $academyStudentPrice = (float) Setting::getValue('academy_student_price', 0);
         
+        // Count total payment transactions in the period
+        $totalPaymentTransactions = PaymentLog::whereIn('teacher_id', $teacherIds)
+            ->whereBetween('confirmed_at', [$startDate, $endDate])
+            ->where('status', 'confirmed')
+            ->count();
+        
         $totalMonthsPaid = PaymentLog::whereIn('teacher_id', $teacherIds)
             ->whereBetween('confirmed_at', [$startDate, $endDate])
             ->where('status', 'confirmed')
@@ -236,9 +242,18 @@ class ReportService
 
         // Calculate additional stats
         
-        // Linked students count (Total active enrollments)
+        // Total unique students (distinct student IDs) in the selected period
+        $totalStudentsCount = \DB::table('enrollments')
+            ->whereIn('teacher_id', $teacherIds)
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->where('is_active', true)
+            ->distinct()
+            ->count('student_id');
+        
+        // Linked students count (Total active enrollments) in the selected period
         $linkedStudentsCount = \DB::table('enrollments')
             ->whereIn('teacher_id', $teacherIds)
+            ->whereBetween('created_at', [$startDate, $endDate])
             ->where('is_active', true)
             ->count();
 
@@ -276,10 +291,12 @@ class ReportService
             ],
             'summary' => [
                 'total_teachers' => $teachers->count(),
+                'total_students' => $totalStudentsCount,
                 'linked_students_count' => $linkedStudentsCount,
                 'total_lectures_count' => $totalLecturesCount,
                 'total_exams_count' => $totalExamsCount,
                 'total_secretaries_count' => $totalSecretariesCount,
+                'total_payment_transactions' => $totalPaymentTransactions,
                 ...$attendanceStats['summary'] ?? [],
             ],
             'financial_details' => [
