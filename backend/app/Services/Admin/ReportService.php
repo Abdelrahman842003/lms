@@ -109,6 +109,7 @@ class ReportService
      */
     public function getTeacherReport(Teacher $teacher, Carbon $startDate, Carbon $endDate): array
     {
+        $endDate = $endDate->copy()->endOfDay();
         $pricePerStudent = \App\Services\HelperService::getPricePerStudent();
 
         // Students data
@@ -234,6 +235,7 @@ class ReportService
      */
     public function getAcademyReport(Academy $academy, Carbon $startDate, Carbon $endDate): array
     {
+        $endDate = $endDate->copy()->endOfDay();
         $pricePerStudent = \App\Services\HelperService::getAcademyStudentPrice();
 
         // Teachers data
@@ -243,7 +245,7 @@ class ReportService
 
         // Students data (via teachers)
         // Since we don't have a direct relationship, we iterate over teachers
-        $academyTeachers = $academy->teachers()->with('enrollments')->get();
+        $academyTeachers = $academy->activeTeachers()->with('enrollments')->get();
         
         $totalEnrollments = 0;
         $activeEnrollments = 0;
@@ -251,19 +253,52 @@ class ReportService
 
         foreach ($academyTeachers as $teacher) {
             foreach ($teacher->enrollments as $enrollment) {
-                $totalEnrollments++;
-                if ($enrollment->is_active) {
-                    $activeEnrollments++;
+                // Filter by date to match Academy Report logic (All Active Enrollments up to End Date)
+                if ($enrollment->created_at <= $endDate) {
+                    $totalEnrollments++;
+                    if ($enrollment->is_active) {
+                        $activeEnrollments++;
+                    }
+                    $uniqueStudentIds[] = $enrollment->student_id;
                 }
-                $uniqueStudentIds[] = $enrollment->student_id;
             }
         }
         
         $totalAcademyStudents = count(array_unique($uniqueStudentIds));
 
-        // Calculate expected revenue (Total Enrollments * Price Per Student)
-        // Note: This is platform revenue from this academy's students
-        $expectedRevenue = $totalEnrollments * $pricePerStudent;
+        // Get teacher IDs for this academy
+        $teacherIds = $academyTeachers->pluck('id')->toArray();
+
+        // Calculate total months paid (subscriptions) in the period
+        $totalMonthsPaid = PaymentLog::whereIn('teacher_id', $teacherIds)
+            ->where('status', 'confirmed')
+            ->whereBetween('confirmed_at', [$startDate, $endDate])
+            ->sum('months');
+
+        // Count total payment transactions (confirmed payments)
+        $totalPaymentTransactions = PaymentLog::whereIn('teacher_id', $teacherIds)
+            ->where('status', 'confirmed')
+            ->whereBetween('confirmed_at', [$startDate, $endDate])
+            ->count();
+
+        // Calculate Platform Fees (Revenue for the Platform)
+        $platformFees = $totalMonthsPaid * $pricePerStudent;
+
+        // Calculate Total Revenue (Collected from Students)
+        // We need to sum up the price of grades for all active enrollments/payments
+        // For simplicity and to match Academy logic, we'll use the same query structure
+        $totalRevenue = \DB::table('enrollments')
+            ->join('grades', 'enrollments.grade_id', '=', 'grades.id')
+            ->whereIn('enrollments.teacher_id', $teacherIds)
+            ->whereBetween('enrollments.created_at', [$startDate, $endDate])
+            ->where('enrollments.is_active', 1)
+            ->sum('grades.price');
+
+        // Calculate Net Revenue (Academy Share)
+        $netRevenue = $totalRevenue - $platformFees;
+
+        // Expected Revenue for Platform (Same as Platform Fees)
+        $expectedRevenue = $platformFees;
 
         // Confirmed payments in period (from AcademyBilling)
         // We sum amount_paid from billings that fall within the selected months
@@ -315,10 +350,15 @@ class ReportService
                 'total_academy_students' => $totalAcademyStudents,
                 'total_enrollments' => $totalEnrollments,
                 'active_enrollments' => $activeEnrollments,
-                'expected_revenue' => $expectedRevenue,
+                'total_subscriptions' => (int) $totalMonthsPaid,
+                'total_payment_transactions' => $totalPaymentTransactions,
+                'expected_revenue' => $expectedRevenue, // Platform Fees
+                'total_revenue' => $totalRevenue, // Total from Students
+                'platform_fees' => $platformFees,
+                'net_revenue' => $netRevenue,
                 'confirmed_payments' => (float) $confirmedPayments,
-                'remaining_balance' => $expectedRevenue - $confirmedPayments,
-                'payment_status' => $confirmedPayments == 0 ? 'لم يدفع' : ($expectedRevenue - $confirmedPayments <= 0 ? 'مدفوع' : 'متبقي دفعات'),
+                'remaining_balance' => $platformFees - $confirmedPayments,
+                'payment_status' => $confirmedPayments == 0 ? 'لم يدفع' : ($platformFees - $confirmedPayments <= 0 ? 'مدفوع' : 'متبقي دفعات'),
                 'price_per_student' => $pricePerStudent,
             ],
             'monthly_breakdown' => $monthlyData,
@@ -512,6 +552,7 @@ class ReportService
      */
     public function getAdminReport(Carbon $startDate, Carbon $endDate): array
     {
+        $endDate = $endDate->copy()->endOfDay();
         $pricePerStudent = \App\Services\HelperService::getPricePerStudent();
 
         // Overall counts
@@ -534,8 +575,13 @@ class ReportService
             ->whereBetween('confirmed_at', [$startDate, $endDate])
             ->sum('amount');
 
-        // Total calculated revenue
-        $totalRevenue = $activeEnrollments * $pricePerStudent;
+        // Total months paid (subscriptions) in the period
+        $totalMonthsPaid = PaymentLog::where('status', 'confirmed')
+            ->whereBetween('confirmed_at', [$startDate, $endDate])
+            ->sum('months');
+
+        // Total calculated revenue based on months paid (not enrollments)
+        $totalRevenue = $totalMonthsPaid * $pricePerStudent;
 
         // Teachers breakdown
         $teachersBreakdown = $this->getTeachersBreakdown($pricePerStudent, $startDate, $endDate);
@@ -560,6 +606,7 @@ class ReportService
                 'total_enrollments' => $totalEnrollments,
                 'active_enrollments' => $activeEnrollments,
                 'new_enrollments' => $newEnrollments,
+                'total_subscriptions' => (int) $totalMonthsPaid,
                 'confirmed_payments' => (float) $confirmedPayments,
                 'total_revenue' => $totalRevenue,
                 'price_per_student' => $pricePerStudent,
@@ -582,6 +629,13 @@ class ReportService
             ->groupBy('teacher_id')
             ->pluck('total_paid', 'teacher_id');
 
+        // Get months paid per teacher for revenue calculation
+        $monthsByTeacher = PaymentLog::where('status', 'confirmed')
+            ->whereBetween('confirmed_at', [$startDate, $endDate])
+            ->selectRaw('teacher_id, SUM(months) as total_months')
+            ->groupBy('teacher_id')
+            ->pluck('total_months', 'teacher_id');
+
         return Teacher::select('id', 'name', 'status', 'created_at')
             ->withCount([
                 'enrollments as total_students',
@@ -589,7 +643,8 @@ class ReportService
                 'secretaries'
             ])
             ->get()
-            ->map(function ($teacher) use ($pricePerStudent, $paymentsByTeacher) {
+            ->map(function ($teacher) use ($pricePerStudent, $paymentsByTeacher, $monthsByTeacher) {
+                $teacherMonths = $monthsByTeacher[$teacher->id] ?? 0;
                 return [
                     'id' => $teacher->id,
                     'name' => $teacher->name,
@@ -602,7 +657,8 @@ class ReportService
                     'total_students' => $teacher->total_students,
                     'active_students' => $teacher->active_students,
                     'secretaries' => $teacher->secretaries_count,
-                    'revenue' => $teacher->active_students * $pricePerStudent,
+                    'subscriptions' => (int) $teacherMonths,
+                    'revenue' => $teacherMonths * $pricePerStudent,
                     'paid' => (float) ($paymentsByTeacher[$teacher->id] ?? 0),
                     'joined' => $teacher->created_at->format('Y-m-d'),
                 ];

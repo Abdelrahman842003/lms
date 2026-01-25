@@ -11,6 +11,7 @@ use App\Models\Exam;
 use Carbon\Carbon;
 use App\Models\Setting;
 use App\Models\PaymentLog;
+use App\Models\AcademyBilling;
 use Illuminate\Support\Facades\DB;
 
 class ReportService
@@ -251,9 +252,10 @@ class ReportService
             ->count('student_id');
         
         // Linked students count (Total active enrollments) in the selected period
+        // Logic: Count all active enrollments that existed by the end of the period
         $linkedStudentsCount = \DB::table('enrollments')
             ->whereIn('teacher_id', $teacherIds)
-            ->whereBetween('created_at', [$startDate, $endDate])
+            ->where('created_at', '<=', $endDate)
             ->where('is_active', true)
             ->count();
 
@@ -270,13 +272,40 @@ class ReportService
         // Total secretaries
         $totalSecretariesCount = $academy->secretaries()->count();
 
-        // Calculate remaining balance
+        // Calculate remaining balance (Academy Debt to Platform)
+        // Logic: Platform Fees - Payments made by Academy to Platform
+        
+        // Restore this for 'total_confirmed_payments' field in response (Student Payments)
         $totalConfirmedPayments = PaymentLog::whereIn('teacher_id', $teacherIds)
             ->whereBetween('confirmed_at', [$startDate, $endDate])
             ->where('status', 'confirmed')
             ->sum('amount');
+        
+        $startMonth = $startDate->month;
+        $startYear = $startDate->year;
+        $endMonth = $endDate->month;
+        $endYear = $endDate->year;
 
-        $remainingBalance = $totalRevenue - $totalConfirmedPayments;
+        $totalPaidToPlatform = AcademyBilling::where('academy_id', $academy->id)
+            ->where(function($q) use ($startMonth, $startYear, $endMonth, $endYear) {
+                if ($startYear === $endYear) {
+                    $q->where('year', $startYear)
+                      ->whereBetween('month', [$startMonth, $endMonth]);
+                } else {
+                    $q->where(function($sub) use ($startMonth, $startYear) {
+                        $sub->where('year', $startYear)
+                            ->where('month', '>=', $startMonth);
+                    })->orWhere(function($sub) use ($endMonth, $endYear) {
+                        $sub->where('year', $endYear)
+                            ->where('month', '<=', $endMonth);
+                    })->orWhere(function($sub) use ($startYear, $endYear) {
+                        $sub->whereBetween('year', [$startYear + 1, $endYear - 1]);
+                    });
+                }
+            })
+            ->sum('amount_paid');
+
+        $remainingBalance = $platformFees - $totalPaidToPlatform;
 
         return [
             'academy' => [

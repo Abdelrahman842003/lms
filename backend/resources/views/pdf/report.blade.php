@@ -528,11 +528,13 @@
                             <td class="label">
                                 إجمالي الإيرادات
                                 <span style="color: #94a3b8; font-size: 9pt;">
-                                    ({{ $report['summary']['active_enrollments'] }} اشتراك ×
+                                    ({{ $report['summary']['total_subscriptions'] ?? 0 }} اشتراك ×
                                     {{ $report['summary']['price_per_student'] }} ج.م)
                                 </span>
                             </td>
-                            <td class="value money">{{ number_format($report['summary']['total_revenue'], 2) }} ج.م</td>
+                            <td class="value money">
+                                {{ number_format($report['summary']['total_revenue'] ?? $report['summary']['expected_revenue'] ?? 0, 2) }}
+                                ج.م</td>
                         </tr>
                     </table>
                 </div>

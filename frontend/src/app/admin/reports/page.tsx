@@ -53,6 +53,7 @@ function ReportsPage() {
   const [selectedAcademyId, setSelectedAcademyId] = useState<string>('');
   const [reportType, setReportType] = useState<ReportType>('admin');
   const [periodPreset, setPeriodPreset] = useState<PeriodPreset>('last_month');
+  const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
   const [customStartDate, setCustomStartDate] = useState('');
   const [customEndDate, setCustomEndDate] = useState('');
   const [report, setReport] = useState<any>(null);
@@ -119,6 +120,20 @@ function ReportsPage() {
       return `${year}-${month}-${day}`;
     };
 
+    // Override if specific month is selected
+    if (selectedMonth !== null) {
+      const year = today.getFullYear();
+      startDate = new Date(year, selectedMonth, 1);
+      // End of the selected month
+      const nextMonth = new Date(year, selectedMonth + 1, 1);
+      const lastDayOfMonth = new Date(nextMonth.getTime() - 86400000); // Subtract 1 day
+      
+      return {
+        start_date: formatDate(startDate),
+        end_date: formatDate(lastDayOfMonth),
+      };
+    }
+
     switch (periodPreset) {
       case 'last_month':
         // Current month only (from 1st of current month to today)
@@ -145,6 +160,8 @@ function ReportsPage() {
         startDate = new Date(today.getFullYear(), today.getMonth(), 1);
     }
 
+
+
     return {
       start_date: formatDate(startDate),
       end_date: formatDate(endDate),
@@ -163,7 +180,7 @@ function ReportsPage() {
       return;
     }
 
-    if (periodPreset === 'custom' && (!customStartDate || !customEndDate)) {
+    if (periodPreset === 'custom' && selectedMonth === null && (!customStartDate || !customEndDate)) {
       toast.error('يرجى تحديد تاريخ البداية والنهاية');
       return;
     }
@@ -227,6 +244,21 @@ function ReportsPage() {
     { value: 'last_6_months', label: 'آخر 6 شهور' },
     { value: 'last_year', label: 'آخر سنة' },
     { value: 'custom', label: 'مخصص' },
+  ];
+
+  const months = [
+    { value: 0, label: 'يناير' },
+    { value: 1, label: 'فبراير' },
+    { value: 2, label: 'مارس' },
+    { value: 3, label: 'أبريل' },
+    { value: 4, label: 'مايو' },
+    { value: 5, label: 'يونيو' },
+    { value: 6, label: 'يوليو' },
+    { value: 7, label: 'أغسطس' },
+    { value: 8, label: 'سبتمبر' },
+    { value: 9, label: 'أكتوبر' },
+    { value: 10, label: 'نوفمبر' },
+    { value: 11, label: 'ديسمبر' },
   ];
 
   // Monthly breakdown table columns
@@ -459,10 +491,11 @@ function ReportsPage() {
                     type="button"
                     onClick={() => {
                       setPeriodPreset(preset.value as PeriodPreset);
+                      setSelectedMonth(null); // Reset month selection
                       setReport(null);
                     }}
                     className={`px-4 py-2 rounded-lg transition-all text-sm ${
-                      periodPreset === preset.value
+                      periodPreset === preset.value && selectedMonth === null
                         ? 'bg-secondary text-white shadow-lg shadow-secondary/30'
                         : 'bg-white/5 text-gray-400 hover:bg-white/10'
                     }`}
@@ -472,8 +505,36 @@ function ReportsPage() {
                 ))}
               </div>
 
+              {/* Month Selection */}
+              <div className="mb-4">
+                <label className="block text-gray-300 mb-2 text-sm font-medium">الشهر</label>
+                <select
+                  value={selectedMonth === null ? '' : selectedMonth}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === '') {
+                      setSelectedMonth(null);
+                      setPeriodPreset('last_month'); // Default back to last month if month is cleared
+                    } else {
+                      setSelectedMonth(parseInt(val));
+                      setPeriodPreset('custom'); // Or any value that isn't one of the presets, to visually deselect them
+                    }
+                    setReport(null);
+                  }}
+                  className="w-full md:w-1/3 p-3 bg-[#1a1f37] border border-white/10 rounded-lg text-white outline-none focus:border-primary transition-all"
+                  style={{ colorScheme: 'dark' }}
+                >
+                  <option value="" className="bg-[#1a1f37] text-white">الكل</option>
+                  {months.map((month) => (
+                    <option key={month.value} value={month.value} className="bg-[#1a1f37] text-white">
+                      {month.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               {/* Custom Date Range */}
-              {periodPreset === 'custom' && (
+              {periodPreset === 'custom' && selectedMonth === null && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 p-4 bg-white/5 rounded-xl border border-white/10">
                   <div>
                     <label className="block text-gray-400 mb-2 text-sm">من تاريخ</label>
@@ -604,12 +665,20 @@ function ReportsPage() {
                     <div className="text-gray-400 text-sm">إجمالي الطلاب</div>
                   </div>
 
-                  {/* Total Enrollments */}
+                  {/* Active Students */}
                   <div className="p-4 bg-white/5 rounded-xl border border-white/10">
                     <div className="text-3xl font-bold text-white mb-1">
-                      {report.summary.total_enrollments}
+                      {report.summary.active_enrollments}
                     </div>
-                    <div className="text-gray-400 text-sm">إجمالي الارتباطات</div>
+                    <div className="text-gray-400 text-sm">الطلاب المرتبطين</div>
+                  </div>
+
+                  {/* Payment Transactions */}
+                  <div className="p-4 bg-white/5 rounded-xl border border-white/10">
+                    <div className="text-3xl font-bold text-white mb-1">
+                      {report.summary.total_payment_transactions || 0}
+                    </div>
+                    <div className="text-gray-400 text-sm">عمليات الدفع</div>
                   </div>
 
 
@@ -781,20 +850,21 @@ function ReportsPage() {
                             {reportType === 'academy' && (
                               <>
                                 <tr className="border-b border-white/5">
-                                  <td className="py-3 px-4 text-white">المدفوعات المعلقة</td>
-                                  <td className="py-3 px-4 text-warning font-semibold">
-                                    {report.summary.remaining_balance?.toLocaleString()} ج.م
+                                  <td className="py-3 px-4 text-white">المدفوعات الصافية للأكاديمية</td>
+                                  <td className="py-3 px-4 text-blue-400 font-semibold">
+                                    {report.summary.net_revenue?.toLocaleString()} ج.م
                                   </td>
                                 </tr>
                                 <tr className="border-b border-white/5">
-                                  <td className="py-3 px-4 text-white">
-                                    الإيرادات المحسوبة
-                                    <span className="text-gray-500 text-sm mr-2">
-                                      ({report.summary.total_enrollments} × {report.summary.price_per_student} ج.م)
-                                    </span>
+                                  <td className="py-3 px-4 text-white">المدفوعات المستحقة للمنصة</td>
+                                  <td className="py-3 px-4 text-warning font-semibold">
+                                    {report.summary.platform_fees?.toLocaleString()} ج.م
                                   </td>
-                                  <td className="py-3 px-4 text-secondary font-bold text-lg">
-                                    {report.summary.expected_revenue?.toLocaleString()} ج.م
+                                </tr>
+                                <tr className="border-b border-white/5">
+                                  <td className="py-3 px-4 text-white">الباقي من التسديد</td>
+                                  <td className="py-3 px-4 text-white font-semibold">
+                                    {report.summary.remaining_balance?.toLocaleString()} ج.م
                                   </td>
                                 </tr>
                                 <tr className="border-b border-white/5">
