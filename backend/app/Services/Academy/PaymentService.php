@@ -206,4 +206,76 @@ class PaymentService
             'is_duplicate' => false,
         ];
     }
+
+    /**
+     * Initiate InstaPay payment for academy billing
+     */
+    public function initiateInstapayPayment($user, \App\DTOs\Academy\InstapayPaymentData $data): array
+    {
+        // Get academy (either Academy or Secretary's academy)
+        $academy = null;
+        if ($user instanceof \App\Models\Academy) {
+            $academy = $user;
+        } elseif ($user instanceof \App\Models\Secretary) {
+            $academy = $user->academies()->first();
+        }
+
+        if (!$academy) {
+            throw new \Exception('غير مصرح', 403);
+        }
+
+        // Find or create billing record
+        $billing = \App\Models\AcademyBilling::firstOrCreate(
+            [
+                'academy_id' => $academy->id,
+                'month' => $data->month,
+                'year' => $data->year,
+            ],
+            [
+                'total_cost' => $data->amount,
+                'status' => 'pending',
+            ]
+        );
+
+        // Generate payment key if not exists
+        if (!$billing->payment_key) {
+            $billing->payment_key = \App\Models\AcademyBilling::generatePaymentKey();
+        }
+        
+        $billing->payment_initiated_at = now();
+        $billing->payment_method = 'instapay';
+        $billing->save();
+
+        // Get InstaPay number from settings
+        $instapayNumber = Setting::getValue('instapay_number', '');
+
+        // Build payment message
+        $months = [
+            1 => 'يناير', 2 => 'فبراير', 3 => 'مارس', 4 => 'أبريل',
+            5 => 'مايو', 6 => 'يونيو', 7 => 'يوليو', 8 => 'أغسطس',
+            9 => 'سبتمبر', 10 => 'أكتوبر', 11 => 'نوفمبر', 12 => 'ديسمبر'
+        ];
+        $monthName = $months[$data->month] ?? '';
+
+        $paymentMessage = "دفع اشتراك منصة نطاق\n";
+        $paymentMessage .= "================\n";
+        $paymentMessage .= "الكود: {$billing->payment_key}\n";
+        $paymentMessage .= "الأكاديمية: {$academy->name}\n";
+        $paymentMessage .= "الشهر: {$monthName} {$data->year}\n";
+        $paymentMessage .= "المبلغ: {$data->amount} ج.م\n";
+        $paymentMessage .= "عدد الطلاب: {$billing->total_students}\n";
+        $paymentMessage .= "================\n";
+        $paymentMessage .= "⚠️ لا تغير هذه الرسالة";
+
+        return [
+            'payment_key' => $billing->payment_key,
+            'instapay_number' => $instapayNumber,
+            'amount' => $data->amount,
+            'payment_message' => $paymentMessage,
+            'academy_name' => $academy->name,
+            'month' => $data->month,
+            'year' => $data->year,
+            'month_name' => $monthName,
+        ];
+    }
 }

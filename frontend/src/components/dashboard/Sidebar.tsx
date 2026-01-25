@@ -64,6 +64,12 @@ const getSidebarItems = (role: string): SidebarItem[] => {
         href: '/admin/reports',
       },
       {
+        id: 'platform_payments',
+        label: 'مدفوعات المنصة',
+        icon: 'fas fa-money-bill-wave',
+        href: '/admin/platform-payments',
+      },
+      {
         id: 'access_control',
         label: 'الصلاحيات',
         icon: 'fas fa-shield-alt',
@@ -234,7 +240,6 @@ const permissionMap: Record<string, string[]> = {
   notifications: ['send notifications'],
   attendance: ['manage lecture attendance'],
   reports: ['view reports'],
-  reports: ['view reports'],
   dashboard: ['view dashboard'],
   gamification: ['view dashboard'], // Everyone with dashboard access can see leaderboard
 };
@@ -322,6 +327,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ role, user, isOpen, onClose, p
           return item;
         });
     }
+
+    // Add Billing Item for Academy
+    items.push({
+      id: 'billing',
+      label: 'الاشتراكات',
+      icon: 'fas fa-file-invoice-dollar',
+      href: '/academy/billing',
+    });
   }
 
   const [expandedItems, setExpandedItems] = React.useState<string[]>([]);

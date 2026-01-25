@@ -10,6 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import * as academyService from '@/services/academyService';
 import toast from 'react-hot-toast';
+import { InstaPayModal } from '@/components/payments/InstaPayModal';
 
 
 
@@ -53,6 +54,11 @@ export default function ReportsPage() {
   const [month, setMonth] = useState(0);
   const [year, setYear] = useState(new Date().getFullYear());
   const [report, setReport] = useState<any>(null);
+  
+  // Payment Modal State
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentData, setPaymentData] = useState<any>(null);
+  const [isInitiatingPayment, setIsInitiatingPayment] = useState(false);
 
   React.useEffect(() => {
     if (!authLoading && (!isAuthenticated || user?.userType !== 'academy')) {
@@ -142,6 +148,29 @@ export default function ReportsPage() {
       setIsDownloading(false);
     }
   };
+
+  const handleInitiatePayment = async () => {
+    if (!report || !report.financial_details) return;
+    
+    setIsInitiatingPayment(true);
+    try {
+      const response = await academyService.initiateInstapayPayment({
+        month: month || new Date().getMonth() + 1,
+        year: year,
+        amount: report.financial_details.remaining_balance
+      });
+      
+      setPaymentData(response.data);
+      setShowPaymentModal(true);
+    } catch (error) {
+      console.error('Failed to initiate payment:', error);
+      toast.error('فشل إنشاء طلب الدفع');
+    } finally {
+      setIsInitiatingPayment(false);
+    }
+  };
+
+
 
   if (authLoading || !user || user.userType !== 'academy') {
     return (
@@ -324,6 +353,16 @@ export default function ReportsPage() {
                             <span className={`badge ${report.financial_details.payment_status === 'paid' ? 'badge-success' : 'badge-danger'}`}>
                               {report.financial_details.payment_status === 'paid' ? 'مدفوع' : 'غير مدفوع'}
                             </span>
+                            {report.financial_details.payment_status !== 'paid' && report.financial_details.remaining_balance > 0 && (
+                              <button
+                                onClick={handleInitiatePayment}
+                                disabled={isInitiatingPayment}
+                                className="mr-3 btn btn-sm btn-primary"
+                              >
+                                {isInitiatingPayment ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-credit-card ml-1"></i>}
+                                ادفع الآن
+                              </button>
+                            )}
                           </td>
                         </tr>
                       </tbody>
@@ -440,6 +479,15 @@ export default function ReportsPage() {
           </DashboardCard>
         )}
       </div>
+
+      {/* Payment Modal */}
+      {showPaymentModal && paymentData && (
+        <InstaPayModal
+          isOpen={showPaymentModal}
+          onClose={() => setShowPaymentModal(false)}
+          data={paymentData}
+        />
+      )}
     </DashboardLayout>
   );
 }

@@ -251,6 +251,16 @@ export const createGroup = async (data: any) => {
   return response.data;
 };
 
+// ========== Payments ==========
+export const initiateInstapayPayment = async (data: { month: number; year: number; amount: number }) => {
+  const response = await axios.post(
+    `${API_BASE_URL}/academy/payments/initiate-instapay`,
+    data,
+    { headers: getAuthHeaders() }
+  );
+  return response.data;
+};
+
 export const updateGroup = async (id: string, data: any) => {
   const response = await axios.put(
     `${API_BASE_URL}/academy/groups/${id}`,
@@ -798,6 +808,16 @@ export default {
   // Teachers
   getTeachers,
   getTeacher,
+
+  // Payments
+  initiateInstapayPayment: async (data: { month: number; year: number; amount: number }) => {
+    const response = await axios.post(
+      `${API_BASE_URL}/academy/payments/initiate-instapay`,
+      data,
+      { headers: getAuthHeaders() }
+    );
+    return response.data;
+  },
   addTeacher,
   removeTeacher,
   toggleTeacherStatus,

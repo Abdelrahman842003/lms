@@ -107,6 +107,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/academy-billings/{billing}', [\App\Http\Controllers\Admin\AcademyBillingController::class, 'show']);
         Route::put('/academy-billings/{billing}/status', [\App\Http\Controllers\Admin\AcademyBillingController::class, 'updateStatus']);
         Route::delete('/academy-billings/{billing}', [\App\Http\Controllers\Admin\AcademyBillingController::class, 'destroy']);
+
+        // Platform Payments (InstaPay)
+        Route::get('/platform-payments', [\App\Http\Controllers\Admin\PlatformPaymentsController::class, 'index']);
+        Route::get('/platform-payments/stats', [\App\Http\Controllers\Admin\PlatformPaymentsController::class, 'stats']);
+        Route::post('/platform-payments/{id}/confirm', [\App\Http\Controllers\Admin\PlatformPaymentsController::class, 'confirm']);
     });
 });
 
@@ -186,6 +191,7 @@ Route::middleware('auth:sanctum')->prefix('academy')->name('academy.')->group(fu
 
     // Payments
     Route::post('payments', [\App\Http\Controllers\Academy\PaymentController::class, 'store']);
+    Route::post('payments/initiate-instapay', [\App\Http\Controllers\Academy\PaymentController::class, 'initiateInstapayPayment']);
 
     // Gamification
     Route::get('/leaderboard', [\App\Http\Controllers\Academy\GamificationController::class, 'leaderboard']);

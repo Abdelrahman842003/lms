@@ -55,6 +55,7 @@ class SettingsService
             'siteDescription', 
             'maintenanceMode', 
             'whatsappNumber',
+            'instapay_number',
             'academy_student_price',
             'seo_title',
             'seo_description',
