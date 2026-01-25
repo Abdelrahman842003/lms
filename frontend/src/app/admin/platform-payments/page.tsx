@@ -12,31 +12,12 @@ function PlatformPaymentsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [payments, setPayments] = useState<any[]>([]);
   const [stats, setStats] = useState<any>(null);
-  const [pagination, setPagination] = useState({
-    current_page: 1,
-    last_page: 1,
-    total: 0,
-  });
-  const [filters, setFilters] = useState({
-    search: '',
-    month: 0,
-    year: new Date().getFullYear(),
-  });
 
-  const fetchPayments = async (page = 1) => {
+  const fetchPayments = async () => {
     setIsLoading(true);
     try {
-      const response = await platformPaymentService.getPlatformPayments(page, 15, {
-        search: filters.search,
-        month: filters.month > 0 ? filters.month : undefined,
-        year: filters.year,
-      });
-      setPayments(response.data.data);
-      setPagination({
-        current_page: response.data.current_page,
-        last_page: response.data.last_page,
-        total: response.data.total,
-      });
+      const response = await platformPaymentService.getPlatformPayments(1, 50);
+      setPayments(response.data.data || []);
     } catch (error) {
       console.error('Failed to fetch payments:', error);
       toast.error('فشل تحميل المدفوعات');
@@ -65,7 +46,7 @@ function PlatformPaymentsPage() {
     try {
       await platformPaymentService.confirmPlatformPayment(id);
       toast.success('تم تأكيد الدفع بنجاح');
-      fetchPayments(pagination.current_page);
+      fetchPayments();
       fetchStats();
     } catch (error) {
       console.error('Failed to confirm payment:', error);
@@ -73,116 +54,77 @@ function PlatformPaymentsPage() {
     }
   };
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    fetchPayments(1);
-  };
-
   return (
     <DashboardLayout role="admin">
       <div className="p-6 max-w-7xl mx-auto">
+        {/* Header */}
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-white mb-2">مدفوعات المنصة (InstaPay)</h1>
-          <p className="text-gray-400">إدارة وتأكيد مدفوعات الأكاديميات عبر InstaPay</p>
+          <h1 className="text-3xl font-bold text-white mb-2">
+            <i className="fas fa-money-check-alt text-primary ml-2"></i>
+            طلبات الدفع
+          </h1>
+          <p className="text-gray-400">إدارة وتأكيد طلبات الدفع من الأكاديميات عبر InstaPay</p>
         </div>
 
         {/* Stats Cards */}
         {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <DashboardCard title="طلبات معلقة" icon="fas fa-clock">
-              <div className="text-2xl font-bold text-warning">{stats.pending_count}</div>
-              <div className="text-sm text-gray-400">{stats.pending_amount} ج.م</div>
+              <div className="text-3xl font-bold text-warning mb-2">{stats.pending_count || 0}</div>
+              <div className="text-sm text-gray-400">{stats.pending_amount || 0} ج.م</div>
             </DashboardCard>
             <DashboardCard title="تم تأكيده هذا الشهر" icon="fas fa-check-circle">
-              <div className="text-2xl font-bold text-success">{stats.confirmed_this_month}</div>
-              <div className="text-sm text-gray-400">{stats.confirmed_amount_this_month} ج.م</div>
+              <div className="text-3xl font-bold text-success mb-2">{stats.confirmed_this_month || 0}</div>
+              <div className="text-sm text-gray-400">{stats.confirmed_amount_this_month || 0} ج.م</div>
             </DashboardCard>
           </div>
         )}
 
-        {/* Filters */}
-        <DashboardCard className="mb-6">
-          <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <input
-              type="text"
-              placeholder="بحث بكود الدفع أو اسم الأكاديمية..."
-              value={filters.search}
-              onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-              className="p-3 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary"
-            />
-            <select
-              value={filters.month}
-              onChange={(e) => setFilters({ ...filters, month: parseInt(e.target.value) })}
-              className="p-3 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary"
-            >
-              <option value="0">كل الشهور</option>
-              <option value="1">يناير</option>
-              <option value="2">فبراير</option>
-              <option value="3">مارس</option>
-              <option value="4">أبريل</option>
-              <option value="5">مايو</option>
-              <option value="6">يونيو</option>
-              <option value="7">يوليو</option>
-              <option value="8">أغسطس</option>
-              <option value="9">سبتمبر</option>
-              <option value="10">أكتوبر</option>
-              <option value="11">نوفمبر</option>
-              <option value="12">ديسمبر</option>
-            </select>
-            <input
-              type="number"
-              value={filters.year}
-              onChange={(e) => setFilters({ ...filters, year: parseInt(e.target.value) })}
-              className="p-3 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary"
-            />
-            <button type="submit" className="btn btn-primary">
-              <i className="fas fa-search ml-2"></i>
-              بحث
-            </button>
-          </form>
-        </DashboardCard>
-
         {/* Payments Table */}
-        <DashboardCard title="قائمة المدفوعات">
+        <DashboardCard title="قائمة المدفوعات" icon="fas fa-list">
           <DataTable
             columns={[
               { key: 'payment_key', label: 'كود الدفع' },
               { key: 'academy_name', label: 'الأكاديمية' },
               { key: 'month_name', label: 'الشهر' },
               { key: 'year', label: 'السنة' },
-              { key: 'total_cost', label: 'المبلغ', render: (val: number) => `${val} ج.م` },
-              { key: 'payment_initiated_at', label: 'تاريخ الطلب' },
+              { 
+                key: 'total_cost', 
+                label: 'المبلغ',
+                render: (value: number) => `${value} ج.م`
+              },
+              { 
+                key: 'payment_initiated_at', 
+                label: 'تاريخ الطلب',
+                render: (value: string) => value ? new Date(value).toLocaleDateString('ar-EG') : '-'
+              },
               {
                 key: 'status',
                 label: 'الحالة',
-                render: (val: string) => (
-                  <span className={`badge ${val === 'paid' ? 'badge-success' : 'badge-warning'}`}>
-                    {val === 'paid' ? 'مدفوع' : 'معلق'}
+                render: (value: string) => (
+                  <span className={`badge ${value === 'paid' ? 'badge-success' : 'badge-warning'}`}>
+                    {value === 'paid' ? 'مدفوع' : 'معلق'}
                   </span>
                 ),
               },
               {
                 key: 'actions',
                 label: 'إجراءات',
-                render: (_: any, row: any) => (
-                  row.status === 'pending' && (
+                render: (_: any, row: any) =>
+                  row.status === 'pending' ? (
                     <button
                       onClick={() => handleConfirm(row.id)}
                       className="btn btn-sm btn-success"
                       title="تأكيد الدفع"
                     >
-                      <i className="fas fa-check"></i> تأكيد
+                      <i className="fas fa-check ml-1"></i>
+                      تأكيد
                     </button>
-                  )
-                ),
+                  ) : null,
               },
             ]}
             data={payments}
             isLoading={isLoading}
-            pagination
-            currentPage={pagination.current_page}
-            totalPages={pagination.last_page}
-            onPageChange={fetchPayments}
           />
         </DashboardCard>
       </div>

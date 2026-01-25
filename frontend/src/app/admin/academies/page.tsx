@@ -115,8 +115,9 @@ const AcademyBillingModal = ({
           ) : subscriptionData ? (
             <>
               <div className="bg-white/5 rounded-lg p-4 space-y-2">
+
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-400">عدد الارتباطات:</span>
+                  <span className="text-gray-400">عدد الاشتراكات:</span>
                   <span className="text-white font-medium">{subscriptionData.student_count}</span>
                 </div>
                 <div className="flex justify-between text-sm">

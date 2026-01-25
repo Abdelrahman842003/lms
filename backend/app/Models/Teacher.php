@@ -64,7 +64,7 @@ class Teacher extends Authenticatable
     public function students()
     {
         return $this->belongsToMany(Student::class, 'enrollments')
-            ->withPivot(['grade_id', 'group_id', 'balance', 'is_active', 'subscription_start', 'subscription_end', 'teacher_notes'])
+            ->withPivot(['grade_id', 'group_id', 'balance', 'is_active', 'subscription_start', 'subscription_end', 'teacher_notes', 'academy_id'])
             ->withTimestamps();
     }
 

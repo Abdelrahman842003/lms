@@ -226,6 +226,8 @@ class ReportService
             'monthly_breakdown' => $monthlyData,
             'subscription_breakdown' => $subscriptionData,
             'student_account_breakdown' => $this->getStudentAccountBreakdown($teacher, $startDate, $endDate),
+            'month' => $startDate->month,
+            'year' => $startDate->year,
             'generated_at' => now()->format('Y-m-d H:i:s'),
         ];
     }

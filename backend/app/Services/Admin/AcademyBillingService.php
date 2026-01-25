@@ -9,6 +9,7 @@ use App\Models\AcademyBilling;
 use App\Models\Setting;
 use Carbon\Carbon;
 use Illuminate\Pagination\LengthAwarePaginator;
+use App\Models\PaymentLog;
 
 class AcademyBillingService
 {
@@ -44,21 +45,22 @@ class AcademyBillingService
         // Get cost per student from settings
         $costPerStudent = \App\Services\HelperService::getAcademyStudentPrice();
 
-        // Calculate total enrollments (All Enrollments)
-        // We use the same logic as in ReportService: All enrollments of all teachers
-        $teacherIds = $academy->teachers()->pluck('teachers.id')->toArray();
+        // Calculate total billable months (Platform Payments)
+        $teacherIds = $academy->activeTeachers()->pluck('teachers.id')->toArray();
         
-        $totalStudents = \Illuminate\Support\Facades\DB::table('enrollments')
-            ->whereIn('teacher_id', $teacherIds)
-            ->count();
+        $totalBillableMonths = PaymentLog::whereIn('teacher_id', $teacherIds)
+            ->whereYear('confirmed_at', $year)
+            ->whereMonth('confirmed_at', $month)
+            ->where('status', 'confirmed')
+            ->sum('months');
 
-        $totalCost = $totalStudents * $costPerStudent;
+        $totalCost = $totalBillableMonths * $costPerStudent;
 
         return AcademyBilling::create([
             'academy_id' => $academy->id,
             'month' => $month,
             'year' => $year,
-            'total_students' => $totalStudents,
+            'total_students' => $totalBillableMonths, // Storing billable months here
             'cost_per_student' => $costPerStudent,
             'total_cost' => $totalCost,
             'status' => 'pending',
@@ -131,27 +133,63 @@ class AcademyBillingService
             ->first();
 
         if ($billing) {
-            // If pending, refresh calculation to ensure it matches current data
-            if ($billing->status === 'pending') {
+            // Always recalculate for pending/partial to ensure accuracy
+            if ($billing->status !== 'paid') {
                 $costPerStudent = \App\Services\HelperService::getAcademyStudentPrice();
-                $teacherIds = $academy->teachers()->pluck('teachers.id')->toArray();
+                $teacherIds = $academy->activeTeachers()->pluck('teachers.id')->toArray();
                 
-                $currentTotalStudents = \Illuminate\Support\Facades\DB::table('enrollments')
-                    ->whereIn('teacher_id', $teacherIds)
-                    ->count();
+                $query = PaymentLog::whereIn('teacher_id', $teacherIds)
+                    ->whereYear('confirmed_at', $year)
+                    ->whereMonth('confirmed_at', $month)
+                    ->where('status', 'confirmed');
                 
-                $currentTotalCost = $currentTotalStudents * $costPerStudent;
+                $logs = $query->get();
+                $currentTotalBillableMonths = $logs->sum('months');
+                
+                // Debug logging
+                $debugInfo = [
+                    'time' => now()->toDateTimeString(),
+                    'academy_id' => $academy->id,
+                    'month' => $month,
+                    'year' => $year,
+                    'teacher_ids' => $teacherIds,
+                    'sql' => $query->toSql(),
+                    'bindings' => $query->getBindings(),
+                    'logs_count' => $logs->count(),
+                    'sum_months' => $currentTotalBillableMonths,
+                    'logs_details' => $logs->map(fn($l) => ['id' => $l->id, 'months' => $l->months, 'confirmed_at' => $l->confirmed_at])->toArray(),
+                ];
+                file_put_contents(storage_path('debug.txt'), print_r($debugInfo, true), FILE_APPEND);
+                
+                $currentTotalCost = $currentTotalBillableMonths * $costPerStudent;
 
-                if ($billing->total_students !== $currentTotalStudents || $billing->total_cost != $currentTotalCost) {
-                    $billing->total_students = $currentTotalStudents;
+                // Update DB if changed
+                if ($billing->total_students != $currentTotalBillableMonths || $billing->total_cost != $currentTotalCost) {
+                    $billing->total_students = $currentTotalBillableMonths;
                     $billing->total_cost = $currentTotalCost;
                     $billing->cost_per_student = $costPerStudent;
                     $billing->save();
+                    $billing->refresh();
                 }
+
+                // Return calculated values
+                return [
+                    'student_count' => (int) $currentTotalBillableMonths,
+                    'enrollment_count' => \Illuminate\Support\Facades\DB::table('enrollments')
+                        ->whereIn('teacher_id', $teacherIds)
+                        ->count(),
+                    'amount_due' => $currentTotalCost,
+                    'amount_paid' => $billing->amount_paid,
+                    'status' => $billing->status,
+                    'remaining' => max(0, $currentTotalCost - $billing->amount_paid),
+                ];
             }
 
             return [
-                'student_count' => $billing->total_students,
+                'student_count' => (int) $billing->total_students,
+                'enrollment_count' => \Illuminate\Support\Facades\DB::table('enrollments')
+                    ->whereIn('teacher_id', $academy->activeTeachers()->pluck('teachers.id')->toArray())
+                    ->count(),
                 'amount_due' => $billing->total_cost,
                 'amount_paid' => $billing->amount_paid,
                 'status' => $billing->status,
@@ -161,20 +199,24 @@ class AcademyBillingService
 
         // If not exists, calculate potential
         $costPerStudent = \App\Services\HelperService::getAcademyStudentPrice();
-        $totalStudents = 0;
         
-        // We need to calculate students active in that month
-        // This is an approximation using current active teachers
-        $teacherIds = $academy->teachers()->pluck('teachers.id')->toArray();
+        $teacherIds = $academy->activeTeachers()->pluck('teachers.id')->toArray();
         
-        $totalStudents = \Illuminate\Support\Facades\DB::table('enrollments')
+        $totalBillableMonths = PaymentLog::whereIn('teacher_id', $teacherIds)
+            ->whereYear('confirmed_at', $year)
+            ->whereMonth('confirmed_at', $month)
+            ->where('status', 'confirmed')
+            ->sum('months');
+
+        $totalCost = $totalBillableMonths * $costPerStudent;
+
+        $totalEnrollments = \Illuminate\Support\Facades\DB::table('enrollments')
             ->whereIn('teacher_id', $teacherIds)
             ->count();
 
-        $totalCost = $totalStudents * $costPerStudent;
-
         return [
-            'student_count' => $totalStudents,
+            'student_count' => (int) $totalBillableMonths,
+            'enrollment_count' => $totalEnrollments,
             'amount_due' => $totalCost,
             'amount_paid' => 0,
             'status' => 'pending',
@@ -210,12 +252,22 @@ class AcademyBillingService
             } else {
                 $billing->status = 'partial';
             }
+
+            // Generate payment key if not exists (for manual payments tracking)
+            if (!$billing->payment_key) {
+                $billing->payment_key = AcademyBilling::generatePaymentKey();
+                $billing->payment_initiated_at = Carbon::now();
+                $billing->payment_method = 'manual';
+            }
             
             $billing->save();
         }
 
         return [
-            'student_count' => $billing->total_students,
+            'student_count' => (int) $billing->total_students,
+            'enrollment_count' => \Illuminate\Support\Facades\DB::table('enrollments')
+                ->whereIn('teacher_id', $academy->activeTeachers()->pluck('teachers.id')->toArray())
+                ->count(),
             'amount_due' => $billing->total_cost,
             'amount_paid' => $billing->amount_paid,
             'status' => $billing->status,

@@ -17,52 +17,122 @@ class PlatformPaymentsController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $query = AcademyBilling::with('academy')
-            ->awaitingInstapayConfirmation()
-            ->orderBy('payment_initiated_at', 'desc');
+        $perPage = $request->get('per_page', 15);
+        $search = $request->get('search');
+        $month = $request->get('month');
+        $year = $request->get('year');
 
-        // Filter by search (payment key or academy name)
-        if ($search = $request->get('search')) {
-            $query->where(function ($q) use ($search) {
+        // Academy Billings Query
+        $academyQuery = AcademyBilling::with('academy')
+            ->select([
+                'id',
+                'academy_id as entity_id',
+                'month',
+                'year',
+                'total_cost as amount',
+                'amount_paid',
+                'payment_key',
+                'payment_initiated_at',
+                'status',
+                \Illuminate\Support\Facades\DB::raw("'academy' as type")
+            ])
+            ->awaitingInstapayConfirmation();
+
+        if ($search) {
+            $academyQuery->where(function ($q) use ($search) {
                 $q->where('payment_key', 'like', "%{$search}%")
                   ->orWhereHas('academy', function ($aq) use ($search) {
                       $aq->where('name', 'like', "%{$search}%");
                   });
             });
         }
+        if ($month) $academyQuery->where('month', $month);
+        if ($year) $academyQuery->where('year', $year);
 
-        // Filter by month
-        if ($month = $request->get('month')) {
-            $query->where('month', $month);
+        // Teacher Subscriptions Query
+        $teacherQuery = \App\Models\TeacherSubscription::with('teacher')
+            ->select([
+                'id',
+                'teacher_id as entity_id',
+                \Illuminate\Support\Facades\DB::raw('MONTH(month) as month'),
+                \Illuminate\Support\Facades\DB::raw('YEAR(month) as year'),
+                'amount_due as amount',
+                'amount_paid',
+                'payment_key',
+                'payment_initiated_at',
+                'status',
+                \Illuminate\Support\Facades\DB::raw("'teacher' as type")
+            ])
+            ->awaitingInstapayConfirmation();
+
+        if ($search) {
+            $teacherQuery->where(function ($q) use ($search) {
+                $q->where('payment_key', 'like', "%{$search}%")
+                  ->orWhereHas('teacher', function ($tq) use ($search) {
+                      $tq->where('name', 'like', "%{$search}%");
+                  });
+            });
         }
+        if ($month) $teacherQuery->whereMonth('month', $month);
+        if ($year) $teacherQuery->whereYear('month', $year);
 
-        // Filter by year
-        if ($year = $request->get('year')) {
-            $query->where('year', $year);
-        }
+        // Combine and Paginate
+        // Note: Union pagination is tricky in Eloquent. 
+        // For simplicity and given expected low volume of *pending* payments, we'll fetch and merge.
+        // If volume grows, we should use a proper Union query builder or a view.
+        
+        $academyPayments = $academyQuery->get();
+        $teacherPayments = $teacherQuery->get();
+        
+        $allPayments = $academyPayments->concat($teacherPayments)->sortByDesc('payment_initiated_at');
+        
+        // Manual Pagination
+        $page = $request->get('page', 1);
+        $offset = ($page - 1) * $perPage;
+        $paginatedItems = $allPayments->slice($offset, $perPage)->values();
+        
+        $paginator = new \Illuminate\Pagination\LengthAwarePaginator(
+            $paginatedItems,
+            $allPayments->count(),
+            $perPage,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
 
-        $payments = $query->paginate($request->get('per_page', 15));
+        // Transform
+        $paginator->getCollection()->transform(function ($item) {
+            $entityName = $item->type === 'academy' 
+                ? ($item->academy->name ?? 'Unknown Academy') 
+                : ($item->teacher->name ?? 'Unknown Teacher');
 
-        // Transform the data
-        $payments->getCollection()->transform(function ($billing) {
             return [
-                'id' => $billing->id,
-                'academy_id' => $billing->academy_id,
-                'academy_name' => $billing->academy?->name ?? 'غير معروف',
-                'month' => $billing->month,
-                'year' => $billing->year,
-                'month_name' => $billing->month_name,
-                'total_cost' => $billing->total_cost,
-                'amount_paid' => $billing->amount_paid,
-                'remaining' => $billing->remaining_balance,
-                'total_students' => $billing->total_students,
-                'payment_key' => $billing->payment_key,
-                'payment_initiated_at' => $billing->payment_initiated_at?->format('Y-m-d H:i'),
-                'status' => $billing->status,
+                'id' => $item->id,
+                'entity_id' => $item->entity_id,
+                'entity_name' => $entityName,
+                'type' => $item->type, // 'academy' or 'teacher'
+                'month' => $item->month,
+                'year' => $item->year,
+                'month_name' => $this->getMonthName($item->month),
+                'total_cost' => $item->amount, // Unified field name for frontend
+                'amount_paid' => $item->amount_paid,
+                'remaining' => $item->amount - $item->amount_paid,
+                'payment_key' => $item->payment_key,
+                'payment_initiated_at' => $item->payment_initiated_at?->format('Y-m-d H:i'),
+                'status' => $item->status,
             ];
         });
 
-        return $this->successResponse($payments, 'تم استرجاع المدفوعات بنجاح');
+        return $this->successResponse($paginator, 'تم استرجاع المدفوعات بنجاح');
+    }
+
+    private function getMonthName(int $month): string
+    {
+        $months = [
+            1 => 'يناير', 2 => 'فبراير', 3 => 'مارس', 4 => 'أبريل',
+            5 => 'مايو', 6 => 'يونيو', 7 => 'يوليو', 8 => 'أغسطس',
+            9 => 'سبتمبر', 10 => 'أكتوبر', 11 => 'نوفمبر', 12 => 'ديسمبر'
+        ];
+        return $months[$month] ?? '';
     }
 
     /**
@@ -70,7 +140,15 @@ class PlatformPaymentsController extends Controller
      */
     public function confirm(Request $request, string $id): JsonResponse
     {
-        $billing = AcademyBilling::find($id);
+        $type = $request->input('type', 'academy'); // Default to academy for backward compatibility
+        
+        if ($type === 'teacher') {
+            $billing = \App\Models\TeacherSubscription::find($id);
+            $amountField = 'amount_due';
+        } else {
+            $billing = AcademyBilling::find($id);
+            $amountField = 'total_cost';
+        }
 
         if (!$billing) {
             return $this->errorResponse('الفاتورة غير موجودة', 404);
@@ -82,8 +160,16 @@ class PlatformPaymentsController extends Controller
 
         // Update billing
         $billing->status = 'paid';
-        $billing->paid_at = now();
-        $billing->amount_paid = $billing->total_cost;
+        // TeacherSubscription doesn't have paid_at in fillable usually, but let's check model
+        // AcademyBilling has paid_at. TeacherSubscription might not.
+        // Let's check TeacherSubscription migration/model.
+        // TeacherSubscription has amount_paid.
+        
+        if ($type === 'academy') {
+            $billing->paid_at = now();
+        }
+        
+        $billing->amount_paid = $billing->$amountField;
         $billing->notes = ($billing->notes ?? '') . "\nتم التأكيد بواسطة الأدمن عبر InstaPay: " . now()->format('Y-m-d H:i');
         $billing->save();
 

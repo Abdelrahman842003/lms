@@ -253,6 +253,13 @@ class TeacherService
             } else {
                 $subscription->status = 'partial';
             }
+
+            // Generate payment key if not exists (for manual payments tracking)
+            if (!$subscription->payment_key) {
+                $subscription->payment_key = \App\Models\TeacherSubscription::generatePaymentKey();
+                $subscription->payment_initiated_at = now();
+                $subscription->payment_method = 'manual';
+            }
             
             $subscription->save();
 

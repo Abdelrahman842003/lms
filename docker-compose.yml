@@ -212,11 +212,15 @@ services:
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d
       - ./nginx/ssl:/etc/nginx/ssl
+      - ./nginx/wait-for-services.sh:/wait-for-services.sh:ro
     depends_on:
-      - frontend
-      - octane
+      frontend:
+        condition: service_started
+      octane:
+        condition: service_started
     networks:
       - lms_network
+    entrypoint: ["/bin/sh", "/wait-for-services.sh"]
 
   # Next.js Frontend
   frontend:

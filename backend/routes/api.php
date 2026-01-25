@@ -277,6 +277,7 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureTeacherNotSuspende
 
     // Full Payment System for Independent Teacher
     Route::post('students/{student}/payments', [\App\Http\Controllers\Teacher\PaymentController::class, 'store']);
+    Route::post('payments/initiate-instapay', [\App\Http\Controllers\Teacher\PaymentController::class, 'initiateInstapayPayment']);
 
     // Sync Errors
     Route::get('sync-errors', [\App\Http\Controllers\Teacher\SyncErrorController::class, 'index']);

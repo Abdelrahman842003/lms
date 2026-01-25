@@ -18,6 +18,9 @@ class TeacherSubscription extends Model
         'amount_paid',
         'status',
         'notes',
+        'payment_key',
+        'payment_initiated_at',
+        'payment_method',
     ];
 
     protected $casts = [
@@ -25,10 +28,40 @@ class TeacherSubscription extends Model
         'student_count' => 'integer',
         'amount_due' => 'decimal:2',
         'amount_paid' => 'decimal:2',
+        'payment_initiated_at' => 'datetime',
     ];
 
     public function teacher()
     {
         return $this->belongsTo(Teacher::class);
+    }
+
+    /**
+     * Scope for billings awaiting InstaPay confirmation
+     */
+    public function scopeAwaitingInstapayConfirmation($query)
+    {
+        return $query->whereNotNull('payment_key')
+                     ->where('status', '!=', 'paid')
+                     ->whereNotNull('payment_initiated_at');
+    }
+
+    /**
+     * Generate unique payment key
+     */
+    public static function generatePaymentKey(): string
+    {
+        $chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        
+        do {
+            $code = 'PAY-';
+            for ($i = 0; $i < 8; $i++) {
+                $code .= $chars[random_int(0, strlen($chars) - 1)];
+            }
+
+            $exists = self::where('payment_key', $code)->exists();
+        } while ($exists);
+
+        return $code;
     }
 }

@@ -305,15 +305,15 @@ export default function ReportsPage() {
             <div className="space-y-6">
               {/* Summary Stats */}
               {report.summary && (
-                <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-3 md:gap-4">
                   {Object.entries(report.summary)
                     .filter(([key]) => !['total_days', 'average_duration_minutes', 'total_duration_minutes', 'total_checked_in', 'total_attendance_logs', 'total_present', 'total_absent'].includes(key))
                     .map(([key, value]: any) => (
-                    <div key={key} className="p-4 bg-white/5 rounded-xl border border-white/10">
-                      <h4 className="text-gray-400 text-sm mb-1">
+                    <div key={key} className="p-3 md:p-4 bg-white/5 rounded-xl border border-white/10">
+                      <h4 className="text-gray-400 text-xs md:text-sm mb-1">
                         {translateSummaryKey(key)}
                       </h4>
-                      <p className="text-white text-2xl font-bold">{value}</p>
+                      <p className="text-white text-lg md:text-2xl font-bold">{value}</p>
                     </div>
                   ))}
                 </div>
@@ -322,12 +322,48 @@ export default function ReportsPage() {
               {/* Financial Summary Detailed */}
               {report.financial_details && (
                 <div className="mt-6">
-                  <h3 className="text-white text-lg font-semibold mb-4 flex items-center gap-2">
+                  <h3 className="text-white text-base md:text-lg font-semibold mb-3 md:mb-4 flex items-center gap-2">
                     <i className="fas fa-coins text-primary"></i>
                     الملخص المالي
                   </h3>
                   <div className="bg-white/5 rounded-xl border border-white/10 overflow-hidden">
-                    <table className="w-full text-right">
+                    {/* Mobile View */}
+                    <div className="block md:hidden divide-y divide-white/5">
+                      <div className="p-4 space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-400 text-sm">المدفوعات الصافيه للاكاديميه</span>
+                          <span className="font-bold text-primary">{report.financial_details.net_payments_to_academy} ج.م</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-400 text-sm">المدفوعات المستحقه للمنصه</span>
+                          <span className="font-bold text-warning">{report.financial_details.payments_due_to_platform} ج.م</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-400 text-sm">الباقي من التسديد</span>
+                          <span className="font-bold text-info">{report.financial_details.remaining_balance} ج.م</span>
+                        </div>
+                        <div className="flex flex-col gap-3 pt-3 border-t border-white/10">
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-400">حاله الدفع</span>
+                            <span className={`badge ${report.financial_details.payment_status === 'paid' ? 'badge-success' : 'badge-danger'}`}>
+                              {report.financial_details.payment_status === 'paid' ? 'مدفوع' : 'غير مدفوع'}
+                            </span>
+                          </div>
+                          {report.financial_details.payment_status !== 'paid' && report.financial_details.remaining_balance > 0 && (
+                            <button
+                              onClick={handleInitiatePayment}
+                              disabled={isInitiatingPayment}
+                              className="btn btn-primary w-full"
+                            >
+                              {isInitiatingPayment ? <i className="fas fa-spinner fa-spin"></i> : <><i className="fas fa-credit-card ml-1"></i> ادفع الآن</>}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Desktop View */}
+                    <table className="hidden md:table w-full text-right">
                       <thead className="bg-white/5 text-gray-400">
                         <tr>
                           <th className="p-4 font-medium">البند</th>
@@ -350,19 +386,27 @@ export default function ReportsPage() {
                         <tr className="hover:bg-white/5 transition-colors">
                           <td className="p-4">حاله الدفع</td>
                           <td className="p-4">
-                            <span className={`badge ${report.financial_details.payment_status === 'paid' ? 'badge-success' : 'badge-danger'}`}>
-                              {report.financial_details.payment_status === 'paid' ? 'مدفوع' : 'غير مدفوع'}
-                            </span>
-                            {report.financial_details.payment_status !== 'paid' && report.financial_details.remaining_balance > 0 && (
-                              <button
-                                onClick={handleInitiatePayment}
-                                disabled={isInitiatingPayment}
-                                className="mr-3 btn btn-sm btn-primary"
-                              >
-                                {isInitiatingPayment ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-credit-card ml-1"></i>}
-                                ادفع الآن
-                              </button>
-                            )}
+                            <div className="flex flex-col gap-2">
+                              <span className={`badge ${report.financial_details.payment_status === 'paid' ? 'badge-success' : 'badge-danger'}`}>
+                                {report.financial_details.payment_status === 'paid' ? 'مدفوع' : 'غير مدفوع'}
+                              </span>
+                              {report.financial_details.payment_status !== 'paid' && report.financial_details.remaining_balance > 0 && (
+                                <button
+                                  onClick={handleInitiatePayment}
+                                  disabled={isInitiatingPayment}
+                                  className="btn btn-primary"
+                                >
+                                  {isInitiatingPayment ? (
+                                    <i className="fas fa-spinner fa-spin"></i>
+                                  ) : (
+                                    <>
+                                      <i className="fas fa-credit-card ml-1"></i>
+                                      ادفع الآن
+                                    </>
+                                  )}
+                                </button>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       </tbody>
