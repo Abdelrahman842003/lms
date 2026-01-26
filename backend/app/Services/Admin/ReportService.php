@@ -117,8 +117,8 @@ class ReportService
         $totalStudents = (clone $enrollmentsQuery)->count();
         $activeStudents = (clone $enrollmentsQuery)->where('is_active', true)->count();
         
-        // Total months paid in period (instead of new enrollments count)
-        $newEnrollments = PaymentLog::where('teacher_id', $teacher->id)
+        // Total months paid in period (Billable Months)
+        $billableMonths = PaymentLog::where('teacher_id', $teacher->id)
             ->where('status', 'confirmed')
             ->whereBetween('confirmed_at', [$startDate, $endDate])
             ->sum('months');
@@ -146,17 +146,13 @@ class ReportService
             ->count('student_id');
         
         // Platform fees calculation
-        $teacherStudentPrice = (float) Setting::getValue('teacher_student_price', 0);
+        // Use the unified HelperService price
+        $teacherStudentPrice = \App\Services\HelperService::getPricePerStudent();
         
-        $totalMonthsPaid = PaymentLog::where('teacher_id', $teacher->id)
-            ->where('status', 'confirmed')
-            ->whereBetween('confirmed_at', [$startDate, $endDate])
-            ->sum('months');
-        
-        $platformFees = $totalMonthsPaid * $teacherStudentPrice;
+        $platformFees = $billableMonths * $teacherStudentPrice;
 
         // Calculated revenue based on total months paid (subscriptions)
-        $calculatedRevenue = $newEnrollments * $teacherStudentPrice;
+        $calculatedRevenue = $billableMonths * $teacherStudentPrice;
 
         // Calculate total revenue from enrollments (similar to academy)
         $totalRevenue = \DB::table('enrollments')
@@ -181,6 +177,10 @@ class ReportService
         $totalPaid = array_sum(array_column($subscriptionData, 'amount_paid'));
         $totalRemaining = $totalDue - $totalPaid;
 
+        // Align platformFees with totalDue (Source of Truth)
+        $platformFees = $totalDue;
+        $calculatedRevenue = $totalDue; // For consistency
+
         return [
             'teacher' => [
                 'id' => $teacher->id,
@@ -202,7 +202,7 @@ class ReportService
             'summary' => [
                 'total_students' => $totalStudents,
                 'active_students' => $activeStudents,
-                'new_enrollments' => $newEnrollments,
+                'new_enrollments' => $billableMonths, // Keeping key name for frontend compatibility, but value is billable months
                 'total_secretaries' => $totalSecretaries,
                 'confirmed_payments' => (float) $confirmedPayments,
                 'pending_payments' => (float) $pendingPayments,
@@ -413,27 +413,34 @@ class ReportService
         $currentMonth = $startDate->copy()->startOfMonth();
         $lastMonth = $endDate->copy()->startOfMonth();
         
-        // Get teacher_student_price from settings
-        $teacherStudentPrice = (float) Setting::getValue('teacher_student_price', 0);
+        // Get teacher_student_price from settings (Unified)
+        $teacherStudentPrice = \App\Services\HelperService::getPricePerStudent();
         
         while ($currentMonth <= $lastMonth) {
             $monthStart = $currentMonth->copy()->startOfMonth();
             $monthEnd = $currentMonth->copy()->endOfMonth();
             
-            // Calculate total months paid in this specific month
-            $totalMonthsPaidInMonth = PaymentLog::where('teacher_id', $teacher->id)
-                ->where('status', 'confirmed')
-                ->whereBetween('confirmed_at', [$monthStart, $monthEnd])
-                ->sum('months');
-            
-            // Calculate amount due based on months paid
-            $amountDue = $totalMonthsPaidInMonth * $teacherStudentPrice;
-            
-            // Calculate amount paid (same as amount due for confirmed payments)
-            $amountPaid = $totalMonthsPaidInMonth > 0 ? $amountDue : 0;
-            
-            // Determine status
-            $status = $totalMonthsPaidInMonth > 0 ? 'paid' : 'pending';
+            // Try to find existing subscription record first (Source of Truth)
+            $subscription = TeacherSubscription::where('teacher_id', $teacher->id)
+                ->where('month', $monthStart->format('Y-m-d'))
+                ->first();
+
+            if ($subscription) {
+                $totalMonthsPaidInMonth = $subscription->student_count; // This stores billable months now
+                $amountDue = $subscription->amount_due;
+                $amountPaid = $subscription->amount_paid;
+                $status = $subscription->status;
+            } else {
+                // Fallback: Calculate on the fly (Potential Revenue)
+                $totalMonthsPaidInMonth = PaymentLog::where('teacher_id', $teacher->id)
+                    ->where('status', 'confirmed')
+                    ->whereBetween('confirmed_at', [$monthStart, $monthEnd])
+                    ->sum('months');
+                
+                $amountDue = $totalMonthsPaidInMonth * $teacherStudentPrice;
+                $amountPaid = 0; // No subscription record means no payment to platform yet
+                $status = 'pending';
+            }
             
             $months[] = [
                 'month' => $currentMonth->format('Y-m'),
@@ -441,7 +448,7 @@ class ReportService
                 'student_count' => (int) $totalMonthsPaidInMonth,
                 'amount_due' => (float) $amountDue,
                 'amount_paid' => (float) $amountPaid,
-                'amount_remaining' => 0.0,
+                'amount_remaining' => (float) ($amountDue - $amountPaid),
                 'status' => $status,
                 'status_label' => \App\Services\HelperService::getStatusLabel($status),
             ];
@@ -556,8 +563,17 @@ class ReportService
     {
         $endDate = $endDate->copy()->endOfDay();
         $pricePerStudent = \App\Services\HelperService::getPricePerStudent();
+        $academyStudentPrice = \App\Services\HelperService::getAcademyStudentPrice();
 
-        // Overall counts
+        // 1. Counts
+        $totalAcademies = Academy::count();
+        
+        // Independent Teachers: Teachers who do NOT belong to any academy OR have explicit subscription fee
+        $independentTeachersCount = Teacher::where(function($q) {
+            $q->whereDoesntHave('academies')
+              ->orWhere('subscription_fee', '>', 0);
+        })->count();
+        
         $totalTeachers = Teacher::count();
         $activeTeachers = Teacher::where('status', 'active')->count();
         $suspendedTeachers = Teacher::where('status', 'suspended')->count();
@@ -572,18 +588,42 @@ class ReportService
         $newStudents = Student::whereBetween('created_at', [$startDate, $endDate])->count();
         $newEnrollments = Enrollment::whereBetween('created_at', [$startDate, $endDate])->count();
 
-        // Payments in period
-        $confirmedPayments = PaymentLog::where('status', 'confirmed')
-            ->whereBetween('confirmed_at', [$startDate, $endDate])
-            ->sum('amount');
-
-        // Total months paid (subscriptions) in the period
-        $totalMonthsPaid = PaymentLog::where('status', 'confirmed')
+        // 2. Subscriptions (Months Paid) Calculation
+        
+        // A. Academy Subscriptions (Months paid by students in academies)
+        $academySubscriptions = PaymentLog::whereHas('enrollment', function($q) {
+                $q->whereNotNull('academy_id');
+            })
+            ->where('status', 'confirmed')
             ->whereBetween('confirmed_at', [$startDate, $endDate])
             ->sum('months');
 
-        // Total calculated revenue based on months paid (not enrollments)
-        $totalRevenue = $totalMonthsPaid * $pricePerStudent;
+        // B. Independent Subscriptions (Months paid by independent students)
+        $independentSubscriptions = PaymentLog::whereHas('enrollment', function($q) {
+                $q->whereNull('academy_id');
+            })
+            ->where('status', 'confirmed')
+            ->whereBetween('confirmed_at', [$startDate, $endDate])
+            ->sum('months');
+
+        // Total Subscriptions
+        $totalSubscriptions = $academySubscriptions + $independentSubscriptions;
+
+        // 3. Financial Summary Calculation
+        
+        // A. Independent Teachers Commission
+        $independentCommission = $independentSubscriptions * $pricePerStudent;
+
+        // B. Academy Revenue (Platform Share)
+        $academyPlatformShare = $academySubscriptions * $academyStudentPrice;
+
+        // C. Net Platform Profit
+        $netPlatformProfit = $independentCommission + $academyPlatformShare;
+
+        // Other financial stats (keeping for backward compatibility if needed, or general info)
+        $confirmedPayments = PaymentLog::where('status', 'confirmed')
+            ->whereBetween('confirmed_at', [$startDate, $endDate])
+            ->sum('amount');
 
         // Teachers breakdown
         $teachersBreakdown = $this->getTeachersBreakdown($pricePerStudent, $startDate, $endDate);
@@ -598,6 +638,9 @@ class ReportService
                 'duration_months' => $startDate->diffInMonths($endDate) + 1,
             ],
             'summary' => [
+                // Counts
+                'total_academies' => $totalAcademies,
+                'independent_teachers_count' => $independentTeachersCount,
                 'total_teachers' => $totalTeachers,
                 'active_teachers' => $activeTeachers,
                 'suspended_teachers' => $suspendedTeachers,
@@ -608,10 +651,20 @@ class ReportService
                 'total_enrollments' => $totalEnrollments,
                 'active_enrollments' => $activeEnrollments,
                 'new_enrollments' => $newEnrollments,
-                'total_subscriptions' => (int) $totalMonthsPaid,
-                'confirmed_payments' => (float) $confirmedPayments,
-                'total_revenue' => $totalRevenue,
+                
+                // Subscriptions
+                'total_subscriptions' => (int) $totalSubscriptions,
+                'academy_subscriptions' => (int) $academySubscriptions,
+                'independent_subscriptions' => (int) $independentSubscriptions,
+                
+                // Financials
+                'confirmed_payments' => (float) $confirmedPayments, // Total raw payments (might include full academy revenue before split if logic differs, but usually payment log tracks what was paid to platform? No, for academy it might be different. Sticking to calculated values for report)
+                'independent_commission' => (float) $independentCommission,
+                'academy_platform_share' => (float) $academyPlatformShare,
+                'net_platform_profit' => (float) $netPlatformProfit,
+                
                 'price_per_student' => $pricePerStudent,
+                'academy_student_price' => $academyStudentPrice,
             ],
             'teachers_breakdown' => $teachersBreakdown,
             'monthly_breakdown' => $monthlyData,

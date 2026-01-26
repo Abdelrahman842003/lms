@@ -210,10 +210,10 @@ class TeacherService
         $subscription = $teacher->subscriptions()->firstOrCreate(
             ['month' => $monthDate],
             [
-                'student_count' => $teacher->students()
-                    ->wherePivot('academy_id', null)
-                    ->wherePivot('created_at', '<=', $date->copy()->endOfMonth())
-                    ->count(),
+                'student_count' => \App\Models\PaymentLog::where('teacher_id', $teacherId)
+                    ->where('status', 'confirmed')
+                    ->whereBetween('confirmed_at', [$date->copy()->startOfMonth(), $date->copy()->endOfMonth()])
+                    ->sum('months'),
                 'amount_due' => $this->calculateAmountDue($teacher, $monthDate),
                 'amount_paid' => 0,
                 'status' => 'pending'
@@ -222,17 +222,21 @@ class TeacherService
 
         // If pending, refresh the calculation to ensure it's up to date
         if ($subscription->status === 'pending') {
-            // Calculate count for that specific month
+            // Calculate billable months for that specific month
+            $startOfMonth = \Carbon\Carbon::parse($monthDate)->startOfMonth();
             $endOfMonth = \Carbon\Carbon::parse($monthDate)->endOfMonth();
-            $currentCount = $teacher->students()
-                ->wherePivot('academy_id', null)
-                ->wherePivot('created_at', '<=', $endOfMonth)
-                ->count();
-                
-            $currentDue = $this->calculateAmountDue($teacher, $monthDate);
             
-            if ($subscription->student_count !== $currentCount || $subscription->amount_due !== $currentDue) {
-                $subscription->student_count = $currentCount;
+            $billableMonths = \App\Models\PaymentLog::where('teacher_id', $teacherId)
+                ->where('status', 'confirmed')
+                ->whereBetween('confirmed_at', [$startOfMonth, $endOfMonth])
+                ->sum('months');
+                
+            $currentDue = $billableMonths * \App\Services\HelperService::getPricePerStudent();
+            
+            // We store 'billable months' in student_count column for now to avoid schema change
+            // Ideally we should rename the column or add a new one, but this works for calculation
+            if ($subscription->student_count !== $billableMonths || $subscription->amount_due !== $currentDue) {
+                $subscription->student_count = $billableMonths;
                 $subscription->amount_due = $currentDue;
                 $subscription->save();
             }
@@ -292,22 +296,23 @@ class TeacherService
 
     private function calculateAmountDue(Teacher $teacher, ?string $month = null): float
     {
-        $query = $teacher->students();
-        
-        // Only count independent students (where academy_id is null)
-        $query->wherePivot('academy_id', null);
-        
+        // New Logic: Calculate based on PaymentLog (Commission/Fee per paid month)
+        // Similar to AcademyBillingService
+
+        $query = \App\Models\PaymentLog::where('teacher_id', $teacher->id)
+            ->where('status', 'confirmed');
+
         if ($month) {
+            $startOfMonth = \Carbon\Carbon::parse($month)->startOfMonth();
             $endOfMonth = \Carbon\Carbon::parse($month)->endOfMonth();
-            // Count students who were enrolled BEFORE or DURING this month
-            // We use the pivot table's created_at timestamp
-            $query->wherePivot('created_at', '<=', $endOfMonth);
+            
+            $query->whereBetween('confirmed_at', [$startOfMonth, $endOfMonth]);
         }
 
-        $count = $query->count();
+        $totalBillableMonths = $query->sum('months');
         $price = \App\Services\HelperService::getPricePerStudent();
         
-        return $count * $price;
+        return $totalBillableMonths * $price;
     }
 
     public function enableIndependent(string $teacherId): Teacher

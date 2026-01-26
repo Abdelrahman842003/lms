@@ -628,21 +628,9 @@ function ReportsPage() {
                   </div>
                   <div className="p-4 bg-white/5 rounded-xl border border-white/10">
                     <div className="text-3xl font-bold text-white mb-1">
-                      {report.summary.total_teachers}
+                      {report.summary.total_subscriptions}
                     </div>
-                    <div className="text-gray-400 text-sm">إجمالي المدرسين</div>
-                  </div>
-                  <div className="p-4 bg-white/5 rounded-xl border border-white/10">
-                    <div className="text-3xl font-bold text-white mb-1">
-                      {report.summary.total_students}
-                    </div>
-                    <div className="text-gray-400 text-sm">إجمالي الطلاب</div>
-                  </div>
-                  <div className="p-4 bg-white/5 rounded-xl border border-white/10">
-                    <div className="text-3xl font-bold text-white mb-1">
-                      {report.summary.total_enrollments}
-                    </div>
-                    <div className="text-gray-400 text-sm">إجمالي الارتباطات</div>
+                    <div className="text-gray-400 text-sm">إجمالي الاشتراكات</div>
                   </div>
                 </>
               )}
@@ -798,6 +786,26 @@ function ReportsPage() {
                         <tr className="border-b border-white/5 bg-white/5">
                           <td className="py-3 px-4 text-white font-bold" colSpan={2}>الأكاديميات</td>
                         </tr>
+                        <tr className="border-b border-white/5">
+                          <td className="py-3 px-4 text-gray-300 pr-8">إيرادات الأكاديميات (للمنصة)</td>
+                          <td className="py-3 px-4 text-success">
+                            {report.summary.academy_platform_share?.toLocaleString()} ج.م
+                          </td>
+                        </tr>
+
+                        {/* Platform Totals */}
+                        <tr className="border-b border-white/5 bg-white/5">
+                          <td className="py-3 px-4 text-white font-bold" colSpan={2}>إجماليات المنصة</td>
+                        </tr>
+                        <tr className="border-b border-white/5">
+                          <td className="py-3 px-4 text-gray-300 pr-8">صافي ربح المنصة</td>
+                          <td className="py-3 px-4 text-primary font-bold">
+                            {report.summary.net_platform_profit?.toLocaleString()} ج.م
+                          </td>
+                        </tr>
+                      </>
+                    ) : reportType === 'academy' ? (
+                      <>
                         <tr className="border-b border-white/5">
                           <td className="py-3 px-4 text-gray-300 pr-8">إيرادات الأكاديميات (للمنصة)</td>
                           <td className="py-3 px-4 text-success">
