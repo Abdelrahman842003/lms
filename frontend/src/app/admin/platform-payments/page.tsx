@@ -8,21 +8,41 @@ import { withAdminAuth } from '@/components/auth/withAdminAuth';
 import { toast } from 'react-hot-toast';
 import * as platformPaymentService from '@/services/platformPaymentService';
 
+import ConfirmationModal from '@/components/ui/ConfirmationModal';
+
 function PlatformPaymentsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [payments, setPayments] = useState<any[]>([]);
+  const [confirmedPayments, setConfirmedPayments] = useState<any[]>([]);
+  const [isConfirmedLoading, setIsConfirmedLoading] = useState(true);
   const [stats, setStats] = useState<any>(null);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [selectedPaymentId, setSelectedPaymentId] = useState<string | null>(null);
+  const [selectedPaymentType, setSelectedPaymentType] = useState<'academy' | 'teacher'>('academy');
+  const [isConfirming, setIsConfirming] = useState(false);
 
   const fetchPayments = async () => {
     setIsLoading(true);
     try {
-      const response = await platformPaymentService.getPlatformPayments(1, 50);
+      const response = await platformPaymentService.getPlatformPayments(1, 50, { status: 'pending' });
       setPayments(response.data.data || []);
     } catch (error) {
       console.error('Failed to fetch payments:', error);
       toast.error('فشل تحميل المدفوعات');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchConfirmedPayments = async () => {
+    setIsConfirmedLoading(true);
+    try {
+      const response = await platformPaymentService.getPlatformPayments(1, 50, { status: 'paid' });
+      setConfirmedPayments(response.data.data || []);
+    } catch (error) {
+      console.error('Failed to fetch confirmed payments:', error);
+    } finally {
+      setIsConfirmedLoading(false);
     }
   };
 
@@ -37,20 +57,33 @@ function PlatformPaymentsPage() {
 
   useEffect(() => {
     fetchPayments();
+    fetchConfirmedPayments();
     fetchStats();
   }, []);
 
-  const handleConfirm = async (id: string) => {
-    if (!confirm('هل أنت متأكد من تأكيد هذا الدفع؟')) return;
+  const openConfirmModal = (id: string, type: 'academy' | 'teacher') => {
+    setSelectedPaymentId(id);
+    setSelectedPaymentType(type);
+    setIsConfirmModalOpen(true);
+  };
 
+  const handleConfirmPayment = async () => {
+    if (!selectedPaymentId) return;
+
+    setIsConfirming(true);
     try {
-      await platformPaymentService.confirmPlatformPayment(id);
+      await platformPaymentService.confirmPlatformPayment(selectedPaymentId, selectedPaymentType);
       toast.success('تم تأكيد الدفع بنجاح');
       fetchPayments();
+      fetchConfirmedPayments();
       fetchStats();
+      setIsConfirmModalOpen(false);
+      setSelectedPaymentId(null);
     } catch (error) {
       console.error('Failed to confirm payment:', error);
       toast.error('فشل تأكيد الدفع');
+    } finally {
+      setIsConfirming(false);
     }
   };
 
@@ -81,11 +114,11 @@ function PlatformPaymentsPage() {
         )}
 
         {/* Payments Table */}
-        <DashboardCard title="قائمة المدفوعات" icon="fas fa-list">
+        <DashboardCard title="طلبات معلقة" icon="fas fa-clock" className="mb-6">
           <DataTable
             columns={[
               { key: 'payment_key', label: 'كود الدفع' },
-              { key: 'academy_name', label: 'الأكاديمية' },
+              { key: 'entity_name', label: 'الجهة' },
               { key: 'month_name', label: 'الشهر' },
               { key: 'year', label: 'السنة' },
               { 
@@ -113,7 +146,7 @@ function PlatformPaymentsPage() {
                 render: (_: any, row: any) =>
                   row.status === 'pending' ? (
                     <button
-                      onClick={() => handleConfirm(row.id)}
+                      onClick={() => openConfirmModal(row.id, row.type)}
                       className="btn btn-sm btn-success"
                       title="تأكيد الدفع"
                     >
@@ -127,6 +160,51 @@ function PlatformPaymentsPage() {
             isLoading={isLoading}
           />
         </DashboardCard>
+
+        {/* Confirmed Payments Table */}
+        <DashboardCard title="المدفوعات المؤكدة" icon="fas fa-check-double">
+          <DataTable
+            columns={[
+              { key: 'payment_key', label: 'كود الدفع' },
+              { key: 'entity_name', label: 'الجهة' },
+              { key: 'month_name', label: 'الشهر' },
+              { key: 'year', label: 'السنة' },
+              { 
+                key: 'total_cost', 
+                label: 'المبلغ',
+                render: (value: number) => `${value} ج.م`
+              },
+              { 
+                key: 'paid_at', 
+                label: 'تاريخ الدفع',
+                render: (value: string) => value ? new Date(value).toLocaleDateString('ar-EG') : '-'
+              },
+              {
+                key: 'status',
+                label: 'الحالة',
+                render: (value: string) => (
+                  <span className="badge badge-success">
+                    مدفوع
+                  </span>
+                ),
+              },
+            ]}
+            data={confirmedPayments}
+            isLoading={isConfirmedLoading}
+          />
+        </DashboardCard>
+
+        <ConfirmationModal
+          isOpen={isConfirmModalOpen}
+          title="تأكيد الدفع"
+          message="هل أنت متأكد من تأكيد هذا الدفع؟ لا يمكن التراجع عن هذا الإجراء."
+          confirmText="تأكيد الدفع"
+          cancelText="إلغاء"
+          onConfirm={handleConfirmPayment}
+          onCancel={() => setIsConfirmModalOpen(false)}
+          isProcessing={isConfirming}
+          variant="success"
+        />
       </div>
     </DashboardLayout>
   );

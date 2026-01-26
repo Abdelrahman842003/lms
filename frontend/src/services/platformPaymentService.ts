@@ -24,6 +24,7 @@ export const getPlatformPayments = async (page = 1, perPage = 15, filters: {
   search?: string;
   month?: number;
   year?: number;
+  status?: 'pending' | 'paid';
 } = {}) => {
   const response = await axios.get(`${API_BASE_URL}/admin/platform-payments`, {
     headers: getAuthHeaders(),
@@ -39,10 +40,10 @@ export const getPlatformPaymentStats = async () => {
   return response.data;
 };
 
-export const confirmPlatformPayment = async (id: string) => {
+export const confirmPlatformPayment = async (id: string, type: 'academy' | 'teacher' = 'academy') => {
   const response = await axios.post(
     `${API_BASE_URL}/admin/platform-payments/${id}/confirm`,
-    {},
+    { type },
     { headers: getAuthHeaders() }
   );
   return response.data;

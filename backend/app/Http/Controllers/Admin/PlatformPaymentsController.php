@@ -9,6 +9,8 @@ use App\Models\AcademyBilling;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class PlatformPaymentsController extends Controller
 {
@@ -21,11 +23,13 @@ class PlatformPaymentsController extends Controller
         $search = $request->get('search');
         $month = $request->get('month');
         $year = $request->get('year');
+        $status = $request->get('status', 'pending'); // pending or paid
 
         // Academy Billings Query
         $academyQuery = AcademyBilling::with('academy')
             ->select([
                 'id',
+                'academy_id', // Required for relationship
                 'academy_id as entity_id',
                 'month',
                 'year',
@@ -34,9 +38,20 @@ class PlatformPaymentsController extends Controller
                 'payment_key',
                 'payment_initiated_at',
                 'status',
+                'paid_at',
+                'updated_at', // Fallback for paid_at
                 \Illuminate\Support\Facades\DB::raw("'academy' as type")
-            ])
-            ->awaitingInstapayConfirmation();
+            ]);
+
+        if ($status === 'paid') {
+            $academyQuery->where('status', 'paid')
+                ->where(function($q) {
+                    $q->where('payment_method', 'instapay')
+                      ->orWhereNotNull('payment_key');
+                });
+        } else {
+            $academyQuery->awaitingInstapayConfirmation();
+        }
 
         if ($search) {
             $academyQuery->where(function ($q) use ($search) {
@@ -53,17 +68,28 @@ class PlatformPaymentsController extends Controller
         $teacherQuery = \App\Models\TeacherSubscription::with('teacher')
             ->select([
                 'id',
+                'teacher_id', // Required for relationship
                 'teacher_id as entity_id',
-                \Illuminate\Support\Facades\DB::raw('MONTH(month) as month'),
+                \Illuminate\Support\Facades\DB::raw('MONTH(month) as month_num'),
                 \Illuminate\Support\Facades\DB::raw('YEAR(month) as year'),
                 'amount_due as amount',
                 'amount_paid',
                 'payment_key',
                 'payment_initiated_at',
                 'status',
+                'updated_at as paid_at', // TeacherSubscription might not have paid_at, using updated_at as fallback for paid ones
                 \Illuminate\Support\Facades\DB::raw("'teacher' as type")
-            ])
-            ->awaitingInstapayConfirmation();
+            ]);
+
+        if ($status === 'paid') {
+            $teacherQuery->where('status', 'paid')
+                ->where(function($q) {
+                    $q->where('payment_method', 'instapay')
+                      ->orWhereNotNull('payment_key');
+                });
+        } else {
+            $teacherQuery->awaitingInstapayConfirmation();
+        }
 
         if ($search) {
             $teacherQuery->where(function ($q) use ($search) {
@@ -77,14 +103,17 @@ class PlatformPaymentsController extends Controller
         if ($year) $teacherQuery->whereYear('month', $year);
 
         // Combine and Paginate
-        // Note: Union pagination is tricky in Eloquent. 
-        // For simplicity and given expected low volume of *pending* payments, we'll fetch and merge.
-        // If volume grows, we should use a proper Union query builder or a view.
-        
         $academyPayments = $academyQuery->get();
         $teacherPayments = $teacherQuery->get();
         
-        $allPayments = $academyPayments->concat($teacherPayments)->sortByDesc('payment_initiated_at');
+        $allPayments = $academyPayments->concat($teacherPayments);
+        
+        // Sort by appropriate date
+        if ($status === 'paid') {
+            $allPayments = $allPayments->sortByDesc('paid_at');
+        } else {
+            $allPayments = $allPayments->sortByDesc('payment_initiated_at');
+        }
         
         // Manual Pagination
         $page = $request->get('page', 1);
@@ -105,19 +134,25 @@ class PlatformPaymentsController extends Controller
                 ? ($item->academy->name ?? 'Unknown Academy') 
                 : ($item->teacher->name ?? 'Unknown Teacher');
 
+            $month = $item->month_num ?? $item->month;
+            
+            // Determine paid_at date
+            $paidAt = $item->paid_at ?? $item->updated_at;
+
             return [
                 'id' => $item->id,
                 'entity_id' => $item->entity_id,
                 'entity_name' => $entityName,
                 'type' => $item->type, // 'academy' or 'teacher'
-                'month' => $item->month,
+                'month' => $month,
                 'year' => $item->year,
-                'month_name' => $this->getMonthName($item->month),
+                'month_name' => $this->getMonthName((int)$month),
                 'total_cost' => $item->amount, // Unified field name for frontend
                 'amount_paid' => $item->amount_paid,
                 'remaining' => $item->amount - $item->amount_paid,
                 'payment_key' => $item->payment_key,
                 'payment_initiated_at' => $item->payment_initiated_at?->format('Y-m-d H:i'),
+                'paid_at' => $paidAt ? (\Carbon\Carbon::parse($paidAt)->format('Y-m-d H:i')) : null,
                 'status' => $item->status,
             ];
         });
