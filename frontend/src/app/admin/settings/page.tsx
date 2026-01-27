@@ -22,7 +22,6 @@ function SettingsPage() {
     pricePerStudent: '0',
     academyPricePerStudent: '0',
     whatsappNumber: '',
-    instapayNumber: '',
   });
 
   const [seoSettings, setSeoSettings] = useState({
@@ -81,7 +80,6 @@ function SettingsPage() {
         if (data.pricePerStudent) setGeneralSettings(prev => ({ ...prev, pricePerStudent: data.pricePerStudent }));
         if (data.academy_student_price) setGeneralSettings(prev => ({ ...prev, academyPricePerStudent: data.academy_student_price }));
         if (data.whatsappNumber) setGeneralSettings(prev => ({ ...prev, whatsappNumber: data.whatsappNumber }));
-        if (data.instapay_number) setGeneralSettings(prev => ({ ...prev, instapayNumber: data.instapay_number }));
 
         // Update SEO Settings
         if (data.seo_title) setSeoSettings(prev => ({ ...prev, seo_title: data.seo_title }));
@@ -123,7 +121,6 @@ function SettingsPage() {
       { key: 'pricePerStudent', value: generalSettings.pricePerStudent, group: 'general' },
       { key: 'academy_student_price', value: generalSettings.academyPricePerStudent, group: 'general' },
       { key: 'whatsappNumber', value: generalSettings.whatsappNumber, group: 'general' },
-      { key: 'instapay_number', value: generalSettings.instapayNumber, group: 'general' },
       // SEO
       { key: 'seo_title', value: seoSettings.seo_title, group: 'seo' },
       { key: 'seo_description', value: seoSettings.seo_description, group: 'seo' },
@@ -259,23 +256,6 @@ function SettingsPage() {
                     <p className="text-xs text-gray-500 mt-1">يستخدم هذا الرقم في زر "تواصل مع الإدارة" على الصفحة الرئيسية</p>
                   </div>
 
-                  <div>
-                    <label className="block text-gray-300 mb-2 text-sm">رقم انستا باي (IPA)</label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        placeholder="username@instapay"
-                        value={generalSettings.instapayNumber}
-                        onChange={(e) => setGeneralSettings({...generalSettings, instapayNumber: e.target.value})}
-                        className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all pr-10"
-                        dir="ltr"
-                      />
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
-                        <i className="fas fa-money-bill-wave"></i>
-                      </div>
-                    </div>
-                    <p className="text-xs text-gray-500 mt-1">عنوان انستا باي (IPA) الذي ستستلم عليه المدفوعات من الأكاديميات</p>
-                  </div>
                 </div>
 
                 <div className="border-t border-white/10 pt-6">

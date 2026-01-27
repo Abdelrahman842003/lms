@@ -16,7 +16,7 @@ class ConfirmPaymentRequest extends FormRequest
         return [
             'enrollment_id' => 'required|exists:enrollments,id',
             'amount' => 'required|numeric|min:0',
-            'payment_method' => 'nullable|string|in:cash,vodafone,instapay,fawry',
+            'payment_method' => 'nullable|string|in:cash,vodafone,fawry',
             'notes' => 'nullable|string|max:500',
         ];
     }

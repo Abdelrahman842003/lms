@@ -108,10 +108,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::put('/academy-billings/{billing}/status', [\App\Http\Controllers\Admin\AcademyBillingController::class, 'updateStatus']);
         Route::delete('/academy-billings/{billing}', [\App\Http\Controllers\Admin\AcademyBillingController::class, 'destroy']);
 
-        // Platform Payments (InstaPay)
+        // Platform Payments
         Route::get('/platform-payments', [\App\Http\Controllers\Admin\PlatformPaymentsController::class, 'index']);
         Route::get('/platform-payments/stats', [\App\Http\Controllers\Admin\PlatformPaymentsController::class, 'stats']);
         Route::post('/platform-payments/{id}/confirm', [\App\Http\Controllers\Admin\PlatformPaymentsController::class, 'confirm']);
+
     });
 });
 
@@ -191,7 +192,6 @@ Route::middleware('auth:sanctum')->prefix('academy')->name('academy.')->group(fu
 
     // Payments
     Route::post('payments', [\App\Http\Controllers\Academy\PaymentController::class, 'store']);
-    Route::post('payments/initiate-instapay', [\App\Http\Controllers\Academy\PaymentController::class, 'initiateInstapayPayment']);
 
     // Gamification
     Route::get('/leaderboard', [\App\Http\Controllers\Academy\GamificationController::class, 'leaderboard']);
@@ -277,7 +277,6 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureTeacherNotSuspende
 
     // Full Payment System for Independent Teacher
     Route::post('students/{student}/payments', [\App\Http\Controllers\Teacher\PaymentController::class, 'store']);
-    Route::post('payments/initiate-instapay', [\App\Http\Controllers\Teacher\PaymentController::class, 'initiateInstapayPayment']);
 
     // Sync Errors
     Route::get('sync-errors', [\App\Http\Controllers\Teacher\SyncErrorController::class, 'index']);

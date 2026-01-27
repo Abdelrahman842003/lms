@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
-import { InstaPayModal } from '@/components/payments/InstaPayModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'react-hot-toast';
 import {
@@ -11,7 +10,6 @@ import {
   downloadMyTeacherReportPdf,
   ReportParams,
 } from '@/services/authService';
-import * as teacherService from '@/services/teacherService';
 
 type PeriodPreset = 'today' | 'last_month' | 'last_3_months' | 'last_6_months' | 'last_year' | 'custom';
 
@@ -20,13 +18,10 @@ export default function TeacherReportsPage() {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
-  const [isInitiatingPayment, setIsInitiatingPayment] = useState(false);
   const [periodPreset, setPeriodPreset] = useState<PeriodPreset>('last_month');
   const [customStartDate, setCustomStartDate] = useState('');
   const [customEndDate, setCustomEndDate] = useState('');
   const [report, setReport] = useState<any>(null);
-  const [showInstaPayModal, setShowInstaPayModal] = useState(false);
-  const [paymentData, setPaymentData] = useState<any>(null);
 
   // Calculate date range based on preset
   const getDateRange = (): ReportParams => {
@@ -121,40 +116,6 @@ export default function TeacherReportsPage() {
     }
   };
 
-  // Initiate Payment
-  const handleInitiatePayment = async () => {
-    if (!report || !report.month || !report.year) {
-      toast.error('لا يمكن بدء عملية الدفع');
-      return;
-    }
-
-    setIsInitiatingPayment(true);
-    try {
-      const response = await teacherService.initiateInstapayPayment({
-        month: report.month,
-        year: report.year,
-        amount: report.financial_details.remaining_balance,
-      });
-      
-      setPaymentData(response);
-      setShowInstaPayModal(true);
-      toast.success('تم إنشاء طلب الدفع بنجاح');
-    } catch (error: any) {
-      console.error('Failed to initiate payment:', error);
-      toast.error(error.response?.data?.message || 'فشل بدء عملية الدفع');
-    } finally {
-      setIsInitiatingPayment(false);
-    }
-  };
-
-  const handleCloseInstaPayModal = () => {
-    setShowInstaPayModal(false);
-    setPaymentData(null);
-    // Refresh report to update payment status
-    if (report) {
-      handleGenerateReport();
-    }
-  };
 
   const periodPresets = [
     { value: 'today', label: 'اليوم' },
@@ -392,15 +353,6 @@ export default function TeacherReportsPage() {
                           {report.financial_details.payment_status === 'paid' ? 'مدفوع' : 'غير مدفوع'}
                         </span>
                       </div>
-                      {report.financial_details.payment_status !== 'paid' && report.financial_details.remaining_balance > 0 && (
-                        <button
-                          onClick={handleInitiatePayment}
-                          disabled={isInitiatingPayment}
-                          className="btn btn-primary w-full"
-                        >
-                          {isInitiatingPayment ? <i className="fas fa-spinner fa-spin"></i> : <><i className="fas fa-credit-card ml-1"></i> ادفع الآن</>}
-                        </button>
-                      )}
                     </div>
                   </div>
                 </div>
@@ -440,22 +392,6 @@ export default function TeacherReportsPage() {
                             <span className={`badge ${report.financial_details.payment_status === 'paid' ? 'badge-success' : 'badge-danger'}`}>
                               {report.financial_details.payment_status === 'paid' ? 'مدفوع' : 'غير مدفوع'}
                             </span>
-                            {report.financial_details.payment_status !== 'paid' && report.financial_details.remaining_balance > 0 && (
-                              <button
-                                onClick={handleInitiatePayment}
-                                disabled={isInitiatingPayment}
-                                className="btn btn-primary"
-                              >
-                                {isInitiatingPayment ? (
-                                  <i className="fas fa-spinner fa-spin"></i>
-                                ) : (
-                                  <>
-                                    <i className="fas fa-credit-card ml-1"></i>
-                                    ادفع الآن
-                                  </>
-                                )}
-                              </button>
-                            )}
                           </div>
                         </td>
                       </tr>
@@ -593,11 +529,6 @@ export default function TeacherReportsPage() {
       </div>
 
       {/* InstaPay Modal */}
-      <InstaPayModal
-        isOpen={showInstaPayModal}
-        onClose={handleCloseInstaPayModal}
-        data={paymentData}
-      />
     </DashboardLayout>
   );
 }

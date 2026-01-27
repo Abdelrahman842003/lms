@@ -10,7 +10,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import * as academyService from '@/services/academyService';
 import toast from 'react-hot-toast';
-import { InstaPayModal } from '@/components/payments/InstaPayModal';
 
 
 
@@ -56,9 +55,6 @@ export default function ReportsPage() {
   const [report, setReport] = useState<any>(null);
   
   // Payment Modal State
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [paymentData, setPaymentData] = useState<any>(null);
-  const [isInitiatingPayment, setIsInitiatingPayment] = useState(false);
 
   React.useEffect(() => {
     if (!authLoading && (!isAuthenticated || user?.userType !== 'academy')) {
@@ -149,26 +145,6 @@ export default function ReportsPage() {
     }
   };
 
-  const handleInitiatePayment = async () => {
-    if (!report || !report.financial_details) return;
-    
-    setIsInitiatingPayment(true);
-    try {
-      const response = await academyService.initiateInstapayPayment({
-        month: month || new Date().getMonth() + 1,
-        year: year,
-        amount: report.financial_details.remaining_balance
-      });
-      
-      setPaymentData(response.data);
-      setShowPaymentModal(true);
-    } catch (error) {
-      console.error('Failed to initiate payment:', error);
-      toast.error('فشل إنشاء طلب الدفع');
-    } finally {
-      setIsInitiatingPayment(false);
-    }
-  };
 
 
 
@@ -349,15 +325,6 @@ export default function ReportsPage() {
                               {report.financial_details.payment_status === 'paid' ? 'مدفوع' : 'غير مدفوع'}
                             </span>
                           </div>
-                          {report.financial_details.payment_status !== 'paid' && report.financial_details.remaining_balance > 0 && (
-                            <button
-                              onClick={handleInitiatePayment}
-                              disabled={isInitiatingPayment}
-                              className="btn btn-primary w-full"
-                            >
-                              {isInitiatingPayment ? <i className="fas fa-spinner fa-spin"></i> : <><i className="fas fa-credit-card ml-1"></i> ادفع الآن</>}
-                            </button>
-                          )}
                         </div>
                       </div>
                     </div>
@@ -390,22 +357,6 @@ export default function ReportsPage() {
                               <span className={`badge ${report.financial_details.payment_status === 'paid' ? 'badge-success' : 'badge-danger'}`}>
                                 {report.financial_details.payment_status === 'paid' ? 'مدفوع' : 'غير مدفوع'}
                               </span>
-                              {report.financial_details.payment_status !== 'paid' && report.financial_details.remaining_balance > 0 && (
-                                <button
-                                  onClick={handleInitiatePayment}
-                                  disabled={isInitiatingPayment}
-                                  className="btn btn-primary"
-                                >
-                                  {isInitiatingPayment ? (
-                                    <i className="fas fa-spinner fa-spin"></i>
-                                  ) : (
-                                    <>
-                                      <i className="fas fa-credit-card ml-1"></i>
-                                      ادفع الآن
-                                    </>
-                                  )}
-                                </button>
-                              )}
                             </div>
                           </td>
                         </tr>
@@ -525,13 +476,6 @@ export default function ReportsPage() {
       </div>
 
       {/* Payment Modal */}
-      {showPaymentModal && paymentData && (
-        <InstaPayModal
-          isOpen={showPaymentModal}
-          onClose={() => setShowPaymentModal(false)}
-          data={paymentData}
-        />
-      )}
     </DashboardLayout>
   );
 }

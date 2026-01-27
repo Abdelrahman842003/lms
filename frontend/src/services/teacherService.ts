@@ -90,9 +90,3 @@ export const getGroups = async (gradeId?: string) => {
   return await fetchApi(`/teacher/groups${query}`);
 };
 
-export const initiateInstapayPayment = async (data: { month: number; year: number }) => {
-  return await fetchApi('/teacher/payments/initiate-instapay', {
-    method: 'POST',
-    body: JSON.stringify(data)
-  });
-};

@@ -38,23 +38,4 @@ class PaymentController extends Controller
             return $this->errorResponse($e->getMessage(), 422);
         }
     }
-    /**
-     * Initiate InstaPay payment for teacher subscription
-     */
-    public function initiateInstapayPayment(\App\Http\Requests\Academy\InitiateInstapayPaymentRequest $request): JsonResponse
-    {
-        try {
-            $teacher = $this->getTeacherFromRequest($request);
-            $data = $request->validated();
-            
-            $result = $this->service->initiateInstapayPayment($teacher, $data);
-
-            return $this->successResponse(
-                $result,
-                'تم إنشاء طلب الدفع بنجاح'
-            );
-        } catch (\Exception $e) {
-            return $this->errorResponse($e->getMessage(), $e->getCode() ?: 400);
-        }
-    }
 }
