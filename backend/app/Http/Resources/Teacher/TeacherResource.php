@@ -38,6 +38,7 @@ class TeacherResource extends JsonResource
             'status_key' => $this->status,
             'is_approved' => $this->status !== 'pending',
             'is_suspended' => $this->status === 'suspended',
+            'is_independent_active' => (bool) $this->is_independent_active,
             'joined' => $this->created_at->format('Y-m-d'),
             'created_at' => $this->created_at->toIso8601String(),
             'subscription_fee' => (float) $this->subscription_fee,

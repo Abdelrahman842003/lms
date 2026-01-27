@@ -52,6 +52,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/teachers/{teacher}/subscription', [\App\Http\Controllers\Admin\TeacherController::class, 'getSubscription']);
         Route::post('/teachers/{teacher}/subscription', [\App\Http\Controllers\Admin\TeacherController::class, 'updateSubscription']);
         Route::put('/teachers/{teacher}/toggle-status', [\App\Http\Controllers\Admin\TeacherController::class, 'toggleStatus']);
+        Route::put('/teachers/{teacher}/independent-status/toggle', [\App\Http\Controllers\Admin\TeacherController::class, 'toggleIndependentStatus']);
+        Route::put('/teachers/{teacher}/academies/{academy}/toggle-status', [\App\Http\Controllers\Admin\TeacherController::class, 'toggleAcademyStatus']);
         Route::post('/teachers/{teacher}/approve', [\App\Http\Controllers\Admin\TeacherController::class, 'approve']);
         Route::post('/teachers/{teacher}/enable-independent', [\App\Http\Controllers\Admin\TeacherController::class, 'enableIndependent']);
         Route::post('/teachers/{teacher}/disable-independent', [\App\Http\Controllers\Admin\TeacherController::class, 'disableIndependent']);

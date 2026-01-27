@@ -12,6 +12,7 @@ import { toast } from 'react-hot-toast';
 import { Avatar } from '@/components/ui';
 import { Filter } from '@/components/Filter';
 import AffiliationModal from '@/components/admin/teachers/AffiliationModal';
+import SuspendModal from '@/components/admin/teachers/SuspendModal';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 
 // Subscription Modal Component
@@ -185,6 +186,8 @@ export default function AdminTeachersPage() {
   const [selectedTeacher, setSelectedTeacher] = useState<any>(null);
   const [affiliationModalOpen, setAffiliationModalOpen] = useState(false);
   const [selectedTeacherForAffiliation, setSelectedTeacherForAffiliation] = useState<any>(null);
+  const [suspendModalOpen, setSuspendModalOpen] = useState(false);
+  const [teacherToSuspend, setTeacherToSuspend] = useState<any>(null);
 
 
 
@@ -487,6 +490,24 @@ export default function AdminTeachersPage() {
 
 
   const handleToggleStatus = async (teacher: any) => {
+    // Check if teacher has multiple affiliations
+    const hasIndependent = teacher.affiliation === 'independent' || teacher.affiliation === 'both';
+    const hasAcademies = teacher.academies && teacher.academies.length > 0;
+    
+    // If they have multiple contexts (Independent + Academy OR Multiple Academies), open modal
+    // Also open if they are just independent but we want to show the new modal style?
+    // Let's stick to the plan: Open modal if multiple affiliations OR if we want granular control.
+    // Actually, even for single affiliation, the new modal provides a clear "Global" vs "Context" distinction.
+    // But to avoid annoyance for simple cases, maybe only if multiple?
+    // User request: "when he belongs to more than one academy... a popup appears"
+    
+    if ((hasIndependent && hasAcademies) || (teacher.academies && teacher.academies.length > 1)) {
+      setTeacherToSuspend(teacher);
+      setSuspendModalOpen(true);
+      return;
+    }
+
+    // Default behavior for single affiliation (or just global toggle)
     try {
       await toggleTeacherStatus(teacher.id);
       toast.success('تم تغيير حالة المدرس بنجاح');
@@ -565,29 +586,36 @@ export default function AdminTeachersPage() {
       label: 'التبعية',
       sortable: false,
       render: (_: any, row: any) => {
-
-
-        if (row.affiliation === 'independent') {
-          return <span className="badge badge-info">مستقل</span>;
-        }
-
-        const academies = row.academies || [];
-        const academyBadges = academies.map((academy: any) => (
-          <span key={academy.id} className="badge badge-primary ml-1">
-            {academy.name}
-          </span>
-        ));
-
-        if (row.affiliation === 'both') {
-          return (
-            <div className="flex flex-wrap gap-1">
-              <span className="badge badge-info">مستقل</span>
-              {academyBadges}
-            </div>
-          );
-        }
-
-        return <div className="flex flex-wrap gap-1">{academyBadges}</div>;
+        return (
+          <div className="flex flex-wrap gap-2">
+            {/* Independent Badge */}
+            {(row.affiliation === 'independent' || row.affiliation === 'both') && (
+              <span 
+                className={`px-3 py-1 rounded-full text-xs font-medium border ${
+                  row.is_independent_active 
+                    ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' 
+                    : 'bg-red-500/10 text-red-400 border-red-500'
+                }`}
+              >
+                مستقل
+              </span>
+            )}
+            
+            {/* Academy Badges */}
+            {row.academies && row.academies.map((academy: any) => (
+              <span 
+                key={academy.id} 
+                className={`px-3 py-1 rounded-full text-xs font-medium border ${
+                  academy.pivot?.is_active
+                    ? 'bg-purple-500/10 text-purple-400 border-purple-500/20'
+                    : 'bg-red-500/10 text-red-400 border-red-500'
+                }`}
+              >
+                {academy.name}
+              </span>
+            ))}
+          </div>
+        );
       },
     },
     {
@@ -1078,6 +1106,44 @@ export default function AdminTeachersPage() {
             </div>
           </div>
         )}
+        {/* Suspend Modal */}
+        <SuspendModal
+          isOpen={suspendModalOpen}
+          onClose={() => {
+            setSuspendModalOpen(false);
+            setTeacherToSuspend(null);
+          }}
+          teacher={teacherToSuspend}
+          onSuccess={() => {
+            fetchTeachers(currentPage);
+            // Don't close immediately if we want to allow multiple toggles?
+            // Usually modals close on success. But here we might want to keep it open?
+            // The modal itself calls onSuccess. Let's keep it open or close it?
+            // If I close it, they have to reopen to toggle another thing.
+            // If I keep it open, I need to refresh the teacher data inside the modal.
+            // For now, let's close it to be simple, or update the teacher object.
+            // To update teacher object, I need to fetch it again or update local state.
+            // Let's close it for now.
+            setSuspendModalOpen(false);
+            setTeacherToSuspend(null);
+          }}
+        />
+
+        {/* Delete Confirmation Modal */}
+        <ConfirmationModal
+          isOpen={deleteModalOpen}
+          onCancel={() => {
+            setDeleteModalOpen(false);
+            setTeacherToDelete(null);
+          }}
+          onConfirm={confirmDelete}
+          title="حذف المدرس"
+          message={`هل أنت متأكد من حذف المدرس "${teacherToDelete?.name}"؟ لا يمكن التراجع عن هذا الإجراء.`}
+          confirmText="حذف"
+          cancelText="إلغاء"
+          variant="danger"
+          isProcessing={isDeleting}
+        />
       </div>
     </DashboardLayout>
   );

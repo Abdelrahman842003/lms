@@ -69,6 +69,26 @@ class TeacherController extends Controller
         );
     }
 
+    public function toggleIndependentStatus($id)
+    {
+        $teacher = $this->teacherService->toggleIndependentStatus($id);
+        
+        return $this->successResponse(
+            new TeacherResource($teacher),
+            'تم تغيير حالة المستقل للمدرس بنجاح'
+        );
+    }
+
+    public function toggleAcademyStatus($id, $academyId)
+    {
+        $teacher = $this->teacherService->toggleAcademyStatus($id, $academyId);
+        
+        return $this->successResponse(
+            new TeacherResource($teacher),
+            'تم تغيير حالة المدرس في الأكاديمية بنجاح'
+        );
+    }
+
     public function approve(Request $request, $id)
     {
         $approved = $request->input('approved', true);

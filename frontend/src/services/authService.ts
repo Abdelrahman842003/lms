@@ -639,6 +639,21 @@ export async function toggleTeacherStatus(id: string): Promise<any> {
   return res.teacher;
 }
 
+export async function toggleIndependentStatus(id: string): Promise<any> {
+  console.log('Toggling independent status for:', id);
+  const res = await fetchApi(`/admin/teachers/${id}/independent-status/toggle`, {
+    method: 'PUT',
+  });
+  return res.teacher;
+}
+
+export async function toggleTeacherAcademyStatus(teacherId: string, academyId: string): Promise<any> {
+  const res = await fetchApi(`/admin/teachers/${teacherId}/academies/${academyId}/toggle-status`, {
+    method: 'PUT',
+  });
+  return res.teacher;
+}
+
 /**
  * Approve teacher (Admin only)
  */

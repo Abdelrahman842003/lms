@@ -20,7 +20,9 @@ class TeacherService
             ->withCount(['enrollments as independent_enrollments_count' => function ($query) {
                 $query->whereNull('academy_id');
             }])
-            ->with(['academies:id,name', 'subscriptions' => function($q) {
+            ->with(['academies' => function($q) {
+                $q->select('academies.id', 'academies.name');
+            }, 'subscriptions' => function($q) {
                 $q->where('month', now()->startOfMonth()->format('Y-m-d'));
             }])
             ->when(isset($filters['status']) && $filters['status'] !== 'all', function ($query) use ($filters) {
@@ -156,6 +158,29 @@ class TeacherService
         \Illuminate\Support\Facades\Log::info("New status for teacher {$teacherId}: {$teacher->status}");
         
         return $teacher;
+    }
+
+    public function toggleIndependentStatus(string $teacherId): Teacher
+    {
+        $teacher = Teacher::findOrFail($teacherId);
+        $teacher->is_independent_active = !$teacher->is_independent_active;
+        $teacher->save();
+        
+        return $teacher;
+    }
+
+    public function toggleAcademyStatus(string $teacherId, string $academyId): Teacher
+    {
+        $teacher = Teacher::findOrFail($teacherId);
+        
+        $academy = $teacher->academies()->where('academy_id', $academyId)->firstOrFail();
+        
+        // Toggle is_active on pivot
+        $newStatus = !$academy->pivot->is_active;
+        
+        $teacher->academies()->updateExistingPivot($academyId, ['is_active' => $newStatus]);
+        
+        return $teacher->load('academies');
     }
 
     public function approveTeacher(string $teacherId): Teacher
@@ -323,6 +348,7 @@ class TeacherService
         // This marks the teacher as independent in our logic
         $defaultPrice = \App\Services\HelperService::getPricePerStudent();
         $teacher->subscription_fee = $defaultPrice > 0 ? $defaultPrice : 100;
+        $teacher->is_independent_active = true; // Ensure it's active when enabled
         
         $teacher->save();
         

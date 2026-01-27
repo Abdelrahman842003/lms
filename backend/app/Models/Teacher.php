@@ -25,6 +25,7 @@ class Teacher extends Authenticatable
         'status',
         'subscription_fee',
         'paid_amount',
+        'is_independent_active',
     ];
 
     protected $hidden = [
@@ -36,6 +37,7 @@ class Teacher extends Authenticatable
     {
         return [
             'password' => 'hashed',
+            'is_independent_active' => 'boolean',
         ];
     }
 
