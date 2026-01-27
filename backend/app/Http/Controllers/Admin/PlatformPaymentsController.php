@@ -220,26 +220,35 @@ class PlatformPaymentsController extends Controller
      */
     public function stats(): JsonResponse
     {
-        $pending = AcademyBilling::awaitingInstapayConfirmation()->count();
-        $pendingAmount = AcademyBilling::awaitingInstapayConfirmation()->sum('total_cost');
-        
-        $confirmedThisMonth = AcademyBilling::where('payment_method', 'instapay')
+        // Academy Stats
+        $academyConfirmedCount = AcademyBilling::where('payment_method', 'instapay')
             ->where('status', 'paid')
             ->whereMonth('paid_at', now()->month)
             ->whereYear('paid_at', now()->year)
             ->count();
 
-        $confirmedAmountThisMonth = AcademyBilling::where('payment_method', 'instapay')
+        $academyConfirmedAmount = AcademyBilling::where('payment_method', 'instapay')
             ->where('status', 'paid')
             ->whereMonth('paid_at', now()->month)
             ->whereYear('paid_at', now()->year)
             ->sum('amount_paid');
 
+        // Teacher Stats
+        $teacherConfirmedCount = \App\Models\TeacherSubscription::where('payment_method', 'instapay')
+            ->where('status', 'paid')
+            ->whereMonth('updated_at', now()->month) // Using updated_at as proxy for paid_at
+            ->whereYear('updated_at', now()->year)
+            ->count();
+
+        $teacherConfirmedAmount = \App\Models\TeacherSubscription::where('payment_method', 'instapay')
+            ->where('status', 'paid')
+            ->whereMonth('updated_at', now()->month)
+            ->whereYear('updated_at', now()->year)
+            ->sum('amount_paid');
+
         return $this->successResponse([
-            'pending_count' => $pending,
-            'pending_amount' => $pendingAmount,
-            'confirmed_this_month' => $confirmedThisMonth,
-            'confirmed_amount_this_month' => $confirmedAmountThisMonth,
+            'confirmed_this_month' => $academyConfirmedCount + $teacherConfirmedCount,
+            'confirmed_amount_this_month' => $academyConfirmedAmount + $teacherConfirmedAmount,
         ], 'تم استرجاع الإحصائيات بنجاح');
     }
 }

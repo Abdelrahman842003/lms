@@ -195,6 +195,11 @@ Route::middleware('auth:sanctum')->prefix('academy')->name('academy.')->group(fu
 
     // Gamification
     Route::get('/leaderboard', [\App\Http\Controllers\Academy\GamificationController::class, 'leaderboard']);
+
+    // Exams Management
+    Route::apiResource('exams', \App\Http\Controllers\Academy\ExamController::class);
+    Route::put('exams/{exam}/toggle-status', [\App\Http\Controllers\Academy\ExamController::class, 'toggleStatus']);
+    Route::post('exams/{exam}/end', [\App\Http\Controllers\Academy\ExamController::class, 'endExam']);
 });
 
 // ============================================
