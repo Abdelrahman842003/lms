@@ -189,7 +189,7 @@ Route::middleware('auth:sanctum')->prefix('academy')->name('academy.')->group(fu
     // Students Management
     Route::get('students/statistics', [\App\Http\Controllers\Academy\StudentController::class, 'statistics']);
     Route::get('students/search-phone', [\App\Http\Controllers\Academy\StudentController::class, 'searchByPhone']);
-    Route::put('students/{student}/toggle-status', [\App\Http\Controllers\Academy\StudentController::class, 'toggleStatus']);
+    Route::put('students/{id}/toggle-status', [\App\Http\Controllers\Academy\StudentController::class, 'toggleStatus']);
     Route::apiResource('students', \App\Http\Controllers\Academy\StudentController::class);
 
     // Payments

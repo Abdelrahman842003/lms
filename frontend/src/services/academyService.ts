@@ -630,10 +630,11 @@ export const deleteAcademyStudent = async (id: string) => {
   return response.data;
 };
 
-export const toggleAcademyStudentStatus = async (id: string) => {
-  const response = await axios.put(`${API_BASE_URL}/academy/students/${id}/toggle-status`, {}, {
-    headers: getAuthHeaders(),
-  });
+export const toggleAcademyStudentStatus = async (id: string, teacherId?: string) => {
+  const response = await axios.put(`${API_BASE_URL}/academy/students/${id}/toggle-status`, 
+    { teacher_id: teacherId }, 
+    { headers: getAuthHeaders() }
+  );
   return response.data;
 };
 

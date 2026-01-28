@@ -15,6 +15,7 @@ import toast from 'react-hot-toast';
 import { ConfirmationModal } from '@/components/ui';
 
 import { LinkTeacherModal } from './LinkTeacherModal';
+import { TeacherSelectionModal } from './TeacherSelectionModal';
 
 export default function AcademyStudentsPage() {
   const { user } = useAuth();
@@ -43,6 +44,16 @@ export default function AcademyStudentsPage() {
   // Link Teacher Modal State
   const [linkTeacherModalOpen, setLinkTeacherModalOpen] = useState(false);
   const [selectedStudentForLink, setSelectedStudentForLink] = useState<any>(null);
+
+  // Teacher Selection Modal State
+  const [teacherSelectionModalOpen, setTeacherSelectionModalOpen] = useState(false);
+  const [teacherSelectionConfig, setTeacherSelectionConfig] = useState({
+    student: null as any,
+    title: '',
+    message: '',
+    confirmText: '',
+    variant: 'danger' as 'danger' | 'success',
+  });
 
   // Teachers Popup State
   const [activeTeacherPopup, setActiveTeacherPopup] = useState<string | null>(null);
@@ -145,8 +156,61 @@ export default function AcademyStudentsPage() {
     setModalOpen(true);
   };
 
+  const handleTeacherSelectionConfirm = async (teacherId: string) => {
+    const student = teacherSelectionConfig.student;
+    const teacher = student.teachers.find((t: any) => t.id === teacherId);
+    const isDisabling = teacher?.is_active;
+    
+    try {
+      await toggleAcademyStudentStatus(student.id, teacherId);
+      // Manually update the local state to reflect changes immediately
+      setTeacherSelectionConfig(prev => {
+        if (!prev.student) return prev;
+        
+        const updatedTeachers = prev.student.teachers.map((t: any) => {
+          if (t.id === teacherId) {
+            return { ...t, is_active: !t.is_active };
+          }
+          return t;
+        });
+
+        return {
+          ...prev,
+          student: {
+            ...prev.student,
+            teachers: updatedTeachers
+          }
+        };
+      });
+
+      // Also refresh the main list in background
+      await fetchStudents();
+      
+      toast.success(`تم ${isDisabling ? 'تعطيل' : 'تفعيل'} الحساب بنجاح`);
+    } catch (error) {
+      console.error('Failed to toggle student status:', error);
+      toast.error(`فشل ${isDisabling ? 'تعطيل' : 'تفعيل'} الحساب`);
+    }
+  };
+
   const handleToggleStatus = (student: any) => {
+    // Check if student has multiple teachers
+    if (student.teachers && student.teachers.length > 1) {
+      setTeacherSelectionConfig({
+        student: student,
+        title: 'إدارة حالة الطالب',
+        message: '', // Not used in new design
+        confirmText: '', // Not used
+        variant: 'success', // Not used
+      });
+      setTeacherSelectionModalOpen(true);
+      return;
+    }
+
+    // If single teacher or no teachers (fallback), use existing logic but pass teacherId if available
+    const teacherId = student.teachers && student.teachers.length === 1 ? student.teachers[0].id : undefined;
     const isDisabling = student.is_active;
+    
     setModalConfig({
       title: isDisabling ? 'تعطيل الحساب' : 'تفعيل الحساب',
       message: `هل أنت متأكد من ${isDisabling ? 'تعطيل' : 'تفعيل'} حساب الطالب "${student.name}"؟`,
@@ -155,7 +219,7 @@ export default function AcademyStudentsPage() {
       onConfirm: async () => {
         try {
           setIsProcessing(true);
-          await toggleAcademyStudentStatus(student.id);
+          await toggleAcademyStudentStatus(student.id, teacherId);
           setModalOpen(false);
           fetchStudents();
           fetchStats();
@@ -208,12 +272,18 @@ export default function AcademyStudentsPage() {
     {
       key: 'teachers',
       label: 'المدرسين',
-      render: (_: any, row: any) => (
+      render: (_: any, row: any) => {
+        const hasInactiveTeacher = row.teachers?.some((t: any) => !t.is_active);
+        const hasTeachers = row.teachers && row.teachers.length > 0;
+        
+        return (
         <div className="flex items-center gap-2">
           <button 
             className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition-colors ${
-              (row.teachers && row.teachers.length > 0) 
-                ? 'bg-blue-100 text-blue-600 hover:bg-blue-200 cursor-pointer' 
+              hasTeachers
+                ? hasInactiveTeacher
+                  ? 'bg-red-100 text-red-600 hover:bg-red-200 cursor-pointer'
+                  : 'bg-blue-100 text-blue-600 hover:bg-blue-200 cursor-pointer' 
                 : 'bg-gray-100 text-gray-400 cursor-default'
             }`}
             onClick={(e) => {
@@ -230,7 +300,8 @@ export default function AcademyStudentsPage() {
             {row.teachers_count || 0}
           </button>
         </div>
-      ),
+        );
+      },
     },
     {
       key: 'phone',
@@ -391,6 +462,18 @@ export default function AcademyStudentsPage() {
           }}
         />
       )}
+
+      {/* Teacher Selection Modal */}
+      <TeacherSelectionModal
+        isOpen={teacherSelectionModalOpen}
+        onClose={() => setTeacherSelectionModalOpen(false)}
+        teachers={teacherSelectionConfig.student?.teachers || []}
+        onConfirm={handleTeacherSelectionConfirm}
+        title={teacherSelectionConfig.title}
+        message={teacherSelectionConfig.message}
+        confirmText={teacherSelectionConfig.confirmText}
+        variant={teacherSelectionConfig.variant}
+      />
 
       {/* Teachers Popup */}
       {activeTeacherPopup && typeof document !== 'undefined' && createPortal(

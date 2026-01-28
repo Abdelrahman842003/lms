@@ -273,22 +273,35 @@ class StudentController extends Controller
             return $this->errorResponse('Unauthorized', 403);
         }
 
-        $teacherIds = $academy->activeTeachers()->pluck('teachers.id');
-
-        $enrollment = Enrollment::whereIn('teacher_id', $teacherIds)
+        $query = Enrollment::where('academy_id', $academy->id)
             ->where(function ($q) use ($id) {
                 $q->where('id', $id)->orWhere('student_id', $id);
-            })
-            ->first();
+            });
+
+        if ($request->has('teacher_id')) {
+            $query->where('teacher_id', $request->teacher_id);
+        }
+
+        \Illuminate\Support\Facades\Log::info('Toggle Status Debug', [
+            'academy_id' => $academy->id,
+            'id_param' => $id,
+            'teacher_id_param' => $request->teacher_id,
+            'sql' => $query->toSql(),
+            'bindings' => $query->getBindings(),
+        ]);
+
+        $enrollment = $query->first();
 
         if (!$enrollment) {
-            return $this->errorResponse('Student not found', 404);
+            \Illuminate\Support\Facades\Log::warning('Enrollment not found for toggle status');
+            return $this->errorResponse('Student not found or not linked to this teacher', 404);
         }
 
         $enrollment = $this->service->toggleStatus($enrollment);
 
         return $this->successResponse([
             'is_active' => $enrollment->is_active,
+            'teacher_id' => $enrollment->teacher_id,
         ], $enrollment->is_active ? 'تم تفعيل حساب الطالب بنجاح' : 'تم تعطيل حساب الطالب بنجاح');
     }
 
