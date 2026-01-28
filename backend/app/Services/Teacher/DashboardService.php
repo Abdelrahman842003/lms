@@ -204,6 +204,7 @@ class DashboardService
     public function getTeacherAcademies(Teacher $teacher): Collection
     {
         $academies = $teacher->academies()
+            ->withPivot(['is_active'])
             ->get()
             ->map(function ($academy) {
                 return [
@@ -211,6 +212,9 @@ class DashboardService
                     'name' => $academy->name,
                     'logo' => $academy->logo_key ? url("/api/media/{$academy->logo_key}") : null,
                     'is_active' => $academy->is_active,
+                    'pivot' => [
+                        'is_active' => $academy->pivot->is_active,
+                    ],
                 ];
             });
 
@@ -219,7 +223,7 @@ class DashboardService
                 'id' => 'independent',
                 'name' => 'مدرس مستقل',
                 'logo' => null,
-                'is_active' => true,
+                'is_active' => (bool) $teacher->is_independent_active,
             ]);
         }
 

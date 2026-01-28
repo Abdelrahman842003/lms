@@ -150,6 +150,8 @@ export function AuthProvider({
               education_type: response.user.education_type,
               teachers: response.teachers || response.user.teachers,
               permissions: response.user.permissions,
+              is_independent_active: response.user.is_independent_active,
+              academies: response.academies || response.user.academies,
             };
 
             setUser(userData);
@@ -409,6 +411,8 @@ export function AuthProvider({
         education_type: response.user.education_type,
         teachers: response.teachers || response.user.teachers,
         permissions: response.user.permissions, // Secretary permissions
+        is_independent_active: response.user.is_independent_active,
+        academies: response.academies || response.user.academies,
       };
 
       setUser(userData);

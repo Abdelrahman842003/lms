@@ -8,6 +8,9 @@ interface Academy {
   name: string;
   logo: string | null;
   is_active: boolean;
+  pivot?: {
+    is_active: boolean | number;
+  };
 }
 
 interface AcademySelectorProps {
@@ -16,8 +19,9 @@ interface AcademySelectorProps {
 }
 
 export function AcademySelector({ isOpen, onClose }: AcademySelectorProps) {
-  const { selectedAcademy, selectAcademy } = useAuth();
+  const { selectedAcademy, selectAcademy, user } = useAuth();
   const [academies, setAcademies] = useState<Academy[]>([]);
+
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -30,17 +34,39 @@ export function AcademySelector({ isOpen, onClose }: AcademySelectorProps) {
   const fetchAcademies = async () => {
     try {
       setIsLoading(true);
-      const { getTeacherAcademies } = await import('@/services/authService');
-      const response: any = await getTeacherAcademies();
-      console.log('Full API response:', response);
+      const { getCurrentUser, getTeacherAcademies } = await import('@/services/authService');
       
+      // Fetch both academies list and user profile to get pivot data
+      const [response, userProfile] = await Promise.all([
+        getTeacherAcademies(),
+        getCurrentUser('teacher')
+      ]);
+
       // Handle both response formats: direct data or wrapped in data property
       const data = response.data || response;
-      console.log('Processed data:', data);
+      let academiesList: Academy[] = data.academies || [];
       
-      const academiesList = data.academies || [];
-      console.log('Academies list:', academiesList);
+      // Merge pivot data from user profile if available
+      if (userProfile.user && userProfile.user.academies) {
+        console.log('User Profile Academies for Merge:', userProfile.user.academies);
+        const userAcademies = userProfile.user.academies;
+        academiesList = academiesList.map(academy => {
+          // Loose equality check for ID to handle string/number differences
+          const userAcademy = userAcademies.find((ua: any) => ua.id == academy.id);
+          if (userAcademy) {
+             console.log(`Found matching academy for ${academy.name}:`, userAcademy);
+             if (userAcademy.pivot) {
+                return {
+                  ...academy,
+                  pivot: userAcademy.pivot
+                };
+             }
+          }
+          return academy;
+        });
+      }
       
+      console.log('Final Merged Academies List:', academiesList);
       setAcademies(academiesList);
     } catch (error) {
       console.error('Failed to fetch academies:', error);
@@ -94,58 +120,88 @@ export function AcademySelector({ isOpen, onClose }: AcademySelectorProps) {
             </div>
           ) : (
             <div className="space-y-3">
-              {academies.map((academy) => (
-                <button
-                  key={academy.id || 'independent'}
-                  onClick={() => handleSelectAcademy(academy)}
-                  className={`w-full flex items-center gap-4 p-4 rounded-xl border transition-all ${
-                    selectedAcademy?.id === academy.id
-                      ? 'border-primary-600 bg-primary-600/10'
-                      : 'border-white/10 hover:border-primary-600/50 hover:bg-white/5'
-                  }`}
-                >
-                  {/* Logo/Icon */}
-                  <div className="flex-shrink-0">
-                    {academy.logo ? (
-                      <img
-                        src={academy.logo}
-                        alt={academy.name}
-                        className="w-12 h-12 rounded-full object-cover ring-2 ring-white/10"
-                      />
-                    ) : (
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center ring-2 ring-primary-400/20">
-                        <i
-                          className={`fas ${
-                            academy.id ? 'fa-building' : 'fa-user-tie'
-                          } text-white text-lg`}
-                        ></i>
-                      </div>
-                    )}
-                  </div>
+              {academies.map((academy) => {
+                // Helper to check if active (handles boolean, string 'true'/'false', 1/0)
+                const isActive = (val: any) => {
+                  if (val === true || val === 1 || val === '1' || val === 'true') return true;
+                  return false;
+                };
 
-                  {/* Academy Info */}
-                  <div className="flex-1 text-right">
-                    <div className="font-semibold text-white text-base mb-1">
-                      {academy.name}
-                    </div>
-                    {!academy.is_active && academy.id && (
-                      <div className="text-xs text-yellow-400 flex items-center justify-end gap-1">
-                        <i className="fas fa-exclamation-triangle"></i>
-                        <span>(غير نشط)</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Selected Indicator */}
-                  {selectedAcademy?.id === academy.id && (
+                let isSuspended = !isActive(academy.is_active);
+                
+                // Check pivot status if available (for academy-specific suspension)
+                if (academy.pivot && academy.pivot.is_active !== undefined) {
+                  isSuspended = !isActive(academy.pivot.is_active);
+                }
+                
+                if (academy.id === null || academy.id === 'Independent' || academy.id === 'independent') {
+                  // Check user object for is_independent_active (handling boolean or 0/1)
+                  if (user && (user as any).is_independent_active !== undefined) {
+                    isSuspended = !(user as any).is_independent_active;
+                  }
+                }
+                return (
+                  <button
+                    key={academy.id || 'independent'}
+                    onClick={() => !isSuspended && handleSelectAcademy(academy)}
+                    disabled={isSuspended}
+                    className={`w-full flex items-center gap-4 p-4 rounded-xl border transition-all ${
+                      isSuspended 
+                        ? 'border-red-500/50 bg-red-500/5 cursor-not-allowed opacity-75'
+                        : selectedAcademy?.id === academy.id
+                          ? 'border-primary-600 bg-primary-600/10'
+                          : 'border-white/10 hover:border-primary-600/50 hover:bg-white/5'
+                    }`}
+                  >
+                    {/* Logo/Icon */}
                     <div className="flex-shrink-0">
-                      <div className="w-6 h-6 rounded-full bg-primary-600 flex items-center justify-center">
-                        <i className="fas fa-check text-white text-xs"></i>
-                      </div>
+                      {academy.logo ? (
+                        <img
+                          src={academy.logo}
+                          alt={academy.name}
+                          className={`w-12 h-12 rounded-full object-cover ring-2 ${isSuspended ? 'ring-red-500/30' : 'ring-white/10'}`}
+                        />
+                      ) : (
+                        <div className={`w-12 h-12 rounded-full flex items-center justify-center ring-2 ${
+                          isSuspended 
+                            ? 'bg-red-500/10 ring-red-500/20' 
+                            : 'bg-gradient-to-br from-primary-500 to-primary-600 ring-primary-400/20'
+                        }`}>
+                          <i
+                            className={`fas ${
+                              academy.id ? 'fa-building' : 'fa-user-tie'
+                            } ${isSuspended ? 'text-red-400' : 'text-white'} text-lg`}
+                          ></i>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </button>
-              ))}
+
+                    {/* Academy Info */}
+                    <div className="flex-1 text-right">
+                      <div className={`font-semibold text-base mb-1 ${isSuspended ? 'text-red-400' : 'text-white'}`}>
+                        {academy.name} {isSuspended && '(معطل)'}
+                      </div>
+
+
+                      {isSuspended && (
+                        <div className="text-xs text-red-400/70 flex items-center justify-end gap-1">
+                          <i className="fas fa-ban"></i>
+                          <span>تم تعليق الحساب</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Selected Indicator */}
+                    {selectedAcademy?.id === academy.id && !isSuspended && (
+                      <div className="flex-shrink-0">
+                        <div className="w-6 h-6 rounded-full bg-primary-600 flex items-center justify-center">
+                          <i className="fas fa-check text-white text-xs"></i>
+                        </div>
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>

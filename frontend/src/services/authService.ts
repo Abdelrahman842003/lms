@@ -40,6 +40,7 @@ export interface AuthResponse {
   teachers?: TeacherInfo[]; // For student login - list of enrolled teachers
   children?: ChildInfo[]; // For parent login - list of children
   parent_phone?: string; // For parent login
+  academies?: any[]; // For teacher login
 }
 
 export interface ChildInfo {

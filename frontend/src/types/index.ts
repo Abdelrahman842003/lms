@@ -14,6 +14,8 @@ export interface User {
     education_type?: string
     teachers?: any[]
     permissions?: string[]  // Secretary/Admin permissions
+    is_independent_active?: boolean
+    academies?: any[]
 }
 
 // Education platform specific types

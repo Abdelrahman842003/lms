@@ -594,10 +594,10 @@ export default function AdminTeachersPage() {
                 className={`px-3 py-1 rounded-full text-xs font-medium border ${
                   row.is_independent_active 
                     ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' 
-                    : 'bg-red-500/10 text-red-400 border-red-500'
+                    : 'bg-red-500/10 text-red-400 border-red-500 cursor-not-allowed opacity-75'
                 }`}
               >
-                مستقل
+                {row.is_independent_active ? 'مستقل' : 'مستقل (معطل)'}
               </span>
             )}
             
@@ -608,10 +608,10 @@ export default function AdminTeachersPage() {
                 className={`px-3 py-1 rounded-full text-xs font-medium border ${
                   academy.pivot?.is_active
                     ? 'bg-purple-500/10 text-purple-400 border-purple-500/20'
-                    : 'bg-red-500/10 text-red-400 border-red-500'
+                    : 'bg-red-500/10 text-red-400 border-red-500 cursor-not-allowed opacity-75'
                 }`}
               >
-                {academy.name}
+                {academy.pivot?.is_active ? academy.name : `${academy.name} (معطل)`}
               </span>
             ))}
           </div>
