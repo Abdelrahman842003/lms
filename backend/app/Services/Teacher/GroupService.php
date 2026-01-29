@@ -23,7 +23,27 @@ class GroupService
             ->filter($filters);
 
         // Apply direct academy filter (groups now have academy_id column)
-        $query = $this->applyDirectAcademyFilter($query, $academyId);
+        // Apply context filter (Academy or Independent)
+        if (!$academyId) {
+            $query->whereRaw('1 = 0');
+        } elseif ($academyId === 'independent') {
+            // Independent: Must have NO academy_id AND (No Grade OR Independent Grade)
+            $query->whereNull('academy_id')
+                  ->where(function ($q) {
+                      $q->whereNull('grade_id')
+                        ->orWhereHas('grade', function ($g) {
+                            $g->whereNull('academy_id');
+                        });
+                  });
+        } else {
+            // Academy: Must have matches academy_id OR matches Grade's academy_id
+            $query->where(function ($q) use ($academyId) {
+                $q->where('academy_id', $academyId)
+                  ->orWhereHas('grade', function ($g) use ($academyId) {
+                      $g->where('academy_id', $academyId);
+                  });
+            });
+        }
 
         return $query->paginate($perPage);
     }

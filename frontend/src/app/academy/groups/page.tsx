@@ -6,6 +6,7 @@ import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { DataTable } from '@/components/dashboard/DataTable';
+import { Filter } from '@/components/Filter';
 import { useAuth } from '@/contexts/AuthContext';
 import * as academyService from '@/services/academyService';
 import { Group } from '@/services/groupService'; // Using Group type from groupService
@@ -167,10 +168,34 @@ export default function AcademyGroupsPage() {
     try {
       setIsLoading(true);
       const response = await academyService.getGroups(page, itemsPerPage, { search: searchQuery });
-      setGroups(response.data.data);
-      setTotalPages(response.data.meta.last_page);
-      setTotalItems(response.data.meta.total);
-      setCurrentPage(response.data.meta.current_page);
+      console.log('Groups API Response:', response);
+      const payload = response.data || response;
+      console.log('Groups Payload:', payload);
+      
+      let groupsList = [];
+      let meta: any = {};
+
+      if (payload.data && Array.isArray(payload.data)) {
+        groupsList = payload.data;
+        // Check for meta in multiple places
+        meta = payload.meta || payload.links || {}; 
+        if (!meta.current_page && payload.data.current_page) {
+             meta = payload.data; // sometimes pagination is mixed in
+        }
+      } else if (payload.data?.data && Array.isArray(payload.data.data)) {
+         groupsList = payload.data.data;
+         meta = payload.data.meta || payload.data || {};
+      } else if (Array.isArray(payload)) {
+        groupsList = payload;
+      }
+      
+      console.log('Parsed Groups:', groupsList);
+      console.log('Parsed Meta:', meta);
+
+      setGroups(groupsList);
+      setTotalPages(meta.last_page || 1);
+      setTotalItems(meta.total || 0);
+      setCurrentPage(meta.current_page || 1);
     } catch (error) {
       console.error('Failed to fetch groups:', error);
     } finally {
@@ -266,7 +291,7 @@ export default function AcademyGroupsPage() {
       label: 'المدرس',
       sortable: true,
       className: 'hidden md:table-cell',
-      render: (value: any, row: Group) => row.teacher?.name || '-',
+      render: (_value: any, row: Group) => row.teacher?.name || '-',
     },
     {
       key: 'grade_name',
@@ -403,26 +428,19 @@ export default function AcademyGroupsPage() {
                 {/* Teacher Selection */}
                 <div>
                   <label htmlFor="teacher_id" className="block text-gray-light mb-2 text-sm">المدرس</label>
-                  <select
-                    id="teacher_id"
-                    className={`w-full p-3 bg-white/5 border rounded-lg text-white focus:ring-1 outline-none transition-all ${
-                      touched.teacher_id && validationErrors.teacher_id 
-                        ? 'border-danger focus:border-danger focus:ring-danger' 
-                        : 'border-white/10 focus:border-primary focus:ring-primary'
-                    }`}
+                  <Filter
+                    options={[
+                      { value: '', label: 'اختر المدرس' },
+                      ...teachers.map((teacher) => ({ value: teacher.id, label: teacher.name }))
+                    ]}
                     value={formData.teacher_id}
-                    onChange={(e) => handleInputChange('teacher_id', e.target.value)}
-                    onBlur={() => handleBlur('teacher_id')}
+                    onChange={(value) => {
+                      handleInputChange('teacher_id', value);
+                    }}
+                    placeholder="اختر المدرس"
                     disabled={isEditing}
-                    required
-                  >
-                    <option value="" className="bg-[#1a1f37]">اختر المدرس</option>
-                    {teachers.map((teacher) => (
-                      <option key={teacher.id} value={teacher.id} className="bg-[#1a1f37]">
-                        {teacher.name}
-                      </option>
-                    ))}
-                  </select>
+                    className={touched.teacher_id && validationErrors.teacher_id ? 'border-danger' : ''}
+                  />
                   {touched.teacher_id && validationErrors.teacher_id && (
                     <p className="text-danger text-xs mt-1 flex items-center gap-1">
                       <i className="fas fa-exclamation-circle"></i>
@@ -455,20 +473,16 @@ export default function AcademyGroupsPage() {
                 </div>
                 <div>
                   <label htmlFor="grade_id" className="block text-gray-light mb-2 text-sm">الصف الدراسي (اختياري)</label>
-                  <select
-                    id="grade_id"
-                    className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                  <Filter
+                    options={[
+                      { value: '', label: 'لا يوجد' },
+                      ...grades.map((grade) => ({ value: grade.id, label: grade.name }))
+                    ]}
                     value={formData.grade_id || ''}
-                    onChange={(e) => setFormData({ ...formData, grade_id: e.target.value || null })}
-                    disabled={!formData.teacher_id} // Disable if no teacher selected
-                  >
-                    <option value="" className="bg-[#1a1f37]">لا يوجد</option>
-                    {grades.map((grade) => (
-                      <option key={grade.id} value={grade.id} className="bg-[#1a1f37]">
-                        {grade.name}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(value) => setFormData({ ...formData, grade_id: value || null })}
+                    placeholder="لا يوجد"
+                    disabled={!formData.teacher_id}
+                  />
                   {!formData.teacher_id && (
                     <p className="text-gray-500 text-xs mt-1">يرجى اختيار المدرس أولاً لعرض الصفوف</p>
                   )}
@@ -486,15 +500,15 @@ export default function AcademyGroupsPage() {
                 </div>
                 <div>
                   <label htmlFor="type" className="block text-gray-light mb-2 text-sm">نوع المجموعة</label>
-                  <select
-                    id="type"
-                    className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                  <Filter
+                    options={[
+                      { value: 'general', label: 'عامة (سعر الصف)' },
+                      { value: 'private', label: 'خاصة (سعر مخصص)' }
+                    ]}
                     value={formData.type}
-                    onChange={(e) => setFormData({ ...formData, type: e.target.value as 'general' | 'private' })}
-                  >
-                    <option value="general" className="bg-[#1a1f37]">عامة (سعر الصف)</option>
-                    <option value="private" className="bg-[#1a1f37]">خاصة (سعر مخصص)</option>
-                  </select>
+                    onChange={(value) => setFormData({ ...formData, type: value as 'general' | 'private' })}
+                    placeholder="اختر نوع المجموعة"
+                  />
                 </div>
                 {formData.type === 'private' && (
                   <div>

@@ -14,8 +14,21 @@ class GroupService
 {
     public function getGroups(Academy $academy, array $filters = [], int $perPage = 10): LengthAwarePaginator
     {
-        return Group::where('academy_id', $academy->id)->whereNotNull('academy_id')
-        ->when(isset($filters['search']), function ($query) use ($filters) {
+        $query = Group::where(function ($query) use ($academy) {
+            $query->where('academy_id', $academy->id)
+                  ->orWhereHas('grade', function ($g) use ($academy) {
+                      $g->where('academy_id', $academy->id);
+                  });
+        });
+
+        // Log the SQL query for debugging
+        \Log::info('Academy Groups Query:', [
+            'academy_id' => $academy->id,
+            'sql' => $query->toSql(),
+            'bindings' => $query->getBindings()
+        ]);
+
+        return $query->when(isset($filters['search']), function ($query) use ($filters) {
             $query->where('name', 'like', "%{$filters['search']}%");
         })
         ->when(isset($filters['grade_id']), function ($query) use ($filters) {
@@ -30,6 +43,7 @@ class GroupService
             $query->where('teacher_id', $filters['teacher_id']);
         })
         ->with(['teacher', 'grade'])
+        ->withCount('enrollments')
         ->latest()
         ->paginate($perPage);
     }
@@ -52,7 +66,16 @@ class GroupService
             }
         }
 
-        return $teacher->groups()->create($data->toArray());
+        // Create the group with academy_id
+        $groupData = $data->toArray();
+        $groupData['academy_id'] = $academy->id;
+
+        $group = $teacher->groups()->create($groupData);
+        
+        // Load relationships and counts
+        $group->load(['teacher', 'grade'])->loadCount('enrollments');
+
+        return $group;
     }
 
     public function updateGroup(Academy $academy, Group $group, GroupData $data): Group

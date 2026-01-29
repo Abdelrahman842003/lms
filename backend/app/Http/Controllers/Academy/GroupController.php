@@ -14,6 +14,7 @@ use App\Services\Academy\GroupService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class GroupController extends Controller
 {
@@ -28,6 +29,13 @@ class GroupController extends Controller
         $filters = $request->only(['search', 'grade_id', 'grade_name', 'teacher_id']);
         
         $groups = $this->service->getGroups($academy, $filters, $perPage);
+
+        Log::info('Academy Groups Debug:', [
+            'academy_id' => $academy->id,
+            'academy_name' => $academy->name,
+            'groups_count' => $groups->count(),
+            'filters' => $filters
+        ]);
         
         return $this->successResponse(
             GroupResource::collection($groups)->response()->getData(true)
@@ -92,8 +100,7 @@ class GroupController extends Controller
 
     private function isOwnedByAcademy($academy, Group $group): bool
     {
-        return $group->teacher->academies()
-            ->where('academy_id', $academy->id)
-            ->exists();
+        return $group->academy_id === $academy->id || 
+               ($group->grade && $group->grade->academy_id === $academy->id);
     }
 }

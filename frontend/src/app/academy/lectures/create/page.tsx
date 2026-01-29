@@ -52,12 +52,13 @@ export default function CreateLecturePage() {
 
     const fetchTeacherData = async () => {
       try {
-        // Get teacher details which includes grades and groups
-        const teacherResponse = await academyService.getTeacher(formData.teacher_id);
+        // Fetch grades for the selected teacher
+        const gradesResponse = await academyService.getGrades(1, 100, { teacher_id: formData.teacher_id });
+        setGrades(gradesResponse.data?.data || []);
         
-        // Extract grades and groups from the response (they are at the top level, not inside teacher)
-        setGrades(teacherResponse.data?.grades || []);
-        setGroups(teacherResponse.data?.groups || []);
+        // Fetch groups for the selected teacher
+        const groupsResponse = await academyService.getGroups(1, 100, { teacher_id: formData.teacher_id });
+        setGroups(groupsResponse.data?.data || []);
         
         // Reset grade and group selection when teacher changes
         setFormData(prev => ({ ...prev, grade_id: '', group_id: '' }));

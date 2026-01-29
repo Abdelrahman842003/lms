@@ -23,6 +23,9 @@ return new class extends Migration
             $table->enum('status', ['pending', 'partial', 'paid', 'cancelled'])->default('pending');
             $table->date('paid_at')->nullable();
             $table->text('notes')->nullable();
+            $table->string('payment_key', 20)->nullable()->unique();
+            $table->timestamp('payment_initiated_at')->nullable();
+            $table->enum('payment_method', ['admin', 'instapay'])->nullable();
             $table->timestamps();
 
             // Prevent duplicate billing for same month/year

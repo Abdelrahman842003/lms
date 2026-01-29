@@ -30,6 +30,7 @@ class Academy extends Model implements AuthenticatableContract
 
     protected $casts = [
         'is_active' => 'boolean',
+        'password' => 'hashed',
     ];
 
     protected $appends = [

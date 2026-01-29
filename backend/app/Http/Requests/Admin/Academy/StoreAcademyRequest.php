@@ -18,6 +18,7 @@ class StoreAcademyRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'phone' => ['required', 'string', 'unique:academies,phone'],
+            'password' => ['required', 'string', 'min:8'],
             'email' => ['nullable', 'email', 'max:255'],
             'logo_key' => ['nullable', 'string'],
             'billing_notes' => ['nullable', 'string'],

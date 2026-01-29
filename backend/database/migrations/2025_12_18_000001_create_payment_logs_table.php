@@ -32,6 +32,8 @@ return new class extends Migration
             $table->ipAddress('ip_address')->nullable(); // Security: confirmation IP
             $table->string('device_info')->nullable(); // Security: confirmation device
             $table->text('notes')->nullable();
+            $table->date('start_date')->nullable();
+            $table->date('end_date')->nullable();
             $table->decimal('base_price', 10, 2)->nullable();
             $table->decimal('teacher_amount', 10, 2)->nullable();
             $table->enum('price_source', ['grade', 'group'])->nullable();

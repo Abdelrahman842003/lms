@@ -179,6 +179,8 @@ Route::middleware('auth:sanctum')->prefix('academy')->name('academy.')->group(fu
     Route::post('lectures/{lecture}/end', [\App\Http\Controllers\Academy\LectureController::class, 'endLecture']);
     Route::post('lectures/{lecture}/qr-code', [\App\Http\Controllers\Academy\LectureController::class, 'generateQrCode']);
     Route::get('lectures/{lecture}/attendees', [\App\Http\Controllers\Academy\LectureController::class, 'getAttendees']);
+    Route::get('lectures/{lecture}/sessions', [\App\Http\Controllers\Api\LectureSessionController::class, 'index']);
+    Route::post('lectures/{lecture}/sessions', [\App\Http\Controllers\Api\LectureSessionController::class, 'store']);
 
     // Grades & Groups Management
     Route::put('grades/bulk-update-name', [\App\Http\Controllers\Academy\GradeController::class, 'bulkUpdateName']);
