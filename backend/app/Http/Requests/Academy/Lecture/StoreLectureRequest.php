@@ -29,6 +29,16 @@ class StoreLectureRequest extends FormRequest
         ];
     }
 
+    protected function failedValidation(\Illuminate\Contracts\Validation\Validator $validator)
+    {
+        \Illuminate\Support\Facades\Log::error('Lecture validation failed', [
+            'errors' => $validator->errors()->toArray(),
+            'input' => $this->all()
+        ]);
+        
+        parent::failedValidation($validator);
+    }
+
     public function messages(): array
     {
         return [

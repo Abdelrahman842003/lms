@@ -12,8 +12,28 @@ class LectureSessionController extends Controller
 {
     public function index(Request $request, Lecture $lecture)
     {
-        if ($request->user()->id !== $lecture->teacher_id) {
-            return response()->json(['message' => 'Unauthorized'], 403);
+        $user = $request->user();
+        
+        // 1. If user is Teacher, must own the lecture
+        if ($user instanceof \App\Models\Teacher) {
+            if ($user->id !== $lecture->teacher_id) {
+                return response()->json(['message' => 'Unauthorized'], 403);
+            }
+        }
+        // 2. If user is Academy, lecture must belong to it (directly or via relations)
+        elseif ($user instanceof \App\Models\Academy) {
+             $isAuthorized = ($lecture->academy_id === $user->id) ||
+                             ($lecture->grade && $lecture->grade->academy_id === $user->id) ||
+                             ($lecture->group && $lecture->group->academy_id === $user->id);
+                             
+             if (!$isAuthorized) {
+                 return response()->json(['message' => 'Unauthorized for Academy'], 403);
+             }
+        }
+        // 3. Other users (e.g. Student) - currently not implemented explicitly, default deny if strict
+        else {
+             // If neither Teacher nor Academy, likely unauthorized for this endpoint
+             return response()->json(['message' => 'Unauthorized type'], 403);
         }
 
         $query = $lecture->sessions();
@@ -33,8 +53,27 @@ class LectureSessionController extends Controller
 
     public function store(Request $request, Lecture $lecture)
     {
-        if ($request->user()->id !== $lecture->teacher_id) {
-            return response()->json(['message' => 'Unauthorized'], 403);
+        $user = $request->user();
+        
+        // 1. If user is Teacher, must own the lecture
+        if ($user instanceof \App\Models\Teacher) {
+            if ($user->id !== $lecture->teacher_id) {
+                return response()->json(['message' => 'Unauthorized'], 403);
+            }
+        }
+        // 2. If user is Academy, lecture must belong to it (directly or via relations)
+        elseif ($user instanceof \App\Models\Academy) {
+             $isAuthorized = ($lecture->academy_id === $user->id) ||
+                             ($lecture->grade && $lecture->grade->academy_id === $user->id) ||
+                             ($lecture->group && $lecture->group->academy_id === $user->id);
+                             
+             if (!$isAuthorized) {
+                 return response()->json(['message' => 'Unauthorized for Academy'], 403);
+             }
+        }
+        // 3. Other users
+        else {
+             return response()->json(['message' => 'Unauthorized type'], 403);
         }
 
         $validated = $request->validate([

@@ -449,9 +449,9 @@ export const exportReportToPDF = async (params: {
 export interface CreateLectureData {
   teacher_id: string;
   title: string;
-  description?: string;
+  description?: string | null;
   grade_id: string;
-  group_id?: string;
+  group_id?: string | null;
   date?: string;
   is_recurring?: boolean;
   recurrence_days?: string[];

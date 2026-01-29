@@ -69,8 +69,8 @@ export default function StudentAttendanceSection() {
       try {
         const [teachersResponse, gradesResponse, groupsResponse] = await Promise.all([
           academyService.getLectureTeachers(),
-          academyService.getGrades(1, 100),
-          academyService.getGroups(1, 100)
+          academyService.getGrades(1, 1000),
+          academyService.getGroups(1, 1000)
         ]);
         setTeachers(teachersResponse.data?.teachers || []);
         setGrades(gradesResponse.data?.data || []);
@@ -160,18 +160,33 @@ export default function StudentAttendanceSection() {
     e.preventDefault();
     setIsSubmitting(true);
 
+    // Prepare payload (convert empty strings to null for optional fields)
+    const payload: any = {
+      ...formData,
+      group_id: formData.group_id || null, // data validation expects uuid or null
+      description: formData.description || null,
+    };
+
+    // Remove date field if empty (for recurring lectures)
+    if (!formData.date) {
+      delete payload.date;
+    }
+
+    console.log('Payload being sent:', payload);
+
     try {
       if (isEditing && selectedLecture) {
-        await academyService.updateLecture(selectedLecture.id, formData);
+        await academyService.updateLecture(selectedLecture.id, payload);
         toast.success('تم تحديث المحاضرة بنجاح');
       } else {
-        await academyService.createLecture(formData);
+        await academyService.createLecture(payload);
         toast.success('تم إضافة المحاضرة بنجاح');
       }
       setShowModal(false);
       fetchLectures(currentPage);
     } catch (error: any) {
       console.error('Failed to save lecture:', error);
+      console.error('Error response:', error.response?.data);
       toast.error(error.response?.data?.message || 'فشل حفظ المحاضرة');
     } finally {
       setIsSubmitting(false);
@@ -426,7 +441,7 @@ export default function StudentAttendanceSection() {
                     description: lecture.description || '',
                     grade_id: lecture.grade?.id || '',
                     group_id: lecture.group?.id || '',
-                    date: lecture.date || '',
+                    date: lecture.is_recurring ? '' : (lecture.date || ''),
                     is_recurring: lecture.is_recurring || false,
                     recurrence_days: lecture.recurrence_days || [],
                     recurrence_time: time,
@@ -651,6 +666,7 @@ export default function StudentAttendanceSection() {
                   </>
                 ) : (
                   <>
+
                     <div className="form-group">
                       <label htmlFor="date">تاريخ المحاضرة</label>
                       <input

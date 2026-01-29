@@ -42,6 +42,7 @@ class GradeService
 
         $grouped = $grades->groupBy('name')->map(function ($group, $name) {
             return [
+                'id' => $group->first()->id, // Add ID from first grade in group
                 'name' => $name,
                 'teachers_count' => $group->pluck('teacher_id')->filter()->unique()->count(),
                 'groups_count' => $group->sum('groups_count'),

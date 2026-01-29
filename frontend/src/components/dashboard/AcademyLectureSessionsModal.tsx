@@ -27,6 +27,8 @@ export const AcademyLectureSessionsModal: React.FC<AcademyLectureSessionsModalPr
   const [filter, setFilter] = useState<'upcoming' | 'past'>('upcoming');
   const [displayedDates, setDisplayedDates] = useState<string[]>([]);
 
+  const [limit, setLimit] = useState(10);
+
   useEffect(() => {
     if (lecture.is_recurring && lecture.recurrence_days) {
       const dates: string[] = [];
@@ -48,10 +50,10 @@ export const AcademyLectureSessionsModal: React.FC<AcademyLectureSessionsModalPr
       };
 
       if (filter === 'upcoming') {
-        // Generate next 2 occurrences
+        // Generate next occurrences based on limit
         let current = new Date(today);
         let count = 0;
-        while (count < 2) {
+        while (count < limit) {
           if (targetDays.includes(current.getDay())) {
             dates.push(getLocalDateString(current));
             count++;
@@ -60,12 +62,17 @@ export const AcademyLectureSessionsModal: React.FC<AcademyLectureSessionsModalPr
         }
       } else {
         // Generate past occurrences (last 3 months)
+        // But NOT before the lecture was created
         let current = new Date(today);
         current.setDate(current.getDate() - 1); // Start from yesterday
+        
         const threeMonthsAgo = new Date(today);
         threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
 
-        while (current >= threeMonthsAgo) {
+        const createdAt = new Date(lecture.created_at);
+        createdAt.setHours(0, 0, 0, 0);
+        
+        while (current >= threeMonthsAgo && current >= createdAt) {
           if (targetDays.includes(current.getDay())) {
             dates.push(getLocalDateString(current));
           }
@@ -74,7 +81,7 @@ export const AcademyLectureSessionsModal: React.FC<AcademyLectureSessionsModalPr
       }
       setDisplayedDates(dates);
     }
-  }, [lecture, filter]);
+  }, [lecture, filter, limit]);
 
   useEffect(() => {
     fetchSessions();
@@ -93,7 +100,7 @@ export const AcademyLectureSessionsModal: React.FC<AcademyLectureSessionsModalPr
   };
 
   const handleEdit = (date: string) => {
-    const session = sessions.find(s => s.date === date);
+    const session = sessions.find(s => s.date.startsWith(date) || s.date.split('T')[0] === date);
     setEditingDate(date);
     setEditForm({
       title: session?.title || '',
@@ -127,7 +134,7 @@ export const AcademyLectureSessionsModal: React.FC<AcademyLectureSessionsModalPr
           <h3 className="text-xl font-bold text-white">إدارة جلسات المحاضرة</h3>
           <div className="flex bg-black/20 rounded-lg p-1">
             <button
-              onClick={() => setFilter('upcoming')}
+              onClick={() => { setFilter('upcoming'); setLimit(10); }}
               className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
                 filter === 'upcoming' 
                   ? 'bg-primary text-white shadow-lg' 
@@ -137,7 +144,7 @@ export const AcademyLectureSessionsModal: React.FC<AcademyLectureSessionsModalPr
               القادمة
             </button>
             <button
-              onClick={() => setFilter('past')}
+              onClick={() => { setFilter('past'); setLimit(10); }}
               className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
                 filter === 'past' 
                   ? 'bg-primary text-white shadow-lg' 
@@ -160,7 +167,7 @@ export const AcademyLectureSessionsModal: React.FC<AcademyLectureSessionsModalPr
           ) : (
             <div className="space-y-4">
               {displayedDates.map(date => {
-                const session = sessions.find(s => s.date === date);
+                const session = sessions.find(s => s.date.startsWith(date) || s.date.split('T')[0] === date);
                 const isEditing = editingDate === date;
                 const dateObj = new Date(date);
                 const dayName = dateObj.toLocaleDateString('ar-EG', { weekday: 'long' });
@@ -242,6 +249,18 @@ export const AcademyLectureSessionsModal: React.FC<AcademyLectureSessionsModalPr
                   </div>
                 );
               })}
+              
+              {filter === 'upcoming' && (
+                <div className="flex justify-center pt-2">
+                    <button 
+                        onClick={() => setLimit(prev => prev + 1)}
+                        className="px-4 py-2 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white rounded-lg transition-all text-sm flex items-center gap-2"
+                    >
+                        <span>عرض المزيد</span>
+                        <i className="fas fa-chevron-down"></i>
+                    </button>
+                </div>
+              )}
             </div>
           )}
         </div>
