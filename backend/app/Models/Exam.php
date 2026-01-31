@@ -11,6 +11,7 @@ class Exam extends Model
 
     protected $fillable = [
         'teacher_id',
+        'academy_id',
         'title',
         'subject',
         'max_score',

@@ -47,6 +47,7 @@ class ExamService
         return DB::transaction(function () use ($teacher, $data) {
             $exam = Exam::create([
                 'teacher_id' => $teacher->id,
+                'academy_id' => $data->academy_id,
                 'title' => $data->title,
                 'subject' => $data->subject,
                 'grade_id' => $data->grade_id,

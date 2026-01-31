@@ -19,6 +19,7 @@ class ExamData
         public readonly array $questions,
         public readonly ?string $group_id = null,
         public readonly int $time_per_question = 60,
+        public readonly ?string $academy_id = null,
     ) {}
 
     public static function fromRequest(Request $request): self
@@ -34,6 +35,7 @@ class ExamData
             questions: $request->validated('questions'),
             group_id: $request->validated('group_id'),
             time_per_question: (int) ($request->validated('time_per_question') ?? 60),
+            academy_id: $request->input('academy_id_override'), // Special input for manual override or context
         );
     }
 
