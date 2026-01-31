@@ -23,13 +23,7 @@ class LectureService
         $query = Lecture::with(['teacher', 'grade', 'group', 'current_session'])
             ->where(function ($q) use ($academy) {
                 // Lectures created by academy
-                $q->where('academy_id', $academy->id)
-                // OR lectures from teachers belonging to this academy
-                  ->orWhereHas('teacher', function ($tq) use ($academy) {
-                      $tq->whereHas('academies', function ($aq) use ($academy) {
-                          $aq->where('academies.id', $academy->id)->where('academy_teacher.is_active', true);
-                      });
-                  });
+                $q->where('academy_id', $academy->id);
             })
             ->filter($filters)
             ->orderBy('created_at', 'desc');

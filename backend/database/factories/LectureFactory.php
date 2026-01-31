@@ -15,7 +15,6 @@ class LectureFactory extends Factory
         return [
             'title' => $this->faker->sentence(3),
             'description' => $this->faker->paragraph,
-            'price' => $this->faker->numberBetween(50, 200),
             'start_time' => $startTime,
             'end_time' => (clone $startTime)->modify('+1 hour'),
         ];
