@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
 use App\Models\Lecture;
+use Illuminate\Console\Command;
 use App\Events\LectureUpdated;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;

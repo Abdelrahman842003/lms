@@ -11,7 +11,7 @@ use App\Models\ExamResult;
 use App\Models\Lecture;
 use App\Models\StudentPoint;
 use App\Models\Teacher;
-use App\Services\MistakesService;
+use App\Services\Student\MistakesService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;

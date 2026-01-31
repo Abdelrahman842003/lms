@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Guardian;
 
 use App\Http\Controllers\Controller;
@@ -10,7 +12,7 @@ use App\Models\Exam;
 use App\Models\Attendance;
 use App\Models\StudentPoint;
 use App\Services\Media\ImageService;
-use App\Services\MistakesService;
+use App\Services\Student\MistakesService;
 use App\Http\Requests\Guardian\Summary\GuardianSummaryRequest;
 use Carbon\Carbon;
 use Illuminate\Http\Request;

@@ -1,9 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Actions\Teacher;
 
 use App\Models\Group;
-
 class ValidateGroupGrade
 {
     public function execute(?string $groupId, ?string $gradeId): bool

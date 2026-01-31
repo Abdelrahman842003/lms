@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
 use App\Models\Attendance;
@@ -10,6 +12,7 @@ use App\Models\PointTransaction;
 use App\Models\Student;
 use App\Models\StudentPoint;
 use App\Models\Teacher;
+use App\Services\Infrastructure\HelperService;
 use App\Traits\HasAcademyFilter;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;

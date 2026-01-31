@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Admin;
 
 use App\Factories\NotificationFactory;
@@ -11,7 +13,7 @@ use App\Models\Teacher;
 use App\Models\Student;
 use App\Models\Secretary;
 use App\Services\Admin\NotificationService;
-use App\Services\VoiceNotificationService;
+use App\Services\Notifications\VoiceNotificationService;
 use App\Traits\ApiResponseTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;

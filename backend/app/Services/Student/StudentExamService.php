@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Student;
 
 use App\Models\Exam;
@@ -9,8 +11,8 @@ use App\Models\Question;
 use App\Models\Student;
 use App\Models\StudentAnswer;
 use App\Notifications\ExamResultNotification;
-use App\Services\MistakesService;
-use App\Services\PointService;
+use App\Services\Student\MistakesService;
+use App\Services\Infrastructure\PointService;
 use Illuminate\Support\Facades\DB;
 
 class StudentExamService

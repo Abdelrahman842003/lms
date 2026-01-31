@@ -138,7 +138,7 @@ class PaymentService
         try {
             \Illuminate\Support\Facades\Log::info("Starting ACADEMY payment notification for payment: " . $payment->id);
 
-            $notificationService = app(\App\Services\NotificationService::class);
+            $notificationService = app(\App\Services\Notifications\NotificationService::class);
             
             // Calculate month names in Arabic
             \Carbon\Carbon::setLocale('ar');

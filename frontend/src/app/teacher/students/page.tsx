@@ -130,7 +130,7 @@ export default function StudentsPage() {
             <div className="flex items-center gap-2 text-xs">
               {row.status === 'trial' && (
                 <span className="text-[#f39c12]">
-                  فترة تجريبية ({row.trial_days_left !== undefined ? `${row.trial_days_left} يوم` : 'متبقي'})
+                  فترة تجريبية ({row.trial_days_left !== undefined ? `${Math.ceil(row.trial_days_left)} يوم` : 'متبقي'})
                 </span>
               )}
               {row.status === 'active' && <span className="text-success">نشط ({row.days_left} يوم)</span>}

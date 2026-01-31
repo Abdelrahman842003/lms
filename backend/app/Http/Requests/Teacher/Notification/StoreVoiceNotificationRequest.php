@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Teacher\Notification;
 
-use App\Services\VoiceNotificationService;
+use App\Services\Notifications\VoiceNotificationService;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreVoiceNotificationRequest extends FormRequest

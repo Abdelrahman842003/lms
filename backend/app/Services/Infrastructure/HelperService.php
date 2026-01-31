@@ -1,9 +1,10 @@
 <?php
 
-namespace App\Services;
+declare(strict_types=1);
+
+namespace App\Services\Infrastructure;
 
 use App\Models\Setting;
-use App\Services\Infrastructure\CacheService;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class HelperService
@@ -51,7 +52,6 @@ class HelperService
      */
     public static function getPricePerStudent(): float
     {
-        // Use CacheService to get the setting, fallback to DB
         return (float) Setting::getValue('pricePerStudent', 0);
     }
 
@@ -60,8 +60,6 @@ class HelperService
      */
     public static function getAcademyStudentPrice(): float
     {
-        // Use CacheService to get the setting, fallback to DB
-        // Default to 20 as per user request if not set
         return (float) Setting::getValue('academy_student_price', 20);
     }
 

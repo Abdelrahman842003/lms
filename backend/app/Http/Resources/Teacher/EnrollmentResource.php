@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Resources\Teacher;
 
 use Illuminate\Http\Request;
@@ -14,17 +16,15 @@ class EnrollmentResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $student = $this->student;
-        
         return [
             // Enrollment data
             'enrollment_id' => $this->id,
             'is_active' => $this->is_active,
             'balance' => $this->balance,
             'grade_id' => $this->grade_id,
-            'grade_name' => $this->grade?->name,
+            'grade_name' => $this->whenLoaded('grade', fn() => $this->grade->name),
             'group_id' => $this->group_id,
-            'group_name' => $this->group?->name,
+            'group_name' => $this->whenLoaded('group', fn() => $this->group->name),
             'subscription_start' => $this->subscription_start,
             'subscription_end' => $this->subscription_end,
             'status' => $this->status,
@@ -38,23 +38,25 @@ class EnrollmentResource extends JsonResource
             'enrolled_at' => $this->created_at,
             
             // Student data
-            'id' => $student->id,
-            'name' => $student->name,
-            'avatar' => $student->avatar_key ? config('filesystems.disks.r2.url') . '/' . $student->avatar_key : null,
-            'phone' => $student->phone,
-            'parent_phone' => $student->parent_phone,
-            'gender' => $student->gender,
-            'education_type' => $student->education_type,
-            'location' => $student->location,
-            'permissions' => $student->getAllPermissions()->pluck('name'),
+            'id' => $this->whenLoaded('student', fn() => $this->student->id),
+            'name' => $this->whenLoaded('student', fn() => $this->student->name),
+            'avatar' => $this->whenLoaded('student', fn() => $this->student->avatar_key 
+                ? config('filesystems.disks.r2.url') . '/' . $this->student->avatar_key 
+                : null),
+            'phone' => $this->whenLoaded('student', fn() => $this->student->phone),
+            'parent_phone' => $this->whenLoaded('student', fn() => $this->student->parent_phone),
+            'gender' => $this->whenLoaded('student', fn() => $this->student->gender),
+            'education_type' => $this->whenLoaded('student', fn() => $this->student->education_type),
+            'location' => $this->whenLoaded('student', fn() => $this->student->location),
+            'permissions' => $this->whenLoaded('student', fn() => $this->student->getAllPermissions()->pluck('name')),
             
             // Attendance Stats (Current Month)
-            'attendance_stats' => $this->calculateAttendanceStats($student),
+            'attendance_stats' => $this->whenLoaded('student', fn() => $this->calculateAttendanceStats($this->student)),
             
             // Exam Stats
-            'exam_stats' => $this->calculateExamStats($student),
+            'exam_stats' => $this->whenLoaded('student', fn() => $this->calculateExamStats($this->student)),
             
-            'created_at' => $student->created_at,
+            'created_at' => $this->whenLoaded('student', fn() => $this->student->created_at),
             'updated_at' => $this->updated_at,
         ];
     }

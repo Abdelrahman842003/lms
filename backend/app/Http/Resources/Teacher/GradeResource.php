@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Resources\Teacher;
 
 use Illuminate\Http\Request;
@@ -9,23 +11,18 @@ class GradeResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
-        $teacher = $this->teacher;
-        if (!$teacher && $this->teacher_id) {
-            $teacher = \App\Models\Teacher::find($this->teacher_id);
-        }
-
         return [
             'id' => $this->id,
             'name' => $this->name,
             'price' => (float) $this->price,
-            'groups_count' => (int) $this->groups_count,
-            'students_count' => (int) $this->enrollments_count,
+            'groups_count' => (int) ($this->groups_count ?? 0),
+            'students_count' => (int) ($this->enrollments_count ?? 0),
             'teacher_id' => $this->teacher_id,
-            'teacher' => $teacher ? [
-                'id' => $teacher->id,
-                'name' => $teacher->name,
-                'avatar' => $teacher->avatar,
-            ] : null,
+            'teacher' => $this->whenLoaded('teacher', fn() => [
+                'id' => $this->teacher->id,
+                'name' => $this->teacher->name,
+                'avatar' => $this->teacher->avatar,
+            ]),
             'created_at' => $this->created_at,
         ];
     }

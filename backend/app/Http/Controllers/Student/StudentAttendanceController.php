@@ -1,10 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Student\MarkAttendanceRequest;
-use App\Services\PointService;
+use App\Services\Infrastructure\PointService;
 use Illuminate\Http\Request;
 use App\Models\Lecture;
 use App\Models\Attendance;

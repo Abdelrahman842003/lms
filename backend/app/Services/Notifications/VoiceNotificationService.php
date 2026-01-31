@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Services;
+namespace App\Services\Notifications;
 
 use App\Models\DailyVoiceLimit;
 use Illuminate\Http\UploadedFile;

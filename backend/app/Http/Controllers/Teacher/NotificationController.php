@@ -10,7 +10,7 @@ use App\Http\Requests\Teacher\Notification\SendNotificationRequest;
 use App\Http\Requests\Teacher\Notification\StoreVoiceNotificationRequest;
 use App\Models\SentNotification;
 use App\Services\Teacher\NotificationService;
-use App\Services\VoiceNotificationService;
+use App\Services\Notifications\VoiceNotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 

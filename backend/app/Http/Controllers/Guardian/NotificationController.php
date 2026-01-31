@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Guardian;
 
 use App\Http\Controllers\Controller;
@@ -9,7 +11,7 @@ use Illuminate\Support\Facades\Auth;
 
 use App\Services\Guardian\GuardianNotificationService;
 
-use App\Services\VoiceNotificationService;
+use App\Services\Notifications\VoiceNotificationService;
 
 class NotificationController extends Controller
 {

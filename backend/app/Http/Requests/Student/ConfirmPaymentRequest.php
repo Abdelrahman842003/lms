@@ -1,9 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Requests\Student;
 
 use Illuminate\Foundation\Http\FormRequest;
-
 class ConfirmPaymentRequest extends FormRequest
 {
     public function authorize(): bool

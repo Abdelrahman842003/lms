@@ -1,6 +1,8 @@
 <?php
 
-namespace App\Services;
+declare(strict_types=1);
+
+namespace App\Services\Notifications;
 
 use App\Events\NewNotificationEvent;
 use Illuminate\Support\Str;

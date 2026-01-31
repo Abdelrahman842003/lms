@@ -171,10 +171,25 @@ class StudentService
             });
         });
 
+        // Get unique students count
+        $totalStudents = Student::whereHas('enrollments.teacher.academies', function ($q) use ($academy) {
+            $q->where('academy_id', $academy->id);
+        })->count();
+
+        $activeStudents = Student::whereHas('enrollments', function ($q) use ($academy) {
+            $q->where('is_active', true)
+              ->whereHas('teacher.academies', function ($q2) use ($academy) {
+                  $q2->where('academy_id', $academy->id);
+              });
+        })->count();
+
         return [
             'total_enrollments' => $baseQuery->count(),
             'active_enrollments' => (clone $baseQuery)->where('is_active', true)->count(),
             'inactive_enrollments' => (clone $baseQuery)->where('is_active', false)->count(),
+            'total_students' => $totalStudents,
+            'active_students' => $activeStudents,
+            'inactive_students' => $totalStudents - $activeStudents,
         ];
     }
 }

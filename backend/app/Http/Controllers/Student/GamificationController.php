@@ -8,7 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Models\GamificationSetting;
 use App\Models\PointTransaction;
 use App\Models\StudentPoint;
-use App\Services\PointService;
+use App\Services\Infrastructure\PointService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 

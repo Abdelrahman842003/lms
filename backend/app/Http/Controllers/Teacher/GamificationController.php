@@ -9,7 +9,7 @@ use App\Http\Requests\Teacher\Gamification\AwardBonusRequest;
 use App\Http\Requests\Teacher\Gamification\UpdateGamificationSettingsRequest;
 use App\Models\GamificationSetting;
 use App\Models\Student;
-use App\Services\PointService;
+use App\Services\Infrastructure\PointService;
 use App\Traits\ResolvesTeacher;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;

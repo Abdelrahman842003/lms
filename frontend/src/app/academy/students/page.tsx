@@ -364,39 +364,40 @@ export default function AcademyStudentsPage() {
       }}
     >
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <StatCard
+          title="إجمالي الطلاب"
+          icon="fas fa-graduation-cap"
+          value={stats?.total_students || 0}
+          color="primary"
+        />
+        <StatCard
+          title="الطلاب النشطين"
+          icon="fas fa-user-check"
+          value={stats?.active_students || 0}
+          color="success"
+        />
         <StatCard
           title="إجمالي التسجيلات"
           icon="fas fa-users"
           value={stats?.total_enrollments || 0}
           trend={{ 
             value: Math.abs(stats?.total_enrollments_trend || 0), 
-            label: 'طالب', 
+            label: 'تسجيل', 
             isPositive: (stats?.total_enrollments_trend || 0) >= 0 
           }}
           color="info"
         />
         <StatCard
-          title="الطلاب النشطين"
+          title="التسجيلات النشطة"
           icon="fas fa-user-check"
           value={stats?.active_enrollments || 0}
           trend={{ 
             value: Math.abs(stats?.active_enrollments_trend || 0), 
-            label: 'طالب', 
+            label: 'تسجيل', 
             isPositive: (stats?.active_enrollments_trend || 0) >= 0 
           }}
           color="success"
-        />
-        <StatCard
-          title="الطلاب غير النشطين"
-          icon="fas fa-user-times"
-          value={stats?.inactive_enrollments || 0}
-          trend={{ 
-            value: Math.abs(stats?.inactive_enrollments_trend || 0), 
-            label: 'طالب', 
-            isPositive: (stats?.inactive_enrollments_trend || 0) >= 0 
-          }}
-          color="danger"
         />
       </div>
 
