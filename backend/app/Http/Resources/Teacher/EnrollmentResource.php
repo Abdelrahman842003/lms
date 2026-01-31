@@ -29,6 +29,11 @@ class EnrollmentResource extends JsonResource
             'subscription_end' => $this->subscription_end,
             'status' => $this->status,
             'days_left' => $this->days_left,
+            'trial_ends_at' => $this->when($this->status === 'trial', $this->trial_ends_at),
+            'trial_days_left' => $this->when(
+                $this->status === 'trial' && $this->trial_ends_at,
+                fn() => max(0, now()->diffInDays($this->trial_ends_at, false))
+            ),
             'teacher_notes' => $this->teacher_notes,
             'enrolled_at' => $this->created_at,
             

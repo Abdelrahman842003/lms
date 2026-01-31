@@ -495,7 +495,11 @@ export default function AcademyStudentsPage() {
             </button>
           </div>
           <div className="space-y-2 max-h-[300px] overflow-y-auto custom-scrollbar">
-            {students.find(s => s.id === activeTeacherPopup)?.teachers?.map((teacher: any) => (
+            {students.find(s => s.id === activeTeacherPopup)?.teachers?.map((teacher: any) => {
+              console.log('Teacher object in popup:', teacher);
+              console.log('teacher.status:', teacher.status);
+              console.log('teacher.is_active:', teacher.is_active);
+              return (
               <div key={teacher.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors">
                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold">
                   {teacher.name?.charAt(0) || '?'}
@@ -503,16 +507,44 @@ export default function AcademyStudentsPage() {
                 <div className="flex flex-col flex-1">
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-white font-medium">{teacher.name}</span>
-                    {teacher.is_active ? (
-                      <span className="text-[10px] bg-success/20 text-success px-1.5 py-0.5 rounded">
-                        نشط
-                        {teacher.remaining_days > 0 && ` (${Math.ceil(teacher.remaining_days / 30)} شهر)`}
-                      </span>
-                    ) : (
-                      <span className="text-[10px] bg-red-500/20 text-red-500 px-1.5 py-0.5 rounded">
-                        غير نشط
-                      </span>
-                    )}
+                    <div className="flex items-center gap-1 flex-wrap">
+                      {/* نشط - يظهر إذا is_active = true */}
+                      {teacher.is_active && (
+                        <span className="text-[10px] bg-success/20 text-success px-1.5 py-0.5 rounded">
+                          نشط
+                        </span>
+                      )}
+                      {/* فترة تجريبية */}
+                      {teacher.status === 'trial' && (
+                        <span className="text-[10px] bg-[#f39c12]/20 text-[#f39c12] px-1.5 py-0.5 rounded">
+                          فترة تجريبية ({teacher.trial_days_left !== undefined ? `${Math.ceil(teacher.trial_days_left)} يوم` : 'متبقي'})
+                        </span>
+                      )}
+                      {/* نشط مع اشتراك - يظهر الأيام المتبقية */}
+                      {teacher.status === 'active' && teacher.days_left > 0 && (
+                        <span className="text-[10px] bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded">
+                          {Math.ceil(teacher.days_left)} يوم متبقي
+                        </span>
+                      )}
+                      {/* فترة سماح */}
+                      {teacher.status === 'grace_period' && (
+                        <span className="text-[10px] bg-warning/20 text-warning px-1.5 py-0.5 rounded">
+                          فترة سماح ({teacher.days_left > 0 ? `${Math.ceil(teacher.days_left)} يوم` : '0 يوم'})
+                        </span>
+                      )}
+                      {/* منتهي */}
+                      {teacher.status === 'expired' && (
+                        <span className="text-[10px] bg-red-500/20 text-red-500 px-1.5 py-0.5 rounded">
+                          منتهي
+                        </span>
+                      )}
+                      {/* غير نشط */}
+                      {!teacher.is_active && (
+                        <span className="text-[10px] bg-red-500/20 text-red-500 px-1.5 py-0.5 rounded">
+                          غير نشط
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div className="flex items-center gap-2 text-[10px] text-gray-400">
                     <span>{teacher.grade_name || '-'}</span>
@@ -521,7 +553,8 @@ export default function AcademyStudentsPage() {
                   </div>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>,
         document.body

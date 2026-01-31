@@ -128,6 +128,11 @@ export default function StudentsPage() {
               {value}
             </span>
             <div className="flex items-center gap-2 text-xs">
+              {row.status === 'trial' && (
+                <span className="text-[#f39c12]">
+                  فترة تجريبية ({row.trial_days_left !== undefined ? `${row.trial_days_left} يوم` : 'متبقي'})
+                </span>
+              )}
               {row.status === 'active' && <span className="text-success">نشط ({row.days_left} يوم)</span>}
               {row.status === 'grace_period' && <span className="text-warning">فترة سماح ({row.days_left} يوم)</span>}
               {row.status === 'expired' && <span className="text-danger">منتهي</span>}
@@ -236,6 +241,7 @@ export default function StudentsPage() {
                 options={[
                   { value: '', label: 'كل الطلاب' },
                   { value: 'active', label: 'الطلاب النشطين' },
+                  { value: 'trial', label: 'فترة تجريبية' },
                   { value: 'inactive', label: 'الطلاب المعطلين' }
                 ]}
                 value={statusFilter}

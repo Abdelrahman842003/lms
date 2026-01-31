@@ -57,6 +57,23 @@ class StudentController extends Controller
         $data = $students->through(function ($student) {
             $enrollments = $student->enrollments;
             
+            // Determine best status from all enrollments (priority: active > trial > grace_period > expired)
+            $statusPriority = ['active' => 1, 'trial' => 2, 'grace_period' => 3, 'expired' => 4];
+            $bestStatus = 'expired';
+            $bestDaysLeft = 0;
+            $bestTrialDaysLeft = null;
+            
+            foreach ($enrollments as $enrollment) {
+                $enrollmentStatus = $enrollment->status ?? 'expired';
+                if (($statusPriority[$enrollmentStatus] ?? 5) < ($statusPriority[$bestStatus] ?? 5)) {
+                    $bestStatus = $enrollmentStatus;
+                    $bestDaysLeft = $enrollment->days_left ?? 0;
+                    if ($enrollmentStatus === 'trial' && $enrollment->trial_ends_at) {
+                        $bestTrialDaysLeft = max(0, now()->diffInDays($enrollment->trial_ends_at, false));
+                    }
+                }
+            }
+            
             return [
                 'id' => $student->id,
                 'name' => $student->name,
@@ -64,6 +81,9 @@ class StudentController extends Controller
                 'parent_phone' => $student->parent_phone,
                 'avatar' => $student->avatar,
                 'is_active' => $enrollments->contains('is_active', true),
+                'status' => $bestStatus,
+                'days_left' => $bestDaysLeft,
+                'trial_days_left' => $bestTrialDaysLeft,
                 'teachers_count' => $enrollments->unique('teacher_id')->count(),
                 'teachers' => $enrollments->map(function ($enrollment) {
                     return [
@@ -73,9 +93,12 @@ class StudentController extends Controller
                         'group_name' => $enrollment->group?->name,
                         'is_active' => $enrollment->is_active,
                         'subscription_end' => $enrollment->subscription_end,
-                        'remaining_days' => ($enrollment->is_active && $enrollment->subscription_end) 
-                            ? now()->startOfDay()->diffInDays(\Carbon\Carbon::parse($enrollment->subscription_end)->endOfDay(), false) 
-                            : 0,
+                        'status' => $enrollment->status,
+                        'days_left' => $enrollment->days_left,
+                        'trial_ends_at' => $enrollment->trial_ends_at,
+                        'trial_days_left' => $enrollment->status === 'trial' && $enrollment->trial_ends_at
+                            ? max(0, now()->diffInDays($enrollment->trial_ends_at, false))
+                            : null,
                     ];
                 })->values(),
                 'group_name' => $enrollments->pluck('group.name')->filter()->unique()->implode(', '),

@@ -34,34 +34,61 @@ class Enrollment extends Model
         ];
     }
 
-    protected $appends = ['status', 'days_left'];
+    protected $appends = ['status', 'days_left', 'trial_ends_at'];
 
     // Accessors
     public function getStatusAttribute()
     {
+        $today = now()->startOfDay();
+        $trialPeriodDays = (int) \App\Models\Setting::getValue('trial_period_days', 4);
+        
+        // Check trial period for new enrollments (not yet activated)
+        if (!$this->is_active && !$this->subscription_end) {
+            $trialEndDate = $this->created_at->copy()->addDays($trialPeriodDays)->startOfDay();
+            
+            if ($today <= $trialEndDate) {
+                return 'trial';
+            }
+            
+            return 'inactive'; // Trial expired, not activated
+        }
+        
+        // Manually deactivated by teacher
         if (!$this->is_active) {
             return 'inactive';
         }
 
+        // Active but no subscription yet - check trial period
         if (!$this->subscription_end) {
-            return 'inactive'; // Not yet activated
+            $trialEndDate = $this->created_at->copy()->addDays($trialPeriodDays)->startOfDay();
+            
+            if ($today <= $trialEndDate) {
+                return 'trial';
+            }
+            
+            return 'inactive'; // Trial expired, no subscription
         }
 
-        $today = now()->startOfDay();
         $end = $this->subscription_end->startOfDay();
         
-        // Active: Not expired yet
+        // Active: Subscription not expired yet
         if ($end >= $today) {
             return 'active';
         }
 
-        // Grace Period: Expired but within 3 days
-        $gracePeriodEnd = $end->copy()->addDays(3);
+        // Subscription expired - check post-subscription trial period
+        $postSubscriptionTrialEnd = $end->copy()->addDays($trialPeriodDays);
+        if ($today <= $postSubscriptionTrialEnd) {
+            return 'trial';
+        }
+
+        // Grace Period: Trial expired but within 3 days
+        $gracePeriodEnd = $postSubscriptionTrialEnd->copy()->addDays(3);
         if ($today <= $gracePeriodEnd) {
             return 'grace_period';
         }
 
-        // Expired: Past grace period
+        // Expired: Past all grace periods
         return 'expired';
     }
 
@@ -75,6 +102,23 @@ class Enrollment extends Model
         $end = $this->subscription_end->startOfDay();
 
         return (int) $today->diffInDays($end, false);
+    }
+
+    public function getTrialEndsAtAttribute()
+    {
+        $trialPeriodDays = (int) \App\Models\Setting::getValue('trial_period_days', 4);
+        
+        // Trial from creation (new enrollment, not activated OR active but no subscription)
+        if (!$this->subscription_end) {
+            return $this->created_at->copy()->addDays($trialPeriodDays);
+        }
+        
+        // Trial after subscription ends
+        if ($this->subscription_end && now() > $this->subscription_end) {
+            return $this->subscription_end->copy()->addDays($trialPeriodDays);
+        }
+        
+        return null;
     }
 
     // Relationships

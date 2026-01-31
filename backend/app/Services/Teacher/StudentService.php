@@ -51,11 +51,6 @@ class StudentService
             // Check if student exists by phone
             if (!empty($data['phone'])) {
                 $existingStudent = Student::findByPhone($data['phone']);
-                \Log::info('Student lookup by phone', [
-                    'phone' => $data['phone'],
-                    'found' => $existingStudent ? 'yes' : 'no',
-                    'student_id' => $existingStudent?->id ?? 'N/A',
-                ]);
             }
 
             if ($existingStudent) {
@@ -68,61 +63,29 @@ class StudentService
                     $academyIdFromContext = $grade?->academy_id;
                 }
 
-                // Check if already enrolled with this teacher IN THE SAME CONTEXT
-                // Context = academy_id (null for independent, UUID for academy)
-                $existingEnrollmentQuery = Enrollment::withTrashed()
-                    ->where('student_id', $existingStudent->id)
+                // Check if already enrolled with this teacher IN THE SAME CONTEXT (academy or independent)
+                $existingEnrollment = Enrollment::where('student_id', $existingStudent->id)
                     ->where('teacher_id', $teacher->id);
                 
                 // Filter by academy context
                 if ($academyIdFromContext) {
-                    $existingEnrollmentQuery->where('academy_id', $academyIdFromContext);
+                    $existingEnrollment->where('academy_id', $academyIdFromContext);
                 } else {
-                    $existingEnrollmentQuery->whereNull('academy_id');
+                    $existingEnrollment->whereNull('academy_id');
                 }
                 
-                $existingEnrollment = $existingEnrollmentQuery->first();
+                $existingEnrollment = $existingEnrollment->first();
 
                 if ($existingEnrollment) {
-                    \Log::info('Found existing enrollment, updating context', [
-                        'enrollment_id' => $existingEnrollment->id,
-                        'old_academy_id' => $existingEnrollment->academy_id,
-                        'new_academy_id' => $academyIdFromContext,
-                        'old_grade_id' => $existingEnrollment->grade_id,
-                        'new_grade_id' => $data['grade_id'] ?? null,
-                    ]);
-
-                    $updates = [];
-
                     // Reactivate if soft deleted
                     if ($existingEnrollment->trashed()) {
                         $existingEnrollment->restore();
-                        $updates['is_active'] = true;
-                    }
-
-                    // Update academy context if different
-                    if ($existingEnrollment->academy_id !== $academyIdFromContext) {
-                        $updates['academy_id'] = $academyIdFromContext;
-                    }
-
-                    // Update grade if different
-                    if (isset($data['grade_id']) && $existingEnrollment->grade_id !== $data['grade_id']) {
-                        $updates['grade_id'] = $data['grade_id'];
-                    }
-
-                    // Update group if different
-                    if (isset($data['group_id']) && $existingEnrollment->group_id !== $data['group_id']) {
-                        $updates['group_id'] = $data['group_id'];
-                    }
-
-                    if (!empty($updates)) {
-                        $existingEnrollment->update($updates);
-                        \Log::info('Updated enrollment', ['updates' => $updates]);
+                        $existingEnrollment->update(['is_active' => true]);
                     }
                     
                     return [
                         'student' => $existingStudent,
-                        'enrollment' => $existingEnrollment->fresh(),
+                        'enrollment' => $existingEnrollment,
                         'is_new_student' => false,
                         'was_already_enrolled' => true,
                     ];
@@ -179,84 +142,35 @@ class StudentService
                 'teacher_id' => $teacher->id,
             ]);
 
-            // Create enrollment with duplication protection
-            try {
-                $enrollment = Enrollment::create([
-                    'student_id' => $student->id,
-                    'teacher_id' => $teacher->id,
-                    'grade_id' => $data['grade_id'] ?? null,
-                    'group_id' => $data['group_id'] ?? null,
-                    'academy_id' => $academyId,
-                    'balance' => $data['balance'] ?? 0,
-                    'is_active' => true,
-                ]);
+            // Create enrollment
+            $enrollment = Enrollment::create([
+                'student_id' => $student->id,
+                'teacher_id' => $teacher->id,
+                'grade_id' => $data['grade_id'] ?? null,
+                'group_id' => $data['group_id'] ?? null,
+                'academy_id' => $academyId,
+                'balance' => $data['balance'] ?? 0,
+                'is_active' => true,
+            ]);
 
-                $wasAlreadyEnrolled = false;
-            } catch (\Illuminate\Database\QueryException $e) {
-                // Handle Duplicate Entry (SQL State 23000)
-                if ($e->getCode() === '23000' || str_contains($e->getMessage(), 'Duplicate entry')) {
-                    // Find enrollment in the same context
-                    $enrollmentQuery = Enrollment::withTrashed()
-                        ->where('student_id', $student->id)
-                        ->where('teacher_id', $teacher->id);
-                    
-                    // Filter by academy context
-                    if ($academyId) {
-                        $enrollmentQuery->where('academy_id', $academyId);
-                    } else {
-                        $enrollmentQuery->whereNull('academy_id');
-                    }
-                    
-                    $enrollment = $enrollmentQuery->first();
+            // Log activity
+            StudentActivityLog::log(
+                $student->id,
+                StudentActivityLog::ACTION_ENROLLED,
+                $enrollment->id,
+                ['teacher_id' => $teacher->id, 'is_new_student' => $isNewStudent],
+                'Teacher',
+                $teacher->id
+            );
 
-                    if ($enrollment) {
-                        // Restore and update existing
-                        if ($enrollment->trashed()) {
-                            $enrollment->restore();
-                        }
-                        
-                        $updates = ['is_active' => true];
-                        
-                        // Update context
-                        if ($enrollment->academy_id !== $academyId) {
-                            $updates['academy_id'] = $academyId;
-                        }
-                        
-                        // Update other fields if needed, but respect existing unless specifically requested?
-                        // For now, minimal updates to activate
-                        $enrollment->update($updates);
-                        
-                        $isNewStudent = false;
-                        $wasAlreadyEnrolled = true;
-                    } else {
-                        // If it's a duplicate but we can't find it, something is very wrong
-                        throw $e;
-                    }
-                } else {
-                    throw $e;
-                }
-            }
-
-            // Log activity only if newly created (to avoid dup logs for existing)
-            if (!$wasAlreadyEnrolled) {
-                StudentActivityLog::log(
-                    $student->id,
-                    StudentActivityLog::ACTION_ENROLLED,
-                    $enrollment->id,
-                    ['teacher_id' => $teacher->id, 'is_new_student' => $isNewStudent],
-                    'Teacher',
-                    $teacher->id
-                );
-
-                // Initialize gamification points
-                \App\Models\StudentPoint::getOrCreate($student->id, $teacher->id);
-            }
+            // Initialize gamification points
+            \App\Models\StudentPoint::getOrCreate($student->id, $teacher->id);
 
             return [
                 'student' => $student,
                 'enrollment' => $enrollment,
                 'is_new_student' => $isNewStudent,
-                'was_already_enrolled' => $wasAlreadyEnrolled,
+                'was_already_enrolled' => false,
             ];
         });
     }
@@ -267,8 +181,6 @@ class StudentService
      */
     public function searchByPhone(string $phone): ?Student
     {
-        $phone = trim($phone);
-
         // Try to get from cache first
         $cachedId = \App\Services\Infrastructure\CacheService::getStudentIdByPhone($phone);
         
@@ -276,14 +188,11 @@ class StudentService
             $cachedProfile = \App\Services\Infrastructure\CacheService::getStudentProfile($cachedId);
             if ($cachedProfile) {
                 // Return cached student as model
-                $student = Student::find($cachedId);
-                if ($student) {
-                    return $student;
-                }
+                return Student::find($cachedId);
             }
         }
         
-        // Not in cache or cache invalid, get from database
+        // Not in cache, get from database
         $student = Student::findByPhone($phone);
         
         if ($student) {
