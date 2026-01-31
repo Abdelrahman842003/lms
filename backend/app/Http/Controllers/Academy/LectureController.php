@@ -32,7 +32,7 @@ class LectureController extends Controller
         }
 
         $perPage = (int) $request->input('per_page', 10);
-        $filters = $request->only(['search', 'date_from', 'date_to', 'group_id', 'status', 'teacher_id']);
+        $filters = $request->only(['search', 'teacher_id', 'status', 'group_id']);
         
         $lectures = $this->service->getLectures($academy, $filters, $perPage);
 

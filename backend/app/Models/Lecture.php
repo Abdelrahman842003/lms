@@ -103,6 +103,10 @@ class Lecture extends Model
             $query->where('group_id', $groupId);
         }
 
+        if ($teacherId = $filters['teacher_id'] ?? null) {
+            $query->where('teacher_id', $teacherId);
+        }
+
         if ($status = $filters['status'] ?? null) {
             switch ($status) {
                 case 'today':
