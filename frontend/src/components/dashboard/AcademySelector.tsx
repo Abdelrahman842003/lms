@@ -43,27 +43,44 @@ export function AcademySelector({ isOpen, onClose }: AcademySelectorProps) {
       ]);
 
       // Handle both response formats: direct data or wrapped in data property
-      const data = response.data || response;
+      const data = (response as any).data || response;
       let academiesList: Academy[] = data.academies || [];
       
+      
       // Merge pivot data from user profile if available
-      if (userProfile.user && userProfile.user.academies) {
-        console.log('User Profile Academies for Merge:', userProfile.user.academies);
-        const userAcademies = userProfile.user.academies;
-        academiesList = academiesList.map(academy => {
-          // Loose equality check for ID to handle string/number differences
-          const userAcademy = userAcademies.find((ua: any) => ua.id == academy.id);
-          if (userAcademy) {
-             console.log(`Found matching academy for ${academy.name}:`, userAcademy);
-             if (userAcademy.pivot) {
-                return {
-                  ...academy,
-                  pivot: userAcademy.pivot
-                };
-             }
-          }
-          return academy;
-        });
+      let isIndependentActive = false;
+      if (userProfile.user) {
+         isIndependentActive = !!userProfile.user.is_independent_active;
+         
+         if (userProfile.user.academies) {
+            console.log('User Profile Academies for Merge:', userProfile.user.academies);
+            const userAcademies = userProfile.user.academies;
+            academiesList = academiesList.map(academy => {
+              // Loose equality check for ID to handle string/number differences
+              const userAcademy = userAcademies.find((ua: any) => ua.id == academy.id);
+              if (userAcademy) {
+                 console.log(`Found matching academy for ${academy.name}:`, userAcademy);
+                 if (userAcademy.pivot) {
+                    return {
+                      ...academy,
+                      pivot: userAcademy.pivot
+                    };
+                 }
+              }
+              return academy;
+            });
+         }
+      }
+
+      // Prepend "Independent" option if active
+      if (isIndependentActive) {
+        const independentAcademy: Academy = {
+          id: 'independent',
+          name: 'شخصي (مستقل)',
+          logo: null,
+          is_active: true
+        };
+        academiesList.unshift(independentAcademy);
       }
       
       console.log('Final Merged Academies List:', academiesList);

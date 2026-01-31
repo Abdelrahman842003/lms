@@ -168,34 +168,10 @@ export default function AcademyGroupsPage() {
     try {
       setIsLoading(true);
       const response = await academyService.getGroups(page, itemsPerPage, { search: searchQuery });
-      console.log('Groups API Response:', response);
-      const payload = response.data || response;
-      console.log('Groups Payload:', payload);
-      
-      let groupsList = [];
-      let meta: any = {};
-
-      if (payload.data && Array.isArray(payload.data)) {
-        groupsList = payload.data;
-        // Check for meta in multiple places
-        meta = payload.meta || payload.links || {}; 
-        if (!meta.current_page && payload.data.current_page) {
-             meta = payload.data; // sometimes pagination is mixed in
-        }
-      } else if (payload.data?.data && Array.isArray(payload.data.data)) {
-         groupsList = payload.data.data;
-         meta = payload.data.meta || payload.data || {};
-      } else if (Array.isArray(payload)) {
-        groupsList = payload;
-      }
-      
-      console.log('Parsed Groups:', groupsList);
-      console.log('Parsed Meta:', meta);
-
-      setGroups(groupsList);
-      setTotalPages(meta.last_page || 1);
-      setTotalItems(meta.total || 0);
-      setCurrentPage(meta.current_page || 1);
+      setGroups(response.data.data);
+      setTotalPages(response.data.meta.last_page);
+      setTotalItems(response.data.meta.total);
+      setCurrentPage(response.data.meta.current_page);
     } catch (error) {
       console.error('Failed to fetch groups:', error);
     } finally {

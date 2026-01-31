@@ -66,10 +66,13 @@ export default function GradeDetailsPage() {
     fetchGrades(1);
   }, [gradeName]);
 
+  // Filter out grades without teachers (General/System grades)
+  const visibleGrades = grades.filter(grade => grade.teacher_id);
+
   // Stats
-  const totalTeachers = grades.length;
-  const totalGroups = grades.reduce((sum, grade) => sum + (grade.groups_count || 0), 0);
-  const totalStudents = grades.reduce((sum, grade) => sum + (grade.students_count || 0), 0);
+  const totalTeachers = visibleGrades.length;
+  const totalGroups = visibleGrades.reduce((sum, grade) => sum + (grade.groups_count || 0), 0);
+  const totalStudents = visibleGrades.reduce((sum, grade) => sum + (grade.students_count || 0), 0);
 
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -225,7 +228,7 @@ export default function GradeDetailsPage() {
     {
       label: 'تعديل',
       icon: 'fas fa-edit',
-      variant: 'primary' as const,
+      variant: 'default' as const,
       onClick: (row: Grade) => handleEditClick(row),
     },
     {
@@ -293,7 +296,7 @@ export default function GradeDetailsPage() {
       >
         <DataTable
           columns={tableColumns}
-          data={grades}
+          data={visibleGrades}
           actions={tableActions}
           searchable={false}
           pagination={true}

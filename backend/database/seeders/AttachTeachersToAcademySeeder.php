@@ -27,21 +27,49 @@ class AttachTeachersToAcademySeeder extends Seeder
         $this->command->info("Attaching {$teachers->count()} teachers to academy: {$academy->name}");
 
         foreach ($teachers as $teacher) {
+            // Attach to academy
             if (!$academy->teachers()->where('teacher_id', $teacher->id)->exists()) {
                 $academy->teachers()->attach($teacher->id, [
                     'is_active' => true,
                     'joined_at' => now(),
                 ]);
             }
-            
-            // Update academy_id in grades and groups for this teacher
-            \App\Models\Grade::where('teacher_id', $teacher->id)
-                ->whereNull('academy_id')
-                ->update(['academy_id' => $academy->id]);
+
+            if ($teacher->phone === '01000000001') {
+                // Hybrid Logic for Demo Teacher (Teacher 1)
+                $this->command->info(" Creating Hybrid Data for Teacher 1 ({$teacher->phone})...");
                 
-            \App\Models\Group::where('teacher_id', $teacher->id)
-                ->whereNull('academy_id')
-                ->update(['academy_id' => $academy->id]);
+                // 1. Academy Grades (1st & 2nd Secondary)
+                $academyGrades = \App\Models\Grade::where('teacher_id', $teacher->id)
+                    ->whereIn('name', ['1st Secondary', '2nd Secondary'])->get();
+                    
+                foreach ($academyGrades as $grade) {
+                    $grade->update(['academy_id' => $academy->id]);
+                    $grade->groups()->update(['academy_id' => $academy->id]);
+                    $grade->enrollments()->update(['academy_id' => $academy->id]);
+                }
+
+                // 2. Independent Grades (3rd Secondary) - Ensure NULL
+                $independentGrades = \App\Models\Grade::where('teacher_id', $teacher->id)
+                    ->where('name', '3rd Secondary')->get();
+                    
+                foreach ($independentGrades as $grade) {
+                    $grade->update(['academy_id' => null]);
+                    $grade->groups()->update(['academy_id' => null]);
+                    $grade->enrollments()->update(['academy_id' => null]);
+                }
+                
+            } else {
+                // Standard Logic for others (All Academy)
+                \App\Models\Grade::where('teacher_id', $teacher->id)
+                    ->update(['academy_id' => $academy->id]);
+                    
+                \App\Models\Group::where('teacher_id', $teacher->id)
+                    ->update(['academy_id' => $academy->id]);
+
+                \App\Models\Enrollment::where('teacher_id', $teacher->id)
+                    ->update(['academy_id' => $academy->id]);
+            }
         }
 
         $this->command->info('Teachers attached successfully!');

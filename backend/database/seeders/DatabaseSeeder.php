@@ -35,10 +35,10 @@ class DatabaseSeeder extends Seeder
             RolesAndPermissionsSeeder::class,
             SuperAdminSeeder::class,
             AdminSeeder::class,
-            AcademySeeder::class,
-            CompleteSeeder::class,
-            AttachTeachersToAcademySeeder::class,
-            AcademyTestDataSeeder::class,
+            // AcademySeeder::class,
+            // CompleteSeeder::class,
+            // AttachTeachersToAcademySeeder::class,
+            // AcademyTestDataSeeder::class,
         ]);
     }
 }

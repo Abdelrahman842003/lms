@@ -53,11 +53,33 @@ class StudentController extends Controller
         $student = $this->service->searchByPhone($request->input('phone'));
         
         if ($student) {
-            // Check if already enrolled with this teacher
             $teacher = $this->getTeacherFromRequest($request);
-            $enrollment = Enrollment::where('student_id', $student->id)
-                ->where('teacher_id', $teacher->id)
-                ->first();
+            
+            // Get academy context from the request
+            $academyId = $request->header('X-Academy-Id') ?? $request->input('academy_id');
+            $gradeId = $request->input('grade_id');
+            
+            // Determine academy_id from grade if provided
+            $academyIdFromGrade = null;
+            if ($gradeId) {
+                $grade = \App\Models\Grade::find($gradeId);
+                $academyIdFromGrade = $grade?->academy_id;
+            } else if ($academyId && $academyId !== 'independent') {
+                $academyIdFromGrade = $academyId;
+            }
+            
+            // Check if already enrolled with this teacher IN THE SAME CONTEXT
+            $enrollmentQuery = Enrollment::where('student_id', $student->id)
+                ->where('teacher_id', $teacher->id);
+            
+            // Filter by academy context
+            if ($academyIdFromGrade) {
+                $enrollmentQuery->where('academy_id', $academyIdFromGrade);
+            } else {
+                $enrollmentQuery->whereNull('academy_id');
+            }
+            
+            $enrollment = $enrollmentQuery->first();
                 
             return $this->successResponse([
                 'found' => true,
@@ -89,6 +111,23 @@ class StudentController extends Controller
         try {
             $teacher = $this->getTeacherFromRequest($request);
             $validated = $request->validated();
+            
+            // Get academy context from header
+            $academyId = $request->header('X-Academy-Id');
+            
+            // Log for debugging
+            \Log::info('Creating student with context', [
+                'academy_id_header' => $academyId,
+                'grade_id' => $validated['grade_id'] ?? null,
+                'teacher_id' => $teacher->id,
+            ]);
+            
+            // Pass academy_id to the validated data
+            if ($academyId && $academyId !== 'independent') {
+                $validated['academy_id'] = $academyId;
+            } else {
+                $validated['academy_id'] = null;
+            }
 
             // Validation for group/grade is handled in StoreStudentRequest
 

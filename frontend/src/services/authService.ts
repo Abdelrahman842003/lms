@@ -241,6 +241,16 @@ export function getAuthHeaders(additionalHeaders: Record<string, string> = {}): 
       } catch (e) {
         // Ignore parse error
       }
+    } else {
+      // If no academy selected, check if user is teacher
+      // If teacher, default to independent context because if they had academies, one would be selected by default (usually)
+      // and checking 'independent' is safer than sending nothing (which returns empty)
+      if (typeof window !== 'undefined') {
+        const userType = localStorage.getItem('userType');
+        if (userType === 'teacher') {
+          headers['X-Academy-Id'] = 'independent';
+        }
+      }
     }
   }
 

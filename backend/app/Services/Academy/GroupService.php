@@ -15,10 +15,8 @@ class GroupService
     public function getGroups(Academy $academy, array $filters = [], int $perPage = 10): LengthAwarePaginator
     {
         $query = Group::where(function ($query) use ($academy) {
-            $query->where('academy_id', $academy->id)
-                  ->orWhereHas('grade', function ($g) use ($academy) {
-                      $g->where('academy_id', $academy->id);
-                  });
+            // Get groups that belong to this academy directly (created by academy)
+            $query->where('academy_id', $academy->id);
         });
 
         // Log the SQL query for debugging

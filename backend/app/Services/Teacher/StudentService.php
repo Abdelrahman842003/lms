@@ -26,24 +26,13 @@ class StudentService
 
         // Apply academy filter via grade relationship
         if ($academyId === 'independent') {
-            // Strict independent filter: 
-            // 1. Enrollment has no academy_id (handled by applyAcademyFilter)
-            // 2. Grade has no academy_id
-            // 3. Group has no academy_id
-            $query->whereNull('academy_id')
-                  ->whereDoesntHave('grade', function($q) {
-                      $q->whereNotNull('academy_id');
-                  })
-                  ->whereDoesntHave('group', function($q) {
-                      $q->whereNotNull('academy_id');
-                  });
+            // Independent filter: only check Enrollment academy_id
+            // The enrollment itself should be independent (academy_id = null)
+            // Grade/Group can be anything (they might be shared across contexts)
+            $query->whereNull('academy_id');
         } elseif ($academyId) {
-            // Academy filter: Check Enrollment OR Grade OR Group
-            $query->where(function($q) use ($academyId) {
-                $q->where('academy_id', $academyId)
-                  ->orWhereHas('grade', fn($g) => $g->where('academy_id', $academyId))
-                  ->orWhereHas('group', fn($gr) => $gr->where('academy_id', $academyId));
-            });
+            // Academy filter: Check Enrollment academy_id
+            $query->where('academy_id', $academyId);
         }
 
         return $query->paginate($perPage);
@@ -65,10 +54,27 @@ class StudentService
             }
 
             if ($existingStudent) {
-                // Check if already enrolled with this teacher
+                // Get academy_id from request data (passed from controller based on X-Academy-Id header)
+                // If not provided, fallback to grade's academy_id
+                $academyIdFromContext = $data['academy_id'] ?? null;
+                
+                if ($academyIdFromContext === null && !empty($data['grade_id'])) {
+                    $grade = \App\Models\Grade::find($data['grade_id']);
+                    $academyIdFromContext = $grade?->academy_id;
+                }
+
+                // Check if already enrolled with this teacher IN THE SAME CONTEXT (academy or independent)
                 $existingEnrollment = Enrollment::where('student_id', $existingStudent->id)
-                    ->where('teacher_id', $teacher->id)
-                    ->first();
+                    ->where('teacher_id', $teacher->id);
+                
+                // Filter by academy context
+                if ($academyIdFromContext) {
+                    $existingEnrollment->where('academy_id', $academyIdFromContext);
+                } else {
+                    $existingEnrollment->whereNull('academy_id');
+                }
+                
+                $existingEnrollment = $existingEnrollment->first();
 
                 if ($existingEnrollment) {
                     // Reactivate if soft deleted
@@ -118,12 +124,23 @@ class StudentService
                 }
             }
 
-            // Get academy_id from grade
-            $academyId = null;
-            if (!empty($data['grade_id'])) {
+            // Get academy_id from request data (passed from controller based on X-Academy-Id header)
+            // If not provided, fallback to grade's academy_id for backward compatibility
+            $academyId = $data['academy_id'] ?? null;
+            
+            if ($academyId === null && !empty($data['grade_id'])) {
                 $grade = \App\Models\Grade::find($data['grade_id']);
                 $academyId = $grade?->academy_id;
             }
+            
+            // Log for debugging
+            \Log::info('Creating enrollment with academy_id', [
+                'academy_id_final' => $academyId,
+                'academy_id_from_data' => $data['academy_id'] ?? 'not set',
+                'grade_id' => $data['grade_id'] ?? null,
+                'student_id' => $student->id,
+                'teacher_id' => $teacher->id,
+            ]);
 
             // Create enrollment
             $enrollment = Enrollment::create([
