@@ -5,14 +5,14 @@
 
 import { 
   API_CONFIG, 
-  API_ENDPOINTS, 
+  FLAT_ENDPOINTS, 
   getErrorMessage,
   getApiBaseUrl
 } from '@/config/api-config';
 
 // Re-export for backward compatibility
 export const API_BASE_URL = API_CONFIG.baseUrl;
-export const ENDPOINTS = API_ENDPOINTS;
+export const ENDPOINTS = FLAT_ENDPOINTS;
 export { getErrorMessage as getDefaultArabicError };
 
 /**
@@ -160,6 +160,11 @@ export async function fetchApi<T = unknown>(
   skipAuthEvent: boolean = false
 ): Promise<T> {
   const headers = getAuthHeaders(options.headers as Record<string, string>);
+
+  // Ensure endpoint is valid
+  if (!endpoint || typeof endpoint !== 'string') {
+    throw new Error('Invalid endpoint: endpoint must be a non-empty string');
+  }
 
   const cleanBaseUrl = getApiBaseUrl();
   const url = `${cleanBaseUrl}${endpoint.startsWith('/api') ? endpoint : '/api' + endpoint}`;

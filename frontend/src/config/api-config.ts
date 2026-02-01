@@ -291,9 +291,45 @@ export function extractApiData<T>(response: any): T {
   return response as T;
 }
 
+// Flat endpoint references for backward compatibility
+export const FLAT_ENDPOINTS = {
+  // Auth endpoints
+  LOGIN_ADMIN: API_ENDPOINTS.auth.loginAdmin,
+  LOGIN_TEACHER: API_ENDPOINTS.auth.loginTeacher,
+  LOGIN_STUDENT: API_ENDPOINTS.auth.loginStudent,
+  LOGIN_SECRETARY: API_ENDPOINTS.auth.loginSecretary,
+  LOGIN_PARENT: API_ENDPOINTS.auth.loginParent,
+  LOGIN_ACADEMY: API_ENDPOINTS.auth.loginAcademy,
+  
+  LOGOUT_ADMIN: API_ENDPOINTS.auth.logoutAdmin,
+  LOGOUT_TEACHER: API_ENDPOINTS.auth.logoutTeacher,
+  LOGOUT_STUDENT: API_ENDPOINTS.auth.logoutStudent,
+  LOGOUT_SECRETARY: API_ENDPOINTS.auth.logoutSecretary,
+  LOGOUT_PARENT: API_ENDPOINTS.auth.logoutParent,
+  LOGOUT_ACADEMY: API_ENDPOINTS.auth.logoutAcademy,
+  
+  ME_ADMIN: API_ENDPOINTS.auth.meAdmin,
+  ME_TEACHER: API_ENDPOINTS.auth.meTeacher,
+  ME_STUDENT: API_ENDPOINTS.auth.meStudent,
+  ME_SECRETARY: API_ENDPOINTS.auth.meSecretary,
+  ME_PARENT: API_ENDPOINTS.auth.meParent,
+  ME_ACADEMY: API_ENDPOINTS.auth.meAcademy,
+  
+  // Teacher dashboard endpoints
+  TEACHER_DASHBOARD_ACADEMIES: API_ENDPOINTS.teacher.dashboard.academies,
+  TEACHER_DASHBOARD_STATS: API_ENDPOINTS.teacher.dashboard.stats,
+  TEACHER_DASHBOARD_STUDENTS: API_ENDPOINTS.teacher.dashboard.students,
+  TEACHER_DASHBOARD_LECTURES: API_ENDPOINTS.teacher.dashboard.lectures,
+  
+  // Student endpoints
+  STUDENT_TEACHERS: API_ENDPOINTS.student.teachers,
+  STUDENT_TEACHER_DASHBOARD: '/api/student/teacher', // Manual endpoint
+} as const;
+
 export default {
   API_CONFIG,
   API_ENDPOINTS,
+  FLAT_ENDPOINTS,
   HTTP_METHODS,
   HTTP_STATUS,
   DEFAULT_ERROR_MESSAGES,
