@@ -1,4 +1,5 @@
 import { fetchApi } from './authService';
+import type { PaymentLog } from '../types/teacher.types';
 
 // ===================
 // Types
@@ -8,21 +9,6 @@ export interface Student {
   id: string;
   name: string;
   phone?: string;
-}
-
-export interface PaymentLog {
-  id: string;
-  client_side_uuid: string;
-  student_id: string;
-  student: Student;
-  amount: number;
-  confirmation_code: string;
-  status: 'pending' | 'confirmed' | 'expired' | 'cancelled';
-  payment_method: string;
-  confirmed_at: string | null;
-  expires_at: string;
-  notes: string | null;
-  created_at: string;
 }
 
 export interface PaymentStatistics {
@@ -68,7 +54,7 @@ export async function getPayments(params?: {
   const queryString = searchParams.toString();
   const url = `/api/teacher/payments${queryString ? `?${queryString}` : ''}`;
 
-  const response = await fetchApi(url);
+  const response = await fetchApi<{ data: { payments: PaymentLog[]; meta?: Record<string, unknown> } }>(url);
   return response.data;
 }
 
@@ -76,7 +62,7 @@ export async function getPayments(params?: {
  * Get pending payments from server
  */
 export async function getPendingPaymentsFromServer(): Promise<PaymentLog[]> {
-  const response = await fetchApi('/api/teacher/payments/pending');
+  const response = await fetchApi<{ data: { payments: PaymentLog[] } }>('/api/teacher/payments/pending');
   return response.data.payments;
 }
 
@@ -84,7 +70,7 @@ export async function getPendingPaymentsFromServer(): Promise<PaymentLog[]> {
  * Get payment statistics
  */
 export async function getPaymentStatistics(): Promise<PaymentStatistics> {
-  const response = await fetchApi('/api/teacher/payments/statistics');
+  const response = await fetchApi<{ data: PaymentStatistics }>('/api/teacher/payments/statistics');
   return response.data;
 }
 
@@ -103,7 +89,7 @@ export async function cancelPayment(paymentId: string): Promise<void> {
 export async function createPayment(
   data: CreatePaymentData
 ): Promise<CreatePaymentResult> {
-  const response = await fetchApi('/api/teacher/payments', {
+  const response = await fetchApi<{ data: { confirmation_code: string; payment: PaymentLog } }>('/api/teacher/payments', {
     method: 'POST',
     body: JSON.stringify({
       student_id: data.student_id,
@@ -133,7 +119,13 @@ export async function confirmPayment(code: string): Promise<{
   subscription_end: string;
   days_left: number;
 }> {
-  const response = await fetchApi('/api/student/payments/confirm', {
+  const response = await fetchApi<{ data: {
+    message: string;
+    amount: number;
+    teacher_name: string;
+    subscription_end: string;
+    days_left: number;
+  } }>('/api/student/payments/confirm', {
     method: 'POST',
     body: JSON.stringify({ code: code.toUpperCase() }),
   });
@@ -153,7 +145,14 @@ export async function getStudentPendingPayments(): Promise<
     days_until_expiration: number;
   }>
 > {
-  const response = await fetchApi('/api/student/payments/pending');
+  const response = await fetchApi<{ data: { payments: Array<{
+    id: string;
+    amount: number;
+    teacher_name: string;
+    created_at: string;
+    expires_at: string;
+    days_until_expiration: number;
+  }> } }>('/api/student/payments/pending');
   return response.data.payments;
 }
 
@@ -171,6 +170,6 @@ export async function getStudentPaymentHistory(params?: {
   const queryString = searchParams.toString();
   const url = `/api/student/payments/history${queryString ? `?${queryString}` : ''}`;
 
-  const response = await fetchApi(url);
+  const response = await fetchApi<{ data: { payments: PaymentLog[]; meta?: Record<string, unknown> } }>(url);
   return response.data;
 }

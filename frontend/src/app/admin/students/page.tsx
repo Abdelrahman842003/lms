@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { withAdminAuth } from '@/components/auth/withAdminAuth';
 import { DataTable } from '@/components/dashboard/DataTable';
 import { StatCard } from '@/components/dashboard/StatCard';

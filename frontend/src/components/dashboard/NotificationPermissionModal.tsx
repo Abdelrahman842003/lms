@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { useSettings } from '@/contexts/SettingsContext';
 
 export const NotificationPermissionModal = () => {

@@ -4,7 +4,7 @@ import React, { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { withAcademyAuth } from '@/components/auth/withAcademyAuth';
 import { fetchApi } from '@/services/authService';
 import { getAcademyStudentDetails } from '@/services/academyService';
@@ -102,8 +102,8 @@ function PaymentPage({ params }: { params: Promise<{ id: string }> }) {
         setStudent(studentData);
 
         // Fetch Settings
-        const settings = await fetchApi('/public-settings');
-        if (settings.academy_student_price) {
+        const settings = await fetchApi('/public-settings') as any;
+        if (settings?.academy_student_price) {
           setAcademyStudentPrice(parseFloat(settings.academy_student_price));
         }
       } catch (error) {
@@ -442,14 +442,13 @@ function PaymentPage({ params }: { params: Promise<{ id: string }> }) {
                                     let effectiveStartDate = subEnd && subEnd > today ? subEnd : today;
                                     
                                     if (subEnd && subEnd > today) {
-                                      const nextDay = new Date(subEnd);
-                                      nextDay.setDate(nextDay.getDate() + 1);
-                                      effectiveStartDate = nextDay;
-                                    }
-                                    
-                                    const targetEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-                                    let diff = (date.getFullYear() - effectiveStartDate.getFullYear()) * 12 + (date.getMonth() - effectiveStartDate.getMonth());
-                                    setMonths(Math.max(1, diff + 1));
+                                    const nextDay = new Date(subEnd);
+                                    nextDay.setDate(nextDay.getDate() + 1);
+                                    effectiveStartDate = nextDay;
+                                  }
+                                  
+                                  let diff = (date.getFullYear() - effectiveStartDate.getFullYear()) * 12 + (date.getMonth() - effectiveStartDate.getMonth());
+                                  setMonths(Math.max(1, diff + 1));
                                   }}
                                   style={isPaid && colors ? {
                                     backgroundColor: colors.bg,

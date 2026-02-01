@@ -1,102 +1,150 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-const rateLimitMap = new Map();
+interface RateLimitData {
+  count: number;
+  lastReset: number;
+}
+
+const rateLimitMap = new Map<string, RateLimitData>();
+
+// Rate limit configuration
+const RATE_LIMIT = 150; // requests per window
+const RATE_WINDOW_MS = 1000; // 1 second
+
+/**
+ * Valid user roles for type checking
+ */
+const VALID_ROLES = ['admin', 'teacher', 'student', 'secretary', 'parent', 'academy'] as const;
+type UserRole = typeof VALID_ROLES[number];
+
+/**
+ * Get client IP from request
+ */
+function getClientIp(request: NextRequest): string {
+  // Try to get IP from headers first (for proxied requests)
+  const forwardedFor = request.headers.get('x-forwarded-for');
+  if (forwardedFor) {
+    return forwardedFor.split(',')[0].trim();
+  }
+  
+  const realIp = request.headers.get('x-real-ip');
+  if (realIp) {
+    return realIp;
+  }
+  
+  // Fallback to CF connecting IP or localhost
+  return request.headers.get('cf-connecting-ip') || '127.0.0.1';
+}
+
+/**
+ * Check and update rate limit for IP
+ */
+function checkRateLimit(ip: string): { allowed: boolean; remaining: number; resetTime: number } {
+  const now = Date.now();
+  let ipData = rateLimitMap.get(ip);
+
+  if (!ipData) {
+    ipData = { count: 0, lastReset: now };
+    rateLimitMap.set(ip, ipData);
+  }
+
+  // Reset window if expired
+  if (now - ipData.lastReset > RATE_WINDOW_MS) {
+    ipData.count = 0;
+    ipData.lastReset = now;
+  }
+
+  const allowed = ipData.count < RATE_LIMIT;
+  if (allowed) {
+    ipData.count += 1;
+  }
+
+  return {
+    allowed,
+    remaining: Math.max(0, RATE_LIMIT - ipData.count),
+    resetTime: ipData.lastReset + RATE_WINDOW_MS,
+  };
+}
+
+/**
+ * Get redirect URL based on user role
+ */
+function getRedirectUrlForRole(role: string | undefined, baseUrl: string): string | null {
+  if (!role || !VALID_ROLES.includes(role as UserRole)) {
+    return null;
+  }
+
+  const roleRoutes: Record<UserRole, string> = {
+    student: '/student/dashboard',
+    teacher: '/teacher/dashboard',
+    admin: '/admin/dashboard',
+    secretary: '/secretary/dashboard',
+    parent: '/parent/children',
+    academy: '/academy/dashboard',
+  };
+
+  return new URL(roleRoutes[role as UserRole], baseUrl).toString();
+}
 
 export function middleware(request: NextRequest) {
-  // @ts-ignore
-  const ip = request.ip ?? '127.0.0.1';
-  const limit = 150; // Limiting requests to 150 per second per IP
-  const windowMs = 1000; // 1 second
+  const ip = getClientIp(request);
+  const rateLimit = checkRateLimit(ip);
 
-  if (!rateLimitMap.has(ip)) {
-    rateLimitMap.set(ip, {
-      count: 0,
-      lastReset: Date.now(),
-    });
-  }
-
-  const ipData = rateLimitMap.get(ip);
-
-  if (Date.now() - ipData.lastReset > windowMs) {
-    ipData.count = 0;
-    ipData.lastReset = Date.now();
-  }
-
-  if (ipData.count >= limit) {
+  // Rate limit exceeded
+  if (!rateLimit.allowed) {
     return new NextResponse('Too Many Requests', {
       status: 429,
       headers: {
-        'X-RateLimit-Limit': limit.toString(),
+        'X-RateLimit-Limit': RATE_LIMIT.toString(),
         'X-RateLimit-Remaining': '0',
-        'X-RateLimit-Reset': (ipData.lastReset + windowMs).toString(),
+        'X-RateLimit-Reset': rateLimit.resetTime.toString(),
+        'Retry-After': Math.ceil(RATE_WINDOW_MS / 1000).toString(),
       },
     });
   }
 
-  ipData.count += 1;
-
   const { pathname } = request.nextUrl;
   
-  // Check for Laravel session cookie or token
-  // We check for 'laravel_session' or 'XSRF-TOKEN' as indicators of a session.
-  // We also check for 'auth_state' which is set by our client-side AuthContext.
+  // Check for auth state cookie (set by client-side AuthContext)
   const hasSession = request.cookies.has('auth_state');
+  const userRole = request.cookies.get('user_role')?.value;
   
-  // Define protected routes
-  const isDashboard = pathname.startsWith('/dashboard');
-  const isTeacherRoute = pathname.startsWith('/teacher');
-  const isStudentRoute = pathname.startsWith('/student');
-  const isParentRoute = pathname.startsWith('/parent');
-  const isAdminRoute = pathname.startsWith('/admin') && !pathname.startsWith('/admin/login');
+  // Define route types
+  const protectedRoutes = {
+    isDashboard: pathname.startsWith('/dashboard'),
+    isTeacher: pathname.startsWith('/teacher'),
+    isStudent: pathname.startsWith('/student'),
+    isParent: pathname.startsWith('/parent'),
+    isSecretary: pathname.startsWith('/secretary'),
+    isAcademy: pathname.startsWith('/academy'),
+    isAdmin: pathname.startsWith('/admin') && !pathname.startsWith('/admin/login'),
+  };
   
-  // Define auth routes (login pages)
+  const isProtectedRoute = Object.values(protectedRoutes).some(Boolean);
   const isAuthRoute = pathname === '/login' || pathname === '/register' || pathname === '/admin/login';
+  const isLandingPage = pathname === '/';
 
-  // 1. Redirect unauthenticated users trying to access protected routes
-  if ((isDashboard || isTeacherRoute || isStudentRoute || isParentRoute || isAdminRoute) && !hasSession) {
-    const loginUrl = new URL('/login', request.url);
-    // If trying to access admin route, redirect to admin login if it exists, otherwise generic login
-    if (isAdminRoute) {
-       // Check if we should redirect to admin login specifically? 
-       // For now, let's stick to generic login or let the client handle it.
-       // But user asked for specific behavior. Let's redirect to /login for now.
-    }
+  // 1. Redirect unauthenticated users from protected routes to login
+  if (isProtectedRoute && !hasSession) {
+    const loginUrl = new URL(protectedRoutes.isAdmin ? '/admin/login' : '/login', request.url);
+    loginUrl.searchParams.set('redirect', pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  // 2. Redirect authenticated users trying to access auth routes
-  // 2. Redirect authenticated users trying to access auth routes or landing page
-  if ((isAuthRoute || pathname === '/') && hasSession) {
-    const userRole = request.cookies.get('user_role')?.value;
-    
-    if (userRole) {
-      if (userRole === 'student') {
-        return NextResponse.redirect(new URL('/student/dashboard', request.url));
-      } else if (userRole === 'teacher') {
-        return NextResponse.redirect(new URL('/teacher/dashboard', request.url));
-      } else if (userRole === 'admin') {
-        return NextResponse.redirect(new URL('/admin/dashboard', request.url));
-      } else if (userRole === 'secretary') {
-      } else if (userRole === 'secretary') {
-        return NextResponse.redirect(new URL('/secretary/dashboard', request.url));
-      } else if (userRole === 'parent') {
-        return NextResponse.redirect(new URL('/parent/children', request.url));
-      }
+  // 2. Redirect authenticated users from auth routes to their dashboard
+  if ((isAuthRoute || isLandingPage) && hasSession) {
+    const redirectUrl = getRedirectUrlForRole(userRole, request.url);
+    if (redirectUrl) {
+      return NextResponse.redirect(redirectUrl);
     }
-    
-    // Fallback if no role found or unknown role, maybe redirect to a generic dashboard or keep as is
-    // For now, let's redirect to student dashboard as a safe default or just allow access if role is missing
-    // But better to just let them pass if we can't decide, to avoid infinite loops.
-    // However, if they have a session but no role, something is wrong.
-    // Let's try to infer from previous logic or just let them be.
-    return NextResponse.next();
   }
   
+  // Add rate limit headers to response
   const response = NextResponse.next();
-  response.headers.set('X-RateLimit-Limit', limit.toString());
-  response.headers.set('X-RateLimit-Remaining', (limit - ipData.count).toString());
-  response.headers.set('X-RateLimit-Reset', (ipData.lastReset + windowMs).toString());
+  response.headers.set('X-RateLimit-Limit', RATE_LIMIT.toString());
+  response.headers.set('X-RateLimit-Remaining', rateLimit.remaining.toString());
+  response.headers.set('X-RateLimit-Reset', rateLimit.resetTime.toString());
   
   return response;
 }

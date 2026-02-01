@@ -53,12 +53,12 @@ export const getGroups = async (
 };
 
 export const getGroup = async (id: string): Promise<{ group: Group; students: any[] }> => {
-  const data = await fetchApi(`/teacher/groups/${id}`);
+  const data = await fetchApi<{ group: Group; students: any[] }>(`/teacher/groups/${id}`);
   return data;
 };
 
 export const createGroup = async (data: CreateGroupData): Promise<{ group: Group; message: string }> => {
-  const res = await fetchApi('/teacher/groups', {
+  const res = await fetchApi<{ group: Group; message: string }>('/teacher/groups', {
     method: 'POST',
     body: JSON.stringify(data),
   });
@@ -66,7 +66,7 @@ export const createGroup = async (data: CreateGroupData): Promise<{ group: Group
 };
 
 export const updateGroup = async (id: string, data: UpdateGroupData): Promise<{ group: Group; message: string }> => {
-  const res = await fetchApi(`/teacher/groups/${id}`, {
+  const res = await fetchApi<{ group: Group; message: string }>(`/teacher/groups/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   });
@@ -74,7 +74,7 @@ export const updateGroup = async (id: string, data: UpdateGroupData): Promise<{ 
 };
 
 export const deleteGroup = async (id: string): Promise<{ message: string }> => {
-  const res = await fetchApi(`/teacher/groups/${id}`, {
+  const res = await fetchApi<{ message: string }>(`/teacher/groups/${id}`, {
     method: 'DELETE',
   });
   return res;

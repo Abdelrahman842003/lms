@@ -6,7 +6,7 @@ import { DataTable } from '@/components/dashboard/DataTable';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { TeacherStatsCharts } from '@/components/dashboard/TeacherStatsCharts';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/EnhancedAuthContext';
 
 
 export default function TeacherDashboard() {

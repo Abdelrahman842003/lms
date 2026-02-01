@@ -7,7 +7,7 @@ import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { DataTable } from '@/components/dashboard/DataTable';
 import { Filter } from '@/components/Filter';
 import { useSearchParams } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { getNotifications, sendNotification, Notification as SentNotification, ReceivedNotification } from '@/services/notificationService';
 import { toast } from 'react-hot-toast';
 import NotificationDetailsModal from '@/components/ui/NotificationDetailsModal';

@@ -6,7 +6,7 @@ import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { DataTable } from '@/components/dashboard/DataTable';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { getTeachers, createTeacher, updateTeacher, toggleTeacherStatus, loginAsTeacher, getDashboardStats, updateTeacherSubscription, getTeacherSubscription, approveTeacher, enableIndependent, disableIndependent, addToAcademy, removeFromAcademy, deleteTeacher } from '@/services/authService';
 import { toast } from 'react-hot-toast';
 import { Avatar } from '@/components/ui';

@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { withAdminAuth } from '@/components/auth/withAdminAuth';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { updateAdminProfile, changeAdminPassword } from '@/services/authService';
 import { Skeleton } from '@/components/ui';
 import NotificationSettings from '@/components/NotificationSettings';

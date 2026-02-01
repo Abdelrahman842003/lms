@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { Filter } from '@/components/Filter';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { createAcademyStudent, searchAcademyStudentByPhone, getGrades, getGroups, getTeachers } from '@/services/academyService';
 import { useRouter } from 'next/navigation';
 

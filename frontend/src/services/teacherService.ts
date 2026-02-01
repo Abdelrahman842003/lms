@@ -57,7 +57,23 @@ export const scanAttendance = async (qrCodeString: string): Promise<ScanAttendan
     
     return {
       status: true,
-      data: response
+      data: response as {
+        log: {
+          id: number;
+          teacher_id: number;
+          academy_id: number;
+          date: string;
+          checked_in_at: string | null;
+          checked_out_at: string | null;
+          status: 'checked_in' | 'checked_out';
+          duration_formatted?: string;
+        };
+        academy: {
+          id: number;
+          name: string;
+        };
+        message: string;
+      }
     };
   } catch (error: any) {
     // If JSON parse fails

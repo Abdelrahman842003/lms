@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { DataTable } from '@/components/dashboard/DataTable';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { withAdminAuth } from '@/components/auth/withAdminAuth';
 import { toast } from 'react-hot-toast';
 import {
@@ -42,13 +42,13 @@ interface Academy {
   joined: string;
 }
 
-function ReportsPage() {
+function ReportsPageContent() {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const searchParams = useSearchParams();
-  const [teachers, setTeachers] = useState<Teacher[]>([]);
-  const [academies, setAcademies] = useState<Academy[]>([]);
+  const [teachers, setTeachers] = useState<{id: string; name: string}[]>([]);
+  const [academies, setAcademies] = useState<{id: string; name: string}[]>([]);
   const [selectedTeacherId, setSelectedTeacherId] = useState<string>('');
   const [selectedAcademyId, setSelectedAcademyId] = useState<string>('');
   const [reportType, setReportType] = useState<ReportType>('admin');
@@ -450,7 +450,7 @@ function ReportsPage() {
                   <option value="" className="bg-[#1a1f37] text-white">-- اختر مدرس --</option>
                   {teachers.map((teacher) => (
                     <option key={teacher.id} value={teacher.id} className="bg-[#1a1f37] text-white">
-                      {teacher.name} ({teacher.students_count} طالب)
+                      {teacher.name}
                     </option>
                   ))}
                 </select>
@@ -921,6 +921,14 @@ function ReportsPage() {
         )}
       </div>
     </DashboardLayout>
+  );
+}
+
+function ReportsPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ReportsPageContent />
+    </Suspense>
   );
 }
 

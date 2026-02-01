@@ -1,4 +1,22 @@
-// Basic User types
+// Re-export all types from modules
+export * from './api.types';
+export * from './auth.types';
+export * from './teacher.types';
+export * from './student.types';
+export * from './admin.types';
+export * from './components.types';
+
+// Legacy types for backward compatibility - prefer using specific type imports
+// Example: import { AuthResponse } from '@/types/auth.types';
+
+/**
+ * @deprecated Use UserType from auth.types instead
+ */
+export type LegacyUserType = 'admin' | 'teacher' | 'student' | 'secretary' | 'parent' | 'academy';
+
+/**
+ * @deprecated Use BaseUser from auth.types instead
+ */
 export interface User {
     id: string | number
     name: string
@@ -12,13 +30,18 @@ export interface User {
     location?: string
     gender?: string
     education_type?: string
-    teachers?: any[]
-    permissions?: string[]  // Secretary/Admin permissions
+    teachers?: TeacherInfo[]
+    permissions?: string[]
     is_independent_active?: boolean
-    academies?: any[]
+    academies?: AcademyInfo[]
 }
 
-// Education platform specific types
+// Import for backward compatibility
+import { TeacherInfo, AcademyInfo } from './auth.types';
+
+/**
+ * @deprecated Use Grade from teacher.types instead
+ */
 export interface Teacher {
     id: number
     name: string
@@ -26,16 +49,12 @@ export interface Teacher {
     updated_at: string
 }
 
+/**
+ * @deprecated Use StudentUser from auth.types instead
+ */
 export interface Student {
     id: number
     name: string
     created_at: string
     updated_at: string
-}
-
-// Authentication response
-export interface AuthResponse {
-    token: string
-    user: Teacher | Student
-    role: 'teacher' | 'student' | 'parent' | 'academy'
 }

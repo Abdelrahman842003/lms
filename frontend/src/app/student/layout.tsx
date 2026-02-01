@@ -1,7 +1,7 @@
 'use client';
 
 import { StudentTeacherProvider } from '@/contexts/StudentTeacherContext';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { ReactNode } from 'react';
 
 export default function StudentLayout({ children }: { children: ReactNode }) {

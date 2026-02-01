@@ -34,7 +34,18 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
   const fetchNotifications = async () => {
     if (!role) return;
     try {
-      const data = await fetchApi(`/${role}/notifications`);
+      const data = await fetchApi<{
+        received_notifications?: AppNotification[];
+        notifications?: {
+          data?: AppNotification[];
+        } | AppNotification[];
+        data?: {
+          received_notifications?: AppNotification[];
+          notifications?: {
+            data?: AppNotification[];
+          } | AppNotification[];
+        };
+      }>(`/${role}/notifications`);
       let fetchedNotifications: AppNotification[] = [];
       
       // Handle different response structures
@@ -42,7 +53,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
         fetchedNotifications = data.received_notifications;
       } else if (data.notifications) {
         // Handle paginated response { notifications: { data: [...] } }
-        if (data.notifications.data && Array.isArray(data.notifications.data)) {
+        if (typeof data.notifications === 'object' && 'data' in data.notifications && Array.isArray(data.notifications.data)) {
           fetchedNotifications = data.notifications.data;
         } else if (Array.isArray(data.notifications)) {
           fetchedNotifications = data.notifications;
@@ -51,7 +62,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
         fetchedNotifications = data.data.received_notifications;
       } else if (data.data && data.data.notifications) {
          // Handle nested data structure
-         if (data.data.notifications.data && Array.isArray(data.data.notifications.data)) {
+         if (typeof data.data.notifications === 'object' && 'data' in data.data.notifications && Array.isArray(data.data.notifications.data)) {
             fetchedNotifications = data.data.notifications.data;
          } else if (Array.isArray(data.data.notifications)) {
             fetchedNotifications = data.data.notifications;

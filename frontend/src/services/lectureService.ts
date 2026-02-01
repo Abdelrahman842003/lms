@@ -114,7 +114,7 @@ export const getLectures = async (
 };
 
 export const createLecture = async (data: CreateLectureData): Promise<Lecture> => {
-  const res = await fetchApi('/teacher/lectures', {
+  const res = await fetchApi<{ lecture: Lecture }>('/teacher/lectures', {
     method: 'POST',
     body: JSON.stringify(data),
   });
@@ -122,7 +122,7 @@ export const createLecture = async (data: CreateLectureData): Promise<Lecture> =
 };
 
 export const updateLecture = async (id: string, data: UpdateLectureData): Promise<Lecture> => {
-  const res = await fetchApi(`/teacher/lectures/${id}`, {
+  const res = await fetchApi<{ lecture: Lecture }>(`/teacher/lectures/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   });

@@ -3,7 +3,7 @@
 import React, { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { getAcademyExam, updateAcademyExam, getGrades, getGroups, getExamTeachers } from '@/services/academyService';
 import { toast } from 'react-hot-toast';
 import { Filter } from '@/components/Filter';

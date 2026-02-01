@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { createLecture, CreateLectureData } from '@/services/lectureService';
 import { getGrades } from '@/services/gradeService';
 import { getGroups, Group } from '@/services/groupService';

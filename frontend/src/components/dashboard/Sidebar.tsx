@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { SidebarItem } from '@/types/dashboard';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/EnhancedAuthContext';
 
 interface SidebarProps {
   role: 'admin' | 'teacher' | 'student' | 'secretary';

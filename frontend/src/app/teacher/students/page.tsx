@@ -6,7 +6,7 @@ import { DataTable } from '@/components/dashboard/DataTable';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { ConfirmationModal } from '@/components/ui';
 import { Filter } from '@/components/Filter';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { getTeacherStudents, deleteTeacherStudent, toggleTeacherStudentStatus } from '@/services/authService';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -46,8 +46,8 @@ export default function StudentsPage() {
       const response = await getTeacherStudents(currentPage, 10, searchQuery, statusFilter);
       // Assuming response structure matches what we saw in secretaryService
       // If getTeacherStudents returns the 'students' object directly:
-      setStudents(response.data || []);
-      setTotalPages(response.last_page || 1);
+      setStudents(response.students || []);
+      setTotalPages(Math.ceil((response.total || 0) / 10));
       setTotalItems(response.total || 0);
     } catch (error) {
       console.error('Failed to fetch students:', error);
@@ -154,14 +154,14 @@ export default function StudentsPage() {
       label: 'الصف الدراسي',
       sortable: true,
       className: 'd-none-lg',
-      render: (value: any, row: any) => row.grade_name || '-',
+      render: (_: any, row: any) => row.grade_name || '-',
     },
     {
       key: 'group',
       label: 'المجموعة',
       sortable: true,
       className: 'd-none-md',
-      render: (value: any, row: any) => row.group_name || '-',
+      render: (_: any, row: any) => row.group_name || '-',
     },
     {
       key: 'attendance_stats',

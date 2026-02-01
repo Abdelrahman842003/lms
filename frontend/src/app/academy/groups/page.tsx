@@ -7,7 +7,7 @@ import { StatCard } from '@/components/dashboard/StatCard';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { DataTable } from '@/components/dashboard/DataTable';
 import { Filter } from '@/components/Filter';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/EnhancedAuthContext';
 import * as academyService from '@/services/academyService';
 import { Group } from '@/services/groupService'; // Using Group type from groupService
 import { Grade } from '@/services/gradeService';

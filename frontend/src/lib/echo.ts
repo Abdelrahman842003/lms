@@ -31,7 +31,8 @@ export const initializeEcho = (token: string): Echo<"reverb"> => {
     Pusher.logToConsole = false;
   }
 
-  const isProduction = process.env.NODE_ENV === "production";
+  // Production environment check
+  process.env.NODE_ENV === "production";
 
   // Clean base URL - remove trailing /api or / to avoid duplication
   const baseUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000")

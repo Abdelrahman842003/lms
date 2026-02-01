@@ -7,7 +7,7 @@ import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { DataTable } from '@/components/dashboard/DataTable';
 import { Filter } from '@/components/Filter';
 import { useSearchParams } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { getGrades, Grade } from '@/services/gradeService';
 import { getGroups, Group } from '@/services/groupService';
 import { 

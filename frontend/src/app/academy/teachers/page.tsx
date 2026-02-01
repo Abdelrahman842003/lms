@@ -6,7 +6,7 @@ import { DataTable } from '@/components/dashboard/DataTable';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { ConfirmationModal } from '@/components/ui';
 import { Filter } from '@/components/Filter';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/EnhancedAuthContext';
 import academyService from '@/services/academyService';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';

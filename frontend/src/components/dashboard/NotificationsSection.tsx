@@ -44,7 +44,14 @@ export const NotificationsSection = () => {
 
   const fetchNotifications = async () => {
     try {
-      const data = await fetchApi('/parent/notifications');
+      const data = await fetchApi<{
+        received_notifications?: any[];
+        notifications?: any[];
+        data?: {
+          received_notifications?: any[];
+          notifications?: any[];
+        };
+      }>('/parent/notifications');
       
       // Handle different response structures
       let fetchedNotifications: Notification[] = [];

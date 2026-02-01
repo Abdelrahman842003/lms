@@ -6,7 +6,7 @@ import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { DataTable } from '@/components/dashboard/DataTable';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { getGroups, createGroup, updateGroup, deleteGroup, Group, CreateGroupData } from '@/services/groupService';
 import { getGrades, Grade as GradeType } from '@/services/gradeService';
 import { Select } from '@/components/ui/Select';

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { BillingClient } from './BillingClient';
 
 export default function BillingPage() {

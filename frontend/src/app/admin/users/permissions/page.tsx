@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { withAdminAuth } from '@/components/auth/withAdminAuth';
 import { getPermissions, Permission } from '@/services/roles';
 import { Skeleton } from '@/components/ui';

@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useSearchParams, useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/EnhancedAuthContext';
 import * as academyService from '@/services/academyService';
 import { Filter } from '@/components/Filter';
 import toast from 'react-hot-toast';
@@ -35,7 +35,6 @@ interface AttendeesResponse {
 export default function LectureAttendancePage() {
   const { user } = useAuth();
   const params = useParams();
-  const searchParams = useSearchParams();
   const router = useRouter();
   const lectureId = params.id as string;
   

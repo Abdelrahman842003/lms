@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { ExamCard } from '@/components/dashboard/ExamCard';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { getExams, toggleExamStatus, endExam, copyExam, deleteExam } from '@/services/authService';
 import { getGroups, Group } from '@/services/groupService';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';

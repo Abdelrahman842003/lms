@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { TeacherInfo } from '@/services/authService';
 
 export default function StudentTeachersPage() {

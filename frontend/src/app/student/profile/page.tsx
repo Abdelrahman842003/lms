@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { DashboardLayout, DashboardCard } from '@/components/dashboard';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { uploadAvatar, deleteAvatar, getAvatarUrl } from '@/services/avatarService';
 import { getAuthToken } from '@/services/authService';
 import { ImageCropModal, ConfirmationModal, Skeleton } from '@/components/ui';

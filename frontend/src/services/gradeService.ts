@@ -41,7 +41,7 @@ export const getGrades = async (
 };
 
 export const createGrade = async (data: CreateGradeData): Promise<{ grade: Grade; message: string }> => {
-  const res = await fetchApi('/teacher/grades', {
+  const res = await fetchApi<{ grade: Grade; message: string }>('/teacher/grades', {
     method: 'POST',
     body: JSON.stringify(data),
   });
@@ -49,7 +49,7 @@ export const createGrade = async (data: CreateGradeData): Promise<{ grade: Grade
 };
 
 export const updateGrade = async (id: string, data: UpdateGradeData): Promise<{ grade: Grade; message: string }> => {
-  const res = await fetchApi(`/teacher/grades/${id}`, {
+  const res = await fetchApi<{ grade: Grade; message: string }>(`/teacher/grades/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   });
@@ -57,7 +57,7 @@ export const updateGrade = async (id: string, data: UpdateGradeData): Promise<{ 
 };
 
 export const deleteGrade = async (id: string): Promise<{ message: string }> => {
-  const res = await fetchApi(`/teacher/grades/${id}`, {
+  const res = await fetchApi<{ message: string }>(`/teacher/grades/${id}`, {
     method: 'DELETE',
   });
   return res;

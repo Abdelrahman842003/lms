@@ -3,7 +3,7 @@
 import React from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { uploadAvatar, deleteAvatar, getAvatarUrl } from '@/services/avatarService';
 import { getAuthToken } from '@/services/authService';
 import { ImageCropModal, ConfirmationModal, Skeleton } from '@/components/ui';

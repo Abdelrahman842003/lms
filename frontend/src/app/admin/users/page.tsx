@@ -3,7 +3,7 @@
 import React from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { FeatureCard } from '@/components/dashboard/FeatureCard';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { withAdminAuth } from '@/components/auth/withAdminAuth';
 
 function UsersPage() {

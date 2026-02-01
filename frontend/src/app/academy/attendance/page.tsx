@@ -5,7 +5,7 @@ import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { DataTable } from '@/components/dashboard/DataTable';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { useRouter } from 'next/navigation';
 import * as academyService from '@/services/academyService';
 
@@ -165,12 +165,12 @@ export default function AttendancePage() {
     {
       key: 'checked_in_at',
       label: 'الحضور',
-      render: (value: string) => value ? new Date(value).toLocaleTimeString('ar-EG') : '-',
+      render: (value: any) => value ? new Date(value).toLocaleTimeString('ar-EG') : '-',
     },
     {
       key: 'checked_out_at',
       label: 'الانصراف',
-      render: (value: string) => value ? new Date(value).toLocaleTimeString('ar-EG') : '-',
+      render: (value: any) => value ? new Date(value).toLocaleTimeString('ar-EG') : '-',
       className: 'hidden md:table-cell', // Hide on small screens
     },
     {

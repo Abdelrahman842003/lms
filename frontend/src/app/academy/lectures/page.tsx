@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/EnhancedAuthContext';
 import StudentAttendanceSection from '@/components/dashboard/StudentAttendanceSection';
 
 export default function StudentLecturesPage() {

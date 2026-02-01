@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 
 import React, { useEffect, useState, Suspense } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { fetchApi } from '@/services/authService';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';

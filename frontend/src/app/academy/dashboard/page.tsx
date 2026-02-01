@@ -6,7 +6,7 @@ import { DataTable } from '@/components/dashboard/DataTable';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { AcademyStatsCharts } from '@/components/dashboard/AcademyStatsCharts';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/EnhancedAuthContext';
 import academyService from '@/services/academyService';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -78,7 +78,7 @@ function AcademyDashboard() {
       key: 'name',
       label: 'اسم المدرس',
       sortable: true,
-      render: (value: string, row: any) => (
+      render: (value: any, row: any) => (
         <div className="table-avatar-wrapper">
           <div className="table-avatar-circle">
             {row.avatar ? (

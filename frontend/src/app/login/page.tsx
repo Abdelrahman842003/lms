@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { PageTransition } from '@/components/shared/PageTransition';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { LoginContainer } from '@/components/auth/LoginContainer';
 import { LoginCard } from '@/components/auth/LoginCard';
 import { UserTypeSelector } from '@/components/auth/UserTypeSelector';

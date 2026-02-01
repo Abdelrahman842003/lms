@@ -16,7 +16,7 @@ export const CreativeDatePicker: React.FC<DatePickerProps> = ({
   maxDate,
 }) => {
   const [isOpen, setIsOpen] = React.useState(false);
-  const [selectedDate, setSelectedDate] = React.useState(value || '');
+  const [, setSelectedDate] = React.useState(value || '');
 
   const monthsArabic = [
     'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',

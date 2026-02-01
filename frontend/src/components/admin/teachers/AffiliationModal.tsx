@@ -27,21 +27,8 @@ export default function AffiliationModal({ isOpen, onClose, teacher, onSuccess }
     try {
       const response = await getAcademies(1, 100, { status: 'active' });
       console.log('Fetched Academies Response:', response);
-      // Handle different response structures
-      const data = response.data || response;
-      console.log('Processed Academies Data:', data);
-      
-      let academiesList = [];
-      if (Array.isArray(data)) {
-        academiesList = data;
-      } else if (Array.isArray(data.data)) {
-        academiesList = data.data;
-      } else if (data.academies && Array.isArray(data.academies.data)) {
-        // Handle paginated response inside 'academies' key
-        academiesList = data.academies.data;
-      } else if (Array.isArray(data.academies)) {
-        academiesList = data.academies;
-      }
+      const academiesList = response.academies || [];
+      console.log('Processed Academies Data:', academiesList);
       
       setAcademies(academiesList);
     } catch (error) {

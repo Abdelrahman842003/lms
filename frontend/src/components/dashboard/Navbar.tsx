@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { SidebarItem } from '@/types/dashboard';
 import { NotificationDropdown } from './NotificationDropdown';
 import { TeacherSelectionDropdown } from './TeacherSelectionDropdown';
@@ -479,8 +479,7 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
       if (role === 'teacher') {
         try {
           const response = await getTeacherAcademies();
-          const data = (response as any).data || response;
-          const academiesList = data.academies || [];
+          const academiesList = response.academies || [];
           setHasAcademies(academiesList.length > 0);
         } catch (error) {
           console.error('Failed to check academies:', error);
