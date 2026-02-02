@@ -110,10 +110,6 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::put('/academy-billings/{billing}/status', [\App\Http\Controllers\Admin\AcademyBillingController::class, 'updateStatus']);
         Route::delete('/academy-billings/{billing}', [\App\Http\Controllers\Admin\AcademyBillingController::class, 'destroy']);
 
-        // Platform Payments
-        Route::get('/platform-payments', [\App\Http\Controllers\Admin\PlatformPaymentsController::class, 'index']);
-        Route::get('/platform-payments/stats', [\App\Http\Controllers\Admin\PlatformPaymentsController::class, 'stats']);
-        Route::post('/platform-payments/{id}/confirm', [\App\Http\Controllers\Admin\PlatformPaymentsController::class, 'confirm']);
 
     });
 });

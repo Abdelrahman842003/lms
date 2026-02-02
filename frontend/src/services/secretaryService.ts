@@ -31,12 +31,12 @@ export const secretaryService = {
       ...(search && { search }),
       ...(status && { status }),
     });
-    return fetchApi(`/teacher/secretaries?${queryParams}`);
+    return fetchApi(`/api/teacher/secretaries?${queryParams}`);
   },
 
   // Get single secretary
   getSecretary: async (id: string) => {
-    return fetchApi(`/teacher/secretaries/${id}`);
+    return fetchApi(`/api/teacher/secretaries/${id}`);
   },
 
   // Check phone
@@ -57,7 +57,7 @@ export const secretaryService = {
 
   // Update secretary
   updateSecretary: async (id: string, data: UpdateSecretaryData) => {
-    return fetchApi(`/teacher/secretaries/${id}`, {
+    return fetchApi(`/api/teacher/secretaries/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
@@ -65,21 +65,21 @@ export const secretaryService = {
 
   // Delete secretary
   deleteSecretary: async (id: string) => {
-    return fetchApi(`/teacher/secretaries/${id}`, {
+    return fetchApi(`/api/teacher/secretaries/${id}`, {
       method: 'DELETE',
     });
   },
 
   // Update permissions
   updatePermissions: async (id: string, permissions: string[]) => {
-    return fetchApi(`/teacher/secretaries/${id}/permissions`, {
+    return fetchApi(`/api/teacher/secretaries/${id}/permissions`, {
       method: 'PUT',
       body: JSON.stringify({ permissions }),
     });
   },
   // Toggle status
   toggleStatus: async (id: string) => {
-    return fetchApi(`/teacher/secretaries/${id}/toggle-status`, {
+    return fetchApi(`/api/teacher/secretaries/${id}/toggle-status`, {
       method: 'PUT',
     });
   },

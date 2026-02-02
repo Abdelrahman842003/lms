@@ -25,14 +25,26 @@ class TeacherController extends Controller
 
     public function index(Request $request)
     {
-        \Illuminate\Support\Facades\Log::info('TeacherController index request:', $request->all());
-        $perPage = $request->input('per_page', 10);
-        $filters = $request->only(['search', 'date_from', 'date_to', 'status', 'type', 'payment_status']);
-        $teachers = $this->teacherService->getTeachers($perPage, $filters);
-        
-        return $this->successResponse(
-            TeacherResource::collection($teachers)->response()->getData(true)
-        );
+        try {
+            $perPage = (int) $request->input('per_page', 10);
+            $filters = $request->only(['search', 'date_from', 'date_to', 'status', 'type', 'payment_status']);
+            $teachers = $this->teacherService->getTeachers($perPage, $filters);
+            
+            return $this->successResponse(
+                TeacherResource::collection($teachers)->response()->getData(true)
+            );
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Error in TeacherController@index: ' . $e->getMessage(), [
+                'exception' => $e,
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'status' => false,
+                'message' => 'حدث خطأ أثناء تحميل بيانات المدرسين: ' . $e->getMessage(),
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function store(\App\Http\Requests\Admin\StoreTeacherRequest $request)

@@ -36,7 +36,7 @@ export const getGrades = async (
     ...(filters?.search && { search: filters.search }),
   });
 
-  const data = await fetchApi(`/teacher/grades?${queryParams}`);
+  const data = await fetchApi(`/api/teacher/grades?${queryParams}`);
   return data;
 };
 

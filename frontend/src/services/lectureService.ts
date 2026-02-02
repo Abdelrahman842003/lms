@@ -110,7 +110,7 @@ export const getLectures = async (
     ...(filters?.status && { status: filters.status }),
   });
 
-  return await fetchApi(`/teacher/lectures?${queryParams}`);
+  return await fetchApi(`/api/teacher/lectures?${queryParams}`);
 };
 
 export const createLecture = async (data: CreateLectureData): Promise<Lecture> => {
@@ -130,19 +130,19 @@ export const updateLecture = async (id: string, data: UpdateLectureData): Promis
 };
 
 export const deleteLecture = async (id: string): Promise<void> => {
-  await fetchApi(`/teacher/lectures/${id}`, {
+  await fetchApi(`/api/teacher/lectures/${id}`, {
     method: 'DELETE',
   });
 };
 
 export const generateQrCode = async (id: string): Promise<{ qr_code_url: string; expires_at: string }> => {
-  return await fetchApi(`/teacher/lectures/${id}/qr-code`, {
+  return await fetchApi(`/api/teacher/lectures/${id}/qr-code`, {
     method: 'POST',
   });
 };
 
 export const recordAttendance = async (lectureId: string, studentId: string): Promise<{ message: string }> => {
-  return await fetchApi(`/teacher/lectures/${lectureId}/attendance`, {
+  return await fetchApi(`/api/teacher/lectures/${lectureId}/attendance`, {
     method: 'POST',
     body: JSON.stringify({ student_id: studentId }),
   });
@@ -156,13 +156,13 @@ export const markStudentAttendance = async (token: string): Promise<{ message: s
 };
 
 export const toggleLectureActive = async (id: string): Promise<{ message: string; is_active: boolean }> => {
-  return await fetchApi(`/teacher/lectures/${id}/toggle-active`, {
+  return await fetchApi(`/api/teacher/lectures/${id}/toggle-active`, {
     method: 'PUT',
   });
 };
 
 export const endLecture = async (id: string): Promise<{ message: string; lecture: Lecture }> => {
-  const res = await fetchApi(`/teacher/lectures/${id}/end`, {
+  const res = await fetchApi(`/api/teacher/lectures/${id}/end`, {
     method: 'POST',
   });
   return res.lecture;
@@ -184,7 +184,7 @@ export const getAttendees = async (
     queryParams.append('date_to', filters.date_to);
   }
   
-  return await fetchApi(`/teacher/lectures/${lectureId}/attendees?${queryParams.toString()}`);
+  return await fetchApi(`/api/teacher/lectures/${lectureId}/attendees?${queryParams.toString()}`);
 };
 
 export const exportAttendeesPDF = async (lectureId: string): Promise<void> => {
@@ -211,7 +211,7 @@ export const exportAttendeesPDF = async (lectureId: string): Promise<void> => {
 };
 
 export const cancelSession = async (id: string, date: string): Promise<{ message: string; lecture: Lecture }> => {
-  const res = await fetchApi(`/teacher/lectures/${id}/cancel-session`, {
+  const res = await fetchApi(`/api/teacher/lectures/${id}/cancel-session`, {
     method: 'POST',
     body: JSON.stringify({ date }),
   });
@@ -229,11 +229,11 @@ export interface LectureSession {
 
 export const getLectureSessions = async (lectureId: string, params?: { date_from?: string; date_to?: string }): Promise<LectureSession[]> => {
   const queryParams = new URLSearchParams(params as any);
-  return await fetchApi(`/teacher/lectures/${lectureId}/sessions?${queryParams}`);
+  return await fetchApi(`/api/teacher/lectures/${lectureId}/sessions?${queryParams}`);
 };
 
 export const updateLectureSession = async (lectureId: string, data: { date: string; title?: string; description?: string; is_cancelled?: boolean }): Promise<LectureSession> => {
-  return await fetchApi(`/teacher/lectures/${lectureId}/sessions`, {
+  return await fetchApi(`/api/teacher/lectures/${lectureId}/sessions`, {
     method: 'POST',
     body: JSON.stringify(data),
   });

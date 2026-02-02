@@ -72,12 +72,7 @@ const getNavItems = (role: string): SidebarItem[] => {
         icon: 'fas fa-chart-bar',
         href: '/admin/reports',
       },
-      {
-        id: 'platform-payments',
-        label: 'طلبات الدفع',
-        icon: 'fas fa-money-check-alt',
-        href: '/admin/platform-payments',
-      },
+
       {
         id: 'users',
         label: 'الصلاحيات',

@@ -36,7 +36,7 @@ export async function getTeacherStudents(
  * Search for student by phone number
  */
 export async function searchStudentByPhone(phone: string): Promise<unknown> {
-  return await fetchApi(`/teacher/students/search-phone?phone=${phone}`);
+  return await fetchApi(`/api/teacher/students/search-phone?phone=${phone}`);
 }
 
 /**
@@ -53,7 +53,7 @@ export async function createTeacherStudent(data: CreateStudentRequest): Promise<
  * Update a student
  */
 export async function updateTeacherStudent(id: string, data: UpdateStudentRequest): Promise<unknown> {
-  return await fetchApi(`/teacher/students/${id}`, {
+  return await fetchApi(`/api/teacher/students/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   });
@@ -63,7 +63,7 @@ export async function updateTeacherStudent(id: string, data: UpdateStudentReques
  * Update student permissions
  */
 export async function updateTeacherStudentPermissions(id: string, permissions: string[]): Promise<unknown> {
-  return await fetchApi(`/teacher/students/${id}/permissions`, {
+  return await fetchApi(`/api/teacher/students/${id}/permissions`, {
     method: 'PUT',
     body: JSON.stringify({ permissions }),
   });
@@ -93,7 +93,7 @@ export async function getTeacherStudentDetails(id: string): Promise<TeacherStude
  * Delete a student
  */
 export async function deleteTeacherStudent(id: string): Promise<unknown> {
-  return await fetchApi(`/teacher/students/${id}`, {
+  return await fetchApi(`/api/teacher/students/${id}`, {
     method: 'DELETE',
   });
 }
@@ -110,7 +110,7 @@ export async function activateTeacherStudent(
     notes?: string;
   }
 ): Promise<unknown> {
-  return await fetchApi(`/teacher/students/${id}/activate`, {
+  return await fetchApi(`/api/teacher/students/${id}/activate`, {
     method: 'POST',
     body: JSON.stringify(data),
   });
@@ -120,14 +120,14 @@ export async function activateTeacherStudent(
  * Get student activation details
  */
 export async function getStudentActivationDetails(id: string): Promise<StudentActivationDetails> {
-  return await fetchApi(`/teacher/students/${id}/activation-details`);
+  return await fetchApi(`/api/teacher/students/${id}/activation-details`);
 }
 
 /**
  * Toggle student status
  */
 export async function toggleTeacherStudentStatus(id: string): Promise<unknown> {
-  return await fetchApi(`/teacher/students/${id}/toggle-status`, {
+  return await fetchApi(`/api/teacher/students/${id}/toggle-status`, {
     method: 'PUT',
   });
 }
@@ -139,7 +139,7 @@ export async function createTeacherStudentPayment(
   studentId: string, 
   data: CreatePaymentRequest
 ): Promise<unknown> {
-  return await fetchApi(`/teacher/students/${studentId}/payments`, {
+  return await fetchApi(`/api/teacher/students/${studentId}/payments`, {
     method: 'POST',
     body: JSON.stringify(data),
   });

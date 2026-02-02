@@ -63,12 +63,7 @@ const getSidebarItems = (role: string): SidebarItem[] => {
         icon: 'fas fa-chart-line',
         href: '/admin/reports',
       },
-      {
-        id: 'platform_payments',
-        label: 'مدفوعات المنصة',
-        icon: 'fas fa-money-bill-wave',
-        href: '/admin/platform-payments',
-      },
+
       {
         id: 'access_control',
         label: 'الصلاحيات',

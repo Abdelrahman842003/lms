@@ -162,7 +162,7 @@ export async function disableIndependent(id: string): Promise<unknown> {
  * Add teacher to academy
  */
 export async function addToAcademy(teacherId: string, academyId: string): Promise<unknown> {
-  return await fetchApi(`/admin/teachers/${teacherId}/academies`, {
+  return await fetchApi(`/api/admin/teachers/${teacherId}/academies`, {
     method: 'POST',
     body: JSON.stringify({ academy_id: academyId }),
   });
@@ -172,7 +172,7 @@ export async function addToAcademy(teacherId: string, academyId: string): Promis
  * Remove teacher from academy
  */
 export async function removeFromAcademy(teacherId: string, academyId: string): Promise<unknown> {
-  return await fetchApi(`/admin/teachers/${teacherId}/academies/${academyId}`, {
+  return await fetchApi(`/api/admin/teachers/${teacherId}/academies/${academyId}`, {
     method: 'DELETE',
   });
 }
@@ -181,7 +181,7 @@ export async function removeFromAcademy(teacherId: string, academyId: string): P
  * Delete teacher
  */
 export async function deleteTeacher(id: string): Promise<unknown> {
-  return await fetchApi(`/admin/teachers/${id}`, {
+  return await fetchApi(`/api/admin/teachers/${id}`, {
     method: 'DELETE',
   });
 }
@@ -190,7 +190,7 @@ export async function deleteTeacher(id: string): Promise<unknown> {
  * Login as a teacher
  */
 export async function loginAsTeacher(id: string): Promise<unknown> {
-  return await fetchApi(`/admin/teachers/${id}/login`, {
+  return await fetchApi(`/api/admin/teachers/${id}/login`, {
     method: 'POST',
   });
 }
@@ -199,7 +199,7 @@ export async function loginAsTeacher(id: string): Promise<unknown> {
  * Update teacher subscription
  */
 export async function updateTeacherSubscription(id: string, data: UpdateSubscriptionRequest): Promise<TeacherSubscription> {
-  return await fetchApi(`/admin/teachers/${id}/subscription`, {
+  return await fetchApi(`/api/admin/teachers/${id}/subscription`, {
     method: 'POST',
     body: JSON.stringify(data),
   });
@@ -209,7 +209,7 @@ export async function updateTeacherSubscription(id: string, data: UpdateSubscrip
  * Get teacher subscription for a month
  */
 export async function getTeacherSubscription(id: string, month: string): Promise<TeacherSubscription> {
-  return await fetchApi(`/admin/teachers/${id}/subscription?month=${month}`);
+  return await fetchApi(`/api/admin/teachers/${id}/subscription?month=${month}`);
 }
 
 // ============================================
@@ -232,7 +232,7 @@ export async function getStudents(
     ...(filters?.date_from && { date_from: filters.date_from }),
     ...(filters?.date_to && { date_to: filters.date_to }),
   });
-  return await fetchApi(`/admin/students?${queryParams}`);
+  return await fetchApi(`/api/admin/students?${queryParams}`);
 }
 
 /**
@@ -275,7 +275,7 @@ export async function getAcademies(
     ...(filters?.search && { search: filters.search }),
     ...(filters?.status && { status: filters.status }),
   });
-  return await fetchApi(`/admin/academies?${queryParams}`);
+  return await fetchApi(`/api/admin/academies?${queryParams}`);
 }
 
 /**
@@ -312,7 +312,7 @@ export async function getAcademyDetails(id: string): Promise<AdminAcademy> {
  * Toggle academy status
  */
 export async function toggleAcademyStatus(id: string): Promise<unknown> {
-  return await fetchApi(`/admin/academies/${id}/toggle-status`, {
+  return await fetchApi(`/api/admin/academies/${id}/toggle-status`, {
     method: 'PUT',
   });
 }
@@ -321,7 +321,7 @@ export async function toggleAcademyStatus(id: string): Promise<unknown> {
  * Update academy subscription
  */
 export async function updateAcademySubscription(id: string, data: UpdateSubscriptionRequest): Promise<AcademySubscription> {
-  return await fetchApi(`/admin/academies/${id}/subscription`, {
+  return await fetchApi(`/api/admin/academies/${id}/subscription`, {
     method: 'POST',
     body: JSON.stringify(data),
   });
@@ -331,7 +331,7 @@ export async function updateAcademySubscription(id: string, data: UpdateSubscrip
  * Get academy subscription for a month
  */
 export async function getAcademySubscription(id: string, month: string): Promise<AcademySubscription> {
-  return await fetchApi(`/admin/academies/${id}/subscription?month=${month}`);
+  return await fetchApi(`/api/admin/academies/${id}/subscription?month=${month}`);
 }
 
 // ============================================
@@ -459,7 +459,7 @@ export async function getTeacherReport(teacherId: string, params: ReportParams):
     start_date: params.start_date,
     end_date: params.end_date,
   });
-  return await fetchApi(`/admin/reports/teacher/${teacherId}?${queryParams}`);
+  return await fetchApi(`/api/admin/reports/teacher/${teacherId}?${queryParams}`);
 }
 
 /**
@@ -470,7 +470,7 @@ export async function getAcademyReport(academyId: string, params: ReportParams):
     start_date: params.start_date,
     end_date: params.end_date,
   });
-  return await fetchApi(`/admin/reports/academy/${academyId}?${queryParams}`);
+  return await fetchApi(`/api/admin/reports/academy/${academyId}?${queryParams}`);
 }
 
 /**
@@ -481,7 +481,7 @@ export async function getAdminReport(params: ReportParams): Promise<AdminReportD
     start_date: params.start_date,
     end_date: params.end_date,
   });
-  return await fetchApi(`/admin/reports/admin?${queryParams}`);
+  return await fetchApi(`/api/admin/reports/admin?${queryParams}`);
 }
 
 /**

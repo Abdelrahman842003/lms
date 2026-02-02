@@ -60,7 +60,7 @@ export async function updateLecture(id: string, data: Partial<CreateLectureReque
  * Delete a lecture
  */
 export async function deleteLecture(id: string): Promise<unknown> {
-  return await fetchApi(`/teacher/lectures/${id}`, {
+  return await fetchApi(`/api/teacher/lectures/${id}`, {
     method: 'DELETE',
   });
 }
@@ -69,7 +69,7 @@ export async function deleteLecture(id: string): Promise<unknown> {
  * Start a lecture
  */
 export async function startLecture(id: string): Promise<unknown> {
-  return await fetchApi(`/teacher/lectures/${id}/start`, {
+  return await fetchApi(`/api/teacher/lectures/${id}/start`, {
     method: 'POST',
   });
 }
@@ -78,7 +78,7 @@ export async function startLecture(id: string): Promise<unknown> {
  * End a lecture
  */
 export async function endLecture(id: string): Promise<unknown> {
-  return await fetchApi(`/teacher/lectures/${id}/end`, {
+  return await fetchApi(`/api/teacher/lectures/${id}/end`, {
     method: 'POST',
   });
 }
@@ -87,7 +87,7 @@ export async function endLecture(id: string): Promise<unknown> {
  * Generate QR Code for lecture attendance
  */
 export async function generateLectureQrCode(id: string): Promise<{ qr_code: string; expires_at: string }> {
-  return await fetchApi(`/teacher/lectures/${id}/qr-code`, {
+  return await fetchApi(`/api/teacher/lectures/${id}/qr-code`, {
     method: 'POST',
   });
 }
@@ -106,14 +106,14 @@ export async function getLectureAttendance(id: string): Promise<{
     attended_at?: string;
   }>;
 }> {
-  return await fetchApi(`/teacher/lectures/${id}/attendance`);
+  return await fetchApi(`/api/teacher/lectures/${id}/attendance`);
 }
 
 /**
  * Mark student attendance manually
  */
 export async function markStudentAttendance(lectureId: string, studentId: string, status: 'present' | 'absent'): Promise<unknown> {
-  return await fetchApi(`/teacher/lectures/${lectureId}/attendance`, {
+  return await fetchApi(`/api/teacher/lectures/${lectureId}/attendance`, {
     method: 'POST',
     body: JSON.stringify({
       student_id: studentId,

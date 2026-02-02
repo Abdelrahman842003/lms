@@ -48,7 +48,7 @@ export const getGroups = async (
     ...(filters?.grade_id && { grade_id: filters.grade_id }),
   });
 
-  const data = await fetchApi(`/teacher/groups?${queryParams}`);
+  const data = await fetchApi(`/api/teacher/groups?${queryParams}`);
   return data;
 };
 

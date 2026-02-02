@@ -47,7 +47,7 @@ export async function updateGroup(id: string, data: Partial<CreateGroupRequest>)
  * Delete a group
  */
 export async function deleteGroup(id: string): Promise<unknown> {
-  return await fetchApi(`/teacher/groups/${id}`, {
+  return await fetchApi(`/api/teacher/groups/${id}`, {
     method: 'DELETE',
   });
 }
@@ -63,14 +63,14 @@ export async function getGroupStudents(id: string, page = 1, perPage = 10): Prom
     page: page.toString(),
     per_page: perPage.toString(),
   });
-  return await fetchApi(`/teacher/groups/${id}/students?${params}`);
+  return await fetchApi(`/api/teacher/groups/${id}/students?${params}`);
 }
 
 /**
  * Add student to group
  */
 export async function addStudentToGroup(groupId: string, studentId: string): Promise<unknown> {
-  return await fetchApi(`/teacher/groups/${groupId}/students`, {
+  return await fetchApi(`/api/teacher/groups/${groupId}/students`, {
     method: 'POST',
     body: JSON.stringify({ student_id: studentId }),
   });
@@ -80,7 +80,7 @@ export async function addStudentToGroup(groupId: string, studentId: string): Pro
  * Remove student from group
  */
 export async function removeStudentFromGroup(groupId: string, studentId: string): Promise<unknown> {
-  return await fetchApi(`/teacher/groups/${groupId}/students/${studentId}`, {
+  return await fetchApi(`/api/teacher/groups/${groupId}/students/${studentId}`, {
     method: 'DELETE',
   });
 }
@@ -94,5 +94,5 @@ export async function getGroupStatistics(id: string): Promise<{
   average_attendance: number;
   total_lectures: number;
 }> {
-  return await fetchApi(`/teacher/groups/${id}/statistics`);
+  return await fetchApi(`/api/teacher/groups/${id}/statistics`);
 }

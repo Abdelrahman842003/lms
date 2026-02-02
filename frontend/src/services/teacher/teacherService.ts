@@ -97,7 +97,7 @@ export async function getTeacherStudents(
  * Search for student by phone number
  */
 export async function searchStudentByPhone(phone: string): Promise<unknown> {
-  return await fetchApi(`/teacher/students/search-phone?phone=${phone}`);
+  return await fetchApi(`/api/teacher/students/search-phone?phone=${phone}`);
 }
 
 /**
@@ -114,7 +114,7 @@ export async function createTeacherStudent(data: CreateStudentRequest): Promise<
  * Update a student
  */
 export async function updateTeacherStudent(id: string, data: UpdateStudentRequest): Promise<unknown> {
-  return await fetchApi(`/teacher/students/${id}`, {
+  return await fetchApi(`/api/teacher/students/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   });
@@ -124,7 +124,7 @@ export async function updateTeacherStudent(id: string, data: UpdateStudentReques
  * Update student permissions
  */
 export async function updateTeacherStudentPermissions(id: string, permissions: string[]): Promise<unknown> {
-  return await fetchApi(`/teacher/students/${id}/permissions`, {
+  return await fetchApi(`/api/teacher/students/${id}/permissions`, {
     method: 'PUT',
     body: JSON.stringify({ permissions }),
   });
@@ -154,7 +154,7 @@ export async function getTeacherStudentDetails(id: string): Promise<TeacherStude
  * Delete a student
  */
 export async function deleteTeacherStudent(id: string): Promise<unknown> {
-  return await fetchApi(`/teacher/students/${id}`, {
+  return await fetchApi(`/api/teacher/students/${id}`, {
     method: 'DELETE',
   });
 }
@@ -167,7 +167,7 @@ export async function activateTeacherStudent(
   paidAmount?: number, 
   pricingSource?: string
 ): Promise<unknown> {
-  return await fetchApi(`/teacher/students/${id}/activate`, {
+  return await fetchApi(`/api/teacher/students/${id}/activate`, {
     method: 'PUT',
     body: JSON.stringify({ 
       paid_amount: paidAmount,
@@ -180,14 +180,14 @@ export async function activateTeacherStudent(
  * Get student activation details
  */
 export async function getStudentActivationDetails(id: string): Promise<StudentActivationDetails> {
-  return await fetchApi(`/teacher/students/${id}/activation-details`);
+  return await fetchApi(`/api/teacher/students/${id}/activation-details`);
 }
 
 /**
  * Toggle student status
  */
 export async function toggleTeacherStudentStatus(id: string): Promise<unknown> {
-  return await fetchApi(`/teacher/students/${id}/toggle-status`, {
+  return await fetchApi(`/api/teacher/students/${id}/toggle-status`, {
     method: 'PUT',
   });
 }
@@ -245,7 +245,7 @@ export async function updateGrade(id: string, data: Partial<CreateGradeRequest>)
  * Delete a grade
  */
 export async function deleteGrade(id: string): Promise<unknown> {
-  return await fetchApi(`/teacher/grades/${id}`, {
+  return await fetchApi(`/api/teacher/grades/${id}`, {
     method: 'DELETE',
   });
 }
@@ -287,7 +287,7 @@ export async function updateGroup(id: string, data: Partial<CreateGroupRequest>)
  * Delete a group
  */
 export async function deleteGroup(id: string): Promise<unknown> {
-  return await fetchApi(`/teacher/groups/${id}`, {
+  return await fetchApi(`/api/teacher/groups/${id}`, {
     method: 'DELETE',
   });
 }
@@ -330,7 +330,7 @@ export async function updateLecture(id: string, data: Partial<CreateLectureReque
  * Delete a lecture
  */
 export async function deleteLecture(id: string): Promise<unknown> {
-  return await fetchApi(`/teacher/lectures/${id}`, {
+  return await fetchApi(`/api/teacher/lectures/${id}`, {
     method: 'DELETE',
   });
 }
@@ -339,7 +339,7 @@ export async function deleteLecture(id: string): Promise<unknown> {
  * Generate QR Code for lecture
  */
 export async function generateLectureQrCode(id: string): Promise<unknown> {
-  return await fetchApi(`/teacher/lectures/${id}/qr-code`, {
+  return await fetchApi(`/api/teacher/lectures/${id}/qr-code`, {
     method: 'POST',
   });
 }
@@ -364,7 +364,7 @@ export async function getExams(
     ...(filters?.date_to && { date_to: filters.date_to }),
   });
 
-  return await fetchApi(`/teacher/exams?${queryParams}`);
+  return await fetchApi(`/api/teacher/exams?${queryParams}`);
 }
 
 /**
@@ -401,7 +401,7 @@ export async function updateExam(id: string, data: Partial<CreateExamRequest>): 
  * Delete an exam
  */
 export async function deleteExam(id: string): Promise<unknown> {
-  return await fetchApi(`/teacher/exams/${id}`, {
+  return await fetchApi(`/api/teacher/exams/${id}`, {
     method: 'DELETE',
   });
 }
@@ -410,7 +410,7 @@ export async function deleteExam(id: string): Promise<unknown> {
  * Toggle exam status
  */
 export async function toggleExamStatus(id: string): Promise<unknown> {
-  return await fetchApi(`/teacher/exams/${id}/toggle-status`, {
+  return await fetchApi(`/api/teacher/exams/${id}/toggle-status`, {
     method: 'PUT',
   });
 }
@@ -419,7 +419,7 @@ export async function toggleExamStatus(id: string): Promise<unknown> {
  * Force end an exam
  */
 export async function endExam(id: string): Promise<unknown> {
-  return await fetchApi(`/teacher/exams/${id}/end`, {
+  return await fetchApi(`/api/teacher/exams/${id}/end`, {
     method: 'PUT',
   });
 }
@@ -452,7 +452,7 @@ export async function getSecretaries(
     ...(search && { search }),
     ...(status && { status }),
   });
-  return await fetchApi(`/teacher/secretaries?${queryParams}`);
+  return await fetchApi(`/api/teacher/secretaries?${queryParams}`);
 }
 
 /**
@@ -481,7 +481,7 @@ export async function updateSecretary(id: string, data: Partial<CreateSecretaryR
  * Update secretary permissions
  */
 export async function updateSecretaryPermissions(id: string, permissions: string[]): Promise<unknown> {
-  return await fetchApi(`/teacher/secretaries/${id}/permissions`, {
+  return await fetchApi(`/api/teacher/secretaries/${id}/permissions`, {
     method: 'PUT',
     body: JSON.stringify({ permissions }),
   });
@@ -491,7 +491,7 @@ export async function updateSecretaryPermissions(id: string, permissions: string
  * Toggle secretary status
  */
 export async function toggleSecretaryStatus(id: string): Promise<unknown> {
-  return await fetchApi(`/teacher/secretaries/${id}/toggle-status`, {
+  return await fetchApi(`/api/teacher/secretaries/${id}/toggle-status`, {
     method: 'PUT',
   });
 }
@@ -500,7 +500,7 @@ export async function toggleSecretaryStatus(id: string): Promise<unknown> {
  * Delete a secretary
  */
 export async function deleteSecretary(id: string): Promise<unknown> {
-  return await fetchApi(`/teacher/secretaries/${id}`, {
+  return await fetchApi(`/api/teacher/secretaries/${id}`, {
     method: 'DELETE',
   });
 }
@@ -521,7 +521,7 @@ export async function getPermissions(): Promise<Permission[]> {
  * Get notifications
  */
 export async function getNotifications(page = 1): Promise<unknown> {
-  return await fetchApi(`/teacher/notifications?page=${page}`);
+  return await fetchApi(`/api/teacher/notifications?page=${page}`);
 }
 
 /**
@@ -553,7 +553,7 @@ export async function getMyTeacherReport(params: ReportParams): Promise<TeacherR
     start_date: params.start_date,
     end_date: params.end_date,
   });
-  return await fetchApi(`/teacher/reports/my-report?${queryParams}`);
+  return await fetchApi(`/api/teacher/reports/my-report?${queryParams}`);
 }
 
 /**

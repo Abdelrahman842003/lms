@@ -11,7 +11,7 @@ import type { AcademyInfo } from '@/types/auth.types';
  */
 export async function getTeacherDashboardStats(academyId?: string | null): Promise<unknown> {
   const params = academyId ? `?academy_id=${academyId}` : '';
-  return await fetchApi(`/teacher/dashboard/stats${params}`);
+  return await fetchApi(`/api/teacher/dashboard/stats${params}`);
 }
 
 /**
@@ -21,14 +21,14 @@ export async function getTeacherRecentStudents(limit: number = 5, academyId?: st
   const params = new URLSearchParams();
   params.append('limit', limit.toString());
   if (academyId) params.append('academy_id', academyId);
-  return await fetchApi(`/teacher/dashboard/students?${params}`);
+  return await fetchApi(`/api/teacher/dashboard/students?${params}`);
 }
 
 /**
  * Get teacher's upcoming lectures
  */
 export async function getTeacherUpcomingLectures(limit: number = 3): Promise<unknown> {
-  return await fetchApi(`/teacher/dashboard/lectures?limit=${limit}`);
+  return await fetchApi(`/api/teacher/dashboard/lectures?limit=${limit}`);
 }
 
 /**
@@ -49,12 +49,12 @@ export async function getTeacherStudentStatistics(): Promise<unknown> {
  * Get teacher performance metrics
  */
 export async function getTeacherPerformanceMetrics(period: 'week' | 'month' | 'year' = 'month'): Promise<unknown> {
-  return await fetchApi(`/teacher/dashboard/performance?period=${period}`);
+  return await fetchApi(`/api/teacher/dashboard/performance?period=${period}`);
 }
 
 /**
  * Get teacher revenue summary
  */
 export async function getTeacherRevenueSummary(period: 'month' | 'quarter' | 'year' = 'month'): Promise<unknown> {
-  return await fetchApi(`/teacher/dashboard/revenue?period=${period}`);
+  return await fetchApi(`/api/teacher/dashboard/revenue?period=${period}`);
 }

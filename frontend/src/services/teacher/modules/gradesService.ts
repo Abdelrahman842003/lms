@@ -47,7 +47,7 @@ export async function updateGrade(id: string, data: Partial<CreateGradeRequest>)
  * Delete a grade
  */
 export async function deleteGrade(id: string): Promise<unknown> {
-  return await fetchApi(`/teacher/grades/${id}`, {
+  return await fetchApi(`/api/teacher/grades/${id}`, {
     method: 'DELETE',
   });
 }
@@ -60,7 +60,7 @@ export async function getGradeStatistics(id: string): Promise<{
   active_students: number;
   average_performance: number;
 }> {
-  return await fetchApi(`/teacher/grades/${id}/statistics`);
+  return await fetchApi(`/api/teacher/grades/${id}/statistics`);
 }
 
 /**
@@ -74,5 +74,5 @@ export async function getGradeStudents(id: string, page = 1, perPage = 10): Prom
     page: page.toString(),
     per_page: perPage.toString(),
   });
-  return await fetchApi(`/teacher/grades/${id}/students?${params}`);
+  return await fetchApi(`/api/teacher/grades/${id}/students?${params}`);
 }
