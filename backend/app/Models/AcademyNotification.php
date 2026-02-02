@@ -24,6 +24,8 @@ class AcademyNotification extends Model
 
     protected $casts = [
         'read_by' => 'array',
+        'type' => \App\Enums\NotificationType::class,
+        'target_type' => \App\Enums\NotificationTargetType::class,
     ];
 
     /**

@@ -41,8 +41,6 @@ class PaymentController extends Controller
         }
     }
 
-    /**
-     * Initiate InstaPay payment for academy billing
-     */
+
 }
 

@@ -40,6 +40,8 @@ class Student extends Authenticatable
     {
         return [
             'password' => 'hashed',
+            'gender' => \App\Enums\StudentGender::class,
+            'education_type' => \App\Enums\StudentEducationType::class,
         ];
     }
 

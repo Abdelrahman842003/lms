@@ -17,6 +17,10 @@ class Attendance extends Model
         'status',
     ];
 
+    protected $casts = [
+        'status' => \App\Enums\StudentAttendanceStatus::class,
+    ];
+
     public function lecture()
     {
         return $this->belongsTo(Lecture::class);

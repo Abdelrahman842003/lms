@@ -803,14 +803,7 @@ export default {
   getTeacher,
 
   // Payments
-  initiateInstapayPayment: async (data: { month: number; year: number; amount: number }) => {
-    const response = await axios.post(
-      `${API_BASE_URL}/academy/payments/initiate-instapay`,
-      data,
-      { headers: getAuthHeaders() }
-    );
-    return response.data;
-  },
+
   addTeacher,
   removeTeacher,
   toggleTeacherStatus,

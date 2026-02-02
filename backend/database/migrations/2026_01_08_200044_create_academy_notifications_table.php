@@ -17,8 +17,8 @@ return new class extends Migration
             $table->foreignUuid('created_by')->nullable()->constrained('secretaries')->onDelete('set null');
             $table->string('title');
             $table->text('message');
-            $table->enum('type', ['info', 'warning', 'success', 'danger'])->default('info');
-            $table->enum('target_type', ['teachers', 'secretaries', 'all'])->default('all');
+            $table->string('type')->default(\App\Enums\NotificationType::INFO->value);
+            $table->string('target_type')->default(\App\Enums\NotificationTargetType::ALL->value);
             $table->json('read_by')->nullable(); // Array of user IDs who read the notification
             $table->timestamps();
 

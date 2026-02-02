@@ -12,7 +12,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->foreignUuid('lecture_id')->constrained('lectures')->onDelete('cascade');
             $table->foreignUuid('student_id')->constrained('students')->onDelete('cascade');
-            $table->enum('status', ['present', 'absent', 'late'])->default('absent');
+            $table->string('status')->default(\App\Enums\StudentAttendanceStatus::ABSENT->value);
             $table->timestamps();
 
             // Performance indexes

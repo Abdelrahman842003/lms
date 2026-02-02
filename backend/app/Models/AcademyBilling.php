@@ -12,6 +12,11 @@ class AcademyBilling extends Model
 {
     use HasFactory, HasUuids;
 
+    protected $casts = [
+        'status' => \App\Enums\AcademyBillingStatus::class,
+        'payment_method' => \App\Enums\PaymentMethod::class,
+    ];
+
     protected $fillable = [
         'academy_id',
         'month',
@@ -71,16 +76,7 @@ class AcademyBilling extends Model
         return $query->where('month', $month)->where('year', $year);
     }
 
-    /**
-     * Scope for billings awaiting InstaPay confirmation
-     * (has payment_key but not yet paid)
-     */
-    public function scopeAwaitingInstapayConfirmation($query)
-    {
-        return $query->whereNotNull('payment_key')
-                     ->where('status', '!=', 'paid')
-                     ->whereNotNull('payment_initiated_at');
-    }
+
 
     /**
      * Scope for filtering

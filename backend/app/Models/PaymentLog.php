@@ -51,6 +51,8 @@ class PaymentLog extends Model
             'meta' => 'array',
             'start_date' => 'date',
             'end_date' => 'date',
+            'status' => \App\Enums\PaymentLogStatus::class,
+            'price_source' => \App\Enums\PaymentPriceSource::class,
         ];
     }
 

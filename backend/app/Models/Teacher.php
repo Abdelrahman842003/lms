@@ -39,6 +39,7 @@ class Teacher extends Authenticatable
         return [
             'password' => 'hashed',
             'is_independent_active' => 'boolean',
+            'status' => \App\Enums\TeacherStatus::class,
         ];
     }
 

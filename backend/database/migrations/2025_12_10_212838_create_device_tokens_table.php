@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('token')->unique();
             $table->nullableUuidMorphs('tokenable'); // Adds tokenable_id (UUID) and tokenable_type
-            $table->enum('device_type', ['android', 'ios', 'web'])->default('web');
+            $table->string('device_type')->default(\App\Enums\DeviceType::WEB->value);
             $table->timestamp('last_used_at')->nullable();
             $table->timestamps();
 

@@ -22,8 +22,7 @@ return new class extends Migration
             $table->decimal('discount', 5, 2)->default(0);
             $table->decimal('commission', 10, 2)->default(0);
             $table->string('confirmation_code', 20)->index(); // XXXX-XXXX
-            $table->enum('status', ['pending', 'confirmed', 'expired', 'cancelled'])
-                  ->default('pending');
+            $table->string('status')->default(\App\Enums\PaymentLogStatus::PENDING->value);
             $table->string('payment_method')->default('cash');
             $table->uuid('received_by_id');
             $table->string('received_by_type'); // Teacher or Secretary
@@ -36,7 +35,7 @@ return new class extends Migration
             $table->date('end_date')->nullable();
             $table->decimal('base_price', 10, 2)->nullable();
             $table->decimal('teacher_amount', 10, 2)->nullable();
-            $table->enum('price_source', ['grade', 'group'])->nullable();
+            $table->string('price_source')->nullable();
             $table->json('meta')->nullable();
             $table->timestamps();
 

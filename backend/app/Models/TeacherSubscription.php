@@ -31,6 +31,7 @@ class TeacherSubscription extends Model
         'amount_due' => 'decimal:2',
         'amount_paid' => 'decimal:2',
         'payment_initiated_at' => 'datetime',
+        'status' => \App\Enums\TeacherSubscriptionStatus::class,
     ];
 
     public function teacher()
@@ -38,15 +39,7 @@ class TeacherSubscription extends Model
         return $this->belongsTo(Teacher::class);
     }
 
-    /**
-     * Scope for billings awaiting InstaPay confirmation
-     */
-    public function scopeAwaitingInstapayConfirmation($query)
-    {
-        return $query->whereNotNull('payment_key')
-                     ->where('status', '!=', 'paid')
-                     ->whereNotNull('payment_initiated_at');
-    }
+
 
     /**
      * Generate unique payment key

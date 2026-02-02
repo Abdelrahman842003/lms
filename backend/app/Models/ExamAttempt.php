@@ -26,6 +26,7 @@ class ExamAttempt extends Model
         'started_at' => 'datetime',
         'completed_at' => 'datetime',
         'questions_order' => 'array',
+        'status' => \App\Enums\ExamAttemptStatus::class,
     ];
 
     public function exam()

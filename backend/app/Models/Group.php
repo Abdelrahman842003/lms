@@ -12,6 +12,10 @@ class Group extends Model
 {
     use HasFactory, HasUuids;
 
+    protected $casts = [
+        'type' => \App\Enums\GroupType::class,
+    ];
+
     protected $keyType = 'string';
     public $incrementing = false;
 

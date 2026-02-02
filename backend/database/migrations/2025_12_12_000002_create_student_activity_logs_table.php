@@ -14,16 +14,7 @@ return new class extends Migration
             $table->foreignUuid('student_id')->constrained('students')->onDelete('cascade');
             $table->foreignUuid('enrollment_id')->nullable()->constrained('enrollments')->onDelete('set null');
             
-            $table->enum('action', [
-                'enrolled',
-                'unenrolled', 
-                'group_change',
-                'grade_change',
-                'payment',
-                'deduction',
-                'merged',
-                'status_change'
-            ]);
+            $table->string('action');
             
             $table->json('data')->nullable(); // Additional context
             

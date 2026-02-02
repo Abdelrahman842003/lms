@@ -18,7 +18,7 @@ return new class extends Migration
             $table->date('date');
             $table->dateTime('checked_in_at')->nullable();
             $table->dateTime('checked_out_at')->nullable();
-            $table->enum('status', ['checked_in', 'checked_out', 'absent'])->default('absent');
+            $table->string('status')->default(\App\Enums\TeacherAttendanceStatus::ABSENT->value);
             $table->text('notes')->nullable();
             $table->timestamps();
 

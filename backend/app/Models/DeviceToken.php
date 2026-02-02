@@ -22,6 +22,7 @@ class DeviceToken extends Model
 
     protected $casts = [
         'last_used_at' => 'datetime',
+        'device_type' => \App\Enums\DeviceType::class,
     ];
 
     /**

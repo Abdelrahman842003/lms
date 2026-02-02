@@ -20,12 +20,12 @@ return new class extends Migration
             $table->decimal('cost_per_student', 10, 2)->default(0);
             $table->decimal('total_cost', 10, 2)->default(0);
             $table->decimal('amount_paid', 10, 2)->default(0);
-            $table->enum('status', ['pending', 'partial', 'paid', 'cancelled'])->default('pending');
+            $table->string('status')->default(\App\Enums\AcademyBillingStatus::PENDING->value);
             $table->date('paid_at')->nullable();
             $table->text('notes')->nullable();
             $table->string('payment_key', 20)->nullable()->unique();
             $table->timestamp('payment_initiated_at')->nullable();
-            $table->enum('payment_method', ['admin', 'instapay'])->nullable();
+            $table->string('payment_method')->nullable();
             $table->timestamps();
 
             // Prevent duplicate billing for same month/year

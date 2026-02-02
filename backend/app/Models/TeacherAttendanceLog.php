@@ -27,6 +27,7 @@ class TeacherAttendanceLog extends Model
         'date' => 'date',
         'checked_in_at' => 'datetime',
         'checked_out_at' => 'datetime',
+        'status' => \App\Enums\TeacherAttendanceStatus::class,
     ];
 
     /**

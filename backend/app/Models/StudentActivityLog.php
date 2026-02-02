@@ -28,6 +28,7 @@ class StudentActivityLog extends Model
         return [
             'data' => 'array',
             'created_at' => 'datetime',
+            'action' => \App\Enums\StudentActivityAction::class,
         ];
     }
 

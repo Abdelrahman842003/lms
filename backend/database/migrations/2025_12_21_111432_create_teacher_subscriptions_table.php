@@ -18,7 +18,7 @@ return new class extends Migration
             $table->integer('student_count')->default(0);
             $table->decimal('amount_due', 10, 2)->default(0);
             $table->decimal('amount_paid', 10, 2)->default(0);
-            $table->enum('status', ['pending', 'partial', 'paid'])->default('pending');
+            $table->string('status')->default(\App\Enums\TeacherSubscriptionStatus::PENDING->value);
             $table->text('notes')->nullable();
             $table->timestamps();
 

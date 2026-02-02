@@ -528,7 +528,6 @@ export default function TeacherReportsPage() {
         )}
       </div>
 
-      {/* InstaPay Modal */}
     </DashboardLayout>
   );
 }
