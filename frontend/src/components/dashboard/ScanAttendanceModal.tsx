@@ -64,7 +64,6 @@ const ScanAttendanceModal: React.FC<ScanAttendanceModalProps> = ({ isOpen, onClo
                   }, 1000);
                 }
               } catch (error: any) {
-                console.error('Scan error:', error);
                 const errorMessage = error?.response?.data?.message || error?.message || 'فشل تسجيل الحضور';
                 toast.error(errorMessage);
                 
@@ -75,7 +74,6 @@ const ScanAttendanceModal: React.FC<ScanAttendanceModalProps> = ({ isOpen, onClo
                     await scannerRef.current.start({ facingMode: "environment" }, config, onSuccess, () => {});
                     isScanningRef.current = true;
                   } catch (restartErr) {
-                    console.error('Failed to restart scanner:', restartErr);
                   }
                 }
               }
@@ -87,13 +85,11 @@ const ScanAttendanceModal: React.FC<ScanAttendanceModalProps> = ({ isOpen, onClo
             await scanner.start({ facingMode: "environment" }, config, onSuccess, () => {});
             isScanningRef.current = true;
           } catch (err) {
-            console.warn("Environment camera failed, trying user camera...", err);
             try {
               // Attempt 2: User Camera (Front/Webcam)
               await scanner.start({ facingMode: "user" }, config, onSuccess, () => {});
               isScanningRef.current = true;
             } catch (err2) {
-              console.warn("User camera failed, trying fallback...", err2);
               try {
                 // Attempt 3: First available camera ID
                 const devices = await Html5Qrcode.getCameras();
@@ -104,13 +100,11 @@ const ScanAttendanceModal: React.FC<ScanAttendanceModalProps> = ({ isOpen, onClo
                   throw new Error("No cameras found");
                 }
               } catch (err3) {
-                console.error("All camera attempts failed:", err3);
                 toast.error('فشل الوصول إلى الكاميرا. يرجى التحقق من الأذونات.');
               }
             }
           }
         } catch (err) {
-          console.error("Critical error starting scanner:", err);
           toast.error('حدث خطأ في تشغيل الماسح الضوئي');
         }
       }
@@ -125,9 +119,8 @@ const ScanAttendanceModal: React.FC<ScanAttendanceModalProps> = ({ isOpen, onClo
           scannerRef.current?.clear();
           scannerRef.current = null;
           isScanningRef.current = false;
-        }).catch(err => {
-          console.error("Failed to stop scanner", err);
-        });
+  }).catch(() => {
+  });
       }
     };
   }, [isOpen, onClose, onScanSuccess, isProcessing]);

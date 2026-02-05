@@ -125,7 +125,7 @@ export default function AcademyGradesPage() {
       setTotalItems(response.data.meta.total);
       setCurrentPage(response.data.meta.current_page);
     } catch (error) {
-      console.error('Failed to fetch grades:', error);
+      // Error handled silently
     } finally {
       setIsLoading(false);
     }
@@ -152,8 +152,7 @@ export default function AcademyGradesPage() {
     setIsSubmitting(true);
 
     try {
-      const response = await academyService.createGrade(formData);
-      console.log('Grade created successfully:', response);
+      await academyService.createGrade(formData);
       
       // Show success message
       if (typeof window !== 'undefined') {
@@ -169,9 +168,6 @@ export default function AcademyGradesPage() {
       // Refresh from page 1 to see the new grade
       fetchGrades(1);
     } catch (error: any) {
-      console.error('Failed to save grade:', error);
-      console.error('Error response:', error.response?.data);
-      
       // Show error message
       if (typeof window !== 'undefined') {
         const toast = await import('react-hot-toast');
@@ -209,7 +205,7 @@ export default function AcademyGradesPage() {
       setShowRenameModal(false);
       fetchGrades(currentPage);
     } catch (error) {
-      console.error('Failed to rename grade:', error);
+      // Error handled silently
     } finally {
       setIsSubmitting(false);
     }
@@ -224,7 +220,7 @@ export default function AcademyGradesPage() {
       setShowDeleteModal(false);
       fetchGrades(currentPage);
     } catch (error) {
-      console.error('Failed to delete grade:', error);
+      // Error handled silently
     } finally {
       setIsSubmitting(false);
     }

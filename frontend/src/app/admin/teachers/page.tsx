@@ -13,168 +13,13 @@ import { Avatar } from '@/components/ui';
 import { Filter } from '@/components/Filter';
 import AffiliationModal from '@/components/admin/teachers/AffiliationModal';
 import SuspendModal from '@/components/admin/teachers/SuspendModal';
+import SubscriptionPlanModal from '@/components/admin/teachers/SubscriptionPlanModal';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 
-// Subscription Modal Component
-const SubscriptionModal = ({ 
-  isOpen, 
-  onClose, 
-  teacher, 
-  onSuccess 
-}: { 
-  isOpen: boolean; 
-  onClose: () => void; 
-  teacher: any; 
-  onSuccess: () => void; 
-}) => {
-  const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7)); // YYYY-MM
-  const [subscriptionData, setSubscriptionData] = useState<any>(null);
-  const [paymentAmount, setPaymentAmount] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [fetching, setFetching] = useState(false);
-  const [fetchError, setFetchError] = useState('');
+// ... existing imports
 
-  useEffect(() => {
-    if (teacher && isOpen) {
-      fetchSubscription();
-    }
-  }, [teacher, selectedMonth, isOpen]);
+// Subscription logic removed based on user request to keep only Plan Settings
 
-  const fetchSubscription = async () => {
-    setFetching(true);
-    setFetchError('');
-    try {
-      const response = await getTeacherSubscription(teacher.id, selectedMonth);
-      setSubscriptionData(response);
-      setPaymentAmount(0);
-    } catch (error: any) {
-      console.error('Failed to fetch subscription', error);
-      setFetchError(error.message || 'فشل جلب البيانات. تأكد من تشغيل الترحيل (Migration) لقاعدة البيانات.');
-      if (!error.message) {
-          toast.error('فشل جلب بيانات الاشتراك');
-      }
-    } finally {
-      setFetching(false);
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      await updateTeacherSubscription(teacher.id, {
-        month: selectedMonth,
-        payment_amount: paymentAmount
-      });
-      toast.success('تم تحديث الاشتراك بنجاح');
-      onSuccess();
-      onClose();
-    } catch (error) {
-      console.error('Failed to update subscription', error);
-      toast.error('فشل تحديث الاشتراك');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-[#1e1e2d] rounded-xl border border-white/10 w-full max-w-md p-6 shadow-xl">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-bold text-white">اشتراك المدرس</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-white">
-            <i className="fas fa-times"></i>
-          </button>
-        </div>
-
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-400 mb-1">الشهر</label>
-            <input
-              type="month"
-              value={selectedMonth}
-              onChange={(e) => setSelectedMonth(e.target.value)}
-              className="w-full bg-[#151521] border border-white/10 rounded-lg px-4 py-2 text-white focus:border-primary focus:outline-none"
-            />
-          </div>
-
-          {fetching ? (
-            <div className="text-center py-4 text-gray-400">جاري جلب البيانات...</div>
-          ) : fetchError ? (
-            <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 text-red-400 text-sm">
-              {fetchError}
-            </div>
-          ) : subscriptionData ? (
-            <>
-              <div className="bg-white/5 rounded-lg p-4 space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-400">عدد الطلاب:</span>
-                  <span className="text-white font-medium">{subscriptionData.student_count}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-400">المبلغ المستحق:</span>
-                  <span className="text-white font-medium">${subscriptionData.amount_due}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-400">المبلغ المدفوع:</span>
-                  <span className="text-green-400 font-medium">${subscriptionData.amount_paid}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-400">حالة الدفع:</span>
-                  <span className={`font-medium ${
-                    subscriptionData.status === 'paid' ? 'text-green-400' : 
-                    subscriptionData.status === 'partial' ? 'text-yellow-400' : 'text-red-400'
-                  }`}>
-                    {subscriptionData.status === 'paid' ? 'مدفوع' : 
-                     subscriptionData.status === 'partial' ? 'مدفوع جزئياً' : 'غير مدفوع'}
-                  </span>
-                </div>
-                <div className="flex justify-between text-sm pt-2 border-t border-white/10">
-                  <span className="text-gray-400">المتبقي:</span>
-                  <span className="text-red-400 font-medium">${(subscriptionData.amount_due - subscriptionData.amount_paid).toFixed(2)}</span>
-                </div>
-              </div>
-
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-1">مبلغ الدفع</label>
-                  <input
-                    type="number"
-                    value={paymentAmount}
-                    onChange={(e) => setPaymentAmount(Number(e.target.value))}
-                    min="0"
-                    max={subscriptionData.amount_due - subscriptionData.amount_paid}
-                    className="w-full bg-[#151521] border border-white/10 rounded-lg px-4 py-2 text-white focus:border-primary focus:outline-none"
-                    placeholder="أدخل المبلغ..."
-                  />
-                </div>
-
-                <div className="flex justify-end gap-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={onClose}
-                    className="px-4 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
-                  >
-                    إلغاء
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={loading || paymentAmount <= 0}
-                    className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    {loading ? 'جاري الحفظ...' : 'تأكيد الدفع'}
-                  </button>
-                </div>
-              </form>
-            </>
-          ) : null}
-        </div>
-      </div>
-    </div>
-  );
-};
 
 export default function AdminTeachersPage() {
   const { user } = useAuth();
@@ -182,12 +27,16 @@ export default function AdminTeachersPage() {
   const [teachers, setTeachers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
+
   const [selectedTeacher, setSelectedTeacher] = useState<any>(null);
   const [affiliationModalOpen, setAffiliationModalOpen] = useState(false);
   const [selectedTeacherForAffiliation, setSelectedTeacherForAffiliation] = useState<any>(null);
   const [suspendModalOpen, setSuspendModalOpen] = useState(false);
   const [teacherToSuspend, setTeacherToSuspend] = useState<any>(null);
+  
+  // Subscription Plan Modal State
+  const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
+  const [selectedTeacherForPlan, setSelectedTeacherForPlan] = useState<any>(null);
 
 
 
@@ -351,14 +200,10 @@ export default function AdminTeachersPage() {
       //   activeFilters.status = filters.status;
       // }
       
-      console.log('Active Filters:', activeFilters); // Debug log
-      
       const [teachersRes, statsRes] = await Promise.all([
         getTeachers(page, itemsPerPage, activeFilters),
         getDashboardStats()
       ]);
-
-      console.log('Fetched teachers:', teachersRes.data);
       
       // Apply client-side status filtering
       let filteredTeachers = teachersRes.data;
@@ -403,7 +248,7 @@ export default function AdminTeachersPage() {
       }
 
     } catch (error) {
-      console.error('Failed to fetch data', error);
+      // Error handled silently
     } finally {
       setIsLoading(false);
     }
@@ -444,10 +289,7 @@ export default function AdminTeachersPage() {
 
 
 
-  const openSubscriptionModal = (teacher: any) => {
-    setSelectedTeacher(teacher);
-    setIsSubscriptionModalOpen(true);
-  };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -513,7 +355,6 @@ export default function AdminTeachersPage() {
       toast.success('تم تغيير حالة المدرس بنجاح');
       await fetchTeachers(currentPage);
     } catch (error) {
-      console.error('Failed to toggle teacher status', error);
       toast.error('فشل تغيير حالة المدرس');
     }
   };
@@ -523,7 +364,6 @@ export default function AdminTeachersPage() {
       toast.success('تمت الموافقة على المدرس بنجاح');
       await fetchTeachers(currentPage);
     } catch (error) {
-      console.error('Failed to approve teacher', error);
       toast.error('فشل الموافقة على المدرس');
     }
   };
@@ -620,12 +460,24 @@ export default function AdminTeachersPage() {
     },
     {
       key: 'subscription_status',
-      label: 'حالة الدفع (الشهر الحالي)',
+      label: 'حالة الباقة',
       sortable: false,
       render: (_: any, row: any) => {
         // Only show for independent or both, OR if filtering by independent
         if (filters.type !== 'independent' && row.affiliation === 'academy') return <span className="text-gray-400">-</span>;
 
+        // Check if teacher has a plan
+        if (row.plan_type) {
+          if (row.plan_type === 'trial') {
+            return <span className="px-2 py-1 rounded text-xs bg-blue-500/10 text-blue-400 border border-blue-500/20">تجريبي</span>;
+          } else if (row.plan_type === 'term') {
+            return <span className="px-2 py-1 rounded text-xs bg-green-500/10 text-green-400 border border-green-500/20">مدة ثابتة</span>;
+          } else if (row.plan_type === 'custom') {
+            return <span className="px-2 py-1 rounded text-xs bg-orange-500/10 text-orange-400 border border-orange-500/20">مخصصة</span>;
+          }
+        }
+
+        // Fallback to old subscription status
         const status = row.subscription_status || 'pending';
         let badgeClass = 'badge-danger';
         let text = 'غير مدفوع';
@@ -691,7 +543,6 @@ export default function AdminTeachersPage() {
       setDeleteModalOpen(false);
       setTeacherToDelete(null);
     } catch (error) {
-      console.error('Failed to delete teacher', error);
       toast.error('فشل حذف المدرس');
     } finally {
       setIsDeleting(false);
@@ -713,11 +564,10 @@ export default function AdminTeachersPage() {
       onClick: (row: any) => handleManageAffiliation(row),
     },
     {
-      label: 'دفع الاشتراك',
-      icon: 'fas fa-money-bill-wave',
-      variant: 'success' as const,
-      onClick: (row: any) => openSubscriptionModal(row),
-      hidden: (row: any) => row.affiliation === 'academy',
+      label: 'إعدادات الباقة',
+      icon: 'fas fa-box-open',
+      variant: 'default' as const,
+      onClick: (row: any) => openPlanModal(row),
     },
     {
       label: 'عرض التفاصيل',
@@ -756,7 +606,6 @@ export default function AdminTeachersPage() {
           window.location.href = '/teacher/dashboard';
           
         } catch (error) {
-          console.error('Failed to login as teacher', error);
           toast.error('فشل الدخول لحساب المدرس');
         }
       },
@@ -787,6 +636,12 @@ export default function AdminTeachersPage() {
   ];
 
 
+
+
+  const openPlanModal = (teacher: any) => {
+    setSelectedTeacherForPlan(teacher);
+    setIsPlanModalOpen(true);
+  };
 
   return (
     <DashboardLayout
@@ -921,16 +776,7 @@ export default function AdminTeachersPage() {
           )}
         </DashboardCard>
 
-        {/* Subscription Modal */}
-        <SubscriptionModal
-          isOpen={isSubscriptionModalOpen}
-          onClose={() => {
-            setIsSubscriptionModalOpen(false);
-            setSelectedTeacher(null);
-          }}
-          teacher={selectedTeacher}
-          onSuccess={() => fetchTeachers(currentPage)}
-        />
+
 
         {/* Affiliation Modal */}
         <AffiliationModal
@@ -1145,6 +991,12 @@ export default function AdminTeachersPage() {
           isProcessing={isDeleting}
         />
       </div>
+      <SubscriptionPlanModal
+        isOpen={isPlanModalOpen}
+        onClose={() => setIsPlanModalOpen(false)}
+        teacher={selectedTeacherForPlan}
+        onSuccess={() => fetchTeachers(currentPage)}
+      />
     </DashboardLayout>
   );
 }

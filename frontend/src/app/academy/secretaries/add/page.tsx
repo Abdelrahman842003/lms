@@ -42,7 +42,7 @@ export default function AddSecretaryPage() {
       );
       setAvailablePermissions(secretaryPermissions);
     } catch (error) {
-      console.error('Failed to fetch permissions:', error);
+      // Error handled silently
     }
   };
 
@@ -65,7 +65,7 @@ export default function AddSecretaryPage() {
         // Don't clear name if user already typed it
       }
     } catch (error) {
-      console.error('Failed to check phone:', error);
+      // Error handled silently
     } finally {
       setIsCheckingPhone(false);
     }
@@ -121,7 +121,6 @@ export default function AddSecretaryPage() {
       toast.success(existingSecretary ? 'تم إضافة السكرتير بنجاح' : 'تم إنشاء حساب السكرتير بنجاح');
       router.push('/academy/secretaries');
     } catch (error: any) {
-      console.error('Failed to create secretary:', error);
       setFormErrors({ submit: error.message || 'فشل إضافة السكرتير' });
       toast.error(error.message || 'فشل إضافة السكرتير');
     } finally {

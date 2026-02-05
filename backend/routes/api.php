@@ -51,6 +51,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/teachers/{teacher}/login', [\App\Http\Controllers\Admin\TeacherController::class, 'loginAsTeacher']);
         Route::get('/teachers/{teacher}/subscription', [\App\Http\Controllers\Admin\TeacherController::class, 'getSubscription']);
         Route::post('/teachers/{teacher}/subscription', [\App\Http\Controllers\Admin\TeacherController::class, 'updateSubscription']);
+        Route::post('/teachers/{teacher}/plan', [\App\Http\Controllers\Admin\TeacherController::class, 'updatePlan']);
         Route::put('/teachers/{teacher}/toggle-status', [\App\Http\Controllers\Admin\TeacherController::class, 'toggleStatus']);
         Route::put('/teachers/{teacher}/independent-status/toggle', [\App\Http\Controllers\Admin\TeacherController::class, 'toggleIndependentStatus']);
         Route::put('/teachers/{teacher}/academies/{academy}/toggle-status', [\App\Http\Controllers\Admin\TeacherController::class, 'toggleAcademyStatus']);
@@ -109,6 +110,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/academy-billings/{billing}', [\App\Http\Controllers\Admin\AcademyBillingController::class, 'show']);
         Route::put('/academy-billings/{billing}/status', [\App\Http\Controllers\Admin\AcademyBillingController::class, 'updateStatus']);
         Route::delete('/academy-billings/{billing}', [\App\Http\Controllers\Admin\AcademyBillingController::class, 'destroy']);
+
+        // Subscriptions Management
+        Route::get('/subscriptions', [\App\Http\Controllers\Admin\SubscriptionController::class, 'index']);
 
 
     });

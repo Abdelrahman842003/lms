@@ -219,9 +219,9 @@ class ReportService
             'financial_details' => [
                 'total_revenue' => round((float) $totalRevenue, 2),
                 'total_confirmed_payments' => round((float) $confirmedPayments, 2),
-                'remaining_balance' => round((float) $remainingBalance, 2),
-                'net_payments_to_teacher' => round((float) $netPaymentsToTeacher, 2),
-                'payments_due_to_platform' => round((float) $platformFees, 2),
+                'uncollected_revenue' => round((float) $remainingBalance, 2),
+                'net_profit' => round((float) $netPaymentsToTeacher, 2),
+                'platform_fees' => round((float) $platformFees, 2),
             ],
             'monthly_breakdown' => $monthlyData,
             'subscription_breakdown' => $subscriptionData,
@@ -431,11 +431,16 @@ class ReportService
                 $amountPaid = $subscription->amount_paid;
                 $status = $subscription->status;
             } else {
-                // Fallback: Calculate on the fly (Potential Revenue)
-                $totalMonthsPaidInMonth = PaymentLog::where('teacher_id', $teacher->id)
-                    ->where('status', 'confirmed')
-                    ->whereBetween('confirmed_at', [$monthStart, $monthEnd])
-                    ->sum('months');
+                // Fallback: Calculate on the fly (Potential Revenue - Seat System)
+                $query = \App\Models\Enrollment::where('teacher_id', $teacher->id)
+                    ->withTrashed()
+                    ->where('created_at', '<=', $monthEnd)
+                    ->where(function($q) use ($monthStart) {
+                        $q->whereNull('deleted_at')
+                          ->orWhere('deleted_at', '>=', $monthStart);
+                    });
+                    
+                $totalMonthsPaidInMonth = $query->count(); // Actually total seats
                 
                 $amountDue = $totalMonthsPaidInMonth * $teacherStudentPrice;
                 $amountPaid = 0; // No subscription record means no payment to platform yet

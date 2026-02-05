@@ -68,6 +68,11 @@ class TeacherResource extends JsonResource
                 }
                 return 'pending';
             })(),
+            // Subscription plan fields
+            'plan_type' => $this->plan_type,
+            'plan_expires_at' => $this->plan_expires_at ? $this->plan_expires_at->toISOString() : null,
+            'plan_max_students' => $this->plan_max_students,
+            'is_unlimited_students' => (bool) $this->is_unlimited_students,
         ];
     }
 }

@@ -25,7 +25,6 @@ export function AcademySelector({ isOpen, onClose }: AcademySelectorProps) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    console.log('AcademySelector isOpen:', isOpen);
     if (isOpen) {
       fetchAcademies();
     }
@@ -52,14 +51,12 @@ export function AcademySelector({ isOpen, onClose }: AcademySelectorProps) {
       if (userProfile.user) {
          isIndependentActive = !!userProfile.user.is_independent_active;
          
-         if (userProfile.user.academies) {
-            console.log('User Profile Academies for Merge:', userProfile.user.academies);
+      if (userProfile.user.academies) {
             const userAcademies = userProfile.user.academies;
             academiesList = academiesList.map(academy => {
               // Loose equality check for ID to handle string/number differences
               const userAcademy = userAcademies.find((ua: any) => ua.id == academy.id);
               if (userAcademy) {
-                 console.log(`Found matching academy for ${academy.name}:`, userAcademy);
                  if (userAcademy.pivot) {
                     return {
                       ...academy,
@@ -83,10 +80,8 @@ export function AcademySelector({ isOpen, onClose }: AcademySelectorProps) {
         academiesList.unshift(independentAcademy);
       }
       
-      console.log('Final Merged Academies List:', academiesList);
       setAcademies(academiesList);
     } catch (error) {
-      console.error('Failed to fetch academies:', error);
       setAcademies([]);
     } finally {
       setIsLoading(false);

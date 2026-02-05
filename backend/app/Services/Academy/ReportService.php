@@ -215,21 +215,27 @@ class ReportService
             ];
         }
 
-        // Platform fee calculation
+        // Platform fee calculation (Seat System)
         $academyStudentPrice = (float) Setting::getValue('academy_student_price', 0);
         
-        // Count total payment transactions in the period
+        // Count total payment transactions in the period (for informational purposes)
         $totalPaymentTransactions = PaymentLog::whereIn('teacher_id', $teacherIds)
             ->whereBetween('confirmed_at', [$startDate, $endDate])
             ->where('status', 'confirmed')
             ->count();
-        
-        $totalMonthsPaid = PaymentLog::whereIn('teacher_id', $teacherIds)
-            ->whereBetween('confirmed_at', [$startDate, $endDate])
-            ->where('status', 'confirmed')
-            ->sum('months');
+            
+        // Platform Fees = Total Active Seats * Price
+        $totalSeatsQuery = \App\Models\Enrollment::whereIn('teacher_id', $teacherIds)
+            ->withTrashed()
+            ->where('created_at', '<=', $endDate)
+            ->where(function($q) use ($startDate) {
+                $q->whereNull('deleted_at')
+                  ->orWhere('deleted_at', '>=', $startDate);
+            });
+            
+        $totalSeats = $totalSeatsQuery->count();
 
-        $platformFees = $totalMonthsPaid * $academyStudentPrice;
+        $platformFees = $totalSeats * $academyStudentPrice;
         $netRevenue = $totalRevenue - $platformFees;
 
         // Get billing for this month if exists (only if specific month selected)
@@ -332,8 +338,8 @@ class ReportService
                 'total_revenue' => round((float) $totalRevenue, 2),
                 'total_confirmed_payments' => round((float) $totalConfirmedPayments, 2),
                 'remaining_balance' => round((float) $remainingBalance, 2),
-                'net_payments_to_academy' => round((float) $netRevenue, 2),
-                'payments_due_to_platform' => round((float) $platformFees, 2),
+                'net_profit' => round((float) $netRevenue, 2),
+                'platform_fees' => round((float) $platformFees, 2),
                 'payment_status' => $billing ? $billing->status : 'unpaid',
             ],
             'teachers_details' => $teachersDetails,

@@ -86,7 +86,6 @@ function PaymentPage({ params }: { params: Promise<{ id: string }> }) {
   const [discount, setDiscount] = useState(0);
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [academyStudentPrice, setAcademyStudentPrice] = useState(0);
 
   // History Modal State
   const [showHistoryModal, setShowHistoryModal] = useState(false);
@@ -100,12 +99,6 @@ function PaymentPage({ params }: { params: Promise<{ id: string }> }) {
         // Fetch Student Details
         const studentData = await getAcademyStudentDetails(id);
         setStudent(studentData);
-
-        // Fetch Settings
-        const settings = await fetchApi('/public-settings') as any;
-        if (settings?.academy_student_price) {
-          setAcademyStudentPrice(parseFloat(settings.academy_student_price));
-        }
       } catch (error) {
         console.error('Failed to load data:', error);
         toast.error('فشل تحميل بيانات الطالب');
@@ -153,8 +146,8 @@ function PaymentPage({ params }: { params: Promise<{ id: string }> }) {
   const price = getPrice();
   const subTotal = price * months;
   const total = subTotal * (1 - discount / 100);
-  const commission = academyStudentPrice * months;
-  const grandTotal = total + commission;
+  // Platform fee removed - academy pays via subscription system
+  const grandTotal = total;
 
   // Auto-generate notes
   useEffect(() => {
@@ -174,14 +167,10 @@ function PaymentPage({ params }: { params: Promise<{ id: string }> }) {
       autoNotes.push(`المبلغ بعد الخصم: ${total} ج.م`);
     }
     
-    if (commission > 0) {
-      autoNotes.push(`حساب المنصة: ${commission} ج.م`);
-    }
-    
     autoNotes.push(`الإجمالي المطلوب: ${grandTotal} ج.م`);
     
     setNotes(autoNotes.join(' | '));
-  }, [months, discount, price, subTotal, total, commission, grandTotal, selectedTeacher]);
+  }, [months, discount, price, subTotal, total, grandTotal, selectedTeacher]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -543,30 +532,20 @@ function PaymentPage({ params }: { params: Promise<{ id: string }> }) {
 
                       <div className="h-px bg-white/10 my-4"></div>
 
-                      {/* Commission Info */}
-                      <div className="flex justify-between items-center text-sm p-3 bg-warning/10 rounded-lg border border-warning/10">
-                        <span className="text-warning">حساب المنصة</span>
-                        <span className="text-warning font-bold">{commission} ج.م</span>
-                      </div>
-
                       {/* Total */}
                       <div className="flex justify-between items-center pt-2">
-                        <span className="text-gray-300 font-medium text-lg">الإجمالي (للمدرس)</span>
+                        <span className="text-gray-300 font-medium text-lg">الإجمالي</span>
                         <div className="text-right">
                           {discount > 0 && (
                             <div className="text-sm text-gray-500 line-through mb-1">
                               {price * months} ج.م
                             </div>
                           )}
-                          <span className="text-primary font-bold text-3xl">{total} ج.م</span>
+                          <span className="text-primary font-bold text-3xl">{grandTotal} ج.م</span>
                         </div>
                       </div>
 
-                      {/* Grand Total */}
-                      <div className="flex justify-between items-center pt-4 border-t border-white/10 mt-4">
-                        <span className="text-white font-bold text-xl">الإجمالي المطلوب من الطالب</span>
-                        <span className="text-white font-bold text-3xl">{grandTotal} ج.م</span>
-                      </div>
+
                     </div>
 
                     {/* Notes */}

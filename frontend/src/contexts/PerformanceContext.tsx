@@ -45,17 +45,6 @@ export function PerformanceProvider({
     }
   }, [performance.metrics.score, performance.sendToAnalytics, autoReport, enableAnalytics]);
 
-  // Report critical performance issues
-  useEffect(() => {
-    if (performance.metrics.score < 50 && performance.metrics.score > 0) {
-      console.warn('🚨 Critical Performance Issue Detected', {
-        score: performance.metrics.score,
-        grade: performance.getPerformanceGrade(),
-        metrics: performance.metrics
-      });
-    }
-  }, [performance.metrics.score, performance.getPerformanceGrade, performance.metrics]);
-
   const value: PerformanceContextType = {
     metrics: performance.metrics,
     isSupported: performance.isSupported,

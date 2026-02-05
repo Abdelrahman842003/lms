@@ -84,7 +84,6 @@ export const NotificationsSection = () => {
       }
       setNotifications(fetchedNotifications);
     } catch (error) {
-      console.error('Failed to fetch notifications:', error);
     } finally {
       setIsLoading(false);
     }
@@ -99,8 +98,6 @@ export const NotificationsSection = () => {
         const customEvent = event as CustomEvent;
         const data = customEvent.detail;
         
-        console.log('NotificationsSection received event:', data); // DEBUG
-
         const notificationData = data.data || {};
         const newNotification: Notification = {
            id: data.notification_id || Date.now().toString(),
@@ -142,7 +139,6 @@ export const NotificationsSection = () => {
         prev.map(n => (n.id === id ? { ...n, read_at: new Date().toISOString() } : n))
       );
     } catch (error) {
-      console.error('Failed to mark as read:', error);
     }
   };
 
@@ -171,7 +167,6 @@ export const NotificationsSection = () => {
       });
       // Optionally refresh notifications if we want to show sent messages (but this section shows received)
     } catch (error) {
-      console.error('Failed to send notification:', error);
       toast.error('فشل إرسال الرسالة');
     } finally {
       setIsSending(false);

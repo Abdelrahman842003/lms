@@ -206,4 +206,21 @@ class TeacherController extends Controller
             'تم حذف المدرس بنجاح'
         );
     }
+    public function updatePlan(Request $request, $id)
+    {
+        $request->validate([
+            'type' => 'required|in:trial,term,custom',
+            'days' => 'required_if:type,trial,custom|integer|min:1',
+            'months' => 'required_if:type,term|integer|min:1',
+            'max_students' => 'nullable|integer|min:0',
+            'is_unlimited_students' => 'boolean'
+        ]);
+
+        $teacher = $this->teacherService->setSubscriptionPlan($id, $request->all());
+
+        return $this->successResponse(
+            new TeacherResource($teacher),
+            'تم تحديث باقة الاشتراك بنجاح'
+        );
+    }
 }

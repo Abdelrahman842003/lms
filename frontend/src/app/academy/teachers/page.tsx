@@ -73,7 +73,6 @@ export default function AcademyTeachersPage() {
         setAddStep('create');
       }
     } catch (error: any) {
-      console.error('Failed to check phone', error);
       toast.error(error.response?.data?.message || 'فشل التحقق من رقم الهاتف');
     } finally {
       setIsProcessing(false);
@@ -109,7 +108,6 @@ export default function AcademyTeachersPage() {
         fetchTeachers();
       }
     } catch (error: any) {
-      console.error('Failed to link teacher', error);
       const errorMessage = error.response?.data?.message || error.response?.data?.error || 'فشل ربط المدرس';
       toast.error(errorMessage);
     } finally {
@@ -138,7 +136,6 @@ export default function AcademyTeachersPage() {
         fetchTeachers();
       }
     } catch (error: any) {
-      console.error('Failed to add teacher', error);
       toast.error(error.response?.data?.message || 'فشل إضافة المدرس');
     } finally {
       setIsProcessing(false);
@@ -169,7 +166,6 @@ export default function AcademyTeachersPage() {
     try {
       setIsLoading(true);
       const response = await academyService.getTeachers(1, 100, searchQuery);
-      console.log('Teachers API Response:', response);
       
       let data = [];
       if (Array.isArray(response.data?.data)) {
@@ -179,8 +175,6 @@ export default function AcademyTeachersPage() {
       } else if (Array.isArray(response.data?.teachers?.data)) {
         data = response.data.teachers.data;
       }
-      
-      console.log('Extracted Teachers Data:', data);
       
       // Client-side filtering for status if backend doesn't support it directly in this endpoint
       if (statusFilter) {
@@ -194,12 +188,12 @@ export default function AcademyTeachersPage() {
       
       setTeachers(data);
     } catch (error) {
-      console.error('Failed to fetch teachers', error);
+      
+      setTeachers(data);
+    } catch (error) {
+      // Error handled silently
     } finally {
       setIsLoading(false);
-    }
-  };
-
 
   const handleDelete = (teacher: any) => {
     setModalConfig({
@@ -215,13 +209,12 @@ export default function AcademyTeachersPage() {
           setModalOpen(false);
           fetchTeachers();
         } catch (error) {
-          console.error('Failed to delete teacher:', error);
+          setModalOpen(false);
+          fetchTeachers();
+        } catch (error) {
           toast.error('فشل حذف المدرس');
         } finally {
           setIsProcessing(false);
-        }
-      },
-      showCancel: true,
     });
     setModalOpen(true);
   };
@@ -239,13 +232,12 @@ export default function AcademyTeachersPage() {
           await academyService.toggleTeacherStatus(teacher.id);
           toast.success(`تم ${isActive ? 'تعطيل' : 'تفعيل'} الحساب بنجاح`);
           setModalOpen(false);
+          setModalOpen(false);
           fetchTeachers();
         } catch (error) {
-          console.error('Failed to toggle teacher status:', error);
           toast.error(`فشل ${isActive ? 'تعطيل' : 'تفعيل'} الحساب`);
         } finally {
           setIsProcessing(false);
-        }
       },
       showCancel: true,
     });

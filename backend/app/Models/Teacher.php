@@ -27,6 +27,10 @@ class Teacher extends Authenticatable
         'subscription_fee',
         'paid_amount',
         'is_independent_active',
+        'plan_type',
+        'plan_expires_at',
+        'plan_max_students',
+        'is_unlimited_students',
     ];
 
     protected $hidden = [
@@ -39,6 +43,8 @@ class Teacher extends Authenticatable
         return [
             'password' => 'hashed',
             'is_independent_active' => 'boolean',
+            'is_unlimited_students' => 'boolean',
+            'plan_expires_at' => 'date',
             'status' => \App\Enums\TeacherStatus::class,
         ];
     }

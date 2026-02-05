@@ -53,7 +53,7 @@ function AcademyDashboard() {
           setTeachers(data.teachers || []);
         }
       } catch (error) {
-        console.error('Failed to fetch academy dashboard data', error);
+        // Error handled silently
       } finally {
         setIsLoading(false);
       }

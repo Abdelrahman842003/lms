@@ -58,7 +58,6 @@ function AdminDashboard() {
         // If there's an API for system activity, fetch it here. Otherwise, leave it empty.
         setSystemActivity([]); 
       } catch (error) {
-        console.error('Failed to fetch dashboard data', error);
       } finally {
         setIsLoading(false);
       }

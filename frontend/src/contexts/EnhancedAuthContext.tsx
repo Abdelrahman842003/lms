@@ -42,14 +42,12 @@ export function useAuth() {
         
         if (token) {
           // Store FCM token or send to backend
-          console.log("FCM token obtained:", token);
           // You can add API call here to store token in backend
           return token;
         }
         
         return null;
       } catch (error) {
-        console.error("Failed to enable notifications:", error);
         return null;
       }
     },

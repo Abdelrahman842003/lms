@@ -307,12 +307,12 @@ export default function ReportsPage() {
                     <div className="block md:hidden divide-y divide-white/5">
                       <div className="p-4 space-y-3">
                         <div className="flex justify-between items-center">
-                          <span className="text-gray-400 text-sm">المدفوعات الصافيه للاكاديميه</span>
-                          <span className="font-bold text-primary">{report.financial_details.net_payments_to_academy} ج.م</span>
+                          <span className="text-gray-400 text-sm">صافي الأرباح</span>
+                          <span className="font-bold text-primary">{report.financial_details.net_profit} ج.م</span>
                         </div>
                         <div className="flex justify-between items-center">
-                          <span className="text-gray-400 text-sm">المدفوعات المستحقه للمنصه</span>
-                          <span className="font-bold text-warning">{report.financial_details.payments_due_to_platform} ج.م</span>
+                          <span className="text-gray-400 text-sm">رسوم المنصة</span>
+                          <span className="font-bold text-warning">{report.financial_details.platform_fees} ج.م</span>
                         </div>
                         <div className="flex justify-between items-center">
                           <span className="text-gray-400 text-sm">الباقي من التسديد</span>

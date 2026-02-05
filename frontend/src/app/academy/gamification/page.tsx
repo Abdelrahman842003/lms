@@ -66,7 +66,7 @@ export default function AcademyGamificationPage() {
         setGrades(res);
       }
     } catch (error) {
-      console.error('Failed to fetch grades', error);
+      // Error handled silently
     }
   };
 
@@ -81,7 +81,7 @@ export default function AcademyGamificationPage() {
         setGroups(res);
       }
     } catch (error) {
-      console.error('Failed to fetch groups', error);
+      // Error handled silently
     }
   };
 
@@ -120,7 +120,7 @@ export default function AcademyGamificationPage() {
         setPage(pageNum);
       }
     } catch (error: any) {
-      console.error('Failed to load gamification data:', error);
+      // Error handled silently
     } finally {
       setLoading(false);
       setLoadingMore(false);

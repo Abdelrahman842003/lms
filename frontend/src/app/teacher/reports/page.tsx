@@ -328,27 +328,27 @@ export default function TeacherReportsPage() {
                     <div className="flex justify-between items-center mb-3">
                       <span className="text-gray-400">صافي الأرباح للمدرس</span>
                       <span className="text-primary font-bold text-lg">
-                        {report.financial_details.net_payments_to_teacher?.toLocaleString()} ج.م
+                        {report.financial_details.net_profit?.toLocaleString()} ج.م
                       </span>
                     </div>
 
                     <div className="flex justify-between items-center mb-3 pb-3 border-b border-white/10">
-                      <span className="text-gray-400">المدفوعات المستحقة للمنصة</span>
+                      <span className="text-gray-400">رسوم المنصة (الاشتراكات)</span>
                       <span className="text-warning font-bold text-lg">
-                        {report.financial_details.payments_due_to_platform?.toLocaleString()} ج.م
+                        {report.financial_details.platform_fees?.toLocaleString()} ج.م
                       </span>
                     </div>
 
                     <div className="flex justify-between items-center mb-3 pb-3 border-b border-white/10">
-                      <span className="text-gray-400">الباقي من التسديد</span>
+                      <span className="text-gray-400">الإيرادات غير المحصلة</span>
                       <span className="text-info font-bold text-lg">
-                        {report.financial_details.remaining_balance?.toLocaleString()} ج.م
+                        {report.financial_details.uncollected_revenue?.toLocaleString()} ج.م
                       </span>
                     </div>
 
                     <div className="flex flex-col gap-3 pt-3 border-t border-white/10">
                       <div className="flex justify-between items-center">
-                        <span className="text-gray-400">حاله الدفع</span>
+                        <span className="text-gray-400">حاله الدفع للمنصة</span>
                         <span className={`badge ${report.financial_details.payment_status === 'paid' ? 'badge-success' : 'badge-danger'}`}>
                           {report.financial_details.payment_status === 'paid' ? 'مدفوع' : 'غير مدفوع'}
                         </span>
@@ -370,19 +370,19 @@ export default function TeacherReportsPage() {
                       <tr className="hover:bg-white/5 transition-colors">
                         <td className="p-4">صافي الأرباح للمدرس</td>
                         <td className="p-4 font-bold text-primary">
-                          {report.financial_details.net_payments_to_teacher?.toLocaleString()} ج.م
+                          {report.financial_details.net_profit?.toLocaleString()} ج.م
                         </td>
                       </tr>
                       <tr className="hover:bg-white/5 transition-colors">
-                        <td className="p-4">المدفوعات المستحقة للمنصة</td>
+                        <td className="p-4">رسوم المنصة (الاشتراكات)</td>
                         <td className="p-4 font-bold text-warning">
-                          {report.financial_details.payments_due_to_platform?.toLocaleString()} ج.م
+                          {report.financial_details.platform_fees?.toLocaleString()} ج.م
                         </td>
                       </tr>
                       <tr className="hover:bg-white/5 transition-colors">
-                        <td className="p-4">الباقي من التسديد</td>
+                        <td className="p-4">الإيرادات غير المحصلة</td>
                         <td className="p-4 font-bold text-info">
-                          {report.financial_details.remaining_balance?.toLocaleString()} ج.م
+                          {report.financial_details.uncollected_revenue?.toLocaleString()} ج.م
                         </td>
                       </tr>
                       <tr className="hover:bg-white/5 transition-colors">

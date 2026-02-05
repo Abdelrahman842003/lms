@@ -74,7 +74,6 @@ export default function ImageCropModal({ image, onCropComplete, onCancel }: Imag
       const croppedImage = await getCroppedImg(image, croppedAreaPixels);
       onCropComplete(croppedImage);
     } catch (error) {
-      console.error('Error cropping image:', error);
       alert('حدث خطأ أثناء معالجة الصورة');
     } finally {
       setIsProcessing(false);

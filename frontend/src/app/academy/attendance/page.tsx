@@ -61,7 +61,6 @@ export default function AttendancePage() {
   const fetchTodayAttendance = async () => {
     try {
       const response = await academyService.getTodayAttendance();
-      console.log('Today Attendance Response:', response);
       // Backend returns { status: true, data: { data: [...] } }
       // response.data is { data: [...] }
       // response.data.data is the array
@@ -73,7 +72,7 @@ export default function AttendancePage() {
       }
       setTodayAttendance(data);
     } catch (error) {
-      console.error('Failed to fetch today attendance', error);
+      // Error handled silently
     }
   };
 
@@ -86,7 +85,6 @@ export default function AttendancePage() {
         date_to: selectedDate,
         per_page: 50,
       });
-      console.log('Attendance Logs Response:', response);
       
       let data = [];
       // API returns { status: true, data: [...] }
@@ -100,10 +98,9 @@ export default function AttendancePage() {
         data = response.data;
       }
       
-      console.log('Extracted attendance logs:', data);
       setAttendanceLogs(data);
     } catch (error) {
-      console.error('Failed to fetch attendance logs', error);
+      // Error handled silently
     } finally {
       setIsLoading(false);
     }
@@ -117,7 +114,7 @@ export default function AttendancePage() {
       const response = await academyService.getAttendanceStats(selectedDate, selectedDate);
       setStats(response.data);
     } catch (error) {
-      console.error('Failed to fetch stats', error);
+      // Error handled silently
     }
   };
 

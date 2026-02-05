@@ -79,9 +79,24 @@ class StudentService
                 $existingEnrollment = $existingEnrollment->first();
 
                 if ($existingEnrollment) {
-                    // Reactivate if soft deleted
-                    if ($existingEnrollment->trashed()) {
-                        $existingEnrollment->restore();
+                    // Check Limits before reactivating
+                    if ($existingEnrollment->trashed() || !$existingEnrollment->is_active) {
+                         // Check Expiration
+                        if ($teacher->plan_expires_at && now()->gt($teacher->plan_expires_at)) {
+                            throw new \Exception('عفواً، لقد انتهت صلاحية باقتك. يرجى تجديد الاشتراك.');
+                        }
+                        
+                        // Check Limit
+                        if (!$teacher->is_unlimited_students && $teacher->plan_max_students !== null) {
+                            // Count active enrollments (this query handles soft deletes automatically usually, but we want active)
+                            if ($teacher->activeEnrollments()->count() >= $teacher->plan_max_students) {
+                                throw new \Exception("عفواً، لقد وصلت للحد الأقصى من الطلاب ({$teacher->plan_max_students}).");
+                            }
+                        }
+
+                        if ($existingEnrollment->trashed()) {
+                            $existingEnrollment->restore();
+                        }
                         $existingEnrollment->update(['is_active' => true]);
                     }
                     
@@ -347,7 +362,7 @@ class StudentService
      */
     public function getActivationDetails(Enrollment $enrollment): array
     {
-        $platformFee = (float) \App\Models\Setting::getValue('pricePerStudent', 15);
+        $platformFee = \App\Services\Infrastructure\HelperService::getPricePerStudent();
         
         $options = [];
         

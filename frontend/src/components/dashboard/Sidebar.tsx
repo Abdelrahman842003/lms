@@ -92,6 +92,12 @@ const getSidebarItems = (role: string): SidebarItem[] => {
         href: '/admin/notifications',
       },
       {
+        id: 'subscriptions',
+        label: 'الاشتراكات',
+        icon: 'fas fa-id-card',
+        href: '/admin/subscriptions',
+      },
+      {
         id: 'settings',
         label: 'الإعدادات',
         icon: 'fas fa-cogs',
@@ -103,6 +109,12 @@ const getSidebarItems = (role: string): SidebarItem[] => {
   if (role === 'teacher') {
     return [
       ...commonItems,
+      {
+        id: 'subscription',
+        label: 'اشتراكي',
+        icon: 'fas fa-id-card',
+        href: '/teacher/subscription',
+      },
       {
         id: 'persons',
         label: 'الاشخاص',
@@ -303,12 +315,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ role, user, isOpen, onClose, p
     } else {
       // Academy Teacher Mode (or loading)
       // They should NOT see: Secretary, Grades (Classes), Reports
-      // They SHOULD see: Attendance
+      // They SHOULD see: Attendance, Subscription
       items = items
         .filter(item => item.id !== 'reports') // Remove Reports
         .map(item => {
           if (item.id === 'gamification') {
             return { ...item, href: '/academy/gamification' };
+          }
+          if (item.id === 'subscription') {
+            // Update subscription link for academy mode
+            return { ...item, href: '/academy/subscription', label: 'الاشتراك' };
           }
           if (item.children) {
             return {
@@ -322,14 +338,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ role, user, isOpen, onClose, p
           return item;
         });
     }
-
-    // Add Billing Item for Academy
-    items.push({
-      id: 'billing',
-      label: 'الاشتراكات',
-      icon: 'fas fa-file-invoice-dollar',
-      href: '/academy/billing',
-    });
   }
 
   const [expandedItems, setExpandedItems] = React.useState<string[]>([]);

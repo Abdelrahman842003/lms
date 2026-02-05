@@ -69,7 +69,6 @@ export default function AcademyGroupsPage() {
         const response = await academyService.getLectureTeachers();
         setTeachers(response.data?.teachers || []);
       } catch (error) {
-        console.error('Failed to fetch teachers:', error);
         setTeachers([]);
       }
     };
@@ -84,7 +83,6 @@ export default function AcademyGroupsPage() {
           const response = await academyService.getGrades(1, 100, { teacher_id: formData.teacher_id });
           setGrades(response.data?.data || []);
         } catch (error) {
-          console.error('Failed to fetch teacher grades:', error);
           setGrades([]);
         }
       };
@@ -173,7 +171,7 @@ export default function AcademyGroupsPage() {
       setTotalItems(response.data.meta.total);
       setCurrentPage(response.data.meta.current_page);
     } catch (error) {
-      console.error('Failed to fetch groups:', error);
+      // Error handled silently
     } finally {
       setIsLoading(false);
     }
@@ -234,7 +232,7 @@ export default function AcademyGroupsPage() {
       setValidationErrors({});
       fetchGroups(currentPage);
     } catch (error) {
-      console.error('Failed to save group:', error);
+      // Error handled silently
     } finally {
       setIsSubmitting(false);
     }
@@ -249,7 +247,7 @@ export default function AcademyGroupsPage() {
       setShowDeleteModal(false);
       fetchGroups(currentPage);
     } catch (error) {
-      console.error('Failed to delete group:', error);
+      // Error handled silently
     } finally {
       setIsSubmitting(false);
     }

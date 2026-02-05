@@ -48,7 +48,6 @@ export default function AcademySecretariesPage() {
     try {
       setIsLoading(true);
       const response = await academyService.getSecretaries(1, 100, searchQuery);
-      console.log('Secretaries API Response:', response);
       
       let data = [];
       if (Array.isArray(response.data?.data)) {
@@ -67,7 +66,6 @@ export default function AcademySecretariesPage() {
       
       setSecretaries(data);
     } catch (error) {
-      console.error('Failed to fetch secretaries', error);
     } finally {
       setIsLoading(false);
     }
@@ -88,7 +86,6 @@ export default function AcademySecretariesPage() {
           setModalOpen(false);
           fetchSecretaries();
         } catch (error) {
-          console.error('Failed to toggle secretary status:', error);
           toast.error(`فشل ${isActive ? 'تعطيل' : 'تفعيل'} الحساب`);
         } finally {
           setIsProcessing(false);
@@ -113,7 +110,6 @@ export default function AcademySecretariesPage() {
           setModalOpen(false);
           fetchSecretaries();
         } catch (error) {
-          console.error('Failed to delete secretary:', error);
           toast.error('فشل حذف السكرتير');
         } finally {
           setIsProcessing(false);

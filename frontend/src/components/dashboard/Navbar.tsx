@@ -67,6 +67,12 @@ const getNavItems = (role: string): SidebarItem[] => {
         href: '/admin/notifications',
       },
       {
+        id: 'subscriptions',
+        label: 'الاشتراكات',
+        icon: 'fas fa-id-card',
+        href: '/admin/subscriptions',
+      },
+      {
         id: 'reports',
         label: 'التقارير',
         icon: 'fas fa-chart-bar',
@@ -698,6 +704,26 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
                     <i className="fas fa-user"></i>
                     <span>الملف الشخصي</span>
                   </Link>
+                  
+                  {/* Subscription Link */}
+                  {(role === 'teacher' || role === 'academy') && (
+                    <Link 
+                      href={
+                        role === 'academy' ? '/academy/subscription' :
+                        (selectedAcademy?.id && selectedAcademy.id !== 'independent') ? '/academy/subscription' :
+                        '/teacher/subscription'
+                      }
+                      className="navbar-dropdown-item"
+                      onClick={() => setIsDropdownOpen(false)}
+                    >
+                      <i className="fas fa-id-card"></i>
+                      <span>
+                        {role === 'academy' ? 'الاشتراك' :
+                         (selectedAcademy?.id && selectedAcademy.id !== 'independent') ? 'الاشتراك' :
+                         'اشتراكي'}
+                      </span>
+                    </Link>
+                  )}
                   
                   {/* Academy Selector for Teachers */}
                   {role === 'teacher' && hasAcademies && (

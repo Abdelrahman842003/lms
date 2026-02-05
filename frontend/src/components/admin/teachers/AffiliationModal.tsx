@@ -26,13 +26,10 @@ export default function AffiliationModal({ isOpen, onClose, teacher, onSuccess }
     setLoading(true);
     try {
       const response = await getAcademies(1, 100, { status: 'active' });
-      console.log('Fetched Academies Response:', response);
       const academiesList = response.academies || [];
-      console.log('Processed Academies Data:', academiesList);
       
       setAcademies(academiesList);
     } catch (error) {
-      console.error('Failed to fetch academies', error);
       toast.error('فشل جلب قائمة الأكاديميات');
     } finally {
       setLoading(false);
@@ -49,7 +46,6 @@ export default function AffiliationModal({ isOpen, onClose, teacher, onSuccess }
       setSelectedAcademyId('');
       onSuccess(); // Refresh parent
     } catch (error) {
-      console.error('Failed to add academy', error);
       toast.error('فشل إضافة المدرس للأكاديمية');
     } finally {
       setProcessing(false);
@@ -65,7 +61,6 @@ export default function AffiliationModal({ isOpen, onClose, teacher, onSuccess }
       toast.success('تم إزالة المدرس من الأكاديمية بنجاح');
       onSuccess(); // Refresh parent
     } catch (error) {
-      console.error('Failed to remove academy', error);
       toast.error('فشل إزالة المدرس من الأكاديمية');
     } finally {
       setProcessing(false);
@@ -85,7 +80,6 @@ export default function AffiliationModal({ isOpen, onClose, teacher, onSuccess }
       }
       onSuccess();
     } catch (error) {
-      console.error('Failed to toggle independent status', error);
       toast.error('فشل تغيير حالة المستقل');
     } finally {
       setProcessing(false);
@@ -95,15 +89,10 @@ export default function AffiliationModal({ isOpen, onClose, teacher, onSuccess }
   const isIndependent = teacher?.affiliation === 'independent' || teacher?.affiliation === 'both';
   const teacherAcademies = teacher?.academies || [];
   
-  console.log('All Academies:', academies);
-  console.log('Teacher Academies:', teacherAcademies);
-
   // Filter out academies the teacher is already in
   const availableAcademies = academies.filter(
     a => !teacherAcademies.some((ta: any) => String(ta.id) === String(a.id))
   );
-  
-  console.log('Available Academies:', availableAcademies);
 
   return (
     <FormModal

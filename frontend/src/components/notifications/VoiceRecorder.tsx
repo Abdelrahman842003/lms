@@ -145,7 +145,6 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
       }, 1000);
 
     } catch (err) {
-      console.error('Error starting recording:', err);
       setError('فشل في بدء التسجيل. تأكد من السماح بصلاحيات الميكروفون.');
     }
   }, [maxDuration, analyzeAudio]);

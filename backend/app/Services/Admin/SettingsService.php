@@ -58,6 +58,7 @@ class SettingsService
             'maintenanceMode', 
             'whatsappNumber',
 
+            'pricePerStudent',
             'academy_student_price',
             'seo_title',
             'seo_description',

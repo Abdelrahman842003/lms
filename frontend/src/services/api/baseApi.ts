@@ -217,7 +217,8 @@ export async function fetchApi<T = unknown>(
       error = { message: `API Error: ${response.status}` };
     }
 
-    const arabicMessage = (error.message as string) || getErrorMessage(response.status);
+    const serverMessage = typeof error?.message === 'string' ? error.message : null;
+    const arabicMessage = serverMessage || getErrorMessage(response.status);
     const errorWithStatus = new Error(arabicMessage) as ApiErrorExtended;
     errorWithStatus.status = response.status;
     errorWithStatus.errors = error.errors as Record<string, string[]>;

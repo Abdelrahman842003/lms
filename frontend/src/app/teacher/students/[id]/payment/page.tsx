@@ -130,13 +130,13 @@ export default function PaymentPage({ params }: { params: Promise<{ id: string }
   };
 
   const basePrice = getBasePrice();
-  const platformFee = activationDetails?.platform_fee || 0;
   
   const subTotal = basePrice * months;
   const discountAmount = subTotal * (discount / 100);
   const teacherAmount = subTotal - discountAmount;
-  const totalCommission = platformFee * months;
-  const totalRequired = teacherAmount + totalCommission;
+  
+  // Platform fee removed - teacher pays via subscription system
+  const totalRequired = teacherAmount;
 
   // Auto-generate notes
   useEffect(() => {
@@ -156,14 +156,10 @@ export default function PaymentPage({ params }: { params: Promise<{ id: string }
       autoNotes.push(`المبلغ بعد الخصم: ${teacherAmount} ج.م`);
     }
     
-    if (totalCommission > 0) {
-      autoNotes.push(`حساب المنصة: ${totalCommission} ج.م`);
-    }
-    
     autoNotes.push(`الإجمالي المطلوب: ${totalRequired} ج.م`);
     
     setNotes(autoNotes.join(' | '));
-  }, [months, discount, basePrice, subTotal, teacherAmount, totalCommission, totalRequired, discountAmount]);
+  }, [months, discount, basePrice, subTotal, teacherAmount, totalRequired, discountAmount]);
 
   const handleSubmit = async () => {
     if (months < 1) {
@@ -451,30 +447,20 @@ export default function PaymentPage({ params }: { params: Promise<{ id: string }
 
                 <div className="h-px bg-white/10 my-4"></div>
 
-                {/* Commission Info */}
-                <div className="flex justify-between items-center text-sm p-3 bg-warning/10 rounded-lg border border-warning/10">
-                  <span className="text-warning">حساب المنصة</span>
-                  <span className="text-warning font-bold">{totalCommission} ج.م</span>
-                </div>
-
-                {/* Total for Teacher */}
+                {/* Total */}
                 <div className="flex justify-between items-center pt-2">
-                  <span className="text-gray-300 font-medium text-lg">الإجمالي (للمدرس)</span>
+                  <span className="text-gray-300 font-medium text-lg">الإجمالي</span>
                   <div className="text-right">
                     {discount > 0 && (
                       <div className="text-sm text-gray-500 line-through mb-1">
                         {basePrice * months} ج.م
                       </div>
                     )}
-                    <span className="text-primary font-bold text-3xl">{teacherAmount} ج.م</span>
+                    <span className="text-primary font-bold text-3xl">{totalRequired} ج.م</span>
                   </div>
                 </div>
 
-                {/* Grand Total */}
-                <div className="flex justify-between items-center pt-4 border-t border-white/10 mt-4">
-                  <span className="text-white font-bold text-xl">الإجمالي المطلوب من الطالب</span>
-                  <span className="text-white font-bold text-3xl">{totalRequired} ج.م</span>
-                </div>
+
 
                 {/* Notes */}
                 <div>

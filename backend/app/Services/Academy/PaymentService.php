@@ -60,12 +60,11 @@ class PaymentService
         $discountAmount = $subTotal * ($discount / 100);
         $teacherAmount = $subTotal - $discountAmount;
         
-        // Get platform fee (commission)
-        $platformFee = (float) Setting::getValue('academy_student_price', 0);
-        $commission = $platformFee * $months;
+        // Platform fee removed - academy pays via subscription system
+        $commission = 0;
         
-        // Total amount = teacher amount + platform commission
-        $totalAmount = $teacherAmount + $commission;
+        // Total amount = teacher amount only (no platform commission)
+        $totalAmount = $teacherAmount;
 
         // Build auto-generated notes
         $autoNotes = [];
@@ -78,9 +77,6 @@ class PaymentService
         $autoNotes[] = "السعر الأساسي: {$basePrice} × {$months} = {$subTotal} ج.م";
         if ($discountAmount > 0) {
             $autoNotes[] = "المبلغ بعد الخصم: {$teacherAmount} ج.م";
-        }
-        if ($commission > 0) {
-            $autoNotes[] = "حساب المنصة: {$commission} ج.م";
         }
         $autoNotes[] = "الإجمالي المطلوب: {$totalAmount} ج.م";
 

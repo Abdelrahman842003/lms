@@ -29,7 +29,7 @@ export const TeacherSelectionModal: React.FC<TeacherSelectionModalProps> = ({
     try {
       await onConfirm(teacherId);
     } catch (error) {
-      console.error('Error toggling status:', error);
+      // Error handled silently
     } finally {
       setProcessingId(null);
     }

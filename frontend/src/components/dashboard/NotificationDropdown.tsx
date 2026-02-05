@@ -103,7 +103,6 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
             }
           }
         } catch (err) {
-          console.error('Error playing notification sound:', err);
         }
       }
       
@@ -115,7 +114,6 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
       setNotifications(fetchedNotifications || []);
       setUnreadCount(newUnreadCount);
     } catch (error) {
-      console.error('Failed to fetch notifications:', error);
     }
   };
 
@@ -134,7 +132,6 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
             return { userId: user.id, token };
           }
         } catch (e) {
-          console.error('Failed to get user data for WebSocket:', e);
         }
         return null;
       };
@@ -164,10 +161,8 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
             channel.error((error: any) => {
               // Suppress 403 errors (unauthorized/suspended)
               if (error?.status === 403 || error?.error?.data?.code === 403) {
-                console.warn('[NotificationDropdown] Channel auth failed (403). User might be suspended or logged out.');
                 return;
               }
-              console.error('[NotificationDropdown] ❌ Channel error:', error);
             });
             
               // Listen for the event
@@ -214,7 +209,6 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
               try {
                 audioRef.current?.play().catch(() => {});
               } catch (err) {
-                console.error('Error playing notification sound:', err);
               }
               
               // Show native notification or toast
@@ -246,7 +240,6 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
               echo.leave(channelName);
             };
           } catch (e) {
-            console.error('[NotificationDropdown] Failed to setup Reverb:', e);
           }
         });
       }
@@ -288,7 +281,6 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
           try {
              audioRef.current?.play().catch(() => {});
           } catch (err) {
-            console.error('Error playing notification sound:', err);
           }
         } else {
             fetchNotifications();
@@ -332,7 +324,6 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
       ));
       setUnreadCount(prev => Math.max(0, prev - 1));
     } catch (error) {
-      console.error('Failed to mark notification as read:', error);
     }
   };
 

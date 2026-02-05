@@ -36,19 +36,6 @@ class Logger {
     this.config = { ...defaultConfig, ...config };
   }
 
-  private formatMessage(level: LogLevel, args: unknown[]): unknown[] {
-    const parts: unknown[] = [];
-    
-    if (this.config.showTimestamp) {
-      parts.push(`[${new Date().toISOString()}]`);
-    }
-    
-    parts.push(this.config.prefix);
-    parts.push(`[${level.toUpperCase()}]`);
-    
-    return [...parts, ...args];
-  }
-
   private shouldLog(level: LogLevel): boolean {
     return this.config.enabled && this.config.logLevels.includes(level);
   }
@@ -57,8 +44,9 @@ class Logger {
    * General log message
    */
   log(...args: unknown[]): void {
+    void args;
     if (this.shouldLog('log')) {
-      console.log(...this.formatMessage('log', args));
+      return;
     }
   }
 
@@ -66,16 +54,19 @@ class Logger {
    * Error message - always logged even in production
    */
   error(...args: unknown[]): void {
-    // Errors are always logged
-    console.error(...this.formatMessage('error', args));
+    void args;
+    if (this.shouldLog('error')) {
+      return;
+    }
   }
 
   /**
    * Warning message
    */
   warn(...args: unknown[]): void {
+    void args;
     if (this.shouldLog('warn')) {
-      console.warn(...this.formatMessage('warn', args));
+      return;
     }
   }
 
@@ -83,8 +74,9 @@ class Logger {
    * Info message
    */
   info(...args: unknown[]): void {
+    void args;
     if (this.shouldLog('info')) {
-      console.info(...this.formatMessage('info', args));
+      return;
     }
   }
 
@@ -92,8 +84,9 @@ class Logger {
    * Debug message - most verbose level
    */
   debug(...args: unknown[]): void {
+    void args;
     if (this.shouldLog('debug')) {
-      console.debug(...this.formatMessage('debug', args));
+      return;
     }
   }
 
@@ -108,8 +101,9 @@ class Logger {
    * Group related logs together
    */
   group(label: string): void {
+    void label;
     if (this.config.enabled) {
-      console.group(label);
+      return;
     }
   }
 
@@ -118,7 +112,7 @@ class Logger {
    */
   groupEnd(): void {
     if (this.config.enabled) {
-      console.groupEnd();
+      return;
     }
   }
 
@@ -126,8 +120,9 @@ class Logger {
    * Log a table (useful for arrays/objects)
    */
   table(data: unknown): void {
+    void data;
     if (this.config.enabled) {
-      console.table(data);
+      return;
     }
   }
 
@@ -135,8 +130,9 @@ class Logger {
    * Start a timer
    */
   time(label: string): void {
+    void label;
     if (this.config.enabled) {
-      console.time(label);
+      return;
     }
   }
 
@@ -144,8 +140,9 @@ class Logger {
    * End a timer
    */
   timeEnd(label: string): void {
+    void label;
     if (this.config.enabled) {
-      console.timeEnd(label);
+      return;
     }
   }
 

@@ -76,7 +76,6 @@ export const ManualAttendanceModal: React.FC<ManualAttendanceModalProps> = ({
         setStudent(null);
       }
     } catch (error) {
-      console.error('Search failed:', error);
     } finally {
       setIsLoading(false);
     }
@@ -107,7 +106,6 @@ export const ManualAttendanceModal: React.FC<ManualAttendanceModalProps> = ({
         }
       }
     } catch (error: any) {
-      console.error('Attendance failed:', error);
       toast.error(error.message || 'فشل تسجيل الحضور');
     } finally {
       setIsMarking(false);

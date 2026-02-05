@@ -9,6 +9,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use App\Services\Infrastructure\HelperService;
 
 class TeacherService
 {
@@ -258,7 +259,7 @@ class TeacherService
                 ->whereBetween('confirmed_at', [$startOfMonth, $endOfMonth])
                 ->sum('months');
                 
-            $currentDue = $billableMonths * \App\Services\HelperService::getPricePerStudent();
+            $currentDue = $billableMonths * HelperService::getPricePerStudent();
             
             // We store 'billable months' in student_count column for now to avoid schema change
             // Ideally we should rename the column or add a new one, but this works for calculation
@@ -294,14 +295,9 @@ class TeacherService
             
             $subscription->save();
 
-            \App\Models\PaymentLog::create([
-                'teacher_id' => $teacherId,
-                'amount' => $amount,
-                'status' => 'confirmed',
-                'confirmed_at' => now(),
-                'client_side_uuid' => \Illuminate\Support\Str::uuid(),
-                'notes' => "Subscription payment for month {$month}"
-            ]);
+            // We do NOT create a PaymentLog here because PaymentLog is strictly for Student-to-Teacher or Student-to-Platform payments
+            // and requires student_id/enrollment_id. 
+            // For Teacher-to-Platform subscription payments, we rely on the TeacherSubscription record itself.
         }
 
         return $subscription;
@@ -323,23 +319,38 @@ class TeacherService
 
     private function calculateAmountDue(Teacher $teacher, ?string $month = null): float
     {
-        // New Logic: Calculate based on PaymentLog (Commission/Fee per paid month)
-        // Similar to AcademyBillingService
-
-        $query = \App\Models\PaymentLog::where('teacher_id', $teacher->id)
-            ->where('status', 'confirmed');
+        // New Logic (Seat System): Use Active Enrollments count
+        
+        $query = \App\Models\Enrollment::where('teacher_id', $teacher->id);
 
         if ($month) {
             $startOfMonth = \Carbon\Carbon::parse($month)->startOfMonth();
             $endOfMonth = \Carbon\Carbon::parse($month)->endOfMonth();
             
-            $query->whereBetween('confirmed_at', [$startOfMonth, $endOfMonth]);
+            // Consider an enrollment valid for this month if:
+            // 1. Created before or during this month
+            // 2. Not deleted, OR deleted after the start of this month
+            // This captures anyone who held a seat during this month
+            $query->where('created_at', '<=', $endOfMonth)
+                  ->where(function($q) use ($startOfMonth) {
+                      $q->whereNull('deleted_at')
+                        ->orWhere('deleted_at', '>=', $startOfMonth);
+                  });
+            // Note: We include soft-deleted enrollments in the initial query scope to handle the deleted_at check manually
+            // But wait, does Enrollment model use SoftDeletes? Yes usually.
+            // If so, we need ->withTrashed() to even see the deleted_at column checks effectively if using Eloquent scopes.
+            $query->withTrashed();
+        } else {
+             // If no month specified, maybe just current active ones?
+             // But usually this function is called WITH a month.
+             // Fallback to active now
+             $query->whereNull('deleted_at');
         }
 
-        $totalBillableMonths = $query->sum('months');
-        $price = \App\Services\HelperService::getPricePerStudent();
+        $totalSeats = $query->count();
+        $price = HelperService::getPricePerStudent();
         
-        return $totalBillableMonths * $price;
+        return (float) ($totalSeats * $price);
     }
 
     public function enableIndependent(string $teacherId): Teacher
@@ -348,7 +359,7 @@ class TeacherService
         
         // Set subscription fee to default price per student (usually 100)
         // This marks the teacher as independent in our logic
-        $defaultPrice = \App\Services\HelperService::getPricePerStudent();
+        $defaultPrice = HelperService::getPricePerStudent();
         $teacher->subscription_fee = $defaultPrice > 0 ? $defaultPrice : 100;
         $teacher->is_independent_active = true; // Ensure it's active when enabled
         
@@ -393,5 +404,43 @@ class TeacherService
     {
         $teacher = Teacher::findOrFail($teacherId);
         $teacher->delete();
+    }
+    public function setSubscriptionPlan(string $teacherId, array $data): Teacher
+    {
+        $teacher = Teacher::findOrFail($teacherId);
+
+        $type = $data['type']; // 'trial', 'term', 'custom'
+        $teacher->plan_type = $type;
+        
+        // Calculate Expiry
+        if ($type === 'trial' || $type === 'custom') {
+            $days = (int) ($data['days'] ?? 0);
+            $teacher->plan_expires_at = now()->addDays($days);
+        } elseif ($type === 'term') {
+            $months = (int) ($data['months'] ?? 6);
+            $teacher->plan_expires_at = now()->addMonths($months);
+        }
+
+        // Student Limits
+        if (!empty($data['is_unlimited_students'])) {
+            $teacher->plan_max_students = null;
+            $teacher->is_unlimited_students = true;
+        } else {
+            $teacher->plan_max_students = (int) ($data['max_students'] ?? 0);
+            $teacher->is_unlimited_students = false;
+        }
+
+        // Ensure independent status is active
+        $teacher->is_independent_active = true;
+        
+        // Legacy support: ensure subscription_fee > 0 so they appear as independent
+        if ($teacher->subscription_fee <= 0) {
+            $teacher->subscription_fee = HelperService::getPricePerStudent();
+            if ($teacher->subscription_fee <= 0) $teacher->subscription_fee = 100; // Fallback
+        }
+
+        $teacher->save();
+
+        return $teacher;
     }
 }

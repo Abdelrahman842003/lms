@@ -110,7 +110,7 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
       const data = await fetchApi(`/parent/children/${child.id}/summary?${params}`);
       setSummary(data);
     } catch (error) {
-      console.error('Failed to fetch summary:', error);
+      // Error handled silently
     } finally {
       setIsLoading(false);
     }

@@ -212,6 +212,40 @@ export async function getTeacherSubscription(id: string, month: string): Promise
   return await fetchApi(`/api/admin/teachers/${id}/subscription?month=${month}`);
 }
 
+/**
+ * Update teacher subscription plan
+ */
+export async function updateTeacherPlan(id: string, data: any): Promise<AdminTeacher> {
+  const res = await fetchApi<{ teacher: AdminTeacher }>(`/api/admin/teachers/${id}/plan`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+  return res.teacher;
+}
+
+/**
+ * Get aggregated subscriptions (Teachers and Academies)
+ */
+export async function getSubscriptions(
+  page = 1,
+  limit = 10,
+  filters?: { search?: string; status?: string; type?: string; record_type?: string }
+): Promise<{ 
+  data: any[]; 
+  meta: any; 
+  stats: { total: number; active: number; trial: number; expired: number } 
+}> {
+  const queryParams = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+    ...(filters?.search && { search: filters.search }),
+    ...(filters?.status && { status: filters.status }),
+    ...(filters?.type && { type: filters.type }),
+    ...(filters?.record_type && { record_type: filters.record_type }),
+  });
+  return await fetchApi(`/api/admin/subscriptions?${queryParams}`);
+}
+
 // ============================================
 // Students
 // ============================================

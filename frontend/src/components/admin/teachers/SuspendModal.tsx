@@ -22,7 +22,6 @@ export default function SuspendModal({ isOpen, onClose, teacher, onSuccess }: Su
       toast.success('تم تغيير حالة الحساب بنجاح');
       onSuccess();
     } catch (error) {
-      console.error('Failed to toggle global status', error);
       toast.error('فشل تغيير حالة الحساب');
     } finally {
       setProcessing(null);
@@ -36,7 +35,6 @@ export default function SuspendModal({ isOpen, onClose, teacher, onSuccess }: Su
       toast.success('تم تغيير حالة المستقل بنجاح');
       onSuccess();
     } catch (error) {
-      console.error('Failed to toggle independent status', error);
       toast.error('فشل تغيير حالة المستقل');
     } finally {
       setProcessing(null);
@@ -50,7 +48,6 @@ export default function SuspendModal({ isOpen, onClose, teacher, onSuccess }: Su
       toast.success('تم تغيير حالة المدرس في الأكاديمية بنجاح');
       onSuccess();
     } catch (error) {
-      console.error('Failed to toggle academy status', error);
       toast.error('فشل تغيير حالة المدرس في الأكاديمية');
     } finally {
       setProcessing(null);

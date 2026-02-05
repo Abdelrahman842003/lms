@@ -88,7 +88,7 @@ export default function AcademyStudentsPage() {
       const response = await getAcademyStudentStatistics();
       setStats(response.data);
     } catch (error) {
-      console.error('Failed to fetch stats:', error);
+      // Error handled silently
     }
   };
 
@@ -98,7 +98,6 @@ export default function AcademyStudentsPage() {
     try {
       setIsLoading(true);
       const response = await getAcademyStudents(currentPage, 10, searchQuery, statusFilter);
-      console.log('FULL API RESPONSE:', response);
       
       // Robust data extraction
       let studentsData = [];
@@ -113,15 +112,12 @@ export default function AcademyStudentsPage() {
          studentsData = response;
       }
       
-      console.log('Extracted Students:', studentsData);
       setStudents(studentsData);
       setTotalPages(metaData.last_page || response.data?.last_page || 1);
       setTotalItems(metaData.total || response.data?.total || 0);
     } catch (error: any) {
-      console.error('Failed to fetch students:', error);
       toast.error(`Failed to load students: ${error.message || 'Unknown error'}`);
       if (error.response) {
-        console.error('Error Response:', error.response);
         toast.error(`Status: ${error.response.status}`);
       }
     } finally {
@@ -145,7 +141,6 @@ export default function AcademyStudentsPage() {
           fetchStats();
           toast.success('تم إلغاء ربط الطالب بنجاح');
         } catch (error) {
-          console.error('Failed to delete student:', error);
           toast.error('فشل إلغاء ربط الطالب');
         } finally {
           setIsProcessing(false);
@@ -188,7 +183,6 @@ export default function AcademyStudentsPage() {
       
       toast.success(`تم ${isDisabling ? 'تعطيل' : 'تفعيل'} الحساب بنجاح`);
     } catch (error) {
-      console.error('Failed to toggle student status:', error);
       toast.error(`فشل ${isDisabling ? 'تعطيل' : 'تفعيل'} الحساب`);
     }
   };
@@ -225,7 +219,6 @@ export default function AcademyStudentsPage() {
           fetchStats();
           toast.success(`تم ${isDisabling ? 'تعطيل' : 'تفعيل'} الحساب بنجاح`);
         } catch (error) {
-          console.error('Failed to toggle student status:', error);
           toast.error(`فشل ${isDisabling ? 'تعطيل' : 'تفعيل'} الحساب`);
         } finally {
           setIsProcessing(false);
@@ -497,9 +490,6 @@ export default function AcademyStudentsPage() {
           </div>
           <div className="space-y-2 max-h-[300px] overflow-y-auto custom-scrollbar">
             {students.find(s => s.id === activeTeacherPopup)?.teachers?.map((teacher: any) => {
-              console.log('Teacher object in popup:', teacher);
-              console.log('teacher.status:', teacher.status);
-              console.log('teacher.is_active:', teacher.is_active);
               return (
               <div key={teacher.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors">
                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold">

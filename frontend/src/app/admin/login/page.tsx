@@ -38,7 +38,6 @@ export default function AdminLoginPage() {
           setIsCheckingAuth(false);
         }
       } catch (error) {
-        console.error('Auth check failed:', error);
         setIsCheckingAuth(false);
       }
     };
@@ -128,7 +127,6 @@ export default function AdminLoginPage() {
       // Redirect to admin dashboard
       window.location.href = '/admin/dashboard';
     } catch (err: any) {
-      console.error('Login error:', err);
       setError(err.message || 'فشل تسجيل الدخول. يرجى التحقق من البيانات والمحاولة مرة أخرى.');
     } finally {
       setIsLoading(false);

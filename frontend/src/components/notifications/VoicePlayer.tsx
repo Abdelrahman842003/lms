@@ -150,7 +150,6 @@ export const VoicePlayer: React.FC<VoicePlayerProps> = ({
       }
     } catch (err: any) {
       if (err.name !== 'AbortError') {
-        console.error('Play error:', err);
         setError('فشل في تشغيل الصوت');
       }
     }

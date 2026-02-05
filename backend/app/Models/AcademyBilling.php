@@ -12,11 +12,6 @@ class AcademyBilling extends Model
 {
     use HasFactory, HasUuids;
 
-    protected $casts = [
-        'status' => \App\Enums\AcademyBillingStatus::class,
-        'payment_method' => \App\Enums\PaymentMethod::class,
-    ];
-
     protected $fillable = [
         'academy_id',
         'month',
@@ -34,6 +29,8 @@ class AcademyBilling extends Model
     ];
 
     protected $casts = [
+        'status' => \App\Enums\AcademyBillingStatus::class,
+        'payment_method' => \App\Enums\PaymentMethod::class,
         'month' => 'integer',
         'year' => 'integer',
         'total_students' => 'integer',

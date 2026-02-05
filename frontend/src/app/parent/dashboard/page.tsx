@@ -63,7 +63,6 @@ export default function ParentDashboard() {
                 teacher_count: stats.teacher_count,
               };
             } catch (error) {
-              console.error(`Failed to load summary for child ${child.id}:`, error);
               return {
                 id: child.id,
                 name: child.name,
@@ -80,7 +79,6 @@ export default function ParentDashboard() {
 
         setChildrenSummaries(summaries);
       } catch (error) {
-        console.error('Failed to load dashboard data:', error);
       } finally {
         setIsLoading(false);
       }
