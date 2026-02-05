@@ -5,84 +5,54 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
-use App\Models\Exam;
-use App\Models\ExamAttempt;
+use App\Http\Requests\Student\GetExamsRequest;
+use App\Http\Resources\Student\StudentExamResource;
 use App\Services\Student\StudentExamService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class StudentExamController extends Controller
 {
-    protected $examService;
-
-    public function __construct(StudentExamService $examService)
-    {
-        $this->examService = $examService;
-    }
+    public function __construct(
+        private StudentExamService $examService
+    ) {}
 
     /**
-     * List exams for the student
+     * List exams for student
      */
-    public function index(Request $request)
+    public function index(GetExamsRequest $request): JsonResponse
     {
-        $request->validate([
-            'teacher_id' => 'required|exists:teachers,id',
-        ]);
+        $student = $request->user();
+        $teacherId = $request->validated('teacher_id');
+        $perPage = (int) $request->input('per_page', 10);
 
-        $exams = Exam::where('teacher_id', $request->teacher_id)
-            ->with(['results' => function ($q) use ($request) {
-                $q->where('student_id', $request->user()->id);
-            }])
-            ->orderBy('is_active', 'desc')
-            ->latest()
-            ->paginate(10);
+        $exams = $this->examService->getExams($student, $teacherId, $perPage);
 
-        // Transform collection
-        $exams->getCollection()->transform(function ($exam) {
-            $result = $exam->results->first();
-            $exam->student_score = $result ? $result->score : null;
-            $exam->student_percentage = $result ? $result->percentage : null;
-            $exam->is_completed = !!$result;
-            unset($exam->results);
-            return $exam;
-        });
-
-        return $this->successResponse($exams);
+        return $this->successResponse(
+            StudentExamResource::collection($exams)->response()->getData(true)
+        );
     }
 
     /**
      * Get exam details before starting
      */
-    public function show(Exam $exam)
+    public function show(\App\Models\Exam $exam): JsonResponse
     {
         $student = auth()->user();
         
-        // Check if student already completed this exam
-        $result = $exam->results()->where('student_id', $student->id)->first();
-        
+        $examData = $this->examService->getExamDetails($exam);
+
         return $this->successResponse([
-            'exam' => [
-                'id' => $exam->id,
-                'title' => $exam->title,
-                'subject' => $exam->subject,
-                'duration' => $exam->duration,
-                'max_score' => $exam->max_score,
-                'actual_question_count' => $exam->actual_question_count,
-                'time_per_question' => $exam->time_per_question,
-                'date' => $exam->date,
-                'is_active' => $exam->is_active,
-            ],
-            'is_completed' => !!$result,
-            'result' => $result ? [
-                'score' => $result->score,
-                'percentage' => $result->percentage,
-            ] : null,
+            'exam' => $examData->toArray(),
+            'is_completed' => $this->examService->hasStudentCompleted($student, $exam),
+            'result' => $this->examService->getStudentResult($student, $exam),
         ]);
     }
 
     /**
      * Start an exam
      */
-    public function start(Exam $exam)
+    public function start(\App\Models\Exam $exam): JsonResponse
     {
         if (!$exam->is_active) {
             return $this->errorResponse('هذا الامتحان غير مفعل حالياً', 403);
@@ -101,19 +71,18 @@ class StudentExamController extends Controller
     /**
      * Submit answer for current question
      */
-    public function submitAnswer(Request $request, ExamAttempt $attempt)
+    public function submitAnswer(Request $request, \App\Models\ExamAttempt $attempt): JsonResponse
     {
-        $request->validate([
-            'answer' => 'required|string',
-        ]);
+        $student = auth()->user();
+        $answer = $request->input('answer');
 
-        // Verify this attempt belongs to the current user
-        if ($attempt->student_id !== auth()->id()) {
+        // Verify this attempt belongs to current user
+        if ($attempt->student_id !== $student->id) {
             return $this->errorResponse('غير مصرح', 403);
         }
 
         try {
-            $data = $this->examService->submitAnswer($attempt, $request->answer);
+            $data = $this->examService->submitAnswer($attempt, $answer);
             return $this->successResponse($data);
         } catch (\Exception $e) {
             return $this->errorResponse($e->getMessage(), 400);
@@ -123,10 +92,12 @@ class StudentExamController extends Controller
     /**
      * Skip current question (time expired)
      */
-    public function skipQuestion(ExamAttempt $attempt)
+    public function skipQuestion(\App\Models\ExamAttempt $attempt): JsonResponse
     {
-        // Verify this attempt belongs to the current user
-        if ($attempt->student_id !== auth()->id()) {
+        $student = auth()->user();
+
+        // Verify this attempt belongs to current user
+        if ($attempt->student_id !== $student->id) {
             return $this->errorResponse('غير مصرح', 403);
         }
 
@@ -141,19 +112,18 @@ class StudentExamController extends Controller
     /**
      * Terminate exam due to violation
      */
-    public function terminate(Request $request, ExamAttempt $attempt)
+    public function terminate(Request $request, \App\Models\ExamAttempt $attempt): JsonResponse
     {
-        $request->validate([
-            'reason' => 'required|string|in:visibility_change,screen_resize,manual',
-        ]);
+        $reason = $request->input('reason');
+        $student = auth()->user();
 
-        // Verify this attempt belongs to the current user
-        if ($attempt->student_id !== auth()->id()) {
+        // Verify this attempt belongs to current user
+        if ($attempt->student_id !== $student->id) {
             return $this->errorResponse('غير مصرح', 403);
         }
 
         try {
-            $data = $this->examService->terminateExam($attempt, $request->reason);
+            $data = $this->examService->terminateExam($attempt, $reason);
             return $this->successResponse($data, 'تم إنهاء الامتحان');
         } catch (\Exception $e) {
             return $this->errorResponse($e->getMessage(), 400);
@@ -163,7 +133,7 @@ class StudentExamController extends Controller
     /**
      * Get exam result
      */
-    public function result(Exam $exam)
+    public function result(\App\Models\Exam $exam): JsonResponse
     {
         $student = auth()->user();
         $result = $this->examService->getResult($student, $exam);
@@ -178,10 +148,12 @@ class StudentExamController extends Controller
     /**
      * Get current attempt status
      */
-    public function attemptStatus(ExamAttempt $attempt)
+    public function attemptStatus(\App\Models\ExamAttempt $attempt): JsonResponse
     {
-        // Verify this attempt belongs to the current user
-        if ($attempt->student_id !== auth()->id()) {
+        $student = auth()->user();
+
+        // Verify this attempt belongs to current user
+        if ($attempt->student_id !== $student->id) {
             return $this->errorResponse('غير مصرح', 403);
         }
 

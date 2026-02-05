@@ -10,6 +10,8 @@ use App\Models\Exam;
 use App\Models\Enrollment;
 use App\Models\Attendance;
 use App\Models\ExamResult;
+use App\Models\Teacher;
+use App\Models\StudentPoint;
 use Carbon\Carbon;
 
 class StudentDashboardService
@@ -88,5 +90,136 @@ class StudentDashboardService
                 'ends_at' => $enrollment->subscription_end,
             ]
         ];
+    }
+
+    /**
+     * Validate teacher and get enrollment for dashboard
+     */
+    public function validateTeacherAndGetEnrollment(Student $student, string $teacherId): ?array
+    {
+        // Validate Teacher & Enrollment Status
+        $teacher = Teacher::find($teacherId);
+        if (!$teacher || $teacher->status === 'suspended') {
+            return null;
+        }
+
+        // Get Enrollment (for Balance & Status)
+        $enrollment = Enrollment::where('student_id', $student->id)
+            ->where('teacher_id', $teacherId)
+            ->first();
+
+        if (!$enrollment || !$enrollment->is_active) {
+            return null;
+        }
+
+        return [
+            'teacher' => $teacher,
+            'enrollment' => $enrollment,
+        ];
+    }
+
+    /**
+     * Get student points for a teacher
+     */
+    public function getStudentPoints(Student $student, string $teacherId): int
+    {
+        $pointsRecord = StudentPoint::where('student_id', $student->id)
+            ->where('teacher_id', $teacherId)
+            ->first();
+        return $pointsRecord ? $pointsRecord->total_points : 0;
+    }
+
+    /**
+     * Get upcoming lectures for a teacher
+     */
+    public function getUpcomingLectures(string $teacherId, int $limit = 3): array
+    {
+        return Lecture::where('teacher_id', $teacherId)
+            ->where('start_time', '>=', Carbon::today())
+            ->orderBy('start_time')
+            ->take($limit)
+            ->get()
+            ->map(function ($lecture) {
+                return [
+                    'id' => $lecture->id,
+                    'title' => $lecture->title,
+                    'date' => $lecture->start_time->format('Y-m-d'),
+                    'time' => $lecture->start_time->format('H:i'),
+                    'status' => 'قادمة',
+                ];
+            })
+            ->toArray();
+    }
+
+    /**
+     * Get recent attendance records
+     */
+    public function getRecentAttendance(Student $student, string $teacherId, int $limit = 5): array
+    {
+        return $student->attendances()
+            ->whereHas('lecture', function ($q) use ($teacherId) {
+                $q->where('teacher_id', $teacherId);
+            })
+            ->with('lecture:id,title')
+            ->latest()
+            ->take($limit)
+            ->get()
+            ->map(function ($attendance) {
+                return [
+                    'type' => 'attendance',
+                    'id' => $attendance->id,
+                    'title' => $attendance->lecture->title,
+                    'status' => $attendance->status, // present, absent
+                    'date' => $attendance->created_at->format('Y-m-d'),
+                    'timestamp' => $attendance->created_at->timestamp,
+                ];
+            })
+            ->toArray();
+    }
+
+    /**
+     * Get recent exam results
+     */
+    public function getRecentExams(Student $student, string $teacherId, int $limit = 5): array
+    {
+        return Exam::where('teacher_id', $teacherId)
+            ->whereHas('results', function ($q) use ($student) {
+                $q->where('student_id', $student->id);
+            })
+            ->with(['results' => function ($q) use ($student) {
+                $q->where('student_id', $student->id);
+            }])
+            ->latest()
+            ->take($limit)
+            ->get()
+            ->map(function ($exam) {
+                $result = $exam->results->first();
+                return [
+                    'type' => 'exam',
+                    'id' => $exam->id,
+                    'title' => $exam->title,
+                    'score' => $result ? $result->score : 0,
+                    'total' => $exam->total_marks ?? 100,
+                    'date' => $exam->created_at->format('Y-m-d'),
+                    'timestamp' => $exam->created_at->timestamp,
+                ];
+            })
+            ->toArray();
+    }
+
+    /**
+     * Get latest news (mixed feed of attendance and exams)
+     */
+    public function getLatestNews(Student $student, string $teacherId, int $limit = 5): array
+    {
+        $recentAttendance = collect($this->getRecentAttendance($student, $teacherId, $limit));
+        $recentExams = collect($this->getRecentExams($student, $teacherId, $limit));
+
+        // Merge and sort by timestamp desc
+        return $recentAttendance->concat($recentExams)
+            ->sortByDesc('timestamp')
+            ->take($limit)
+            ->values()
+            ->toArray();
     }
 }

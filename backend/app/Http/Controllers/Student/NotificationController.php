@@ -5,31 +5,27 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Auth;
-use App\Traits\ApiResponseTrait;
+use App\Http\Requests\Student\SendNotificationRequest;
+use App\Http\Resources\Student\StudentNotificationResource;
+use App\Services\Student\StudentNotificationService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class NotificationController extends Controller
 {
-    use ApiResponseTrait;
+    public function __construct(
+        private StudentNotificationService $notificationService
+    ) {}
 
-    public function index()
+    /**
+     * Get all notifications for the student
+     */
+    public function index(Request $request): JsonResponse
     {
-        $student = Auth::user();
+        $student = $request->user();
         
-        // Get received notifications, excluding those marked for parent only
-        $receivedNotifications = $student->notifications()
-            ->orderBy('created_at', 'desc')
-            ->get()
-            ->filter(function ($notification) {
-                // Exclude notifications that are for parent only
-                $data = $notification->data;
-                return !isset($data['for_parent']) || $data['for_parent'] !== true;
-            })
-            ->values();
-
-        $sentNotifications = $student->sentNotifications()
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $receivedNotifications = $this->notificationService->getReceivedNotifications($student);
+        $sentNotifications = $this->notificationService->getSentNotifications($student);
 
         return $this->successResponse([
             'received_notifications' => $receivedNotifications,
@@ -37,36 +33,35 @@ class NotificationController extends Controller
         ]);
     }
 
-    public function markAsRead($id)
+    /**
+     * Mark a notification as read
+     */
+    public function markAsRead(Request $request, string $id): JsonResponse
     {
-        $student = Auth::user();
-        $notification = $student->notifications()->where('id', $id)->first();
+        $student = $request->user();
+        $this->notificationService->markAsRead($student, $id);
 
-        if ($notification) {
-            $notification->markAsRead();
-        }
-
-        return $this->successResponse(null, 'Notification marked as read');
+        return $this->successResponse(null, 'تم تحديد الإشعار كمقروء');
     }
 
-    public function store(\Illuminate\Http\Request $request)
+    /**
+     * Send a notification from student to admin
+     */
+    public function store(SendNotificationRequest $request): JsonResponse
     {
-        $request->validate([
-            'title' => 'required|string|max:255',
-            'message' => 'required|string',
-            'recipient_type' => 'required|in:admin',
-        ]);
+        $student = $request->user();
+        $validated = $request->validated();
 
-        $student = Auth::user();
+        $notification = $this->notificationService->sendNotification(
+            $student,
+            $validated['title'],
+            $validated['message'],
+            $validated['recipient_type']
+        );
 
-        $notification = \App\Models\SentNotification::create([
-            'student_id' => $student->id,
-            'title' => $request->title,
-            'message' => $request->message,
-            'recipient_type' => $request->recipient_type,
-            'recipient_count' => 1, // Only sent to admin/support
-        ]);
-
-        return $this->successResponse($notification, 'Notification sent successfully');
+        return $this->successResponse(
+            new StudentNotificationResource($notification),
+            'تم إرسال الإشعار بنجاح'
+        );
     }
 }

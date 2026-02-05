@@ -5,23 +5,17 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
-use App\Models\Enrollment;
-use App\Models\Exam;
-use App\Models\ExamResult;
-use App\Models\Lecture;
-use App\Models\StudentPoint;
-use App\Models\Teacher;
-use App\Services\Student\MistakesService;
-use Carbon\Carbon;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use App\Http\Requests\Student\Dashboard\StudentDashboardRequest;
+use App\Http\Resources\Student\DashboardResource;
+use App\Services\Student\MistakesService;
+use App\Services\Student\StudentDashboardService;
+use Illuminate\Http\JsonResponse;
 
 class StudentDashboardController extends Controller
 {
     public function __construct(
         private MistakesService $mistakesService,
-        private \App\Services\Student\StudentDashboardService $dashboardService
+        private StudentDashboardService $dashboardService
     ) {}
 
     public function getDashboard(StudentDashboardRequest $request): JsonResponse
@@ -31,102 +25,34 @@ class StudentDashboardController extends Controller
         $student = $request->user();
         $teacherId = $request->teacher_id;
 
-        // 0. Validate Teacher & Enrollment Status
-        $teacher = Teacher::find($teacherId);
-        if (!$teacher || $teacher->status === 'suspended') {
-             return $this->errorResponse('Teacher is suspended or not found', 403);
+        // Validate Teacher & Enrollment Status
+        $validationResult = $this->dashboardService->validateTeacherAndGetEnrollment($student, $teacherId);
+        
+        if (!$validationResult) {
+             return $this->errorResponse('المدرس غير موجود أو تم تعليقه', 403);
         }
 
-        // 1. Get Enrollment (for Balance & Status)
-        $enrollment = Enrollment::where('student_id', $student->id)
-            ->where('teacher_id', $teacherId)
-            ->first();
+        $enrollment = $validationResult['enrollment'];
 
-        if (!$enrollment || !$enrollment->is_active) {
-             return $this->errorResponse('Enrollment is not active', 403);
-        }
-
-        // 2. Mistakes Count (Unmastered)
+        // Get mistakes count (unmastered)
         $mistakesStats = $this->mistakesService->getStats($student->id, $teacherId);
         $mistakesCount = $mistakesStats['pending'] ?? 0;
 
-        // 3. Total Points
-        $pointsRecord = StudentPoint::where('student_id', $student->id)
-            ->where('teacher_id', $teacherId)
-            ->first();
-        $totalPoints = $pointsRecord ? $pointsRecord->total_points : 0;
+        // Get total points
+        $totalPoints = $this->dashboardService->getStudentPoints($student, $teacherId);
 
-        // Use service for stats
+        // Get teacher stats
         $teacherStats = $this->dashboardService->getTeacherStats($student, $teacherId);
 
-        // 7. Upcoming Lectures (Keep for now as it might be used elsewhere, or just return empty if frontend removes it)
-        $upcomingLectures = Lecture::where('teacher_id', $teacherId)
-            ->where('start_time', '>=', Carbon::today())
-            ->orderBy('start_time')
-            ->take(3)
-            ->get()
-            ->map(function ($lecture) {
-                return [
-                    'id' => $lecture->id,
-                    'title' => $lecture->title,
-                    'date' => $lecture->start_time->format('Y-m-d'),
-                    'time' => $lecture->start_time->format('H:i'),
-                    'status' => 'قادمة',
-                ];
-            });
+        // Get upcoming lectures
+        $upcomingLectures = $this->dashboardService->getUpcomingLectures($teacherId, 3);
 
-        // 8. Latest News (Mixed Feed: Attendance & Exams)
-        $recentAttendance = $student->attendances()
-            ->whereHas('lecture', function ($q) use ($teacherId) {
-                $q->where('teacher_id', $teacherId);
-            })
-            ->with('lecture:id,title')
-            ->latest()
-            ->take(5)
-            ->get()
-            ->map(function ($attendance) {
-                return [
-                    'type' => 'attendance',
-                    'id' => $attendance->id,
-                    'title' => $attendance->lecture->title,
-                    'status' => $attendance->status, // present, absent
-                    'date' => $attendance->created_at->format('Y-m-d'),
-                    'timestamp' => $attendance->created_at->timestamp,
-                ];
-            });
-
-        $recentExams = Exam::where('teacher_id', $teacherId)
-            ->whereHas('results', function ($q) use ($student) {
-                $q->where('student_id', $student->id);
-            })
-            ->with(['results' => function ($q) use ($student) {
-                $q->where('student_id', $student->id);
-            }])
-            ->latest()
-            ->take(5)
-            ->get()
-            ->map(function ($exam) {
-                $result = $exam->results->first();
-                return [
-                    'type' => 'exam',
-                    'id' => $exam->id,
-                    'title' => $exam->title,
-                    'score' => $result ? $result->score : 0,
-                    'total' => $exam->total_marks ?? 100,
-                    'date' => $exam->created_at->format('Y-m-d'),
-                    'timestamp' => $exam->created_at->timestamp,
-                ];
-            });
-
-        // Merge and sort by timestamp desc
-        $latestNews = $recentAttendance->concat($recentExams)
-            ->sortByDesc('timestamp')
-            ->take(5)
-            ->values();
+        // Get latest news (mixed feed of attendance and exams)
+        $latestNews = $this->dashboardService->getLatestNews($student, $teacherId, 5);
 
         return $this->successResponse([
             'stats' => [
-                'walletBalance' => $enrollment ? $enrollment->balance : 0,
+                'walletBalance' => $enrollment->balance,
                 'mistakesCount' => $mistakesCount,
                 'totalPoints' => $totalPoints,
                 'attendanceRate' => $teacherStats['attendance_rate'],
