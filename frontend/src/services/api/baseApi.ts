@@ -1,14 +1,20 @@
 /**
  * Base API Configuration and Utilities
  * Central place for all API-related helpers
+ * Updated to use secure token management (httpOnly cookies + in-memory storage)
+ * and unified error handling
  */
 
-import { 
-  API_CONFIG, 
-  FLAT_ENDPOINTS, 
+import {
+  API_CONFIG,
+  FLAT_ENDPOINTS,
   getErrorMessage,
   getApiBaseUrl
 } from '@/config/api-config';
+
+import { getCSRFToken, initializeCSRF } from '@/lib/csrf';
+import { getAccessToken, setAccessToken, clearAccessToken, refreshAccessToken as tokenRefresh } from '@/lib/tokenManager';
+import { ApiError, handleApiError, showErrorToast } from '@/lib/errorHandler';
 
 // Re-export for backward compatibility
 export const API_BASE_URL = API_CONFIG.baseUrl;
@@ -27,11 +33,22 @@ export function getCookie(name: string): string | null {
 }
 
 /**
- * Get auth token from localStorage
+ * Get auth token from memory (secure) or fallback to localStorage (legacy)
+ * @deprecated Use tokenManager.getToken() directly for new code
  */
 export function getAuthToken(): string | null {
+  // Try in-memory token first (new secure approach)
+  const memoryToken = getAccessToken();
+  if (memoryToken) return memoryToken;
+
+  // Fallback to localStorage for backward compatibility during transition
   if (typeof window !== 'undefined') {
-    return localStorage.getItem('token');
+    const legacyToken = localStorage.getItem('token');
+    if (legacyToken) {
+      // Migrate to in-memory storage
+      setAccessToken(legacyToken, 60);
+      return legacyToken;
+    }
   }
   return null;
 }
@@ -48,14 +65,11 @@ export function getRefreshToken(): string | null {
 
 /**
  * Get auth headers including token and academy context
+ * Uses secure token management (memory-first approach)
  */
 export function getAuthHeaders(additionalHeaders: Record<string, string> = {}): Record<string, string> {
-  const xsrfToken = getCookie('XSRF-TOKEN');
-  
-  let token = null;
-  if (typeof window !== 'undefined') {
-    token = localStorage.getItem('token');
-  }
+  const xsrfToken = getCSRFToken();
+  const token = getAuthToken();
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -92,63 +106,29 @@ export function getAuthHeaders(additionalHeaders: Record<string, string> = {}): 
 
 /**
  * Refresh the access token using the refresh token
+ * Uses secure token management (cookies are httpOnly)
  */
 async function refreshAccessToken(): Promise<string | null> {
-  const refreshToken = getRefreshToken();
-  if (!refreshToken) {
-    return null;
+  // Use the new secure token manager
+  const newToken = await tokenRefresh();
+
+  if (!newToken) {
+    // Clear legacy localStorage tokens
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('token');
+      localStorage.removeItem('refreshToken');
+    }
   }
 
-  try {
-    const cleanBaseUrl = getApiBaseUrl();
-    const url = `${cleanBaseUrl}/api/refresh-token`;
-
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'Authorization': `Bearer ${refreshToken}`
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to refresh token');
-    }
-
-    const resText = await response.text();
-    const res = JSON.parse(resText);
-    const newAccessToken = res.data.access_token;
-    
-    if (newAccessToken) {
-      localStorage.setItem('token', newAccessToken);
-      return newAccessToken;
-    }
-    return null;
-  } catch {
-    localStorage.removeItem('token');
-    localStorage.removeItem('refreshToken');
-    return null;
-  }
+  return newToken;
 }
 
 /**
  * CSRF Cookie initialization
+ * Uses the dedicated CSRF service
  */
 export async function csrf(): Promise<void> {
-  await fetch(`${API_BASE_URL}/sanctum/csrf-cookie`, {
-    method: 'GET',
-    credentials: 'include',
-  });
-}
-
-/**
- * API Error with extended properties
- */
-export interface ApiErrorExtended extends Error {
-  status: number;
-  errors?: Record<string, string[]>;
-  data?: Record<string, unknown>;
+  await initializeCSRF();
 }
 
 /**
@@ -178,8 +158,8 @@ export async function fetchApi<T = unknown>(
   // Handle 419 CSRF Token Mismatch - Retry once
   if (response.status === 419) {
     await csrf();
-    const newXsrfToken = getCookie('XSRF-TOKEN');
-    
+    const newXsrfToken = getCSRFToken();
+
     if (newXsrfToken) {
       headers['X-XSRF-TOKEN'] = newXsrfToken;
       response = await fetch(url, {
@@ -219,26 +199,33 @@ export async function fetchApi<T = unknown>(
 
     const serverMessage = typeof error?.message === 'string' ? error.message : null;
     const arabicMessage = serverMessage || getErrorMessage(response.status);
-    const errorWithStatus = new Error(arabicMessage) as ApiErrorExtended;
-    errorWithStatus.status = response.status;
-    errorWithStatus.errors = error.errors as Record<string, string[]>;
-    errorWithStatus.data = error.data as Record<string, unknown>;
-    
+
+    // Create ApiError instance
+    const apiError = new ApiError(
+      arabicMessage,
+      response.status,
+      error.errors as Record<string, string[]> | undefined,
+      error.data as Record<string, unknown> | undefined
+    );
+
     // Dispatch auth events
     if (response.status === 401 && !skipAuthEvent) {
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new Event('auth:unauthorized'));
       }
     }
-    
+
     if (response.status === 403 && !skipAuthEvent) {
       const isTeacherSuspended = error?.error === 'TEACHER_SUSPENDED';
       if (isTeacherSuspended && typeof window !== 'undefined') {
         window.dispatchEvent(new Event('auth:teacher_suspended'));
       }
     }
-    
-    throw errorWithStatus;
+
+    // Show error toast
+    showErrorToast(apiError);
+
+    throw apiError;
   }
 
   interface ApiResponse<T> {

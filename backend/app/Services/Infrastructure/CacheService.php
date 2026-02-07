@@ -243,4 +243,41 @@ class CacheService
         Cache::tags(['exam_' . $examId])->flush();
         Cache::forget("teacher:{$teacherId}:exams");
     }
+
+    // ==================== Academy Cache ====================
+
+    public static function getAcademyDashboardStats(string|int $academyId, callable $callback): array
+    {
+        return Cache::tags(['academy_' . $academyId, 'dashboard'])->remember(
+            "academy:{$academyId}:dashboard:stats",
+            self::TTL_SHORT, // 5 minutes
+            $callback
+        );
+    }
+
+    public static function forgetAcademyDashboard(string|int $academyId): void
+    {
+        Cache::tags(['academy_' . $academyId, 'dashboard'])->flush();
+    }
+
+    public static function forgetAllAcademyCache(string|int $academyId): void
+    {
+        Cache::tags(['academy_' . $academyId])->flush();
+    }
+
+    // ==================== Admin Cache ====================
+
+    public static function getAdminDashboardStats(callable $callback): array
+    {
+        return Cache::tags(['admin', 'dashboard'])->remember(
+            "admin:dashboard:stats",
+            self::TTL_SHORT, // 5 minutes
+            $callback
+        );
+    }
+
+    public static function forgetAdminDashboard(): void
+    {
+        Cache::tags(['admin', 'dashboard'])->flush();
+    }
 }

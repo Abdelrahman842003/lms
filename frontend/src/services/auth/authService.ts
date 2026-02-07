@@ -1,15 +1,17 @@
 /**
  * Authentication Service
  * Handles login, logout, and user authentication
+ * Updated to use secure token management (httpOnly cookies + in-memory storage)
  */
 
 import { fetchApi, ENDPOINTS } from '../api/baseApi';
-import type { 
-  AuthResponse, 
-  TeacherInfo, 
-  ChildInfo, 
+import { setAccessToken, clearAccessToken } from '@/lib/tokenManager';
+import type {
+  AuthResponse,
+  TeacherInfo,
+  ChildInfo,
   AcademyInfo,
-  UserType 
+  UserType
 } from '@/types/auth.types';
 
 // Re-export types for backward compatibility
@@ -32,8 +34,13 @@ export async function loginAdmin(
     body: JSON.stringify({ username, password }),
   }, true);
 
+  // Store token in memory (secure) instead of localStorage
+  if (data.access_token) {
+    setAccessToken(data.access_token, 60);
+  }
+
   return {
-    token: data.access_token || '', 
+    token: data.access_token || '',
     refresh_token: data.refresh_token,
     user: data.user,
     role: data.role,
@@ -47,10 +54,17 @@ export async function loginTeacher(
   phone: string,
   password: string
 ): Promise<AuthResponse> {
-  return await fetchApi<AuthResponse>(ENDPOINTS.LOGIN_TEACHER, {
+  const response = await fetchApi<AuthResponse>(ENDPOINTS.LOGIN_TEACHER, {
     method: 'POST',
     body: JSON.stringify({ phone, password }),
   }, true);
+
+  // Store token in memory (secure)
+  if (response.token) {
+    setAccessToken(response.token, 60);
+  }
+
+  return response;
 }
 
 /**
@@ -70,7 +84,12 @@ export async function loginStudent(
     method: 'POST',
     body: JSON.stringify({ phone, password }),
   }, true);
-  
+
+  // Store token in memory (secure)
+  if (data.token) {
+    setAccessToken(data.token, 60);
+  }
+
   return {
     token: data.token,
     refresh_token: data.refresh_token,
@@ -87,10 +106,17 @@ export async function loginSecretary(
   phone: string,
   password: string
 ): Promise<AuthResponse> {
-  return await fetchApi<AuthResponse>(ENDPOINTS.LOGIN_SECRETARY, {
+  const response = await fetchApi<AuthResponse>(ENDPOINTS.LOGIN_SECRETARY, {
     method: 'POST',
     body: JSON.stringify({ phone, password }),
   }, true);
+
+  // Store token in memory (secure)
+  if (response.token) {
+    setAccessToken(response.token, 60);
+  }
+
+  return response;
 }
 
 /**
@@ -111,13 +137,18 @@ export async function loginParent(
     method: 'POST',
     body: JSON.stringify({ phone, password }),
   }, true);
-  
+
+  // Store token in memory (secure)
+  if (data.token) {
+    setAccessToken(data.token, 60);
+  }
+
   return {
     token: data.token,
     refresh_token: data.refresh_token,
-    user: { 
-      id: data.user.id, 
-      name: data.user.name || 'ولي الأمر', 
+    user: {
+      id: data.user.id,
+      name: data.user.name || 'ولي الأمر',
       phone: data.user.phone || data.parent_phone,
       avatar: data.user.avatar
     },
@@ -143,7 +174,12 @@ export async function loginAcademy(
     method: 'POST',
     body: JSON.stringify({ phone, password }),
   }, true);
-  
+
+  // Store token in memory (secure)
+  if (data.token) {
+    setAccessToken(data.token, 60);
+  }
+
   return {
     token: data.token,
     refresh_token: data.refresh_token,
@@ -172,6 +208,9 @@ export async function logout(
     method: 'POST',
     body: fcmToken ? JSON.stringify({ fcm_token: fcmToken }) : undefined,
   });
+
+  // Clear token from memory (secure)
+  clearAccessToken();
 
   return { message: 'تم تسجيل الخروج بنجاح' };
 }

@@ -6,12 +6,14 @@ namespace App\Services\Academy;
 
 use App\Models\Academy;
 use App\Models\TeacherAttendanceLog;
+use App\Services\Infrastructure\CacheService;
 use Carbon\Carbon;
 
 class DashboardService
 {
     public function getStats(Academy $academy): array
     {
+        return CacheService::getAcademyDashboardStats($academy->id, function () use ($academy) {
         // Get active teachers count
         $activeTeachersCount = $academy->activeTeachers()->count();
         
@@ -134,5 +136,15 @@ class DashboardService
                 'total_cost' => $pendingBilling->total_cost,
             ] : null,
         ];
+        });
+    }
+
+    /**
+     * Clear academy dashboard cache
+     * Call this when data changes (students, teachers, enrollments, etc.)
+     */
+    public function clearStatsCache(Academy $academy): void
+    {
+        CacheService::forgetAcademyDashboard($academy->id);
     }
 }

@@ -10,32 +10,21 @@ use App\Http\Controllers\Teacher\TeacherController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-
-
-
-
-
+// ============================================
+// API Version 1
+// ============================================
+Route::prefix('v1')->group(function () {
 
 // ============================================
 // Broadcasting Authentication Route
 // ============================================
-Route::middleware('auth:sanctum')->post('/broadcasting/auth', 
-    [\App\Http\Controllers\Api\BroadcastAuthController::class, 'authenticate']
-);
-
-// ============================================
-// Media Proxy Routes (Stream files from R2)
-// ============================================
-Route::get('/media/voice/{path}', [\App\Http\Controllers\Api\MediaProxyController::class, 'voice'])
-    ->where('path', '.*');
-Route::get('/media/{path}', [\App\Http\Controllers\Api\MediaProxyController::class, 'media'])
-    ->where('path', '.*');
 
 // ============================================
 // Admin Authentication Routes (Central DB)
 // ============================================
 Route::prefix('admin')->name('admin.')->group(function () {
-    Route::post('/login', [AdminAuthController::class, 'login']);
+    Route::post('/login', [AdminAuthController::class, 'login'])
+        ->middleware(['throttle.login', 'auth.cookies']);
     Route::post('/register', [AdminAuthController::class, 'register']);
     
     Route::middleware('auth:sanctum')->group(function () {
@@ -122,7 +111,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
 // Academy Authentication Routes
 // ============================================
 Route::prefix('academy')->name('academy.')->group(function () {
-    Route::post('/login', [App\Http\Controllers\Academy\AuthController::class, 'login']);
+    Route::post('/login', [App\Http\Controllers\Academy\AuthController::class, 'login'])
+        ->middleware(['throttle.login', 'auth.cookies']);
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/logout', [App\Http\Controllers\Academy\AuthController::class, 'logout']);
         Route::get('/me', [App\Http\Controllers\Academy\AuthController::class, 'me']);
@@ -213,7 +203,7 @@ Route::middleware('auth:sanctum')->prefix('academy')->name('academy.')->group(fu
 // ============================================
 Route::post('/register/teacher', [\App\Http\Controllers\Teacher\TeacherController::class, 'register']);
 Route::post('/login/teacher', [TeacherAuthController::class, 'login'])
-    ->middleware([\App\Http\Middleware\LoginThrottleMiddleware::class]);
+    ->middleware(['throttle.login', 'auth.cookies']);
 
 Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureTeacherNotSuspended::class])->prefix('teacher')->name('teacher.')->group(function () {
     Route::post('/logout', [TeacherAuthController::class, 'logout']);
@@ -311,7 +301,7 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureTeacherNotSuspende
 // Student Authentication Routes
 // ============================================
 Route::post('/login/student', [StudentAuthController::class, 'login'])
-    ->middleware([\App\Http\Middleware\LoginThrottleMiddleware::class]);
+    ->middleware(['throttle.login', 'auth.cookies']);
 
 Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureTeacherNotSuspendedForStudent::class])->prefix('student')->group(function () {
     Route::post('/logout', [StudentAuthController::class, 'logout']);
@@ -357,7 +347,7 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureTeacherNotSuspende
 // Guardian (Parent) Authentication Routes
 // ============================================
 Route::post('/login/parent', [\App\Http\Controllers\Guardian\AuthController::class, 'login'])
-    ->middleware([\App\Http\Middleware\LoginThrottleMiddleware::class]);
+    ->middleware(['throttle.login', 'auth.cookies']);
 
 Route::middleware(['auth:sanctum'])->prefix('parent')->group(function () {
     Route::post('/logout', [\App\Http\Controllers\Guardian\AuthController::class, 'logout']);
@@ -382,7 +372,7 @@ Route::middleware(['auth:sanctum'])->prefix('parent')->group(function () {
 // Secretary Authentication Routes
 // ============================================
 Route::post('/login/secretary', [SecretaryAuthController::class, 'login'])
-    ->middleware([\App\Http\Middleware\LoginThrottleMiddleware::class]);
+    ->middleware(['throttle.login', 'auth.cookies']);
 
 Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureSecretaryTeacherNotSuspended::class])->prefix('secretary')->group(function () {
     Route::post('/logout', [SecretaryAuthController::class, 'logout']);
@@ -411,3 +401,20 @@ Route::get('/public-settings', [\App\Http\Controllers\Admin\SettingsController::
 Route::get('/login', function () {
     return response()->json(['message' => 'Unauthenticated.'], 401);
 })->name('login');
+
+}); // End of v1 prefix group
+
+// ============================================
+// Public Routes (Outside Versioning)
+// ============================================
+
+// Broadcasting Authentication Route - Keep outside versioning
+Route::middleware('auth:sanctum')->post('/broadcasting/auth',
+    [\App\Http\Controllers\Api\BroadcastAuthController::class, 'authenticate']
+);
+
+// Media Proxy Routes (Stream files from R2) - Keep outside versioning for compatibility
+Route::get('/media/voice/{path}', [\App\Http\Controllers\Api\MediaProxyController::class, 'voice'])
+    ->where('path', '.*');
+Route::get('/media/{path}', [\App\Http\Controllers\Api\MediaProxyController::class, 'media'])
+    ->where('path', '.*');

@@ -19,6 +19,12 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->append(\Illuminate\Http\Middleware\HandleCors::class);
+
+        // Register middleware aliases
+        $middleware->alias([
+            'auth.cookies' => \App\Http\Middleware\SetAuthCookies::class,
+            'throttle.login' => \App\Http\Middleware\LoginThrottleMiddleware::class,
+        ]);
         
         $middleware->validateCsrfTokens(except: [
             'api/student/attend',

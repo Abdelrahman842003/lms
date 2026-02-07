@@ -1,27 +1,34 @@
 /**
  * Unified API Configuration
- * 
+ *
  * This file contains all API-related configuration and utilities in one place
  * to eliminate duplication and improve maintainability.
+ *
+ * API Versioning:
+ * - All endpoints use /api/v1 prefix
+ * - Version can be changed in one place for future updates
  */
 
 // Environment-based API URL configuration
 export const API_CONFIG = {
   // Main API base URL
   baseUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
-  
+
   // Internal API URL (used for server-side requests)
   internalUrl: process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
-  
+
+  // API Version
+  version: 'v1',
+
   // API timeout settings
   timeout: 30000, // 30 seconds
-  
+
   // Retry configuration
   retry: {
     attempts: 3,
     delay: 1000, // 1 second base delay
   },
-  
+
   // Rate limiting
   rateLimit: {
     maxRequests: 100,
@@ -40,120 +47,126 @@ export function getApiUrl(): string {
   return `${cleanUrl}/api`;
 }
 
-// All API endpoints in one place
+// Helper to get versioned API URL
+export function getVersionedApiUrl(): string {
+  const cleanUrl = getApiBaseUrl();
+  return `${cleanUrl}/api/${API_CONFIG.version}`;
+}
+
+// All API endpoints in one place (using v1 prefix)
 export const API_ENDPOINTS = {
   // Authentication endpoints
   auth: {
-    loginAdmin: '/api/admin/login',
-    loginTeacher: '/api/login/teacher',
-    loginStudent: '/api/login/student',
-    loginSecretary: '/api/login/secretary',
-    loginParent: '/api/login/parent',
-    loginAcademy: '/api/academy/login',
-    
-    logoutAdmin: '/api/admin/logout',
-    logoutTeacher: '/api/teacher/logout',
-    logoutStudent: '/api/student/logout',
-    logoutSecretary: '/api/secretary/logout',
-    logoutParent: '/api/parent/logout',
-    logoutAcademy: '/api/academy/logout',
-    
-    meAdmin: '/api/admin/me',
-    meTeacher: '/api/teacher/me',
-    meStudent: '/api/student/me',
-    meSecretary: '/api/secretary/me',
-    meParent: '/api/parent/me',
-    meAcademy: '/api/academy/me',
-    
-    refreshToken: '/api/refresh-token',
+    loginAdmin: '/api/v1/admin/login',
+    loginTeacher: '/api/v1/login/teacher',
+    loginStudent: '/api/v1/login/student',
+    loginSecretary: '/api/v1/login/secretary',
+    loginParent: '/api/v1/login/parent',
+    loginAcademy: '/api/v1/academy/login',
+
+    logoutAdmin: '/api/v1/admin/logout',
+    logoutTeacher: '/api/v1/teacher/logout',
+    logoutStudent: '/api/v1/student/logout',
+    logoutSecretary: '/api/v1/secretary/logout',
+    logoutParent: '/api/v1/parent/logout',
+    logoutAcademy: '/api/v1/academy/logout',
+
+    meAdmin: '/api/v1/admin/me',
+    meTeacher: '/api/v1/teacher/me',
+    meStudent: '/api/v1/student/me',
+    meSecretary: '/api/v1/secretary/me',
+    meParent: '/api/v1/parent/me',
+    meAcademy: '/api/v1/academy/me',
+
+    refreshToken: '/api/v1/refresh-token',
     csrf: '/sanctum/csrf-cookie',
   },
-  
+
   // Admin endpoints
   admin: {
-    profile: '/api/admin/profile',
-    changePassword: '/api/admin/change-password',
-    dashboard: '/api/admin/dashboard',
-    users: '/api/admin/users',
-    academies: '/api/admin/academies',
-    reports: '/api/admin/reports',
-    settings: '/api/admin/settings',
+    profile: '/api/v1/admin/profile',
+    changePassword: '/api/v1/admin/change-password',
+    dashboard: '/api/v1/admin/dashboard',
+    users: '/api/v1/admin/users',
+    academies: '/api/v1/admin/academies',
+    reports: '/api/v1/admin/reports',
+    settings: '/api/v1/admin/settings',
   },
-  
+
   // Teacher endpoints
   teacher: {
     dashboard: {
-      stats: '/api/teacher/dashboard/stats',
-      students: '/api/teacher/dashboard/students',
-      lectures: '/api/teacher/dashboard/lectures',
-      academies: '/api/teacher/dashboard/academies',
+      stats: '/api/v1/teacher/dashboard/stats',
+      students: '/api/v1/teacher/dashboard/students',
+      lectures: '/api/v1/teacher/dashboard/lectures',
+      academies: '/api/v1/teacher/dashboard/academies',
     },
-    students: '/api/teacher/students',
-    grades: '/api/teacher/grades',
-    groups: '/api/teacher/groups',
-    exams: '/api/teacher/exams',
-    lectures: '/api/teacher/lectures',
-    secretaries: '/api/teacher/secretaries',
-    notifications: '/api/teacher/notifications',
-    reports: '/api/teacher/reports',
-    attendance: '/api/teacher/attendance',
-    profile: '/api/teacher/profile',
+    students: '/api/v1/teacher/students',
+    grades: '/api/v1/teacher/grades',
+    groups: '/api/v1/teacher/groups',
+    exams: '/api/v1/teacher/exams',
+    lectures: '/api/v1/teacher/lectures',
+    secretaries: '/api/v1/teacher/secretaries',
+    notifications: '/api/v1/teacher/notifications',
+    reports: '/api/v1/teacher/reports',
+    attendance: '/api/v1/teacher/attendance',
+    profile: '/api/v1/teacher/profile',
   },
-  
+
   // Student endpoints
   student: {
-    dashboard: '/api/student/dashboard',
-    teachers: '/api/student/teachers',
-    exams: '/api/student/exams',
-    lectures: '/api/student/lectures',
-    grades: '/api/student/grades',
-    attendance: '/api/student/attendance',
-    notifications: '/api/student/notifications',
-    profile: '/api/student/profile',
-    leaderboard: '/api/student/leaderboard',
+    dashboard: '/api/v1/student/dashboard',
+    teachers: '/api/v1/student/teachers',
+    exams: '/api/v1/student/exams',
+    lectures: '/api/v1/student/lectures',
+    grades: '/api/v1/student/grades',
+    attendance: '/api/v1/student/attendance',
+    notifications: '/api/v1/student/notifications',
+    profile: '/api/v1/student/profile',
+    leaderboard: '/api/v1/student/leaderboard',
   },
-  
+
   // Academy endpoints
   academy: {
-    dashboard: '/api/academy/dashboard',
-    teachers: '/api/academy/teachers',
-    students: '/api/academy/students',
-    billing: '/api/academy/billing',
-    reports: '/api/academy/reports',
-    settings: '/api/academy/settings',
-    profile: '/api/academy/profile',
+    dashboard: '/api/v1/academy/dashboard',
+    teachers: '/api/v1/academy/teachers',
+    students: '/api/v1/academy/students',
+    billing: '/api/v1/academy/billing',
+    reports: '/api/v1/academy/reports',
+    settings: '/api/v1/academy/settings',
+    profile: '/api/v1/academy/profile',
   },
-  
+
   // Parent endpoints
   parent: {
-    dashboard: '/api/parent/dashboard',
-    children: '/api/parent/children',
-    profile: '/api/parent/profile',
-    notifications: '/api/parent/notifications',
+    dashboard: '/api/v1/parent/dashboard',
+    children: '/api/v1/parent/children',
+    profile: '/api/v1/parent/profile',
+    notifications: '/api/v1/parent/notifications',
   },
-  
-  // Public endpoints
+
+  // Public endpoints (outside versioning)
   public: {
     settings: '/public-settings',
     maintenance: '/maintenance-status',
     health: '/health',
   },
-  
+
   // File upload endpoints
   upload: {
-    avatar: '/api/upload/avatar',
-    document: '/api/upload/document',
-    audio: '/api/upload/audio',
-    image: '/api/upload/image',
+    avatar: '/api/v1/avatar/upload',
+    document: '/api/v1/upload/document',
+    audio: '/api/v1/upload/audio',
+    image: '/api/v1/upload/image',
   },
-  
+
   // Notification endpoints
   notifications: {
-    send: '/api/notifications/send',
-    markRead: '/api/notifications/mark-read',
-    getAll: '/api/notifications',
-    subscribe: '/api/notifications/subscribe',
-    unsubscribe: '/api/notifications/unsubscribe',
+    send: '/api/v1/notifications/send',
+    markRead: '/api/v1/notifications/mark-read',
+    getAll: '/api/v1/notifications',
+    subscribe: '/api/v1/notifications/subscribe',
+    unsubscribe: '/api/v1/notifications/unsubscribe',
   }
 } as const;
 
