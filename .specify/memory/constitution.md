@@ -30,8 +30,11 @@ Security is integrated into every layer:
 - Authorization checks using Laravel Spatie Permissions
 - SQL injection prevention using Eloquent ORM
 - XSS protection using proper escaping and Content Security Policy
-- Rate limiting on all public endpoints
-- Secure authentication using Laravel Sanctum
+- **Rate limiting** on all public endpoints (`throttle.login` middleware)
+- **Secure authentication** using Laravel Sanctum with **httpOnly cookies**
+- **CSRF protection** with automatic token refresh
+- **Token storage** in memory only (never localStorage) to prevent XSS token theft
+- **API versioning** (`/api/v1`) for backward compatibility
 
 ### IV. Type Safety
 

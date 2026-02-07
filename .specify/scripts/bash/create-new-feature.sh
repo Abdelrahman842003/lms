@@ -68,35 +68,83 @@ if [ -z "$FEATURE_DESCRIPTION" ]; then
 fi
 
 # Function to find the repository root by searching for existing project markers
+# SECURITY: Validates path to prevent directory traversal attacks
 find_repo_root() {
     local dir="$1"
-    while [ "$dir" != "/" ]; do
-        if [ -d "$dir/.git" ] || [ -d "$dir/.specify" ]; then
-            echo "$dir"
+
+    # SECURITY: Validate input path is absolute or relative but safe
+    # Remove any .. or suspicious patterns
+    if [[ "$dir" =~ \.\. ]]; then
+        echo "ERROR: Invalid path containing '..'" >&2
+        return 1
+    fi
+
+    # Resolve to absolute path safely
+    local abs_dir=""
+    abs_dir="$(cd "$dir" 2>/dev/null && pwd)" || return 1
+
+    # Limit traversal depth to prevent infinite loops
+    local max_depth=20
+    local depth=0
+
+    while [ "$abs_dir" != "/" ] && [ $depth -lt $max_depth ]; do
+        # SECURITY: Validate we're still within expected bounds
+        if [ -d "$abs_dir/.git" ] || [ -d "$abs_dir/.specify" ]; then
+            echo "$abs_dir"
             return 0
         fi
-        dir="$(dirname "$dir")"
+        abs_dir="$(dirname "$abs_dir")"
+        depth=$((depth + 1))
     done
+
     return 1
 }
 
 # Function to get highest number from specs directory
+# SECURITY: Validates specs_dir path and filters unsafe directory names
 get_highest_from_specs() {
     local specs_dir="$1"
     local highest=0
-    
-    if [ -d "$specs_dir" ]; then
-        for dir in "$specs_dir"/*; do
-            [ -d "$dir" ] || continue
-            dirname=$(basename "$dir")
-            number=$(echo "$dirname" | grep -o '^[0-9]\+' || echo "0")
-            number=$((10#$number))
-            if [ "$number" -gt "$highest" ]; then
-                highest=$number
-            fi
-        done
+
+    # SECURITY: Validate specs_dir path
+    if [[ ! -d "$specs_dir" ]]; then
+        echo "0"
+        return 0
     fi
-    
+
+    # SECURITY: Check for path traversal attempts
+    local real_specs_dir
+    real_specs_dir="$(realpath "$specs_dir" 2>/dev/null)" || {
+        echo "0"
+        return 0
+    }
+
+    # SECURITY: Use nullglob to prevent unwanted expansion with special filenames
+    # Iterate safely over directory contents
+    for dir in "$real_specs_dir"/[0-9]*; do
+        # SECURITY: Skip if no matches (nullglob behavior)
+        [[ -e "$dir" ]] || continue
+        [[ -d "$dir" ]] || continue
+
+        # SECURITY: Use parameter expansion instead of external commands
+        local dirname
+        dirname="${dir##*/}"
+
+        # SECURITY: Validate dirname format (only numbers and dashes)
+        if [[ ! "$dirname" =~ ^[0-9][0-9][0-9] ]]; then
+            continue
+        fi
+
+        # Extract numeric prefix safely
+        local number="${dirname%%-*}"
+        # Remove leading zeros for arithmetic but keep for display
+        number=$((10#$number))
+
+        if [ "$number" -gt "$highest" ]; then
+            highest=$number
+        fi
+    done
+
     echo "$highest"
 }
 

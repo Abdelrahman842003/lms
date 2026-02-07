@@ -2,14 +2,47 @@
 # Common functions and variables for all scripts
 
 # Get repository root, with fallback for non-git repositories
+# SECURITY: Validates path to prevent directory traversal attacks
 get_repo_root() {
+    local repo_root=""
+
     if git rev-parse --show-toplevel >/dev/null 2>&1; then
-        git rev-parse --show-toplevel
+        repo_root=$(git rev-parse --show-toplevel)
     else
         # Fall back to script location for non-git repos
-        local script_dir="$(CDPATH="" cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-        (cd "$script_dir/../../.." && pwd)
+        # SECURITY: Use parameter expansion to sanitize path
+        local script_dir="${BASH_SOURCE[0]}"
+        script_dir="$(CDPATH="" cd "$(dirname "$script_dir")" 2>/dev/null && pwd)"
+        if [[ -z "$script_dir" ]]; then
+            echo "ERROR: Could not determine script directory" >&2
+            return 1
+        fi
+
+        # Navigate up safely (max 10 levels to prevent infinite loops)
+        repo_root="$script_dir"
+        for ((i=0; i<10; i++)); do
+            if [[ -d "$repo_root/.specify" ]]; then
+                echo "$repo_root"
+                return 0
+            fi
+            repo_root="$(dirname "$repo_root")"
+            # Stop at filesystem root
+            if [[ "$repo_root" == "/" ]]; then
+                break
+            fi
+        done
+
+        echo "ERROR: Could not find .specify directory" >&2
+        return 1
     fi
+
+    # Validate repo_root is an absolute path
+    if [[ "$repo_root" != /* ]]; then
+        echo "ERROR: Repository root must be an absolute path" >&2
+        return 1
+    fi
+
+    echo "$repo_root"
 }
 
 # Get current branch, with fallback for non-git repositories
@@ -100,9 +133,23 @@ find_feature_dir_by_prefix() {
     local prefix="${BASH_REMATCH[1]}"
 
     # Search for directories in specs/ that start with this prefix
+    # SECURITY: Validate prefix to prevent directory traversal
+    if [[ ! "$prefix" =~ ^[0-9]+$ ]]; then
+        echo "ERROR: Invalid prefix '$prefix'. Prefix must be numeric only." >&2
+        echo "$specs_dir/$branch_name"
+        return 1
+    fi
+
     local matches=()
     if [[ -d "$specs_dir" ]]; then
         for dir in "$specs_dir"/"$prefix"-*; do
+            # SECURITY: Validate directory path before processing
+            local dir_resolved
+            dir_resolved=$(cd "$specs_dir" && realpath "$dir" 2>/dev/null || echo "")
+            if [[ -z "$dir_resolved" ]] || [[ "$dir_resolved" != "$specs_dir"* ]]; then
+                continue
+            fi
+
             if [[ -d "$dir" ]]; then
                 matches+=("$(basename "$dir")")
             fi

@@ -57,10 +57,13 @@
 |------|--------|-------|
 | Service-First Architecture | [ ] | Controllers only handle HTTP, Services contain business logic |
 | TDD Approach | [ ] | Tests written before implementation |
-| Security | [ ] | Input validation, authorization, XSS prevention |
+| Security | [ ] | Input validation, authorization, XSS prevention, **httpOnly cookies** |
+| Token Storage | [ ] | **Memory-only storage**, no localStorage for sensitive data |
+| Rate Limiting | [ ] | **throttle.login middleware** on all auth endpoints |
+| CSRF Protection | [ ] | Automatic CSRF token refresh, 419 error handling |
 | Type Safety | [ ] | `declare(strict_types=1)`, return types, parameter types |
 | Code Quality | [ ] | Laravel Pint, PHPStan level 5+ |
-| API-First | [ ] | RESTful design, ApiResponseTrait, consistent responses |
+| API-First | [ ] | RESTful design, ApiResponseTrait, consistent responses, **API versioning** |
 | Performance | [ ] | Indexes, caching, lazy loading, N+1 prevention |
 | Observability | [ ] | Logging, error tracking, performance monitoring |
 | Internationalization | [ ] | Arabic messages, RTL support |
@@ -188,6 +191,50 @@ frontend/
 ```
 
 **Structure Decision**: Web application with Laravel backend and Next.js frontend. Backend follows Service-First architecture, frontend follows component-based architecture with TypeScript.
+
+---
+
+## Security Checklist
+
+> **MANDATORY**: Must be completed before any implementation begins
+
+### Authentication & Authorization
+
+- [ ] All auth endpoints use `throttle.login` middleware
+- [ ] Tokens stored in httpOnly cookies (not localStorage)
+- [ ] Token expiration ≤ 12 hours (not 1 year)
+- [ ] Refresh token flow implemented with automatic refresh
+- [ ] CSRF protection enabled on state-changing operations
+
+### Input Validation & Output Encoding
+
+- [ ] Form Request validation on all backend endpoints
+- [ ] Zod validation on all frontend inputs
+- [ ] SQL injection prevention (Eloquent ORM, parameterized queries)
+- [ ] XSS prevention (proper escaping, CSP headers)
+- [ ] File upload validation (type, size, content)
+
+### API Security
+
+- [ ] API versioned (`/api/v1`) for future compatibility
+- [ ] Rate limiting on public endpoints
+- [ ] CORS configuration properly set
+- [ ] Authentication required on non-public routes
+- [ ] Authorization checks using Spatie Permissions
+
+### Data Protection
+
+- [ ] Sensitive data encrypted at rest
+- [ ] Passwords hashed (bcrypt/argon2)
+- [ ] PII data access logged
+- [ ] Database backups encrypted
+
+### Frontend Security
+
+- [ ] No tokens in localStorage
+- [ ] Content Security Policy configured
+- [ ] HTTPS only in production
+- [ ] Error messages don't leak sensitive info
 
 ---
 
