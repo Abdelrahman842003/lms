@@ -3,12 +3,14 @@ name: Claude Bot
 on:
   issue_comment:
     types: [created]
+  pull_request_review_comment:
+    types: [created]
 
 jobs:
   respond:
     if: |
-      github.event_name == 'issue_comment' && 
-      contains(github.event.comment.body, '@claude')
+      contains(github.event.comment.body, '@claude') ||
+      contains(github.event.review.body, '@claude')
     
     runs-on: ubuntu-latest
     permissions:
@@ -17,6 +19,12 @@ jobs:
       issues: write
     
     steps:
+      - name: Debug Event
+        run: |
+          echo "Event name: ${{ github.event_name }}"
+          echo "Comment body: ${{ github.event.comment.body }}"
+          echo "Issue/PR number: ${{ github.event.issue.number }}"
+          
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
