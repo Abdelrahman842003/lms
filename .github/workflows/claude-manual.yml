@@ -20,17 +20,7 @@ jobs:
       pull-requests: write
     
     steps:
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-      
-      - name: Install SDK
-        run: |
-          npm init -y
-          npm install @anthropic-ai/sdk
-      
-      - name: Ask Claude
+      - name: Ask Claude and Post Reply
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -38,35 +28,39 @@ jobs:
           ISSUE_NUMBER: ${{ inputs.issue_number }}
           REPO: ${{ github.repository }}
         run: |
-          node -e "
-          const Anthropic = require('@anthropic-ai/sdk');
-          const https = require('https');
+          # Call Claude API
+          CLAUDE_RESPONSE=$(curl -s https://api.anthropic.com/v1/messages \
+            -H "x-api-key: $ANTHROPIC_API_KEY" \
+            -H "anthropic-version: 2023-06-01" \
+            -H "content-type: application/json" \
+            -d '{
+              "model": "claude-sonnet-4-20250514",
+              "max_tokens": 4096,
+              "messages": [{
+                "role": "user",
+                "content": "'"$QUESTION"'"
+              }]
+            }')
           
-          (async () => {
-            const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-            
-            const message = await anthropic.messages.create({
-              model: 'claude-sonnet-4-20250514',
-              max_tokens: 4096,
-              messages: [{ role: 'user', content: process.env.QUESTION }]
-            });
-            
-            const reply = message.content[0].text;
-            const data = JSON.stringify({ body: reply });
-            
-            const req = https.request({
-              hostname: 'api.github.com',
-              path: '/repos/' + process.env.REPO + '/issues/' + process.env.ISSUE_NUMBER + '/comments',
-              method: 'POST',
-              headers: {
-                'Authorization': 'token ' + process.env.GITHUB_TOKEN,
-                'User-Agent': 'Claude-Bot',
-                'Accept': 'application/vnd.github.v3+json',
-                'Content-Type': 'application/json'
-              }
-            }, (res) => console.log('Status:', res.statusCode));
-            
-            req.write(data);
-            req.end();
-          })();
-          "
+          echo "Claude API Response:"
+          echo "$CLAUDE_RESPONSE"
+          
+          # Extract reply text
+          REPLY=$(echo "$CLAUDE_RESPONSE" | jq -r '.content[0].text')
+          
+          if [ "$REPLY" = "null" ] || [ -z "$REPLY" ]; then
+            echo "Error: No valid response from Claude"
+            echo "$CLAUDE_RESPONSE"
+            exit 1
+          fi
+          
+          echo "Posting to GitHub..."
+          
+          # Post to GitHub
+          curl -X POST \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/$REPO/issues/$ISSUE_NUMBER/comments \
+            -d "$(jq -n --arg body "$REPLY" '{body: $body}')"
+          
+          echo "Done!"
