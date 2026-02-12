@@ -6,7 +6,6 @@ on:
 
 jobs:
   respond:
-    # Only trigger on @claude mentions
     if: |
       github.event_name == 'issue_comment' && 
       contains(github.event.comment.body, '@claude')
@@ -31,54 +30,15 @@ jobs:
       - name: Install Anthropic SDK
         run: npm install -g @anthropic-ai/sdk
 
-      - name: Respond with Claude
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          COMMENT_BODY: ${{ github.event.comment.body }}
-          ISSUE_NUMBER: ${{ github.event.issue.number }}
-          REPO: ${{ github.repository }}
-          IS_PR: ${{ github.event.issue.pull_request != null }}
+      - name: Create Bot Script
         run: |
-          cat > claude-bot.js << 'SCRIPT'
+          cat > claude-bot.js << 'ENDSCRIPT'
           const Anthropic = require('@anthropic-ai/sdk');
           const https = require('https');
-          const { exec } = require('child_process');
-          const util = require('util');
-          const execPromise = util.promisify(exec);
 
           const anthropic = new Anthropic({
             apiKey: process.env.ANTHROPIC_API_KEY,
           });
-
-          async function getFileContent(file) {
-            try {
-              const { stdout } = await execPromise(`cat "${file}"`);
-              return stdout;
-            } catch {
-              return null;
-            }
-          }
-
-          async function getPRContext() {
-            if (process.env.IS_PR !== 'true') return '';
-            
-            try {
-              const { stdout: files } = await execPromise('git diff --name-only HEAD~1');
-              const changedFiles = files.trim().split('\n').slice(0, 5); // First 5 files
-              
-              let context = '\n\nChanged files in this PR:\n';
-              for (const file of changedFiles) {
-                const content = await getFileContent(file);
-                if (content) {
-                  context += `\n--- ${file} ---\n${content.slice(0, 1000)}\n`;
-                }
-              }
-              return context;
-            } catch {
-              return '';
-            }
-          }
 
           async function main() {
             const commentBody = process.env.COMMENT_BODY;
@@ -89,17 +49,14 @@ jobs:
               return;
             }
 
-            console.log(`Processing prompt: ${prompt.slice(0, 100)}...`);
+            console.log('Processing prompt: ' + prompt.slice(0, 100) + '...');
 
-            const prContext = await getPRContext();
-            const fullPrompt = `You are a helpful GitHub assistant for a Laravel + Next.js project.
-            
-Project context:
-- Backend: Laravel 12, PHP 8.2, Octane, MySQL, Redis
-- Frontend: Next.js with App Router, TypeScript
-- Repository: ${process.env.REPO}
-
-User question: ${prompt}${prContext}`;
+            const fullPrompt = 'You are a helpful GitHub assistant for a Laravel + Next.js LMS project.\n\n' +
+              'Project context:\n' +
+              '- Backend: Laravel 12, PHP 8.2, Octane, MySQL, Redis\n' +
+              '- Frontend: Next.js with App Router, TypeScript\n' +
+              '- Repository: ' + process.env.REPO + '\n\n' +
+              'User question: ' + prompt;
 
             try {
               const message = await anthropic.messages.create({
@@ -114,14 +71,13 @@ User question: ${prompt}${prContext}`;
               const reply = message.content[0].text;
               console.log('Claude response generated successfully');
 
-              // Post comment to GitHub
               const data = JSON.stringify({ body: reply });
               const options = {
                 hostname: 'api.github.com',
-                path: `/repos/${process.env.REPO}/issues/${process.env.ISSUE_NUMBER}/comments`,
+                path: '/repos/' + process.env.REPO + '/issues/' + process.env.ISSUE_NUMBER + '/comments',
                 method: 'POST',
                 headers: {
-                  'Authorization': `token ${process.env.GITHUB_TOKEN}`,
+                  'Authorization': 'token ' + process.env.GITHUB_TOKEN,
                   'User-Agent': 'Claude-Bot',
                   'Accept': 'application/vnd.github.v3+json',
                   'Content-Type': 'application/json',
@@ -130,7 +86,7 @@ User question: ${prompt}${prContext}`;
               };
 
               const req = https.request(options, (res) => {
-                console.log(`GitHub API Status: ${res.statusCode}`);
+                console.log('GitHub API Status: ' + res.statusCode);
                 res.on('data', (d) => {
                   process.stdout.write(d);
                 });
@@ -144,9 +100,8 @@ User question: ${prompt}${prContext}`;
               req.write(data);
               req.end();
 
-              // Wait a bit for the request to complete
               await new Promise(resolve => setTimeout(resolve, 2000));
-              console.log('✅ Comment posted successfully');
+              console.log('Comment posted successfully');
 
             } catch (error) {
               console.error('Error calling Claude API:', error.message);
@@ -161,6 +116,13 @@ User question: ${prompt}${prContext}`;
             console.error('Unhandled error:', error);
             process.exit(1);
           });
-          SCRIPT
-          
-          node claude-bot.js
+          ENDSCRIPT
+
+      - name: Run Claude Bot
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COMMENT_BODY: ${{ github.event.comment.body }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          REPO: ${{ github.repository }}
+        run: node claude-bot.js
