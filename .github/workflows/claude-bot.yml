@@ -36,7 +36,9 @@ jobs:
           node-version: '20'
 
       - name: Install Anthropic SDK
-        run: npm install -g @anthropic-ai/sdk
+        run: |
+          npm init -y
+          npm install @anthropic-ai/sdk
 
       - name: Create Bot Script
         run: |
