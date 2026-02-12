@@ -38,7 +38,15 @@ export const API_CONFIG = {
 
 // Helper to get clean base URL
 export function getApiBaseUrl(): string {
-  return API_CONFIG.baseUrl.replace(/\/api\/?$/, '').replace(/\/$/, '');
+  const baseUrl = API_CONFIG.baseUrl;
+  
+  // Handle empty or invalid base URL
+  if (!baseUrl || baseUrl === '/api') {
+    return 'http://localhost:8000';
+  }
+  
+  // Strip trailing /api if present, then trailing slash
+  return baseUrl.replace(/\/api\/?$/, '').replace(/\/$/, '');
 }
 
 // Helper to get API URL with /api suffix
@@ -147,9 +155,9 @@ export const API_ENDPOINTS = {
 
   // Public endpoints (outside versioning)
   public: {
-    settings: '/public-settings',
-    maintenance: '/maintenance-status',
-    health: '/health',
+    settings: '/api/v1/public-settings',
+    maintenance: '/api/v1/maintenance-status',
+    health: '/api/v1/health',
   },
 
   // File upload endpoints

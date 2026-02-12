@@ -48,7 +48,7 @@ export default function Hero() {
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        const data = await fetchApi('/public-settings', { method: 'GET' });
+        const data = await fetchApi('/api/v1/public-settings', { method: 'GET' });
         if (data?.whatsappNumber) {
           setWhatsappNumber(data.whatsappNumber);
         }

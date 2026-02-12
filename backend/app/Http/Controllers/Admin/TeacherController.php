@@ -58,6 +58,32 @@ class TeacherController extends Controller
         );
     }
 
+    public function show($id)
+    {
+        try {
+            $teacher = $this->teacherService->getTeacherById($id);
+            
+            return $this->successResponse([
+                'teacher' => new \App\Http\Resources\Teacher\TeacherResource($teacher)
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'المدرس غير موجود'
+            ], 404);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Error in TeacherController@show: ' . $e->getMessage(), [
+                'exception' => $e,
+                'teacher_id' => $id
+            ]);
+            
+            return response()->json([
+                'status' => false,
+                'message' => 'حدث خطأ أثناء تحميل بيانات المدرس'
+            ], 500);
+        }
+    }
+
     public function update(\App\Http\Requests\Admin\UpdateTeacherRequest $request, $id)
     {
         \Illuminate\Support\Facades\Log::info('Admin update teacher request', [

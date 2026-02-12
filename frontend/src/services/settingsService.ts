@@ -20,7 +20,7 @@ export const updateSettings = async (settings: Setting[]): Promise<void> => {
 };
 
 export const getPublicSettings = async (): Promise<Record<string, string>> => {
-  return await fetchApi('/public-settings', {
+  return await fetchApi('/api/v1/public-settings', {
     method: 'GET',
   });
 };

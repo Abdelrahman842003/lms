@@ -14,13 +14,15 @@ import MaintenanceGuard from '@/components/MaintenanceGuard';
 // Fetch SEO settings from API
 const getSeoSettings = cache(async () => {
     try {
-        const apiUrl = process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL;
+        let apiUrl = process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+        // Ensure apiUrl doesn't end with /api to avoid double /api
+        apiUrl = apiUrl.replace(/\/$/, '');
         
         // Add timeout to prevent build hangs
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
 
-        const res = await fetch(`${apiUrl}/public-settings`, {
+        const res = await fetch(`${apiUrl}/api/v1/public-settings`, {
             next: { revalidate: 60 },
             signal: controller.signal
         });

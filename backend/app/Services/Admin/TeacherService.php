@@ -106,6 +106,18 @@ class TeacherService
         return $result;
     }
 
+    public function getTeacherById(string $id): Teacher
+    {
+        return Teacher::with([
+            'secretaries',
+            'activeStudents',
+            'academies',
+            'subscriptions' => function ($query) {
+                $query->latest()->limit(1);
+            }
+        ])->findOrFail($id);
+    }
+
     public function createTeacher(array $data): Teacher
     {
         $teacher = new Teacher();

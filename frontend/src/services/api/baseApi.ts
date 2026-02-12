@@ -135,8 +135,8 @@ export async function csrf(): Promise<void> {
  * Generic API fetch wrapper
  */
 export async function fetchApi<T = unknown>(
-  endpoint: string, 
-  options: RequestInit = {}, 
+  endpoint: string,
+  options: RequestInit = {},
   skipAuthEvent: boolean = false
 ): Promise<T> {
   const headers = getAuthHeaders(options.headers as Record<string, string>);
@@ -147,7 +147,32 @@ export async function fetchApi<T = unknown>(
   }
 
   const cleanBaseUrl = getApiBaseUrl();
-  const url = `${cleanBaseUrl}${endpoint.startsWith('/api') ? endpoint : '/api' + endpoint}`;
+  
+  // Build URL with version prefix
+  let normalizedEndpoint = endpoint;
+  
+  // If endpoint starts with /api, handle it
+  if (endpoint.startsWith('/api')) {
+    // Check if it already has version prefix
+    if (!endpoint.includes('/api/v1/')) {
+      // Replace /api/ with /api/v1/
+      normalizedEndpoint = endpoint.replace('/api/', '/api/v1/');
+    }
+  } else {
+    // Endpoint doesn't start with /api
+    // Check if it starts with /v1/
+    if (endpoint.startsWith('/v1/')) {
+      normalizedEndpoint = '/api' + endpoint;
+    } else {
+      // Add /api/v1 prefix
+      normalizedEndpoint = '/api/v1' + endpoint;
+    }
+  }
+  
+  const url = `${cleanBaseUrl}${normalizedEndpoint}`;
+  
+  // DEBUG: Log all API requests
+  console.log('[DEBUG] API Request:', options.method || 'GET', url);
   
   let response = await fetch(url, {
     ...options,
@@ -199,6 +224,9 @@ export async function fetchApi<T = unknown>(
 
     const serverMessage = typeof error?.message === 'string' ? error.message : null;
     const arabicMessage = serverMessage || getErrorMessage(response.status);
+
+    // DEBUG: Log errors
+    console.error('[DEBUG] API ERROR:', response.status, url, arabicMessage);
 
     // Create ApiError instance
     const apiError = new ApiError(

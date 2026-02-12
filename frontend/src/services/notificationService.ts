@@ -44,11 +44,11 @@ export interface VoiceLimitResponse {
 
 const getNotificationEndpoint = () => {
   const userType = localStorage.getItem('userType');
-  if (userType === 'admin') return '/admin/notifications';
-  if (userType === 'student') return '/student/notifications';
-  if (userType === 'parent') return '/parent/notifications';
-  if (userType === 'secretary') return '/secretary/notifications';
-  return '/teacher/notifications';
+  if (userType === 'admin') return '/api/v1/admin/notifications';
+  if (userType === 'student') return '/api/v1/student/notifications';
+  if (userType === 'parent') return '/api/v1/parent/notifications';
+  if (userType === 'secretary') return '/api/v1/secretary/notifications';
+  return '/api/v1/teacher/notifications';
 };
 
 export const getNotifications = async () => {
@@ -88,7 +88,7 @@ export interface SendVoiceNotificationData {
 export const sendVoiceNotification = async (data: SendVoiceNotificationData) => {
   const endpoint = getNotificationEndpoint() + '/voice';
   const token = localStorage.getItem('token');
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+  const baseUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/api\/?$/, '').replace(/\/$/, '');
   
   const formData = new FormData();
   formData.append('title', data.title);

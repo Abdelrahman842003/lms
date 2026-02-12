@@ -24,7 +24,8 @@ class SetAuthCookies
         $response = $next($request);
 
         // Only process successful JSON responses with token data
-        if (!$response->headers->get('content-type')?.contains('application/json')) {
+        $contentType = $response->headers->get('content-type');
+        if (!$contentType || !str_contains($contentType, 'application/json')) {
             return $response;
         }
 

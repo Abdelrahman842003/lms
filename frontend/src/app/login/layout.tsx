@@ -2,12 +2,14 @@ import type { Metadata } from 'next'
 
 async function getSeoSettings() {
     try {
-        const apiUrl = process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL;
+        let apiUrl = process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+        // Ensure apiUrl doesn't end with /api to avoid double /api
+        apiUrl = apiUrl.replace(/\/$/, '');
         
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 3000);
 
-        const res = await fetch(`${apiUrl}/public-settings`, {
+        const res = await fetch(`${apiUrl}/api/v1/public-settings`, {
             next: { revalidate: 0 },
             signal: controller.signal
         });

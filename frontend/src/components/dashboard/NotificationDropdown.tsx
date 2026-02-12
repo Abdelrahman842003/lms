@@ -45,7 +45,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
             data?: AppNotification[];
           } | AppNotification[];
         };
-      }>(`/${role}/notifications`);
+      }>(`/v1/${role}/notifications`);
       let fetchedNotifications: AppNotification[] = [];
       
       // Handle different response structures
@@ -316,7 +316,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
 
   const markAsRead = async (id: string) => {
     try {
-      await fetchApi(`/${role}/notifications/${id}/read`, {
+      await fetchApi(`/v1/${role}/notifications/${id}/read`, {
         method: 'POST'
       });
       setNotifications(prev => prev.map(n => 

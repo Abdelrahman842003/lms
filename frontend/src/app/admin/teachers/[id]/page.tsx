@@ -4,10 +4,12 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
-import { getTeacherDetails } from '@/services/authService';
+import { getTeacherDetails } from '@/services/admin/adminService';
 import { DataTable } from '@/components/dashboard/DataTable';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
+import { SubscriptionCard } from '@/components/admin/teachers/SubscriptionCard';
+import { BillingCard } from '@/components/admin/teachers/BillingCard';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
 
@@ -26,7 +28,8 @@ export default function TeacherDetailsPage() {
       try {
         setIsLoading(true);
         const data = await getTeacherDetails(params.id as string);
-        setTeacher(data);
+        // adminService returns { teacher: AdminTeacher }
+        setTeacher(data.teacher || data);
       } catch (err: any) {
         setError(err.message || 'فشل جلب بيانات المدرس');
       } finally {
@@ -88,7 +91,7 @@ export default function TeacherDetailsPage() {
   const secretaryColumns = [
     { key: 'id', label: '#', render: (_: any, __: any, index: number) => index + 1 },
     { key: 'name', label: 'الاسم', sortable: true },
-    { key: 'username', label: 'اسم المستخدم', sortable: true },
+    { key: 'phone', label: 'رقم الهاتف', sortable: true },
     { key: 'created_at', label: 'تاريخ الانضمام', sortable: true, render: (val: string) => new Date(val).toLocaleDateString('ar-EG') },
   ];
 
@@ -108,13 +111,13 @@ export default function TeacherDetailsPage() {
       }
     >
       {/* Teacher Info Cards */}
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-5 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
         <DashboardCard className="text-center flex flex-col justify-center items-center">
           <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center mx-auto mb-4 text-[2rem] text-white font-bold shadow-lg shadow-primary/20">
-            {teacher.name.charAt(0).toUpperCase()}
+            {teacher.name?.charAt(0).toUpperCase()}
           </div>
           <h3 className="text-white text-2xl mb-2 font-bold">{teacher.name}</h3>
-          <p className="text-gray-400">{teacher.username}</p>
+          <p className="text-gray-400">{teacher.phone || teacher.username}</p>
           {teacher.subject && (
             <p className="text-primary text-sm mt-1">
               <i className="fas fa-book ml-1"></i>
@@ -125,7 +128,7 @@ export default function TeacherDetailsPage() {
 
         <StatCard
           title="عدد الطلاب"
-          value={teacher.students_count}
+          value={teacher.students_count || 0}
           icon="fas fa-users"
           color="primary"
           variant="centered"
@@ -133,7 +136,7 @@ export default function TeacherDetailsPage() {
 
         <StatCard
           title="عدد السكرتارية"
-          value={teacher.secretaries_count}
+          value={teacher.secretaries_count || 0}
           icon="fas fa-user-tie"
           color="success"
           variant="centered"
@@ -142,14 +145,22 @@ export default function TeacherDetailsPage() {
         <DashboardCard className="text-center flex flex-col justify-center items-center">
           <i className="fas fa-calendar-alt text-[2.5rem] text-warning mb-3"></i>
           <h3 className="text-[1.2rem] font-bold text-white mb-2">
-            {teacher.joined}
+            {teacher.joined || (teacher.created_at && new Date(teacher.created_at).toLocaleDateString('ar-EG'))}
           </h3>
           <p className="text-gray-400 text-[0.95rem] mb-1">تاريخ الانضمام</p>
           <p className="text-primary text-[0.85rem] m-0 font-medium bg-primary/10 px-3 py-1 rounded-full">
-            {calculateTimeSince(teacher.joined)}
+            {teacher.created_at ? calculateTimeSince(teacher.created_at) : '-'}
           </p>
         </DashboardCard>
       </div>
+
+      {/* Subscription Card - Only show if teacher has a plan */}
+      {teacher.plan_type && (
+        <SubscriptionCard teacher={teacher} />
+      )}
+
+      {/* Billing Card */}
+      <BillingCard teacher={teacher} />
 
       {/* Students Table */}
       <DashboardCard
