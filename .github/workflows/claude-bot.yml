@@ -1,0 +1,166 @@
+name: Claude Bot
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  respond:
+    # Only trigger on @claude mentions
+    if: |
+      github.event_name == 'issue_comment' && 
+      contains(github.event.comment.body, '@claude')
+    
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Anthropic SDK
+        run: npm install -g @anthropic-ai/sdk
+
+      - name: Respond with Claude
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COMMENT_BODY: ${{ github.event.comment.body }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          REPO: ${{ github.repository }}
+          IS_PR: ${{ github.event.issue.pull_request != null }}
+        run: |
+          cat > claude-bot.js << 'SCRIPT'
+          const Anthropic = require('@anthropic-ai/sdk');
+          const https = require('https');
+          const { exec } = require('child_process');
+          const util = require('util');
+          const execPromise = util.promisify(exec);
+
+          const anthropic = new Anthropic({
+            apiKey: process.env.ANTHROPIC_API_KEY,
+          });
+
+          async function getFileContent(file) {
+            try {
+              const { stdout } = await execPromise(`cat "${file}"`);
+              return stdout;
+            } catch {
+              return null;
+            }
+          }
+
+          async function getPRContext() {
+            if (process.env.IS_PR !== 'true') return '';
+            
+            try {
+              const { stdout: files } = await execPromise('git diff --name-only HEAD~1');
+              const changedFiles = files.trim().split('\n').slice(0, 5); // First 5 files
+              
+              let context = '\n\nChanged files in this PR:\n';
+              for (const file of changedFiles) {
+                const content = await getFileContent(file);
+                if (content) {
+                  context += `\n--- ${file} ---\n${content.slice(0, 1000)}\n`;
+                }
+              }
+              return context;
+            } catch {
+              return '';
+            }
+          }
+
+          async function main() {
+            const commentBody = process.env.COMMENT_BODY;
+            const prompt = commentBody.replace(/@claude\s*/i, '').trim();
+            
+            if (!prompt) {
+              console.log('No prompt found after @claude');
+              return;
+            }
+
+            console.log(`Processing prompt: ${prompt.slice(0, 100)}...`);
+
+            const prContext = await getPRContext();
+            const fullPrompt = `You are a helpful GitHub assistant for a Laravel + Next.js project.
+            
+Project context:
+- Backend: Laravel 12, PHP 8.2, Octane, MySQL, Redis
+- Frontend: Next.js with App Router, TypeScript
+- Repository: ${process.env.REPO}
+
+User question: ${prompt}${prContext}`;
+
+            try {
+              const message = await anthropic.messages.create({
+                model: "claude-sonnet-4-20250514",
+                max_tokens: 4096,
+                messages: [{
+                  role: "user",
+                  content: fullPrompt
+                }]
+              });
+
+              const reply = message.content[0].text;
+              console.log('Claude response generated successfully');
+
+              // Post comment to GitHub
+              const data = JSON.stringify({ body: reply });
+              const options = {
+                hostname: 'api.github.com',
+                path: `/repos/${process.env.REPO}/issues/${process.env.ISSUE_NUMBER}/comments`,
+                method: 'POST',
+                headers: {
+                  'Authorization': `token ${process.env.GITHUB_TOKEN}`,
+                  'User-Agent': 'Claude-Bot',
+                  'Accept': 'application/vnd.github.v3+json',
+                  'Content-Type': 'application/json',
+                  'Content-Length': data.length
+                }
+              };
+
+              const req = https.request(options, (res) => {
+                console.log(`GitHub API Status: ${res.statusCode}`);
+                res.on('data', (d) => {
+                  process.stdout.write(d);
+                });
+              });
+
+              req.on('error', (error) => {
+                console.error('GitHub API Error:', error);
+                process.exit(1);
+              });
+
+              req.write(data);
+              req.end();
+
+              // Wait a bit for the request to complete
+              await new Promise(resolve => setTimeout(resolve, 2000));
+              console.log('✅ Comment posted successfully');
+
+            } catch (error) {
+              console.error('Error calling Claude API:', error.message);
+              if (error.response) {
+                console.error('Response:', error.response.data);
+              }
+              process.exit(1);
+            }
+          }
+
+          main().catch((error) => {
+            console.error('Unhandled error:', error);
+            process.exit(1);
+          });
+          SCRIPT
+          
+          node claude-bot.js

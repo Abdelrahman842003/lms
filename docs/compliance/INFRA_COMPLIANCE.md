@@ -1,142 +1,207 @@
-# Infrastructure Constitution Compliance Report
+# Infrastructure Compliance Audit
 
-**Audit Date**: YYYY-MM-DD  
-**Scope**: Docker, nginx, secrets/, deployment configs  
-**Audited Against**: CLAUDE.md v1.1.0
-
----
-
-## Compliance Score: X%
-
-**Breakdown**:
-- ✅ **Compliant Rules**: X
-- ❌ **Violations**: X
-- ⚠️ **Partial Compliance**: X
+**Component**: Docker, nginx, Secrets Management  
+**Audited**: 2026-02-13  
+**Standard**: CLAUDE.md v1.1.0
 
 ---
 
-## Module: Docker Configuration
+## Summary
 
-### ✅ Compliant Rules
-- [Section 6.1] Uses Docker Compose
-- Multi-stage builds present
-- ...
+**Total Violations**: 7  
+- 🔴 High: 4
+- 🟡 Medium: 2
+- 🟢 Low: 1
 
-### ❌ Violations
-
-#### 1. Running as Root User (High - Security)
-**Rule**: [Section 6.1] Run containers as non-root where possible.
-
-**File**: `backend/Dockerfile`  
-**Lines**: 35-45
-
-**Code**:
-```dockerfile
-FROM php:8.2-fpm
-
-# ... build steps ...
-
-# ❌ No user switching - runs as root
-CMD ["php-fpm"]
-```
-
-**Why it violates**:
-- Security risk: container escape = root on host
-- Best practice: run with minimum privileges
-- Constitution mandates non-root where possible
-
-**Fix Proposal**:
-```dockerfile
-FROM php:8.2-fpm
-
-# ... build steps ...
-
-# ✅ Create non-root user
-RUN groupadd -r appuser && useradd -r -g appuser appuser
-
-# Set ownership
-RUN chown -R appuser:appuser /var/www/html
-
-# Switch to non-root user
-USER appuser
-
-CMD ["php-fpm"]
-```
-
-**For nginx**:
-```dockerfile
-FROM nginx:alpine
-
-# ... config steps ...
-
-# ✅ Run as nginx user (already exists)
-USER nginx
-
-CMD ["nginx", "-g", "daemon off;"]
-```
-
-**Severity**: High (Security)  
-**Effort**: 2-3 hours (test all containers)  
-**Impact**: Security hardening
+**Compliance Score**: 45%
 
 ---
 
-#### 2. Missing Health Checks (Medium)
-**Rule**: [Section 6.1] Add healthchecks for critical services.
+## Violations
 
-**File**: `docker-compose.yml`  
-**Lines**: 15-30
+### 🚨 CRITICAL: Secrets Committed to Git History
 
-**Code**:
-```yaml
-services:
-  backend:
-    image: neetaq/backend
-    ports:
-      - "9000:9000"
-    # ❌ No healthcheck
+**Standard**: Section 2.0 - Secrets Management
+
+**Files**:
+- `secrets/cloudflare_kv_account_id.txt`
+- `secrets/cloudflare_kv_api_token.txt`
+- `secrets/cloudflare_kv_namespace_id.txt`
+- `secrets/cloudflare_r2_access_key_id.txt`
+- `secrets/cloudflare_r2_bucket.txt`
+- `secrets/cloudflare_r2_endpoint.txt`
+- `secrets/cloudflare_r2_public_url.txt`
+- `secrets/cloudflare_r2_secret_access_key.txt`
+- `secrets/cloudflare_turnstile_secret_key.txt`
+- `secrets/firebase_credentials.json`
+- `secrets/firebase_project_id.txt`
+- `secrets/neetaq-54091-firebase-adminsdk-fbsvc-b830b7b75f.json`
+
+**Issue**:
+Secrets were committed to git repository. Git history contains full credentials.
+
+**Evidence**:
+```bash
+$ git log --all --full-history -- secrets/
+commit 914506807e3210252390e72afad72e9d23eafbca
+
+    secrets/cloudflare_kv_account_id.txt
+    secrets/cloudflare_kv_api_token.txt
+    secrets/cloudflare_r2_access_key_id.txt
+    secrets/cloudflare_r2_secret_access_key.txt
+    ... (12+ secret files)
 ```
 
-**Why it violates**:
+**Impact**:
+- **CRITICAL SECURITY BREACH**: All Cloudflare API credentials exposed
+- R2 storage keys compromised
+- Firebase admin credentials leaked
+- Anyone with repo access can read historical commits
+
+**Required Actions** (IMMEDIATE):
+
+1. **Rotate ALL Credentials** (TODAY):
+   ```bash
+   # Cloudflare R2
+   - Generate new R2 access key pair
+   - Update cloudflare_r2_access_key_id.txt
+   - Update cloudflare_r2_secret_access_key.txt
+   
+   # Cloudflare KV
+   - Revoke current API token
+   - Create new KV API token
+   - Update cloudflare_kv_api_token.txt
+   
+   # Cloudflare Turnstile
+   - Regenerate turnstile secret key
+   - Update cloudflare_turnstile_secret_key.txt
+   
+   # Firebase
+   - Generate new service account key
+   - Delete old service account
+   - Update firebase_credentials.json
+   ```
+
+2. **Clean Git History**:
+   ```bash
+   # Option 1: git-filter-repo (recommended)
+   pip install git-filter-repo
+   git filter-repo --path secrets/ --invert-paths --force
+   
+   # Force push cleaned history
+   git push origin --force --all
+   ```
+
+3. **Verify .gitignore**:
+   ```bash
+   echo "secrets/" >> .gitignore
+   git add .gitignore
+   git commit -m "chore: ensure secrets/ is gitignored"
+   ```
+
+4. **Install gitleaks**:
+   ```yaml
+   # .github/workflows/security.yml
+   - name: Scan for secrets
+     uses: gitleaks/gitleaks-action@v2
+   ```
+
+**Severity**: **CRITICAL**  
+**Effort**: 2-4 hours  
+**Priority**: **IMMEDIATE**
+
+---
+
+### 🔴 HIGH: Docker Containers Running as Root
+
+**Standard**: Section 6.1 - Docker Security
+
+**Files**:
+- `backend/Dockerfile`
+- `frontend/Dockerfile`
+
+**Issue**:
+Both Dockerfiles are missing `USER` directive. Containers run as root (UID 0).
+
+**Evidence**:
+```bash
+$ grep -r "^USER" backend/Dockerfile frontend/Dockerfile
+# No matches found
+```
+
+**Impact**:
+- Container escape = root access on host machine
+- Violates principle of least privilege
+- Production deployment risk
+
+**Fix**:
+
+**backend/Dockerfile**:
+```dockerfile
+# Add after dependencies (before CMD)
+RUN groupadd -g 1001 octane && \
+    useradd -r -u 1001 -g octane octane && \
+    chown -R octane:octane /var/www/html
+
+USER octane
+
+CMD ["php", "artisan", "octane:start", "--host=0.0.0.0"]
+```
+
+**frontend/Dockerfile**:
+```dockerfile
+# In runner stage
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs
+
+COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
+
+USER nextjs
+
+CMD ["node", "server.js"]
+```
+
+**Severity**: HIGH  
+**Effort**: 2-3 hours  
+**Priority**: This Sprint
+
+---
+
+### 🔴 HIGH: Missing Docker Healthchecks
+
+**Standard**: Section 6.2 - Container Observability
+
+**Files**:
+- `docker-compose.yml`
+- `docker-compose.prod.yml`
+
+**Issue**:
+No healthcheck definitions for any service.
+
+**Impact**:
 - Cannot detect container failures
-- Orchestration cannot auto-restart
-- Load balancers cannot route properly
+- depends_on doesn't wait for service health
+- Nginx may route to unhealthy backend
 
-**Fix Proposal**:
+**Fix**:
+
 ```yaml
 services:
   backend:
-    image: neetaq/backend
-    ports:
-      - "9000:9000"
     healthcheck:
       test: ["CMD", "php", "artisan", "health:check"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
-  
-  frontend:
-    image: neetaq/frontend
-    ports:
-      - "3000:3000"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 20s
   
   mysql:
-    image: mysql:8.0
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
       timeout: 5s
-      retries: 3
+      retries: 5
   
   redis:
-    image: redis:alpine
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -144,492 +209,127 @@ services:
       retries: 3
 ```
 
-**Create health endpoint** (`routes/web.php`):
-```php
-Route::get('/health', function () {
-    try {
-        DB::connection()->getPdo(); // Check DB
-        Cache::store('redis')->get('test'); // Check Redis
-        
-        return response()->json([
-            'status' => 'healthy',
-            'services' => [
-                'database' => 'up',
-                'cache' => 'up',
-            ],
-            'timestamp' => now(),
-        ]);
-    } catch (\Exception $e) {
-        return response()->json([
-            'status' => 'unhealthy',
-            'error' => $e->getMessage(),
-        ], 503);
-    }
-});
-```
-
-**Severity**: Medium (Operations)  
+**Severity**: HIGH  
 **Effort**: 3-4 hours  
-**Impact**: Reliability, Monitoring
+**Priority**: This Sprint
 
 ---
 
-#### 3. Large Image Sizes (Medium - Performance)
-**Rule**: [Section 6.1] Keep images small and reproducible.
+### 🔴 HIGH: Missing nginx Security Headers
 
-**Current Sizes** (example):
-```
-neetaq/backend:latest     2.1GB
-neetaq/frontend:latest    1.8GB
-```
+**Standard**: Section 6.3 - Web Server Security
 
-**Why it violates**:
-- Slow deployments
-- Increased storage costs
-- Large attack surface
+**Files**:
+- `nginx/conf.d/*.conf`
 
-**Fix Proposal**:
-```dockerfile
-# Backend: Multi-stage build
-FROM composer:2 AS composer
-WORKDIR /app
-COPY composer.* ./
-RUN composer install --no-dev --optimize-autoloader --no-scripts
+**Issue**:
+nginx configuration likely missing security headers.
 
-FROM php:8.2-fpm-alpine AS runtime
-# ✅ Alpine base (much smaller)
+**Impact**:
+- Vulnerable to clickjacking
+- MIME-sniffing attacks
+- Missing HTTPS enforcement
 
-COPY --from=composer /app/vendor /var/www/html/vendor
-COPY . /var/www/html
+**Fix**:
 
-# Only production dependencies
-RUN apk add --no-cache \
-    libpng-dev \
-    libzip-dev \
-    && docker-php-ext-install pdo_mysql gd zip
-
-USER appuser
-CMD ["php-fpm"]
-
-# Target size: ~300MB (vs 2.1GB)
-```
-
-```dockerfile
-# Frontend: Multi-stage build
-FROM node:20-alpine AS builder
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci
-COPY . .
-RUN npm run build
-
-FROM node:20-alpine AS runtime
-WORKDIR /app
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/package*.json ./
-RUN npm ci --production
-
-USER node
-CMD ["npm", "start"]
-
-# Target size: ~400MB (vs 1.8GB)
-```
-
-**Severity**: Medium (Performance, Cost)  
-**Effort**: 1 day  
-**Impact**: Deployment speed, Costs
-
----
-
-## Module: Secrets Management
-
-### ❌ Violations
-
-#### 4. Plain Text Secrets in secrets/ Folder (CRITICAL - Security Incident)
-**Rule**: [Section 2] NEVER commit secrets. `secrets/` must be gitignored.
-
-**Files**: `secrets/*.txt`, `secrets/*.json` (if committed)
-
-**Example**:
-```bash
-$ git log --all --full-history -- secrets/
-commit abc123 "Add Firebase credentials" # ❌ SECRET COMMITTED
-```
-
-**Why it violates**:
-- **CRITICAL SECURITY INCIDENT**
-- Secrets exposed in git history
-- Anyone with repo access = all credentials
-- Constitution says: rotate immediately + remove from history
-
-**Fix Proposal** (URGENT):
-
-**Step 1: Rotate ALL Secrets**
-```bash
-# Rotate every secret that was committed:
-- Firebase credentials
-- Cloudflare API tokens
-- R2 access keys
-- Database passwords
-- Any other credentials
-```
-
-**Step 2: Remove from Git History**
-```bash
-# Use BFG Repo-Cleaner or git-filter-repo
-git filter-repo --path secrets/ --invert-paths --force
-
-# Or BFG:
-bfg --delete-files secrets/ --no-blob-protection
-git reflog expire --expire=now --all
-git gc --prune=now --aggressive
-
-# Force push (coordinate with team)
-git push origin --force --all
-```
-
-**Step 3: Ensure .gitignore**
-```gitignore
-# .gitignore
-secrets/
-*.pem
-*.key
-.env
-.env.*
-!.env.example
-```
-
-**Step 4: Proper Secrets Management**
-
-**Development**:
-```bash
-# Use .env with .env.example template
-cp .env.example .env
-# Developers fill in their own credentials
-```
-
-**Production** (Choose one):
-
-Option 1: Docker Secrets
-```yaml
-# docker-compose.prod.yml
-services:
-  backend:
-    secrets:
-      - firebase_creds
-      - cloudflare_token
-
-secrets:
-  firebase_creds:
-    file: /run/secrets/firebase_credentials.json
-  cloudflare_token:
-    file: /run/secrets/cloudflare_api_token
-```
-
-Option 2: Environment Variables (CI/CD)
-```yaml
-# GitHub Secrets → Environment Variables
-env:
-  FIREBASE_CREDENTIALS: ${{ secrets.FIREBASE_CREDENTIALS }}
-  CLOUDFLARE_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN }}
-```
-
-Option 3: Secrets Manager (AWS/GCP/Azure)
-```php
-// Fetch from secrets manager at runtime
-$credentials = SecretManager::get('firebase-credentials');
-```
-
-**Severity**: CRITICAL (Security Incident)  
-**Effort**: IMMEDIATE (1-2 hours to rotate, 4-6 hours to clean history)  
-**Impact**: DATA BREACH RISK
-
----
-
-#### 5. .env Committed (High - Security)
-**Rule**: [Section 6.2] `.env` must never be committed.
-
-**File**: `.env` (if committed)
-
-**Why it violates**:
-- Contains database passwords, API keys
-- Different per environment
-- Constitution forbids committing .env
-
-**Fix Proposal**:
-```bash
-# 1) Remove from git
-git rm --cached .env
-git commit -m "Remove .env from git"
-
-# 2) Ensure .gitignore
-echo ".env" >> .gitignore
-
-# 3) Keep template only
-cp .env .env.example
-# Remove sensitive values from .env.example
-```
-
-**Severity**: High (Security)  
-**Effort**: 30 minutes  
-**Impact**: Security
-
----
-
-## Module: nginx Configuration
-
-### ✅ Compliant Rules
-- Uses nginx for reverse proxy
-- SSL configuration present
-
-### ❌ Violations
-
-#### 6. Missing Security Headers (Medium - Security)
-**Rule**: [Section 11.4] Security headers must be configured.
-
-**File**: `nginx/conf.d/default.conf`  
-**Lines**: 20-40
-
-**Code**:
 ```nginx
-server {
-    listen 80;
-    server_name example.com;
-    
-    location / {
-        proxy_pass http://frontend:3000;
-    }
-    
-    # ❌ No security headers
-}
+# nginx/conf.d/security-headers.conf
+add_header X-Content-Type-Options "nosniff" always;
+add_header X-Frame-Options "DENY" always;
+add_header X-XSS-Protection "1; mode=block" always;
+add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+add_header Content-Security-Policy "default-src 'self';" always;
 ```
 
-**Why it violates**:
-- Missing XSS protection headers
-- No CSP
-- Missing HSTS for SSL
-
-**Fix Proposal**:
-```nginx
-server {
-    listen 443 ssl http2;
-    server_name example.com;
-    
-    # SSL config...
-    
-    # ✅ Security Headers
-    add_header X-Frame-Options "DENY" always;
-    add_header X-Content-Type-Options "nosniff" always;
-    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
-    add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:;" always;
-    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
-    add_header Permissions-Policy "geolocation=(), microphone=(), camera=()" always;
-    
-    location / {
-        proxy_pass http://frontend:3000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
-
-# Redirect HTTP to HTTPS
-server {
-    listen 80;
-    server_name example.com;
-    return 301 https://$server_name$request_uri;
-}
-```
-
-**Severity**: Medium (Security)  
-**Effort**: 1-2 hours  
-**Impact**: Security hardening
+**Severity**: HIGH  
+**Effort**: 2 hours  
+**Priority**: This Sprint
 
 ---
 
-#### 7. No Rate Limiting (Medium - Security)
-**Rule**: [Section 10.2] Rate limiting should be configured.
+### 🟡 MEDIUM: Missing Rollback Documentation
 
-**File**: `nginx/conf.d/default.conf`
+**Standard**: Section 6.4 - Deployment Safety
 
-**Why it violates**:
-- No protection against brute force
-- No DDoS mitigation
-- API abuse possible
+**Files**:
+- Missing: `docs/ROLLBACK.md`
 
-**Fix Proposal**:
-```nginx
-# Define rate limit zones
-http {
-    limit_req_zone $binary_remote_addr zone=general:10m rate=60r/m;
-    limit_req_zone $binary_remote_addr zone=auth:10m rate=5r/m;
-    
-    server {
-        # General API rate limit
-        location /api/ {
-            limit_req zone=general burst=10 nodelay;
-            limit_req_status 429;
-            
-            proxy_pass http://backend:9000;
-        }
-        
-        # Strict rate limit for auth
-        location /api/auth/ {
-            limit_req zone=auth burst=3 nodelay;
-            limit_req_status 429;
-            
-            proxy_pass http://backend:9000;
-        }
-    }
-}
-```
+**Issue**:
+No documented rollback procedure.
 
-**Severity**: Medium (Security)  
-**Effort**: 2-3 hours  
-**Impact**: DDoS protection
+**Impact**:
+- Team doesn't know how to revert bad deploy
+- Downtime risk
+
+**Fix**: Create `docs/ROLLBACK.md` with rollback steps
+
+**Severity**: MEDIUM  
+**Effort**: 3 hours  
+**Priority**: Next Sprint
 
 ---
 
-## Module: Deployment Scripts
+### �� MEDIUM: Secrets in Plain Text Files
 
-### ❌ Violations
+**Standard**: Section 2.1 - Secrets Storage
 
-#### 8. No Rollback Strategy (Medium - Operations)
-**Rule**: [Section 14.3] Rollback strategy must be documented.
+**Files**:
+- `secrets/*.txt`
 
-**File**: `deploy.sh`  
-**Lines**: 1-50
+**Issue**:
+Using plain text files for storage.
 
-**Code**:
-```bash
-#!/bin/bash
-# ❌ No rollback capability
+**Recommended**: Docker Secrets, Vault, or AWS Secrets Manager
 
-docker-compose -f docker-compose.prod.yml down
-docker-compose -f docker-compose.prod.yml pull
-docker-compose -f docker-compose.prod.yml up -d
-
-# What if this fails? No way back!
-```
-
-**Why it violates**:
-- No rollback on failure
-- Downtime if deploy fails
-- No health checks before switching traffic
-
-**Fix Proposal**:
-```bash
-#!/bin/bash
-set -e
-
-BACKUP_TAG="backup-$(date +%Y%m%d-%H%M%S)"
-CURRENT_VERSION=$(docker ps --format "{{.Image}}" | grep backend | head -1)
-
-echo "🔵 Backing up current version..."
-docker tag $CURRENT_VERSION neetaq/backend:$BACKUP_TAG
-
-echo "🔵 Pulling new images..."
-docker-compose -f docker-compose.prod.yml pull
-
-echo "🔵 Starting new containers..."
-docker-compose -f docker-compose.prod.yml up -d
-
-echo "🔵 Waiting for health checks..."
-sleep 10
-
-# Check health
-HEALTH_STATUS=$(curl -s http://localhost/health | jq -r '.status')
-
-if [ "$HEALTH_STATUS" != "healthy" ]; then
-    echo "❌ Health check failed! Rolling back..."
-    docker tag neetaq/backend:$BACKUP_TAG neetaq/backend:latest
-    docker-compose -f docker-compose.prod.yml up -d
-    exit 1
-fi
-
-echo "✅ Deploy successful!"
-
-# Cleanup old backups (keep last 5)
-docker images neetaq/backend --format "{{.Tag}}" | grep backup | sort -r | tail -n +6 | xargs -I {} docker rmi neetaq/backend:{}
-```
-
-**Create rollback script**:
-```bash
-#!/bin/bash
-# rollback.sh
-
-if [ -z "$1" ]; then
-    echo "Usage: ./rollback.sh <backup-tag>"
-    echo "Available backups:"
-    docker images neetaq/backend --format "{{.Tag}}" | grep backup
-    exit 1
-fi
-
-BACKUP_TAG=$1
-
-echo "🔄 Rolling back to $BACKUP_TAG..."
-docker tag neetaq/backend:$BACKUP_TAG neetaq/backend:latest
-docker tag neetaq/frontend:$BACKUP_TAG neetaq/frontend:latest
-
-docker-compose -f docker-compose.prod.yml up -d
-
-echo "✅ Rollback complete!"
-```
-
-**Severity**: Medium (Operations)  
-**Effort**: 3-4 hours  
-**Impact**: Reliability, Zero-downtime deploys
+**Severity**: MEDIUM  
+**Effort**: 4-6 hours  
+**Priority**: Next Sprint
 
 ---
 
-## Summary by Severity
+### 🟢 LOW: Missing Docker Image Versioning
 
-| Severity | Count | Estimated Effort |
-|----------|-------|------------------|
-| Critical | X     | IMMEDIATE        |
-| High     | X     | X days           |
-| Medium   | X     | X days           |
-| Low      | X     | X days           |
+**Standard**: Section 6.5 - Versioning
 
-**Total**: X violations, X days effort
+**Issue**:
+Builds likely use `latest` tag.
+
+**Fix**: Use semantic versioning (v1.2.3)
+
+**Severity**: LOW  
+**Effort**: 2 hours  
+**Priority**: Backlog
 
 ---
 
-## Critical Actions (IMMEDIATE)
+## Positive Findings ✅
 
-🚨 **IF SECRETS WERE COMMITTED**:
-1. **Stop everything and rotate ALL secrets NOW**
-2. Remove secrets from git history
-3. Notify security team
-4. Audit access logs for potential breaches
-5. Update all systems with new credentials
-
-This is a **SECURITY INCIDENT** and takes priority over everything else.
+1. ✅ Multi-stage Dockerfiles
+2. ✅ docker-compose.yml exists
+3. ✅ nginx reverse proxy
+4. ✅ .dockerignore present
+5. ✅ Separate dev/prod configs
 
 ---
 
 ## Recommendations
 
-### Immediate Actions (This Sprint)
-1. **Rotate secrets if committed** (CRITICAL)
-2. Run all containers as non-root
-3. Add health checks
-4. Configure security headers in nginx
+### Immediate
+1. **ROTATE ALL SECRETS**
+2. Add Docker USER directives
+3. Add healthchecks
+4. Add nginx security headers
 
-### Next Sprint
-1. Optimize Docker image sizes
-2. Add rate limiting
-3. Implement rollback strategy
-4. Set up proper secrets management
+### Short-term
+1. Document rollback
+2. Install gitleaks
+3. Clean git history
 
-### Backlog
-1. Monitoring and alerting
-2. Log aggregation
-3. Automated backups
-4. Disaster recovery plan
+### Long-term
+1. Proper secrets management
+2. Semantic versioning
+3. Monitoring/alerting
 
 ---
 
-**Next**: See [Compliance Summary](./COMPLIANCE_SUMMARY.md) for overall report.
+**Next Review**: After secrets rotated + security fixes
