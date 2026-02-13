@@ -215,7 +215,7 @@ export async function getTeacherSubscription(id: string, month: string): Promise
 /**
  * Update teacher subscription plan
  */
-export async function updateTeacherPlan(id: string, data: any): Promise<AdminTeacher> {
+export async function updateTeacherPlan(id: string, data: { plan: string; max_students?: number }): Promise<AdminTeacher> {
   const res = await fetchApi<{ teacher: AdminTeacher }>(`/api/admin/teachers/${id}/plan`, {
     method: 'POST',
     body: JSON.stringify(data),
@@ -231,8 +231,8 @@ export async function getSubscriptions(
   limit = 10,
   filters?: { search?: string; status?: string; type?: string; record_type?: string }
 ): Promise<{ 
-  data: any[]; 
-  meta: any; 
+  data: Array<{ id: string; name: string; type: string; status: string; plan: string; expires_at: string }>; 
+  meta: { current_page: number; last_page: number; per_page: number; total: number }; 
   stats: { total: number; active: number; trial: number; expired: number } 
 }> {
   const queryParams = new URLSearchParams({

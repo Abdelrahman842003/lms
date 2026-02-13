@@ -81,7 +81,7 @@ export const updateAttendanceNotes = async (logId: string, notes: string) => {
 };
 
 export const getAttendanceStats = async (dateFrom: string, dateTo: string, teacherId?: string, studentId?: string): Promise<AttendanceStats> => {
-  const params: any = { date_from: dateFrom, date_to: dateTo };
+  const params: Record<string, string | number> = { date_from: dateFrom, date_to: dateTo };
   if (teacherId) params.teacher_id = teacherId;
   if (studentId) params.student_id = studentId;
 
@@ -93,7 +93,7 @@ export const getAttendanceStats = async (dateFrom: string, dateTo: string, teach
 };
 
 export const getMonthlyAttendance = async (year: number, month: number, teacherId?: string) => {
-  const params: any = { year, month };
+  const params: Record<string, string | number> = { year, month };
   if (teacherId) params.teacher_id = teacherId;
 
   const response = await axios.get(`${API_BASE_URL}/academy/attendance/monthly`, {

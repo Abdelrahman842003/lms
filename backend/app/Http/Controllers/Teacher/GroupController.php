@@ -15,6 +15,7 @@ use App\Services\Teacher\GroupService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 class GroupController extends Controller
 {
@@ -40,9 +41,7 @@ class GroupController extends Controller
 
     public function show(Request $request, Group $group): JsonResponse
     {
-        if ($group->teacher_id !== $this->getTeacherFromRequest($request)->id) {
-            return $this->errorResponse('Unauthorized', 403);
-        }
+        Gate::authorize('view', $group);
 
         $group->load(['grade', 'enrollments.student']);
         
@@ -95,9 +94,7 @@ class GroupController extends Controller
 
     public function update(UpdateGroupRequest $request, Group $group): JsonResponse
     {
-        if ($group->teacher_id !== $this->getTeacherFromRequest($request)->id) {
-            return $this->errorResponse('Unauthorized', 403);
-        }
+        Gate::authorize('update', $group);
 
         $groupData = GroupData::fromRequest($request);
         $group = $this->service->updateGroup($group, $groupData);
@@ -110,9 +107,7 @@ class GroupController extends Controller
 
     public function destroy(Request $request, Group $group): JsonResponse
     {
-        if ($group->teacher_id !== $this->getTeacherFromRequest($request)->id) {
-            return $this->errorResponse('Unauthorized', 403);
-        }
+        Gate::authorize('delete', $group);
 
         $this->service->deleteGroup($group);
 

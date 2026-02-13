@@ -21,6 +21,7 @@ class ExamService
     {
         $query = Exam::where('teacher_id', $teacher->id)
             ->with(['grade', 'group', 'results.student'])
+            ->withCount('questions')
             ->orderBy('is_active', 'desc')
             ->latest()
             ->filter($filters);

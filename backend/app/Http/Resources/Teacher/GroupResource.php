@@ -15,7 +15,7 @@ class GroupResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'grade_id' => $this->grade_id,
-            'grade_name' => $this->grade ? $this->grade->name : null,
+            'grade_name' => $this->whenLoaded('grade', fn() => $this->grade->name),
             'time' => $this->time,
             'days' => $this->days,
             'type' => $this->type,

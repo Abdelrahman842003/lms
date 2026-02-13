@@ -26,7 +26,7 @@ export const createSecretary = async (data: {
   name: string;
   phone: string;
   password: string;
-  permissions?: any[];
+  permissions?: string[];
   avatar_key?: string;
 }) => {
   const response = await axios.post(
@@ -51,7 +51,7 @@ export const updateSecretary = async (id: string, data: {
   return response.data;
 };
 
-export const updateSecretaryPermissions = async (id: string, permissions: any[]) => {
+export const updateSecretaryPermissions = async (id: string, permissions: string[]) => {
   const response = await axios.put(
     `${API_BASE_URL}/academy/secretaries/${id}/permissions`,
     { permissions },

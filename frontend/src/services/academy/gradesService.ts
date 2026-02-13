@@ -21,7 +21,7 @@ export interface CreateGradeData {
 
 // ========== Grades Management ==========
 export const getGrades = async (page = 1, perPage = 10, filters: string | GradeFilters = '') => {
-  const params: any = { page, per_page: perPage };
+  const params: Record<string, string | number> = { page, per_page: perPage };
   
   if (typeof filters === 'string') {
     if (filters) params.search = filters;

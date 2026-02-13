@@ -30,7 +30,7 @@ export interface ReceivedNotification {
     is_voice?: boolean;
     voice_url?: string;
     voice_duration?: number;
-    [key: string]: any;
+    [key: string]: string | boolean | number | undefined;
   };
   voice_url?: string;
   read_at: string | null;
@@ -69,7 +69,7 @@ export const checkVoiceLimit = async (): Promise<VoiceLimitResponse> => {
   try {
     const endpoint = getNotificationEndpoint() + '/voice-limit';
     return await fetchApi(endpoint) as VoiceLimitResponse;
-  } catch (error: any) {
+  } catch (error: unknown) {
     // If endpoint doesn't exist (404), return default values silently
     // This handles the case before backend is updated
     return { can_send_voice: true, max_duration: 40 };

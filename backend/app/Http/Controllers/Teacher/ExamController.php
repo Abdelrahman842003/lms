@@ -14,6 +14,7 @@ use App\Models\Exam;
 use App\Services\Teacher\ExamService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 
 class ExamController extends Controller
@@ -29,9 +30,7 @@ class ExamController extends Controller
         Log::info('Results endpoint hit', ['exam_id' => $exam->id]);
         
         try {
-            if ($exam->teacher_id !== $this->getTeacherFromRequest(request())->id) {
-                return $this->errorResponse('Unauthorized', 403);
-            }
+            Gate::authorize('viewResults', $exam);
 
             // فقط الطلاب الذين حضروا (لديهم attempt_id)
             $results = $exam->results()
@@ -110,9 +109,7 @@ class ExamController extends Controller
 
     public function show(Exam $exam): JsonResponse
     {
-        if ($exam->teacher_id !== $this->getTeacherFromRequest(request())->id) {
-            return $this->errorResponse('Unauthorized', 403);
-        }
+        Gate::authorize('view', $exam);
 
         return $this->successResponse([
             'exam' => $exam->load(['questions', 'grade', 'group'])
@@ -123,9 +120,7 @@ class ExamController extends Controller
     {
         $teacher = $this->getTeacherFromRequest($request);
         
-        if ($exam->teacher_id !== $teacher->id) {
-            return $this->errorResponse('Unauthorized', 403);
-        }
+        Gate::authorize('update', $exam);
 
         try {
             $data = ExamData::fromRequest($request);
@@ -171,9 +166,7 @@ class ExamController extends Controller
 
     public function copy(Exam $exam): JsonResponse
     {
-        if ($exam->teacher_id !== $this->getTeacherFromRequest(request())->id) {
-            return $this->errorResponse('Unauthorized', 403);
-        }
+        Gate::authorize('copy', $exam);
 
         try {
             $title = request()->input('title');

@@ -36,6 +36,9 @@ RUN chown -R www-data:www-data /var/www/backend \
     && chmod -R 755 /var/www/backend/storage \
     && chmod -R 755 /var/www/backend/bootstrap/cache
 
+# Run as non-root user
+USER www-data
+
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s \
     CMD php artisan octane:status || exit 1

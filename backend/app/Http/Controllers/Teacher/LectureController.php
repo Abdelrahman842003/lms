@@ -14,6 +14,7 @@ use App\Models\Lecture;
 use App\Services\Teacher\LectureService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 
 class LectureController extends Controller
@@ -59,9 +60,7 @@ class LectureController extends Controller
     
     public function show(Request $request, Lecture $lecture): JsonResponse
     {
-        if ($lecture->teacher_id !== $this->getTeacherFromRequest($request)->id) {
-            return $this->errorResponse('Unauthorized', 403);
-        }
+        Gate::authorize('view', $lecture);
 
         return $this->successResponse([
             'lecture' => new LectureResource($lecture->load(['grade', 'group']))
@@ -70,9 +69,7 @@ class LectureController extends Controller
 
     public function update(UpdateLectureRequest $request, Lecture $lecture): JsonResponse
     {
-        if ($lecture->teacher_id !== $this->getTeacherFromRequest($request)->id) {
-            return $this->errorResponse('Unauthorized', 403);
-        }
+        Gate::authorize('update', $lecture);
 
         $lectureData = LectureData::fromRequest($request);
         $lecture = $this->service->updateLecture($lecture, $lectureData->toArray());
@@ -85,9 +82,7 @@ class LectureController extends Controller
 
     public function destroy(Request $request, Lecture $lecture): JsonResponse
     {
-        if ($lecture->teacher_id !== $this->getTeacherFromRequest($request)->id) {
-            return $this->errorResponse('Unauthorized', 403);
-        }
+        Gate::authorize('delete', $lecture);
 
         $this->service->deleteLecture($lecture);
 
@@ -98,9 +93,7 @@ class LectureController extends Controller
 
     public function toggleActive(Request $request, Lecture $lecture): JsonResponse
     {
-        if ($lecture->teacher_id !== $this->getTeacherFromRequest($request)->id) {
-            return $this->errorResponse('Unauthorized', 403);
-        }
+        Gate::authorize('toggleActive', $lecture);
 
         $lecture = $this->service->toggleActive($lecture);
 
@@ -112,9 +105,7 @@ class LectureController extends Controller
 
     public function endLecture(Request $request, Lecture $lecture): JsonResponse
     {
-        if ($lecture->teacher_id !== $this->getTeacherFromRequest($request)->id) {
-            return $this->errorResponse('Unauthorized', 403);
-        }
+        Gate::authorize('endLecture', $lecture);
 
         $this->service->endLecture($lecture);
 
@@ -126,9 +117,7 @@ class LectureController extends Controller
 
     public function getAttendees(Request $request, Lecture $lecture): JsonResponse
     {
-        if ($lecture->teacher_id !== $this->getTeacherFromRequest($request)->id) {
-            return $this->errorResponse('Unauthorized', 403);
-        }
+        Gate::authorize('viewAttendees', $lecture);
 
         $filters = [
             'date_from' => $request->input('date_from'),
@@ -155,9 +144,7 @@ class LectureController extends Controller
 
     public function exportAttendees(Request $request, Lecture $lecture)
     {
-        if ($lecture->teacher_id !== $this->getTeacherFromRequest($request)->id) {
-            abort(403, 'Unauthorized');
-        }
+        Gate::authorize('exportAttendees', $lecture);
 
         // Same logic as getAttendees to ensure consistency
         $query = $lecture->teacher->students()
@@ -235,9 +222,7 @@ class LectureController extends Controller
 
     public function cancelSession(CancelSessionRequest $request, Lecture $lecture): JsonResponse
     {
-        if ($lecture->teacher_id !== $this->getTeacherFromRequest($request)->id) {
-            return $this->errorResponse('Unauthorized', 403);
-        }
+        Gate::authorize('cancelSession', $lecture);
 
         $validated = $request->validated();
         $this->service->cancelSession($lecture, $validated['date']);

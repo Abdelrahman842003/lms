@@ -7,16 +7,23 @@ namespace App\Providers;
 use App\Listeners\BroadcastNotificationSent;
 use App\Models\Enrollment;
 use App\Models\Exam;
+use App\Models\Grade;
+use App\Models\Group;
 use App\Models\Lecture;
 use App\Models\Student;
 use App\Observers\EnrollmentObserver;
 use App\Observers\ExamObserver;
 use App\Observers\LectureObserver;
 use App\Observers\StudentObserver;
+use App\Policies\ExamPolicy;
+use App\Policies\GradePolicy;
+use App\Policies\GroupPolicy;
+use App\Policies\LecturePolicy;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Notifications\Events\NotificationSent;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
@@ -35,6 +42,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Register Policies
+        Gate::policy(Grade::class, GradePolicy::class);
+        Gate::policy(Lecture::class, LecturePolicy::class);
+        Gate::policy(Exam::class, ExamPolicy::class);
+        Gate::policy(Group::class, GroupPolicy::class);
+
         // Register cache invalidation observers
         Student::observe(StudentObserver::class);
         Enrollment::observe(EnrollmentObserver::class);

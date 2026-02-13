@@ -99,7 +99,7 @@ export const getLectures = async (
   page = 1, 
   perPage = 10,
   filters?: { search?: string; date_from?: string; date_to?: string; group_id?: string; status?: string }
-): Promise<any> => {
+): Promise<{ data: { lectures: Lecture[] }; meta?: { current_page: number; last_page: number; total: number } }> => {
   const queryParams = new URLSearchParams({
     page: page.toString(),
     per_page: perPage.toString(),
@@ -161,8 +161,8 @@ export const toggleLectureActive = async (id: string): Promise<{ message: string
   });
 };
 
-export const endLecture = async (id: string): Promise<{ message: string; lecture: Lecture }> => {
-  const res = await fetchApi(`/api/teacher/lectures/${id}/end`, {
+export const endLecture = async (id: string): Promise<Lecture> => {
+  const res = await fetchApi<{ lecture: Lecture }>(`/api/teacher/lectures/${id}/end`, {
     method: 'POST',
   });
   return res.lecture;
@@ -210,8 +210,8 @@ export const exportAttendeesPDF = async (lectureId: string): Promise<void> => {
   document.body.removeChild(a);
 };
 
-export const cancelSession = async (id: string, date: string): Promise<{ message: string; lecture: Lecture }> => {
-  const res = await fetchApi(`/api/teacher/lectures/${id}/cancel-session`, {
+export const cancelSession = async (id: string, date: string): Promise<Lecture> => {
+  const res = await fetchApi<{ lecture: Lecture }>(`/api/teacher/lectures/${id}/cancel-session`, {
     method: 'POST',
     body: JSON.stringify({ date }),
   });
@@ -228,7 +228,7 @@ export interface LectureSession {
 }
 
 export const getLectureSessions = async (lectureId: string, params?: { date_from?: string; date_to?: string }): Promise<LectureSession[]> => {
-  const queryParams = new URLSearchParams(params as any);
+  const queryParams = new URLSearchParams(params as Record<string, string>);
   return await fetchApi(`/api/teacher/lectures/${lectureId}/sessions?${queryParams}`);
 };
 

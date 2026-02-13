@@ -112,7 +112,7 @@ export const createSecretary = async (data: {
   name: string;
   phone: string;
   password: string;
-  permissions?: any[];
+  permissions?: string[];
   avatar_key?: string;
 }) => {
   const response = await axios.post(
@@ -137,7 +137,7 @@ export const updateSecretary = async (id: string, data: {
   return response.data;
 };
 
-export const updateSecretaryPermissions = async (id: string, permissions: any[]) => {
+export const updateSecretaryPermissions = async (id: string, permissions: string[]) => {
   const response = await axios.put(
     `${API_BASE_URL}/academy/secretaries/${id}/permissions`,
     { permissions },
@@ -173,7 +173,7 @@ export const checkPhoneAvailability = async (phone: string, excludeId?: string) 
 
 // ========== Grades Management ==========
 export const getGrades = async (page = 1, perPage = 10, filters: string | { search?: string; name?: string; teacher_id?: string } = '') => {
-  const params: any = { page, per_page: perPage };
+  const params: Record<string, string | number> = { page, per_page: perPage };
   
   if (typeof filters === 'string') {
     if (filters) params.search = filters;
@@ -190,7 +190,7 @@ export const getGrades = async (page = 1, perPage = 10, filters: string | { sear
   return response.data;
 };
 
-export const createGrade = async (data: any) => {
+export const createGrade = async (data: { name: string; description?: string }) => {
   const response = await axios.post(
     `${API_BASE_URL}/academy/grades`,
     data,
@@ -199,7 +199,7 @@ export const createGrade = async (data: any) => {
   return response.data;
 };
 
-export const updateGrade = async (id: string, data: any) => {
+export const updateGrade = async (id: string, data: { name?: string; description?: string }) => {
   const response = await axios.put(
     `${API_BASE_URL}/academy/grades/${id}`,
     data,
@@ -234,7 +234,7 @@ export const deleteGradeByName = async (name: string) => {
 };
 
 // ========== Groups Management ==========
-export const getGroups = async (page = 1, perPage = 10, filters: any = {}) => {
+export const getGroups = async (page = 1, perPage = 10, filters: { search?: string; grade_id?: string; teacher_id?: string } = {}) => {
   const response = await axios.get(`${API_BASE_URL}/academy/groups`, {
     headers: getAuthHeaders(),
     params: { page, per_page: perPage, ...filters },
@@ -242,7 +242,7 @@ export const getGroups = async (page = 1, perPage = 10, filters: any = {}) => {
   return response.data;
 };
 
-export const createGroup = async (data: any) => {
+export const createGroup = async (data: { name: string; grade_id: string; teacher_id?: string }) => {
   const response = await axios.post(
     `${API_BASE_URL}/academy/groups`,
     data,
@@ -253,7 +253,7 @@ export const createGroup = async (data: any) => {
 
 // ========== Payments ==========
 
-export const updateGroup = async (id: string, data: any) => {
+export const updateGroup = async (id: string, data: { name?: string; grade_id?: string }) => {
   const response = await axios.put(
     `${API_BASE_URL}/academy/groups/${id}`,
     data,
@@ -638,7 +638,7 @@ export const toggleAcademyStudentStatus = async (id: string, teacherId?: string)
   return response.data;
 };
 
-export const createAcademyStudent = async (data: any) => {
+export const createAcademyStudent = async (data: { name: string; phone: string; grade_id: string; group_id?: string; teacher_id?: string }) => {
   const response = await axios.post(
     `${API_BASE_URL}/academy/students`,
     data,
@@ -647,7 +647,7 @@ export const createAcademyStudent = async (data: any) => {
   return response.data;
 };
 
-export const updateAcademyStudent = async (id: string, data: any) => {
+export const updateAcademyStudent = async (id: string, data: { name?: string; phone?: string; grade_id?: string; group_id?: string }) => {
   const response = await axios.put(
     `${API_BASE_URL}/academy/students/${id}`,
     data,

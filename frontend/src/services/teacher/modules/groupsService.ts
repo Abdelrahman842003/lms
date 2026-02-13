@@ -56,7 +56,7 @@ export async function deleteGroup(id: string): Promise<unknown> {
  * Get group students
  */
 export async function getGroupStudents(id: string, page = 1, perPage = 10): Promise<{
-  students: any[];
+  students: Array<{ id: string; name: string; phone: string; status?: string }>;
   total: number;
 }> {
   const params = new URLSearchParams({

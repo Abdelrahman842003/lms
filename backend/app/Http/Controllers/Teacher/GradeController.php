@@ -14,6 +14,7 @@ use App\Services\Teacher\GradeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 class GradeController extends Controller
 {
@@ -79,9 +80,7 @@ class GradeController extends Controller
 
     public function update(UpdateGradeRequest $request, Grade $grade): JsonResponse
     {
-        if ($grade->teacher_id !== $this->getTeacherFromRequest($request)->id) {
-            return $this->errorResponse('Unauthorized', 403);
-        }
+        Gate::authorize('update', $grade);
 
         $gradeData = GradeData::fromRequest($request);
         $grade = $this->service->updateGrade($grade, $gradeData);
@@ -94,9 +93,7 @@ class GradeController extends Controller
 
     public function destroy(Request $request, Grade $grade): JsonResponse
     {
-        if ($grade->teacher_id !== $this->getTeacherFromRequest($request)->id) {
-            return $this->errorResponse('Unauthorized', 403);
-        }
+        Gate::authorize('delete', $grade);
 
         $this->service->deleteGrade($grade);
 

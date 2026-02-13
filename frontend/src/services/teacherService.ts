@@ -75,7 +75,7 @@ export const scanAttendance = async (qrCodeString: string): Promise<ScanAttendan
         message: string;
       }
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     // If JSON parse fails
     if (error instanceof SyntaxError) {
       throw new Error('رمز QR غير صالح');

@@ -28,7 +28,7 @@ class ExamResource extends JsonResource
             'is_active' => $this->is_active,
             'grade' => new GradeResource($this->whenLoaded('grade')),
             'group' => new GroupResource($this->whenLoaded('group')),
-            'questions_count' => $this->questions_count ?? $this->questions()->count(),
+            'questions_count' => (int) ($this->questions_count ?? 0),
             'activated_at' => $this->activated_at?->toIso8601String(),
             'ended_at' => $this->ended_at?->toIso8601String(),
             'attended_students' => $this->when($this->ended_at !== null, function () {

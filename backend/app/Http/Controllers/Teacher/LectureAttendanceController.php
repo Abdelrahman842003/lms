@@ -10,6 +10,7 @@ use App\Models\Lecture;
 use App\Services\Teacher\LectureService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 class LectureAttendanceController extends Controller
 {
@@ -21,10 +22,7 @@ class LectureAttendanceController extends Controller
 
     public function generateQrCode(Request $request, Lecture $lecture): JsonResponse
     {
-        // Ensure the user is the teacher of this lecture
-        if ($lecture->teacher_id !== $this->getTeacherFromRequest($request)->id) {
-            return $this->errorResponse('Unauthorized', 403);
-        }
+        Gate::authorize('generateQrCode', $lecture);
 
         $result = $this->service->generateQrCode($lecture);
 
@@ -33,10 +31,7 @@ class LectureAttendanceController extends Controller
 
     public function recordAttendance(RecordAttendanceRequest $request, Lecture $lecture): JsonResponse
     {
-        // Ensure the user is the teacher of this lecture
-        if ($lecture->teacher_id !== $this->getTeacherFromRequest($request)->id) {
-            return $this->errorResponse('Unauthorized', 403);
-        }
+        Gate::authorize('recordAttendance', $lecture);
 
         $result = $this->service->recordAttendance($lecture, $request->validated('student_id'));
 

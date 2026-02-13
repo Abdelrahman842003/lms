@@ -92,6 +92,12 @@ services:
         condition: service_healthy
     networks:
       - lms_network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
   # Laravel Horizon (Queue Worker)
   horizon:
@@ -271,6 +277,12 @@ services:
       - reverb
     networks:
       - lms_network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
 networks:
   lms_network:

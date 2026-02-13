@@ -40,7 +40,7 @@ export const getGroups = async (
   page = 1, 
   perPage = 10,
   filters?: { search?: string; grade_id?: string }
-): Promise<any> => {
+): Promise<{ data: { groups: Group[] }; meta?: { current_page: number; last_page: number; total: number } }> => {
   const queryParams = new URLSearchParams({
     page: page.toString(),
     per_page: perPage.toString(),
@@ -48,12 +48,12 @@ export const getGroups = async (
     ...(filters?.grade_id && { grade_id: filters.grade_id }),
   });
 
-  const data = await fetchApi(`/api/teacher/groups?${queryParams}`);
+  const data = await fetchApi<{ data: { groups: Group[] }; meta?: { current_page: number; last_page: number; total: number } }>(`/api/teacher/groups?${queryParams}`);
   return data;
 };
 
-export const getGroup = async (id: string): Promise<{ group: Group; students: any[] }> => {
-  const data = await fetchApi<{ group: Group; students: any[] }>(`/teacher/groups/${id}`);
+export const getGroup = async (id: string): Promise<{ group: Group; students: Array<{ id: string; name: string; phone: string }> }> => {
+  const data = await fetchApi<{ group: Group; students: Array<{ id: string; name: string; phone: string }> }>(`/teacher/groups/${id}`);
   return data;
 };
 

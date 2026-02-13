@@ -67,7 +67,7 @@ export async function getGradeStatistics(id: string): Promise<{
  * Get students in a grade
  */
 export async function getGradeStudents(id: string, page = 1, perPage = 10): Promise<{
-  students: any[];
+  students: Array<{ id: string; name: string; phone: string; status?: string }>;
   total: number;
 }> {
   const params = new URLSearchParams({

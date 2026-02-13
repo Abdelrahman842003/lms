@@ -171,9 +171,6 @@ export async function fetchApi<T = unknown>(
   
   const url = `${cleanBaseUrl}${normalizedEndpoint}`;
   
-  // DEBUG: Log all API requests
-  console.log('[DEBUG] API Request:', options.method || 'GET', url);
-  
   let response = await fetch(url, {
     ...options,
     headers,
@@ -225,8 +222,6 @@ export async function fetchApi<T = unknown>(
     const serverMessage = typeof error?.message === 'string' ? error.message : null;
     const arabicMessage = serverMessage || getErrorMessage(response.status);
 
-    // DEBUG: Log errors
-    console.error('[DEBUG] API ERROR:', response.status, url, arabicMessage);
 
     // Create ApiError instance
     const apiError = new ApiError(
