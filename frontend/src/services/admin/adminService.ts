@@ -14,12 +14,6 @@ import type {
   CreateAcademyRequest,
   UpdateAcademyRequest,
   TeacherSubscription,
-  AcademySubscription,
-  UpdateSubscriptionRequest,
-  AcademyBilling,
-  GenerateBillingRequest,
-  UpdateBillingStatusRequest,
-  PayBillingRequest,
   AdminReportData,
   AcademyReportData,
   StudentStatistics,
@@ -352,89 +346,20 @@ export async function toggleAcademyStatus(id: string): Promise<unknown> {
 }
 
 /**
- * Update academy subscription
+ * Update academy subscription plan (similar to teacher's setSubscriptionPlan)
  */
-export async function updateAcademySubscription(id: string, data: UpdateSubscriptionRequest): Promise<AcademySubscription> {
-  return await fetchApi(`/api/admin/academies/${id}/subscription`, {
+export async function updateAcademyPlan(id: string, data: {
+  type: 'trial' | 'term' | 'custom';
+  days?: number;
+  months?: number;
+  max_students?: number | null;
+  is_unlimited_students?: boolean;
+}): Promise<AdminAcademy> {
+  const res = await fetchApi<{ academy: AdminAcademy }>(`/api/admin/academies/${id}/plan`, {
     method: 'POST',
     body: JSON.stringify(data),
   });
-}
-
-/**
- * Get academy subscription for a month
- */
-export async function getAcademySubscription(id: string, month: string): Promise<AcademySubscription> {
-  return await fetchApi(`/api/admin/academies/${id}/subscription?month=${month}`);
-}
-
-// ============================================
-// Academy Billing
-// ============================================
-
-/**
- * Get academy billing for a specific month
- */
-export async function getAcademyBilling(
-  academyId: string, 
-  month: string, 
-  year: string
-): Promise<AcademyBilling[]> {
-  const res = await fetchApi<unknown>(`/admin/academy-billings?academy_id=${academyId}&month=${parseInt(month)}&year=${parseInt(year)}`);
-  
-  // Handle various response formats
-  if (Array.isArray(res)) return res as AcademyBilling[];
-  
-  const resObj = res as Record<string, unknown>;
-  if (resObj.billings && Array.isArray(resObj.billings)) return resObj.billings as AcademyBilling[];
-  if (resObj.billing) return [resObj.billing] as AcademyBilling[];
-  if (resObj.data) {
-    if (Array.isArray(resObj.data)) return resObj.data as AcademyBilling[];
-    return [resObj.data] as AcademyBilling[];
-  }
-  if (resObj.id) return [resObj as unknown as AcademyBilling];
-  
-  return [];
-}
-
-/**
- * Generate academy billing
- */
-export async function generateAcademyBilling(data: GenerateBillingRequest): Promise<AcademyBilling> {
-  const res = await fetchApi<{ billing: AcademyBilling }>('/admin/academy-billings/generate', {
-    method: 'POST',
-    body: JSON.stringify({ 
-      academy_id: data.academy_id, 
-      month: data.month, 
-      year: data.year 
-    }),
-  });
-  return res.billing;
-}
-
-/**
- * Update academy billing status
- */
-export async function updateAcademyBillingStatus(
-  billingId: string, 
-  data: UpdateBillingStatusRequest
-): Promise<AcademyBilling> {
-  const res = await fetchApi<{ billing: AcademyBilling }>(`/admin/academy-billings/${billingId}/status`, {
-    method: 'PUT',
-    body: JSON.stringify(data),
-  });
-  return res.billing;
-}
-
-/**
- * Pay academy billing
- */
-export async function payAcademyBilling(billingId: string, data: PayBillingRequest): Promise<AcademyBilling> {
-  const res = await fetchApi<{ billing: AcademyBilling }>(`/admin/academy-billings/${billingId}/pay`, {
-    method: 'POST',
-    body: JSON.stringify(data),
-  });
-  return res.billing;
+  return res.academy;
 }
 
 // ============================================

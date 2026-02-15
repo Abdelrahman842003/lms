@@ -23,6 +23,12 @@ class Academy extends Model implements AuthenticatableContract
         'logo_key',
         'is_active',
         'billing_notes',
+        'plan_type',
+        'plan_expires_at',
+        'plan_max_students',
+        'is_unlimited_students',
+        'subscription_fee',
+        'paid_amount',
     ];
 
     protected $hidden = [
@@ -32,6 +38,11 @@ class Academy extends Model implements AuthenticatableContract
     protected $casts = [
         'is_active' => 'boolean',
         'password' => 'hashed',
+        'plan_expires_at' => 'date',
+        'plan_max_students' => 'integer',
+        'is_unlimited_students' => 'boolean',
+        'subscription_fee' => 'decimal:2',
+        'paid_amount' => 'decimal:2',
     ];
 
     protected $appends = [
@@ -88,11 +99,11 @@ class Academy extends Model implements AuthenticatableContract
     }
 
     /**
-     * Billings for this academy
+     * Subscriptions for this academy (through polymorphic relationship)
      */
-    public function billings()
+    public function subscriptions()
     {
-        return $this->hasMany(AcademyBilling::class);
+        return $this->morphMany(Subscription::class, 'subscriber');
     }
 
     /**
@@ -155,5 +166,50 @@ class Academy extends Model implements AuthenticatableContract
                 $query->where('is_active', false);
             }
         }
+    }
+
+    /**
+     * Check if academy has unlimited enrollments quota
+     */
+    public function hasUnlimitedQuota(): bool
+    {
+        return $this->max_enrollments_limit === null;
+    }
+
+    /**
+     * Get current quota usage
+     */
+    public function getQuotaUsage(): array
+    {
+        $teacherIds = $this->activeTeachers()->pluck('teachers.id')->toArray();
+        $currentEnrollments = \Illuminate\Support\Facades\DB::table('enrollments')
+            ->whereIn('teacher_id', $teacherIds)
+            ->where('is_active', true)
+            ->count();
+
+        return [
+            'used' => $currentEnrollments,
+            'limit' => $this->max_enrollments_limit,
+            'remaining' => $this->max_enrollments_limit !== null
+                ? max(0, $this->max_enrollments_limit - $currentEnrollments)
+                : null,
+            'unlimited' => $this->hasUnlimitedQuota(),
+            'percentage' => $this->max_enrollments_limit
+                ? min(100, round(($currentEnrollments / $this->max_enrollments_limit) * 100, 2))
+                : 0,
+        ];
+    }
+
+    /**
+     * Check if academy can add more enrollments
+     */
+    public function canAddEnrollment(): bool
+    {
+        if ($this->hasUnlimitedQuota()) {
+            return true;
+        }
+
+        $usage = $this->getQuotaUsage();
+        return $usage['remaining'] > 0;
     }
 }

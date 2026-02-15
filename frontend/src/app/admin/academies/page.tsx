@@ -7,181 +7,19 @@ import { DataTable } from '@/components/dashboard/DataTable';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
-import { 
-  getAcademies, 
-  createAcademy, 
-  updateAcademy, 
+import AcademySubscriptionPlanModal from '@/components/admin/academies/AcademySubscriptionPlanModal';
+import {
+  getAcademies,
+  createAcademy,
+  updateAcademy,
   toggleAcademyStatus,
-  getDashboardStats,
-  getAcademySubscription,
-  updateAcademySubscription
+  getDashboardStats
 } from '@/services/authService';
 import { toast } from 'react-hot-toast';
 import { Avatar } from '@/components/ui';
 
 
 
-// Billing Modal Component
-const AcademyBillingModal = ({ 
-  isOpen, 
-  onClose, 
-  academy, 
-  onSuccess 
-}: { 
-  isOpen: boolean; 
-  onClose: () => void; 
-  academy: any; 
-  onSuccess: () => void; 
-}) => {
-  const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7)); // YYYY-MM
-  const [subscriptionData, setSubscriptionData] = useState<any>(null);
-  const [paymentAmount, setPaymentAmount] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [fetching, setFetching] = useState(false);
-  const [fetchError, setFetchError] = useState('');
-
-  useEffect(() => {
-    if (academy && isOpen) {
-      fetchSubscription();
-    }
-  }, [academy, selectedMonth, isOpen]);
-
-  const fetchSubscription = async () => {
-    setFetching(true);
-    setFetchError('');
-    try {
-      const response = await getAcademySubscription(academy.id, selectedMonth);
-      setSubscriptionData(response);
-      setPaymentAmount(0);
-    } catch (error: any) {
-      console.error('Failed to fetch subscription', error);
-      setFetchError(error.message || 'فشل جلب البيانات. تأكد من تشغيل الترحيل (Migration) لقاعدة البيانات.');
-      if (!error.message) {
-          toast.error('فشل جلب بيانات الاشتراك');
-      }
-    } finally {
-      setFetching(false);
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      await updateAcademySubscription(academy.id, {
-        month: selectedMonth,
-        amount: paymentAmount
-      });
-      toast.success('تم تحديث الاشتراك بنجاح');
-      onSuccess();
-      onClose();
-    } catch (error) {
-      console.error('Failed to update subscription', error);
-      toast.error('فشل تحديث الاشتراك');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-[#1e1e2d] rounded-xl border border-white/10 w-full max-w-md p-6 shadow-xl">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-bold text-white">اشتراك الأكاديمية</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-white">
-            <i className="fas fa-times"></i>
-          </button>
-        </div>
-
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-400 mb-1">الشهر</label>
-            <input
-              type="month"
-              value={selectedMonth}
-              onChange={(e) => setSelectedMonth(e.target.value)}
-              className="w-full bg-[#151521] border border-white/10 rounded-lg px-4 py-2 text-white focus:border-primary focus:outline-none"
-            />
-          </div>
-
-          {fetching ? (
-            <div className="text-center py-4 text-gray-400">جاري جلب البيانات...</div>
-          ) : fetchError ? (
-            <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 text-red-400 text-sm">
-              {fetchError}
-            </div>
-          ) : subscriptionData ? (
-            <>
-              <div className="bg-white/5 rounded-lg p-4 space-y-2">
-
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-400">عدد الاشتراكات:</span>
-                  <span className="text-white font-medium">{subscriptionData.student_count}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-400">حالة الدفع:</span>
-                  <span className={`font-medium ${
-                    subscriptionData.status === 'paid' ? 'text-green-400' : 
-                    subscriptionData.status === 'partial' ? 'text-yellow-400' : 'text-red-400'
-                  }`}>
-                    {subscriptionData.status === 'paid' ? 'مدفوع' : 
-                     subscriptionData.status === 'partial' ? 'مدفوع جزئياً' : 'غير مدفوع'}
-                  </span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-400">المبلغ المستحق:</span>
-                  <span className="text-white font-medium">${subscriptionData.amount_due}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-400">المبلغ المدفوع:</span>
-                  <span className="text-green-400 font-medium">${subscriptionData.amount_paid}</span>
-                </div>
-                <div className="flex justify-between text-sm pt-2 border-t border-white/10">
-                  <span className="text-gray-400">المتبقي:</span>
-                  <span className="text-red-400 font-medium">${subscriptionData.remaining}</span>
-                </div>
-              </div>
-
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-1">مبلغ الدفع</label>
-                  <input
-                    type="number"
-                    value={paymentAmount}
-                    onChange={(e) => setPaymentAmount(Number(e.target.value))}
-                    min="0"
-                    max={subscriptionData.remaining}
-                    className="w-full bg-[#151521] border border-white/10 rounded-lg px-4 py-2 text-white focus:border-primary focus:outline-none"
-                    placeholder="أدخل المبلغ..."
-                  />
-                </div>
-
-                <div className="flex justify-end gap-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={onClose}
-                    className="px-4 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
-                  >
-                    إلغاء
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={loading || paymentAmount <= 0}
-                    className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    {loading ? 'جاري الحفظ...' : 'تأكيد الدفع'}
-                  </button>
-                </div>
-              </form>
-            </>
-          ) : null}
-        </div>
-      </div>
-    </div>
-  );
-};
 
 
 export default function AdminAcademiesPage() {
@@ -190,7 +28,7 @@ export default function AdminAcademiesPage() {
   const [academies, setAcademies] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isBillingModalOpen, setIsBillingModalOpen] = useState(false);
+  const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
   const [selectedAcademy, setSelectedAcademy] = useState<any>(null);
 
   const [confirmModal, setConfirmModal] = useState<{
@@ -403,9 +241,9 @@ export default function AdminAcademiesPage() {
     setIsModalOpen(true);
   };
 
-  const openBillingModal = (academy: any) => {
+  const openPlanModal = (academy: any) => {
     setSelectedAcademy(academy);
-    setIsBillingModalOpen(true);
+    setIsPlanModalOpen(true);
   };
 
 
@@ -548,10 +386,9 @@ export default function AdminAcademiesPage() {
       onClick: (row: any) => handleToggleStatus(row),
     },
     {
-      label: 'دفع الاشتراك',
-      icon: 'fas fa-money-bill-wave',
-      variant: 'success' as const,
-      onClick: (row: any) => openBillingModal(row),
+      label: 'تعديل الباقة',
+      icon: 'fas fa-cog',
+      onClick: (row: any) => openPlanModal(row),
     },
   ];
 
@@ -843,18 +680,16 @@ export default function AdminAcademiesPage() {
         </div>
       )}
 
-      {/* Billing Modal Component*/}
-      <AcademyBillingModal
-        isOpen={isBillingModalOpen}
+      {/* Subscription Plan Modal */}
+      <AcademySubscriptionPlanModal
+        isOpen={isPlanModalOpen}
         onClose={() => {
-          setIsBillingModalOpen(false);
+          setIsPlanModalOpen(false);
           setSelectedAcademy(null);
         }}
         academy={selectedAcademy}
         onSuccess={() => fetchAcademies(currentPage)}
       />
-
-{/* Billing Modal */}
 
 
       {/* Confirmation Modal */}

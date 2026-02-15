@@ -133,17 +133,15 @@ export interface TeacherSubscription {
 }
 
 /**
- * Academy subscription data
+ * Academy subscription data (plan-based, not monthly billing)
  */
 export interface AcademySubscription {
   id: string;
   academy_id: string;
-  month: string;
-  year: string;
-  amount: number;
-  status: 'pending' | 'paid' | 'overdue';
-  paid_at?: string;
-  notes?: string;
+  plan_type: 'trial' | 'term' | 'custom';
+  plan_expires_at?: string;
+  max_students?: number;
+  is_unlimited_students: boolean;
   created_at: string;
 }
 
@@ -154,59 +152,6 @@ export interface UpdateSubscriptionRequest {
   amount?: number;
   status?: 'pending' | 'paid' | 'overdue';
   notes?: string;
-}
-
-/**
- * Academy billing
- */
-export interface AcademyBilling {
-  id: string;
-  academy_id: string;
-  academy?: AdminAcademy;
-  month: number;
-  year: number;
-  total_amount: number;
-  paid_amount: number;
-  remaining_amount: number;
-  status: 'pending' | 'partial' | 'paid';
-  teachers_breakdown: BillingTeacherBreakdown[];
-  notes?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-/**
- * Billing teacher breakdown
- */
-export interface BillingTeacherBreakdown {
-  teacher_id: string;
-  teacher_name: string;
-  students_count: number;
-  amount: number;
-}
-
-/**
- * Generate billing request
- */
-export interface GenerateBillingRequest {
-  academy_id: string;
-  month: number;
-  year: number;
-}
-
-/**
- * Update billing status request
- */
-export interface UpdateBillingStatusRequest {
-  status: 'pending' | 'partial' | 'paid';
-  notes?: string;
-}
-
-/**
- * Pay billing request
- */
-export interface PayBillingRequest {
-  amount: number;
 }
 
 /**

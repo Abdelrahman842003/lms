@@ -94,4 +94,43 @@ class AcademyService
 
         return $academy->fresh();
     }
+
+    /**
+     * Set subscription plan for academy (similar to teacher's setSubscriptionPlan)
+     */
+    public function setSubscriptionPlan(string $academyId, array $data): Academy
+    {
+        $academy = Academy::findOrFail($academyId);
+
+        $type = $data['type']; // 'trial', 'term', 'custom'
+        $academy->plan_type = $type;
+        
+        // Calculate Expiry
+        if ($type === 'trial' || $type === 'custom') {
+            $days = (int) ($data['days'] ?? 0);
+            $academy->plan_expires_at = now()->addDays($days);
+        } elseif ($type === 'term') {
+            $months = (int) ($data['months'] ?? 6);
+            $academy->plan_expires_at = now()->addMonths($months);
+        }
+
+        // Student Limits
+        if (!empty($data['is_unlimited_students'])) {
+            $academy->plan_max_students = null;
+            $academy->is_unlimited_students = true;
+        } else {
+            $academy->plan_max_students = (int) ($data['max_students'] ?? 0);
+            $academy->is_unlimited_students = false;
+        }
+
+        // Set default subscription fee if not set
+        if ($academy->subscription_fee <= 0) {
+            $academy->subscription_fee = \App\Services\Infrastructure\HelperService::getAcademyStudentPrice();
+            if ($academy->subscription_fee <= 0) $academy->subscription_fee = 20; // Fallback
+        }
+
+        $academy->save();
+
+        return $academy;
+    }
 }

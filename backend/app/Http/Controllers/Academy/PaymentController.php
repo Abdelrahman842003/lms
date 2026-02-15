@@ -7,8 +7,6 @@ namespace App\Http\Controllers\Academy;
 use App\DTOs\Academy\PaymentData;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Academy\StorePaymentRequest;
-use App\Models\AcademyBilling;
-use App\Models\Setting;
 use App\Services\Academy\PaymentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;

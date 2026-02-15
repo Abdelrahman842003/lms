@@ -1,266 +1,187 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\SubscriptionType;
 use App\Http\Controllers\Controller;
-use App\Models\Student;
-use App\Models\Enrollment;
+use App\Http\Requests\Admin\Subscription\RecordPaymentRequest;
+use App\Models\Academy;
+use App\Models\Subscription;
+use App\Models\Teacher;
+use App\Services\Admin\SubscriptionService;
+use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class SubscriptionController extends Controller
 {
-    public function index(Request $request)
+    public function __construct(
+        private SubscriptionService $subscriptionService
+    ) {}
+
+    /**
+     * List all subscriptions
+     */
+    public function index(Request $request): JsonResponse
     {
-        $limit = $request->get('limit', 10);
-        $search = $request->get('search');
-        $status = $request->get('status');
-        $type = $request->get('type'); // plan type filter
-        $recordType = $request->get('record_type'); // student/teacher filter
+        $perPage = $request->input('per_page', 15);
+        $filters = $request->only(['status', 'type', 'month', 'year', 'subscriber_id', 'subscriber_type']);
 
-        $results = collect();
-
-        // Get teachers with subscription plans
-        $teachers = \App\Models\Teacher::whereNotNull('plan_type')
-            ->select([
-                'id',
-                'name',
-                'phone',
-                'plan_type',
-                'plan_expires_at',
-                'plan_max_students',
-                'is_unlimited_students',
-                'subscription_fee',
-                'created_at'
-            ])
-            ->get()
-            ->map(function ($teacher) {
-                return (object)[
-                    'id' => $teacher->id,
-                    'name' => $teacher->name,
-                    'phone' => $teacher->phone,
-                    'teacher_name' => $teacher->name,
-                    'teacher_id' => $teacher->id,
-                    'academy_name' => null,
-                    'plan_type' => $teacher->plan_type,
-                    'plan_expires_at' => $teacher->plan_expires_at,
-                    'plan_max_students' => $teacher->plan_max_students,
-                    'is_unlimited_students' => $teacher->is_unlimited_students,
-                    'teacher_created_at' => $teacher->created_at,
-                    'subscription_start' => $teacher->created_at,
-                    'subscription_end' => $teacher->plan_expires_at,
-                    'subscription_fee' => $this->calculateSubscriptionFee($teacher),
-                    'teacher_notes' => null,
-                    'created_at' => $teacher->created_at,
-                    'record_type' => 'teacher'
-                ];
-            });
-
-        // Use only teachers (no students)
-        $results = $teachers;
-
-        // Apply search filter
-        if ($search) {
-            $results = $results->filter(function($record) use ($search) {
-                return stripos($record->name, $search) !== false ||
-                       stripos($record->phone, $search) !== false ||
-                       stripos($record->teacher_name, $search) !== false;
-            });
-        }
-
-        // Apply status filter based on subscription plan
-        if ($status && $status !== 'all') {
-            $results = $results->filter(function($record) use ($status) {
-                switch ($status) {
-                    case 'trial':
-                        return $record->plan_type === 'trial';
-                    case 'active':
-                        return in_array($record->plan_type, ['term', 'custom']) && 
-                               $record->plan_expires_at && 
-                               now()->lt($record->plan_expires_at);
-                    case 'expired':
-                        return $record->plan_expires_at && now()->gt($record->plan_expires_at);
-                    default:
-                        return true;
-                }
-            });
-        }
-
-        // Apply entity type filter (teacher only for now)
-        if ($type && $type !== 'all') {
-            $results = $results->filter(function($record) use ($type) {
-                return $type === 'teacher' && $record->record_type === 'teacher';
-            });
-        }
-
-        // Sort and paginate
-        $totalCount = $results->count();
-        $currentPage = (int)$request->get('page', 1);
-        $paginatedResults = $results->sortByDesc('created_at')
-                                   ->forPage($currentPage, $limit)
-                                   ->values();
-
-        // Transform data for frontend
-        $subscriptions = $paginatedResults->map(function ($record) {
-            return [
-                'id' => $record->id,
-                'name' => $record->record_type === 'teacher' ? $record->teacher_name : $record->name,
-                'phone' => $record->phone,
-                'teacher_name' => $record->teacher_name,
-                'academy_name' => $record->academy_name,
-                'subscription_plan' => $this->getSubscriptionPlanLabel(
-                    $record->plan_type, 
-                    $record->plan_expires_at,
-                    $record->teacher_created_at,
-                    $record->plan_max_students,
-                    $record->is_unlimited_students
-                ),
-                'status' => $this->calculateStatus($record),
-                'subscription_start' => $record->subscription_start,
-                'subscription_end' => $record->subscription_end,
-                'plan_expires_at' => $record->plan_expires_at,
-                'subscription_fee' => $this->calculateSubscriptionFee($record),
-                'notes' => $record->teacher_notes,
-                'created_at' => $record->created_at,
-                'is_trial' => $record->plan_type === 'trial',
-                'record_type' => $record->record_type,
-            ];
-        });
-
-        // Calculate stats
-        $allRecords = $results;
-        
-        $stats = [
-            'total' => $allRecords->count(),
-            'active' => $allRecords->filter(function($r) {
-                return in_array($r->plan_type, ['term', 'custom']) && 
-                       $r->plan_expires_at && 
-                       now()->lt($r->plan_expires_at);
-            })->count(),
-            'trial' => $allRecords->where('plan_type', 'trial')->count(),
-            'expired' => $allRecords->filter(function($r) {
-                return $r->plan_expires_at && now()->gt($r->plan_expires_at);
-            })->count(),
-        ];
+        $subscriptions = $this->subscriptionService->getSubscriptions($perPage, $filters);
 
         return response()->json([
-            'status' => true,
-            'status_code' => 200,
-            'message' => 'Subscriptions fetched successfully',
-            'data' => [
-                'data' => $subscriptions,
-                'meta' => [
-                    'total' => $totalCount,
-                    'current_page' => $currentPage,
-                    'per_page' => $limit,
-                    'last_page' => ceil($totalCount / $limit),
-                ],
-                'stats' => $stats
-            ]
+            'success' => true,
+            'data' => $subscriptions,
         ]);
     }
 
-    private function getSubscriptionPlanLabel($planType, $planExpiresAt, $teacherCreatedAt, $planMaxStudents, $isUnlimitedStudents)
+    /**
+     * Get teacher subscription for a specific month
+     */
+    public function getTeacherSubscription(Request $request, string $teacherId): JsonResponse
     {
-        if (!$planType) return 'غير محدد';
+        $month = $request->input('month', now()->format('Y-m'));
+        $date = Carbon::parse($month . '-01');
+
+        $subscription = $this->subscriptionService->getTeacherSubscription($teacherId, $date);
+        $quotaUsage = $this->subscriptionService->getTeacherQuotaUsage($teacherId);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'subscription' => $subscription,
+                'quota_usage' => $quotaUsage,
+            ],
+        ]);
+    }
+
+    /**
+     * Get academy subscription for a specific month
+     */
+    public function getAcademySubscription(Request $request, string $academyId): JsonResponse
+    {
+        $month = $request->input('month', now()->format('Y-m'));
+        $date = Carbon::parse($month . '-01');
+
+        $subscription = $this->subscriptionService->getAcademySubscription($academyId, $date);
+        $quotaUsage = $this->subscriptionService->getAcademyQuotaUsage($academyId);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'subscription' => $subscription,
+                'quota_usage' => $quotaUsage,
+            ],
+        ]);
+    }
+
+    /**
+     * Record payment for a subscription
+     */
+    public function recordPayment(RecordPaymentRequest $request, string $subscriptionId): JsonResponse
+    {
+        $subscription = Subscription::findOrFail($subscriptionId);
+
+        $subscription = $this->subscriptionService->recordPayment(
+            $subscription,
+            $request->input('amount'),
+            $request->input('payment_method'),
+            $request->input('notes')
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'تم تسجيل الدفع بنجاح',
+            'data' => $subscription,
+        ]);
+    }
+
+    /**
+     * Get subscription statistics
+     */
+    public function statistics(Request $request): JsonResponse
+    {
+        $year = $request->input('year', now()->year);
+        $type = $request->input('type');
+
+        $typeEnum = $type ? SubscriptionType::from($type) : null;
+        $statistics = $this->subscriptionService->getStatistics((int) $year, $typeEnum);
+
+        return response()->json([
+            'success' => true,
+            'data' => $statistics,
+        ]);
+    }
+
+    /**
+     * Check if teacher can add more students
+     */
+    public function canTeacherAddStudent(string $teacherId): JsonResponse
+    {
+        $canAdd = $this->subscriptionService->canTeacherAddStudent($teacherId);
+        $quotaUsage = $this->subscriptionService->getTeacherQuotaUsage($teacherId);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'can_add' => $canAdd,
+                'quota_usage' => $quotaUsage,
+            ],
+        ]);
+    }
+
+    /**
+     * Check if academy can add more enrollments
+     */
+    public function canAcademyAddEnrollment(string $academyId): JsonResponse
+    {
+        $canAdd = $this->subscriptionService->canAcademyAddEnrollment($academyId);
+        $quotaUsage = $this->subscriptionService->getAcademyQuotaUsage($academyId);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'can_add' => $canAdd,
+                'quota_usage' => $quotaUsage,
+            ],
+        ]);
+    }
+
+    /**
+     * Get all subscriptions for a teacher
+     */
+    public function teacherSubscriptions(Request $request, string $teacherId): JsonResponse
+    {
+        $teacher = Teacher::findOrFail($teacherId);
         
-        switch ($planType) {
-            case 'trial':
-                if ($planExpiresAt && $teacherCreatedAt) {
-                    $durationInDays = intval(\Carbon\Carbon::parse($teacherCreatedAt)->diffInDays($planExpiresAt));
-                    return "تجريبي ({$durationInDays} يوم)";
-                }
-                return 'تجريبي';
-                
-            case 'term':
-                if ($planExpiresAt && $teacherCreatedAt) {
-                    $durationInMonths = intval(\Carbon\Carbon::parse($teacherCreatedAt)->diffInMonths($planExpiresAt));
-                    if ($durationInMonths <= 6) {
-                        return '6 شهور';
-                    } elseif ($durationInMonths <= 12) {
-                        return '12 شهر';
-                    } else {
-                        return "مدة ثابتة ({$durationInMonths} شهر)";
-                    }
-                }
-                return 'مدة ثابتة';
-                
-            case 'custom':
-                $label = 'باقة مخصصة';
-                if ($planExpiresAt && $teacherCreatedAt) {
-                    $durationInDays = intval(\Carbon\Carbon::parse($teacherCreatedAt)->diffInDays($planExpiresAt));
-                    if ($durationInDays < 30) {
-                        $label .= " ({$durationInDays} يوم)";
-                    } else {
-                        $durationInMonths = intval($durationInDays / 30);
-                        $label .= " ({$durationInMonths} شهر)";
-                    }
-                }
-                
-                // Add student limit info
-                if ($isUnlimitedStudents) {
-                    $label .= ' - لا نهائي';
-                } elseif ($planMaxStudents) {
-                    $label .= " - {$planMaxStudents} طالب";
-                }
-                
-                return $label;
-                
-            default:
-                return 'غير محدد';
-        }
+        $perPage = $request->input('per_page', 12);
+        $subscriptions = $teacher->subscriptions()
+            ->orderBy('month', 'desc')
+            ->paginate($perPage);
+
+        return response()->json([
+            'success' => true,
+            'data' => $subscriptions,
+        ]);
     }
 
-    private function calculateStatus($record)
+    /**
+     * Get all subscriptions for an academy
+     */
+    public function academySubscriptions(Request $request, string $academyId): JsonResponse
     {
-        if ($record->plan_type === 'trial') {
-            if ($record->plan_expires_at && now()->gt($record->plan_expires_at)) {
-                return 'expired';
-            }
-            return 'trial';
-        }
+        $academy = Academy::findOrFail($academyId);
+        
+        $perPage = $request->input('per_page', 12);
+        $subscriptions = $academy->subscriptions()
+            ->orderBy('month', 'desc')
+            ->paginate($perPage);
 
-        if ($record->plan_expires_at && now()->gt($record->plan_expires_at)) {
-            return 'expired';
-        }
-
-        if (!$record->plan_type) return 'expired';
-
-        return 'active';
-    }
-
-    private function calculateSubscriptionFee($record)
-    {
-        switch ($record->plan_type) {
-            case 'trial':
-                return 0;
-                
-            case 'term':
-                if ($record->plan_expires_at && $record->teacher_created_at) {
-                    $durationInMonths = intval(\Carbon\Carbon::parse($record->teacher_created_at)->diffInMonths($record->plan_expires_at));
-                    $maxStudents = $record->plan_max_students ?? 50;
-                    
-                    // الحصول على سعر الطالب من الإعدادات
-                    $pricePerStudentPerMonth = (float) \App\Models\Setting::where('key', 'pricePerStudent')->value('value') ;
-                    
-                    return $durationInMonths * $maxStudents * $pricePerStudentPerMonth;
-                }
-                return $record->subscription_fee ?? 0;
-                
-            case 'custom':
-                if ($record->plan_expires_at && $record->teacher_created_at) {
-                    $durationInMonths = intval(\Carbon\Carbon::parse($record->teacher_created_at)->diffInMonths($record->plan_expires_at));
-                    $maxStudents = $record->plan_max_students ?? 50;
-                    
-                    // الحصول على سعر الطالب من الإعدادات
-                    $pricePerStudentPerMonth = (float) \App\Models\Setting::where('key', 'pricePerStudent')->value('value');
-                    
-                    return $durationInMonths * $maxStudents * $pricePerStudentPerMonth;
-                }
-                // للباقة المخصصة، استخدم القيمة المحفوظة إذا لم تكن هناك تواريخ
-                return $record->subscription_fee ?? 0;
-                
-            default:
-                return $record->subscription_fee ?? 0;
-        }
+        return response()->json([
+            'success' => true,
+            'data' => $subscriptions,
+        ]);
     }
 }

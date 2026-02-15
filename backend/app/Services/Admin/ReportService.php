@@ -302,31 +302,8 @@ class ReportService
         // Expected Revenue for Platform (Same as Platform Fees)
         $expectedRevenue = $platformFees;
 
-        // Confirmed payments in period (from AcademyBilling)
-        // We sum amount_paid from billings that fall within the selected months
-        $startMonth = $startDate->month;
-        $startYear = $startDate->year;
-        $endMonth = $endDate->month;
-        $endYear = $endDate->year;
-
-        $confirmedPayments = \App\Models\AcademyBilling::where('academy_id', $academy->id)
-            ->where(function($q) use ($startMonth, $startYear, $endMonth, $endYear) {
-                if ($startYear === $endYear) {
-                    $q->where('year', $startYear)
-                      ->whereBetween('month', [$startMonth, $endMonth]);
-                } else {
-                    $q->where(function($sub) use ($startMonth, $startYear) {
-                        $sub->where('year', $startYear)
-                            ->where('month', '>=', $startMonth);
-                    })->orWhere(function($sub) use ($endMonth, $endYear) {
-                        $sub->where('year', $endYear)
-                            ->where('month', '<=', $endMonth);
-                    })->orWhere(function($sub) use ($startYear, $endYear) {
-                        $sub->whereBetween('year', [$startYear + 1, $endYear - 1]);
-                    });
-                }
-            })
-            ->sum('amount_paid');
+        // Confirmed payments - using subscription-based model (not monthly billing)
+        $confirmedPayments = 0;
 
         // Monthly breakdown
         // We can reuse getMonthlyBreakdown but we need to pass teacher IDs
@@ -387,19 +364,12 @@ class ReportService
             $newEnrollments = Enrollment::whereIn('teacher_id', $teacherIds)
                 ->whereBetween('created_at', [$queryStart, $queryEnd])
                 ->count();
-                
-            $payments = \App\Models\AcademyBilling::whereIn('academy_id', \App\Models\Academy::whereHas('teachers', function($q) use ($teacherIds) {
-                    $q->whereIn('teachers.id', $teacherIds);
-                })->pluck('id'))
-                ->where('month', $currentMonth->month)
-                ->where('year', $currentMonth->year)
-                ->sum('amount_paid');
-            
+
             $months[] = [
                 'month' => $currentMonth->format('Y-m'),
                 'month_name' => \App\Services\HelperService::getArabicMonthName($currentMonth->month) . ' ' . $currentMonth->year,
                 'new_enrollments' => $newEnrollments,
-                'confirmed_payments' => (float) $payments,
+                'confirmed_payments' => 0,
             ];
             
             $currentMonth->addMonth();

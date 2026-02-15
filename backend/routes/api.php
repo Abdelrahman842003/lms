@@ -89,20 +89,22 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/academies/{academy}/secretaries', [\App\Http\Controllers\Admin\AcademyController::class, 'addSecretary']);
         Route::delete('/academies/{academy}/secretaries/{secretary}', [\App\Http\Controllers\Admin\AcademyController::class, 'removeSecretary']);
         Route::post('/academies/{academy}/regenerate-qr', [\App\Http\Controllers\Admin\AcademyController::class, 'regenerateQrCodes']);
-        Route::get('/academies/{academy}/subscription', [\App\Http\Controllers\Admin\AcademyController::class, 'getSubscription']);
-        Route::post('/academies/{academy}/subscription', [\App\Http\Controllers\Admin\AcademyController::class, 'updateSubscription']);
+        Route::post('/academies/{academy}/plan', [\App\Http\Controllers\Admin\AcademyController::class, 'updatePlan']);
 
-        // Academy Billing
-        Route::get('/academy-billings', [\App\Http\Controllers\Admin\AcademyBillingController::class, 'index']);
-        Route::post('/academy-billings/generate', [\App\Http\Controllers\Admin\AcademyBillingController::class, 'generate']);
-        Route::get('/academy-billings/statistics', [\App\Http\Controllers\Admin\AcademyBillingController::class, 'statistics']);
-        Route::get('/academy-billings/{billing}', [\App\Http\Controllers\Admin\AcademyBillingController::class, 'show']);
-        Route::put('/academy-billings/{billing}/status', [\App\Http\Controllers\Admin\AcademyBillingController::class, 'updateStatus']);
-        Route::delete('/academy-billings/{billing}', [\App\Http\Controllers\Admin\AcademyBillingController::class, 'destroy']);
-
-        // Subscriptions Management
+        // Subscriptions Management (Unified)
         Route::get('/subscriptions', [\App\Http\Controllers\Admin\SubscriptionController::class, 'index']);
-
+        Route::get('/subscriptions/statistics', [\App\Http\Controllers\Admin\SubscriptionController::class, 'statistics']);
+        Route::post('/subscriptions/{subscription}/pay', [\App\Http\Controllers\Admin\SubscriptionController::class, 'recordPayment']);
+        
+        // Teacher Subscriptions
+        Route::get('/teachers/{teacher}/subscriptions', [\App\Http\Controllers\Admin\SubscriptionController::class, 'teacherSubscriptions']);
+        Route::get('/teachers/{teacher}/subscriptions/current', [\App\Http\Controllers\Admin\SubscriptionController::class, 'getTeacherSubscription']);
+        Route::get('/teachers/{teacher}/quota-check', [\App\Http\Controllers\Admin\SubscriptionController::class, 'canTeacherAddStudent']);
+        
+        // Academy Subscriptions
+        Route::get('/academies/{academy}/subscriptions', [\App\Http\Controllers\Admin\SubscriptionController::class, 'academySubscriptions']);
+        Route::get('/academies/{academy}/subscriptions/current', [\App\Http\Controllers\Admin\SubscriptionController::class, 'getAcademySubscription']);
+        Route::get('/academies/{academy}/quota-check', [\App\Http\Controllers\Admin\SubscriptionController::class, 'canAcademyAddEnrollment']);
 
     });
 });

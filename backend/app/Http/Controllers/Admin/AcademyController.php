@@ -14,8 +14,7 @@ use Illuminate\Http\JsonResponse;
 class AcademyController extends Controller
 {
     public function __construct(
-        private AcademyService $academyService,
-        private \App\Services\Admin\AcademyBillingService $academyBillingService
+        private AcademyService $academyService
     ) {}
 
     /**
@@ -157,45 +156,24 @@ class AcademyController extends Controller
     }
 
     /**
-     * Get academy subscription details (mapped from billing)
+     * Update academy subscription plan (similar to teacher's updatePlan)
      */
-    public function getSubscription(Request $request, string $id): JsonResponse
-    {
-        $month = $request->input('month'); // YYYY-MM
-        if (!$month) {
-            return $this->errorResponse('الشهر مطلوب', 400);
-        }
-
-        try {
-            $date = \Carbon\Carbon::parse($month . '-01');
-            $billing = $this->academyBillingService->getSubscriptionDetails($id, $date->month, $date->year);
-            return $this->successResponse($billing);
-        } catch (\Exception $e) {
-            return $this->errorResponse($e->getMessage(), 400);
-        }
-    }
-
-    /**
-     * Update academy subscription (payment)
-     */
-    public function updateSubscription(Request $request, string $id): JsonResponse
+    public function updatePlan(Request $request, string $id): JsonResponse
     {
         $request->validate([
-            'month' => 'required|date_format:Y-m',
-            'amount' => 'required|numeric|min:0',
+            'type' => 'required|in:trial,term,custom',
+            'days' => 'required_if:type,trial,custom|integer|min:1',
+            'months' => 'required_if:type,term|integer|min:1',
+            'max_students' => 'nullable|integer|min:0',
+            'is_unlimited_students' => 'boolean'
         ]);
 
         try {
-            $date = \Carbon\Carbon::parse($request->month . '-01');
-            
-            $billing = $this->academyBillingService->paySubscription(
-                $id, 
-                $date->month, 
-                $date->year, 
-                (float) $request->amount
-            );
+            $academy = $this->academyService->setSubscriptionPlan($id, $request->all());
 
-            return $this->successResponse($billing, 'تم تحديث الاشتراك بنجاح');
+            return $this->successResponse([
+                'academy' => $academy,
+            ], 'تم تحديث باقة الاشتراك بنجاح');
         } catch (\Exception $e) {
             return $this->errorResponse($e->getMessage(), 400);
         }

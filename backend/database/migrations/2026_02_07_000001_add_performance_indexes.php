@@ -21,14 +21,9 @@ return new class extends Migration
     {
         // ============================================
         // Students Table Indexes
+        // Note: phone index already exists in create_students_table migration
         // ============================================
         Schema::table('students', function (Blueprint $table) {
-            // Composite index for teacher + status filtering (common query)
-            $table->index(['teacher_id', 'status'], 'students_teacher_status_index');
-
-            // Index for phone search (used in login/search)
-            $table->index('phone', 'students_phone_index');
-
             // Index for sorting by creation date
             $table->index('created_at', 'students_created_at_index');
 

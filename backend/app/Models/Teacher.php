@@ -129,9 +129,21 @@ class Teacher extends Authenticatable
             $query->whereDate('created_at', '<=', $dateTo);
         }
     }
-    public function subscriptions()
+    /**
+     * Old subscriptions (for backward compatibility)
+     * @deprecated Use morph subscriptions instead
+     */
+    public function teacherSubscriptions()
     {
         return $this->hasMany(TeacherSubscription::class);
+    }
+
+    /**
+     * Unified subscriptions (polymorphic)
+     */
+    public function subscriptions()
+    {
+        return $this->morphMany(Subscription::class, 'subscriber');
     }
 
     /**
