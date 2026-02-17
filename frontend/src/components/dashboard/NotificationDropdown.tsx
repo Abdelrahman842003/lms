@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { fetchApi } from '@/services/authService';
 import { toast } from 'react-hot-toast';
 import { ReceivedNotification as AppNotification } from '@/services/notificationService';
+import { getAccessToken } from '@/lib/tokenManager';
 
 interface NotificationDropdownProps {
   role: string;
@@ -126,7 +127,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
       const getUserData = () => {
         try {
           const storedUser = localStorage.getItem('user');
-          const token = localStorage.getItem('token');
+          const token = getAccessToken();
           if (storedUser && token) {
             const user = JSON.parse(storedUser);
             return { userId: user.id, token };

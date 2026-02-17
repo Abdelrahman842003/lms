@@ -5,28 +5,65 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Traits\ApiResponseTrait;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class RefreshTokenController extends Controller
 {
     use ApiResponseTrait;
 
-    public function refresh(Request $request)
+    public function refresh(Request $request): JsonResponse
     {
-        $user = $request->user();
-        
-        // Check if the current token has the ability to issue access tokens (i.e., it is a refresh token)
-        if (!$user->currentAccessToken()->can('issue-access-token')) {
+        $refreshToken = $this->extractRefreshToken($request);
+        if (!$refreshToken) {
+            return $this->errorResponse('Refresh token is required.', 401);
+        }
+
+        $token = PersonalAccessToken::findToken($refreshToken);
+        if (!$token) {
+            return $this->errorResponse('Invalid refresh token.', 401);
+        }
+
+        if (!$token->can('issue-access-token')) {
             return $this->errorResponse('Invalid token type. Refresh token required.', 403);
         }
 
-        // Create a new access token
+        if ($token->expires_at && $token->expires_at->isPast()) {
+            return $this->errorResponse('Refresh token has expired.', 401);
+        }
+
+        $user = $token->tokenable;
+        if (!$user) {
+            return $this->errorResponse('Invalid refresh token.', 401);
+        }
+
+        if ($request->path() === 'api/v1/refresh-token') {
+            Log::warning('Deprecated refresh endpoint used: /api/v1/refresh-token', [
+                'ip' => $request->ip(),
+                'user_id' => $user->id,
+                'user_type' => get_class($user),
+            ]);
+        }
+
         $newAccessToken = $user->createToken('access_token', ['access-api'], now()->addMinutes(60))->plainTextToken;
 
         return $this->successResponse([
             'access_token' => $newAccessToken,
+            'token' => $newAccessToken,
             'token_type' => 'Bearer',
         ], 'Token refreshed successfully');
+    }
+
+    private function extractRefreshToken(Request $request): ?string
+    {
+        $authHeader = $request->header('Authorization');
+        if ($authHeader && str_starts_with($authHeader, 'Bearer ')) {
+            return trim(substr($authHeader, 7));
+        }
+
+        return $request->cookie('refresh_token');
     }
 }

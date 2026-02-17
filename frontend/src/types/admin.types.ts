@@ -52,7 +52,9 @@ export interface AdminAcademy extends AcademyInfo {
   teachers_count: number;
   students_count: number;
   revenue: number;
-  subscription_status: 'active' | 'expired' | 'pending';
+  plan_type?: 'trial' | 'fixed' | 'custom' | 'term';
+  plan_expires_at?: string;
+  subscription_status: 'active' | 'expired' | 'pending' | 'paid' | 'partial' | 'unpaid';
   subscription_ends_at?: string;
   created_at: string;
   updated_at: string;

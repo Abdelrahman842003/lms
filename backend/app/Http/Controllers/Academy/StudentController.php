@@ -6,8 +6,10 @@ namespace App\Http\Controllers\Academy;
 
 use App\DTOs\Academy\StudentData;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Academy\Student\SearchByPhoneRequest;
 use App\Http\Requests\Academy\Student\StoreStudentRequest;
 use App\Http\Requests\Academy\Student\UpdateStudentRequest;
+use App\Http\Resources\Academy\AcademyStudentResource;
 use App\Models\Academy;
 use App\Models\Enrollment;
 use App\Models\Student;
@@ -15,6 +17,7 @@ use App\Services\Academy\StudentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class StudentController extends Controller
 {
@@ -52,64 +55,7 @@ class StudentController extends Controller
         $filters = $request->only(['search', 'status']);
         
         $students = $this->service->getStudents($academy, $filters, $perPage);
-
-        // Transform data
-        $data = $students->through(function ($student) {
-            $enrollments = $student->enrollments;
-            
-            // Determine best status from all enrollments (priority: active > trial > grace_period > expired)
-            $statusPriority = ['active' => 1, 'trial' => 2, 'grace_period' => 3, 'expired' => 4];
-            $bestStatus = 'expired';
-            $bestDaysLeft = 0;
-            $bestTrialDaysLeft = null;
-            
-            foreach ($enrollments as $enrollment) {
-                $enrollmentStatus = $enrollment->status ?? 'expired';
-                if (($statusPriority[$enrollmentStatus] ?? 5) < ($statusPriority[$bestStatus] ?? 5)) {
-                    $bestStatus = $enrollmentStatus;
-                    $bestDaysLeft = $enrollment->days_left ?? 0;
-                    if ($enrollmentStatus === 'trial' && $enrollment->trial_ends_at) {
-                        $bestTrialDaysLeft = max(0, now()->diffInDays($enrollment->trial_ends_at, false));
-                    }
-                }
-            }
-            
-            return [
-                'id' => $student->id,
-                'name' => $student->name,
-                'phone' => $student->phone,
-                'parent_phone' => $student->parent_phone,
-                'avatar' => $student->avatar,
-                'is_active' => $enrollments->contains('is_active', true),
-                'status' => $bestStatus,
-                'days_left' => $bestDaysLeft,
-                'trial_days_left' => $bestTrialDaysLeft,
-                'teachers_count' => $enrollments->unique('teacher_id')->count(),
-                'teachers' => $enrollments->map(function ($enrollment) {
-                    return [
-                        'id' => $enrollment->teacher_id,
-                        'name' => $enrollment->teacher?->name,
-                        'grade_name' => $enrollment->grade?->name,
-                        'group_name' => $enrollment->group?->name,
-                        'is_active' => $enrollment->is_active,
-                        'subscription_end' => $enrollment->subscription_end,
-                        'status' => $enrollment->status,
-                        'days_left' => $enrollment->days_left,
-                        'trial_ends_at' => $enrollment->trial_ends_at,
-                        'trial_days_left' => $enrollment->status === 'trial' && $enrollment->trial_ends_at
-                            ? max(0, now()->diffInDays($enrollment->trial_ends_at, false))
-                            : null,
-                    ];
-                })->values(),
-                'group_name' => $enrollments->pluck('group.name')->filter()->unique()->implode(', '),
-                'grade_name' => $enrollments->pluck('grade.name')->filter()->unique()->implode(', '),
-                'created_at' => $student->created_at,
-                'remaining_days' => $enrollments->where('is_active', true)
-                    ->filter(fn($e) => $e->subscription_end && $e->subscription_end->isFuture())
-                    ->map(fn($e) => now()->diffInDays($e->subscription_end))
-                    ->max() ?? 0,
-            ];
-        });
+        $data = $students->through(fn ($student) => (new AcademyStudentResource($student))->toArray($request));
 
         return $this->successResponse($data);
     }
@@ -305,7 +251,7 @@ class StudentController extends Controller
             $query->where('teacher_id', $request->teacher_id);
         }
 
-        \Illuminate\Support\Facades\Log::info('Toggle Status Debug', [
+        Log::info('Toggle Status Debug', [
             'academy_id' => $academy->id,
             'id_param' => $id,
             'teacher_id_param' => $request->teacher_id,
@@ -316,7 +262,7 @@ class StudentController extends Controller
         $enrollment = $query->first();
 
         if (!$enrollment) {
-            \Illuminate\Support\Facades\Log::warning('Enrollment not found for toggle status');
+            Log::warning('Enrollment not found for toggle status');
             return $this->errorResponse('Student not found or not linked to this teacher', 404);
         }
 
@@ -328,11 +274,9 @@ class StudentController extends Controller
         ], $enrollment->is_active ? 'تم تفعيل حساب الطالب بنجاح' : 'تم تعطيل حساب الطالب بنجاح');
     }
 
-    public function searchByPhone(Request $request): JsonResponse
+    public function searchByPhone(SearchByPhoneRequest $request): JsonResponse
     {
-        $request->validate(['phone' => 'required|string']);
-
-        $student = Student::findByPhone($request->phone);
+        $student = Student::findByPhone($request->validated()['phone']);
 
         if ($student) {
             return $this->successResponse([

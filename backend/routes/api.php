@@ -91,8 +91,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/academies/{academy}/regenerate-qr', [\App\Http\Controllers\Admin\AcademyController::class, 'regenerateQrCodes']);
         Route::post('/academies/{academy}/plan', [\App\Http\Controllers\Admin\AcademyController::class, 'updatePlan']);
 
-        // Subscriptions Management (Unified)
+        // Subscriptions List (Aggregated Teachers and Academies)
         Route::get('/subscriptions', [\App\Http\Controllers\Admin\SubscriptionController::class, 'index']);
+
+        // Subscriptions Management (Unified)
         Route::get('/subscriptions/statistics', [\App\Http\Controllers\Admin\SubscriptionController::class, 'statistics']);
         Route::post('/subscriptions/{subscription}/pay', [\App\Http\Controllers\Admin\SubscriptionController::class, 'recordPayment']);
         
@@ -206,6 +208,8 @@ Route::middleware('auth:sanctum')->prefix('academy')->name('academy.')->group(fu
 Route::post('/register/teacher', [\App\Http\Controllers\Teacher\TeacherController::class, 'register']);
 Route::post('/login/teacher', [TeacherAuthController::class, 'login'])
     ->middleware(['throttle.login', 'auth.cookies']);
+Route::post('/teacher/login', [TeacherAuthController::class, 'login'])
+    ->middleware(['throttle.login', 'auth.cookies']);
 
 Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureTeacherNotSuspended::class])->prefix('teacher')->name('teacher.')->group(function () {
     Route::post('/logout', [TeacherAuthController::class, 'logout']);
@@ -304,6 +308,8 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureTeacherNotSuspende
 // ============================================
 Route::post('/login/student', [StudentAuthController::class, 'login'])
     ->middleware(['throttle.login', 'auth.cookies']);
+Route::post('/student/login', [StudentAuthController::class, 'login'])
+    ->middleware(['throttle.login', 'auth.cookies']);
 
 Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureTeacherNotSuspendedForStudent::class])->prefix('student')->group(function () {
     Route::post('/logout', [StudentAuthController::class, 'logout']);
@@ -350,6 +356,8 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureTeacherNotSuspende
 // ============================================
 Route::post('/login/parent', [\App\Http\Controllers\Guardian\AuthController::class, 'login'])
     ->middleware(['throttle.login', 'auth.cookies']);
+Route::post('/parent/login', [\App\Http\Controllers\Guardian\AuthController::class, 'login'])
+    ->middleware(['throttle.login', 'auth.cookies']);
 
 Route::middleware(['auth:sanctum'])->prefix('parent')->group(function () {
     Route::post('/logout', [\App\Http\Controllers\Guardian\AuthController::class, 'logout']);
@@ -376,6 +384,10 @@ Route::middleware(['auth:sanctum'])->prefix('parent')->group(function () {
 Route::post('/login/secretary', [SecretaryAuthController::class, 'login'])
     ->middleware(['throttle.login', 'auth.cookies']);
 
+// Canonical refresh endpoint + backward-compatible alias
+Route::post('/auth/refresh', [\App\Http\Controllers\Api\RefreshTokenController::class, 'refresh']);
+Route::post('/refresh-token', [\App\Http\Controllers\Api\RefreshTokenController::class, 'refresh']);
+
 Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureSecretaryTeacherNotSuspended::class])->prefix('secretary')->group(function () {
     Route::post('/logout', [SecretaryAuthController::class, 'logout']);
     Route::get('/me', [SecretaryAuthController::class, 'me']);
@@ -392,7 +404,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/avatar/upload', [\App\Http\Controllers\Media\AvatarController::class, 'upload']);
     Route::delete('/avatar', [\App\Http\Controllers\Media\AvatarController::class, 'delete']);
     Route::get('/avatar', [\App\Http\Controllers\Media\AvatarController::class, 'show']);
-    Route::post('/refresh-token', [\App\Http\Controllers\Api\RefreshTokenController::class, 'refresh']);
     Route::post('/device-tokens', [\App\Http\Controllers\Api\DeviceTokenController::class, 'store']);
 });
 

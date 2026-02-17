@@ -71,7 +71,7 @@ export default function ParentProfile() {
 
   const loadAvatar = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = getAuthToken();
       if (!token) {
         return;
       }

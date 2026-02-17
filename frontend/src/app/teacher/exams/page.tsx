@@ -6,7 +6,7 @@ import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { ExamCard } from '@/components/dashboard/ExamCard';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
-import { getExams, toggleExamStatus, endExam, copyExam, deleteExam } from '@/services/authService';
+import { getExams, toggleExamStatus, endExam, copyExam, deleteExam, getAuthToken } from '@/services/authService';
 import { getGroups, Group } from '@/services/groupService';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import { Filter } from '@/components/Filter';
@@ -106,7 +106,7 @@ export default function ExamsPage() {
   useEffect(() => {
     if (!user?.id) return;
     
-    const token = localStorage.getItem('token');
+    const token = getAuthToken();
     if (!token) return;
 
     import('@/lib/echo').then(({ initializeEcho }) => {

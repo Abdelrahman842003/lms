@@ -1,5 +1,7 @@
 node_modules/
-secrets/
+secrets/*
+!secrets/README.md
+!secrets/.gitkeep
 dist/
 build/
 .next/

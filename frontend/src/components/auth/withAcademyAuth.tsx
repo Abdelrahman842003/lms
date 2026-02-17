@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { getAccessToken } from '@/lib/tokenManager';
 
 /**
  * Higher-Order Component to protect academy routes
@@ -19,7 +20,7 @@ export function withAcademyAuth<P extends object>(
       const checkAuth = () => {
         try {
           // Check if user is logged in
-          const token = localStorage.getItem('token');
+          const token = getAccessToken();
           const userType = localStorage.getItem('userType');
           const user = localStorage.getItem('user');
 

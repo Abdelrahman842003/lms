@@ -81,8 +81,8 @@ git log --oneline -10
 # Create a revert commit (safer than reset)
 git revert <commit-hash>
 
-# Or reset to a previous state (destructive)
-git reset --hard <commit-hash>
+# Do NOT use `git reset --hard` in incident rollback playbooks (forbidden/destructive)
+# Use `git revert` or a dedicated rollback commit instead.
 
 # Rebuild and deploy
 docker compose -f docker-compose.prod.yml build
@@ -95,8 +95,8 @@ docker compose -f docker-compose.prod.yml up -d
 # Check all services are healthy
 docker compose -f docker-compose.prod.yml ps
 
-# Test backend health endpoint
-curl -f http://localhost:8000/health
+# Test backend health endpoint (Laravel health route)
+curl -f http://localhost:8000/up
 
 # Test frontend
 curl -f http://localhost:3000/

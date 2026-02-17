@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Teacher;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Teacher\Student\StoreStudentRequest;
+use App\Http\Requests\Teacher\Student\SearchByPhoneRequest;
 use App\Http\Requests\Teacher\Student\UpdatePermissionsRequest;
 use App\Http\Requests\Teacher\Student\UpdateStudentRequest;
 use App\Http\Resources\Teacher\EnrollmentResource;
@@ -46,18 +47,17 @@ class StudentController extends Controller
     /**
      * Search for existing student by phone (for smart enrollment)
      */
-    public function searchByPhone(Request $request): JsonResponse
+    public function searchByPhone(SearchByPhoneRequest $request): JsonResponse
     {
-        $request->validate(['phone' => 'required|string']);
-        
-        $student = $this->service->searchByPhone($request->input('phone'));
+        $validated = $request->validated();
+        $student = $this->service->searchByPhone($validated['phone']);
         
         if ($student) {
             $teacher = $this->getTeacherFromRequest($request);
             
             // Get academy context from the request
-            $academyId = $request->header('X-Academy-Id') ?? $request->input('academy_id');
-            $gradeId = $request->input('grade_id');
+            $academyId = $request->header('X-Academy-Id') ?? ($validated['academy_id'] ?? null);
+            $gradeId = $validated['grade_id'] ?? null;
             
             // Determine academy_id from grade if provided
             $academyIdFromGrade = null;

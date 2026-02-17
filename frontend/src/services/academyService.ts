@@ -1,28 +1,10 @@
 import axios from 'axios';
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+import { API_BASE_URL, getAuthHeaders } from './api/baseApi';
 
 /**
  * Academy Service - API client for academy management features
+ * Transitional facade while migrating to `services/academy/*`
  */
-
-// Helper to get auth token
-const getAuthToken = () => {
-  if (typeof window !== 'undefined') {
-    return localStorage.getItem('token');
-  }
-  return null;
-};
-
-// Helper to get auth headers
-const getAuthHeaders = () => {
-  const token = getAuthToken();
-  return {
-    'Authorization': `Bearer ${token}`,
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
-  };
-};
 
 // ========== Dashboard ==========
 export const getDashboardStats = async () => {

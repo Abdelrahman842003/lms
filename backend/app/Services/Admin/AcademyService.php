@@ -18,7 +18,49 @@ class AcademyService
     {
         return Academy::filter($filters)
             ->withCount(['teachers', 'secretaries'])
-            ->paginate($perPage);
+            ->with(['subscriptions' => function ($query) {
+                $query->latest('created_at')->limit(1);
+            }])
+            ->paginate($perPage)
+            ->through(function ($academy) {
+                $academy->subscription_status = $this->getSubscriptionStatus($academy);
+                return $academy;
+            });
+    }
+
+    /**
+     * Get subscription status for academy
+     */
+    private function getSubscriptionStatus(Academy $academy): string
+    {
+        // Check if there's an active subscription
+        if ($academy->subscriptions && $academy->subscriptions->isNotEmpty()) {
+            $subscription = $academy->subscriptions->first();
+            return $subscription->status->value ?? 'pending';
+        }
+
+        // Fall back to plan_type-based logic
+        $planType = $academy->plan_type;
+        $planExpiresAt = $academy->plan_expires_at;
+
+        if ($planType === 'trial') {
+            return 'pending';
+        }
+
+        if ($planExpiresAt && $planExpiresAt->isFuture()) {
+            return 'active';
+        }
+
+        if ($planExpiresAt && $planExpiresAt->isPast()) {
+            return 'expired';
+        }
+
+        // Check if there's a subscription fee but not fully paid
+        if ($academy->subscription_fee > 0 && $academy->paid_amount < $academy->subscription_fee) {
+            return 'unpaid';
+        }
+
+        return 'pending';
     }
 
     /**

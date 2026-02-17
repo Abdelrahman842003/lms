@@ -66,10 +66,10 @@ export const API_ENDPOINTS = {
   // Authentication endpoints
   auth: {
     loginAdmin: '/api/v1/admin/login',
-    loginTeacher: '/api/v1/login/teacher',
-    loginStudent: '/api/v1/login/student',
+    loginTeacher: '/api/v1/teacher/login',
+    loginStudent: '/api/v1/student/login',
     loginSecretary: '/api/v1/login/secretary',
-    loginParent: '/api/v1/login/parent',
+    loginParent: '/api/v1/parent/login',
     loginAcademy: '/api/v1/academy/login',
 
     logoutAdmin: '/api/v1/admin/logout',
@@ -86,7 +86,7 @@ export const API_ENDPOINTS = {
     meParent: '/api/v1/parent/me',
     meAcademy: '/api/v1/academy/me',
 
-    refreshToken: '/api/v1/refresh-token',
+    refreshToken: '/api/v1/auth/refresh',
     csrf: '/sanctum/csrf-cookie',
   },
 

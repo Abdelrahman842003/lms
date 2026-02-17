@@ -82,11 +82,13 @@ class GuardianAuthService
 
         $this->loginAttemptService->clearAttempts($phone, $ip);
 
-        $token = $guardian->createToken('guardian-token')->plainTextToken;
+        $accessToken = $guardian->createToken('access_token', ['access-api'], now()->addMinutes(60))->plainTextToken;
+        $refreshToken = $guardian->createToken('refresh_token', ['issue-access-token'], now()->addDays(30))->plainTextToken;
 
         return [
             'guardian' => $guardian,
-            'token' => $token,
+            'token' => $accessToken,
+            'refresh_token' => $refreshToken,
             'children' => $this->getChildrenData($guardian->phone)
         ];
     }

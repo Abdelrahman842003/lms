@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\Academy\AddSecretaryRequest;
 use App\Services\Admin\AcademyService;
 use App\Http\Requests\Admin\Academy\StoreAcademyRequest;
 use App\Http\Requests\Admin\Academy\UpdateAcademyRequest;
+use App\Http\Requests\Admin\Academy\UpdatePlanRequest;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 
@@ -106,20 +108,15 @@ class AcademyController extends Controller
     /**
      * Add secretary to academy
      */
-    public function addSecretary(Request $request, string $id): JsonResponse
+    public function addSecretary(AddSecretaryRequest $request, string $id): JsonResponse
     {
         $academy = \App\Models\Academy::findOrFail($id);
-
-        $validated = $request->validate([
-            'secretary_id' => 'required|exists:secretaries,id',
-            'permissions' => 'nullable|array',
-        ]);
 
         try {
             $secretary = $this->academyService->addSecretary(
                 $academy,
-                $validated['secretary_id'],
-                $validated['permissions'] ?? []
+                $request->validated()['secretary_id'],
+                $request->validated()['permissions'] ?? []
             );
 
             return $this->successResponse([
@@ -158,18 +155,10 @@ class AcademyController extends Controller
     /**
      * Update academy subscription plan (similar to teacher's updatePlan)
      */
-    public function updatePlan(Request $request, string $id): JsonResponse
+    public function updatePlan(UpdatePlanRequest $request, string $id): JsonResponse
     {
-        $request->validate([
-            'type' => 'required|in:trial,term,custom',
-            'days' => 'required_if:type,trial,custom|integer|min:1',
-            'months' => 'required_if:type,term|integer|min:1',
-            'max_students' => 'nullable|integer|min:0',
-            'is_unlimited_students' => 'boolean'
-        ]);
-
         try {
-            $academy = $this->academyService->setSubscriptionPlan($id, $request->all());
+            $academy = $this->academyService->setSubscriptionPlan($id, $request->validated());
 
             return $this->successResponse([
                 'academy' => $academy,

@@ -22,18 +22,23 @@ class SubscriptionController extends Controller
     ) {}
 
     /**
-     * List all subscriptions
+     * List all subscriptions (aggregated teachers and academies)
      */
     public function index(Request $request): JsonResponse
     {
-        $perPage = $request->input('per_page', 15);
-        $filters = $request->only(['status', 'type', 'month', 'year', 'subscriber_id', 'subscriber_type']);
+        $perPage = (int) $request->input('per_page', 10);
+        $page = (int) $request->input('page', 1);
+        $filters = $request->only(['status', 'type', 'month', 'year', 'subscriber_id', 'subscriber_type', 'search']);
+        $filters['page'] = $page;
 
-        $subscriptions = $this->subscriptionService->getSubscriptions($perPage, $filters);
+        // Get aggregated data from teachers and academies
+        $result = $this->subscriptionService->getAggregatedSubscriptions($perPage, $filters);
 
         return response()->json([
             'success' => true,
-            'data' => $subscriptions,
+            'data' => $result['data'],
+            'meta' => $result['meta'],
+            'stats' => $result['stats'],
         ]);
     }
 

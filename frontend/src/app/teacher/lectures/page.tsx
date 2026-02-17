@@ -27,6 +27,7 @@ import { LectureCard } from '@/components/dashboard/LectureCard';
 import { ManualAttendanceModal } from '@/components/dashboard/ManualAttendanceModal';
 import { LectureSessionsModal } from '@/components/dashboard/LectureSessionsModal';
 import { Filter } from '@/components/Filter';
+import { getAuthToken } from '@/services/authService';
 
 import toast from 'react-hot-toast';
 
@@ -145,7 +146,7 @@ export default function TeacherLecturesPage() {
   useEffect(() => {
     if (!user?.id) return;
 
-    const token = localStorage.getItem('token');
+    const token = getAuthToken();
     if (!token) return;
 
     const echo = initializeEcho(token);

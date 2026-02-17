@@ -21,7 +21,7 @@ type EntityType = 'teacher' | 'academy' | 'all';
 
 function SubscriptionsPage() {
   const { user } = useAuth();
-  const [loading, setLoading] = React.useState(true);
+  const [loading, setLoading] = React.useState(false);
   const [subscriptions, setSubscriptions] = React.useState<Subscription[]>([]);
   const [stats, setStats] = React.useState({ total: 0, active: 0, trial: 0, expired: 0 });
   
@@ -44,10 +44,21 @@ function SubscriptionsPage() {
         }
       ));
       
-      setSubscriptions(data);
-      setStats(stats);
-      setTotalPages(meta.last_page);
+      // Cast the data to Subscription type
+      const typedData = (data || []).map((item: any) => ({
+        ...item,
+        type: item.type as 'teacher' | 'academy',
+        status: item.status as 'active' | 'trial' | 'expired',
+      }));
+      
+      setSubscriptions(typedData);
+      setStats(stats || { total: 0, active: 0, trial: 0, expired: 0 });
+      setTotalPages(meta?.last_page || 1);
     } catch (error) {
+      console.error('Failed to fetch subscriptions:', error);
+      setSubscriptions([]);
+      setStats({ total: 0, active: 0, trial: 0, expired: 0 });
+      setTotalPages(1);
     } finally {
       setLoading(false);
     }

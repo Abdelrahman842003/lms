@@ -5,7 +5,7 @@ import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { withAdminAuth } from '@/components/auth/withAdminAuth';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
-import { updateAdminProfile, changeAdminPassword } from '@/services/authService';
+import { updateAdminProfile, changeAdminPassword, getAuthToken } from '@/services/authService';
 import { Skeleton } from '@/components/ui';
 import NotificationSettings from '@/components/NotificationSettings';
 
@@ -57,7 +57,7 @@ function AdminProfile() {
     setMessage(null);
 
     try {
-      const token = localStorage.getItem('token');
+      const token = getAuthToken();
       if (!token) throw new Error('No token found');
 
       const response = await updateAdminProfile(formData);
@@ -87,7 +87,7 @@ function AdminProfile() {
     setMessage(null);
 
     try {
-      const token = localStorage.getItem('token');
+      const token = getAuthToken();
       if (!token) throw new Error('No token found');
 
       await changeAdminPassword(passwordData);

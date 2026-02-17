@@ -3,6 +3,7 @@
 import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
+import { getAuthToken } from '@/services/authService';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -37,7 +38,7 @@ function AttendanceContent() {
 
   const markAttendance = async () => {
     try {
-      const authToken = localStorage.getItem('token');
+      const authToken = getAuthToken();
       const response = await fetch(`${API_BASE_URL}/api/student/attend`, {
         method: 'POST',
         headers: {

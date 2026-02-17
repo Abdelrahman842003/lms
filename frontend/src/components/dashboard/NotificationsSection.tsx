@@ -4,6 +4,7 @@ import { fetchApi } from '@/services/authService';
 import NotificationDetailsModal from '@/components/ui/NotificationDetailsModal';
 import { sendNotification } from '@/services/notificationService';
 import { toast } from 'react-hot-toast';
+import { getAccessToken } from '@/lib/tokenManager';
 
 interface Notification {
   id: string;
@@ -37,9 +38,7 @@ export const NotificationsSection = () => {
   });
 
   useEffect(() => {
-    // Get token from localStorage on mount
-    const storedToken = localStorage.getItem('token');
-    setToken(storedToken);
+    setToken(getAccessToken());
   }, []);
 
   const fetchNotifications = async () => {

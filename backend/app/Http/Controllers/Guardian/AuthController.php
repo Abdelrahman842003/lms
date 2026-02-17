@@ -62,6 +62,7 @@ class AuthController extends Controller
 
             return $this->successResponse([
                 'token' => $result['token'],
+                'refresh_token' => $result['refresh_token'],
                 'user' => [
                     'id' => $result['guardian']->id,
                     'name' => $result['guardian']->name,

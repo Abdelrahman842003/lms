@@ -7,7 +7,7 @@ import { DataTable } from '@/components/dashboard/DataTable';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
-import { getTeachers, createTeacher, updateTeacher, toggleTeacherStatus, loginAsTeacher, getDashboardStats, updateTeacherSubscription, getTeacherSubscription, approveTeacher, enableIndependent, disableIndependent, addToAcademy, removeFromAcademy, deleteTeacher } from '@/services/authService';
+import { getTeachers, createTeacher, updateTeacher, toggleTeacherStatus, loginAsTeacher, getDashboardStats, updateTeacherSubscription, getTeacherSubscription, approveTeacher, enableIndependent, disableIndependent, addToAcademy, removeFromAcademy, deleteTeacher, getAuthToken } from '@/services/authService';
 import { toast } from 'react-hot-toast';
 import { Avatar } from '@/components/ui';
 import { Filter } from '@/components/Filter';
@@ -584,7 +584,7 @@ export default function AdminTeachersPage() {
           const response = await loginAsTeacher(row.id);
           
           // Store admin session
-          localStorage.setItem('adminToken', localStorage.getItem('token') || '');
+          localStorage.setItem('adminToken', getAuthToken() || '');
           localStorage.setItem('adminUser', localStorage.getItem('user') || '');
           localStorage.setItem('adminUserType', localStorage.getItem('userType') || '');
 

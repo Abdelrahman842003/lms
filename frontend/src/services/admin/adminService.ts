@@ -4,6 +4,7 @@
  */
 
 import { fetchApi, getAuthHeaders, API_BASE_URL } from '../api/baseApi';
+import { getApiBaseUrl } from '@/config/api-config';
 import type {
   AdminTeacher,
   AdminAcademy,
@@ -17,6 +18,7 @@ import type {
   AdminReportData,
   AcademyReportData,
   StudentStatistics,
+  UpdateSubscriptionRequest,
 } from '@/types/admin.types';
 import type { TeacherFilters, StudentFilters, AcademyFilters, ReportParams } from '@/types/api.types';
 import type { TeacherReportData } from '@/types/teacher.types';
@@ -224,10 +226,10 @@ export async function getSubscriptions(
   page = 1,
   limit = 10,
   filters?: { search?: string; status?: string; type?: string; record_type?: string }
-): Promise<{ 
-  data: Array<{ id: string; name: string; type: string; status: string; plan: string; expires_at: string }>; 
-  meta: { current_page: number; last_page: number; per_page: number; total: number }; 
-  stats: { total: number; active: number; trial: number; expired: number } 
+): Promise<{
+  data: Array<{ id: string; name: string; type: string; status: string; plan: string; expires_at: string }>;
+  meta: { current_page: number; last_page: number; per_page: number; total: number };
+  stats: { total: number; active: number; trial: number; expired: number }
 }> {
   const queryParams = new URLSearchParams({
     page: page.toString(),
@@ -236,8 +238,33 @@ export async function getSubscriptions(
     ...(filters?.status && { status: filters.status }),
     ...(filters?.type && { type: filters.type }),
     ...(filters?.record_type && { record_type: filters.record_type }),
+    _t: Date.now().toString(), // Cache buster
   });
-  return await fetchApi(`/api/admin/subscriptions?${queryParams}`);
+  
+  // Use raw fetch to get full response (not just data field)
+  // Use getApiBaseUrl() to handle URLs that may end with /api
+  const baseUrl = getApiBaseUrl();
+  const response = await fetch(`${baseUrl}/api/v1/admin/subscriptions?${queryParams}`, {
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'Authorization': `Bearer ${localStorage.getItem('token') || ''}`,
+    },
+    credentials: 'include',
+  });
+  
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+  
+  const result = await response.json();
+  // Ensure data is always an array
+  const data = Array.isArray(result.data) ? result.data : [];
+  return {
+    data: data,
+    meta: result.meta || { current_page: 1, last_page: 1, per_page: limit, total: 0 },
+    stats: result.stats || { total: 0, active: 0, trial: 0, expired: 0 },
+  };
 }
 
 // ============================================

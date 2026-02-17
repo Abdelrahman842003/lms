@@ -111,7 +111,7 @@ export async function refreshAccessToken(): Promise<string | null> {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
   try {
-    const response = await fetch(`${apiUrl}/refresh-token`, {
+    const response = await fetch(`${apiUrl}/auth/refresh`, {
       method: 'POST',
       credentials: 'include',
       headers: {

@@ -93,7 +93,7 @@ export interface LecturesResponse {
   lectures: Lecture[];
 }
 
-import { fetchApi } from './authService';
+import { fetchApi, getAuthToken } from './authService';
 
 export const getLectures = async (
   page = 1, 
@@ -188,7 +188,7 @@ export const getAttendees = async (
 };
 
 export const exportAttendeesPDF = async (lectureId: string): Promise<void> => {
-  const token = localStorage.getItem('token');
+  const token = getAuthToken();
   const response = await fetch(`${API_BASE_URL}/api/teacher/lectures/${lectureId}/attendees/export`, {
     headers: {
       'Authorization': `Bearer ${token}`,

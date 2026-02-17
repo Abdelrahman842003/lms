@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getAccessToken } from './tokenManager';
 
 // Handle different API URL configurations
 const envApiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -15,7 +16,7 @@ const axiosInstance = axios.create({
 // Add a request interceptor to include the token
 axiosInstance.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    const token = getAccessToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }

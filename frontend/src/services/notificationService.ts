@@ -1,4 +1,5 @@
 import { fetchApi } from './authService';
+import { getAccessToken } from '@/lib/tokenManager';
 
 export interface Notification {
   id: number;
@@ -87,7 +88,7 @@ export interface SendVoiceNotificationData {
 
 export const sendVoiceNotification = async (data: SendVoiceNotificationData) => {
   const endpoint = getNotificationEndpoint() + '/voice';
-  const token = localStorage.getItem('token');
+  const token = getAccessToken();
   const baseUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/api\/?$/, '').replace(/\/$/, '');
   
   const formData = new FormData();

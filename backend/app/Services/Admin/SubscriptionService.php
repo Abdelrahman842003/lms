@@ -321,4 +321,153 @@ class SubscriptionService
             'percentage' => $quota ? min(100, round(($currentEnrollments / $quota) * 100, 2)) : 0,
         ];
     }
+
+    /**
+     * Get aggregated subscriptions for both teachers and academies
+     * Used by admin/subscriptions page
+     */
+    public function getAggregatedSubscriptions(int $perPage, array $filters): array
+    {
+        $search = $filters['search'] ?? null;
+        $typeFilter = $filters['type'] ?? null;
+        $statusFilter = $filters['status'] ?? null;
+
+        $items = collect();
+        $stats = ['total' => 0, 'active' => 0, 'trial' => 0, 'expired' => 0];
+
+        // Get teachers if type filter allows
+        if (!$typeFilter || $typeFilter === 'teacher') {
+            $teachers = Teacher::query()
+                ->when($search, fn($q) => $q->where('name', 'like', "%{$search}%"))
+                ->whereNotNull('plan_type')
+                ->where('plan_type', '!=', '')
+                ->where('plan_type', '!=', 'none')
+                ->orderBy('id')
+                ->get();
+
+            foreach ($teachers as $teacher) {
+                $planType = $teacher->plan_type;
+                $subscriptionStatus = $this->getTeacherSubscriptionStatus($teacher);
+
+                // Filter by status if specified
+                if ($statusFilter && $subscriptionStatus !== $statusFilter) {
+                    continue;
+                }
+
+                $items->push([
+                    'id' => $teacher->id,
+                    'name' => $teacher->name,
+                    'type' => 'teacher',
+                    'status' => $subscriptionStatus,
+                    'plan' => $planType ?: 'none',
+                    'expires_at' => $teacher->plan_expires_at?->toISOString(),
+                ]);
+
+                // Update stats
+                $stats['total']++;
+                if ($subscriptionStatus === 'active') $stats['active']++;
+                if ($subscriptionStatus === 'trial') $stats['trial']++;
+                if ($subscriptionStatus === 'expired') $stats['expired']++;
+            }
+        }
+
+        // Get academies if type filter allows
+        if (!$typeFilter || $typeFilter === 'academy') {
+            $academies = Academy::query()
+                ->when($search, fn($q) => $q->where('name', 'like', "%{$search}%"))
+                ->whereNotNull('plan_type')
+                ->where('plan_type', '!=', '')
+                ->where('plan_type', '!=', 'none')
+                ->orderBy('id')
+                ->get();
+
+            foreach ($academies as $academy) {
+                $planType = $academy->plan_type;
+                $subscriptionStatus = $this->getAcademySubscriptionStatus($academy);
+
+                // Filter by status if specified
+                if ($statusFilter && $subscriptionStatus !== $statusFilter) {
+                    continue;
+                }
+
+                $items->push([
+                    'id' => $academy->id,
+                    'name' => $academy->name,
+                    'type' => 'academy',
+                    'status' => $subscriptionStatus,
+                    'plan' => $planType ?? 'none',
+                    'expires_at' => $academy->plan_expires_at?->toISOString(),
+                ]);
+
+                // Update stats
+                $stats['total']++;
+                if ($subscriptionStatus === 'active') $stats['active']++;
+                if ($subscriptionStatus === 'trial') $stats['trial']++;
+                if ($subscriptionStatus === 'expired') $stats['expired']++;
+            }
+        }
+
+        // Manual pagination
+        $currentPage = $filters['page'] ?? 1;
+        $total = $items->count();
+        $lastPage = (int) ceil($total / $perPage);
+        $paginatedItems = $items->forPage($currentPage, $perPage)->values();
+
+        return [
+            'data' => $paginatedItems,
+            'meta' => [
+                'current_page' => (int) $currentPage,
+                'last_page' => $lastPage,
+                'per_page' => $perPage,
+                'total' => $total,
+            ],
+            'stats' => $stats,
+        ];
+    }
+
+    /**
+     * Get subscription status for a teacher
+     */
+    private function getTeacherSubscriptionStatus(Teacher $teacher): string
+    {
+        $planType = $teacher->plan_type;
+        $planExpiresAt = $teacher->plan_expires_at;
+
+        if ($planType === 'trial') {
+            return 'trial';
+        }
+
+        if ($planExpiresAt && $planExpiresAt->isFuture()) {
+            return 'active';
+        }
+
+        if ($planExpiresAt && $planExpiresAt->isPast()) {
+            return 'expired';
+        }
+
+        return 'trial';
+    }
+
+    /**
+     * Get subscription status for an academy
+     */
+    private function getAcademySubscriptionStatus(Academy $academy): string
+    {
+        $planType = $academy->plan_type;
+        $planExpiresAt = $academy->plan_expires_at;
+
+        if ($planType === 'trial') {
+            return 'trial';
+        }
+
+        if ($planExpiresAt && $planExpiresAt->isFuture()) {
+            return 'active';
+        }
+
+        if ($planExpiresAt && $planExpiresAt->isPast()) {
+            return 'expired';
+        }
+
+        return 'trial';
+    }
 }

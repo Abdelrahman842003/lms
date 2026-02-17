@@ -347,6 +347,42 @@ export default function AdminAcademiesPage() {
       className: 'hidden lg:table-cell',
     },
     {
+      key: 'subscription_status',
+      label: 'حالة الباقة',
+      sortable: false,
+      className: 'hidden md:table-cell',
+      render: (_: any, row: any) => {
+        // Check if academy has a plan
+        if (row.plan_type) {
+          if (row.plan_type === 'trial') {
+            return <span className="px-2 py-1 rounded text-xs bg-blue-500/10 text-blue-400 border border-blue-500/20">تجريبي</span>;
+          } else if (row.plan_type === 'term' || row.plan_type === 'fixed') {
+            return <span className="px-2 py-1 rounded text-xs bg-green-500/10 text-green-400 border border-green-500/20">مدة ثابتة</span>;
+          } else if (row.plan_type === 'custom') {
+            return <span className="px-2 py-1 rounded text-xs bg-orange-500/10 text-orange-400 border border-orange-500/20">مخصصة</span>;
+          }
+        }
+
+        // Fallback to old subscription status
+        const status = row.subscription_status || 'pending';
+        let badgeClass = 'bg-red-500/10 text-red-400 border-red-500/20';
+        let text = 'غير مدفوع';
+
+        if (status === 'paid' || status === 'active') {
+          badgeClass = 'bg-green-500/10 text-green-400 border-green-500/20';
+          text = 'مدفوع';
+        } else if (status === 'partial') {
+          badgeClass = 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20';
+          text = 'مدفوع جزئياً';
+        } else if (status === 'pending') {
+          badgeClass = 'bg-blue-500/10 text-blue-400 border-blue-500/20';
+          text = 'تجريبي';
+        }
+
+        return <span className={`px-2 py-1 rounded text-xs border ${badgeClass}`}>{text}</span>;
+      },
+    },
+    {
       key: 'created_at',
       label: 'تاريخ الإنشاء',
       sortable: true,

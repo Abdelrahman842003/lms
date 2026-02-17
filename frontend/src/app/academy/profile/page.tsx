@@ -76,7 +76,7 @@ export default function AcademyProfilePage() {
   const loadAvatar = async () => {
     try {
       // Check if user is authenticated first
-      const token = localStorage.getItem('token');
+      const token = getAuthToken();
       if (!token) {
         return; // No token, skip loading avatar
       }

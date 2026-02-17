@@ -8,6 +8,7 @@ import { LoginContainer } from '@/components/auth/LoginContainer';
 import { LoginCard } from '@/components/auth/LoginCard';
 import { AuthInput } from '@/components/auth/AuthInput';
 import { AuthButton } from '@/components/auth/AuthButton';
+import { getAuthToken } from '@/services/authService';
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -28,7 +29,7 @@ export default function AdminLoginPage() {
   useEffect(() => {
     const checkAuth = () => {
       try {
-        const token = localStorage.getItem('token');
+        const token = getAuthToken();
         const userType = localStorage.getItem('userType');
         
         if (token && userType === 'admin') {
