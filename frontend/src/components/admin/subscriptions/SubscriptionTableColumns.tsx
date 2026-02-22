@@ -7,6 +7,10 @@ export interface Subscription {
   status: 'active' | 'trial' | 'expired';
   plan: string;
   expires_at?: string;
+  // Package total price (stored when plan is activated)
+  subscription_fee?: number;
+  // Amount paid
+  amount_paid?: number;
   // Legacy fields for backward compatibility
   phone?: string;
   teacher_name?: string;
@@ -15,7 +19,6 @@ export interface Subscription {
   subscription_start?: string;
   subscription_end?: string;
   plan_expires_at?: string;
-  subscription_fee?: number;
   notes?: string;
   is_trial?: boolean;
   record_type?: 'student' | 'teacher';
@@ -40,42 +43,8 @@ export const getSubscriptionTableColumns = () => [
           )}
         </div>
         <div>
-          <div className="flex items-center gap-2">
-            <span className="text-white font-medium">{value}</span>
-            {row.type === 'teacher' && (
-              <span className="px-2 py-1 rounded text-xs bg-primary/10 text-primary border border-primary/20">
-                مدرس
-              </span>
-            )}
-            {row.type === 'academy' && (
-              <span className="px-2 py-1 rounded text-xs bg-green-500/10 text-green-400 border border-green-500/20">
-                أكاديمية
-              </span>
-            )}
-          </div>
+          <span className="text-white font-medium">{value}</span>
         </div>
-      </div>
-    ),
-  },
-  {
-    key: 'type',
-    label: 'النوع',
-    sortable: true,
-    render: (value: string, row: Subscription) => (
-      <div>
-        {value === 'teacher' ? (
-          <div>
-            <div className="text-primary font-medium">مدرس مستقل</div>
-            <div className="text-xs text-gray-400">Teacher</div>
-          </div>
-        ) : value === 'academy' ? (
-          <div>
-            <div className="text-green-400 font-medium">أكاديمية</div>
-            <div className="text-xs text-gray-400">Academy</div>
-          </div>
-        ) : (
-          <div className="text-gray-400">-</div>
-        )}
       </div>
     ),
   },
@@ -156,13 +125,17 @@ export const getSubscriptionTableColumns = () => [
   },
   {
     key: 'subscription_fee',
-    label: 'التكلفة التقديرية',
+    label: 'السعر المدفوع للمنصة',
     sortable: true,
-    render: (value: number) => {
+    render: (_: number, row: Subscription) => {
+      const totalPrice = row.subscription_fee || 0;
+      
       return (
-        <span className="font-bold text-blue-400">
-          {value ? value.toLocaleString() : '0'} ج.م
-        </span>
+        <div>
+          <span className="font-bold text-blue-400">
+            {totalPrice ? totalPrice.toLocaleString() : '0'} ج.م
+          </span>
+        </div>
       );
     },
   },

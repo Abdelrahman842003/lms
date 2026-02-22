@@ -77,8 +77,20 @@ class SettingsService
             'firebase_app_id',
         ];
 
-        return Setting::whereIn('key', $keys)
+        $settings = Setting::whereIn('key', $keys)
             ->get()
             ->pluck('value', 'key');
+        
+        // Map snake_case keys to camelCase for frontend compatibility
+        // Also keep original keys for backward compatibility
+        $mapped = $settings->toArray();
+        foreach ($settings as $key => $value) {
+            if (str_contains($key, '_')) {
+                $camelKey = str_replace('_', '', lcfirst(ucwords($key, '_')));
+                $mapped[$camelKey] = $value;
+            }
+        }
+        
+        return collect($mapped);
     }
 }

@@ -424,13 +424,16 @@ class TeacherService
         $type = $data['type']; // 'trial', 'term', 'custom'
         $teacher->plan_type = $type;
         
-        // Calculate Expiry
+        // Calculate duration in months
+        $durationMonths = 1;
         if ($type === 'trial' || $type === 'custom') {
             $days = (int) ($data['days'] ?? 0);
             $teacher->plan_expires_at = now()->addDays($days);
+            $durationMonths = max(1, ceil($days / 30));
         } elseif ($type === 'term') {
             $months = (int) ($data['months'] ?? 6);
             $teacher->plan_expires_at = now()->addMonths($months);
+            $durationMonths = $months;
         }
 
         // Student Limits
@@ -445,10 +448,15 @@ class TeacherService
         // Ensure independent status is active
         $teacher->is_independent_active = true;
         
-        // Legacy support: ensure subscription_fee > 0 so they appear as independent
-        if ($teacher->subscription_fee <= 0) {
-            $teacher->subscription_fee = HelperService::getPricePerStudent();
-            if ($teacher->subscription_fee <= 0) $teacher->subscription_fee = 100; // Fallback
+        // Calculate total subscription fee (package price) - 0 for trial plans
+        if ($type === 'trial') {
+            $teacher->subscription_fee = 0;
+        } else {
+            $pricePerStudent = HelperService::getPricePerStudent();
+            if ($pricePerStudent <= 0) $pricePerStudent = 60; // Fallback
+            
+            $maxStudents = $teacher->plan_max_students ?? 0;
+            $teacher->subscription_fee = $maxStudents * $durationMonths * $pricePerStudent;
         }
 
         $teacher->save();

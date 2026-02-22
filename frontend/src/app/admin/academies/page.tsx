@@ -353,7 +353,7 @@ export default function AdminAcademiesPage() {
       className: 'hidden md:table-cell',
       render: (_: any, row: any) => {
         // Check if academy has a plan
-        if (row.plan_type) {
+        if (row.plan_type && row.plan_type !== 'none') {
           if (row.plan_type === 'trial') {
             return <span className="px-2 py-1 rounded text-xs bg-blue-500/10 text-blue-400 border border-blue-500/20">تجريبي</span>;
           } else if (row.plan_type === 'term' || row.plan_type === 'fixed') {
@@ -364,7 +364,13 @@ export default function AdminAcademiesPage() {
         }
 
         // Fallback to old subscription status
-        const status = row.subscription_status || 'pending';
+        const status = row.subscription_status;
+        
+        // If no status set, show "لم يحدد"
+        if (!status) {
+          return <span className="px-2 py-1 rounded text-xs bg-gray-500/10 text-gray-400 border border-gray-500/20">لم يحدد</span>;
+        }
+        
         let badgeClass = 'bg-red-500/10 text-red-400 border-red-500/20';
         let text = 'غير مدفوع';
 

@@ -354,6 +354,16 @@ class SubscriptionService
                     continue;
                 }
 
+                // Get subscription data for current month
+                $subscription = Subscription::where('subscriber_id', $teacher->id)
+                    ->where('subscriber_type', Teacher::class)
+                    ->whereMonth('month', now()->month)
+                    ->whereYear('month', now()->year)
+                    ->first();
+                
+                // Use subscription_fee as the total package price (stored when plan is activated)
+                $packageTotalPrice = (float) ($teacher->subscription_fee ?? 0);
+                
                 $items->push([
                     'id' => $teacher->id,
                     'name' => $teacher->name,
@@ -361,6 +371,8 @@ class SubscriptionService
                     'status' => $subscriptionStatus,
                     'plan' => $planType ?: 'none',
                     'expires_at' => $teacher->plan_expires_at?->toISOString(),
+                    'subscription_fee' => $packageTotalPrice,
+                    'amount_paid' => (float) ($teacher->paid_amount ?? 0),
                 ]);
 
                 // Update stats
@@ -389,6 +401,9 @@ class SubscriptionService
                 if ($statusFilter && $subscriptionStatus !== $statusFilter) {
                     continue;
                 }
+                
+                // Use subscription_fee as the total package price (stored when plan is activated)
+                $packageTotalPrice = (float) ($academy->subscription_fee ?? 0);
 
                 $items->push([
                     'id' => $academy->id,
@@ -397,6 +412,8 @@ class SubscriptionService
                     'status' => $subscriptionStatus,
                     'plan' => $planType ?? 'none',
                     'expires_at' => $academy->plan_expires_at?->toISOString(),
+                    'subscription_fee' => $packageTotalPrice,
+                    'amount_paid' => (float) ($academy->paid_amount ?? 0),
                 ]);
 
                 // Update stats

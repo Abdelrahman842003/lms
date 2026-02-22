@@ -31,17 +31,22 @@ class AcademyService
     /**
      * Get subscription status for academy
      */
-    private function getSubscriptionStatus(Academy $academy): string
+    private function getSubscriptionStatus(Academy $academy): ?string
     {
         // Check if there's an active subscription
         if ($academy->subscriptions && $academy->subscriptions->isNotEmpty()) {
             $subscription = $academy->subscriptions->first();
-            return $subscription->status->value ?? 'pending';
+            return $subscription->status->value ?? null;
         }
 
         // Fall back to plan_type-based logic
         $planType = $academy->plan_type;
         $planExpiresAt = $academy->plan_expires_at;
+
+        // If no plan is set, return null (not set)
+        if (empty($planType) || $planType === 'none') {
+            return null;
+        }
 
         if ($planType === 'trial') {
             return 'pending';
@@ -60,7 +65,7 @@ class AcademyService
             return 'unpaid';
         }
 
-        return 'pending';
+        return null;
     }
 
     /**
@@ -147,13 +152,16 @@ class AcademyService
         $type = $data['type']; // 'trial', 'term', 'custom'
         $academy->plan_type = $type;
         
-        // Calculate Expiry
+        // Calculate duration in months
+        $durationMonths = 1;
         if ($type === 'trial' || $type === 'custom') {
             $days = (int) ($data['days'] ?? 0);
             $academy->plan_expires_at = now()->addDays($days);
+            $durationMonths = max(1, ceil($days / 30));
         } elseif ($type === 'term') {
             $months = (int) ($data['months'] ?? 6);
             $academy->plan_expires_at = now()->addMonths($months);
+            $durationMonths = $months;
         }
 
         // Student Limits
@@ -165,10 +173,15 @@ class AcademyService
             $academy->is_unlimited_students = false;
         }
 
-        // Set default subscription fee if not set
-        if ($academy->subscription_fee <= 0) {
-            $academy->subscription_fee = \App\Services\Infrastructure\HelperService::getAcademyStudentPrice();
-            if ($academy->subscription_fee <= 0) $academy->subscription_fee = 20; // Fallback
+        // Calculate total subscription fee (package price) - 0 for trial plans
+        if ($type === 'trial') {
+            $academy->subscription_fee = 0;
+        } else {
+            $pricePerStudent = \App\Services\Infrastructure\HelperService::getAcademyStudentPrice();
+            if ($pricePerStudent <= 0) $pricePerStudent = 40; // Fallback
+            
+            $maxStudents = $academy->plan_max_students ?? 0;
+            $academy->subscription_fee = $maxStudents * $durationMonths * $pricePerStudent;
         }
 
         $academy->save();
