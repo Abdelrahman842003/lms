@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Academy;
 
 use App\DTOs\Academy\StudentData;
+use App\Exceptions\QuotaExceededException;
 use App\Models\Academy;
 use App\Models\Enrollment;
 use App\Models\Student;
@@ -52,6 +53,26 @@ class StudentService
                 $q->where('academy_id', $academy->id)
                   ->where('academy_teacher.is_active', true);
             })->firstOrFail();
+
+        // Check if plan is expired
+        if ($academy->plan_expires_at && now()->gt($academy->plan_expires_at)) {
+            throw new \Exception('عفواً، لقد انتهت صلاحية باقتك. يرجى تجديد الاشتراك.');
+        }
+
+        // Check student limit
+        if (!$academy->is_unlimited_students && $academy->plan_max_students !== null) {
+            $currentCount = $this->getActiveStudentsCount($academy);
+            $maxAllowed = $academy->plan_max_students;
+
+            if ($currentCount >= $maxAllowed) {
+                throw new QuotaExceededException(
+                    message: "عفواً، لقد وصلت للحد الأقصى من الطلاب ({$maxAllowed}).",
+                    currentCount: $currentCount,
+                    maxAllowed: $maxAllowed,
+                    remainingSeats: 0
+                );
+            }
+        }
 
         return DB::transaction(function () use ($teacher, $data, $academy) {
             $isNewStudent = false;
@@ -191,5 +212,16 @@ class StudentService
             'active_students' => $activeStudents,
             'inactive_students' => $totalStudents - $activeStudents,
         ];
+    }
+
+    /**
+     * Get active students count for academy
+     */
+    private function getActiveStudentsCount(Academy $academy): int
+    {
+        return Student::whereHas('enrollments', function ($q) use ($academy) {
+            $q->where('is_active', true)
+              ->where('academy_id', $academy->id);
+        })->count();
     }
 }

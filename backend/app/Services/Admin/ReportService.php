@@ -4,12 +4,16 @@ declare(strict_types=1);
 
 namespace App\Services\Admin;
 
+use App\DTO\Reports\ReportPeriodData;
+use App\DTO\Reports\TeacherReportData;
+use App\DTO\Reports\TeacherReportSummaryData;
+use App\DTO\Reports\AcademyReportSummaryData;
+use App\DTO\Reports\AdminReportSummaryData;
 use App\Models\Teacher;
 use App\Models\Student;
 use App\Models\Secretary;
 use App\Models\Enrollment;
 use App\Models\PaymentLog;
-use App\Models\Setting;
 use App\Models\TeacherSubscription;
 use Carbon\Carbon;
 use App\Models\Academy;
@@ -18,11 +22,11 @@ use Illuminate\Support\Collection;
 class ReportService
 {
     /**
-     * Get list of teachers for report selection
+     * Get list of teachers for report selection with eager loading
      */
     public function getTeachersList(): Collection
     {
-        return Teacher::select('id', 'name', 'phone', 'status', 'created_at')
+        return Teacher::select('id', 'name', 'phone', 'status', 'created_at', 'subscription_fee')
             ->where(function($query) {
                 $query->whereDoesntHave('academies')
                       ->orWhereHas('enrollments', function($q) {
@@ -38,25 +42,21 @@ class ReportService
                     'id' => $teacher->id,
                     'name' => $teacher->name,
                     'phone' => $teacher->phone,
-                    'status' => match($teacher->status) {
-                        'active' => 'نشط',
-                        'suspended' => 'معلق',
-                        'pending' => 'في انتظار الموافقة',
-                        default => 'غير معروف'
-                    },
+                    'status' => $this->getStatusLabel($teacher->status),
                     'students_count' => $teacher->enrollments_count,
                     'secretaries_count' => $teacher->secretaries_count,
                     'joined' => $teacher->created_at->format('Y-m-d'),
+                    'subscription_fee' => (float) $teacher->subscription_fee,
                 ];
             });
     }
 
     /**
-     * Get list of academies for report selection
+     * Get list of academies for report selection with eager loading
      */
     public function getAcademiesList(): Collection
     {
-        return Academy::select('id', 'name', 'phone', 'is_active', 'created_at')
+        return Academy::select('id', 'name', 'phone', 'is_active', 'created_at', 'subscription_fee', 'plan_max_students', 'plan_expires_at')
             ->withCount(['teachers'])
             ->orderBy('name')
             ->get()
@@ -67,8 +67,11 @@ class ReportService
                     'phone' => $academy->phone,
                     'status' => $academy->is_active ? 'نشط' : 'غير نشط',
                     'teachers_count' => $academy->teachers_count,
-                    'students_count' => $academy->total_students_count,
+                    'students_count' => $academy->total_students_count ?? 0,
                     'joined' => $academy->created_at->format('Y-m-d'),
+                    'subscription_fee' => (float) $academy->subscription_fee,
+                    'plan_max_students' => $academy->plan_max_students,
+                    'plan_expires_at' => $academy->plan_expires_at?->format('Y-m-d'),
                 ];
             });
     }
@@ -104,33 +107,62 @@ class ReportService
 
         return $mpdf->Output('', 'S');
     }
+
     /**
-     * Get report data for a specific teacher
+     * Get report data for a specific teacher using DTOs and subscription_fee
      */
-    public function getTeacherReport(Teacher $teacher, Carbon $startDate, Carbon $endDate): array
+    public function getTeacherReport(Teacher $teacher, Carbon $startDate, Carbon $endDate): TeacherReportData
     {
         $endDate = $endDate->copy()->endOfDay();
-        $pricePerStudent = \App\Services\HelperService::getPricePerStudent();
+        $pricePerStudent = \App\Services\Infrastructure\HelperService::getPricePerStudent();
+
+        // Eager load relationships to prevent N+1
+        $teacher->load(['secretaries', 'enrollments.grade', 'enrollments.group', 'subscriptions']);
 
         // Students data
-        $enrollmentsQuery = Enrollment::where('teacher_id', $teacher->id);
-        $totalStudents = (clone $enrollmentsQuery)->count();
-        $activeStudents = (clone $enrollmentsQuery)->where('is_active', true)->count();
-        
-        // Total months paid in period (Billable Months)
+        $totalStudents = $teacher->enrollments->count();
+        $activeStudents = $teacher->enrollments->where('is_active', true)->count();
+
+        // Total months paid in period from PaymentLog (student payments)
         $billableMonths = PaymentLog::where('teacher_id', $teacher->id)
             ->where('status', 'confirmed')
             ->whereBetween('confirmed_at', [$startDate, $endDate])
             ->sum('months');
 
         // Secretaries
-        $totalSecretaries = Secretary::where('teacher_id', $teacher->id)->count();
+        $totalSecretaries = $teacher->secretaries->count();
 
-        // Confirmed payments in period
-        $confirmedPayments = PaymentLog::where('teacher_id', $teacher->id)
+        // === PAYMENT DATA FROM ALL SOURCES ===
+
+        // Source 1: Teacher model's paid_amount field
+        $teacherPaidAmount = (float) ($teacher->paid_amount ?? 0);
+
+        // Source 2: PaymentLog (student-to-teacher payments)
+        $paymentLogPayments = (float) PaymentLog::where('teacher_id', $teacher->id)
             ->where('status', 'confirmed')
             ->whereBetween('confirmed_at', [$startDate, $endDate])
             ->sum('amount');
+
+        // Source 3: TeacherSubscription records (teacher-to-platform monthly subscriptions)
+        $subscriptionsPaid = (float) \App\Models\TeacherSubscription::where('teacher_id', $teacher->id)
+            ->sum('amount_paid');
+        $subscriptionsDue = (float) \App\Models\TeacherSubscription::where('teacher_id', $teacher->id)
+            ->sum('amount_due');
+        $paidSubscriptionsCount = \App\Models\TeacherSubscription::where('teacher_id', $teacher->id)
+            ->where('amount_paid', '>', 0)
+            ->count();
+
+        // Last paid subscription
+        $lastPaidSubscription = \App\Models\TeacherSubscription::where('teacher_id', $teacher->id)
+            ->where('amount_paid', '>', 0)
+            ->orderBy('month', 'desc')
+            ->first();
+
+        // Use the maximum from all payment sources as confirmed payments
+        $confirmedPayments = max($teacherPaidAmount, $paymentLogPayments, $subscriptionsPaid);
+
+        // Effective paid amount (considering all sources)
+        $effectivePaidAmount = max($teacherPaidAmount, $subscriptionsPaid);
 
         // Pending payments
         $pendingPayments = PaymentLog::where('teacher_id', $teacher->id)
@@ -138,36 +170,68 @@ class ReportService
             ->where('expires_at', '>', now())
             ->sum('amount');
 
+        // Last payment date - check PaymentLog first, then subscriptions
+        $lastPayment = PaymentLog::where('teacher_id', $teacher->id)
+            ->where('status', 'confirmed')
+            ->orderBy('confirmed_at', 'desc')
+            ->first();
+        $lastPaymentDate = $lastPayment ? $lastPayment->confirmed_at->format('Y-m-d') : null;
+
+        // If no PaymentLog, use last paid subscription date
+        if (!$lastPaymentDate && $lastPaidSubscription) {
+            $lastPaymentDate = $lastPaidSubscription->updated_at?->format('Y-m-d')
+                ?? $lastPaidSubscription->month->format('Y-m-d');
+        }
+
+        // First payment date (subscription start)
+        $firstPayment = PaymentLog::where('teacher_id', $teacher->id)
+            ->where('status', 'confirmed')
+            ->orderBy('confirmed_at', 'asc')
+            ->first();
+        $subscriptionStartDate = $firstPayment ? $firstPayment->confirmed_at->format('Y-m-d') : null;
+
+        // If no PaymentLog, use first subscription
+        if (!$subscriptionStartDate) {
+            $firstSubscription = \App\Models\TeacherSubscription::where('teacher_id', $teacher->id)
+                ->orderBy('month', 'asc')
+                ->first();
+            if ($firstSubscription) {
+                $subscriptionStartDate = $firstSubscription->month->format('Y-m-d');
+            }
+        }
+
         // Paying students count (unique students who paid in this period)
         $payingStudentsCount = PaymentLog::where('teacher_id', $teacher->id)
             ->where('status', 'confirmed')
             ->whereBetween('confirmed_at', [$startDate, $endDate])
             ->distinct('student_id')
             ->count('student_id');
-        
-        // Platform fees calculation
-        // Use the unified HelperService price
-        $teacherStudentPrice = \App\Services\HelperService::getPricePerStudent();
-        
-        $platformFees = $billableMonths * $teacherStudentPrice;
 
-        // Calculated revenue based on total months paid (subscriptions)
-        $calculatedRevenue = $billableMonths * $teacherStudentPrice;
+        // Calculate subscription_fee from teacher's plan if available
+        $subscriptionFee = (float) $teacher->subscription_fee;
 
-        // Calculate total revenue from enrollments (similar to academy)
-        $totalRevenue = \DB::table('enrollments')
-            ->join('grades', 'enrollments.grade_id', '=', 'grades.id')
-            ->where('enrollments.teacher_id', $teacher->id)
-            ->whereBetween('enrollments.created_at', [$startDate, $endDate])
-            ->where('enrollments.is_active', 1)
-            ->sum('grades.price');
+        // If no subscription_fee set, try subscriptionsDue, then calculate from billable months
+        if ($subscriptionFee <= 0 && $subscriptionsDue > 0) {
+            $subscriptionFee = $subscriptionsDue;
+        }
+        if ($subscriptionFee <= 0 && $billableMonths > 0) {
+            $subscriptionFee = $billableMonths * $pricePerStudent;
+        }
 
-        // Calculate remaining balance and net payments
-        $remainingBalance = $totalRevenue - $confirmedPayments;
-        $netPaymentsToTeacher = $confirmedPayments - $platformFees;
-
-        // Monthly breakdown
-        $monthlyData = $this->getMonthlyBreakdown($teacher->id, $startDate, $endDate, 'teacher');
+        // Calculate paid months
+        $paidMonths = 0;
+        // From plan duration
+        if ($teacher->plan_expires_at && $teacher->created_at) {
+            $paidMonths = (int) ceil($teacher->created_at->diffInMonths($teacher->plan_expires_at));
+        }
+        // From subscription records
+        if ($paidMonths <= 0 && $paidSubscriptionsCount > 0) {
+            $paidMonths = $paidSubscriptionsCount;
+        }
+        // From PaymentLog
+        if ($paidMonths <= 0 && $billableMonths > 0) {
+            $paidMonths = (int) $billableMonths;
+        }
 
         // Monthly subscription breakdown
         $subscriptionData = $this->getMonthlySubscriptions($teacher, $startDate, $endDate, $pricePerStudent);
@@ -175,87 +239,114 @@ class ReportService
         // Calculate totals from subscriptions
         $totalDue = array_sum(array_column($subscriptionData, 'amount_due'));
         $totalPaid = array_sum(array_column($subscriptionData, 'amount_paid'));
-        $totalRemaining = $totalDue - $totalPaid;
 
-        // Align platformFees with totalDue (Source of Truth)
-        $platformFees = $totalDue;
-        $calculatedRevenue = $totalDue; // For consistency
+        // Use subscription_fee as primary metric
+        $totalDue = max($subscriptionFee, $totalDue);
 
-        return [
-            'teacher' => [
+        // Determine payment status using effective paid amount
+        $paymentStatus = $this->calculatePaymentStatus($subscriptionFee, $effectivePaidAmount);
+
+        // Monthly breakdown
+        $monthlyData = $this->getMonthlyBreakdown($teacher->id, $startDate, $endDate, 'teacher');
+
+        $period = new ReportPeriodData(
+            startDate: $startDate,
+            endDate: $endDate,
+            durationMonths: (int) $startDate->diffInMonths($endDate) + 1
+        );
+
+        $summary = new TeacherReportSummaryData(
+            totalStudents: $totalStudents,
+            activeStudents: $activeStudents,
+            newEnrollments: $paidMonths,
+            totalSecretaries: $totalSecretaries,
+            confirmedPayments: $confirmedPayments,
+            payingStudentsCount: $payingStudentsCount,
+            pricePerStudent: $pricePerStudent,
+            subscriptionFee: $subscriptionFee,
+        );
+
+        $financialDetails = [
+            'total_revenue' => round($subscriptionFee, 2),
+            'total_confirmed_payments' => round($confirmedPayments, 2),
+            'price_per_student' => $pricePerStudent,
+        ];
+
+        // Calculate subscription expiry from plan_expires_at or from last payment
+        $subscriptionExpiry = null;
+        if ($teacher->plan_expires_at) {
+            $subscriptionExpiry = $teacher->plan_expires_at->format('Y-m-d');
+        } elseif ($lastPaymentDate && $lastPayment) {
+            $subscriptionExpiry = $lastPayment->confirmed_at->copy()->addMonth()->format('Y-m-d');
+        }
+
+        // Check if teacher has subscription
+        $hasSubscription = (float) $teacher->subscription_fee > 0
+            || $effectivePaidAmount > 0
+            || $subscriptionStartDate !== null
+            || $paidSubscriptionsCount > 0;
+
+        // Calculate remaining amount due
+        $amountDue = $hasSubscription ? max(0, $subscriptionFee - $effectivePaidAmount) : 0;
+
+        return new TeacherReportData(
+            teacher: [
                 'id' => $teacher->id,
                 'name' => $teacher->name,
                 'phone' => $teacher->phone,
                 'joined' => $teacher->created_at->format('Y-m-d'),
-                'status' => match($teacher->status) {
-                    'active' => 'نشط',
-                    'suspended' => 'معلق',
-                    'pending' => 'في انتظار الموافقة',
-                    default => 'غير معروف'
-                },
-            ],
-            'period' => [
-                'start' => $startDate->format('Y-m-d'),
-                'end' => $endDate->format('Y-m-d'),
-                'duration_months' => $startDate->diffInMonths($endDate) + 1,
-            ],
-            'summary' => [
-                'total_students' => $totalStudents,
-                'active_students' => $activeStudents,
-                'new_enrollments' => $billableMonths, // Keeping key name for frontend compatibility, but value is billable months
+                'status' => $this->getStatusLabel($teacher->status),
                 'total_secretaries' => $totalSecretaries,
-                'confirmed_payments' => (float) $confirmedPayments,
-                'pending_payments' => (float) $pendingPayments,
-                'calculated_revenue' => $calculatedRevenue,
-                'price_per_student' => $pricePerStudent,
-                'teacher_student_price' => (float) $teacherStudentPrice,
-                'total_due' => $totalDue,
-                'total_paid' => $totalPaid,
-                'total_remaining' => $totalRemaining,
-                'paying_students_count' => $payingStudentsCount,
-                'not_paying_students_count' => $totalStudents - $payingStudentsCount,
-                'platform_fees' => (float) $platformFees,
+                'subscription_start_date' => $subscriptionStartDate,
+                'last_payment_date' => $lastPaymentDate,
+                'subscription_expiry' => $subscriptionExpiry,
+                'has_subscription' => $hasSubscription,
+                'amount_due' => $amountDue,
+                'paid_amount' => $effectivePaidAmount,
+                'plan_type' => $teacher->plan_type,
+                'plan_max_students' => $teacher->plan_max_students,
+                'is_unlimited_students' => $teacher->is_unlimited_students ?? false,
+                'days_remaining' => $teacher->plan_expires_at
+                    ? (int) max(0, now()->diffInDays($teacher->plan_expires_at, false))
+                    : null,
+                'payment_percentage' => $subscriptionFee > 0
+                    ? min(100, round(($effectivePaidAmount / $subscriptionFee) * 100, 1))
+                    : ($hasSubscription ? 100 : 0),
+                'plan_duration_months' => $paidMonths,
+                'member_since_days' => (int) $teacher->created_at->diffInDays(now()),
             ],
-            'financial_details' => [
-                'total_revenue' => round((float) $totalRevenue, 2),
-                'total_confirmed_payments' => round((float) $confirmedPayments, 2),
-                'uncollected_revenue' => round((float) $remainingBalance, 2),
-                'net_profit' => round((float) $netPaymentsToTeacher, 2),
-                'platform_fees' => round((float) $platformFees, 2),
-            ],
-            'monthly_breakdown' => $monthlyData,
-            'subscription_breakdown' => $subscriptionData,
-            'student_account_breakdown' => $this->getStudentAccountBreakdown($teacher, $startDate, $endDate),
-            'month' => $startDate->month,
-            'year' => $startDate->year,
-            'generated_at' => now()->format('Y-m-d H:i:s'),
-        ];
+            period: $period,
+            summary: $summary,
+            financialDetails: $financialDetails,
+            monthlyBreakdown: $monthlyData,
+            subscriptionBreakdown: $subscriptionData,
+            generatedAt: now()->format('Y-m-d H:i:s')
+        );
     }
 
     /**
-     * Get report data for a specific academy
+     * Get report data for a specific academy using DTOs and subscription_fee
      */
     public function getAcademyReport(Academy $academy, Carbon $startDate, Carbon $endDate): array
     {
         $endDate = $endDate->copy()->endOfDay();
-        $pricePerStudent = \App\Services\HelperService::getAcademyStudentPrice();
+        $academyStudentPrice = \App\Services\Infrastructure\HelperService::getAcademyStudentPrice();
+
+        // Eager load teachers and their enrollments to prevent N+1
+        $academy->load(['teachers.enrollments.grade', 'teachers.enrollments.group']);
 
         // Teachers data
-        $teachersQuery = $academy->teachers();
-        $totalTeachers = (clone $teachersQuery)->count();
-        $activeTeachers = (clone $teachersQuery)->wherePivot('is_active', true)->count();
+        $teachers = $academy->teachers;
+        $totalTeachers = $teachers->count();
+        $activeTeachers = $teachers->where('pivot.is_active', true)->count();
 
         // Students data (via teachers)
-        // Since we don't have a direct relationship, we iterate over teachers
-        $academyTeachers = $academy->activeTeachers()->with('enrollments')->get();
-        
         $totalEnrollments = 0;
         $activeEnrollments = 0;
         $uniqueStudentIds = [];
 
-        foreach ($academyTeachers as $teacher) {
+        foreach ($teachers as $teacher) {
             foreach ($teacher->enrollments as $enrollment) {
-                // Filter by date to match Academy Report logic (All Active Enrollments up to End Date)
                 if ($enrollment->created_at <= $endDate) {
                     $totalEnrollments++;
                     if ($enrollment->is_active) {
@@ -265,11 +356,11 @@ class ReportService
                 }
             }
         }
-        
+
         $totalAcademyStudents = count(array_unique($uniqueStudentIds));
 
         // Get teacher IDs for this academy
-        $teacherIds = $academyTeachers->pluck('id')->toArray();
+        $teacherIds = $teachers->pluck('id')->toArray();
 
         // Calculate total months paid (subscriptions) in the period
         $totalMonthsPaid = PaymentLog::whereIn('teacher_id', $teacherIds)
@@ -283,32 +374,90 @@ class ReportService
             ->whereBetween('confirmed_at', [$startDate, $endDate])
             ->count();
 
-        // Calculate Platform Fees (Revenue for the Platform)
-        $platformFees = $totalMonthsPaid * $pricePerStudent;
+        // Use subscription_fee from academy as primary metric (Source of Truth)
+        $subscriptionFee = (float) $academy->subscription_fee;
 
-        // Calculate Total Revenue (Collected from Students)
-        // We need to sum up the price of grades for all active enrollments/payments
-        // For simplicity and to match Academy logic, we'll use the same query structure
-        $totalRevenue = \DB::table('enrollments')
-            ->join('grades', 'enrollments.grade_id', '=', 'grades.id')
-            ->whereIn('enrollments.teacher_id', $teacherIds)
-            ->whereBetween('enrollments.created_at', [$startDate, $endDate])
-            ->where('enrollments.is_active', 1)
-            ->sum('grades.price');
+        // If no subscription_fee set, try from subscriptions table, then from billable months
+        if ($subscriptionFee <= 0 && $academySubscriptionsDue > 0) {
+            $subscriptionFee = $academySubscriptionsDue;
+        }
+        if ($subscriptionFee <= 0 && $totalMonthsPaid > 0) {
+            $subscriptionFee = $totalMonthsPaid * $academyStudentPrice;
+        }
 
-        // Calculate Net Revenue (Academy Share)
-        $netRevenue = $totalRevenue - $platformFees;
+        // Calculate confirmed payments from PaymentLog
+        $confirmedPayments = PaymentLog::whereIn('teacher_id', $teacherIds)
+            ->where('status', 'confirmed')
+            ->whereBetween('confirmed_at', [$startDate, $endDate])
+            ->sum('amount');
 
-        // Expected Revenue for Platform (Same as Platform Fees)
-        $expectedRevenue = $platformFees;
+        // === PAYMENT DATA FROM ALL SOURCES ===
 
-        // Confirmed payments - using subscription-based model (not monthly billing)
-        $confirmedPayments = 0;
+        // Source 1: Academy model's paid_amount field
+        $academyPaidAmount = (float) ($academy->paid_amount ?? 0);
+
+        // Source 2: Unified subscriptions table (academy-to-platform monthly subscriptions)
+        $academySubscriptionsPaid = (float) \App\Models\Subscription::where('subscriber_id', $academy->id)
+            ->where('subscriber_type', \App\Models\Academy::class)
+            ->sum('amount_paid');
+        $academySubscriptionsDue = (float) \App\Models\Subscription::where('subscriber_id', $academy->id)
+            ->where('subscriber_type', \App\Models\Academy::class)
+            ->sum('amount_due');
+        $paidAcademySubscriptionsCount = \App\Models\Subscription::where('subscriber_id', $academy->id)
+            ->where('subscriber_type', \App\Models\Academy::class)
+            ->where('amount_paid', '>', 0)
+            ->count();
+
+        // Use the maximum from all payment sources
+        $effectivePaidAmount = max($academyPaidAmount, (float) $confirmedPayments, $academySubscriptionsPaid);
+
+        $remainingBalance = max(0, $subscriptionFee - $effectivePaidAmount);
+        $paymentStatus = $this->calculatePaymentStatus($subscriptionFee, $effectivePaidAmount);
 
         // Monthly breakdown
-        // We can reuse getMonthlyBreakdown but we need to pass teacher IDs
-        // For now, let's just get overall monthly breakdown for these teachers
-        $monthlyData = $this->getMonthlyBreakdownForAcademy($academyTeachers->pluck('id')->toArray(), $startDate, $endDate);
+        $monthlyData = $this->getMonthlyBreakdownForAcademy($teacherIds, $startDate, $endDate);
+
+        $summary = new AcademyReportSummaryData(
+            totalTeachers: $totalTeachers,
+            activeTeachers: $activeTeachers,
+            totalAcademyStudents: $totalAcademyStudents,
+            totalEnrollments: $totalEnrollments,
+            activeEnrollments: $activeEnrollments,
+            totalSubscriptions: (int) $totalMonthsPaid,
+            totalPaymentTransactions: $totalPaymentTransactions,
+            subscriptionFee: $subscriptionFee,
+            confirmedPayments: $effectivePaidAmount,
+            remainingBalance: (float) $remainingBalance,
+            paymentStatus: $paymentStatus,
+            pricePerStudent: $academyStudentPrice
+        );
+
+        // Calculate plan duration
+        $paidMonths = 0;
+        if ($academy->plan_expires_at && $academy->created_at) {
+            $paidMonths = (int) ceil($academy->created_at->diffInMonths($academy->plan_expires_at));
+        }
+        if ($paidMonths <= 0 && $paidAcademySubscriptionsCount > 0) {
+            $paidMonths = $paidAcademySubscriptionsCount;
+        }
+        if ($paidMonths <= 0 && $totalMonthsPaid > 0) {
+            $paidMonths = (int) $totalMonthsPaid;
+        }
+
+        // Has subscription
+        $hasSubscription = (float) $academy->subscription_fee > 0
+            || $effectivePaidAmount > 0
+            || $totalPaymentTransactions > 0
+            || $paidAcademySubscriptionsCount > 0;
+
+        // Subscription expiry
+        $subscriptionExpiry = null;
+        if ($academy->plan_expires_at) {
+            $subscriptionExpiry = $academy->plan_expires_at->format('Y-m-d');
+        }
+
+        // Amount due
+        $amountDue = $hasSubscription ? max(0, $subscriptionFee - $effectivePaidAmount) : 0;
 
         return [
             'academy' => [
@@ -317,242 +466,57 @@ class ReportService
                 'phone' => $academy->phone,
                 'joined' => $academy->created_at->format('Y-m-d'),
                 'status' => $academy->is_active ? 'نشط' : 'غير نشط',
+                'total_teachers' => $totalTeachers,
+                'active_teachers' => $activeTeachers,
+                'has_subscription' => $hasSubscription,
+                'subscription_expiry' => $subscriptionExpiry,
+                'amount_due' => $amountDue,
+                'paid_amount' => $effectivePaidAmount,
+                'plan_type' => $academy->plan_type,
+                'plan_max_students' => $academy->plan_max_students,
+                'is_unlimited_students' => ($academy->plan_max_students === null || $academy->plan_max_students <= 0),
+                'days_remaining' => $academy->plan_expires_at
+                    ? (int) max(0, now()->diffInDays($academy->plan_expires_at, false))
+                    : null,
+                'payment_percentage' => $subscriptionFee > 0
+                    ? min(100, round(($effectivePaidAmount / $subscriptionFee) * 100, 1))
+                    : ($hasSubscription ? 100 : 0),
+                'plan_duration_months' => $paidMonths,
+                'member_since_days' => (int) $academy->created_at->diffInDays(now()),
             ],
             'period' => [
                 'start' => $startDate->format('Y-m-d'),
                 'end' => $endDate->format('Y-m-d'),
                 'duration_months' => $startDate->diffInMonths($endDate) + 1,
             ],
-            'summary' => [
-                'total_teachers' => $totalTeachers,
-                'active_teachers' => $activeTeachers,
-                'total_academy_students' => $totalAcademyStudents,
-                'total_enrollments' => $totalEnrollments,
-                'active_enrollments' => $activeEnrollments,
-                'total_subscriptions' => (int) $totalMonthsPaid,
-                'total_payment_transactions' => $totalPaymentTransactions,
-                'expected_revenue' => $expectedRevenue, // Platform Fees
-                'total_revenue' => $totalRevenue, // Total from Students
-                'platform_fees' => $platformFees,
-                'net_revenue' => $netRevenue,
-                'confirmed_payments' => (float) $confirmedPayments,
-                'remaining_balance' => $platformFees - $confirmedPayments,
-                'payment_status' => $confirmedPayments == 0 ? 'لم يدفع' : ($platformFees - $confirmedPayments <= 0 ? 'مدفوع' : 'متبقي دفعات'),
-                'price_per_student' => $pricePerStudent,
-            ],
+            'summary' => $summary->toArray(),
             'monthly_breakdown' => $monthlyData,
             'generated_at' => now()->format('Y-m-d H:i:s'),
         ];
     }
 
     /**
-     * Get monthly breakdown for academy (list of teachers)
-     */
-    private function getMonthlyBreakdownForAcademy(array $teacherIds, Carbon $startDate, Carbon $endDate): array
-    {
-        $months = [];
-        $currentMonth = $startDate->copy()->startOfMonth();
-        $lastMonth = $endDate->copy()->startOfMonth();
-        
-        while ($currentMonth <= $lastMonth) {
-            $monthStart = $currentMonth->copy()->startOfMonth();
-            $monthEnd = $currentMonth->copy()->endOfMonth();
-            
-            $queryStart = $monthStart->lt($startDate) ? $startDate->copy()->startOfDay() : $monthStart;
-            $queryEnd = $monthEnd->gt($endDate) ? $endDate->copy()->endOfDay() : $monthEnd->endOfDay();
-            
-            $newEnrollments = Enrollment::whereIn('teacher_id', $teacherIds)
-                ->whereBetween('created_at', [$queryStart, $queryEnd])
-                ->count();
-
-            $months[] = [
-                'month' => $currentMonth->format('Y-m'),
-                'month_name' => \App\Services\HelperService::getArabicMonthName($currentMonth->month) . ' ' . $currentMonth->year,
-                'new_enrollments' => $newEnrollments,
-                'confirmed_payments' => 0,
-            ];
-            
-            $currentMonth->addMonth();
-        }
-        
-        return $months;
-    }
-    private function getMonthlySubscriptions(Teacher $teacher, Carbon $startDate, Carbon $endDate, float $pricePerStudent): array
-    {
-        $months = [];
-        $currentMonth = $startDate->copy()->startOfMonth();
-        $lastMonth = $endDate->copy()->startOfMonth();
-        
-        // Get teacher_student_price from settings (Unified)
-        $teacherStudentPrice = \App\Services\HelperService::getPricePerStudent();
-        
-        while ($currentMonth <= $lastMonth) {
-            $monthStart = $currentMonth->copy()->startOfMonth();
-            $monthEnd = $currentMonth->copy()->endOfMonth();
-            
-            // Try to find existing subscription record first (Source of Truth)
-            $subscription = TeacherSubscription::where('teacher_id', $teacher->id)
-                ->where('month', $monthStart->format('Y-m-d'))
-                ->first();
-
-            if ($subscription) {
-                $totalMonthsPaidInMonth = $subscription->student_count; // This stores billable months now
-                $amountDue = $subscription->amount_due;
-                $amountPaid = $subscription->amount_paid;
-                $status = $subscription->status;
-            } else {
-                // Fallback: Calculate on the fly (Potential Revenue - Seat System)
-                $query = \App\Models\Enrollment::where('teacher_id', $teacher->id)
-                    ->withTrashed()
-                    ->where('created_at', '<=', $monthEnd)
-                    ->where(function($q) use ($monthStart) {
-                        $q->whereNull('deleted_at')
-                          ->orWhere('deleted_at', '>=', $monthStart);
-                    });
-                    
-                $totalMonthsPaidInMonth = $query->count(); // Actually total seats
-                
-                $amountDue = $totalMonthsPaidInMonth * $teacherStudentPrice;
-                $amountPaid = 0; // No subscription record means no payment to platform yet
-                $status = 'pending';
-            }
-            
-            $months[] = [
-                'month' => $currentMonth->format('Y-m'),
-                'month_name' => \App\Services\HelperService::getArabicMonthName($currentMonth->month) . ' ' . $currentMonth->year,
-                'student_count' => (int) $totalMonthsPaidInMonth,
-                'amount_due' => (float) $amountDue,
-                'amount_paid' => (float) $amountPaid,
-                'amount_remaining' => (float) ($amountDue - $amountPaid),
-                'status' => $status,
-                'status_label' => \App\Services\HelperService::getStatusLabel($status),
-            ];
-
-            $currentMonth->addMonth();
-        }
-        
-        return $months;
-    }
-
-    /**
-     * Get monthly student account breakdown (Expected vs Actual from students)
-     */
-    private function getStudentAccountBreakdown(Teacher $teacher, Carbon $startDate, Carbon $endDate): array
-    {
-        $months = [];
-        $currentMonth = $startDate->copy()->startOfMonth();
-        $lastMonth = $endDate->copy()->startOfMonth();
-        
-        while ($currentMonth <= $lastMonth) {
-            $monthStart = $currentMonth->copy()->startOfMonth();
-            $monthEnd = $currentMonth->copy()->endOfMonth();
-            
-            // Adjust to actual date range for payments
-            $queryStart = $monthStart->lt($startDate) ? $startDate->copy()->startOfDay() : $monthStart;
-            $queryEnd = $monthEnd->gt($endDate) ? $endDate->copy()->endOfDay() : $monthEnd->endOfDay();
-
-            // 1. Calculate Amount Due (Expected Revenue)
-            // Logic: Sum of (Group Price OR Grade Price) for all active students in this month
-            // We consider an enrollment active for this month if it was created before month end
-            // and (not deleted OR deleted after month start)
-            
-            $enrollments = Enrollment::where('teacher_id', $teacher->id)
-                ->withTrashed()
-                ->where('created_at', '<=', $monthEnd)
-                ->where(function($q) use ($monthStart) {
-                    $q->whereNull('deleted_at')
-                      ->orWhere('deleted_at', '>=', $monthStart);
-                })
-                ->with(['group', 'grade'])
-                ->get();
-
-            $amountDue = 0;
-            $studentCount = 0;
-
-            foreach ($enrollments as $enrollment) {
-                $price = 0;
-                if ($enrollment->group && $enrollment->group->price) {
-                    $price = $enrollment->group->price;
-                } elseif ($enrollment->grade && $enrollment->grade->price) {
-                    $price = $enrollment->grade->price;
-                }
-                
-                $amountDue += $price;
-                $studentCount++;
-            }
-
-            // 2. Calculate Amount Paid (Actual Revenue)
-            $amountPaid = PaymentLog::where('teacher_id', $teacher->id)
-                ->where('status', 'confirmed')
-                ->whereBetween('confirmed_at', [$queryStart, $queryEnd])
-                ->sum('amount');
-
-            $amountRemaining = $amountDue - $amountPaid;
-
-            // Determine status
-            $status = 'pending';
-            if ($amountRemaining <= 0 && $amountPaid > 0) {
-                $status = 'paid';
-            } elseif ($amountPaid > 0) {
-                $status = 'partial';
-            }
-
-            $months[] = [
-                'month' => $currentMonth->format('Y-m'),
-                'month_name' => \App\Services\HelperService::getArabicMonthName($currentMonth->month) . ' ' . $currentMonth->year,
-                'student_count' => $studentCount,
-                'amount_due' => (float) $amountDue,
-                'amount_paid' => (float) $amountPaid,
-                'amount_remaining' => (float) max(0, $amountRemaining),
-                'status' => $status,
-                'status_label' => \App\Services\HelperService::getStatusLabel($status),
-            ];
-
-            $currentMonth->addMonth();
-        }
-        
-        return $months;
-    }
-
-
-
-
-    /**
-     * Get Arabic status label
-     */
-    private function getStatusLabel(string $status): string
-    {
-        return match($status) {
-            'paid' => 'مدفوع',
-            'partial' => 'مدفوع جزئياً',
-            'pending' => 'غير مدفوع',
-            default => $status,
-        };
-    }
-
-
-    /**
-     * Get admin overview report
+     * Get admin overview report using DTOs and subscription_fee
      */
     public function getAdminReport(Carbon $startDate, Carbon $endDate): array
     {
         $endDate = $endDate->copy()->endOfDay();
-        $pricePerStudent = \App\Services\HelperService::getPricePerStudent();
-        $academyStudentPrice = \App\Services\HelperService::getAcademyStudentPrice();
+        $pricePerStudent = \App\Services\Infrastructure\HelperService::getPricePerStudent();
+        $academyStudentPrice = \App\Services\Infrastructure\HelperService::getAcademyStudentPrice();
 
-        // 1. Counts
+        // 1. Counts with eager loading for efficiency
         $totalAcademies = Academy::count();
-        
+
         // Independent Teachers: Teachers who do NOT belong to any academy OR have explicit subscription fee
         $independentTeachersCount = Teacher::where(function($q) {
             $q->whereDoesntHave('academies')
               ->orWhere('subscription_fee', '>', 0);
         })->count();
-        
+
         $totalTeachers = Teacher::count();
         $activeTeachers = Teacher::where('status', 'active')->count();
         $suspendedTeachers = Teacher::where('status', 'suspended')->count();
-        
+
         $totalStudents = Student::count();
         $totalSecretaries = Secretary::count();
         $totalEnrollments = Enrollment::count();
@@ -564,7 +528,7 @@ class ReportService
         $newEnrollments = Enrollment::whereBetween('created_at', [$startDate, $endDate])->count();
 
         // 2. Subscriptions (Months Paid) Calculation
-        
+
         // A. Academy Subscriptions (Months paid by students in academies)
         $academySubscriptions = PaymentLog::whereHas('enrollment', function($q) {
                 $q->whereNotNull('academy_id');
@@ -584,8 +548,11 @@ class ReportService
         // Total Subscriptions
         $totalSubscriptions = $academySubscriptions + $independentSubscriptions;
 
-        // 3. Financial Summary Calculation
-        
+        // 3. Financial Summary Calculation using subscription_fee
+
+        // Calculate total subscription fees from all teachers and academies
+        $totalSubscriptionFees = Teacher::sum('subscription_fee') + Academy::sum('subscription_fee');
+
         // A. Independent Teachers Commission
         $independentCommission = $independentSubscriptions * $pricePerStudent;
 
@@ -595,7 +562,7 @@ class ReportService
         // C. Net Platform Profit
         $netPlatformProfit = $independentCommission + $academyPlatformShare;
 
-        // Other financial stats (keeping for backward compatibility if needed, or general info)
+        // Confirmed payments
         $confirmedPayments = PaymentLog::where('status', 'confirmed')
             ->whereBetween('confirmed_at', [$startDate, $endDate])
             ->sum('amount');
@@ -606,41 +573,38 @@ class ReportService
         // Monthly breakdown
         $monthlyData = $this->getMonthlyBreakdown(null, $startDate, $endDate, 'admin');
 
+        $summary = new AdminReportSummaryData(
+            totalAcademies: $totalAcademies,
+            independentTeachersCount: $independentTeachersCount,
+            totalTeachers: $totalTeachers,
+            activeTeachers: $activeTeachers,
+            suspendedTeachers: $suspendedTeachers,
+            newTeachers: $newTeachers,
+            totalStudents: $totalStudents,
+            newStudents: $newStudents,
+            totalSecretaries: $totalSecretaries,
+            totalEnrollments: $totalEnrollments,
+            activeEnrollments: $activeEnrollments,
+            newEnrollments: $newEnrollments,
+            totalSubscriptions: (int) $totalSubscriptions,
+            academySubscriptions: (int) $academySubscriptions,
+            independentSubscriptions: (int) $independentSubscriptions,
+            totalSubscriptionFees: (float) $totalSubscriptionFees,
+            confirmedPayments: (float) $confirmedPayments,
+            independentCommission: (float) $independentCommission,
+            academyPlatformShare: (float) $academyPlatformShare,
+            netPlatformProfit: (float) $netPlatformProfit,
+            pricePerStudent: $pricePerStudent,
+            academyStudentPrice: $academyStudentPrice
+        );
+
         return [
             'period' => [
                 'start' => $startDate->format('Y-m-d'),
                 'end' => $endDate->format('Y-m-d'),
                 'duration_months' => $startDate->diffInMonths($endDate) + 1,
             ],
-            'summary' => [
-                // Counts
-                'total_academies' => $totalAcademies,
-                'independent_teachers_count' => $independentTeachersCount,
-                'total_teachers' => $totalTeachers,
-                'active_teachers' => $activeTeachers,
-                'suspended_teachers' => $suspendedTeachers,
-                'new_teachers' => $newTeachers,
-                'total_students' => $totalStudents,
-                'new_students' => $newStudents,
-                'total_secretaries' => $totalSecretaries,
-                'total_enrollments' => $totalEnrollments,
-                'active_enrollments' => $activeEnrollments,
-                'new_enrollments' => $newEnrollments,
-                
-                // Subscriptions
-                'total_subscriptions' => (int) $totalSubscriptions,
-                'academy_subscriptions' => (int) $academySubscriptions,
-                'independent_subscriptions' => (int) $independentSubscriptions,
-                
-                // Financials
-                'confirmed_payments' => (float) $confirmedPayments, // Total raw payments (might include full academy revenue before split if logic differs, but usually payment log tracks what was paid to platform? No, for academy it might be different. Sticking to calculated values for report)
-                'independent_commission' => (float) $independentCommission,
-                'academy_platform_share' => (float) $academyPlatformShare,
-                'net_platform_profit' => (float) $netPlatformProfit,
-                
-                'price_per_student' => $pricePerStudent,
-                'academy_student_price' => $academyStudentPrice,
-            ],
+            'summary' => $summary->toArray(),
             'teachers_breakdown' => $teachersBreakdown,
             'monthly_breakdown' => $monthlyData,
             'generated_at' => now()->format('Y-m-d H:i:s'),
@@ -666,6 +630,9 @@ class ReportService
             ->groupBy('teacher_id')
             ->pluck('total_months', 'teacher_id');
 
+        // Get subscription fees per teacher
+        $subscriptionFeesByTeacher = Teacher::pluck('subscription_fee', 'id');
+
         return Teacher::select('id', 'name', 'status', 'created_at')
             ->withCount([
                 'enrollments as total_students',
@@ -673,26 +640,122 @@ class ReportService
                 'secretaries'
             ])
             ->get()
-            ->map(function ($teacher) use ($pricePerStudent, $paymentsByTeacher, $monthsByTeacher) {
+            ->map(function ($teacher) use ($pricePerStudent, $paymentsByTeacher, $monthsByTeacher, $subscriptionFeesByTeacher) {
                 $teacherMonths = $monthsByTeacher[$teacher->id] ?? 0;
+                $subscriptionFee = $subscriptionFeesByTeacher[$teacher->id] ?? 0;
+
+                // Use subscription_fee if available, otherwise calculate from months
+                $revenue = $subscriptionFee > 0
+                    ? $subscriptionFee
+                    : $teacherMonths * $pricePerStudent;
+
                 return [
                     'id' => $teacher->id,
                     'name' => $teacher->name,
-                    'status' => match($teacher->status) {
-                        'active' => 'نشط',
-                        'suspended' => 'معلق',
-                        'pending' => 'في انتظار الموافقة',
-                        default => 'غير معروف'
-                    },
+                    'status' => $this->getStatusLabel($teacher->status),
                     'total_students' => $teacher->total_students,
                     'active_students' => $teacher->active_students,
                     'secretaries' => $teacher->secretaries_count,
                     'subscriptions' => (int) $teacherMonths,
-                    'revenue' => $teacherMonths * $pricePerStudent,
+                    'subscription_fee' => (float) $subscriptionFee,
+                    'revenue' => $revenue,
                     'paid' => (float) ($paymentsByTeacher[$teacher->id] ?? 0),
                     'joined' => $teacher->created_at->format('Y-m-d'),
                 ];
             })->toArray();
+    }
+
+    /**
+     * Get monthly breakdown for academy (list of teachers)
+     */
+    private function getMonthlyBreakdownForAcademy(array $teacherIds, Carbon $startDate, Carbon $endDate): array
+    {
+        $months = [];
+        $currentMonth = $startDate->copy()->startOfMonth();
+        $lastMonth = $endDate->copy()->startOfMonth();
+
+        while ($currentMonth <= $lastMonth) {
+            $monthStart = $currentMonth->copy()->startOfMonth();
+            $monthEnd = $currentMonth->copy()->endOfMonth();
+
+            $queryStart = $monthStart->lt($startDate) ? $startDate->copy()->startOfDay() : $monthStart;
+            $queryEnd = $monthEnd->gt($endDate) ? $endDate->copy()->endOfDay() : $monthEnd->endOfDay();
+
+            $newEnrollments = Enrollment::whereIn('teacher_id', $teacherIds)
+                ->whereBetween('created_at', [$queryStart, $queryEnd])
+                ->count();
+
+            $months[] = [
+                'month' => $currentMonth->format('Y-m'),
+                'month_name' => \App\Services\Infrastructure\HelperService::getArabicMonthName($currentMonth->month) . ' ' . $currentMonth->year,
+                'new_enrollments' => $newEnrollments,
+                'confirmed_payments' => 0,
+            ];
+
+            $currentMonth->addMonth();
+        }
+
+        return $months;
+    }
+
+    /**
+     * Get monthly subscriptions breakdown
+     */
+    private function getMonthlySubscriptions(Teacher $teacher, Carbon $startDate, Carbon $endDate, float $pricePerStudent): array
+    {
+        $months = [];
+        $currentMonth = $startDate->copy()->startOfMonth();
+        $lastMonth = $endDate->copy()->startOfMonth();
+
+        // Get teacher_student_price from settings (Unified)
+        $teacherStudentPrice = \App\Services\Infrastructure\HelperService::getPricePerStudent();
+
+        while ($currentMonth <= $lastMonth) {
+            $monthStart = $currentMonth->copy()->startOfMonth();
+            $monthEnd = $currentMonth->copy()->endOfMonth();
+
+            // Try to find existing subscription record first (Source of Truth)
+            $subscription = TeacherSubscription::where('teacher_id', $teacher->id)
+                ->where('month', $monthStart->format('Y-m-d'))
+                ->first();
+
+            if ($subscription) {
+                $totalMonthsPaidInMonth = $subscription->student_count;
+                $amountDue = $subscription->amount_due;
+                $amountPaid = $subscription->amount_paid;
+                $status = $subscription->status;
+            } else {
+                // Fallback: Calculate on the fly (Potential Revenue - Seat System)
+                $query = Enrollment::where('teacher_id', $teacher->id)
+                    ->withTrashed()
+                    ->where('created_at', '<=', $monthEnd)
+                    ->where(function($q) use ($monthStart) {
+                        $q->whereNull('deleted_at')
+                          ->orWhere('deleted_at', '>=', $monthStart);
+                    });
+
+                $totalMonthsPaidInMonth = $query->count();
+
+                $amountDue = $totalMonthsPaidInMonth * $teacherStudentPrice;
+                $amountPaid = 0;
+                $status = 'pending';
+            }
+
+            $months[] = [
+                'month' => $currentMonth->format('Y-m'),
+                'month_name' => \App\Services\Infrastructure\HelperService::getArabicMonthName($currentMonth->month) . ' ' . $currentMonth->year,
+                'student_count' => (int) $totalMonthsPaidInMonth,
+                'amount_due' => (float) $amountDue,
+                'amount_paid' => (float) $amountPaid,
+                'amount_remaining' => (float) ($amountDue - $amountPaid),
+                'status' => $status,
+                'status_label' => $this->getStatusLabel($status),
+            ];
+
+            $currentMonth->addMonth();
+        }
+
+        return $months;
     }
 
     /**
@@ -701,46 +764,80 @@ class ReportService
     private function getMonthlyBreakdown(?string $teacherId, Carbon $startDate, Carbon $endDate, string $type): array
     {
         $months = [];
-        
-        // Start from the first day of startDate's month
+
         $currentMonth = $startDate->copy()->startOfMonth();
         $lastMonth = $endDate->copy()->startOfMonth();
-        
+
         while ($currentMonth <= $lastMonth) {
             $monthStart = $currentMonth->copy()->startOfMonth();
             $monthEnd = $currentMonth->copy()->endOfMonth();
-            
-            // Adjust to actual date range
+
             $queryStart = $monthStart->lt($startDate) ? $startDate->copy()->startOfDay() : $monthStart;
             $queryEnd = $monthEnd->gt($endDate) ? $endDate->copy()->endOfDay() : $monthEnd->endOfDay();
-            
+
             $enrollmentsQuery = Enrollment::query();
             $paymentsQuery = PaymentLog::where('status', 'confirmed');
-            
+
             if ($teacherId) {
                 $enrollmentsQuery->where('teacher_id', $teacherId);
                 $paymentsQuery->where('teacher_id', $teacherId);
             }
-            
+
             $newEnrollments = (clone $enrollmentsQuery)
                 ->whereBetween('created_at', [$queryStart, $queryEnd])
                 ->count();
-                
+
             $payments = (clone $paymentsQuery)
                 ->whereBetween('confirmed_at', [$queryStart, $queryEnd])
                 ->sum('amount');
-            
+
             $months[] = [
                 'month' => $currentMonth->format('Y-m'),
-                'month_name' => \App\Services\HelperService::getArabicMonthName($currentMonth->month) . ' ' . $currentMonth->year,
+                'month_name' => \App\Services\Infrastructure\HelperService::getArabicMonthName($currentMonth->month) . ' ' . $currentMonth->year,
                 'new_enrollments' => $newEnrollments,
                 'confirmed_payments' => (float) $payments,
             ];
-            
+
             $currentMonth->addMonth();
         }
-        
+
         return $months;
     }
 
+    /**
+     * Get status label in Arabic
+     */
+    private function getStatusLabel(string|\BackedEnum $status): string
+    {
+        $statusValue = $status instanceof \BackedEnum ? $status->value : $status;
+        return match($statusValue) {
+            'active' => 'نشط',
+            'suspended' => 'معلق',
+            'pending' => 'في انتظار الموافقة',
+            'paid' => 'مدفوع',
+            'partial' => 'مدفوع جزئياً',
+            'unpaid' => 'غير مدفوع',
+            default => $statusValue,
+        };
+    }
+
+    /**
+     * Calculate payment status based on amounts
+     */
+    private function calculatePaymentStatus(float $totalDue, float $totalPaid): string
+    {
+        if ($totalDue <= 0) {
+            return 'unpaid';
+        }
+
+        if ($totalPaid >= $totalDue) {
+            return 'paid';
+        }
+
+        if ($totalPaid > 0) {
+            return 'partial';
+        }
+
+        return 'unpaid';
+    }
 }

@@ -39,6 +39,9 @@ const translateSummaryKey = (key: string): string => {
     'net_payments_to_academy': 'المدفوعات الصافيه للاكاديميه',
     'payments_due_to_platform': 'المدفوعات المستحقه للمنصه',
     'payment_status': 'حاله الدفع',
+    'subscription_fee': 'السعر المدفوع للمنصة', // Added per SUBSCRIPTION_SYSTEM_CHANGES.md
+    'confirmed_payments': 'المدفوعات المؤكدة',
+    'remaining_balance': 'المتبقي من الرصيد',
   };
   return translations[key] || key.replace(/_/g, ' ');
 };
@@ -295,7 +298,7 @@ export default function ReportsPage() {
                 </div>
               )}
 
-              {/* Financial Summary Detailed */}
+              {/* Financial Summary Detailed with subscription_fee */}
               {report.financial_details && (
                 <div className="mt-6">
                   <h3 className="text-white text-base md:text-lg font-semibold mb-3 md:mb-4 flex items-center gap-2">
@@ -306,6 +309,15 @@ export default function ReportsPage() {
                     {/* Mobile View */}
                     <div className="block md:hidden divide-y divide-white/5">
                       <div className="p-4 space-y-3">
+                        {/* Subscription Fee - Primary Metric */}
+                        <div className="flex justify-between items-center p-3 bg-primary/10 rounded-lg border border-primary/20">
+                          <span className="text-primary text-sm font-medium">السعر المدفوع للمنصة</span>
+                          <span className="font-bold text-primary text-lg">{(report.financial_details.subscription_fee || report.financial_details.platform_fees || 0).toLocaleString()} ج.م</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-400 text-sm">المدفوعات المؤكدة</span>
+                          <span className="font-bold text-success">{(report.financial_details.confirmed_payments || 0).toLocaleString()} ج.م</span>
+                        </div>
                         <div className="flex justify-between items-center">
                           <span className="text-gray-400 text-sm">صافي الأرباح</span>
                           <span className="font-bold text-primary">{report.financial_details.net_profit} ج.م</span>
@@ -316,13 +328,13 @@ export default function ReportsPage() {
                         </div>
                         <div className="flex justify-between items-center">
                           <span className="text-gray-400 text-sm">الباقي من التسديد</span>
-                          <span className="font-bold text-info">{report.financial_details.remaining_balance} ج.م</span>
+                          <span className="font-bold text-info">{(report.financial_details.remaining_balance || report.financial_details.payments_due_to_platform || 0).toLocaleString()} ج.م</span>
                         </div>
                         <div className="flex flex-col gap-3 pt-3 border-t border-white/10">
                           <div className="flex justify-between items-center">
                             <span className="text-gray-400">حاله الدفع</span>
-                            <span className={`badge ${report.financial_details.payment_status === 'paid' ? 'badge-success' : 'badge-danger'}`}>
-                              {report.financial_details.payment_status === 'paid' ? 'مدفوع' : 'غير مدفوع'}
+                            <span className={`badge ${report.financial_details.payment_status === 'paid' ? 'badge-success' : report.financial_details.payment_status === 'partial' ? 'badge-warning' : 'badge-danger'}`}>
+                              {report.financial_details.payment_status === 'paid' ? 'مدفوع' : report.financial_details.payment_status === 'partial' ? 'مدفوع جزئياً' : 'غير مدفوع'}
                             </span>
                           </div>
                         </div>
@@ -338,24 +350,33 @@ export default function ReportsPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-white/5 text-white">
+                        {/* Subscription Fee - Primary Metric */}
+                        <tr className="bg-primary/5 border-l-4 border-primary">
+                          <td className="p-4 font-medium text-primary">السعر المدفوع للمنصة</td>
+                          <td className="p-4 font-bold text-primary text-lg">{(report.financial_details.subscription_fee || report.financial_details.platform_fees || 0).toLocaleString()} ج.م</td>
+                        </tr>
+                        <tr className="hover:bg-white/5 transition-colors">
+                          <td className="p-4">المدفوعات المؤكدة</td>
+                          <td className="p-4 font-bold text-success">{(report.financial_details.confirmed_payments || 0).toLocaleString()} ج.م</td>
+                        </tr>
                         <tr className="hover:bg-white/5 transition-colors">
                           <td className="p-4">المدفوعات الصافيه للاكاديميه</td>
                           <td className="p-4 font-bold text-primary">{report.financial_details.net_payments_to_academy} ج.م</td>
                         </tr>
                         <tr className="hover:bg-white/5 transition-colors">
                           <td className="p-4">المدفوعات المستحقه للمنصه</td>
-                          <td className="p-4 font-bold text-warning">{report.financial_details.payments_due_to_platform} ج.م</td>
+                          <td className="p-4 font-bold text-warning">{(report.financial_details.payments_due_to_platform || report.financial_details.platform_fees || 0).toLocaleString()} ج.م</td>
                         </tr>
                         <tr className="hover:bg-white/5 transition-colors">
                           <td className="p-4">الباقي من التسديد</td>
-                          <td className="p-4 font-bold text-info">{report.financial_details.remaining_balance} ج.م</td>
+                          <td className="p-4 font-bold text-info">{(report.financial_details.remaining_balance || 0).toLocaleString()} ج.م</td>
                         </tr>
                         <tr className="hover:bg-white/5 transition-colors">
                           <td className="p-4">حاله الدفع</td>
                           <td className="p-4">
                             <div className="flex flex-col gap-2">
-                              <span className={`badge ${report.financial_details.payment_status === 'paid' ? 'badge-success' : 'badge-danger'}`}>
-                                {report.financial_details.payment_status === 'paid' ? 'مدفوع' : 'غير مدفوع'}
+                              <span className={`badge ${report.financial_details.payment_status === 'paid' ? 'badge-success' : report.financial_details.payment_status === 'partial' ? 'badge-warning' : 'badge-danger'}`}>
+                                {report.financial_details.payment_status === 'paid' ? 'مدفوع' : report.financial_details.payment_status === 'partial' ? 'مدفوع جزئياً' : 'غير مدفوع'}
                               </span>
                             </div>
                           </td>

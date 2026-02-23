@@ -188,12 +188,11 @@ export default function AcademyTeachersPage() {
       
       setTeachers(data);
     } catch (error) {
-      
-      setTeachers(data);
-    } catch (error) {
       // Error handled silently
     } finally {
       setIsLoading(false);
+    }
+  };
 
   const handleDelete = (teacher: any) => {
     setModalConfig({
@@ -209,12 +208,12 @@ export default function AcademyTeachersPage() {
           setModalOpen(false);
           fetchTeachers();
         } catch (error) {
-          setModalOpen(false);
-          fetchTeachers();
-        } catch (error) {
           toast.error('فشل حذف المدرس');
         } finally {
           setIsProcessing(false);
+        }
+      },
+      showCancel: true,
     });
     setModalOpen(true);
   };
@@ -232,12 +231,12 @@ export default function AcademyTeachersPage() {
           await academyService.toggleTeacherStatus(teacher.id);
           toast.success(`تم ${isActive ? 'تعطيل' : 'تفعيل'} الحساب بنجاح`);
           setModalOpen(false);
-          setModalOpen(false);
           fetchTeachers();
         } catch (error) {
           toast.error(`فشل ${isActive ? 'تعطيل' : 'تفعيل'} الحساب`);
         } finally {
           setIsProcessing(false);
+        }
       },
       showCancel: true,
     });

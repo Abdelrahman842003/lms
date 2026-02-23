@@ -8,15 +8,18 @@ use App\Http\Controllers\Controller;
 use App\Models\Teacher;
 use App\Models\Academy;
 use App\Services\Admin\ReportService;
-use App\Http\Requests\Admin\Report\ReportRequest;
+use App\Http\Requests\Admin\Report\GenerateReportRequest;
 use Carbon\Carbon;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 
+/**
+ * Report Controller - Thin controller following best practices
+ * All business logic delegated to ReportService
+ */
 class ReportController extends Controller
 {
     public function __construct(
-        private ReportService $reportService
+        private readonly ReportService $reportService
     ) {}
 
     /**
@@ -26,7 +29,10 @@ class ReportController extends Controller
     {
         $teachers = $this->reportService->getTeachersList();
 
-        return $this->successResponse($teachers);
+        return $this->successResponse([
+            'teachers' => $teachers,
+            'count' => $teachers->count(),
+        ]);
     }
 
     /**
@@ -36,75 +42,95 @@ class ReportController extends Controller
     {
         $academies = $this->reportService->getAcademiesList();
 
-        return $this->successResponse($academies);
+        return $this->successResponse([
+            'academies' => $academies,
+            'count' => $academies->count(),
+        ]);
     }
 
     /**
-     * Get teacher report data (JSON)
+     * Generate report based on type (unified endpoint)
      */
-    public function teacherReport(ReportRequest $request, Teacher $teacher): JsonResponse
+    public function generate(GenerateReportRequest $request): JsonResponse
     {
-        $validated = $request->validated();
+        $dateRange = $request->getDateRange();
+        $reportType = $request->getReportType();
 
-        $startDate = Carbon::parse($validated['start_date'])->startOfDay();
-        $endDate = Carbon::parse($validated['end_date'])->endOfDay();
-
-        $report = $this->reportService->getTeacherReport($teacher, $startDate, $endDate);
+        $report = match ($reportType) {
+            'teacher' => $this->generateTeacherReport($request, $dateRange),
+            'academy' => $this->generateAcademyReport($request, $dateRange),
+            'admin' => $this->generateAdminReport($dateRange),
+            default => throw new \InvalidArgumentException('Invalid report type'),
+        };
 
         return $this->successResponse($report);
     }
 
     /**
-     * Get academy report data (JSON)
+     * Get teacher report data (JSON) - Legacy endpoint for backward compatibility
      */
-    public function academyReport(ReportRequest $request, Academy $academy): JsonResponse
+    public function teacherReport(GenerateReportRequest $request, Teacher $teacher): JsonResponse
     {
-        $validated = $request->validated();
+        $dateRange = $request->getDateRange();
+        $report = $this->reportService->getTeacherReport(
+            $teacher,
+            $dateRange['start_date'],
+            $dateRange['end_date']
+        );
 
-        $startDate = Carbon::parse($validated['start_date'])->startOfDay();
-        $endDate = Carbon::parse($validated['end_date'])->endOfDay();
+        return $this->successResponse($report->toArray());
+    }
 
-        $report = $this->reportService->getAcademyReport($academy, $startDate, $endDate);
+    /**
+     * Get academy report data (JSON) - Legacy endpoint for backward compatibility
+     */
+    public function academyReport(GenerateReportRequest $request, Academy $academy): JsonResponse
+    {
+        $dateRange = $request->getDateRange();
+        $report = $this->reportService->getAcademyReport(
+            $academy,
+            $dateRange['start_date'],
+            $dateRange['end_date']
+        );
 
         return $this->successResponse($report);
     }
 
     /**
-     * Download academy report as PDF
+     * Get admin overview report (JSON) - Legacy endpoint for backward compatibility
      */
-    public function academyReportPdf(ReportRequest $request, Academy $academy)
+    public function adminReport(GenerateReportRequest $request): JsonResponse
     {
-        $validated = $request->validated();
+        $dateRange = $request->getDateRange();
+        $report = $this->reportService->getAdminReport(
+            $dateRange['start_date'],
+            $dateRange['end_date']
+        );
 
-        $startDate = Carbon::parse($validated['start_date'])->startOfDay();
-        $endDate = Carbon::parse($validated['end_date'])->endOfDay();
-
-        $report = $this->reportService->getAcademyReport($academy, $startDate, $endDate);
-
-        $pdfContent = $this->reportService->generatePdf($report, 'academy', 'تقرير الأكاديمية: ' . $academy->name);
-        
-        $filename = 'academy-report-' . $academy->id . '-' . $startDate->format('Y-m-d') . '-to-' . $endDate->format('Y-m-d') . '.pdf';
-
-        return response($pdfContent)
-            ->header('Content-Type', 'application/pdf')
-            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
+        return $this->successResponse($report);
     }
 
     /**
      * Download teacher report as PDF
      */
-    public function teacherReportPdf(ReportRequest $request, Teacher $teacher)
+    public function teacherReportPdf(GenerateReportRequest $request, Teacher $teacher)
     {
-        $validated = $request->validated();
+        $dateRange = $request->getDateRange();
+        $report = $this->reportService->getTeacherReport(
+            $teacher,
+            $dateRange['start_date'],
+            $dateRange['end_date']
+        );
 
-        $startDate = Carbon::parse($validated['start_date'])->startOfDay();
-        $endDate = Carbon::parse($validated['end_date'])->endOfDay();
+        $pdfContent = $this->reportService->generatePdf(
+            $report->toArray(),
+            'teacher',
+            'تقرير المدرس: ' . $teacher->name
+        );
 
-        $report = $this->reportService->getTeacherReport($teacher, $startDate, $endDate);
-
-        $pdfContent = $this->reportService->generatePdf($report, 'teacher', 'تقرير المدرس: ' . $teacher->name);
-        
-        $filename = 'teacher-report-' . $teacher->id . '-' . $startDate->format('Y-m-d') . '-to-' . $endDate->format('Y-m-d') . '.pdf';
+        $filename = 'teacher-report-' . $teacher->id . '-' .
+                    $dateRange['start_date']->format('Y-m-d') . '-to-' .
+                    $dateRange['end_date']->format('Y-m-d') . '.pdf';
 
         return response($pdfContent)
             ->header('Content-Type', 'application/pdf')
@@ -112,38 +138,107 @@ class ReportController extends Controller
     }
 
     /**
-     * Get admin overview report (JSON)
+     * Download academy report as PDF
      */
-    public function adminReport(ReportRequest $request): JsonResponse
+    public function academyReportPdf(GenerateReportRequest $request, Academy $academy)
     {
-        $validated = $request->validated();
+        $dateRange = $request->getDateRange();
+        $report = $this->reportService->getAcademyReport(
+            $academy,
+            $dateRange['start_date'],
+            $dateRange['end_date']
+        );
 
-        $startDate = Carbon::parse($validated['start_date'])->startOfDay();
-        $endDate = Carbon::parse($validated['end_date'])->endOfDay();
+        $pdfContent = $this->reportService->generatePdf(
+            $report,
+            'academy',
+            'تقرير الأكاديمية: ' . $academy->name
+        );
 
-        $report = $this->reportService->getAdminReport($startDate, $endDate);
+        $filename = 'academy-report-' . $academy->id . '-' .
+                    $dateRange['start_date']->format('Y-m-d') . '-to-' .
+                    $dateRange['end_date']->format('Y-m-d') . '.pdf';
 
-        return $this->successResponse($report);
+        return response($pdfContent)
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
     }
 
     /**
      * Download admin report as PDF
      */
-    public function adminReportPdf(ReportRequest $request)
+    public function adminReportPdf(GenerateReportRequest $request)
     {
-        $validated = $request->validated();
+        $dateRange = $request->getDateRange();
+        $report = $this->reportService->getAdminReport(
+            $dateRange['start_date'],
+            $dateRange['end_date']
+        );
 
-        $startDate = Carbon::parse($validated['start_date'])->startOfDay();
-        $endDate = Carbon::parse($validated['end_date'])->endOfDay();
+        $pdfContent = $this->reportService->generatePdf(
+            $report,
+            'admin',
+            'التقرير العام للنظام'
+        );
 
-        $report = $this->reportService->getAdminReport($startDate, $endDate);
-
-        $pdfContent = $this->reportService->generatePdf($report, 'admin', 'التقرير العام للنظام');
-        
-        $filename = 'admin-report-' . $startDate->format('Y-m-d') . '-to-' . $endDate->format('Y-m-d') . '.pdf';
+        $filename = 'admin-report-' .
+                    $dateRange['start_date']->format('Y-m-d') . '-to-' .
+                    $dateRange['end_date']->format('Y-m-d') . '.pdf';
 
         return response($pdfContent)
             ->header('Content-Type', 'application/pdf')
             ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
+    }
+
+    /**
+     * Generate teacher report helper
+     */
+    private function generateTeacherReport(GenerateReportRequest $request, array $dateRange): array
+    {
+        $teacherId = $request->getTeacherId();
+
+        if (!$teacherId) {
+            throw new \InvalidArgumentException('Teacher ID is required for teacher reports');
+        }
+
+        $teacher = Teacher::findOrFail($teacherId);
+        $report = $this->reportService->getTeacherReport(
+            $teacher,
+            $dateRange['start_date'],
+            $dateRange['end_date']
+        );
+
+        return $report->toArray();
+    }
+
+    /**
+     * Generate academy report helper
+     */
+    private function generateAcademyReport(GenerateReportRequest $request, array $dateRange): array
+    {
+        $academyId = $request->getAcademyId();
+
+        if (!$academyId) {
+            throw new \InvalidArgumentException('Academy ID is required for academy reports');
+        }
+
+        $academy = Academy::findOrFail($academyId);
+
+        return $this->reportService->getAcademyReport(
+            $academy,
+            $dateRange['start_date'],
+            $dateRange['end_date']
+        );
+    }
+
+    /**
+     * Generate admin report helper
+     */
+    private function generateAdminReport(array $dateRange): array
+    {
+        return $this->reportService->getAdminReport(
+            $dateRange['start_date'],
+            $dateRange['end_date']
+        );
     }
 }

@@ -375,9 +375,76 @@ export interface PermissionGroup {
 }
 
 /**
- * Teacher report data
+ * Teacher report data with subscription_fee
  */
 export interface TeacherReportData {
+  teacher?: {
+    id: string;
+    name: string;
+    phone: string;
+    joined: string;
+    status: string;
+  };
+  period: {
+    start: string;
+    end: string;
+    duration_months: number;
+  };
+  summary: {
+    total_students: number;
+    active_students: number;
+    new_enrollments: number;
+    total_secretaries: number;
+    subscription_fee: number; // السعر المدفوع للمنصة (Primary metric)
+    confirmed_payments: number;
+    pending_payments: number;
+    paying_students_count: number;
+    not_paying_students_count: number;
+    price_per_student: number;
+    payment_status: 'paid' | 'partial' | 'unpaid';
+    // Legacy fields for backward compatibility
+    new_students?: number;
+    expired_students?: number;
+    total_revenue?: number;
+    total_lectures?: number;
+    total_exams?: number;
+  };
+  revenue_breakdown?: {
+    subscriptions: number;
+    lectures: number;
+    other: number;
+  };
+  financial_details: {
+    total_revenue: number;
+    total_confirmed_payments: number;
+    subscription_fee: number;
+    total_paid_to_platform: number;
+    remaining_balance: number;
+    price_per_student: number;
+  };
+  monthly_breakdown: Array<{
+    month: string;
+    month_name: string;
+    new_enrollments: number;
+    confirmed_payments: number;
+  }>;
+  subscription_breakdown: Array<{
+    month: string;
+    month_name: string;
+    student_count: number;
+    amount_due: number;
+    amount_paid: number;
+    amount_remaining: number;
+    status: 'pending' | 'paid' | 'partial';
+    status_label: string;
+  }>;
+  generated_at: string;
+}
+
+/**
+ * Legacy Teacher report data (for backward compatibility)
+ */
+export interface LegacyTeacherReportData {
   period: {
     start_date: string;
     end_date: string;

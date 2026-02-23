@@ -1,0 +1,151 @@
+{
+  "metadata": {
+    "title": "Reports | Reporting System",
+    "description": "Comprehensive reporting system for the educational platform"
+  },
+  "navigation": {
+    "reports": "Reports",
+    "dashboard": "Dashboard",
+    "teachers": "Teachers",
+    "academies": "Academies",
+    "students": "Students"
+  },
+  "reports": {
+    "title": "Reports",
+    "pageTitle": "Financial and Statistical Reports",
+    "subtitle": "View financial and statistical reports for the platform",
+    
+    "types": {
+      "teacher": "Teacher Report",
+      "academy": "Academy Report",
+      "admin": "Platform Report"
+    },
+    
+    "filters": {
+      "title": "Report Options",
+      "reportType": "Report Type",
+      "selectTeacher": "Select Teacher",
+      "selectAcademy": "Select Academy",
+      "period": "Time Period",
+      "allTeachers": "All Teachers",
+      "allAcademies": "All Academies",
+      "customRange": "Custom Range"
+    },
+    
+    "periods": {
+      "current_month": "Current Month",
+      "last_month": "Last Month",
+      "last_3_months": "Last 3 Months",
+      "last_6_months": "Last 6 Months",
+      "this_year": "This Year",
+      "custom": "Custom Period"
+    },
+    
+    "summary": {
+      "title": "Report Summary",
+      "students": "Students",
+      "teachers": "Teachers",
+      "academies": "Academies",
+      "total_students": "Total Students",
+      "active_students": "Active Students",
+      "new_enrollments": "New Enrollments",
+      "total_teachers": "Total Teachers",
+      "active_teachers": "Active Teachers",
+      "independent_teachers": "Independent Teachers",
+      "total_academies": "Total Academies",
+      "active_academies": "Active Academies"
+    },
+    
+    "financial": {
+      "title": "Financial Details",
+      "subscription_fee": "Platform Subscription Fee",
+      "subscription_fee_description": "Amount due to the platform based on active students",
+      "subscription_fee_teacher": "60 EGP × Number of Active Students",
+      "subscription_fee_academy": "40 EGP × Number of Active Students",
+      "total_revenue": "Total Revenue",
+      "confirmed_payments": "Confirmed Payments",
+      "pending_payments": "Pending Payments",
+      "total_paid": "Total Paid",
+      "total_due": "Total Due",
+      "remaining_balance": "Remaining Balance",
+      "net_profit": "Net Profit",
+      "price_per_student": "Price Per Student",
+      "total_subscription_fees": "Total Subscription Fees",
+      "payment_status": "Payment Status"
+    },
+    
+    "status": {
+      "paid": "Fully Paid",
+      "partial": "Partially Paid",
+      "pending": "Pending",
+      "overdue": "Overdue",
+      "active": "Active",
+      "inactive": "Inactive",
+      "suspended": "Suspended"
+    },
+    
+    "breakdown": {
+      "monthly_title": "Monthly Breakdown",
+      "subscription_title": "Monthly Subscription Breakdown",
+      "teachers_title": "Teachers Breakdown",
+      "month": "Month",
+      "new_enrollments": "New Enrollments",
+      "confirmed_payments": "Confirmed Payments",
+      "student_count": "Student Count",
+      "amount_due": "Amount Due",
+      "amount_paid": "Amount Paid"
+    },
+    
+    "actions": {
+      "generate": "Generate Report",
+      "download_pdf": "Download PDF",
+      "print": "Print",
+      "export": "Export",
+      "refresh": "Refresh"
+    },
+    
+    "messages": {
+      "select_teacher_first": "Please select a teacher first",
+      "select_academy_first": "Please select an academy first",
+      "no_data": "No data available for the selected period",
+      "report_generated": "Report generated successfully",
+      "download_started": "Downloading report...",
+      "error_generating": "An error occurred while generating the report"
+    },
+    
+    "placeholders": {
+      "select_report_type": "Select report type",
+      "select_teacher": "Select teacher",
+      "select_academy": "Select academy"
+    }
+  },
+  "errors": {
+    "generic": "Something went wrong",
+    "network": "Network connection error",
+    "unauthorized": "Unauthorized",
+    "not_found": "Page not found",
+    "validation": "Validation error",
+    "server": "Server error"
+  },
+  "common": {
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "search": "Search",
+    "filter": "Filter",
+    "clear": "Clear",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "submit": "Submit",
+    "confirm": "Confirm",
+    "success": "Success",
+    "error": "Error",
+    "warning": "Warning",
+    "info": "Information"
+  }
+}

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Teacher;
 
+use App\Exceptions\QuotaExceededException;
 use App\Models\Student;
 use App\Models\Enrollment;
 use App\Models\StudentActivityLog;
@@ -81,16 +82,23 @@ class StudentService
                 if ($existingEnrollment) {
                     // Check Limits before reactivating
                     if ($existingEnrollment->trashed() || !$existingEnrollment->is_active) {
-                         // Check Expiration
+                        // Check Expiration
                         if ($teacher->plan_expires_at && now()->gt($teacher->plan_expires_at)) {
                             throw new \Exception('عفواً، لقد انتهت صلاحية باقتك. يرجى تجديد الاشتراك.');
                         }
-                        
+
                         // Check Limit
                         if (!$teacher->is_unlimited_students && $teacher->plan_max_students !== null) {
-                            // Count active enrollments (this query handles soft deletes automatically usually, but we want active)
-                            if ($teacher->activeEnrollments()->count() >= $teacher->plan_max_students) {
-                                throw new \Exception("عفواً، لقد وصلت للحد الأقصى من الطلاب ({$teacher->plan_max_students}).");
+                            $currentCount = $teacher->activeEnrollments()->count();
+                            $maxAllowed = $teacher->plan_max_students;
+
+                            if ($currentCount >= $maxAllowed) {
+                                throw new QuotaExceededException(
+                                    message: "عفواً، لقد وصلت للحد الأقصى من الطلاب ({$maxAllowed}).",
+                                    currentCount: $currentCount,
+                                    maxAllowed: $maxAllowed,
+                                    remainingSeats: 0
+                                );
                             }
                         }
 
@@ -138,6 +146,22 @@ class StudentService
                     // Link student to guardian
                     $student->guardian_id = $guardian->id;
                     $student->save();
+                }
+            }
+
+            // Check student limit for NEW enrollment (not reactivation)
+            // This applies to both new students and existing students being enrolled for the first time
+            if (!$teacher->is_unlimited_students && $teacher->plan_max_students !== null) {
+                $currentCount = $teacher->activeEnrollments()->count();
+                $maxAllowed = $teacher->plan_max_students;
+
+                if ($currentCount >= $maxAllowed) {
+                    throw new QuotaExceededException(
+                        message: "عفواً، لقد وصلت للحد الأقصى من الطلاب ({$maxAllowed}).",
+                        currentCount: $currentCount,
+                        maxAllowed: $maxAllowed,
+                        remainingSeats: 0
+                    );
                 }
             }
 

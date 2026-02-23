@@ -39,16 +39,21 @@ export function getCookie(name: string): string | null {
 export function getAuthToken(): string | null {
   // Try in-memory token first (new secure approach)
   const memoryToken = getAccessToken();
-  if (memoryToken) return memoryToken;
+  if (memoryToken) {
+    console.log('[getAuthToken] Using memory token');
+    return memoryToken;
+  }
 
   // Fallback to localStorage for backward compatibility during transition
   if (typeof window !== 'undefined') {
     const legacyToken = localStorage.getItem('token');
     if (legacyToken) {
+      console.log('[getAuthToken] Using localStorage token, migrating to memory');
       // Migrate to in-memory storage
       setAccessToken(legacyToken, 60);
       return legacyToken;
     }
+    console.log('[getAuthToken] No token found in memory or localStorage');
   }
   return null;
 }
@@ -70,6 +75,10 @@ export function getRefreshToken(): string | null {
 export function getAuthHeaders(additionalHeaders: Record<string, string> = {}): Record<string, string> {
   const xsrfToken = getCSRFToken();
   const token = getAuthToken();
+  
+  // Debug logging
+  console.log('[getAuthHeaders] Token present:', !!token);
+  console.log('[getAuthHeaders] Token source:', token ? (getAccessToken() ? 'memory' : 'localStorage') : 'none');
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',

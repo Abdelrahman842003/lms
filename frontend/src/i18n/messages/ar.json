@@ -1,0 +1,151 @@
+{
+  "metadata": {
+    "title": "التقارير | نظام التقارير",
+    "description": "نظام التقارير الشامل للمنصة التعليمية"
+  },
+  "navigation": {
+    "reports": "التقارير",
+    "dashboard": "لوحة التحكم",
+    "teachers": "المدرسين",
+    "academies": "الأكاديميات",
+    "students": "الطلاب"
+  },
+  "reports": {
+    "title": "التقارير",
+    "pageTitle": "التقارير المالية والإحصائية",
+    "subtitle": "عرض التقارير المالية والإحصائية للمنصة",
+    
+    "types": {
+      "teacher": "تقرير مدرس",
+      "academy": "تقرير أكاديمية",
+      "admin": "تقرير المنصة"
+    },
+    
+    "filters": {
+      "title": "خيارات التقرير",
+      "reportType": "نوع التقرير",
+      "selectTeacher": "اختر المدرس",
+      "selectAcademy": "اختر الأكاديمية",
+      "period": "الفترة الزمنية",
+      "allTeachers": "جميع المدرسين",
+      "allAcademies": "جميع الأكاديميات",
+      "customRange": "نطاق مخصص"
+    },
+    
+    "periods": {
+      "current_month": "الشهر الحالي",
+      "last_month": "الشهر الماضي",
+      "last_3_months": "آخر 3 أشهر",
+      "last_6_months": "آخر 6 أشهر",
+      "this_year": "السنة الحالية",
+      "custom": "فترة مخصصة"
+    },
+    
+    "summary": {
+      "title": "ملخص التقرير",
+      "students": "الطلاب",
+      "teachers": "المدرسين",
+      "academies": "الأكاديميات",
+      "total_students": "إجمالي الطلاب",
+      "active_students": "الطلاب النشطين",
+      "new_enrollments": "التسجيلات الجديدة",
+      "total_teachers": "إجمالي المدرسين",
+      "active_teachers": "المدرسين النشطين",
+      "independent_teachers": "المدرسين المستقلين",
+      "total_academies": "إجمالي الأكاديميات",
+      "active_academies": "الأكاديميات النشطة"
+    },
+    
+    "financial": {
+      "title": "التفاصيل المالية",
+      "subscription_fee": "السعر المدفوع للمنصة",
+      "subscription_fee_description": "المبلغ المستحق للمنصة بناءً على عدد الطلاب النشطين",
+      "subscription_fee_teacher": "60 جنيه × عدد الطلاب النشطين",
+      "subscription_fee_academy": "40 جنيه × عدد الطلاب النشطين",
+      "total_revenue": "إجمالي الإيرادات",
+      "confirmed_payments": "المدفوعات المؤكدة",
+      "pending_payments": "المدفوعات المعلقة",
+      "total_paid": "إجمالي المدفوع",
+      "total_due": "إجمالي المستحق",
+      "remaining_balance": "المتبقي",
+      "net_profit": "صافي الربح",
+      "price_per_student": "سعر الطالب",
+      "total_subscription_fees": "إجمالي رسوم الاشتراكات",
+      "payment_status": "حالة الدفع"
+    },
+    
+    "status": {
+      "paid": "مدفوع بالكامل",
+      "partial": "مدفوع جزئياً",
+      "pending": "معلق",
+      "overdue": "متأخر",
+      "active": "نشط",
+      "inactive": "غير نشط",
+      "suspended": "موقوف"
+    },
+    
+    "breakdown": {
+      "monthly_title": "التفصيل الشهري",
+      "subscription_title": "تفصيل الاشتراكات الشهرية",
+      "teachers_title": "تفصيل المدرسين",
+      "month": "الشهر",
+      "new_enrollments": "التسجيلات الجديدة",
+      "confirmed_payments": "المدفوعات المؤكدة",
+      "student_count": "عدد الطلاب",
+      "amount_due": "المبلغ المستحق",
+      "amount_paid": "المبلغ المدفوع"
+    },
+    
+    "actions": {
+      "generate": "إنشاء التقرير",
+      "download_pdf": "تحميل PDF",
+      "print": "طباعة",
+      "export": "تصدير",
+      "refresh": "تحديث"
+    },
+    
+    "messages": {
+      "select_teacher_first": "يرجى اختيار مدرس أولاً",
+      "select_academy_first": "يرجى اختيار أكاديمية أولاً",
+      "no_data": "لا توجد بيانات متاحة للفترة المحددة",
+      "report_generated": "تم إنشاء التقرير بنجاح",
+      "download_started": "جاري تحميل التقرير...",
+      "error_generating": "حدث خطأ أثناء إنشاء التقرير"
+    },
+    
+    "placeholders": {
+      "select_report_type": "اختر نوع التقرير",
+      "select_teacher": "اختر المدرس",
+      "select_academy": "اختر الأكاديمية"
+    }
+  },
+  "errors": {
+    "generic": "حدث خطأ ما",
+    "network": "خطأ في الاتصال بالشبكة",
+    "unauthorized": "غير مصرح",
+    "not_found": "الصفحة غير موجودة",
+    "validation": "خطأ في التحقق من البيانات",
+    "server": "خطأ في الخادم"
+  },
+  "common": {
+    "loading": "جاري التحميل...",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "delete": "حذف",
+    "edit": "تعديل",
+    "create": "إنشاء",
+    "search": "بحث",
+    "filter": "تصفية",
+    "clear": "مسح",
+    "close": "إغلاق",
+    "back": "رجوع",
+    "next": "التالي",
+    "previous": "السابق",
+    "submit": "إرسال",
+    "confirm": "تأكيد",
+    "success": "نجاح",
+    "error": "خطأ",
+    "warning": "تحذير",
+    "info": "معلومات"
+  }
+}

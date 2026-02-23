@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { DataTable } from '@/components/dashboard/DataTable';
@@ -15,89 +15,97 @@ import {
   getAcademyReport,
   getAdminReport,
   downloadTeacherReportPdf,
+  downloadAcademyReportPdf,
   downloadAdminReportPdf,
-  ReportParams,
-} from '@/services/authService';
+  getDateRangeFromPreset,
+  getPeriodPresetLabel,
+  type PeriodPreset,
+} from '@/services/admin/reportService';
+import type {
+  TeacherListItem,
+  AcademyListItem,
+  TeacherReportData,
+  AcademyReportData,
+  AdminReportData,
+} from '@/types/admin.types';
 
 type ReportType = 'admin' | 'teacher' | 'academy';
-type PeriodPreset = 'last_month' | 'last_3_months' | 'last_6_months' | 'last_year' | 'custom';
-
-interface Teacher {
-  id: string;
-  name: string;
-  phone: string;
-  status: string;
-  students_count: number;
-  secretaries_count: number;
-  joined: string;
-}
-
-interface Academy {
-  id: string;
-  name: string;
-  phone: string;
-  status: string;
-  teachers_count: number;
-  students_count: number;
-  joined: string;
-}
 
 function ReportsPageContent() {
   const { user } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
-  const [isDownloading, setIsDownloading] = useState(false);
+  const router = useRouter();
   const searchParams = useSearchParams();
-  const [teachers, setTeachers] = useState<{id: string; name: string}[]>([]);
-  const [academies, setAcademies] = useState<{id: string; name: string}[]>([]);
-  const [selectedTeacherId, setSelectedTeacherId] = useState<string>('');
-  const [selectedAcademyId, setSelectedAcademyId] = useState<string>('');
+
+  // URL-driven state
   const [reportType, setReportType] = useState<ReportType>('admin');
   const [periodPreset, setPeriodPreset] = useState<PeriodPreset>('last_month');
-  const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
-  const [customStartDate, setCustomStartDate] = useState('');
-  const [customEndDate, setCustomEndDate] = useState('');
-  const [report, setReport] = useState<any>(null);
+  const [selectedTeacherId, setSelectedTeacherId] = useState<string>('');
+  const [selectedAcademyId, setSelectedAcademyId] = useState<string>('');
 
+  // Data state
+  const [teachers, setTeachers] = useState<TeacherListItem[]>([]);
+  const [academies, setAcademies] = useState<AcademyListItem[]>([]);
+  const [report, setReport] = useState<TeacherReportData | AcademyReportData | AdminReportData | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  // Sync state from URL on mount
   useEffect(() => {
-    const type = searchParams.get('type');
-    if (type === 'teacher' || type === 'admin' || type === 'academy') {
-      setReportType(type as ReportType);
+    const type = searchParams.get('type') as ReportType | null;
+    const preset = searchParams.get('preset') as PeriodPreset | null;
+    const teacherId = searchParams.get('teacher_id');
+    const academyId = searchParams.get('academy_id');
+
+    if (type && ['admin', 'teacher', 'academy'].includes(type)) {
+      setReportType(type);
     }
+    if (preset && ['last_month', 'last_3_months', 'last_6_months', 'last_year', 'custom'].includes(preset)) {
+      setPeriodPreset(preset);
+    }
+    if (teacherId) setSelectedTeacherId(teacherId);
+    if (academyId) setSelectedAcademyId(academyId);
   }, [searchParams]);
 
-  // Fetch teachers list on mount
+  // Update URL when state changes
+  const updateUrlParams = (updates: Record<string, string | null>) => {
+    const params = new URLSearchParams(searchParams.toString());
+
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value === null) {
+        params.delete(key);
+      } else {
+        params.set(key, value);
+      }
+    });
+
+    router.push(`?${params.toString()}`, { scroll: false });
+  };
+
+  // Fetch teachers list when user is authenticated
   useEffect(() => {
+    if (!user) return;
+    
     const fetchTeachers = async () => {
       try {
         const data = await getReportTeachers();
-        // Handle both array and object responses
-        if (Array.isArray(data)) {
-          setTeachers(data);
-        } else if (data && typeof data === 'object') {
-          setTeachers((data as any).teachers || []);
-        } else {
-          setTeachers([]);
-        }
+        setTeachers(data);
       } catch (error) {
         console.error('Failed to fetch teachers:', error);
-        toast.error('فشل تحميل قائمة المدرسين');
+        // Don't show error toast for 401 - user just needs to login
+        if ((error as { statusCode?: number }).statusCode !== 401) {
+          toast.error('فشل تحميل قائمة المدرسين');
+        }
       }
     };
     fetchTeachers();
-  }, []);
+  }, [user]);
 
   // Fetch academies list on mount
   useEffect(() => {
     const fetchAcademies = async () => {
       try {
         const data = await getReportAcademies();
-        if (Array.isArray(data)) {
-          setAcademies(data);
-        } else if (data && typeof data === 'object') {
-          setAcademies((data as any).academies || []);
-        } else {
-          setAcademies([]);
-        }
+        setAcademies(data);
       } catch (error) {
         console.error('Failed to fetch academies:', error);
         toast.error('فشل تحميل قائمة الأكاديميات');
@@ -105,68 +113,6 @@ function ReportsPageContent() {
     };
     fetchAcademies();
   }, []);
-
-  // Calculate date range based on preset
-  const getDateRange = (): ReportParams => {
-    const today = new Date();
-    let startDate: Date;
-    const endDate = today;
-
-    // Helper function to format date as YYYY-MM-DD in local timezone
-    const formatDate = (date: Date): string => {
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
-    };
-
-    // Override if specific month is selected
-    if (selectedMonth !== null) {
-      const year = today.getFullYear();
-      startDate = new Date(year, selectedMonth, 1);
-      // End of the selected month
-      const nextMonth = new Date(year, selectedMonth + 1, 1);
-      const lastDayOfMonth = new Date(nextMonth.getTime() - 86400000); // Subtract 1 day
-      
-      return {
-        start_date: formatDate(startDate),
-        end_date: formatDate(lastDayOfMonth),
-      };
-    }
-
-    switch (periodPreset) {
-      case 'last_month':
-        // Current month only (from 1st of current month to today)
-        startDate = new Date(today.getFullYear(), today.getMonth(), 1);
-        break;
-      case 'last_3_months':
-        // Last 3 calendar months (from 1st of month, 2 months ago, to today)
-        startDate = new Date(today.getFullYear(), today.getMonth() - 2, 1);
-        break;
-      case 'last_6_months':
-        // Last 6 calendar months
-        startDate = new Date(today.getFullYear(), today.getMonth() - 5, 1);
-        break;
-      case 'last_year':
-        // Last 12 calendar months
-        startDate = new Date(today.getFullYear() - 1, today.getMonth() + 1, 1);
-        break;
-      case 'custom':
-        return {
-          start_date: customStartDate,
-          end_date: customEndDate,
-        };
-      default:
-        startDate = new Date(today.getFullYear(), today.getMonth(), 1);
-    }
-
-
-
-    return {
-      start_date: formatDate(startDate),
-      end_date: formatDate(endDate),
-    };
-  };
 
   // Generate report
   const handleGenerateReport = async () => {
@@ -180,28 +126,22 @@ function ReportsPageContent() {
       return;
     }
 
-    if (periodPreset === 'custom' && selectedMonth === null && (!customStartDate || !customEndDate)) {
-      toast.error('يرجى تحديد تاريخ البداية والنهاية');
-      return;
-    }
-
     setIsLoading(true);
     setReport(null);
 
     try {
-      const params = getDateRange();
-      
+      const params = getDateRangeFromPreset(periodPreset);
+
+      let data;
       if (reportType === 'admin') {
-        const data = await getAdminReport(params);
-        setReport(data);
+        data = await getAdminReport(params);
       } else if (reportType === 'academy') {
-        const data = await getAcademyReport(selectedAcademyId, params);
-        setReport(data);
+        data = await getAcademyReport(selectedAcademyId, params);
       } else {
-        const data = await getTeacherReport(selectedTeacherId, params);
-        setReport(data);
+        data = await getTeacherReport(selectedTeacherId, params);
       }
-      
+
+      setReport(data);
       toast.success('تم إنشاء التقرير بنجاح');
     } catch (error) {
       console.error('Failed to generate report:', error);
@@ -221,14 +161,16 @@ function ReportsPageContent() {
     setIsDownloading(true);
 
     try {
-      const params = getDateRange();
-      
+      const params = getDateRangeFromPreset(periodPreset);
+
       if (reportType === 'admin') {
         await downloadAdminReportPdf(params);
+      } else if (reportType === 'academy') {
+        await downloadAcademyReportPdf(selectedAcademyId, params);
       } else {
         await downloadTeacherReportPdf(selectedTeacherId, params);
       }
-      
+
       toast.success('تم تحميل التقرير بنجاح');
     } catch (error) {
       console.error('Failed to download PDF:', error);
@@ -238,45 +180,7 @@ function ReportsPageContent() {
     }
   };
 
-  const periodPresets = [
-    { value: 'last_month', label: 'الشهر الحالي' },
-    { value: 'last_3_months', label: 'آخر 3 شهور' },
-    { value: 'last_6_months', label: 'آخر 6 شهور' },
-    { value: 'last_year', label: 'آخر سنة' },
-    { value: 'custom', label: 'مخصص' },
-  ];
-
-  const months = [
-    { value: 0, label: 'يناير' },
-    { value: 1, label: 'فبراير' },
-    { value: 2, label: 'مارس' },
-    { value: 3, label: 'أبريل' },
-    { value: 4, label: 'مايو' },
-    { value: 5, label: 'يونيو' },
-    { value: 6, label: 'يوليو' },
-    { value: 7, label: 'أغسطس' },
-    { value: 8, label: 'سبتمبر' },
-    { value: 9, label: 'أكتوبر' },
-    { value: 10, label: 'نوفمبر' },
-    { value: 11, label: 'ديسمبر' },
-  ];
-
-  // Monthly breakdown table columns
-  const monthlyColumns = [
-    { key: 'month_name', label: 'الشهر', sortable: true },
-    {
-      key: 'confirmed_payments',
-      label: 'المدفوعات المؤكدة',
-      sortable: true,
-      render: (value: number) => (
-        <span className="text-secondary font-semibold">
-          {value.toLocaleString()} ج.م
-        </span>
-      ),
-    },
-  ];
-
-  // Teachers breakdown table columns
+  // Teachers breakdown columns with subscription_fee
   const teachersColumns = [
     { key: 'name', label: 'الاسم', sortable: true },
     {
@@ -291,7 +195,16 @@ function ReportsPageContent() {
     },
     { key: 'total_students', label: 'إجمالي الطلاب', sortable: true },
     { key: 'active_students', label: 'النشطين', sortable: true },
-    { key: 'secretaries', label: 'السكرتارية', sortable: true },
+    {
+      key: 'subscription_fee',
+      label: 'السعر المدفوع للمنصة',
+      sortable: true,
+      render: (value: number) => (
+        <span className="text-primary font-semibold">
+          {(value || 0).toLocaleString()} ج.م
+        </span>
+      ),
+    },
     {
       key: 'revenue',
       label: 'الإيرادات',
@@ -314,9 +227,8 @@ function ReportsPageContent() {
     },
   ];
 
-
-  // Teacher monthly breakdown columns
-  const teacherMonthlyColumns = [
+  // Subscription breakdown columns
+  const subscriptionColumns = [
     { key: 'month_name', label: 'الشهر', sortable: true },
     { key: 'student_count', label: 'عدد الطلاب', sortable: true },
     {
@@ -385,55 +297,33 @@ function ReportsPageContent() {
             <div>
               <label className="block text-gray-300 mb-3 text-sm font-medium">نوع التقرير</label>
               <div className="flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setReportType('admin');
-                    setReport(null);
-                  }}
-                  className={`px-6 py-3 rounded-xl transition-all flex items-center gap-2 ${
-                    reportType === 'admin'
-                      ? 'bg-primary text-white shadow-lg shadow-primary/30'
-                      : 'bg-white/5 text-gray-400 hover:bg-white/10'
-                  }`}
-                >
-                  <i className="fas fa-chart-pie"></i>
-                  التقرير العام
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setReportType('teacher');
-                    setReport(null);
-                  }}
-                  className={`px-6 py-3 rounded-xl transition-all flex items-center gap-2 ${
-                    reportType === 'teacher'
-                      ? 'bg-primary text-white shadow-lg shadow-primary/30'
-                      : 'bg-white/5 text-gray-400 hover:bg-white/10'
-                  }`}
-                >
-                  <i className="fas fa-chalkboard-teacher"></i>
-                  تقرير مدرس
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setReportType('academy');
-                    setReport(null);
-                  }}
-                  className={`px-6 py-3 rounded-xl transition-all flex items-center gap-2 ${
-                    reportType === 'academy'
-                      ? 'bg-primary text-white shadow-lg shadow-primary/30'
-                      : 'bg-white/5 text-gray-400 hover:bg-white/10'
-                  }`}
-                >
-                  <i className="fas fa-building"></i>
-                  تقرير أكاديمية
-                </button>
+                {[
+                  { value: 'admin', label: 'التقرير العام', icon: 'fa-chart-pie' },
+                  { value: 'teacher', label: 'تقرير مدرس', icon: 'fa-chalkboard-teacher' },
+                  { value: 'academy', label: 'تقرير أكاديمية', icon: 'fa-building' },
+                ].map((type) => (
+                  <button
+                    key={type.value}
+                    type="button"
+                    onClick={() => {
+                      setReportType(type.value as ReportType);
+                      setReport(null);
+                      updateUrlParams({ type: type.value, teacher_id: null, academy_id: null });
+                    }}
+                    className={`px-6 py-3 rounded-xl transition-all flex items-center gap-2 ${
+                      reportType === type.value
+                        ? 'bg-primary text-white shadow-lg shadow-primary/30'
+                        : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                    }`}
+                  >
+                    <i className={`fas ${type.icon}`}></i>
+                    {type.label}
+                  </button>
+                ))}
               </div>
             </div>
 
-            {/* Teacher Selection (if teacher report) */}
+            {/* Teacher Selection */}
             {reportType === 'teacher' && (
               <div>
                 <label className="block text-gray-300 mb-2 text-sm font-medium">اختر المدرس</label>
@@ -442,6 +332,7 @@ function ReportsPageContent() {
                   onChange={(e) => {
                     setSelectedTeacherId(e.target.value);
                     setReport(null);
+                    updateUrlParams({ teacher_id: e.target.value || null });
                   }}
                   className="w-full md:w-1/2 p-3 bg-[#1a1f37] border border-white/10 rounded-lg text-white outline-none focus:border-primary transition-all"
                   disabled={!teachers || teachers.length === 0}
@@ -450,14 +341,14 @@ function ReportsPageContent() {
                   <option value="" className="bg-[#1a1f37] text-white">-- اختر مدرس --</option>
                   {teachers.map((teacher) => (
                     <option key={teacher.id} value={teacher.id} className="bg-[#1a1f37] text-white">
-                      {teacher.name}
+                      {teacher.name} ({teacher.subscription_fee > 0 ? `${teacher.subscription_fee.toLocaleString()} ج.م` : 'لا يوجد باقة'})
                     </option>
                   ))}
                 </select>
               </div>
             )}
 
-            {/* Academy Selection (if academy report) */}
+            {/* Academy Selection */}
             {reportType === 'academy' && (
               <div>
                 <label className="block text-gray-300 mb-2 text-sm font-medium">اختر الأكاديمية</label>
@@ -466,6 +357,7 @@ function ReportsPageContent() {
                   onChange={(e) => {
                     setSelectedAcademyId(e.target.value);
                     setReport(null);
+                    updateUrlParams({ academy_id: e.target.value || null });
                   }}
                   className="w-full md:w-1/2 p-3 bg-[#1a1f37] border border-white/10 rounded-lg text-white outline-none focus:border-primary transition-all"
                   disabled={!academies || academies.length === 0}
@@ -474,106 +366,28 @@ function ReportsPageContent() {
                   <option value="" className="bg-[#1a1f37] text-white">-- اختر أكاديمية --</option>
                   {academies.map((academy) => (
                     <option key={academy.id} value={academy.id} className="bg-[#1a1f37] text-white">
-                      {academy.name} ({academy.teachers_count} مدرس)
+                      {academy.name} ({academy.subscription_fee > 0 ? `${academy.subscription_fee.toLocaleString()} ج.م` : 'لا يوجد باقة'})
                     </option>
                   ))}
                 </select>
               </div>
             )}
 
-            {/* Period Selection */}
-            <div>
-              <label className="block text-gray-300 mb-3 text-sm font-medium">الفترة الزمنية</label>
-              <div className="flex flex-wrap gap-2 mb-4">
-                {periodPresets.map((preset) => (
-                  <button
-                    key={preset.value}
-                    type="button"
-                    onClick={() => {
-                      setPeriodPreset(preset.value as PeriodPreset);
-                      setSelectedMonth(null); // Reset month selection
-                      setReport(null);
-                    }}
-                    className={`px-4 py-2 rounded-lg transition-all text-sm ${
-                      periodPreset === preset.value && selectedMonth === null
-                        ? 'bg-secondary text-white shadow-lg shadow-secondary/30'
-                        : 'bg-white/5 text-gray-400 hover:bg-white/10'
-                    }`}
-                  >
-                    {preset.label}
-                  </button>
-                ))}
-              </div>
-
-              {/* Month Selection */}
-              <div className="mb-4">
-                <label className="block text-gray-300 mb-2 text-sm font-medium">الشهر</label>
-                <select
-                  value={selectedMonth === null ? '' : selectedMonth}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    if (val === '') {
-                      setSelectedMonth(null);
-                      setPeriodPreset('last_month'); // Default back to last month if month is cleared
-                    } else {
-                      setSelectedMonth(parseInt(val));
-                      setPeriodPreset('custom'); // Or any value that isn't one of the presets, to visually deselect them
-                    }
-                    setReport(null);
-                  }}
-                  className="w-full md:w-1/3 p-3 bg-[#1a1f37] border border-white/10 rounded-lg text-white outline-none focus:border-primary transition-all"
-                  style={{ colorScheme: 'dark' }}
-                >
-                  <option value="" className="bg-[#1a1f37] text-white">الكل</option>
-                  {months.map((month) => (
-                    <option key={month.value} value={month.value} className="bg-[#1a1f37] text-white">
-                      {month.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Custom Date Range */}
-              {periodPreset === 'custom' && selectedMonth === null && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 p-4 bg-white/5 rounded-xl border border-white/10">
-                  <div>
-                    <label className="block text-gray-400 mb-2 text-sm">من تاريخ</label>
-                    <input
-                      type="date"
-                      value={customStartDate}
-                      onChange={(e) => setCustomStartDate(e.target.value)}
-                      className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary transition-all"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-gray-400 mb-2 text-sm">إلى تاريخ</label>
-                    <input
-                      type="date"
-                      value={customEndDate}
-                      onChange={(e) => setCustomEndDate(e.target.value)}
-                      className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary transition-all"
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex flex-wrap gap-3 pt-4 border-t border-white/10">
+            {/* Generate Button */}
+            <div className="flex gap-3">
               <button
-                type="button"
                 onClick={handleGenerateReport}
                 disabled={isLoading}
-                className="btn btn-primary px-6 py-3 flex items-center gap-2"
+                className="px-6 py-3 bg-primary text-white rounded-xl hover:bg-primary/90 transition-all disabled:opacity-50 flex items-center gap-2"
               >
                 {isLoading ? (
                   <>
                     <i className="fas fa-spinner fa-spin"></i>
-                    جاري الإنشاء...
+                    جاري التحميل...
                   </>
                 ) : (
                   <>
-                    <i className="fas fa-chart-line"></i>
+                    <i className="fas fa-file-alt"></i>
                     إنشاء التقرير
                   </>
                 )}
@@ -581,10 +395,9 @@ function ReportsPageContent() {
 
               {report && (
                 <button
-                  type="button"
                   onClick={handleDownloadPdf}
                   disabled={isDownloading}
-                  className="btn btn-secondary px-6 py-3 flex items-center gap-2"
+                  className="px-6 py-3 bg-secondary text-white rounded-xl hover:bg-secondary/90 transition-all disabled:opacity-50 flex items-center gap-2"
                 >
                   {isDownloading ? (
                     <>
@@ -593,7 +406,7 @@ function ReportsPageContent() {
                     </>
                   ) : (
                     <>
-                      <i className="fas fa-file-pdf"></i>
+                      <i className="fas fa-download"></i>
                       تحميل PDF
                     </>
                   )}
@@ -605,319 +418,444 @@ function ReportsPageContent() {
 
         {/* Report Results */}
         {report && (
-          <>
-            {/* Summary Stats */}
-            <div className={`grid grid-cols-2 gap-4 mb-6 ${
-              reportType === 'admin' ? 'md:grid-cols-5' :
-              reportType === 'teacher' ? 'md:grid-cols-4' :
-              'md:grid-cols-3'
-            }`}>
-              {reportType === 'admin' && (
+          <div className="space-y-6">
+            {/* Summary Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Teacher Report Summary */}
+              {'teacher' in report && (
                 <>
-                  <div className="p-4 bg-white/5 rounded-xl border border-white/10">
-                    <div className="text-3xl font-bold text-white mb-1">
-                      {report.summary.total_academies}
-                    </div>
-                    <div className="text-gray-400 text-sm">عدد الأكاديميات</div>
-                  </div>
-                  <div className="p-4 bg-white/5 rounded-xl border border-white/10">
-                    <div className="text-3xl font-bold text-white mb-1">
-                      {report.summary.independent_teachers_count}
-                    </div>
-                    <div className="text-gray-400 text-sm">مدرسين مستقلين</div>
-                  </div>
-                  <div className="p-4 bg-white/5 rounded-xl border border-white/10">
-                    <div className="text-3xl font-bold text-white mb-1">
-                      {report.summary.total_subscriptions}
-                    </div>
-                    <div className="text-gray-400 text-sm">إجمالي الاشتراكات</div>
-                  </div>
-                </>
-              )}
-
-              {reportType === 'academy' && (
-                <>
-                  {/* Total Teachers */}
-                  <div className="p-4 bg-white/5 rounded-xl border border-white/10">
-                    <div className="text-3xl font-bold text-white mb-1">
-                      {report.summary.active_teachers}
-                    </div>
-                    <div className="text-gray-400 text-sm">إجمالي المدرسين</div>
-                  </div>
-
-                  {/* Total Students */}
-                  <div className="p-4 bg-white/5 rounded-xl border border-white/10">
-                    <div className="text-3xl font-bold text-white mb-1">
-                      {report.summary.total_academy_students}
-                    </div>
-                    <div className="text-gray-400 text-sm">إجمالي الطلاب</div>
-                  </div>
-
-                  {/* Active Students */}
-                  <div className="p-4 bg-white/5 rounded-xl border border-white/10">
-                    <div className="text-3xl font-bold text-white mb-1">
-                      {report.summary.active_enrollments}
-                    </div>
-                    <div className="text-gray-400 text-sm">الطلاب المرتبطين</div>
-                  </div>
-
-                  {/* Payment Transactions */}
-                  <div className="p-4 bg-white/5 rounded-xl border border-white/10">
-                    <div className="text-3xl font-bold text-white mb-1">
-                      {report.summary.total_payment_transactions || 0}
-                    </div>
-                    <div className="text-gray-400 text-sm">عمليات الدفع</div>
-                  </div>
-
-
-
-                  {/* Remaining Balance removed from here */}
-                </>
-              )}
-
-              {reportType === 'teacher' && (
-                <>
-                  <div className="p-4 bg-white/5 rounded-xl border border-white/10">
-                    <div className="text-3xl font-bold text-white mb-1">
+                  <DashboardCard title="الطلاب" icon="fas fa-users" className="bg-white/5">
+                    <div className="text-3xl font-bold text-white">
                       {report.summary.total_students}
                     </div>
-                    <div className="text-gray-400 text-sm">إجمالي الطلاب</div>
-                  </div>
-                  <div className="p-4 bg-white/5 rounded-xl border border-white/10">
-                    <div className="text-3xl font-bold text-white mb-1">
-                      {report.summary.active_students}
+                    <div className="text-sm text-gray-400">
+                      {report.summary.active_students} نشط
                     </div>
-                    <div className="text-gray-400 text-sm">الطلاب النشطين</div>
-                  </div>
-                  <div className="p-4 bg-white/5 rounded-xl border border-white/10">
-                    <div className="text-3xl font-bold text-white mb-1">
-                      {report.summary.new_enrollments}
+                  </DashboardCard>
+                  <DashboardCard title="السعر المدفوع للمنصة" icon="fas fa-money-bill-wave" className="bg-primary/10 border-primary/30">
+                    <div className="text-3xl font-bold text-primary">
+                      {(report.financial_details?.total_revenue || 0).toLocaleString()} ج.م
                     </div>
-                    <div className="text-gray-400 text-sm">اشتراكات جديدة</div>
-                  </div>
-                  <div className="p-4 bg-secondary/20 rounded-xl border border-secondary/30">
-                    <div className="text-3xl font-bold text-secondary mb-1">
-                      {report.summary.calculated_revenue?.toLocaleString()} ج.م
+                    <div className="text-sm text-gray-400">
+                      {report.summary.new_enrollments} شهر
                     </div>
-                    <div className="text-gray-400 text-sm">الإيرادات المحسوبة</div>
-                  </div>
+                  </DashboardCard>
+                </>
+              )}
+
+              {/* Academy Report Summary */}
+              {'academy' in report && (
+                <>
+                  <DashboardCard title="المدرسين" icon="fas fa-chalkboard-teacher" className="bg-white/5">
+                    <div className="text-3xl font-bold text-white">
+                      {report.summary.total_teachers}
+                    </div>
+                    <div className="text-sm text-gray-400">
+                      {report.summary.active_teachers} نشط
+                    </div>
+                  </DashboardCard>
+                  <DashboardCard title="الطلاب" icon="fas fa-users" className="bg-white/5">
+                    <div className="text-3xl font-bold text-white">
+                      {report.summary.total_academy_students}
+                    </div>
+                    <div className="text-sm text-gray-400">
+                      {report.summary.total_enrollments} تسجيل
+                    </div>
+                  </DashboardCard>
+                  <DashboardCard title="السعر المدفوع للمنصة" icon="fas fa-money-bill-wave" className="bg-primary/10 border-primary/30">
+                    <div className="text-3xl font-bold text-primary">
+                      {report.summary.subscription_fee.toLocaleString()} ج.م
+                    </div>
+                    <div className="text-sm text-gray-400">
+                      {report.summary.total_subscriptions} اشتراك
+                    </div>
+                  </DashboardCard>
+                  <DashboardCard title="حالة الدفع" icon="fas fa-info-circle" className="bg-white/5">
+                    <div className={`text-2xl font-bold ${
+                      report.summary.payment_status === 'paid' ? 'text-success' :
+                      report.summary.payment_status === 'partial' ? 'text-warning' : 'text-danger'
+                    }`}>
+                      {report.summary.payment_status === 'paid' ? 'مدفوع' :
+                       report.summary.payment_status === 'partial' ? 'مدفوع جزئياً' : 'غير مدفوع'}
+                    </div>
+                    <div className="text-sm text-gray-400">
+                      {report.summary.remaining_balance.toLocaleString()} ج.م متبقي
+                    </div>
+                  </DashboardCard>
+                </>
+              )}
+
+              {/* Academy Additional Info */}
+              {'academy' in report && (
+                <div className="col-span-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-2">
+                  {/* Plan Type */}
+                  <DashboardCard title="الباقة الحالية" icon="fas fa-crown" className="bg-yellow-500/10 border-yellow-500/30">
+                    <div className="text-2xl font-bold text-yellow-400">
+                      {report.academy.plan_type === 'trial' ? 'فترة تجريبية' :
+                       report.academy.plan_type === 'term' ? 'باقة فصلية' :
+                       report.academy.plan_type === 'custom' ? 'باقة مخصصة' :
+                       report.academy.plan_type ? report.academy.plan_type : 'بدون باقة'}
+                    </div>
+                    <div className="text-sm text-gray-400">
+                      {report.summary.price_per_student} ج.م / طالب
+                    </div>
+                  </DashboardCard>
+
+                  {/* Allowed Students */}
+                  <DashboardCard title="الطلاب المسموح بهم" icon="fas fa-user-friends" className="bg-blue-500/10 border-blue-500/30">
+                    <div className="text-2xl font-bold text-blue-400">
+                      {report.academy.is_unlimited_students ? 'غير محدود' : (report.academy.plan_max_students || 0)}
+                    </div>
+                    <div className="text-sm text-gray-400">
+                      الطلاب الحاليين: {report.summary.total_academy_students}
+                    </div>
+                  </DashboardCard>
+
+                  {/* Usage Percentage */}
+                  <DashboardCard title="نسبة استخدام الباقة" icon="fas fa-chart-pie" className="bg-cyan-500/10 border-cyan-500/30">
+                    <div className="text-2xl font-bold text-cyan-400">
+                      {report.academy.is_unlimited_students
+                        ? '∞'
+                        : report.academy.plan_max_students && report.academy.plan_max_students > 0
+                          ? `${Math.round((report.summary.total_academy_students / report.academy.plan_max_students) * 100)}%`
+                          : '0%'}
+                    </div>
+                    <div className="text-sm text-gray-400">
+                      {report.summary.total_academy_students} / {report.academy.is_unlimited_students ? '∞' : (report.academy.plan_max_students || 0)} طالب
+                    </div>
+                  </DashboardCard>
+
+                  {/* Teachers Count */}
+                  <DashboardCard title="عدد المدرسين" icon="fas fa-chalkboard-teacher" className="bg-purple-500/10 border-purple-500/30">
+                    <div className="text-2xl font-bold text-purple-400">
+                      {report.academy.total_teachers || report.summary.total_teachers}
+                    </div>
+                    <div className="text-sm text-gray-400">
+                      {report.academy.active_teachers || report.summary.active_teachers} مدرس نشط
+                    </div>
+                  </DashboardCard>
+
+                  {/* Join Date */}
+                  <DashboardCard title="تاريخ الانضمام للمنصة" icon="fas fa-calendar-alt" className="bg-white/5">
+                    <div className="text-2xl font-bold text-white">
+                      {report.academy.joined}
+                    </div>
+                    <div className="text-sm text-gray-400">
+                      عضو منذ {report.academy.member_since_days || 0} يوم
+                    </div>
+                  </DashboardCard>
+
+                  {/* Payment Status */}
+                  <DashboardCard title="تاريخ آخر دفعة" icon="fas fa-receipt" className={
+                    report.academy.has_subscription
+                      ? (report.academy.amount_due ?? 0) <= 0
+                        ? 'bg-green-500/10 border-green-500/30'
+                        : 'bg-yellow-500/10 border-yellow-500/30'
+                      : 'bg-red-500/10 border-red-500/30'
+                  }>
+                    <div className={`text-xl font-bold ${
+                      report.academy.has_subscription
+                        ? (report.academy.amount_due ?? 0) <= 0
+                          ? 'text-green-400'
+                          : 'text-yellow-400'
+                        : 'text-red-400'
+                    }`}>
+                      {report.academy.has_subscription ? 'تم الدفع' : 'لم يتم الدفع'}
+                      {!report.academy.has_subscription && (
+                        <span className="text-xs mr-2 bg-red-500/20 text-red-400 px-2 py-1 rounded">⚠ مطلوب الدفع</span>
+                      )}
+                    </div>
+                    <div className="text-sm text-gray-400">
+                      {report.academy.subscription_expiry
+                        ? `تنتهي: ${report.academy.subscription_expiry}`
+                        : report.academy.has_subscription
+                          ? ((report.academy.amount_due ?? 0) > 0
+                            ? `المتبقي: ${(report.academy.amount_due ?? 0).toLocaleString()} ج.م`
+                            : 'مدفوع بالكامل')
+                          : `المطلوب: ${(report.summary.subscription_fee || 0).toLocaleString()} ج.م`
+                      }
+                    </div>
+                  </DashboardCard>
+
+                  {/* Remaining Days until Plan Expiry */}
+                  {(() => {
+                    const daysRemaining = report.academy.days_remaining ?? null;
+                    return (
+                      <DashboardCard
+                        title="المتبقي على انتهاء الباقة"
+                        icon="fas fa-hourglass-half"
+                        className={
+                          daysRemaining === null ? 'bg-white/5' :
+                          daysRemaining <= 7 ? 'bg-red-500/10 border-red-500/30' :
+                          daysRemaining <= 30 ? 'bg-yellow-500/10 border-yellow-500/30' :
+                          'bg-green-500/10 border-green-500/30'
+                        }
+                      >
+                        <div className={`text-2xl font-bold ${
+                          daysRemaining === null ? 'text-gray-400' :
+                          daysRemaining <= 7 ? 'text-red-400' :
+                          daysRemaining <= 30 ? 'text-yellow-400' :
+                          'text-green-400'
+                        }`}>
+                          {daysRemaining !== null
+                            ? `${daysRemaining} يوم`
+                            : 'غير محدد'}
+                        </div>
+                        <div className="text-sm text-gray-400">
+                          {report.academy.subscription_expiry
+                            ? `تنتهي في ${report.academy.subscription_expiry}`
+                            : 'لا يوجد تاريخ انتهاء'}
+                        </div>
+                      </DashboardCard>
+                    );
+                  })()}
+
+                  {/* Payment Progress */}
+                  {(() => {
+                    const pct = report.academy.payment_percentage ?? 0;
+                    return (
+                      <DashboardCard title="نسبة الدفع" icon="fas fa-money-check-alt" className={
+                        pct >= 100 ? 'bg-green-500/10 border-green-500/30' :
+                        pct > 0 ? 'bg-yellow-500/10 border-yellow-500/30' :
+                        'bg-red-500/10 border-red-500/30'
+                      }>
+                        <div className={`text-2xl font-bold ${
+                          pct >= 100 ? 'text-green-400' :
+                          pct > 0 ? 'text-yellow-400' :
+                          'text-red-400'
+                        }`}>
+                          {pct}%
+                        </div>
+                        <div className="w-full bg-gray-700 rounded-full h-2 mt-2">
+                          <div
+                            className={`h-2 rounded-full transition-all ${
+                              pct >= 100 ? 'bg-green-500' :
+                              pct > 0 ? 'bg-yellow-500' :
+                              'bg-red-500'
+                            }`}
+                            style={{ width: `${Math.min(pct, 100)}%` }}
+                          />
+                        </div>
+                        <div className="text-sm text-gray-400 mt-1">
+                          {(report.academy.paid_amount ?? 0).toLocaleString()} / {(report.summary.subscription_fee || 0).toLocaleString()} ج.م
+                        </div>
+                      </DashboardCard>
+                    );
+                  })()}
+                </div>
+              )}
+
+              {/* Admin Report Summary */}
+              {'summary' in report && !('teacher' in report) && !('academy' in report) && (
+                <>
+                  <DashboardCard title="إجمالي المدرسين" icon="fas fa-chalkboard-teacher" className="bg-white/5">
+                    <div className="text-3xl font-bold text-white">
+                      {report.summary.total_teachers}
+                    </div>
+                    <div className="text-sm text-gray-400">
+                      {report.summary.active_teachers} نشط | {report.summary.suspended_teachers} معلق
+                    </div>
+                  </DashboardCard>
+                  <DashboardCard title="إجمالي الطلاب" icon="fas fa-users" className="bg-white/5">
+                    <div className="text-3xl font-bold text-white">
+                      {report.summary.total_students}
+                    </div>
+                    <div className="text-sm text-gray-400">
+                      {report.summary.new_students} جديد في الفترة
+                    </div>
+                  </DashboardCard>
+                  <DashboardCard title="إجمالي رسوم الاشتراكات" icon="fas fa-money-bill-wave" className="bg-primary/10 border-primary/30">
+                    <div className="text-3xl font-bold text-primary">
+                      {report.summary.total_subscription_fees.toLocaleString()} ج.م
+                    </div>
+                    <div className="text-sm text-gray-400">
+                      {report.summary.total_subscriptions} اشتراك
+                    </div>
+                  </DashboardCard>
+                  <DashboardCard title="صافي ربح المنصة" icon="fas fa-chart-line" className="bg-success/10 border-success/30">
+                    <div className="text-3xl font-bold text-success">
+                      {report.summary.net_platform_profit.toLocaleString()} ج.م
+                    </div>
+                    <div className="text-sm text-gray-400">
+                      {report.summary.independent_commission.toLocaleString()} مدرسين | {report.summary.academy_platform_share.toLocaleString()} أكاديميات
+                    </div>
+                  </DashboardCard>
                 </>
               )}
             </div>
 
-            {/* Teacher Info (for teacher report) */}
-            {reportType === 'teacher' && report.teacher && (
-              <DashboardCard title="معلومات المدرس" icon="fas fa-user" className="mb-6">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div>
-                    <div className="text-gray-400 text-sm mb-1">الاسم</div>
-                    <div className="text-white font-medium">{report.teacher.name}</div>
+            {/* Teacher Plan Info */}
+            {'teacher' in report && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                <DashboardCard title="الباقة الحالية" icon="fas fa-crown" className="bg-yellow-500/10 border-yellow-500/30">
+                  <div className="text-2xl font-bold text-yellow-400">
+                    {report.teacher.plan_type === 'trial' ? 'فترة تجريبية' :
+                     report.teacher.plan_type === 'term' ? 'باقة فصلية' :
+                     report.teacher.plan_type === 'custom' ? 'باقة مخصصة' :
+                     report.teacher.plan_type ? report.teacher.plan_type : 'بدون باقة'}
                   </div>
-                  <div>
-                    <div className="text-gray-400 text-sm mb-1">الهاتف</div>
-                    <div className="text-white font-medium">{report.teacher.phone}</div>
+                  <div className="text-sm text-gray-400">
+                    {report.summary.price_per_student} ج.م / طالب
                   </div>
-                  <div>
-                    <div className="text-gray-400 text-sm mb-1">تاريخ الانضمام</div>
-                    <div className="text-white font-medium">{report.teacher.joined}</div>
-                  </div>
-                  <div>
-                    <div className="text-gray-400 text-sm mb-1">الحالة</div>
-                    <span className={`badge ${report.teacher.status === 'نشط' ? 'badge-success' : 'badge-danger'}`}>
-                      {report.teacher.status}
-                    </span>
-                  </div>
-                </div>
-              </DashboardCard>
-            )}
+                </DashboardCard>
 
-            {/* Academy Info (for academy report) */}
-            {reportType === 'academy' && report.academy && (
-              <DashboardCard title="معلومات الأكاديمية" icon="fas fa-building" className="mb-6">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div>
-                    <div className="text-gray-400 text-sm mb-1">الاسم</div>
-                    <div className="text-white font-medium">{report.academy.name}</div>
+                <DashboardCard title="الطلاب المسموح بهم" icon="fas fa-users-cog" className="bg-blue-500/10 border-blue-500/30">
+                  <div className="text-2xl font-bold text-blue-400">
+                    {report.teacher.is_unlimited_students ? 'غير محدود' : (report.teacher.plan_max_students || 0)}
                   </div>
-                  <div>
-                    <div className="text-gray-400 text-sm mb-1">الهاتف</div>
-                    <div className="text-white font-medium">{report.academy.phone}</div>
+                  <div className="text-sm text-gray-400">
+                    الطلاب الحاليين: {report.summary.total_students}
                   </div>
-                  <div>
-                    <div className="text-gray-400 text-sm mb-1">تاريخ الانضمام</div>
-                    <div className="text-white font-medium">{report.academy.joined}</div>
+                </DashboardCard>
+
+                <DashboardCard title="نسبة استخدام الباقة" icon="fas fa-chart-pie" className="bg-purple-500/10 border-purple-500/30">
+                  <div className="text-2xl font-bold text-purple-400">
+                    {report.teacher.is_unlimited_students ? '-' :
+                     report.teacher.plan_max_students && report.teacher.plan_max_students > 0
+                       ? `${Math.min(Math.round((report.summary.total_students / report.teacher.plan_max_students) * 100), 100)}%`
+                       : '0%'}
                   </div>
-                  <div>
-                    <div className="text-gray-400 text-sm mb-1">الحالة</div>
-                    <span className={`badge ${report.academy.status === 'نشط' ? 'badge-success' : 'badge-danger'}`}>
-                      {report.academy.status}
-                    </span>
-                  </div>
-
-                </div>
-              </DashboardCard>
-            )}
-
-            {/* Financial Summary */}
-            <DashboardCard title="الملخص المالي" icon="fas fa-coins" className="mb-6">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-white/10">
-                      <th className="text-right py-3 px-4 text-gray-400 font-medium">البند</th>
-                      <th className="text-right py-3 px-4 text-gray-400 font-medium">القيمة</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {reportType === 'admin' ? (
-                      <>
-                        {/* Independent */}
-                        <tr className="border-b border-white/5 bg-white/5">
-                          <td className="py-3 px-4 text-white font-bold" colSpan={2}>المدرسين المستقلين</td>
-                        </tr>
-                        <tr className="border-b border-white/5">
-                          <td className="py-3 px-4 text-gray-300 pr-8">عمولة المنصة</td>
-                          <td className="py-3 px-4 text-success">
-                            {report.summary.independent_commission?.toLocaleString()} ج.م
-                          </td>
-                        </tr>
-
-                        {/* Academies */}
-                        <tr className="border-b border-white/5 bg-white/5">
-                          <td className="py-3 px-4 text-white font-bold" colSpan={2}>الأكاديميات</td>
-                        </tr>
-                        <tr className="border-b border-white/5">
-                          <td className="py-3 px-4 text-gray-300 pr-8">إيرادات الأكاديميات (للمنصة)</td>
-                          <td className="py-3 px-4 text-success">
-                            {report.summary.academy_platform_share?.toLocaleString()} ج.م
-                          </td>
-                        </tr>
-
-                        {/* Platform Totals */}
-                        <tr className="border-b border-white/5 bg-white/5">
-                          <td className="py-3 px-4 text-white font-bold" colSpan={2}>إجماليات المنصة</td>
-                        </tr>
-                        <tr className="border-b border-white/5">
-                          <td className="py-3 px-4 text-gray-300 pr-8">صافي ربح المنصة</td>
-                          <td className="py-3 px-4 text-primary font-bold">
-                            {report.summary.net_platform_profit?.toLocaleString()} ج.م
-                          </td>
-                        </tr>
-                      </>
-                    ) : reportType === 'academy' ? (
-                      <>
-                        <tr className="border-b border-white/5">
-                          <td className="py-3 px-4 text-gray-300 pr-8">إيرادات الأكاديميات (للمنصة)</td>
-                          <td className="py-3 px-4 text-success">
-                            {report.summary.academy_revenue?.toLocaleString()} ج.م
-                          </td>
-                        </tr>
-
-                        {/* Platform Totals */}
-                        <tr className="border-b border-white/5 bg-primary/10">
-                          <td className="py-3 px-4 text-white font-bold" colSpan={2}>إجماليات المنصة</td>
-                        </tr>
-                        <tr>
-                          <td className="py-3 px-4 text-gray-300 pr-8">صافي ربح المنصة</td>
-                          <td className="py-3 px-4 text-secondary font-bold text-lg">
-                            {report.summary.total_profit?.toLocaleString()} ج.م
-                          </td>
-                        </tr>
-                      </>
-                    ) : (
-                      <>
-                        {reportType === 'teacher' ? (
-                          <>
-                            <tr className="border-b border-white/5">
-                              <td className="py-3 px-4 text-white">إجمالي المستحق</td>
-                              <td className="py-3 px-4 text-white font-semibold">
-                                {report.summary.total_due?.toLocaleString()} ج.م
-                              </td>
-                            </tr>
-                            <tr className="border-b border-white/5">
-                              <td className="py-3 px-4 text-white">إجمالي المدفوع</td>
-                              <td className="py-3 px-4 text-success font-semibold">
-                                {report.summary.total_paid?.toLocaleString()} ج.م
-                              </td>
-                            </tr>
-                            <tr className="border-b border-white/5">
-                              <td className="py-3 px-4 text-white">المبلغ المتبقي</td>
-                              <td className="py-3 px-4 text-danger font-semibold">
-                                {report.summary.total_remaining?.toLocaleString()} ج.م
-                              </td>
-                            </tr>
-                          </>
-                        ) : (
-                          <>
-                            <tr className="border-b border-white/5">
-                              <td className="py-3 px-4 text-white">المدفوعات المؤكدة</td>
-                              <td className="py-3 px-4 text-secondary font-semibold">
-                                {report.summary.confirmed_payments?.toLocaleString()} ج.م
-                              </td>
-                            </tr>
-                            {reportType === 'academy' && (
-                              <>
-                                <tr className="border-b border-white/5">
-                                  <td className="py-3 px-4 text-white">المدفوعات الصافية للأكاديمية</td>
-                                  <td className="py-3 px-4 text-blue-400 font-semibold">
-                                    {report.summary.net_revenue?.toLocaleString()} ج.م
-                                  </td>
-                                </tr>
-                                <tr className="border-b border-white/5">
-                                  <td className="py-3 px-4 text-white">المدفوعات المستحقة للمنصة</td>
-                                  <td className="py-3 px-4 text-warning font-semibold">
-                                    {report.summary.platform_fees?.toLocaleString()} ج.م
-                                  </td>
-                                </tr>
-                                <tr className="border-b border-white/5">
-                                  <td className="py-3 px-4 text-white">الباقي من التسديد</td>
-                                  <td className="py-3 px-4 text-white font-semibold">
-                                    {report.summary.remaining_balance?.toLocaleString()} ج.م
-                                  </td>
-                                </tr>
-                                <tr className="border-b border-white/5">
-                                  <td className="py-3 px-4 text-white">حالة الدفع</td>
-                                  <td className="py-3 px-4">
-                                    <span className={`badge ${
-                                      report.summary.payment_status === 'مدفوع' ? 'badge-success' :
-                                      report.summary.payment_status === 'متبقي دفعات' ? 'badge-warning' :
-                                      'badge-danger'
-                                    }`}>
-                                      {report.summary.payment_status}
-                                    </span>
-                                  </td>
-                                </tr>
-                              </>
-                            )}
-                          </>
-                        )}
-                      </>
-                    )}
-                  </tbody>
-                </table>
+                  {!report.teacher.is_unlimited_students && report.teacher.plan_max_students && report.teacher.plan_max_students > 0 && (
+                    <div className="w-full bg-gray-700 rounded-full h-2 mt-2">
+                      <div
+                        className="bg-purple-500 h-2 rounded-full transition-all"
+                        style={{ width: `${Math.min((report.summary.total_students / report.teacher.plan_max_students) * 100, 100)}%` }}
+                      />
+                    </div>
+                  )}
+                </DashboardCard>
               </div>
-            </DashboardCard>
-
-            {/* Teachers Breakdown (REMOVED) */}
-
-            {/* Monthly Breakdown */}
-            {(report.monthly_breakdown?.length > 0 || report.subscription_breakdown?.length > 0) && (
-              <DashboardCard title="التفصيل الشهري" icon="fas fa-calendar-alt" noPadding>
-                <DataTable
-                  columns={reportType === 'teacher' ? teacherMonthlyColumns : monthlyColumns}
-                  data={reportType === 'teacher' ? report.subscription_breakdown : report.monthly_breakdown}
-                  searchable={false}
-                  pagination={false}
-                />
-              </DashboardCard>
             )}
 
-            {/* Report Footer */}
-            <div className="text-center text-gray-500 text-sm mt-6">
-              <p>تم إنشاء التقرير في: {report.generated_at}</p>
-              <p>الفترة: {report.period.start} إلى {report.period.end}</p>
-            </div>
-          </>
+            {/* Teacher Additional Info */}
+            {'teacher' in report && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                <DashboardCard title="تاريخ الانضمام للمنصة" icon="fas fa-calendar-alt" className="bg-white/5">
+                  <div className="text-2xl font-bold text-white">
+                    {report.teacher.joined || '-'}
+                  </div>
+                  <div className="text-sm text-gray-400">
+                    عضو منذ {report.teacher.member_since_days ?? 0} يوم
+                  </div>
+                </DashboardCard>
+
+                <DashboardCard title="عدد السكرتارية" icon="fas fa-user-tie" className="bg-white/5">
+                  <div className="text-2xl font-bold text-white">
+                    {report.teacher.total_secretaries || 0}
+                  </div>
+                  <div className="text-sm text-gray-400">
+                    سكرتير مساعد
+                  </div>
+                </DashboardCard>
+
+                <DashboardCard title="تاريخ آخر دفعة" icon="fas fa-credit-card" className={report.teacher.has_subscription ? 'bg-green-500/10 border-green-500/30' : 'bg-red-500/10 border-red-500/30'}>
+                  <div className="flex items-center gap-2">
+                    <div className={`text-2xl font-bold ${report.teacher.has_subscription ? 'text-green-400' : 'text-red-400'}`}>
+                      {report.teacher.last_payment_date || (report.teacher.has_subscription ? 'تم الدفع' : 'لم يتم الدفع')}
+                    </div>
+                    {report.teacher.has_subscription ? (
+                      <span className="px-2 py-1 text-xs bg-green-500 text-white rounded-full">
+                        ✓ مدفوع {report.teacher.paid_amount ? `${report.teacher.paid_amount.toLocaleString()} ج.م` : ''}
+                      </span>
+                    ) : (
+                      <span className="px-2 py-1 text-xs bg-red-500 text-white rounded-full">
+                        ⚠ مطلوب الدفع
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-sm text-gray-400">
+                    {report.teacher.subscription_expiry
+                      ? `تنتهي: ${report.teacher.subscription_expiry}`
+                      : report.teacher.has_subscription
+                        ? ((report.teacher.amount_due ?? 0) > 0
+                          ? `المتبقي: ${(report.teacher.amount_due ?? 0).toLocaleString()} ج.م`
+                          : 'مدفوع بالكامل')
+                        : `المطلوب: ${(report.financial_details?.total_revenue || 0).toLocaleString()} ج.م`
+                    }
+                  </div>
+                </DashboardCard>
+
+                {/* Remaining Days until Plan Expiry */}
+                {(() => {
+                  const daysRemaining = report.teacher.days_remaining ?? null;
+                  return (
+                    <DashboardCard
+                      title="المتبقي على انتهاء الباقة"
+                      icon="fas fa-hourglass-half"
+                      className={
+                        daysRemaining === null ? 'bg-white/5' :
+                        daysRemaining <= 7 ? 'bg-red-500/10 border-red-500/30' :
+                        daysRemaining <= 30 ? 'bg-yellow-500/10 border-yellow-500/30' :
+                        'bg-green-500/10 border-green-500/30'
+                      }
+                    >
+                      <div className={`text-2xl font-bold ${
+                        daysRemaining === null ? 'text-gray-400' :
+                        daysRemaining <= 7 ? 'text-red-400' :
+                        daysRemaining <= 30 ? 'text-yellow-400' :
+                        'text-green-400'
+                      }`}>
+                        {daysRemaining !== null
+                          ? `${daysRemaining} يوم`
+                          : 'غير محدد'}
+                      </div>
+                      <div className="text-sm text-gray-400">
+                        {report.teacher.subscription_expiry
+                          ? `تنتهي في ${report.teacher.subscription_expiry}`
+                          : 'لا يوجد تاريخ انتهاء'}
+                      </div>
+                    </DashboardCard>
+                  );
+                })()}
+
+                {/* Plan Duration */}
+                <DashboardCard title="مدة الباقة" icon="fas fa-calendar-check" className="bg-indigo-500/10 border-indigo-500/30">
+                  <div className="text-2xl font-bold text-indigo-400">
+                    {report.teacher.plan_duration_months
+                      ? `${report.teacher.plan_duration_months} شهر`
+                      : 'غير محدد'}
+                  </div>
+                  <div className="text-sm text-gray-400">
+                    {report.teacher.plan_type === 'trial' ? 'فترة تجريبية' : 'مدة الاشتراك'}
+                  </div>
+                </DashboardCard>
+
+                {/* Payment Progress */}
+                {(() => {
+                  const pct = report.teacher.payment_percentage ?? 0;
+                  return (
+                    <DashboardCard title="نسبة الدفع" icon="fas fa-money-check-alt" className={
+                      pct >= 100 ? 'bg-green-500/10 border-green-500/30' :
+                      pct > 0 ? 'bg-yellow-500/10 border-yellow-500/30' :
+                      'bg-red-500/10 border-red-500/30'
+                    }>
+                      <div className={`text-2xl font-bold ${
+                        pct >= 100 ? 'text-green-400' :
+                        pct > 0 ? 'text-yellow-400' :
+                        'text-red-400'
+                      }`}>
+                        {pct}%
+                      </div>
+                      <div className="w-full bg-gray-700 rounded-full h-2 mt-2">
+                        <div
+                          className={`h-2 rounded-full transition-all ${
+                            pct >= 100 ? 'bg-green-500' :
+                            pct > 0 ? 'bg-yellow-500' :
+                            'bg-red-500'
+                          }`}
+                          style={{ width: `${Math.min(pct, 100)}%` }}
+                        />
+                      </div>
+                      <div className="text-sm text-gray-400 mt-1">
+                        {report.teacher.paid_amount?.toLocaleString() || 0} / {(report.financial_details?.total_revenue || 0).toLocaleString()} ج.م
+                      </div>
+                    </DashboardCard>
+                  );
+                })()}
+              </div>
+            )}
+
+          </div>
         )}
       </div>
     </DashboardLayout>
@@ -926,7 +864,9 @@ function ReportsPageContent() {
 
 function ReportsPage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen">
+      <div className="text-white">جاري التحميل...</div>
+    </div>}>
       <ReportsPageContent />
     </Suspense>
   );
