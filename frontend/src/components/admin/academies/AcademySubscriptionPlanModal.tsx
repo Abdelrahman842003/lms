@@ -25,6 +25,7 @@ export default function AcademySubscriptionPlanModal({
   const [activeTab, setActiveTab] = useState<'trial' | 'term' | 'custom'>('trial');
   const [loading, setLoading] = useState(false);
   const [exportingPdf, setExportingPdf] = useState(false);
+  const [isPaid, setIsPaid] = useState(false);
   
   // Form State
   const [days, setDays] = useState(14);
@@ -51,6 +52,7 @@ export default function AcademySubscriptionPlanModal({
       } else if (academy.is_unlimited_students) {
           setIsUnlimitedStudents(true);
       }
+      setIsPaid(false); // always start as unpaid for a new plan save
     }
   }, [isOpen, academy]);
 
@@ -94,7 +96,8 @@ export default function AcademySubscriptionPlanModal({
       const payload: any = {
         type: activeTab,
         is_unlimited_students: isUnlimitedStudents,
-        max_students: isUnlimitedStudents ? null : (maxStudents === '' ? 0 : Number(maxStudents))
+        max_students: isUnlimitedStudents ? null : (maxStudents === '' ? 0 : Number(maxStudents)),
+        is_paid: isPaid,
       };
 
       if (activeTab === 'trial' || activeTab === 'custom') {
@@ -452,6 +455,20 @@ export default function AcademySubscriptionPlanModal({
           })()}
 
           <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
+            {/* Is Paid toggle - only for non-trial plans */}
+            {activeTab !== 'trial' && (
+              <label className="flex items-center gap-2 cursor-pointer mr-auto self-center">
+                <input
+                  type="checkbox"
+                  checked={isPaid}
+                  onChange={(e) => setIsPaid(e.target.checked)}
+                  className="rounded border-gray-600 bg-[#151521] text-green-500 focus:ring-green-500 w-4 h-4"
+                />
+                <span className={`text-sm font-medium ${isPaid ? 'text-green-400' : 'text-gray-400'}`}>
+                  {isPaid ? '✓ تم الدفع' : 'تم الدفع؟'}
+                </span>
+              </label>
+            )}
             <button
               type="button"
               onClick={onClose}

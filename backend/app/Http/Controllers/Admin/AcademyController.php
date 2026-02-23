@@ -167,4 +167,59 @@ class AcademyController extends Controller
             return $this->errorResponse($e->getMessage(), 400);
         }
     }
+
+    /**
+     * Get academy subscription for a specific month
+     * Same as TeacherController::getSubscription
+     */
+    public function getSubscription(Request $request, string $id): JsonResponse
+    {
+        $request->validate([
+            'month' => 'required|string|size:7', // YYYY-MM format
+        ]);
+
+        $subscription = $this->academyService->getSubscriptionForMonth(
+            $id,
+            $request->month . '-01'
+        );
+
+        return $this->successResponse($subscription);
+    }
+
+    /**
+     * Update academy subscription (record payment)
+     * Same as TeacherController::updateSubscription
+     */
+    public function updateSubscription(Request $request, string $id): JsonResponse
+    {
+        $request->validate([
+            'month' => 'required|string|size:7', // YYYY-MM format
+            'payment_amount' => 'required|numeric|min:0',
+        ]);
+
+        $subscription = $this->academyService->paySubscription(
+            $id,
+            $request->month . '-01',
+            $request->payment_amount ?? 0
+        );
+
+        return $this->successResponse(
+            $subscription,
+            'تم تحديث بيانات الاشتراك بنجاح'
+        );
+    }
+
+    /**
+     * Get all academy subscriptions with pagination
+     * Same as teacher subscriptions endpoint
+     */
+    public function subscriptions(Request $request, string $id): JsonResponse
+    {
+        $perPage = (int) $request->input('per_page', 12);
+        $subscriptions = $this->academyService->getAcademySubscriptions($id, $perPage);
+
+        return $this->successResponse([
+            'subscriptions' => $subscriptions,
+        ]);
+    }
 }

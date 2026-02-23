@@ -21,6 +21,7 @@ class UpdatePlanRequest extends FormRequest
             'months' => ['required_if:type,term', 'integer', 'min:1'],
             'max_students' => ['nullable', 'integer', 'min:0'],
             'is_unlimited_students' => ['boolean'],
+            'is_paid' => ['boolean'],
         ];
     }
 }

@@ -5,7 +5,11 @@ declare(strict_types=1);
 namespace App\Services\Admin;
 
 use App\Models\Academy;
+use App\Models\AcademySubscription;
+use App\Models\Enrollment;
 use App\Models\Secretary;
+use App\Services\Infrastructure\HelperService;
+use Carbon\Carbon;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Str;
 
@@ -58,11 +62,6 @@ class AcademyService
 
         if ($planExpiresAt && $planExpiresAt->isPast()) {
             return 'expired';
-        }
-
-        // Check if there's a subscription fee but not fully paid
-        if ($academy->subscription_fee > 0 && $academy->paid_amount < $academy->subscription_fee) {
-            return 'unpaid';
         }
 
         return null;
@@ -176,16 +175,177 @@ class AcademyService
         // Calculate total subscription fee (package price) - 0 for trial plans
         if ($type === 'trial') {
             $academy->subscription_fee = 0;
+            $academy->paid_amount = 0;
         } else {
-            $pricePerStudent = \App\Services\Infrastructure\HelperService::getAcademyStudentPrice();
-            if ($pricePerStudent <= 0) $pricePerStudent = 40; // Fallback
-            
+            $pricePerStudent = HelperService::getAcademyStudentPrice();
+            if ($pricePerStudent <= 0) $pricePerStudent = 20; // Fallback
+
             $maxStudents = $academy->plan_max_students ?? 0;
             $academy->subscription_fee = $maxStudents * $durationMonths * $pricePerStudent;
+            // Reset paid_amount when a new plan is set (fresh plan starts unpaid)
+            $academy->paid_amount = 0;
+        }
+
+        // If admin marks as paid, set paid_amount = subscription_fee
+        if (!empty($data['is_paid']) && $type !== 'trial') {
+            $academy->paid_amount = $academy->subscription_fee;
         }
 
         $academy->save();
 
         return $academy;
+    }
+
+    /**
+     * Get or create subscription for academy for a specific month
+     * Same logic as TeacherService::getSubscriptionForMonth
+     */
+    public function getSubscriptionForMonth(string $academyId, string $month): AcademySubscription
+    {
+        $academy = Academy::findOrFail($academyId);
+        // Ensure month is YYYY-MM-01
+        $date = Carbon::parse($month)->startOfMonth();
+        $monthDate = $date->format('Y-m-d');
+        $pricePerSeat = HelperService::getAcademyStudentPrice();
+
+        $subscription = $academy->academySubscriptions()->firstOrCreate(
+            ['month' => $monthDate],
+            [
+                'student_count' => $this->calculateBillableMonths($academyId, $date),
+                'price_per_seat' => $pricePerSeat,
+                'amount_due' => $this->calculateAmountDue($academy, $monthDate),
+                'amount_paid' => 0,
+                'status' => 'pending'
+            ]
+        );
+
+        // If pending, refresh the calculation to ensure it's up to date
+        if ($subscription->status === 'pending') {
+            $startOfMonth = Carbon::parse($monthDate)->startOfMonth();
+            $endOfMonth = Carbon::parse($monthDate)->endOfMonth();
+            
+            $billableMonths = $this->calculateBillableMonths($academyId, $startOfMonth, $endOfMonth);
+            $currentDue = $billableMonths * $pricePerSeat;
+            
+            if ($subscription->student_count !== $billableMonths || $subscription->amount_due !== $currentDue || $subscription->price_per_seat !== $pricePerSeat) {
+                $subscription->student_count = $billableMonths;
+                $subscription->price_per_seat = $pricePerSeat;
+                $subscription->amount_due = $currentDue;
+                $subscription->save();
+            }
+        }
+
+        return $subscription;
+    }
+
+    /**
+     * Pay subscription for academy
+     * Same logic as TeacherService::paySubscription
+     */
+    public function paySubscription(string $academyId, string $month, float $amount): AcademySubscription
+    {
+        $subscription = $this->getSubscriptionForMonth($academyId, $month);
+
+        if ($amount > 0) {
+            $subscription->amount_paid += $amount;
+            
+            if ($subscription->amount_paid >= $subscription->amount_due) {
+                $subscription->status = 'paid';
+            } else {
+                $subscription->status = 'partial';
+            }
+
+            // Generate payment key if not exists (for manual payments tracking)
+            if (!$subscription->payment_key) {
+                $subscription->payment_key = AcademySubscription::generatePaymentKey();
+                $subscription->payment_initiated_at = now();
+                $subscription->payment_method = 'manual';
+            }
+            
+            $subscription->save();
+
+            // Sync paid_amount on the academy model (sum of all subscriptions paid)
+            $totalPaid = \App\Models\AcademySubscription::where('academy_id', $academyId)
+                ->sum('amount_paid');
+            Academy::where('id', $academyId)->update(['paid_amount' => $totalPaid]);
+        }
+
+        return $subscription;
+    }
+
+    /**
+     * Calculate billable months for academy
+     * Same logic as teacher - counts enrollments with payment logs
+     */
+    private function calculateBillableMonths(string $academyId, Carbon $startOfMonth, ?Carbon $endOfMonth = null): int
+    {
+        $endOfMonth = $endOfMonth ?? $startOfMonth->copy()->endOfMonth();
+        
+        // Get active teacher IDs in this academy
+        $teacherIds = Academy::findOrFail($academyId)
+            ->activeTeachers()
+            ->pluck('teachers.id')
+            ->toArray();
+        
+        if (empty($teacherIds)) {
+            return 0;
+        }
+        
+        // Sum months from PaymentLog for all teachers in this academy
+        return \App\Models\PaymentLog::whereIn('teacher_id', $teacherIds)
+            ->where('status', 'confirmed')
+            ->whereBetween('confirmed_at', [$startOfMonth, $endOfMonth])
+            ->sum('months');
+    }
+
+    /**
+     * Calculate amount due for academy
+     * Same logic as teacher - based on active enrollments count
+     */
+    private function calculateAmountDue(Academy $academy, ?string $month = null): float
+    {
+        // Get active teacher IDs
+        $teacherIds = $academy->activeTeachers()->pluck('teachers.id')->toArray();
+        
+        if (empty($teacherIds)) {
+            return 0;
+        }
+        
+        $query = Enrollment::whereIn('teacher_id', $teacherIds);
+
+        if ($month) {
+            $startOfMonth = Carbon::parse($month)->startOfMonth();
+            $endOfMonth = Carbon::parse($month)->endOfMonth();
+            
+            // Consider an enrollment valid for this month if:
+            // 1. Created before or during this month
+            // 2. Not deleted, OR deleted after the start of this month
+            $query->where('created_at', '<=', $endOfMonth)
+                  ->where(function($q) use ($startOfMonth) {
+                      $q->whereNull('deleted_at')
+                        ->orWhere('deleted_at', '>=', $startOfMonth);
+                  });
+            $query->withTrashed();
+        } else {
+             // If no month specified, use current active ones
+             $query->whereNull('deleted_at');
+        }
+
+        $totalSeats = $query->count();
+        $price = HelperService::getAcademyStudentPrice();
+        
+        return (float) ($totalSeats * $price);
+    }
+
+    /**
+     * Get all academy subscriptions with pagination
+     */
+    public function getAcademySubscriptions(string $academyId, int $perPage = 12): \Illuminate\Contracts\Pagination\LengthAwarePaginator
+    {
+        $academy = Academy::findOrFail($academyId);
+        
+        return $academy->academySubscriptions()
+            ->orderBy('month', 'desc')
+            ->paginate($perPage);
     }
 }

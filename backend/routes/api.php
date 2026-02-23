@@ -90,6 +90,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::delete('/academies/{academy}/secretaries/{secretary}', [\App\Http\Controllers\Admin\AcademyController::class, 'removeSecretary']);
         Route::post('/academies/{academy}/regenerate-qr', [\App\Http\Controllers\Admin\AcademyController::class, 'regenerateQrCodes']);
         Route::post('/academies/{academy}/plan', [\App\Http\Controllers\Admin\AcademyController::class, 'updatePlan']);
+        Route::get('/academies/{academy}/subscription', [\App\Http\Controllers\Admin\AcademyController::class, 'getSubscription']);
+        Route::post('/academies/{academy}/subscription', [\App\Http\Controllers\Admin\AcademyController::class, 'updateSubscription']);
+        Route::get('/academies/{academy}/subscriptions', [\App\Http\Controllers\Admin\AcademyController::class, 'subscriptions']);
 
         // Subscriptions List (Aggregated Teachers and Academies)
         Route::get('/subscriptions', [\App\Http\Controllers\Admin\SubscriptionController::class, 'index']);

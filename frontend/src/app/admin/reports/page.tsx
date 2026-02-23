@@ -488,6 +488,8 @@ function ReportsPageContent() {
               {/* Academy Additional Info */}
               {'academy' in report && (
                 <div className="col-span-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-2">
+                  {/* DEBUG - REMOVE LATER */}
+                  {(() => { console.log('[DEBUG] report.academy:', JSON.stringify(report.academy)); return null; })()}
                   {/* Plan Type */}
                   <DashboardCard title="الباقة الحالية" icon="fas fa-crown" className="bg-yellow-500/10 border-yellow-500/30">
                     <div className="text-2xl font-bold text-yellow-400">

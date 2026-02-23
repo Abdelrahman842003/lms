@@ -40,12 +40,21 @@ class ReportController extends Controller
      */
     public function academiesList(): JsonResponse
     {
-        $academies = $this->reportService->getAcademiesList();
+        try {
+            $academies = $this->reportService->getAcademiesList();
 
-        return $this->successResponse([
-            'academies' => $academies,
-            'count' => $academies->count(),
-        ]);
+            return $this->successResponse([
+                'academies' => $academies,
+                'count' => $academies->count(),
+            ]);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Error in academiesList: ' . $e->getMessage(), [
+                'exception' => $e,
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return $this->errorResponse('حدث خطأ في جلب قائمة الأكاديميات: ' . $e->getMessage(), 500);
+        }
     }
 
     /**

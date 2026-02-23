@@ -23,12 +23,12 @@ class Academy extends Model implements AuthenticatableContract
         'logo_key',
         'is_active',
         'billing_notes',
+        'subscription_fee',
+        'paid_amount',
         'plan_type',
         'plan_expires_at',
         'plan_max_students',
         'is_unlimited_students',
-        'subscription_fee',
-        'paid_amount',
     ];
 
     protected $hidden = [
@@ -104,6 +104,14 @@ class Academy extends Model implements AuthenticatableContract
     public function subscriptions()
     {
         return $this->morphMany(Subscription::class, 'subscriber');
+    }
+
+    /**
+     * Academy subscription records (monthly billing)
+     */
+    public function academySubscriptions()
+    {
+        return $this->hasMany(AcademySubscription::class);
     }
 
     /**

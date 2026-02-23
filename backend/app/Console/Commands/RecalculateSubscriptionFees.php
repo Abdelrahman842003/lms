@@ -60,47 +60,7 @@ class RecalculateSubscriptionFees extends Command
         }
 
         $this->newLine();
-
-        // Recalculate Academies
-        $this->info('Processing Academies...');
-        $academies = Academy::whereNotNull('plan_type')
-            ->where('plan_type', '!=', 'none')
-            ->where('plan_type', '!=', '')
-            ->where('plan_type', '!=', 'trial') // Skip trial plans
-            ->get();
-
-        foreach ($academies as $academy) {
-            $oldFee = $academy->subscription_fee;
-            
-            // Calculate duration in months
-            $planStartsAt = $academy->plan_starts_at ?? $academy->created_at ?? now();
-            $planExpiresAt = $academy->plan_expires_at;
-            
-            if (!$planExpiresAt) {
-                $this->warn("Academy {$academy->name}: No expiry date, skipping");
-                continue;
-            }
-            
-            $durationMonths = max(1, ceil($planStartsAt->diffInDays($planExpiresAt) / 30));
-            $maxStudents = $academy->plan_max_students ?? 0;
-            
-            // Skip unlimited plans or zero students
-            if ($academy->is_unlimited_students || $maxStudents <= 0) {
-                $this->warn("Academy {$academy->name}: Unlimited or zero students, skipping");
-                continue;
-            }
-            
-            // Calculate new fee
-            $newFee = $maxStudents * $durationMonths * $academyPrice;
-            
-            $academy->subscription_fee = $newFee;
-            $academy->save();
-            
-            $this->info("Academy {$academy->name}: {$oldFee} → {$newFee} EGP ({$maxStudents} students × {$durationMonths} months × {$academyPrice} EGP)");
-        }
-
-        $this->newLine();
-        $this->info('Done! All subscription fees have been recalculated.');
+        $this->info('Done! Teacher subscription fees have been recalculated. Academy fees are now managed via monthly subscription records.');
 
         return self::SUCCESS;
     }

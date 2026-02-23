@@ -27,6 +27,13 @@ class AcademyResource extends JsonResource
             'checkout_qr_code' => $this->checkout_qr_code,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
+            // Subscription fields
+            'plan_type' => $this->plan_type,
+            'plan_expires_at' => $this->plan_expires_at,
+            'plan_max_students' => $this->plan_max_students,
+            'is_unlimited_students' => (bool) $this->is_unlimited_students,
+            'subscription_fee' => $this->subscription_fee ?? 0,
+            'paid_amount' => $this->paid_amount ?? 0,
             
             // Relationships
             'secretaries' => $this->whenLoaded('secretaries'),

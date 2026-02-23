@@ -9,6 +9,8 @@ use App\DTO\Reports\TeacherReportData;
 use App\DTO\Reports\TeacherReportSummaryData;
 use App\DTO\Reports\AcademyReportSummaryData;
 use App\DTO\Reports\AdminReportSummaryData;
+use App\Models\Academy;
+use App\Models\AcademySubscription;
 use App\Models\Teacher;
 use App\Models\Student;
 use App\Models\Secretary;
@@ -16,7 +18,6 @@ use App\Models\Enrollment;
 use App\Models\PaymentLog;
 use App\Models\TeacherSubscription;
 use Carbon\Carbon;
-use App\Models\Academy;
 use Illuminate\Support\Collection;
 
 class ReportService
@@ -56,7 +57,7 @@ class ReportService
      */
     public function getAcademiesList(): Collection
     {
-        return Academy::select('id', 'name', 'phone', 'is_active', 'created_at', 'subscription_fee', 'plan_max_students', 'plan_expires_at')
+        return Academy::select('id', 'name', 'phone', 'is_active', 'created_at', 'subscription_fee', 'paid_amount', 'plan_type', 'plan_expires_at', 'plan_max_students', 'is_unlimited_students')
             ->withCount(['teachers'])
             ->orderBy('name')
             ->get()
@@ -69,9 +70,12 @@ class ReportService
                     'teachers_count' => $academy->teachers_count,
                     'students_count' => $academy->total_students_count ?? 0,
                     'joined' => $academy->created_at->format('Y-m-d'),
-                    'subscription_fee' => (float) $academy->subscription_fee,
-                    'plan_max_students' => $academy->plan_max_students,
+                    'plan_type' => $academy->plan_type,
+                    'plan_max_students' => $academy->plan_max_students ?? 0,
                     'plan_expires_at' => $academy->plan_expires_at?->format('Y-m-d'),
+                    'is_unlimited_students' => (bool) $academy->is_unlimited_students,
+                    'subscription_fee' => (float) ($academy->subscription_fee ?? 0),
+                    'paid_amount' => (float) ($academy->paid_amount ?? 0),
                 ];
             });
     }
@@ -377,14 +381,6 @@ class ReportService
         // Use subscription_fee from academy as primary metric (Source of Truth)
         $subscriptionFee = (float) $academy->subscription_fee;
 
-        // If no subscription_fee set, try from subscriptions table, then from billable months
-        if ($subscriptionFee <= 0 && $academySubscriptionsDue > 0) {
-            $subscriptionFee = $academySubscriptionsDue;
-        }
-        if ($subscriptionFee <= 0 && $totalMonthsPaid > 0) {
-            $subscriptionFee = $totalMonthsPaid * $academyStudentPrice;
-        }
-
         // Calculate confirmed payments from PaymentLog
         $confirmedPayments = PaymentLog::whereIn('teacher_id', $teacherIds)
             ->where('status', 'confirmed')
@@ -393,29 +389,34 @@ class ReportService
 
         // === PAYMENT DATA FROM ALL SOURCES ===
 
-        // Source 1: Academy model's paid_amount field
-        $academyPaidAmount = (float) ($academy->paid_amount ?? 0);
-
-        // Source 2: Unified subscriptions table (academy-to-platform monthly subscriptions)
-        $academySubscriptionsPaid = (float) \App\Models\Subscription::where('subscriber_id', $academy->id)
-            ->where('subscriber_type', \App\Models\Academy::class)
+        // Source 1: Academy subscriptions table (dedicated tracking)
+        $academySubscriptionsPaid = (float) \App\Models\AcademySubscription::where('academy_id', $academy->id)
             ->sum('amount_paid');
-        $academySubscriptionsDue = (float) \App\Models\Subscription::where('subscriber_id', $academy->id)
-            ->where('subscriber_type', \App\Models\Academy::class)
+        $academySubscriptionsDue = (float) \App\Models\AcademySubscription::where('academy_id', $academy->id)
             ->sum('amount_due');
-        $paidAcademySubscriptionsCount = \App\Models\Subscription::where('subscriber_id', $academy->id)
-            ->where('subscriber_type', \App\Models\Academy::class)
+        $paidAcademySubscriptionsCount = \App\Models\AcademySubscription::where('academy_id', $academy->id)
             ->where('amount_paid', '>', 0)
             ->count();
 
-        // Use the maximum from all payment sources
-        $effectivePaidAmount = max($academyPaidAmount, (float) $confirmedPayments, $academySubscriptionsPaid);
+        // If no subscription_fee set, try from subscriptions table, then from billable months
+        if ($subscriptionFee <= 0 && $academySubscriptionsDue > 0) {
+            $subscriptionFee = $academySubscriptionsDue;
+        }
+        if ($subscriptionFee <= 0 && $totalMonthsPaid > 0) {
+            $subscriptionFee = $totalMonthsPaid * $academyStudentPrice;
+        }
+
+        // Source 2: academy.paid_amount field (set directly when saving plan or manual update)
+        $academyDirectPaid = (float) ($academy->paid_amount ?? 0);
+
+        // Use the maximum from all payment sources (AcademySubscription, manual logs, or direct paid_amount)
+        $effectivePaidAmount = max((float) $confirmedPayments, $academySubscriptionsPaid, $academyDirectPaid);
 
         $remainingBalance = max(0, $subscriptionFee - $effectivePaidAmount);
         $paymentStatus = $this->calculatePaymentStatus($subscriptionFee, $effectivePaidAmount);
 
         // Monthly breakdown
-        $monthlyData = $this->getMonthlyBreakdownForAcademy($teacherIds, $startDate, $endDate);
+        $monthlyData = $this->getMonthlyBreakdownForAcademy($teacherIds, $startDate, $endDate, $academy);
 
         $summary = new AcademyReportSummaryData(
             totalTeachers: $totalTeachers,
@@ -667,12 +668,14 @@ class ReportService
 
     /**
      * Get monthly breakdown for academy (list of teachers)
+     * NOW SAME AS TEACHER: Uses AcademySubscription as Source of Truth
      */
-    private function getMonthlyBreakdownForAcademy(array $teacherIds, Carbon $startDate, Carbon $endDate): array
+    private function getMonthlyBreakdownForAcademy(array $teacherIds, Carbon $startDate, Carbon $endDate, ?Academy $academy = null): array
     {
         $months = [];
         $currentMonth = $startDate->copy()->startOfMonth();
         $lastMonth = $endDate->copy()->startOfMonth();
+        $academyStudentPrice = \App\Services\Infrastructure\HelperService::getAcademyStudentPrice();
 
         while ($currentMonth <= $lastMonth) {
             $monthStart = $currentMonth->copy()->startOfMonth();
@@ -685,10 +688,46 @@ class ReportService
                 ->whereBetween('created_at', [$queryStart, $queryEnd])
                 ->count();
 
+            // Source of Truth: AcademySubscription record
+            if ($academy) {
+                $subscription = AcademySubscription::where('academy_id', $academy->id)
+                    ->where('month', $monthStart->format('Y-m-d'))
+                    ->first();
+            } else {
+                $subscription = null;
+            }
+
+            if ($subscription) {
+                $studentCount = $subscription->student_count;
+                $amountDue = $subscription->amount_due;
+                $amountPaid = $subscription->amount_paid;
+                $status = $subscription->status->value ?? 'pending';
+            } else {
+                // Fallback: Calculate on the fly (Seat System)
+                $query = Enrollment::whereIn('teacher_id', $teacherIds)
+                    ->withTrashed()
+                    ->where('created_at', '<=', $monthEnd)
+                    ->where(function($q) use ($monthStart) {
+                        $q->whereNull('deleted_at')
+                          ->orWhere('deleted_at', '>=', $monthStart);
+                    });
+
+                $studentCount = $query->count();
+                $amountDue = $studentCount * $academyStudentPrice;
+                $amountPaid = 0;
+                $status = 'pending';
+            }
+
             $months[] = [
                 'month' => $currentMonth->format('Y-m'),
                 'month_name' => \App\Services\Infrastructure\HelperService::getArabicMonthName($currentMonth->month) . ' ' . $currentMonth->year,
                 'new_enrollments' => $newEnrollments,
+                'student_count' => (int) $studentCount,
+                'amount_due' => (float) $amountDue,
+                'amount_paid' => (float) $amountPaid,
+                'amount_remaining' => (float) ($amountDue - $amountPaid),
+                'status' => $status,
+                'status_label' => $this->getStatusLabel($status),
                 'confirmed_payments' => 0,
             ];
 
