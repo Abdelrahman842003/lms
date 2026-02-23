@@ -178,25 +178,46 @@ class ReportController extends Controller
      */
     public function adminReportPdf(GenerateReportRequest $request)
     {
-        $dateRange = $request->getDateRange();
-        $report = $this->reportService->getAdminReport(
-            $dateRange['start_date'],
-            $dateRange['end_date']
-        );
+        \Log::info('[adminReportPdf] Request received', [
+            'all_params' => $request->all(),
+            'start_date' => $request->input('start_date'),
+            'end_date' => $request->input('end_date'),
+            'period_preset' => $request->input('period_preset'),
+        ]);
 
-        $pdfContent = $this->reportService->generatePdf(
-            $report,
-            'admin',
-            'التقرير العام للنظام'
-        );
+        try {
+            $dateRange = $request->getDateRange();
+            \Log::info('[adminReportPdf] Date range', [
+                'start_date' => $dateRange['start_date']->format('Y-m-d'),
+                'end_date' => $dateRange['end_date']->format('Y-m-d'),
+            ]);
 
-        $filename = 'admin-report-' .
-                    $dateRange['start_date']->format('Y-m-d') . '-to-' .
-                    $dateRange['end_date']->format('Y-m-d') . '.pdf';
+            $report = $this->reportService->getAdminReport(
+                $dateRange['start_date'],
+                $dateRange['end_date']
+            );
+            \Log::info('[adminReportPdf] Report generated');
 
-        return response($pdfContent)
-            ->header('Content-Type', 'application/pdf')
-            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
+            $pdfContent = $this->reportService->generatePdf(
+                $report,
+                'admin',
+                'التقرير العام للنظام'
+            );
+            \Log::info('[adminReportPdf] PDF generated, size: ' . strlen($pdfContent));
+
+            $filename = 'admin-report-' .
+                        $dateRange['start_date']->format('Y-m-d') . '-to-' .
+                        $dateRange['end_date']->format('Y-m-d') . '.pdf';
+
+            return response($pdfContent)
+                ->header('Content-Type', 'application/pdf')
+                ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
+        } catch (\Throwable $e) {
+            \Log::error('[adminReportPdf] Error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+            ]);
+            throw $e;
+        }
     }
 
     /**

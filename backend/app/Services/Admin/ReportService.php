@@ -488,7 +488,7 @@ class ReportService
             'period' => [
                 'start' => $startDate->format('Y-m-d'),
                 'end' => $endDate->format('Y-m-d'),
-                'duration_months' => $startDate->diffInMonths($endDate) + 1,
+                'duration_months' => (int) ($startDate->diffInMonths($endDate) + 1),
             ],
             'summary' => $summary->toArray(),
             'monthly_breakdown' => $monthlyData,
@@ -569,7 +569,7 @@ class ReportService
             ->sum('amount');
 
         // Teachers breakdown
-        $teachersBreakdown = $this->getTeachersBreakdown($pricePerStudent, $startDate, $endDate);
+
 
         // Monthly breakdown
         $monthlyData = $this->getMonthlyBreakdown(null, $startDate, $endDate, 'admin');
@@ -603,10 +603,10 @@ class ReportService
             'period' => [
                 'start' => $startDate->format('Y-m-d'),
                 'end' => $endDate->format('Y-m-d'),
-                'duration_months' => $startDate->diffInMonths($endDate) + 1,
+                'duration_months' => (int) ($startDate->diffInMonths($endDate) + 1),
             ],
             'summary' => $summary->toArray(),
-            'teachers_breakdown' => $teachersBreakdown,
+            'teachers_breakdown' => [],
             'monthly_breakdown' => $monthlyData,
             'generated_at' => now()->format('Y-m-d H:i:s'),
         ];
@@ -643,22 +643,22 @@ class ReportService
             ->get()
             ->map(function ($teacher) use ($pricePerStudent, $paymentsByTeacher, $monthsByTeacher, $subscriptionFeesByTeacher) {
                 $teacherMonths = $monthsByTeacher[$teacher->id] ?? 0;
-                $subscriptionFee = $subscriptionFeesByTeacher[$teacher->id] ?? 0;
+                $subscriptionFee = (float) ($subscriptionFeesByTeacher[$teacher->id] ?? 0);
 
                 // Use subscription_fee if available, otherwise calculate from months
                 $revenue = $subscriptionFee > 0
                     ? $subscriptionFee
-                    : $teacherMonths * $pricePerStudent;
+                    : (float) ($teacherMonths * $pricePerStudent);
 
                 return [
                     'id' => $teacher->id,
                     'name' => $teacher->name,
                     'status' => $this->getStatusLabel($teacher->status),
-                    'total_students' => $teacher->total_students,
-                    'active_students' => $teacher->active_students,
-                    'secretaries' => $teacher->secretaries_count,
+                    'total_students' => (int) $teacher->total_students,
+                    'active_students' => (int) $teacher->active_students,
+                    'secretaries' => (int) $teacher->secretaries_count,
                     'subscriptions' => (int) $teacherMonths,
-                    'subscription_fee' => (float) $subscriptionFee,
+                    'subscription_fee' => $subscriptionFee,
                     'revenue' => $revenue,
                     'paid' => (float) ($paymentsByTeacher[$teacher->id] ?? 0),
                     'joined' => $teacher->created_at->format('Y-m-d'),

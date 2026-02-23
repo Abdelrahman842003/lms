@@ -6,6 +6,8 @@ namespace App\Http\Requests\Admin\Report;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Http\Exceptions\HttpResponseException;
 
 /**
  * Form Request for generating reports
@@ -28,10 +30,24 @@ final class GenerateReportRequest extends FormRequest
      */
     public function rules(): array
     {
-        // Check if this is a legacy endpoint (teacher/{id}, academy/{id}, or admin)
-        $isLegacyEndpoint = str_contains($this->url(), '/teacher/') ||
-                           str_contains($this->url(), '/academy/') ||
-                           str_ends_with($this->url(), '/admin');
+        // Check if this is a legacy endpoint (teacher/{id}, academy/{id}, admin, or admin/pdf)
+        // Must NOT match /generate (unified endpoint that requires report_type in the body)
+        $url = $this->url();
+        $isLegacyEndpoint = str_contains($url, '/teacher/') ||
+                           str_contains($url, '/academy/') ||
+                           (str_contains($url, '/admin') && !str_ends_with($url, '/generate'));
+        
+        // DEBUG: Log request details for troubleshooting
+        \Log::info('[GenerateReportRequest] Validation check', [
+            'url' => $this->url(),
+            'is_legacy' => $isLegacyEndpoint,
+            'all_input' => $this->all(),
+            'query_params' => $this->query(),
+            'report_type' => $this->input('report_type'),
+            'period_preset' => $this->input('period_preset'),
+            'start_date' => $this->input('start_date'),
+            'end_date' => $this->input('end_date'),
+        ]);
         
         return [
             'report_type' => $isLegacyEndpoint
@@ -50,7 +66,7 @@ final class GenerateReportRequest extends FormRequest
             'period_preset' => [
                 'nullable',
                 'string',
-                Rule::in(['last_month', 'custom']),
+                Rule::in(['last_month', 'last_3_months', 'last_6_months', 'last_year', 'custom']),
             ],
             'start_date' => [
                 'required_if:period_preset,custom',
@@ -137,10 +153,44 @@ final class GenerateReportRequest extends FormRequest
                 'start_date' => \Carbon\Carbon::parse($this->validated('start_date'))->startOfDay(),
                 'end_date' => \Carbon\Carbon::parse($this->validated('end_date'))->endOfDay(),
             ],
+            'last_3_months' => [
+                'start_date' => $today->copy()->subMonths(2)->startOfMonth(),
+                'end_date' => $today->copy()->endOfDay(),
+            ],
+            'last_6_months' => [
+                'start_date' => $today->copy()->subMonths(5)->startOfMonth(),
+                'end_date' => $today->copy()->endOfDay(),
+            ],
+            'last_year' => [
+                'start_date' => $today->copy()->subYear()->startOfMonth(),
+                'end_date' => $today->copy()->endOfDay(),
+            ],
             default => [
-                'start_date' => $today->copy()->startOfMonth(),
+                'start_date' => \Carbon\Carbon::create(2020, 1, 1)->startOfDay(),
                 'end_date' => $today->copy()->endOfDay(),
             ],
         };
+    }
+
+    /**
+     * Handle a failed validation attempt.
+     *
+     * @param Validator $validator
+     * @throws HttpResponseException
+     */
+    protected function failedValidation(Validator $validator): void
+    {
+        \Log::error('[GenerateReportRequest] Validation FAILED', [
+            'url' => $this->url(),
+            'errors' => $validator->errors()->toArray(),
+            'all_input' => $this->all(),
+        ]);
+
+        throw new HttpResponseException(
+            response()->json([
+                'message' => 'Validation failed',
+                'errors' => $validator->errors(),
+            ], 422)
+        );
     }
 }

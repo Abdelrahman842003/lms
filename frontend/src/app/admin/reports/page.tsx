@@ -4,7 +4,6 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
-import { DataTable } from '@/components/dashboard/DataTable';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { withAdminAuth } from '@/components/auth/withAdminAuth';
 import { toast } from 'react-hot-toast';
@@ -17,9 +16,6 @@ import {
   downloadTeacherReportPdf,
   downloadAcademyReportPdf,
   downloadAdminReportPdf,
-  getDateRangeFromPreset,
-  getPeriodPresetLabel,
-  type PeriodPreset,
 } from '@/services/admin/reportService';
 import type {
   TeacherListItem,
@@ -31,18 +27,21 @@ import type {
 
 type ReportType = 'admin' | 'teacher' | 'academy';
 
+// All-time date range (no period filter)
+const ALL_TIME_PARAMS = {
+  start_date: '2020-01-01',
+  end_date: new Date().toISOString().split('T')[0],
+};
+
 function ReportsPageContent() {
   const { user } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // URL-driven state
   const [reportType, setReportType] = useState<ReportType>('admin');
-  const [periodPreset, setPeriodPreset] = useState<PeriodPreset>('last_month');
   const [selectedTeacherId, setSelectedTeacherId] = useState<string>('');
   const [selectedAcademyId, setSelectedAcademyId] = useState<string>('');
 
-  // Data state
   const [teachers, setTeachers] = useState<TeacherListItem[]>([]);
   const [academies, setAcademies] = useState<AcademyListItem[]>([]);
   const [report, setReport] = useState<TeacherReportData | AcademyReportData | AdminReportData | null>(null);
@@ -52,24 +51,18 @@ function ReportsPageContent() {
   // Sync state from URL on mount
   useEffect(() => {
     const type = searchParams.get('type') as ReportType | null;
-    const preset = searchParams.get('preset') as PeriodPreset | null;
     const teacherId = searchParams.get('teacher_id');
     const academyId = searchParams.get('academy_id');
 
     if (type && ['admin', 'teacher', 'academy'].includes(type)) {
       setReportType(type);
     }
-    if (preset && ['last_month', 'last_3_months', 'last_6_months', 'last_year', 'custom'].includes(preset)) {
-      setPeriodPreset(preset);
-    }
     if (teacherId) setSelectedTeacherId(teacherId);
     if (academyId) setSelectedAcademyId(academyId);
   }, [searchParams]);
 
-  // Update URL when state changes
   const updateUrlParams = (updates: Record<string, string | null>) => {
     const params = new URLSearchParams(searchParams.toString());
-
     Object.entries(updates).forEach(([key, value]) => {
       if (value === null) {
         params.delete(key);
@@ -77,21 +70,18 @@ function ReportsPageContent() {
         params.set(key, value);
       }
     });
-
     router.push(`?${params.toString()}`, { scroll: false });
   };
 
-  // Fetch teachers list when user is authenticated
+  // Fetch teachers list
   useEffect(() => {
     if (!user) return;
-    
     const fetchTeachers = async () => {
       try {
         const data = await getReportTeachers();
         setTeachers(data);
       } catch (error) {
         console.error('Failed to fetch teachers:', error);
-        // Don't show error toast for 401 - user just needs to login
         if ((error as { statusCode?: number }).statusCode !== 401) {
           toast.error('فشل تحميل قائمة المدرسين');
         }
@@ -100,7 +90,7 @@ function ReportsPageContent() {
     fetchTeachers();
   }, [user]);
 
-  // Fetch academies list on mount
+  // Fetch academies list
   useEffect(() => {
     const fetchAcademies = async () => {
       try {
@@ -114,13 +104,12 @@ function ReportsPageContent() {
     fetchAcademies();
   }, []);
 
-  // Generate report
+  // Generate report (all-time, no date filter)
   const handleGenerateReport = async () => {
     if (reportType === 'teacher' && !selectedTeacherId) {
       toast.error('يرجى اختيار مدرس');
       return;
     }
-
     if (reportType === 'academy' && !selectedAcademyId) {
       toast.error('يرجى اختيار أكاديمية');
       return;
@@ -130,15 +119,13 @@ function ReportsPageContent() {
     setReport(null);
 
     try {
-      const params = getDateRangeFromPreset(periodPreset);
-
       let data;
       if (reportType === 'admin') {
-        data = await getAdminReport(params);
+        data = await getAdminReport(ALL_TIME_PARAMS);
       } else if (reportType === 'academy') {
-        data = await getAcademyReport(selectedAcademyId, params);
+        data = await getAcademyReport(selectedAcademyId, ALL_TIME_PARAMS);
       } else {
-        data = await getTeacherReport(selectedTeacherId, params);
+        data = await getTeacherReport(selectedTeacherId, ALL_TIME_PARAMS);
       }
 
       setReport(data);
@@ -151,7 +138,7 @@ function ReportsPageContent() {
     }
   };
 
-  // Download PDF
+  // Download PDF (all-time)
   const handleDownloadPdf = async () => {
     if (!report) {
       toast.error('يرجى إنشاء التقرير أولاً');
@@ -159,18 +146,14 @@ function ReportsPageContent() {
     }
 
     setIsDownloading(true);
-
     try {
-      const params = getDateRangeFromPreset(periodPreset);
-
       if (reportType === 'admin') {
-        await downloadAdminReportPdf(params);
+        await downloadAdminReportPdf(ALL_TIME_PARAMS);
       } else if (reportType === 'academy') {
-        await downloadAcademyReportPdf(selectedAcademyId, params);
+        await downloadAcademyReportPdf(selectedAcademyId, ALL_TIME_PARAMS);
       } else {
-        await downloadTeacherReportPdf(selectedTeacherId, params);
+        await downloadTeacherReportPdf(selectedTeacherId, ALL_TIME_PARAMS);
       }
-
       toast.success('تم تحميل التقرير بنجاح');
     } catch (error) {
       console.error('Failed to download PDF:', error);
@@ -179,108 +162,6 @@ function ReportsPageContent() {
       setIsDownloading(false);
     }
   };
-
-  // Teachers breakdown columns with subscription_fee
-  const teachersColumns = [
-    { key: 'name', label: 'الاسم', sortable: true },
-    {
-      key: 'status',
-      label: 'الحالة',
-      sortable: true,
-      render: (value: string) => (
-        <span className={`badge ${value === 'نشط' ? 'badge-success' : 'badge-danger'}`}>
-          {value}
-        </span>
-      ),
-    },
-    { key: 'total_students', label: 'إجمالي الطلاب', sortable: true },
-    { key: 'active_students', label: 'النشطين', sortable: true },
-    {
-      key: 'subscription_fee',
-      label: 'السعر المدفوع للمنصة',
-      sortable: true,
-      render: (value: number) => (
-        <span className="text-primary font-semibold">
-          {(value || 0).toLocaleString()} ج.م
-        </span>
-      ),
-    },
-    {
-      key: 'revenue',
-      label: 'الإيرادات',
-      sortable: true,
-      render: (value: number) => (
-        <span className="text-secondary font-semibold">
-          {value.toLocaleString()} ج.م
-        </span>
-      ),
-    },
-    {
-      key: 'paid',
-      label: 'المدفوع',
-      sortable: true,
-      render: (value: number) => (
-        <span className="text-success font-semibold">
-          {(value || 0).toLocaleString()} ج.م
-        </span>
-      ),
-    },
-  ];
-
-  // Subscription breakdown columns
-  const subscriptionColumns = [
-    { key: 'month_name', label: 'الشهر', sortable: true },
-    { key: 'student_count', label: 'عدد الطلاب', sortable: true },
-    {
-      key: 'amount_due',
-      label: 'المبلغ المستحق',
-      sortable: true,
-      render: (value: number) => (
-        <span className="text-white font-medium">
-          {value.toLocaleString()} ج.م
-        </span>
-      ),
-    },
-    {
-      key: 'amount_paid',
-      label: 'المدفوع',
-      sortable: true,
-      render: (value: number) => (
-        <span className="text-success font-medium">
-          {value.toLocaleString()} ج.م
-        </span>
-      ),
-    },
-    {
-      key: 'amount_remaining',
-      label: 'المتبقي',
-      sortable: true,
-      render: (value: number) => (
-        <span className="text-danger font-medium">
-          {value.toLocaleString()} ج.م
-        </span>
-      ),
-    },
-    {
-      key: 'status',
-      label: 'حالة الدفع',
-      sortable: true,
-      render: (value: string) => {
-        let badgeClass = 'badge-danger';
-        let text = 'غير مدفوع';
-
-        if (value === 'paid') {
-          badgeClass = 'badge-success';
-          text = 'مدفوع';
-        } else if (value === 'partial') {
-          badgeClass = 'badge-warning';
-          text = 'مدفوع جزئياً';
-        }
-
-        return <span className={`badge ${badgeClass}`}>{text}</span>;
-      },
-    },
-  ];
 
   return (
     <DashboardLayout role="admin" user={user || undefined}>
@@ -373,7 +254,7 @@ function ReportsPageContent() {
               </div>
             )}
 
-            {/* Generate Button */}
+            {/* Action Buttons */}
             <div className="flex gap-3">
               <button
                 onClick={handleGenerateReport}
@@ -419,11 +300,52 @@ function ReportsPageContent() {
         {/* Report Results */}
         {report && (
           <div className="space-y-6">
-            {/* Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {/* Teacher Report Summary */}
-              {'teacher' in report && (
-                <>
+            {/* ======================== ADMIN REPORT ======================== */}
+            {'summary' in report && !('teacher' in report) && !('academy' in report) && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <DashboardCard title="إجمالي المدرسين" icon="fas fa-chalkboard-teacher" className="bg-white/5">
+                  <div className="text-3xl font-bold text-white">
+                    {report.summary.total_teachers}
+                  </div>
+                  <div className="text-sm text-gray-400">
+                    {report.summary.active_teachers} نشط | {report.summary.suspended_teachers} معلق
+                  </div>
+                </DashboardCard>
+
+                <DashboardCard title="إجمالي الطلاب" icon="fas fa-users" className="bg-white/5">
+                  <div className="text-3xl font-bold text-white">
+                    {report.summary.total_students}
+                  </div>
+                  <div className="text-sm text-gray-400">
+                    {report.summary.new_students} جديد في الفترة
+                  </div>
+                </DashboardCard>
+
+                <DashboardCard title="إجمالي رسوم الاشتراكات" icon="fas fa-money-bill-wave" className="bg-primary/10 border-primary/30">
+                  <div className="text-3xl font-bold text-primary">
+                    {report.summary.total_subscription_fees.toLocaleString()} ج.م
+                  </div>
+                  <div className="text-sm text-gray-400">
+                    {report.summary.total_subscriptions} اشتراك
+                  </div>
+                </DashboardCard>
+
+                <DashboardCard title="صافي ربح المنصة" icon="fas fa-chart-line" className="bg-success/10 border-success/30">
+                  <div className="text-3xl font-bold text-success">
+                    {report.summary.net_platform_profit.toLocaleString()} ج.م
+                  </div>
+                  <div className="text-sm text-gray-400">
+                    {report.summary.independent_commission.toLocaleString()} مدرسين | {report.summary.academy_platform_share.toLocaleString()} أكاديميات
+                  </div>
+                </DashboardCard>
+              </div>
+            )}
+
+            {/* ======================== TEACHER REPORT ======================== */}
+            {'teacher' in report && (
+              <>
+                {/* Main Summary */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <DashboardCard title="الطلاب" icon="fas fa-users" className="bg-white/5">
                     <div className="text-3xl font-bold text-white">
                       {report.summary.total_students}
@@ -432,6 +354,7 @@ function ReportsPageContent() {
                       {report.summary.active_students} نشط
                     </div>
                   </DashboardCard>
+
                   <DashboardCard title="السعر المدفوع للمنصة" icon="fas fa-money-bill-wave" className="bg-primary/10 border-primary/30">
                     <div className="text-3xl font-bold text-primary">
                       {(report.financial_details?.total_revenue || 0).toLocaleString()} ج.م
@@ -440,12 +363,178 @@ function ReportsPageContent() {
                       {report.summary.new_enrollments} شهر
                     </div>
                   </DashboardCard>
-                </>
-              )}
+                </div>
 
-              {/* Academy Report Summary */}
-              {'academy' in report && (
-                <>
+                {/* Plan Info */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <DashboardCard title="الباقة الحالية" icon="fas fa-crown" className="bg-yellow-500/10 border-yellow-500/30">
+                    <div className="text-2xl font-bold text-yellow-400">
+                      {report.teacher.plan_type === 'trial' ? 'فترة تجريبية' :
+                       report.teacher.plan_type === 'term' ? 'باقة فصلية' :
+                       report.teacher.plan_type === 'custom' ? 'باقة مخصصة' :
+                       report.teacher.plan_type ? report.teacher.plan_type : 'بدون باقة'}
+                    </div>
+                    <div className="text-sm text-gray-400">
+                      {report.summary.price_per_student} ج.م / طالب
+                    </div>
+                  </DashboardCard>
+
+                  <DashboardCard title="الطلاب المسموح بهم" icon="fas fa-users-cog" className="bg-blue-500/10 border-blue-500/30">
+                    <div className="text-2xl font-bold text-blue-400">
+                      {report.teacher.is_unlimited_students ? 'غير محدود' : (report.teacher.plan_max_students || 0)}
+                    </div>
+                    <div className="text-sm text-gray-400">
+                      الطلاب الحاليين: {report.summary.total_students}
+                    </div>
+                  </DashboardCard>
+
+                  <DashboardCard title="نسبة استخدام الباقة" icon="fas fa-chart-pie" className="bg-purple-500/10 border-purple-500/30">
+                    <div className="text-2xl font-bold text-purple-400">
+                      {report.teacher.is_unlimited_students ? '-' :
+                       report.teacher.plan_max_students && report.teacher.plan_max_students > 0
+                         ? `${Math.min(Math.round((report.summary.total_students / report.teacher.plan_max_students) * 100), 100)}%`
+                         : '0%'}
+                    </div>
+                    {!report.teacher.is_unlimited_students && report.teacher.plan_max_students && report.teacher.plan_max_students > 0 && (
+                      <div className="w-full bg-gray-700 rounded-full h-2 mt-2">
+                        <div
+                          className="bg-purple-500 h-2 rounded-full transition-all"
+                          style={{ width: `${Math.min((report.summary.total_students / report.teacher.plan_max_students) * 100, 100)}%` }}
+                        />
+                      </div>
+                    )}
+                  </DashboardCard>
+                </div>
+
+                {/* Additional Teacher Info */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <DashboardCard title="تاريخ الانضمام للمنصة" icon="fas fa-calendar-alt" className="bg-white/5">
+                    <div className="text-2xl font-bold text-white">
+                      {report.teacher.joined || '-'}
+                    </div>
+                    <div className="text-sm text-gray-400">
+                      عضو منذ {report.teacher.member_since_days ?? 0} يوم
+                    </div>
+                  </DashboardCard>
+
+                  <DashboardCard title="عدد السكرتارية" icon="fas fa-user-tie" className="bg-white/5">
+                    <div className="text-2xl font-bold text-white">
+                      {report.teacher.total_secretaries || 0}
+                    </div>
+                    <div className="text-sm text-gray-400">سكرتير مساعد</div>
+                  </DashboardCard>
+
+                  <DashboardCard title="تاريخ آخر دفعة" icon="fas fa-credit-card" className={report.teacher.has_subscription ? 'bg-green-500/10 border-green-500/30' : 'bg-red-500/10 border-red-500/30'}>
+                    <div className="flex items-center gap-2">
+                      <div className={`text-2xl font-bold ${report.teacher.has_subscription ? 'text-green-400' : 'text-red-400'}`}>
+                        {report.teacher.last_payment_date || (report.teacher.has_subscription ? 'تم الدفع' : 'لم يتم الدفع')}
+                      </div>
+                      {report.teacher.has_subscription ? (
+                        <span className="px-2 py-1 text-xs bg-green-500 text-white rounded-full">
+                          ✓ مدفوع {report.teacher.paid_amount ? `${report.teacher.paid_amount.toLocaleString()} ج.م` : ''}
+                        </span>
+                      ) : (
+                        <span className="px-2 py-1 text-xs bg-red-500 text-white rounded-full">
+                          ⚠ مطلوب الدفع
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-sm text-gray-400">
+                      {report.teacher.subscription_expiry
+                        ? `تنتهي: ${report.teacher.subscription_expiry}`
+                        : report.teacher.has_subscription
+                          ? ((report.teacher.amount_due ?? 0) > 0
+                            ? `المتبقي: ${(report.teacher.amount_due ?? 0).toLocaleString()} ج.م`
+                            : 'مدفوع بالكامل')
+                          : `المطلوب: ${(report.financial_details?.total_revenue || 0).toLocaleString()} ج.م`
+                      }
+                    </div>
+                  </DashboardCard>
+
+                  {/* Days Remaining */}
+                  {(() => {
+                    const daysRemaining = report.teacher.days_remaining ?? null;
+                    return (
+                      <DashboardCard
+                        title="المتبقي على انتهاء الباقة"
+                        icon="fas fa-hourglass-half"
+                        className={
+                          daysRemaining === null ? 'bg-white/5' :
+                          daysRemaining <= 7 ? 'bg-red-500/10 border-red-500/30' :
+                          daysRemaining <= 30 ? 'bg-yellow-500/10 border-yellow-500/30' :
+                          'bg-green-500/10 border-green-500/30'
+                        }
+                      >
+                        <div className={`text-2xl font-bold ${
+                          daysRemaining === null ? 'text-gray-400' :
+                          daysRemaining <= 7 ? 'text-red-400' :
+                          daysRemaining <= 30 ? 'text-yellow-400' :
+                          'text-green-400'
+                        }`}>
+                          {daysRemaining !== null ? `${daysRemaining} يوم` : 'غير محدد'}
+                        </div>
+                        <div className="text-sm text-gray-400">
+                          {report.teacher.subscription_expiry
+                            ? `تنتهي في ${report.teacher.subscription_expiry}`
+                            : 'لا يوجد تاريخ انتهاء'}
+                        </div>
+                      </DashboardCard>
+                    );
+                  })()}
+
+                  {/* Plan Duration */}
+                  <DashboardCard title="مدة الباقة" icon="fas fa-calendar-check" className="bg-indigo-500/10 border-indigo-500/30">
+                    <div className="text-2xl font-bold text-indigo-400">
+                      {report.teacher.plan_duration_months
+                        ? `${report.teacher.plan_duration_months} شهر`
+                        : 'غير محدد'}
+                    </div>
+                    <div className="text-sm text-gray-400">
+                      {report.teacher.plan_type === 'trial' ? 'فترة تجريبية' : 'مدة الاشتراك'}
+                    </div>
+                  </DashboardCard>
+
+                  {/* Payment Progress */}
+                  {(() => {
+                    const pct = report.teacher.payment_percentage ?? 0;
+                    return (
+                      <DashboardCard title="نسبة الدفع" icon="fas fa-money-check-alt" className={
+                        pct >= 100 ? 'bg-green-500/10 border-green-500/30' :
+                        pct > 0 ? 'bg-yellow-500/10 border-yellow-500/30' :
+                        'bg-red-500/10 border-red-500/30'
+                      }>
+                        <div className={`text-2xl font-bold ${
+                          pct >= 100 ? 'text-green-400' :
+                          pct > 0 ? 'text-yellow-400' :
+                          'text-red-400'
+                        }`}>
+                          {pct}%
+                        </div>
+                        <div className="w-full bg-gray-700 rounded-full h-2 mt-2">
+                          <div
+                            className={`h-2 rounded-full transition-all ${
+                              pct >= 100 ? 'bg-green-500' :
+                              pct > 0 ? 'bg-yellow-500' :
+                              'bg-red-500'
+                            }`}
+                            style={{ width: `${Math.min(pct, 100)}%` }}
+                          />
+                        </div>
+                        <div className="text-sm text-gray-400 mt-1">
+                          {report.teacher.paid_amount?.toLocaleString() || 0} / {(report.financial_details?.total_revenue || 0).toLocaleString()} ج.م
+                        </div>
+                      </DashboardCard>
+                    );
+                  })()}
+                </div>
+              </>
+            )}
+
+            {/* ======================== ACADEMY REPORT ======================== */}
+            {'academy' in report && (
+              <>
+                {/* Main Summary */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   <DashboardCard title="المدرسين" icon="fas fa-chalkboard-teacher" className="bg-white/5">
                     <div className="text-3xl font-bold text-white">
                       {report.summary.total_teachers}
@@ -454,6 +543,7 @@ function ReportsPageContent() {
                       {report.summary.active_teachers} نشط
                     </div>
                   </DashboardCard>
+
                   <DashboardCard title="الطلاب" icon="fas fa-users" className="bg-white/5">
                     <div className="text-3xl font-bold text-white">
                       {report.summary.total_academy_students}
@@ -462,6 +552,7 @@ function ReportsPageContent() {
                       {report.summary.total_enrollments} تسجيل
                     </div>
                   </DashboardCard>
+
                   <DashboardCard title="السعر المدفوع للمنصة" icon="fas fa-money-bill-wave" className="bg-primary/10 border-primary/30">
                     <div className="text-3xl font-bold text-primary">
                       {report.summary.subscription_fee.toLocaleString()} ج.م
@@ -470,6 +561,7 @@ function ReportsPageContent() {
                       {report.summary.total_subscriptions} اشتراك
                     </div>
                   </DashboardCard>
+
                   <DashboardCard title="حالة الدفع" icon="fas fa-info-circle" className="bg-white/5">
                     <div className={`text-2xl font-bold ${
                       report.summary.payment_status === 'paid' ? 'text-success' :
@@ -482,15 +574,10 @@ function ReportsPageContent() {
                       {report.summary.remaining_balance.toLocaleString()} ج.م متبقي
                     </div>
                   </DashboardCard>
-                </>
-              )}
+                </div>
 
-              {/* Academy Additional Info */}
-              {'academy' in report && (
-                <div className="col-span-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-2">
-                  {/* DEBUG - REMOVE LATER */}
-                  {(() => { console.log('[DEBUG] report.academy:', JSON.stringify(report.academy)); return null; })()}
-                  {/* Plan Type */}
+                {/* Academy Additional Info */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   <DashboardCard title="الباقة الحالية" icon="fas fa-crown" className="bg-yellow-500/10 border-yellow-500/30">
                     <div className="text-2xl font-bold text-yellow-400">
                       {report.academy.plan_type === 'trial' ? 'فترة تجريبية' :
@@ -503,7 +590,6 @@ function ReportsPageContent() {
                     </div>
                   </DashboardCard>
 
-                  {/* Allowed Students */}
                   <DashboardCard title="الطلاب المسموح بهم" icon="fas fa-user-friends" className="bg-blue-500/10 border-blue-500/30">
                     <div className="text-2xl font-bold text-blue-400">
                       {report.academy.is_unlimited_students ? 'غير محدود' : (report.academy.plan_max_students || 0)}
@@ -513,7 +599,6 @@ function ReportsPageContent() {
                     </div>
                   </DashboardCard>
 
-                  {/* Usage Percentage */}
                   <DashboardCard title="نسبة استخدام الباقة" icon="fas fa-chart-pie" className="bg-cyan-500/10 border-cyan-500/30">
                     <div className="text-2xl font-bold text-cyan-400">
                       {report.academy.is_unlimited_students
@@ -527,7 +612,6 @@ function ReportsPageContent() {
                     </div>
                   </DashboardCard>
 
-                  {/* Teachers Count */}
                   <DashboardCard title="عدد المدرسين" icon="fas fa-chalkboard-teacher" className="bg-purple-500/10 border-purple-500/30">
                     <div className="text-2xl font-bold text-purple-400">
                       {report.academy.total_teachers || report.summary.total_teachers}
@@ -537,7 +621,6 @@ function ReportsPageContent() {
                     </div>
                   </DashboardCard>
 
-                  {/* Join Date */}
                   <DashboardCard title="تاريخ الانضمام للمنصة" icon="fas fa-calendar-alt" className="bg-white/5">
                     <div className="text-2xl font-bold text-white">
                       {report.academy.joined}
@@ -547,7 +630,6 @@ function ReportsPageContent() {
                     </div>
                   </DashboardCard>
 
-                  {/* Payment Status */}
                   <DashboardCard title="تاريخ آخر دفعة" icon="fas fa-receipt" className={
                     report.academy.has_subscription
                       ? (report.academy.amount_due ?? 0) <= 0
@@ -579,7 +661,7 @@ function ReportsPageContent() {
                     </div>
                   </DashboardCard>
 
-                  {/* Remaining Days until Plan Expiry */}
+                  {/* Days Remaining */}
                   {(() => {
                     const daysRemaining = report.academy.days_remaining ?? null;
                     return (
@@ -599,9 +681,7 @@ function ReportsPageContent() {
                           daysRemaining <= 30 ? 'text-yellow-400' :
                           'text-green-400'
                         }`}>
-                          {daysRemaining !== null
-                            ? `${daysRemaining} يوم`
-                            : 'غير محدد'}
+                          {daysRemaining !== null ? `${daysRemaining} يوم` : 'غير محدد'}
                         </div>
                         <div className="text-sm text-gray-400">
                           {report.academy.subscription_expiry
@@ -645,218 +725,8 @@ function ReportsPageContent() {
                     );
                   })()}
                 </div>
-              )}
-
-              {/* Admin Report Summary */}
-              {'summary' in report && !('teacher' in report) && !('academy' in report) && (
-                <>
-                  <DashboardCard title="إجمالي المدرسين" icon="fas fa-chalkboard-teacher" className="bg-white/5">
-                    <div className="text-3xl font-bold text-white">
-                      {report.summary.total_teachers}
-                    </div>
-                    <div className="text-sm text-gray-400">
-                      {report.summary.active_teachers} نشط | {report.summary.suspended_teachers} معلق
-                    </div>
-                  </DashboardCard>
-                  <DashboardCard title="إجمالي الطلاب" icon="fas fa-users" className="bg-white/5">
-                    <div className="text-3xl font-bold text-white">
-                      {report.summary.total_students}
-                    </div>
-                    <div className="text-sm text-gray-400">
-                      {report.summary.new_students} جديد في الفترة
-                    </div>
-                  </DashboardCard>
-                  <DashboardCard title="إجمالي رسوم الاشتراكات" icon="fas fa-money-bill-wave" className="bg-primary/10 border-primary/30">
-                    <div className="text-3xl font-bold text-primary">
-                      {report.summary.total_subscription_fees.toLocaleString()} ج.م
-                    </div>
-                    <div className="text-sm text-gray-400">
-                      {report.summary.total_subscriptions} اشتراك
-                    </div>
-                  </DashboardCard>
-                  <DashboardCard title="صافي ربح المنصة" icon="fas fa-chart-line" className="bg-success/10 border-success/30">
-                    <div className="text-3xl font-bold text-success">
-                      {report.summary.net_platform_profit.toLocaleString()} ج.م
-                    </div>
-                    <div className="text-sm text-gray-400">
-                      {report.summary.independent_commission.toLocaleString()} مدرسين | {report.summary.academy_platform_share.toLocaleString()} أكاديميات
-                    </div>
-                  </DashboardCard>
-                </>
-              )}
-            </div>
-
-            {/* Teacher Plan Info */}
-            {'teacher' in report && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-                <DashboardCard title="الباقة الحالية" icon="fas fa-crown" className="bg-yellow-500/10 border-yellow-500/30">
-                  <div className="text-2xl font-bold text-yellow-400">
-                    {report.teacher.plan_type === 'trial' ? 'فترة تجريبية' :
-                     report.teacher.plan_type === 'term' ? 'باقة فصلية' :
-                     report.teacher.plan_type === 'custom' ? 'باقة مخصصة' :
-                     report.teacher.plan_type ? report.teacher.plan_type : 'بدون باقة'}
-                  </div>
-                  <div className="text-sm text-gray-400">
-                    {report.summary.price_per_student} ج.م / طالب
-                  </div>
-                </DashboardCard>
-
-                <DashboardCard title="الطلاب المسموح بهم" icon="fas fa-users-cog" className="bg-blue-500/10 border-blue-500/30">
-                  <div className="text-2xl font-bold text-blue-400">
-                    {report.teacher.is_unlimited_students ? 'غير محدود' : (report.teacher.plan_max_students || 0)}
-                  </div>
-                  <div className="text-sm text-gray-400">
-                    الطلاب الحاليين: {report.summary.total_students}
-                  </div>
-                </DashboardCard>
-
-                <DashboardCard title="نسبة استخدام الباقة" icon="fas fa-chart-pie" className="bg-purple-500/10 border-purple-500/30">
-                  <div className="text-2xl font-bold text-purple-400">
-                    {report.teacher.is_unlimited_students ? '-' :
-                     report.teacher.plan_max_students && report.teacher.plan_max_students > 0
-                       ? `${Math.min(Math.round((report.summary.total_students / report.teacher.plan_max_students) * 100), 100)}%`
-                       : '0%'}
-                  </div>
-                  {!report.teacher.is_unlimited_students && report.teacher.plan_max_students && report.teacher.plan_max_students > 0 && (
-                    <div className="w-full bg-gray-700 rounded-full h-2 mt-2">
-                      <div
-                        className="bg-purple-500 h-2 rounded-full transition-all"
-                        style={{ width: `${Math.min((report.summary.total_students / report.teacher.plan_max_students) * 100, 100)}%` }}
-                      />
-                    </div>
-                  )}
-                </DashboardCard>
-              </div>
+              </>
             )}
-
-            {/* Teacher Additional Info */}
-            {'teacher' in report && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                <DashboardCard title="تاريخ الانضمام للمنصة" icon="fas fa-calendar-alt" className="bg-white/5">
-                  <div className="text-2xl font-bold text-white">
-                    {report.teacher.joined || '-'}
-                  </div>
-                  <div className="text-sm text-gray-400">
-                    عضو منذ {report.teacher.member_since_days ?? 0} يوم
-                  </div>
-                </DashboardCard>
-
-                <DashboardCard title="عدد السكرتارية" icon="fas fa-user-tie" className="bg-white/5">
-                  <div className="text-2xl font-bold text-white">
-                    {report.teacher.total_secretaries || 0}
-                  </div>
-                  <div className="text-sm text-gray-400">
-                    سكرتير مساعد
-                  </div>
-                </DashboardCard>
-
-                <DashboardCard title="تاريخ آخر دفعة" icon="fas fa-credit-card" className={report.teacher.has_subscription ? 'bg-green-500/10 border-green-500/30' : 'bg-red-500/10 border-red-500/30'}>
-                  <div className="flex items-center gap-2">
-                    <div className={`text-2xl font-bold ${report.teacher.has_subscription ? 'text-green-400' : 'text-red-400'}`}>
-                      {report.teacher.last_payment_date || (report.teacher.has_subscription ? 'تم الدفع' : 'لم يتم الدفع')}
-                    </div>
-                    {report.teacher.has_subscription ? (
-                      <span className="px-2 py-1 text-xs bg-green-500 text-white rounded-full">
-                        ✓ مدفوع {report.teacher.paid_amount ? `${report.teacher.paid_amount.toLocaleString()} ج.م` : ''}
-                      </span>
-                    ) : (
-                      <span className="px-2 py-1 text-xs bg-red-500 text-white rounded-full">
-                        ⚠ مطلوب الدفع
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-sm text-gray-400">
-                    {report.teacher.subscription_expiry
-                      ? `تنتهي: ${report.teacher.subscription_expiry}`
-                      : report.teacher.has_subscription
-                        ? ((report.teacher.amount_due ?? 0) > 0
-                          ? `المتبقي: ${(report.teacher.amount_due ?? 0).toLocaleString()} ج.م`
-                          : 'مدفوع بالكامل')
-                        : `المطلوب: ${(report.financial_details?.total_revenue || 0).toLocaleString()} ج.م`
-                    }
-                  </div>
-                </DashboardCard>
-
-                {/* Remaining Days until Plan Expiry */}
-                {(() => {
-                  const daysRemaining = report.teacher.days_remaining ?? null;
-                  return (
-                    <DashboardCard
-                      title="المتبقي على انتهاء الباقة"
-                      icon="fas fa-hourglass-half"
-                      className={
-                        daysRemaining === null ? 'bg-white/5' :
-                        daysRemaining <= 7 ? 'bg-red-500/10 border-red-500/30' :
-                        daysRemaining <= 30 ? 'bg-yellow-500/10 border-yellow-500/30' :
-                        'bg-green-500/10 border-green-500/30'
-                      }
-                    >
-                      <div className={`text-2xl font-bold ${
-                        daysRemaining === null ? 'text-gray-400' :
-                        daysRemaining <= 7 ? 'text-red-400' :
-                        daysRemaining <= 30 ? 'text-yellow-400' :
-                        'text-green-400'
-                      }`}>
-                        {daysRemaining !== null
-                          ? `${daysRemaining} يوم`
-                          : 'غير محدد'}
-                      </div>
-                      <div className="text-sm text-gray-400">
-                        {report.teacher.subscription_expiry
-                          ? `تنتهي في ${report.teacher.subscription_expiry}`
-                          : 'لا يوجد تاريخ انتهاء'}
-                      </div>
-                    </DashboardCard>
-                  );
-                })()}
-
-                {/* Plan Duration */}
-                <DashboardCard title="مدة الباقة" icon="fas fa-calendar-check" className="bg-indigo-500/10 border-indigo-500/30">
-                  <div className="text-2xl font-bold text-indigo-400">
-                    {report.teacher.plan_duration_months
-                      ? `${report.teacher.plan_duration_months} شهر`
-                      : 'غير محدد'}
-                  </div>
-                  <div className="text-sm text-gray-400">
-                    {report.teacher.plan_type === 'trial' ? 'فترة تجريبية' : 'مدة الاشتراك'}
-                  </div>
-                </DashboardCard>
-
-                {/* Payment Progress */}
-                {(() => {
-                  const pct = report.teacher.payment_percentage ?? 0;
-                  return (
-                    <DashboardCard title="نسبة الدفع" icon="fas fa-money-check-alt" className={
-                      pct >= 100 ? 'bg-green-500/10 border-green-500/30' :
-                      pct > 0 ? 'bg-yellow-500/10 border-yellow-500/30' :
-                      'bg-red-500/10 border-red-500/30'
-                    }>
-                      <div className={`text-2xl font-bold ${
-                        pct >= 100 ? 'text-green-400' :
-                        pct > 0 ? 'text-yellow-400' :
-                        'text-red-400'
-                      }`}>
-                        {pct}%
-                      </div>
-                      <div className="w-full bg-gray-700 rounded-full h-2 mt-2">
-                        <div
-                          className={`h-2 rounded-full transition-all ${
-                            pct >= 100 ? 'bg-green-500' :
-                            pct > 0 ? 'bg-yellow-500' :
-                            'bg-red-500'
-                          }`}
-                          style={{ width: `${Math.min(pct, 100)}%` }}
-                        />
-                      </div>
-                      <div className="text-sm text-gray-400 mt-1">
-                        {report.teacher.paid_amount?.toLocaleString() || 0} / {(report.financial_details?.total_revenue || 0).toLocaleString()} ج.م
-                      </div>
-                    </DashboardCard>
-                  );
-                })()}
-              </div>
-            )}
-
           </div>
         )}
       </div>

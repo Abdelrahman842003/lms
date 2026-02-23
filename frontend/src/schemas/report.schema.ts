@@ -64,7 +64,7 @@ export type GenerateReportRequest = z.infer<typeof GenerateReportRequestSchema>;
 export const ReportPeriodSchema = z.object({
   start: z.string(),
   end: z.string(),
-  duration_months: z.number().int().min(1),
+  duration_months: z.coerce.number().int().min(1),
 });
 
 export type ReportPeriod = z.infer<typeof ReportPeriodSchema>;
@@ -246,13 +246,13 @@ export const TeacherBreakdownItemSchema = z.object({
   id: z.string(),
   name: z.string(),
   status: z.string(),
-  total_students: z.number().int().min(0),
-  active_students: z.number().int().min(0),
-  secretaries: z.number().int().min(0),
-  subscriptions: z.number().int().min(0),
-  subscription_fee: z.number().min(0),
-  revenue: z.number().min(0),
-  paid: z.number().min(0),
+  total_students: z.coerce.number().int().min(0),
+  active_students: z.coerce.number().int().min(0),
+  secretaries: z.coerce.number().int().min(0),
+  subscriptions: z.coerce.number().int().min(0),
+  subscription_fee: z.coerce.number().min(0),
+  revenue: z.coerce.number().min(0),
+  paid: z.coerce.number().min(0),
   joined: z.string(),
 });
 

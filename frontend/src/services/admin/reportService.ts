@@ -4,7 +4,8 @@
  * Aligned with DTOs and subscription_fee system per SUBSCRIPTION_SYSTEM_CHANGES.md
  */
 
-import { fetchApi, API_BASE_URL, getAuthHeaders } from '../api/baseApi';
+import { fetchApi, getAuthHeaders } from '../api/baseApi';
+import { getApiBaseUrl } from '@/config/api-config';
 import type {
   TeacherListItem,
   AcademyListItem,
@@ -282,7 +283,8 @@ async function downloadPdf(
   filename: string
 ): Promise<void> {
   try {
-    const cleanBaseUrl = API_BASE_URL.replace(/\/api\/?$/, '').replace(/\/$/, '');
+    // FIX: Use getApiBaseUrl() which has proper fallback to localhost:8000
+    const cleanBaseUrl = getApiBaseUrl();
 
     const queryParams = new URLSearchParams({
       period_preset: 'custom',
@@ -294,7 +296,21 @@ async function downloadPdf(
       'Accept': 'application/pdf',
     });
 
-    const response = await fetch(`${cleanBaseUrl}${endpoint}?${queryParams}`, {
+    // FIX: Add /api/v1 prefix to endpoint (same logic as fetchApi)
+    let normalizedEndpoint = endpoint;
+    if (endpoint.startsWith('/api')) {
+      if (!endpoint.includes('/api/v1/')) {
+        normalizedEndpoint = endpoint.replace('/api/', '/api/v1/');
+      }
+    } else {
+      if (endpoint.startsWith('/v1/')) {
+        normalizedEndpoint = '/api' + endpoint;
+      } else {
+        normalizedEndpoint = '/api/v1' + endpoint;
+      }
+    }
+
+    const response = await fetch(`${cleanBaseUrl}${normalizedEndpoint}?${queryParams}`, {
       method: 'GET',
       headers,
     });
