@@ -4,13 +4,12 @@ import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { DataTable } from '@/components/dashboard/DataTable';
-import { ConfirmationModal } from '@/components/ui';
+import { ConfirmationModal, Button, Icon, Input, Textarea, Select, LoadingSpinner, Badge } from '@/components/ui';
 import { Filter } from '@/components/Filter';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { useRouter } from 'next/navigation';
 import academyService from '@/services/academyService';
 import toast from 'react-hot-toast';
-
 export default function AcademySecretariesPage() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const router = useRouter();
@@ -124,7 +123,7 @@ export default function AcademySecretariesPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <i className="fas fa-spinner fa-spin text-4xl text-primary mb-4"></i>
+          <LoadingSpinner size="sm" color="primary" />
           <p className="text-gray-400">جاري التحميل...</p>
         </div>
       </div>
@@ -142,7 +141,7 @@ export default function AcademySecretariesPage() {
             {row.avatar ? (
               <img src={row.avatar} alt={row.name} className="w-full h-full rounded-full object-cover" />
             ) : (
-              <i className="fas fa-user-tie"></i>
+              <Icon name="user-tie" />
             )}
           </div>
           <div className="flex flex-col">
@@ -165,9 +164,9 @@ export default function AcademySecretariesPage() {
       label: 'الحالة',
       sortable: true,
       render: (value: boolean) => (
-        <span className={`badge ${value ? 'badge-success' : 'badge-danger'}`}>
+        <Badge variant={value ? 'success' : 'danger'}>
           {value ? 'نشط' : 'غير نشط'}
-        </span>
+        </Badge>
       ),
     },
   ];
@@ -175,13 +174,13 @@ export default function AcademySecretariesPage() {
   const actions = [
     {
       label: (row: any) => row.is_active ? 'تعطيل' : 'تفعيل',
-      icon: (row: any) => row.is_active ? 'fas fa-ban' : 'fas fa-check',
+      icon: (row: any) => row.is_active ? 'ban' : 'check',
       variant: (row: any) => row.is_active ? 'danger' : 'success',
       onClick: (row: any) => handleToggleStatus(row),
     },
     {
       label: 'حذف',
-      icon: 'fas fa-trash',
+      icon: 'trash',
       variant: 'danger' as 'danger',
       onClick: (row: any) => handleDelete(row),
     },
@@ -191,7 +190,7 @@ export default function AcademySecretariesPage() {
     <DashboardLayout role="academy" user={user}>
       <DashboardCard
         title="إدارة السكرتيرات"
-        icon="fas fa-users-cog"
+        icon="users-cog"
       >
         <DataTable
           columns={tableColumns}
@@ -212,13 +211,14 @@ export default function AcademySecretariesPage() {
                 onChange={(value) => setStatusFilter(value)}
                 className="w-full sm:w-auto min-w-[150px]"
               />
-              <button
+              <Button
                 onClick={() => router.push('/academy/secretaries/add')}
-                className="btn btn-primary w-full sm:w-auto justify-center"
+                variant="primary"
+                className="w-full sm:w-auto justify-center"
               >
-                <i className="fas fa-plus ml-2"></i>
+                <Icon name="plus" className="ml-2" />
                 إضافة سكرتير
-              </button>
+              </Button>
             </div>
           }
         />

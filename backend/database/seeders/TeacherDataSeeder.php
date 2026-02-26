@@ -2,20 +2,19 @@
 
 namespace Database\Seeders;
 
+use App\Domains\Auth\Models\Student;
+use App\Domains\Auth\Models\Teacher;
+use App\Domains\Enrollments\Models\Enrollment;
+use App\Domains\Enrollments\Models\Grade;
+use App\Domains\Enrollments\Models\Group;
+use App\Domains\Lectures\Models\Attendance;
+use App\Domains\Lectures\Models\Lecture;
+use App\Domains\Exams\Models\Exam;
 use Illuminate\Database\Seeder;
-use App\Models\Teacher;
-use App\Models\Grade;
-use App\Models\Group;
-use App\Models\Student;
-use App\Models\Lecture;
-use App\Models\Attendance;
-use App\Models\Exam;
-use App\Models\ExamResult;
+use App\Domains\Exams\Models\ExamResult;
 use App\Models\Secretary;
 use Illuminate\Support\Facades\Hash;
 use Carbon\Carbon;
-
-use App\Models\Enrollment;
 
 class TeacherDataSeeder extends Seeder
 {

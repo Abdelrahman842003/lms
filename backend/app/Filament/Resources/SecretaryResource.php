@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources;
 
-use App\Models\Secretary;
+use App\Domains\Auth\Models\Secretary;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -22,13 +22,16 @@ class SecretaryResource extends BaseResource
 
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
 
-    protected static ?string $navigationGroup = 'إدارة المستخدمين';
-
     protected static ?int $navigationSort = 5;
 
     protected static ?string $modelLabel = 'سكرتير';
 
     protected static ?string $pluralModelLabel = 'السكرتيريون';
+
+    public static function getNavigationGroup(): ?string
+    {
+        return 'إدارة المستخدمين';
+    }
 
     public static function form(Schema $schema): Schema
     {

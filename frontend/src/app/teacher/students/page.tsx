@@ -4,7 +4,9 @@ import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { DataTable } from '@/components/dashboard/DataTable';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
-import { ConfirmationModal } from '@/components/ui';
+import { Button, Icon } from '@/components/ui';
+import ConfirmationModal from '@/components/ui/ConfirmationModal';
+import { Badge } from '@/components/ui/Badge';
 import { Filter } from '@/components/Filter';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { getTeacherStudents, deleteTeacherStudent, toggleTeacherStudentStatus } from '@/services/authService';
@@ -127,17 +129,17 @@ export default function StudentsPage() {
             <span className={`font-semibold ${row.is_active ? '' : 'text-gray-light'}`}>
               {value}
             </span>
-            <div className="flex items-center gap-2 text-xs">
+            <div className="flex items-center gap-2 text-xs flex-wrap">
               {row.status === 'trial' && (
-                <span className="text-[#f39c12]">
+                <Badge variant="warning" size="sm">
                   فترة تجريبية ({row.trial_days_left !== undefined ? `${Math.ceil(row.trial_days_left)} يوم` : 'متبقي'})
-                </span>
+                </Badge>
               )}
-              {row.status === 'active' && <span className="text-success">نشط ({row.days_left} يوم)</span>}
-              {row.status === 'grace_period' && <span className="text-warning">فترة سماح ({row.days_left} يوم)</span>}
-              {row.status === 'expired' && <span className="text-danger">منتهي</span>}
-              {row.status === 'inactive' && <span className="text-gray-400">غير مفعل</span>}
-              {!row.is_active && <span className="text-danger ml-1">(معطل يدوياً)</span>}
+              {row.status === 'active' && <Badge variant="success" size="sm">نشط ({row.days_left} يوم)</Badge>}
+              {row.status === 'grace_period' && <Badge variant="warning" size="sm">فترة سماح ({row.days_left} يوم)</Badge>}
+              {row.status === 'expired' && <Badge variant="danger" size="sm">منتهي</Badge>}
+              {row.status === 'inactive' && <Badge variant="default" size="sm">غير مفعل</Badge>}
+              {!row.is_active && <Badge variant="danger" size="sm">معطل يدوياً</Badge>}
             </div>
           </div>
         </div>
@@ -248,9 +250,11 @@ export default function StudentsPage() {
                 onChange={(value) => setStatusFilter(value)}
                 className="w-full sm:w-auto min-w-[150px]"
               />
-              <Link href="/teacher/students/add" className="btn btn-primary w-full sm:w-auto justify-center">
-                <i className="fas fa-plus"></i>
-                <span>إضافة طالب جديد</span>
+              <Link href="/teacher/students/add">
+                <Button className="w-full sm:w-auto justify-center">
+                  <Icon name="plus" className="ml-2" />
+                  <span>إضافة طالب جديد</span>
+                </Button>
               </Link>
             </div>
           }

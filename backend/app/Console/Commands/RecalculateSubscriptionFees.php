@@ -2,9 +2,9 @@
 
 namespace App\Console\Commands;
 
-use App\Models\Academy;
-use App\Models\Teacher;
-use App\Services\Infrastructure\HelperService;
+use App\Domains\Auth\Models\Academy;
+use App\Domains\Auth\Models\Teacher;
+use App\Domains\Support\Services\HelperService;
 use Illuminate\Console\Command;
 
 class RecalculateSubscriptionFees extends Command

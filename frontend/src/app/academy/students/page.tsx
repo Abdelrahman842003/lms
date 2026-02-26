@@ -12,7 +12,8 @@ import { getAcademyStudents, getAcademyStudentStatistics, deleteAcademyStudent, 
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
-import { ConfirmationModal } from '@/components/ui';
+import { ConfirmationModal, Icon, Button } from '@/components/ui';
+import { Badge } from '@/components/ui/Badge';
 
 import { LinkTeacherModal } from './LinkTeacherModal';
 import { TeacherSelectionModal } from './TeacherSelectionModal';
@@ -271,12 +272,12 @@ export default function AcademyStudentsPage() {
         
         return (
         <div className="flex items-center gap-2">
-          <button 
+          <button
             className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition-colors ${
               hasTeachers
                 ? hasInactiveTeacher
                   ? 'bg-red-100 text-red-600 hover:bg-red-200 cursor-pointer'
-                  : 'bg-blue-100 text-blue-600 hover:bg-blue-200 cursor-pointer' 
+                  : 'bg-blue-100 text-blue-600 hover:bg-blue-200 cursor-pointer'
                 : 'bg-gray-100 text-gray-400 cursor-default'
             }`}
             onClick={(e) => {
@@ -313,12 +314,12 @@ export default function AcademyStudentsPage() {
   const actions = [
     {
       label: 'عرض التفاصيل',
-      icon: 'fas fa-eye',
+      icon: 'eye',
       onClick: (row: any) => router.push(`/academy/students/${row.id}`),
     },
     {
       label: 'ربط مدرس',
-      icon: 'fas fa-link',
+      icon: 'link',
       onClick: (row: any) => {
         setSelectedStudentForLink(row);
         setLinkTeacherModalOpen(true);
@@ -326,23 +327,23 @@ export default function AcademyStudentsPage() {
     },
     {
       label: 'تسجيل دفعة',
-      icon: 'fas fa-money-bill-wave',
+      icon: 'money-bill-wave',
       onClick: (row: any) => router.push(`/academy/students/${row.id}/payment`),
     },
     {
       label: 'تعديل',
-      icon: 'fas fa-edit',
+      icon: 'edit',
       onClick: (row: any) => router.push(`/academy/students/${row.id}/edit`),
     },
     {
       label: (row: any) => row.is_active ? 'تعطيل الحساب' : 'تفعيل الحساب',
-      icon: (row: any) => row.is_active ? 'fas fa-ban' : 'fas fa-check-circle',
+      icon: (row: any) => row.is_active ? 'ban' : 'check-circle',
       variant: (row: any) => row.is_active ? 'danger' : 'success',
       onClick: (row: any) => handleToggleStatus(row),
     },
     {
       label: 'إلغاء ربط',
-      icon: 'fas fa-trash-alt',
+      icon: 'trash-alt',
       variant: 'danger' as 'danger',
       onClick: (row: any) => handleDelete(row),
     },
@@ -360,35 +361,35 @@ export default function AcademyStudentsPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <StatCard
           title="إجمالي الطلاب"
-          icon="fas fa-graduation-cap"
+          icon="graduation-cap"
           value={stats?.total_students || 0}
           color="primary"
         />
         <StatCard
           title="الطلاب النشطين"
-          icon="fas fa-user-check"
+          icon="user-check"
           value={stats?.active_students || 0}
           color="success"
         />
         <StatCard
           title="إجمالي التسجيلات"
-          icon="fas fa-users"
+          icon="users"
           value={stats?.total_enrollments || 0}
-          trend={{ 
-            value: Math.abs(stats?.total_enrollments_trend || 0), 
-            label: 'تسجيل', 
-            isPositive: (stats?.total_enrollments_trend || 0) >= 0 
+          trend={{
+            value: Math.abs(stats?.total_enrollments_trend || 0),
+            label: 'تسجيل',
+            isPositive: (stats?.total_enrollments_trend || 0) >= 0
           }}
           color="info"
         />
         <StatCard
           title="التسجيلات النشطة"
-          icon="fas fa-user-check"
+          icon="user-check"
           value={stats?.active_enrollments || 0}
-          trend={{ 
-            value: Math.abs(stats?.active_enrollments_trend || 0), 
-            label: 'تسجيل', 
-            isPositive: (stats?.active_enrollments_trend || 0) >= 0 
+          trend={{
+            value: Math.abs(stats?.active_enrollments_trend || 0),
+            label: 'تسجيل',
+            isPositive: (stats?.active_enrollments_trend || 0) >= 0
           }}
           color="success"
         />
@@ -396,7 +397,7 @@ export default function AcademyStudentsPage() {
 
       <DashboardCard
         title="قائمة الطلاب"
-        icon="fas fa-table"
+        icon="table"
       >
         <DataTable
           columns={columns}
@@ -422,9 +423,11 @@ export default function AcademyStudentsPage() {
                 className="w-full sm:w-auto min-w-[150px]"
               />
 
-              <Link href="/academy/students/add" className="btn btn-primary w-full sm:w-auto justify-center">
-                <i className="fas fa-plus"></i>
-                <span>إضافة طالب جديد</span>
+              <Link href="/academy/students/add" className="inline-flex">
+                <Button variant="primary" className="w-full sm:w-auto justify-center">
+                  <Icon name="plus" className="ml-2" />
+                  <span>إضافة طالب جديد</span>
+                </Button>
               </Link>
             </div>
           }
@@ -481,11 +484,11 @@ export default function AcademyStudentsPage() {
         >
           <div className="flex items-center justify-between mb-3 pb-2 border-b border-white/10">
             <h4 className="text-sm font-bold text-white">المدرسين المرتبطين</h4>
-            <button 
+            <button
               onClick={() => setActiveTeacherPopup(null)}
               className="text-gray-400 hover:text-white transition-colors"
             >
-              <i className="fas fa-times"></i>
+              <Icon name="times" />
             </button>
           </div>
           <div className="space-y-2 max-h-[300px] overflow-y-auto custom-scrollbar">
@@ -501,39 +504,39 @@ export default function AcademyStudentsPage() {
                     <div className="flex items-center gap-1 flex-wrap">
                       {/* نشط - يظهر إذا is_active = true */}
                       {teacher.is_active && (
-                        <span className="text-[10px] bg-success/20 text-success px-1.5 py-0.5 rounded">
+                        <Badge variant="success" size="sm">
                           نشط
-                        </span>
+                        </Badge>
                       )}
                       {/* فترة تجريبية */}
                       {teacher.status === 'trial' && (
-                        <span className="text-[10px] bg-[#f39c12]/20 text-[#f39c12] px-1.5 py-0.5 rounded">
+                        <Badge variant="warning" size="sm">
                           فترة تجريبية ({teacher.trial_days_left !== undefined ? `${Math.ceil(teacher.trial_days_left)} يوم` : 'متبقي'})
-                        </span>
+                        </Badge>
                       )}
                       {/* نشط مع اشتراك - يظهر الأيام المتبقية */}
                       {teacher.status === 'active' && teacher.days_left > 0 && (
-                        <span className="text-[10px] bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded">
+                        <Badge variant="info" size="sm">
                           {Math.ceil(teacher.days_left)} يوم متبقي
-                        </span>
+                        </Badge>
                       )}
                       {/* فترة سماح */}
                       {teacher.status === 'grace_period' && (
-                        <span className="text-[10px] bg-warning/20 text-warning px-1.5 py-0.5 rounded">
+                        <Badge variant="warning" size="sm">
                           فترة سماح ({teacher.days_left > 0 ? `${Math.ceil(teacher.days_left)} يوم` : '0 يوم'})
-                        </span>
+                        </Badge>
                       )}
                       {/* منتهي */}
                       {teacher.status === 'expired' && (
-                        <span className="text-[10px] bg-red-500/20 text-red-500 px-1.5 py-0.5 rounded">
+                        <Badge variant="danger" size="sm">
                           منتهي
-                        </span>
+                        </Badge>
                       )}
                       {/* غير نشط */}
                       {!teacher.is_active && (
-                        <span className="text-[10px] bg-red-500/20 text-red-500 px-1.5 py-0.5 rounded">
+                        <Badge variant="danger" size="sm">
                           غير نشط
-                        </span>
+                        </Badge>
                       )}
                     </div>
                   </div>

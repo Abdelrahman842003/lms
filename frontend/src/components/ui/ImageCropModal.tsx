@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback } from 'react';
 import Cropper from 'react-easy-crop';
+import { LoadingSpinner, Button, Icon } from '.';
 
 interface ImageCropModalProps {
   image: string;
@@ -86,7 +87,7 @@ export default function ImageCropModal({ image, onCropComplete, onCancel }: Imag
         <div className="modal-header">
           <h2>تعديل الصورة</h2>
           <button className="close-btn" onClick={onCancel}>
-            <i className="fas fa-times"></i>
+            <Icon name="times" />
           </button>
         </div>
 
@@ -106,7 +107,7 @@ export default function ImageCropModal({ image, onCropComplete, onCancel }: Imag
 
         <div className="controls">
           <div className="zoom-control">
-            <i className="fas fa-search-minus"></i>
+            <Icon name="search-minus" />
             <input
               type="range"
               min={1}
@@ -116,27 +117,27 @@ export default function ImageCropModal({ image, onCropComplete, onCancel }: Imag
               onChange={(e) => setZoom(Number(e.target.value))}
               className="zoom-slider"
             />
-            <i className="fas fa-search-plus"></i>
+            <Icon name="search-plus" />
           </div>
         </div>
 
         <div className="modal-actions">
-          <button className="btn btn-outline" onClick={onCancel} disabled={isProcessing}>
+          <Button variant="outline" onClick={onCancel} disabled={isProcessing}>
             إلغاء
-          </button>
-          <button className="btn btn-primary" onClick={handleSave} disabled={isProcessing}>
+          </Button>
+          <Button variant="primary" onClick={handleSave} disabled={isProcessing}>
             {isProcessing ? (
               <>
-                <i className="fas fa-spinner fa-spin"></i>
+                <LoadingSpinner size="sm" color="white" />
                 <span>جاري المعالجة...</span>
               </>
             ) : (
               <>
-                <i className="fas fa-check"></i>
+                <Icon name="check" />
                 <span>حفظ</span>
               </>
             )}
-          </button>
+          </Button>
         </div>
       </div>
 

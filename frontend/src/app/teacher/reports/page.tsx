@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { DataTable } from '@/components/dashboard/DataTable';
+import { LoadingSpinner, Button, Icon, Input } from '@/components/ui';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { toast } from 'react-hot-toast';
 import {
@@ -166,7 +167,7 @@ export default function TeacherReportsPage() {
     <DashboardLayout role={user?.userType as 'teacher' | 'secretary' || 'teacher'} user={user || undefined}>
       <div className="max-w-7xl mx-auto">
         <h1 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-          <i className="fas fa-chart-bar text-primary"></i>
+          <Icon name="chart" className="text-primary" />
           التقارير
         </h1>
 
@@ -178,21 +179,18 @@ export default function TeacherReportsPage() {
               <label className="block text-gray-300 mb-3 text-sm font-medium">الفترة الزمنية</label>
               <div className="flex flex-wrap gap-2 mb-4">
                 {periodPresets.map((preset) => (
-                  <button
+                  <Button
                     key={preset.value}
                     type="button"
+                    variant={periodPreset === preset.value ? 'primary' : 'outline'}
                     onClick={() => {
                       setPeriodPreset(preset.value as PeriodPreset);
                       setReport(null);
                     }}
-                    className={`px-4 py-2 rounded-lg transition-all text-sm ${
-                      periodPreset === preset.value
-                        ? 'bg-secondary text-white shadow-lg shadow-secondary/30'
-                        : 'bg-white/5 text-gray-400 hover:bg-white/10'
-                    }`}
+                    className="px-4 py-2 text-sm"
                   >
                     {preset.label}
-                  </button>
+                  </Button>
                 ))}
               </div>
 
@@ -201,20 +199,20 @@ export default function TeacherReportsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 p-4 bg-white/5 rounded-xl border border-white/10">
                   <div>
                     <label className="block text-gray-400 mb-2 text-sm">من تاريخ</label>
-                    <input
+                    <Input
                       type="date"
                       value={customStartDate}
                       onChange={(e) => setCustomStartDate(e.target.value)}
-                      className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary transition-all"
+                      className="w-full"
                     />
                   </div>
                   <div>
                     <label className="block text-gray-400 mb-2 text-sm">إلى تاريخ</label>
-                    <input
+                    <Input
                       type="date"
                       value={customEndDate}
                       onChange={(e) => setCustomEndDate(e.target.value)}
-                      className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary transition-all"
+                      className="w-full"
                     />
                   </div>
                 </div>
@@ -223,44 +221,46 @@ export default function TeacherReportsPage() {
 
             {/* Action Buttons */}
             <div className="flex flex-wrap gap-3 pt-4 border-t border-white/10">
-              <button
+              <Button
                 type="button"
+                variant="primary"
                 onClick={handleGenerateReport}
                 disabled={isLoading}
-                className="btn btn-primary px-6 py-3 flex items-center gap-2"
+                className="px-6 py-3 flex items-center gap-2"
               >
                 {isLoading ? (
                   <>
-                    <i className="fas fa-spinner fa-spin"></i>
+                    <LoadingSpinner size="sm" color="white" className="ml-2" />
                     جاري الإنشاء...
                   </>
                 ) : (
                   <>
-                    <i className="fas fa-file-alt"></i>
+                    <Icon name="file-alt" />
                     إنشاء التقرير
                   </>
                 )}
-              </button>
+              </Button>
 
               {report && (
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
                   onClick={handleDownloadPdf}
                   disabled={isDownloading}
-                  className="btn btn-secondary px-6 py-3 flex items-center gap-2"
+                  className="px-6 py-3 flex items-center gap-2"
                 >
                   {isDownloading ? (
                     <>
-                      <i className="fas fa-spinner fa-spin"></i>
+                      <LoadingSpinner size="sm" color="white" className="ml-2" />
                       جاري التحميل...
                     </>
                   ) : (
                     <>
-                      <i className="fas fa-download"></i>
+                      <Icon name="download" />
                       تحميل PDF
                     </>
                   )}
-                </button>
+                </Button>
               )}
             </div>
           </div>

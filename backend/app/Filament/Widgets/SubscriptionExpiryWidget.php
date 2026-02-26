@@ -2,9 +2,9 @@
 
 namespace App\Filament\Widgets;
 
-use App\Enums\SubscriptionStatus;
-use App\Enums\SubscriptionType;
-use App\Models\Subscription;
+use App\Domains\Subscriptions\Enums\SubscriptionStatus;
+use App\Domains\Subscriptions\Enums\SubscriptionType;
+use App\Domains\Subscriptions\Models\Subscription;
 use Carbon\Carbon;
 use Filament\Widgets\Widget;
 use Illuminate\Support\Collection;

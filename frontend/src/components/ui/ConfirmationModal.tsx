@@ -2,6 +2,8 @@
 
 import React from 'react';
 import { createPortal } from 'react-dom';
+import { Button } from './Button';
+import { Icon } from './Icon';
 
 interface ConfirmationModalProps {
   isOpen: boolean;
@@ -37,13 +39,16 @@ export default function ConfirmationModal({
       <div className="modal-content">
         <div className="modal-header">
           <h3>{title}</h3>
-          <button 
+          <Button
+            variant="ghost"
+            size="sm"
             className="close-btn"
             onClick={onCancel}
             disabled={isProcessing}
+            aria-label="إغلاق"
           >
-            <i className="fas fa-times"></i>
-          </button>
+            <Icon name="times" size="sm" />
+          </Button>
         </div>
         
         <div className="modal-body">
@@ -53,29 +58,23 @@ export default function ConfirmationModal({
         {(showCancel || confirmText) && (
         <div className="modal-footer">
           {showCancel && (
-            <button 
-              className="btn btn-outline" 
+            <Button
+              variant="outline"
               onClick={onCancel}
               disabled={isProcessing}
             >
               {cancelText}
-            </button>
+            </Button>
           )}
           {confirmText && (
-            <button 
-              className={`btn btn-${variant}`} 
+            <Button
+              variant={variant === 'danger' ? 'destructive' : 'primary'}
               onClick={onConfirm}
               disabled={isProcessing}
+              loading={isProcessing}
             >
-              {isProcessing ? (
-                <>
-                  <i className="fas fa-spinner fa-spin"></i>
-                  <span>جاري التنفيذ...</span>
-                </>
-              ) : (
-                confirmText
-              )}
-            </button>
+              {confirmText}
+            </Button>
           )}
         </div>
         )}

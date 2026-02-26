@@ -6,6 +6,7 @@ import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { DataTable } from '@/components/dashboard/DataTable';
+import { Button, LoadingSpinner, Icon } from '@/components/ui';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { getGroup, Group } from '@/services/groupService';
 
@@ -44,7 +45,7 @@ export default function GroupDetailsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-[#131b2c]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+        <LoadingSpinner size="lg" />
       </div>
     );
   }
@@ -62,10 +63,10 @@ export default function GroupDetailsPage() {
       role={user?.userType as 'teacher' | 'secretary' || 'teacher'}
       user={{ name: user?.name || 'المدرس', avatar: user?.avatar || '' }}
       headerActions={
-        <button onClick={() => router.back()} className="btn btn-secondary">
-          <i className="fas fa-arrow-right ml-2"></i>
+        <Button onClick={() => router.back()} variant="secondary">
+          <Icon name="arrow-right" className="ml-2" />
           رجوع
-        </button>
+        </Button>
       }
     >
       {/* Group Stats */}

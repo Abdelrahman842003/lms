@@ -1,4 +1,5 @@
 import React from 'react';
+import { Button, Icon } from '@/components/ui';
 
 interface AttendanceDetailsModalProps {
   isOpen: boolean;
@@ -33,12 +34,12 @@ export default function AttendanceDetailsModal({
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-white/10">
           <h3 className="text-xl font-bold text-white m-0">تفاصيل الحضور</h3>
-          <button 
-            className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors" 
+          <button
+            className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
             onClick={onClose}
             type="button"
           >
-            <i className="fas fa-times"></i>
+            <Icon name="times" />
           </button>
         </div>
 
@@ -87,13 +88,12 @@ export default function AttendanceDetailsModal({
 
         {/* Footer */}
         <div className="flex items-center justify-end gap-3 p-6 border-t border-white/10 bg-black/20 rounded-b-xl">
-          <button
-            type="button"
-            className="px-6 py-2.5 rounded-lg bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-all duration-200 font-medium"
+          <Button
+            variant="outline"
             onClick={onClose}
           >
             إغلاق
-          </button>
+          </Button>
         </div>
       </div>
     </div>

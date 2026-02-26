@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 
+import { LoadingSpinner, Button, Icon } from '@/components/ui';
 interface Academy {
   id: string | null;
   name: string;
@@ -108,20 +109,22 @@ export function AcademySelector({ isOpen, onClose }: AcademySelectorProps) {
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-white/10">
           <h3 className="text-xl font-bold text-white m-0">اختر الأكاديمية</h3>
-          <button 
-            className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors" 
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-8 h-8 p-0 flex items-center justify-center rounded-lg"
             onClick={onClose}
-            type="button"
+            aria-label="إغلاق"
           >
-            <i className="fas fa-times"></i>
-          </button>
+            <Icon name="times" size="sm" />
+          </Button>
         </div>
 
         {/* Body */}
         <div className="p-6 overflow-y-auto max-h-[60vh]">
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary-600 mb-3"></div>
+              <LoadingSpinner size="lg" color="primary" />
               <p className="text-sm text-gray-400">جاري التحميل...</p>
             </div>
           ) : academies.length === 0 ? (

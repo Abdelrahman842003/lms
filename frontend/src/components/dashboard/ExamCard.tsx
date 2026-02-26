@@ -1,4 +1,7 @@
 import React from 'react';
+import { Button } from '@/components/ui/Button';
+import { Icon } from '@/components/ui/Icon';
+import { Badge } from '@/components/ui/Badge';
 
 interface Exam {
   id: number | string;
@@ -94,21 +97,20 @@ export const ExamCard: React.FC<ExamCardProps> = ({
     return () => clearInterval(timer);
   }, [isActive, exam.activated_at, exam.duration]);
 
-  // Get status badge
-  const getStatusBadge = () => {
-    if (isEnded) {
-      return { text: 'منتهي', className: 'bg-gray-500/20 text-gray-400 border border-gray-500/30' };
-    }
-    if (isActive) {
-      return { text: 'نشط الآن', className: 'bg-[#2ecc71]/20 text-[#2ecc71] border border-[#2ecc71]/30' };
-    }
-    if (isUpcoming) {
-      return { text: 'قادم', className: 'bg-primary/20 text-primary border border-primary/30' };
-    }
-    return { text: 'غير نشط', className: 'bg-[#f39c12]/20 text-[#f39c12] border border-[#f39c12]/30' };
+  // Get status badge variant
+  const getStatusVariant = () => {
+    if (isEnded) return 'secondary';
+    if (isActive) return 'success';
+    if (isUpcoming) return 'primary';
+    return 'warning';
   };
 
-  const status = getStatusBadge();
+  const getStatusText = () => {
+    if (isEnded) return 'منتهي';
+    if (isActive) return 'نشط الآن';
+    if (isUpcoming) return 'قادم';
+    return 'غير نشط';
+  };
 
   return (
     <div 
@@ -122,32 +124,33 @@ export const ExamCard: React.FC<ExamCardProps> = ({
       <div className="flex justify-between items-start mb-6">
         {/* Status Badge */}
         <div className="flex gap-2 flex-wrap">
-          <span className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${status.className}`}>
-            {status.text}
-          </span>
+          <Badge variant={getStatusVariant()} size="sm">
+            {getStatusText()}
+          </Badge>
 
           {exam.teacher && (
-            <span className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center gap-1.5">
-              <i className="fas fa-chalkboard-teacher text-[10px]"></i>
+            <Badge variant="info" size="sm" icon="chalkboard-teacher">
               {exam.teacher.name}
-            </span>
+            </Badge>
           )}
           
           {isActive && timeLeft && (
-            <span className="px-3 py-1.5 rounded-lg text-xs font-mono font-bold bg-red-500/20 text-red-400 border border-red-500/30 animate-pulse">
+            <Badge variant="danger" size="sm" pulse>
               {timeLeft}
-            </span>
+            </Badge>
           )}
         </div>
 
         {/* Three-dot Menu */}
         <div className="relative">
-          <button 
-            className="w-10 h-10 rounded-xl bg-[rgba(16,20,38,0.8)] hover:bg-[rgba(66,99,235,0.2)] border border-white/10 hover:border-primary/50 flex items-center justify-center transition-all"
+          <Button 
+            variant="ghost"
+            size="sm"
+            className="w-10 h-10 rounded-xl bg-[rgba(16,20,38,0.8)] hover:bg-[rgba(66,99,235,0.2)] border border-white/10 hover:border-primary/50 flex items-center justify-center transition-all p-0"
             onClick={onMenuToggle}
           >
-            <i className="fas fa-ellipsis-v text-white"></i>
-          </button>
+            <Icon name="ellipsis-v" color="inherit" />
+          </Button>
           
           {/* Dropdown Menu */}
           {isMenuOpen && (
@@ -159,7 +162,7 @@ export const ExamCard: React.FC<ExamCardProps> = ({
                   onViewDetails();
                 }}
               >
-                <i className="fas fa-eye"></i>
+                <Icon name="eye" size="sm" />
                 <span>عرض التفاصيل</span>
               </button>
               
@@ -170,7 +173,7 @@ export const ExamCard: React.FC<ExamCardProps> = ({
                   onViewResults();
                 }}
               >
-                <i className="fas fa-chart-bar"></i>
+                <Icon name="chart-bar" size="sm" />
                 <span>نتائج الطلاب</span>
               </button>
 
@@ -182,7 +185,7 @@ export const ExamCard: React.FC<ExamCardProps> = ({
                     onEdit();
                   }}
                 >
-                  <i className="fas fa-edit"></i>
+                  <Icon name="edit" size="sm" />
                   <span>تعديل</span>
                 </button>
               )}
@@ -194,7 +197,7 @@ export const ExamCard: React.FC<ExamCardProps> = ({
                   onCopy();
                 }}
               >
-                <i className="fas fa-copy"></i>
+                <Icon name="copy" size="sm" />
                 <span>نسخ الامتحان</span>
               </button>
               
@@ -205,7 +208,7 @@ export const ExamCard: React.FC<ExamCardProps> = ({
                   onDelete();
                 }}
               >
-                <i className="fas fa-trash"></i>
+                <Icon name="trash" size="sm" />
                 <span>حذف</span>
               </button>
             </div>
@@ -226,38 +229,38 @@ export const ExamCard: React.FC<ExamCardProps> = ({
       {/* Exam Info */}
       <div className="grid gap-3.5 mb-6">
         <div className="flex items-center gap-3 text-sm text-gray-light">
-          <i className="fas fa-calendar w-5 text-primary text-base"></i>
+          <Icon name="calendar" className="w-5 text-primary text-base" />
           <span>{examDate.toLocaleDateString('ar-EG')}</span>
         </div>
         <div className="flex items-center gap-3 text-sm text-gray-light">
-          <i className="fas fa-clock w-5 text-primary text-base"></i>
+          <Icon name="clock" className="w-5 text-primary text-base" />
           <span>{examDate.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })} ({exam.duration} دقيقة)</span>
         </div>
         {exam.teacher && (
           <div className="flex items-center gap-3 text-sm text-gray-light">
-            <i className="fas fa-chalkboard-teacher w-5 text-primary text-base"></i>
+            <Icon name="chalkboard-teacher" className="w-5 text-primary text-base" />
             <span>{exam.teacher.name}</span>
           </div>
         )}
         {exam.grade && (
           <div className="flex items-center gap-3 text-sm text-gray-light">
-            <i className="fas fa-graduation-cap w-5 text-primary text-base"></i>
+            <Icon name="graduation-cap" className="w-5 text-primary text-base" />
             <span>{exam.grade.name}</span>
           </div>
         )}
         {exam.group && (
           <div className="flex items-center gap-3 text-sm text-gray-light">
-            <i className="fas fa-users w-5 text-primary text-base"></i>
+            <Icon name="users" className="w-5 text-primary text-base" />
             <span>{exam.group.name}</span>
           </div>
         )}
         <div className="flex items-center gap-3 text-sm text-gray-light">
-          <i className="fas fa-star w-5 text-primary text-base"></i>
+          <Icon name="star" className="w-5 text-primary text-base" />
           <span>الدرجة الكلية: {exam.max_score}</span>
         </div>
         {exam.attended_students && exam.attended_students.length > 0 && (
           <div className="flex items-center gap-3 text-sm text-gray-light">
-            <i className="fas fa-user-check w-5 text-primary text-base"></i>
+            <Icon name="user-check" className="w-5 text-primary text-base" />
             <span>{exam.attended_students.length} طالب حضر</span>
           </div>
         )}
@@ -268,33 +271,36 @@ export const ExamCard: React.FC<ExamCardProps> = ({
         <div className="mt-auto grid gap-3">
           {!isActive ? (
             <div className="flex items-center gap-3">
-              <button 
-                className="flex-1 py-3 rounded-xl text-gray-light hover:text-white hover:bg-white/5 transition-all flex items-center justify-center gap-2" 
-                onClick={(e) => {
+              <Button 
+                variant="ghost"
+                className="flex-1 py-3 rounded-xl text-gray-light hover:text-white hover:bg-white/5 transition-all flex items-center justify-center gap-2"
+                onClick={(e: React.MouseEvent) => {
                   e.stopPropagation();
                   onToggleStatus();
                 }}
               >
-                <i className="fas fa-power-off"></i>
+                <Icon name="power-off" size="sm" />
                 <span>تفعيل الامتحان</span>
-              </button>
+              </Button>
             </div>
           ) : (
             <div className="flex items-center gap-2">
-              <button 
-                className="flex-1 py-3 rounded-xl bg-[rgba(66,99,235,0.15)] hover:bg-[rgba(66,99,235,0.25)] text-primary border border-primary/30 hover:border-primary/50 font-medium text-xs flex flex-col items-center justify-center gap-1.5 transition-all" 
+              <Button 
+                variant="outline"
+                className="flex-1 py-3 rounded-xl bg-[rgba(66,99,235,0.15)] hover:bg-[rgba(66,99,235,0.25)] text-primary border-primary/30 hover:border-primary/50 font-medium text-xs flex flex-col items-center justify-center gap-1.5 transition-all h-auto"
                 onClick={onViewResults}
               >
-                <i className="fas fa-chart-bar text-sm"></i>
+                <Icon name="chart-bar" size="sm" />
                 <span>النتائج</span>
-              </button>
-              <button 
-                className="flex-1 py-3 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/30 hover:border-red-500/50 font-medium text-xs flex flex-col items-center justify-center gap-1.5 transition-all" 
+              </Button>
+              <Button 
+                variant="destructive"
+                className="flex-1 py-3 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-500 border-red-500/30 hover:border-red-500/50 font-medium text-xs flex flex-col items-center justify-center gap-1.5 transition-all h-auto"
                 onClick={onEnd}
               >
-                <i className="fas fa-stop-circle text-sm"></i>
+                <Icon name="stop-circle" size="sm" />
                 <span>إنهاء</span>
-              </button>
+              </Button>
             </div>
           )}
         </div>

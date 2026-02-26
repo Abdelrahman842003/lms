@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { Icon } from './Icon';
 
 interface Option {
   value: string;
@@ -95,12 +96,12 @@ export function Select({
         onClick={() => !disabled && setIsOpen(!isOpen)}
       >
         <div className="flex items-center gap-2 truncate">
-          {icon && <i className={`${icon} text-primary/80`}></i>}
+          {icon && <Icon name={icon.replace('fas fa-', '')} className="text-primary/80" />}
           <span className={`text-sm ${!selectedOption ? 'text-gray-400' : ''}`}>
             {selectedOption ? selectedOption.label : placeholder}
           </span>
         </div>
-        <i className={`fas fa-chevron-down text-xs text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}></i>
+        <Icon name="chevron-down" size="xs" className={`text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
       </div>
 
       {isOpen && (
@@ -108,7 +109,7 @@ export function Select({
           {searchable && (
             <div className="p-2 border-b border-white/10">
               <div className="relative">
-                <i className="fas fa-search absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+                <Icon name="search" size="xs" className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
                   ref={searchInputRef}
                   type="text"
@@ -133,7 +134,7 @@ export function Select({
                 onClick={() => handleSelect(option.value)}
               >
                 <span>{option.label}</span>
-                {option.value === value && <i className="fas fa-check text-xs"></i>}
+                {option.value === value && <Icon name="check" size="xs" />}
               </div>
             ))}
             {filteredOptions.length === 0 && (

@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { DataTable } from '@/components/dashboard/DataTable';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
-import { ConfirmationModal } from '@/components/ui';
+import { ConfirmationModal, FormModal, Button, Icon, Input, LoadingSpinner } from '@/components/ui';
 import { Filter } from '@/components/Filter';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import academyService from '@/services/academyService';
@@ -247,7 +247,7 @@ export default function AcademyTeachersPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <i className="fas fa-spinner fa-spin text-4xl text-primary mb-4"></i>
+          <LoadingSpinner size="sm" color="primary" />
           <p className="text-gray-400">جاري التحميل...</p>
         </div>
       </div>
@@ -317,19 +317,19 @@ export default function AcademyTeachersPage() {
   const actions = [
     {
       label: 'التفاصيل',
-      icon: 'fas fa-eye',
+      icon: 'eye',
       variant: 'default' as 'default',
       onClick: (row: any) => router.push(`/academy/teachers/${row.id}`),
     },
     {
       label: (row: any) => row.status === 'نشط' ? 'تعطيل' : 'تفعيل',
-      icon: (row: any) => row.status === 'نشط' ? 'fas fa-ban' : 'fas fa-check',
+      icon: (row: any) => row.status === 'نشط' ? 'ban' : 'check',
       variant: (row: any) => row.status === 'نشط' ? 'danger' : 'success',
       onClick: (row: any) => handleToggleStatus(row),
     },
     {
       label: 'حذف',
-      icon: 'fas fa-trash',
+      icon: 'trash',
       variant: 'danger' as 'danger',
       onClick: (row: any) => handleDelete(row),
     },
@@ -342,7 +342,7 @@ export default function AcademyTeachersPage() {
     >
       <DashboardCard
         title={`المدرسين (${teachers.length})`}
-        icon="fas fa-chalkboard-teacher"
+        icon="chalkboard-teacher"
       >
         {/* Debug Info */}
         <div className="mb-4 p-2 bg-red-500/20 text-red-200 text-xs rounded hidden">
@@ -368,16 +368,17 @@ export default function AcademyTeachersPage() {
                 onChange={(value) => setStatusFilter(value)}
                 className="w-full sm:w-auto min-w-[150px]"
               />
-              <button 
+              <Button 
                 onClick={() => {
                   setAddStep('phone');
                   setShowAddModal(true);
                 }}
-                className="btn btn-primary w-full sm:w-auto justify-center"
+                variant="primary"
+                className="w-full sm:w-auto justify-center"
               >
-                <i className="fas fa-plus"></i>
+                <Icon name="plus" />
                 <span>إضافة مدرس</span>
-              </button>
+              </Button>
             </div>
           }
         />
@@ -396,191 +397,127 @@ export default function AcademyTeachersPage() {
       />
 
       {/* Add Teacher Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-[#1e1e2d] rounded-xl border border-white/10 w-full max-w-md p-6 shadow-xl">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-white">
-                {addStep === 'phone' ? 'إضافة مدرس جديد' : 
-                 addStep === 'link' ? 'ربط مدرس موجود' : 
-                 'بيانات المدرس الجديد'}
-              </h2>
-              <button 
-                onClick={() => { setShowAddModal(false); resetAddModal(); }}
-                className="text-gray-400 hover:text-white transition-colors"
-              >
-                <i className="fas fa-times"></i>
-              </button>
+      <FormModal
+        isOpen={showAddModal}
+        onClose={() => { setShowAddModal(false); resetAddModal(); }}
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (addStep === 'phone') {
+            handleCheckPhone();
+          } else if (addStep === 'link') {
+            handleLinkTeacher();
+          } else if (addStep === 'create') {
+            handleAddTeacher();
+          }
+        }}
+        title={addStep === 'phone' ? 'إضافة مدرس جديد' :
+               addStep === 'link' ? 'ربط مدرس موجود' :
+               'بيانات المدرس الجديد'}
+        isLoading={isProcessing}
+        submitText={addStep === 'phone' ? 'تحقق ومتابعة' :
+                    addStep === 'link' ? 'ربط المدرس' :
+                    'إضافة المدرس'}
+        cancelText={addStep === 'link' ? 'رجوع' : 'إلغاء'}
+        maxWidth="500px"
+      >
+        {/* Step 1: Check Phone (Only for Add) */}
+        {addStep === 'phone' && (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-gray-300 mb-1.5 text-sm">رقم الهاتف</label>
+              <Input
+                type="text"
+                value={phoneToCheck}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, ''); // Only numbers
+                  setPhoneToCheck(value);
+                }}
+                className="w-full p-2.5 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm pr-10"
+                placeholder="01xxxxxxxxx"
+                maxLength={11}
+                autoFocus
+              />
+              {isProcessing && (
+                <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                  <LoadingSpinner size="sm" color="primary" />
+                </div>
+              )}
+              <p className="text-xs text-gray-400 mt-1">
+                {phoneToCheck.length === 11
+                  ? isProcessing
+                    ? 'جاري التحقق من الرقم...'
+                    : 'سيتم التحقق تلقائياً'
+                  : 'أدخل رقم هاتف المدرس (11 رقم)'}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Step 2: Link Existing Teacher (Only for Add) */}
+        {addStep === 'link' && existingTeacher && (
+          <div className="space-y-6">
+            <div className="text-center">
+              <div className="w-16 h-16 rounded-full bg-primary/20 text-primary flex items-center justify-center mx-auto mb-3 text-2xl">
+                <Icon name="user-check" />
+              </div>
+              <h3 className="text-white font-bold text-lg mb-1">{existingTeacher.name}</h3>
+              <p className="text-gray-400 text-sm">{existingTeacher.phone}</p>
+            </div>
+            
+            <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 text-sm text-blue-300">
+              <Icon name="info-circle" className="ml-2" />
+              هذا المدرس مسجل بالفعل في النظام. هل تريد إضافته إلى الأكاديمية؟
+            </div>
+          </div>
+        )}
+
+        {/* Step 3: Create New Teacher */}
+        {addStep === 'create' && (
+          <div className="space-y-4">
+            <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg text-sm text-blue-300">
+              <Icon name="info-circle" className="mr-1" />
+              المدرس سيتم إضافته بحالة "في انتظار الموافقة" ولن يتمكن من الدخول حتى تتم الموافقة عليه من الإدارة
             </div>
 
-            {/* Step 1: Check Phone (Only for Add) */}
-            {addStep === 'phone' && (
-              <>
-                <div className="mb-4">
-                  <label className="block text-gray-300 mb-1.5 text-sm">رقم الهاتف</label>
-                  <input
-                    type="text"
-                    value={phoneToCheck}
-                    onChange={(e) => {
-                      const value = e.target.value.replace(/\D/g, ''); // Only numbers
-                      setPhoneToCheck(value);
-                    }}
-                    className="w-full p-2.5 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm pr-10"
-                    placeholder="01xxxxxxxxx"
-                    maxLength={11}
-                    autoFocus
-                  />
-                  {isProcessing && (
-                    <div className="absolute left-3 top-1/2 -translate-y-1/2">
-                      <i className="fas fa-spinner fa-spin text-primary"></i>
-                    </div>
-                  )}
-                  <p className="text-xs text-gray-400 mt-1">
-                    {phoneToCheck.length === 11 
-                      ? isProcessing 
-                        ? 'جاري التحقق من الرقم...' 
-                        : 'سيتم التحقق تلقائياً'
-                      : 'أدخل رقم هاتف المدرس (11 رقم)'}
-                  </p>
-                </div>
-                <div className="flex justify-end pt-2">
-                  <button
-                    onClick={handleCheckPhone}
-                    disabled={phoneToCheck.length < 11 || isProcessing}
-                    className="btn btn-primary w-full justify-center"
-                  >
-                    {isProcessing ? 'جاري التحقق...' : 'تحقق ومتابعة'}
-                  </button>
-                </div>
-              </>
-            )}
+            <div>
+              <label className="block text-gray-300 mb-1.5 text-sm">الاسم</label>
+              <Input
+                type="text"
+                value={formData.name}
+                onChange={(e) => setFormData({...formData, name: e.target.value})}
+                className="w-full p-2.5 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm"
+                placeholder="أدخل اسم المدرس"
+                required
+              />
+            </div>
 
-            {/* Step 2: Link Existing Teacher (Only for Add) */}
-            {addStep === 'link' && existingTeacher && (
-              <>
-                <div className="text-center mb-6">
-                  <div className="w-16 h-16 rounded-full bg-primary/20 text-primary flex items-center justify-center mx-auto mb-3 text-2xl">
-                    <i className="fas fa-user-check"></i>
-                  </div>
-                  <h3 className="text-white font-bold text-lg mb-1">{existingTeacher.name}</h3>
-                  <p className="text-gray-400 text-sm">{existingTeacher.phone}</p>
-                </div>
-                
-                <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 mb-6 text-sm text-blue-300">
-                  <i className="fas fa-info-circle ml-2"></i>
-                  هذا المدرس مسجل بالفعل في النظام. هل تريد إضافته إلى الأكاديمية؟
-                </div>
+            <div>
+              <label className="block text-gray-300 mb-1.5 text-sm">المادة</label>
+              <Input
+                type="text"
+                value={formData.subject}
+                onChange={(e) => setFormData({...formData, subject: e.target.value})}
+                className="w-full p-2.5 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm"
+                placeholder="مثال: رياضيات، عربي، إنجليزي"
+              />
+            </div>
 
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => { setAddStep('phone'); setExistingTeacher(null); }}
-                    className="btn btn-outline flex-1 justify-center"
-                  >
-                    رجوع
-                  </button>
-                  <button
-                    onClick={handleLinkTeacher}
-                    disabled={isProcessing}
-                    className="btn btn-primary flex-1 justify-center"
-                  >
-                    {isProcessing ? 'جاري الربط...' : (
-                      <>
-                        <i className="fas fa-link"></i>
-                        <span>ربط المدرس</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-              </>
-            )}
-
-            {/* Step 3: Create New Teacher */}
-            {addStep === 'create' && (
-              <>
-                <div className="mb-4 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg text-sm text-blue-300">
-                  <i className="fas fa-info-circle mr-1"></i>
-                  المدرس سيتم إضافته بحالة "في انتظار الموافقة" ولن يتمكن من الدخول حتى تتم الموافقة عليه من الإدارة
-                </div>
-
-                <form onSubmit={(e) => { 
-                  e.preventDefault(); 
-                  handleAddTeacher(); 
-                }}>
-                  <div className="mb-4">
-                    <label className="block text-gray-300 mb-1.5 text-sm">الاسم</label>
-                    <input
-                      type="text"
-                      value={formData.name}
-                      onChange={(e) => setFormData({...formData, name: e.target.value})}
-                      className="w-full p-2.5 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm"
-                      placeholder="أدخل اسم المدرس"
-                      required
-                    />
-                  </div>
-
-                  <div className="mb-4">
-                    <label className="block text-gray-300 mb-1.5 text-sm">رقم الهاتف</label>
-                    <input
-                      type="text"
-                      value={formData.phone}
-                      readOnly={true}
-                      className={`w-full p-2.5 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm text-gray-400 cursor-not-allowed`}
-                    />
-                  </div>
-
-                  <div className="mb-4">
-                    <label className="block text-gray-300 mb-1.5 text-sm">المادة</label>
-                    <input
-                      type="text"
-                      value={formData.subject}
-                      onChange={(e) => setFormData({...formData, subject: e.target.value})}
-                      className="w-full p-2.5 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm"
-                      placeholder="مثال: رياضيات، عربي، إنجليزي"
-                    />
-                  </div>
-
-                  <div className="mb-6">
-                    <label className="block text-gray-300 mb-1.5 text-sm">
-                      كلمة المرور
-                    </label>
-                    <input
-                      type="password"
-                      value={formData.password}
-                      onChange={(e) => setFormData({...formData, password: e.target.value})}
-                      className="w-full p-2.5 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm"
-                      placeholder="******"
-                      required={addStep === 'create'}
-                    />
-                  </div>
-
-                  <div className="flex gap-3 justify-end pt-3 border-t border-white/10">
-                    <button
-                      type="button"
-                      className="px-4 py-1.5 rounded-lg border border-white/10 text-gray-300 hover:bg-white/5 transition-all text-sm"
-                      onClick={() => { setShowAddModal(false); resetAddModal(); }}
-                      disabled={isProcessing}
-                    >
-                      إلغاء
-                    </button>
-                    <button
-                      type="submit"
-                      className="px-4 py-1.5 rounded-lg bg-primary text-white hover:bg-primary/90 transition-all flex items-center gap-2 text-sm"
-                      disabled={!formData.name || !formData.password || isProcessing}
-                    >
-                      {isProcessing ? 'جاري الحفظ...' : (
-                        <>
-                          <i className="fas fa-plus"></i>
-                          <span>إضافة المدرس</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </form>
-              </>
-            )}
+            <div>
+              <label className="block text-gray-300 mb-1.5 text-sm">
+                كلمة المرور
+              </label>
+              <Input
+                type="password"
+                value={formData.password}
+                onChange={(e) => setFormData({...formData, password: e.target.value})}
+                className="w-full p-2.5 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm"
+                placeholder="******"
+                required={addStep === 'create'}
+              />
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </FormModal>
     </DashboardLayout>
   );
 }

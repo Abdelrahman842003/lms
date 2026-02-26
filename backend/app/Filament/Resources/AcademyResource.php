@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources;
 
-use App\Models\Academy;
+use App\Domains\Auth\Models\Academy;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
@@ -24,13 +24,16 @@ class AcademyResource extends BaseResource
 
     protected static ?string $navigationIcon = 'heroicon-o-building-library';
 
-    protected static ?string $navigationGroup = 'إدارة المنصة';
-
     protected static ?int $navigationSort = 2;
 
     protected static ?string $modelLabel = 'أكاديمية';
 
     protected static ?string $pluralModelLabel = 'الأكاديميات';
+
+    public static function getNavigationGroup(): ?string
+    {
+        return 'إدارة المنصة';
+    }
 
     public static function form(Schema $schema): Schema
     {

@@ -5,14 +5,11 @@ import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { DataTable } from '@/components/dashboard/DataTable';
 
-import { MonthDropdown } from '@/components/ui';
+import { MonthDropdown, Button, Icon, Input, Textarea, Select, LoadingSpinner, Badge } from '@/components/ui';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { useRouter } from 'next/navigation';
 import * as academyService from '@/services/academyService';
 import toast from 'react-hot-toast';
-
-
-
 const translateSummaryKey = (key: string): string => {
   const translations: Record<string, string> = {
     'total_teachers': 'إجمالي المدرسين',
@@ -155,7 +152,7 @@ export default function ReportsPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <i className="fas fa-spinner fa-spin text-4xl text-primary mb-4"></i>
+          <LoadingSpinner size="sm" color="primary" />
           <p className="text-gray-400">جاري التحميل...</p>
         </div>
       </div>
@@ -168,12 +165,12 @@ export default function ReportsPage() {
     <DashboardLayout role="academy" user={user}>
       <div className="max-w-7xl mx-auto">
         <h1 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-          <i className="fas fa-chart-bar text-primary"></i>
+          <Icon name="chart-bar" color="primary" />
           التقارير
         </h1>
 
         {/* Report Type Selection */}
-        <DashboardCard title="نوع التقرير" icon="fas fa-file-alt" className="mb-6">
+        <DashboardCard title="نوع التقرير" icon="file-alt" className="mb-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <button
               onClick={() => { setReportType('attendance'); setReport(null); }}
@@ -183,9 +180,9 @@ export default function ReportsPage() {
                   : 'border-white/10 bg-white/5 hover:bg-white/10'
               }`}
             >
-              <i className={`fas fa-calendar-check text-4xl mb-3 ${
+              <Icon name="calendar-check" className={`text-4xl mb-3 ${
                 reportType === 'attendance' ? 'text-primary' : 'text-gray-400'
-              }`}></i>
+              }`} />
               <h3 className="text-white font-semibold text-lg">تقرير الحضور</h3>
               <p className="text-gray-400 text-sm mt-2">إحصائيات حضور المدرسين</p>
             </button>
@@ -198,9 +195,9 @@ export default function ReportsPage() {
                   : 'border-white/10 bg-white/5 hover:bg-white/10'
               }`}
             >
-              <i className={`fas fa-chart-line text-4xl mb-3 ${
+              <Icon name="chart-line" className={`text-4xl mb-3 ${
                 reportType === 'monthly' ? 'text-success' : 'text-gray-400'
-              }`}></i>
+              }`} />
               <h3 className="text-white font-semibold text-lg">التقرير الشهري</h3>
               <p className="text-gray-400 text-sm mt-2">ملخص شهري شامل</p>
             </button>
@@ -208,7 +205,7 @@ export default function ReportsPage() {
         </DashboardCard>
 
         {/* Filters Card */}
-        <DashboardCard title="خيارات التقرير" icon="fas fa-filter" className="mb-6">
+        <DashboardCard title="خيارات التقرير" icon="filter" className="mb-6">
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <MonthDropdown
@@ -218,14 +215,13 @@ export default function ReportsPage() {
               />
               <div>
                 <label className="block text-gray-300 mb-2 font-semibold">
-                  <i className="fas fa-calendar ml-2 text-primary"></i>
+                  <Icon name="calendar" className="ml-2 text-primary" />
                   السنة
                 </label>
-                <input
+                <Input
                   type="number"
                   value={year}
                   onChange={(e) => setYear(parseInt(e.target.value))}
-                  className="w-full p-3 bg-dark-lighter border-2 border-gray-700 rounded-lg text-white hover:border-primary transition-all"
                   min="2020"
                   max="2030"
                 />
@@ -234,44 +230,44 @@ export default function ReportsPage() {
 
             {/* Action Buttons */}
             <div className="flex flex-wrap gap-3 pt-4 border-t border-white/10">
-              <button
-                type="button"
+              <Button
                 onClick={handleGenerateReport}
                 disabled={isLoading}
-                className="btn btn-primary px-6 py-3 flex items-center gap-2"
+                variant="primary"
+                className="px-6 py-3 flex items-center gap-2"
               >
                 {isLoading ? (
                   <>
-                    <i className="fas fa-spinner fa-spin"></i>
+                    <LoadingSpinner size="sm" color="primary" />
                     جاري الإنشاء...
                   </>
                 ) : (
                   <>
-                    <i className="fas fa-chart-line"></i>
+                    <Icon name="chart-line" />
                     إنشاء التقرير
                   </>
                 )}
-              </button>
+              </Button>
 
               {report && (
-                <button
-                  type="button"
+                <Button
                   onClick={handleDownloadPdf}
                   disabled={isDownloading}
-                  className="btn btn-secondary px-6 py-3 flex items-center gap-2"
+                  variant="secondary"
+                  className="px-6 py-3 flex items-center gap-2"
                 >
                   {isDownloading ? (
                     <>
-                      <i className="fas fa-spinner fa-spin"></i>
+                      <LoadingSpinner size="sm" color="primary" />
                       جاري التحميل...
                     </>
                   ) : (
                     <>
-                      <i className="fas fa-file-pdf"></i>
+                      <Icon name="file-pdf" />
                       تحميل PDF
                     </>
                   )}
-                </button>
+                </Button>
               )}
             </div>
           </div>
@@ -280,7 +276,7 @@ export default function ReportsPage() {
         {/* Report Results */}
         {report && (
           console.log('Report Data:', report),
-          <DashboardCard title="نتائج التقرير" icon="fas fa-chart-bar">
+          <DashboardCard title="نتائج التقرير" icon="chart-bar">
             <div className="space-y-6">
               {/* Summary Stats */}
               {report.summary && (
@@ -302,7 +298,7 @@ export default function ReportsPage() {
               {report.financial_details && (
                 <div className="mt-6">
                   <h3 className="text-white text-base md:text-lg font-semibold mb-3 md:mb-4 flex items-center gap-2">
-                    <i className="fas fa-coins text-primary"></i>
+                    <Icon name="coins" className="text-primary" />
                     الملخص المالي
                   </h3>
                   <div className="bg-white/5 rounded-xl border border-white/10 overflow-hidden">
@@ -333,9 +329,9 @@ export default function ReportsPage() {
                         <div className="flex flex-col gap-3 pt-3 border-t border-white/10">
                           <div className="flex justify-between items-center">
                             <span className="text-gray-400">حاله الدفع</span>
-                            <span className={`badge ${report.financial_details.payment_status === 'paid' ? 'badge-success' : report.financial_details.payment_status === 'partial' ? 'badge-warning' : 'badge-danger'}`}>
+                            <Badge variant={report.financial_details.payment_status === 'paid' ? 'success' : report.financial_details.payment_status === 'partial' ? 'warning' : 'danger'}>
                               {report.financial_details.payment_status === 'paid' ? 'مدفوع' : report.financial_details.payment_status === 'partial' ? 'مدفوع جزئياً' : 'غير مدفوع'}
-                            </span>
+                            </Badge>
                           </div>
                         </div>
                       </div>
@@ -375,9 +371,9 @@ export default function ReportsPage() {
                           <td className="p-4">حاله الدفع</td>
                           <td className="p-4">
                             <div className="flex flex-col gap-2">
-                              <span className={`badge ${report.financial_details.payment_status === 'paid' ? 'badge-success' : report.financial_details.payment_status === 'partial' ? 'badge-warning' : 'badge-danger'}`}>
+                              <Badge variant={report.financial_details.payment_status === 'paid' ? 'success' : report.financial_details.payment_status === 'partial' ? 'warning' : 'danger'}>
                                 {report.financial_details.payment_status === 'paid' ? 'مدفوع' : report.financial_details.payment_status === 'partial' ? 'مدفوع جزئياً' : 'غير مدفوع'}
-                              </span>
+                              </Badge>
                             </div>
                           </td>
                         </tr>
@@ -391,19 +387,19 @@ export default function ReportsPage() {
               {report.teachers_details && Array.isArray(report.teachers_details) && (
                 <div className="mt-6">
                   <h3 className="text-white text-lg font-semibold mb-4 flex items-center gap-2">
-                    <i className="fas fa-users text-secondary"></i>
+                    <Icon name="users" className="text-secondary" />
                     تفاصيل المدرسين
                   </h3>
                   <DataTable
                     columns={[
                       { key: 'name', label: 'الاسم', sortable: true },
-                      { 
-                        key: 'status', 
+                      {
+                        key: 'status',
                         label: 'الحالة',
                         render: (value: string) => (
-                          <span className={`badge ${value === 'نشط' ? 'badge-success' : 'badge-danger'}`}>
+                          <Badge variant={value === 'نشط' ? 'success' : 'danger'}>
                             {value}
-                          </span>
+                          </Badge>
                         )
                       },
                       { key: 'total_students', label: 'إجمالي الطلاب', sortable: true },
@@ -428,7 +424,7 @@ export default function ReportsPage() {
               {report.monthly_breakdown && Array.isArray(report.monthly_breakdown) && report.monthly_breakdown.length > 0 && (
                 <div className="mt-6">
                   <h3 className="text-white text-lg font-semibold mb-4 flex items-center gap-2">
-                    <i className="fas fa-calendar-alt text-success"></i>
+                    <Icon name="calendar-alt" className="text-success" />
                     التفصيل الشهري
                   </h3>
                   <DataTable

@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources;
 
-use App\Enums\SubscriptionStatus;
-use App\Enums\SubscriptionType;
-use App\Models\Subscription;
-use App\Models\Academy;
-use App\Models\Teacher;
+use App\Domains\Subscriptions\Enums\SubscriptionStatus;
+use App\Domains\Subscriptions\Enums\SubscriptionType;
+use App\Domains\Subscriptions\Models\Subscription;
+use App\Domains\Auth\Models\Academy;
+use App\Domains\Auth\Models\Teacher;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\DatePicker;
@@ -26,13 +26,16 @@ class SubscriptionResource extends BaseResource
 
     protected static ?string $navigationIcon = 'heroicon-o-credit-card';
 
-    protected static ?string $navigationGroup = 'إدارة الاشتراكات';
-
     protected static ?int $navigationSort = 1;
 
     protected static ?string $modelLabel = 'اشتراك';
 
     protected static ?string $pluralModelLabel = 'الاشتراكات';
+
+    public static function getNavigationGroup(): ?string
+    {
+        return 'إدارة الاشتراكات';
+    }
 
     public static function form(Schema $schema): Schema
     {

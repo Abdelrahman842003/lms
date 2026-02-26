@@ -6,18 +6,19 @@ import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { ExamCard } from '@/components/dashboard/ExamCard';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
-import { 
-  getAcademyExams, 
-  toggleAcademyExamStatus, 
-  endAcademyExam, 
-  copyAcademyExam, 
+import {
+  getAcademyExams,
+  toggleAcademyExamStatus,
+  endAcademyExam,
+  copyAcademyExam,
   deleteAcademyExam,
-  getTeachers 
+  getTeachers
 } from '@/services/academyService';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import { Filter } from '@/components/Filter';
 import { toast } from 'react-hot-toast';
 
+import { Button, Icon, Input, Textarea, Select, LoadingSpinner, Badge, FormModal } from '@/components/ui';
 interface Exam {
   id: number | string;
   title: string;
@@ -254,28 +255,28 @@ export default function AcademyExamsPage() {
         <StatCard
           title="إجمالي الامتحانات"
           value={totalExams}
-          icon="fas fa-file-alt"
+          icon="file-alt"
           color="primary"
           variant="centered"
         />
         <StatCard
           title="امتحانات نشطة"
           value={activeExams}
-          icon="fas fa-play-circle"
+          icon="play-circle"
           color="success"
           variant="centered"
         />
         <StatCard
           title="امتحانات قادمة"
           value={upcomingExams}
-          icon="fas fa-calendar-alt"
+          icon="calendar-alt"
           color="warning"
           variant="centered"
         />
         <StatCard
           title="امتحانات منتهية"
           value={completedExams}
-          icon="fas fa-check-circle"
+          icon="check-circle"
           color="danger"
           variant="centered"
         />
@@ -285,27 +286,26 @@ export default function AcademyExamsPage() {
       <div className="header-section flex justify-between items-center mb-6 max-md:flex-col max-md:items-stretch max-md:gap-4">
         <div className="header-title flex items-center gap-3 max-md:w-full max-md:justify-center">
           <div className="w-12 h-12 rounded-xl bg-[rgba(66,99,235,0.1)] flex items-center justify-center text-primary text-2xl">
-            <i className="fas fa-file-alt"></i>
+            <Icon name="file-alt" />
           </div>
           <h2 className="text-2xl font-bold text-white m-0">إدارة الامتحانات</h2>
         </div>
         <div className="header-actions max-md:w-full">
-          <button onClick={() => router.push('/academy/exams/add')} className="btn btn-primary max-md:w-full max-md:justify-center">
-            <i className="fas fa-plus"></i>
+          <Button onClick={() => router.push('/academy/exams/add')} variant="primary" className="max-md:w-full max-md:justify-center">
+            <Icon name="plus" />
             <span>امتحان جديد</span>
-          </button>
+          </Button>
         </div>
       </div>
 
       {/* Filters */}
       <div className="flex gap-4 mb-6 max-md:flex-col">
         <div className="flex-1">
-          <input
+          <Input
             type="text"
             placeholder="بحث عن امتحان..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="form-input w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white"
           />
         </div>
         <div className="w-64 max-md:w-full">
@@ -360,12 +360,12 @@ export default function AcademyExamsPage() {
         </div>
       ) : filteredExams.length === 0 ? (
         <div className="text-center p-12 bg-white/2 rounded-2xl">
-          <i className="fas fa-file-alt text-5xl text-gray-light mb-4 opacity-50"></i>
+          <Icon name="file-alt" size="2x" className="mb-4 opacity-50" />
           <p className="text-gray-light text-lg">لا توجد امتحانات</p>
-          <button onClick={() => router.push('/academy/exams/add')} className="btn btn-primary mt-4">
-            <i className="fas fa-plus"></i>
+          <Button onClick={() => router.push('/academy/exams/add')} variant="primary" className="mt-4">
+            <Icon name="plus" />
             <span>إضافة امتحان جديد</span>
-          </button>
+          </Button>
         </div>
       ) : (
         <div className="exams-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -409,23 +409,25 @@ export default function AcademyExamsPage() {
       {/* Pagination Controls */}
       {totalPages > 1 && (
         <div className="flex justify-center mt-6 gap-2">
-          <button 
-            className="btn btn-outline btn-sm"
+          <Button
+            variant="outline"
+            size="sm"
             disabled={currentPage === 1}
             onClick={() => fetchExams(currentPage - 1)}
           >
             السابق
-          </button>
+          </Button>
           <span className="flex items-center text-gray-light">
             صفحة {currentPage} من {totalPages}
           </span>
-          <button 
-            className="btn btn-outline btn-sm"
+          <Button
+            variant="outline"
+            size="sm"
             disabled={currentPage === totalPages}
             onClick={() => fetchExams(currentPage + 1)}
           >
             التالي
-          </button>
+          </Button>
         </div>
       )}
 
@@ -462,75 +464,36 @@ export default function AcademyExamsPage() {
       />
 
       {/* Copy Modal */}
-      {isCopyModalOpen && (
-        <div className="modal-overlay" onClick={() => {
+      <FormModal
+        isOpen={isCopyModalOpen}
+        onClose={() => {
           setIsCopyModalOpen(false);
           setExamToCopy(null);
           setNewExamTitle('');
-        }}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>نسخ الامتحان</h3>
-              <button 
-                className="modal-close" 
-                onClick={() => {
-                  setIsCopyModalOpen(false);
-                  setExamToCopy(null);
-                  setNewExamTitle('');
-                }}
-              >
-                <i className="fas fa-times"></i>
-              </button>
-            </div>
-            
-            <div className="modal-body">
-              <div className="form-group">
-                <label htmlFor="newExamTitle">اسم النسخة الجديدة</label>
-                <input
-                  type="text"
-                  id="newExamTitle"
-                  value={newExamTitle}
-                  onChange={(e) => setNewExamTitle(e.target.value)}
-                  className="form-input"
-                  placeholder="أدخل اسم النسخة"
-                  autoFocus
-                />
-              </div>
-            </div>
-
-            <div className="modal-footer">
-              <button
-                onClick={() => {
-                  setIsCopyModalOpen(false);
-                  setExamToCopy(null);
-                  setNewExamTitle('');
-                }}
-                className="btn btn-outline"
-                disabled={isProcessing}
-              >
-                إلغاء
-              </button>
-              <button
-                onClick={handleConfirmCopy}
-                className="btn btn-primary"
-                disabled={isProcessing || !newExamTitle.trim()}
-              >
-                {isProcessing ? (
-                  <>
-                    <i className="fas fa-spinner fa-spin"></i>
-                    <span>جاري النسخ...</span>
-                  </>
-                ) : (
-                  <>
-                    <i className="fas fa-copy"></i>
-                    <span>نسخ</span>
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
+        }}
+        onSubmit={(e) => {
+          e.preventDefault();
+          handleConfirmCopy();
+        }}
+        title="نسخ الامتحان"
+        isLoading={isProcessing}
+        submitText={isProcessing ? 'جاري النسخ...' : 'نسخ'}
+        cancelText="إلغاء"
+        maxWidth="500px"
+      >
+        <div className="form-group">
+          <label htmlFor="newExamTitle">اسم النسخة الجديدة</label>
+          <Input
+            type="text"
+            id="newExamTitle"
+            value={newExamTitle}
+            onChange={(e) => setNewExamTitle(e.target.value)}
+            placeholder="أدخل اسم النسخة"
+            autoFocus
+            required
+          />
         </div>
-      )}
+      </FormModal>
     </DashboardLayout>
   );
 }

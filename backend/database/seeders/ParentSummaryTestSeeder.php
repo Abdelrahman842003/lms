@@ -2,15 +2,15 @@
 
 namespace Database\Seeders;
 
-use App\Models\Teacher;
-use App\Models\Student;
-use App\Models\Grade;
-use App\Models\Group;
-use App\Models\Enrollment;
-use App\Models\Lecture;
-use App\Models\Attendance;
-use App\Models\Exam;
-use App\Models\ExamResult;
+use App\Domains\Auth\Models\Student;
+use App\Domains\Auth\Models\Teacher;
+use App\Domains\Enrollments\Models\Enrollment;
+use App\Domains\Enrollments\Models\Grade;
+use App\Domains\Enrollments\Models\Group;
+use App\Domains\Lectures\Models\Attendance;
+use App\Domains\Lectures\Models\Lecture;
+use App\Domains\Exams\Models\Exam;
+use App\Domains\Exams\Models\ExamResult;
 use App\Models\StudentPoint;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;

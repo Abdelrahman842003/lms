@@ -37,7 +37,7 @@ return new class extends Migration
             $table->decimal('amount_paid', 10, 2)->default(0);
             
             // Status
-            $table->string('status')->default(\App\Enums\SubscriptionStatus::PENDING->value);
+            $table->string('status')->default(\App\Domains\Subscriptions\Enums\SubscriptionStatus::PENDING->value);
             
             // Payment tracking
             $table->string('payment_key', 20)->nullable()->unique();

@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { usePathname } from 'next/navigation';
+import { Icon } from '@/components/ui';
 
 interface MaintenanceGuardProps {
   children: React.ReactNode;
@@ -17,7 +18,7 @@ export default function MaintenanceGuard({ children, maintenanceMode }: Maintena
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-[#0f111a] text-white p-4 text-center">
         <div className="w-24 h-24 bg-primary/20 rounded-full flex items-center justify-center mb-6 animate-pulse">
-          <i className="fas fa-tools text-4xl text-primary"></i>
+          <Icon name="tools" size="4x" color="primary" />
         </div>
         <h1 className="text-3xl font-bold mb-4">الموقع تحت الصيانة</h1>
         <p className="text-gray-400 max-w-md mb-8">

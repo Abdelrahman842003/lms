@@ -3,7 +3,7 @@
 namespace App\Filament\Widgets;
 
 use App\Filament\Resources\AcademyResource;
-use App\Models\Academy;
+use App\Domains\Auth\Models\Academy;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;

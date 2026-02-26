@@ -5,6 +5,7 @@ import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { fetchApi } from '@/services/authService';
 import Link from 'next/link';
+import { Button, LoadingSpinner, Icon } from '@/components/ui/index';
 
 interface Mistake {
   id: string;
@@ -144,16 +145,18 @@ export default function MistakesPage() {
         <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
           <div>
             <h1 className="text-2xl font-bold text-white mb-2 flex items-center gap-3">
-              <i className="fas fa-book-open text-danger"></i>
+              <Icon name="book-open" className="text-danger" />
               أخطائي
             </h1>
             <p className="text-gray-400">راجع أخطاءك وقواها قبل الامتحان 💪</p>
           </div>
           <div className="flex gap-3">
 
-            <Link href="/student/dashboard" className="btn btn-outline">
-              <i className="fas fa-arrow-right ml-2"></i>
-              العودة
+            <Link href="/student/dashboard" className="inline-flex">
+              <Button variant="outline">
+                <Icon name="arrow-right" className="ml-2" />
+                العودة
+              </Button>
             </Link>
           </div>
         </div>
@@ -184,25 +187,26 @@ export default function MistakesPage() {
 
         {loading ? (
           <div className="text-center py-16">
-            <i className="fas fa-spinner fa-spin text-4xl text-primary"></i>
+            <LoadingSpinner size="lg" className="mx-auto" />
             <p className="text-gray-400 mt-4">جاري التحميل...</p>
           </div>
         ) : !selectedTeacher ? (
           <div className="text-center py-16 bg-white/5 rounded-2xl border border-white/10">
-            <i className="fas fa-user-graduate text-4xl text-gray-500 mb-4"></i>
+            <Icon name="user-graduate" size="2x" className="text-gray-500 mb-4" />
             <p className="text-gray-400">اختر مدرس لعرض أخطاءك</p>
           </div>
         ) : error ? (
           <div className="text-center py-16 bg-red-500/10 rounded-2xl border border-red-500/30">
-            <i className="fas fa-exclamation-circle text-4xl text-red-500 mb-4"></i>
+            <Icon name="exclamation-circle" size="2x" className="text-red-500 mb-4" />
             <h3 className="text-xl font-bold text-white mb-2">عفواً</h3>
             <p className="text-gray-400">{error}</p>
-            <button 
+            <Button
+              variant="primary"
               onClick={loadMistakes}
-              className="mt-4 px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
+              className="mt-4"
             >
               إعادة المحاولة
-            </button>
+            </Button>
           </div>
         ) : mistakes.length === 0 ? (
           <div className="text-center py-16 bg-gradient-to-br from-success/10 to-success/5 rounded-2xl border border-success/30">
@@ -233,7 +237,7 @@ export default function MistakesPage() {
                       mistake.is_mastered ? 'bg-success/20 text-success' : 'bg-danger/20 text-danger'
                     }`}>
                       {mistake.is_mastered ? (
-                        <i className="fas fa-check"></i>
+                        <Icon name="check" />
                       ) : (
                         <span className="font-bold">{mistake.times_failed}x</span>
                       )}
@@ -243,9 +247,9 @@ export default function MistakesPage() {
                       <p className="text-sm text-gray-500">{mistake.exam?.title}</p>
                     </div>
                   </div>
-                  <i className={`fas fa-chevron-down text-gray-400 transition-transform ${
+                  <Icon name="chevron-down" className={`text-gray-400 transition-transform ${
                     expandedId === mistake.id ? 'rotate-180' : ''
-                  }`}></i>
+                  }`} />
                 </div>
 
                 {/* Expanded Content */}
@@ -270,8 +274,8 @@ export default function MistakesPage() {
                                 }`}
                               >
                                 <div className="flex items-center gap-2">
-                                  {isCorrect && <i className="fas fa-check-circle"></i>}
-                                  {isStudentAnswer && !isCorrect && <i className="fas fa-times-circle"></i>}
+                                  {isCorrect && <Icon name="check-circle" />}
+                                  {isStudentAnswer && !isCorrect && <Icon name="times-circle" />}
                                   <span>{option}</span>
                                   {isCorrect && <span className="text-xs mr-auto">(الإجابة الصحيحة)</span>}
                                   {isStudentAnswer && !isCorrect && <span className="text-xs mr-auto">(إجابتك)</span>}
@@ -288,13 +292,15 @@ export default function MistakesPage() {
 
                       {/* Actions */}
                       {!mistake.is_mastered && (
-                        <button
+                        <Button
+                          variant="primary"
+                          size="sm"
                           onClick={() => markAsMastered(mistake.id)}
-                          className="btn btn-success btn-sm w-full mt-4"
+                          className="w-full mt-4"
                         >
-                          <i className="fas fa-check ml-2"></i>
+                          <Icon name="check" className="ml-2" />
                           فهمتها ✓
-                        </button>
+                        </Button>
                       )}
                     </div>
                   </div>

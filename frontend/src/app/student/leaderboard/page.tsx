@@ -5,6 +5,8 @@ import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { fetchApi } from '@/services/authService';
 import Link from 'next/link';
+import { Button, LoadingSpinner, Icon } from '@/components/ui/index';
+import { Badge } from '@/components/ui/Badge';
 
 // Custom Confetti Component - Enhanced Celebration
 const Confetti = ({ show }: { show: boolean }) => {
@@ -273,40 +275,35 @@ export default function StudentLeaderboardPage() {
               {activeTab === 'weekly' ? 'أشطر الطلاب هذا الأسبوع 🔥' : 'أشطر الطلاب على الإطلاق 🌟'}
             </p>
           </div>
-          <Link 
-            href="/student/dashboard" 
-            className="px-6 py-2.5 bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 rounded-xl transition-all duration-300 hover:scale-105 flex items-center gap-2 text-white"
+          <Button
+            variant="outline"
+            onClick={() => window.location.href = '/student/dashboard'}
+            className="flex items-center gap-2"
           >
             <span>العودة</span>
-            <i className="fas fa-arrow-right" />
-          </Link>
+            <Icon name="arrow-right" />
+          </Button>
         </div>
 
         {/* Toggle Tabs */}
         <div className={`flex items-center justify-center mb-8 transition-all duration-700 delay-100 ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
           <div className="flex gap-2 p-1.5 bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10">
-            <button
+            <Button
+              variant={activeTab === 'weekly' ? 'primary' : 'ghost'}
               onClick={() => setActiveTab('weekly')}
-              className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center gap-2 ${
-                activeTab === 'weekly' 
-                  ? 'bg-gradient-to-r from-primary to-primary/80 text-white shadow-lg shadow-primary/30' 
-                  : 'text-gray-400 hover:text-white hover:bg-white/10'
-              }`}
+              className="flex items-center gap-2"
             >
-              <i className="fas fa-calendar-week" />
+              <Icon name="calendar-alt" />
               هذا الأسبوع
-            </button>
-            <button
+            </Button>
+            <Button
+              variant={activeTab === 'allTime' ? 'primary' : 'ghost'}
               onClick={() => setActiveTab('allTime')}
-              className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center gap-2 ${
-                activeTab === 'allTime' 
-                  ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg shadow-purple-500/30' 
-                  : 'text-gray-400 hover:text-white hover:bg-white/10'
-              }`}
+              className="flex items-center gap-2"
             >
-              <i className="fas fa-trophy" />
+              <Icon name="trophy" />
               أشطر الطلاب على الإطلاق
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -314,7 +311,7 @@ export default function StudentLeaderboardPage() {
         {loading ? (
           <div className="text-center py-20">
             <div className="relative inline-block">
-              <div className="w-16 h-16 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
+              <LoadingSpinner size="lg" />
               <div className="absolute inset-0 flex items-center justify-center">
                 <span className="text-2xl">🏆</span>
               </div>
@@ -325,12 +322,12 @@ export default function StudentLeaderboardPage() {
           <div className="text-center py-20 bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10">
             <div className="text-6xl mb-4">😔</div>
             <p className="text-red-400 text-lg mb-6">{error}</p>
-            <button 
-              onClick={() => window.location.reload()} 
-              className="px-8 py-3 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 rounded-xl transition-all duration-300 hover:scale-105 text-white font-medium"
+            <Button
+              variant="primary"
+              onClick={() => window.location.reload()}
             >
               إعادة المحاولة
-            </button>
+            </Button>
           </div>
         ) : (
           <>
@@ -424,7 +421,7 @@ export default function StudentLeaderboardPage() {
                               />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-600 to-gray-800">
-                                <i className="fas fa-user text-gray-400 text-xl md:text-3xl" />
+                                <Icon name="user" className="text-gray-400 text-xl md:text-3xl" />
                               </div>
                             )}
                           </div>
@@ -464,7 +461,7 @@ export default function StudentLeaderboardPage() {
             {restOfList.length > 0 && (
               <div className={`mb-10 transition-all duration-700 delay-400 ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
                 <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
-                  <i className="fas fa-list-ol text-primary" />
+                  <Icon name="list-ol" className="text-primary" />
                   باقي المتسابقين
                 </h2>
                 
@@ -495,7 +492,7 @@ export default function StudentLeaderboardPage() {
                               />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center">
-                                <i className="fas fa-user text-gray-400" />
+                                <Icon name="user" className="text-gray-400" />
                               </div>
                             )}
                           </div>
@@ -504,7 +501,7 @@ export default function StudentLeaderboardPage() {
                           <div>
                             <h3 className="font-bold text-white text-sm md:text-base">{entry.student.name}</h3>
                             {entry.student_id === user?.id && (
-                              <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full">أنت</span>
+                              <Badge variant="primary" size="sm">أنت</Badge>
                             )}
                           </div>
                         </div>
@@ -536,7 +533,7 @@ export default function StudentLeaderboardPage() {
             <div className={`bg-white/5 backdrop-blur-xl rounded-3xl p-6 md:p-8 border border-white/10 transition-all duration-700 delay-500 ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
               <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
                 <span className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
-                  <i className="fas fa-info-circle text-primary" />
+                  <Icon name="info-circle" className="text-primary" />
                 </span>
                 كيف تجمع النقاط؟
               </h3>

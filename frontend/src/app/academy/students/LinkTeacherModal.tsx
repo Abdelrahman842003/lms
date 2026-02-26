@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
 import { Filter } from '@/components/Filter';
 import { getTeachers, getGrades, getGroups, createAcademyStudent } from '@/services/academyService';
 import toast from 'react-hot-toast';
-
+import { FormModal, LoadingSpinner, Icon } from '@/components/ui';
 interface LinkTeacherModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -151,14 +150,11 @@ export const LinkTeacherModal: React.FC<LinkTeacherModalProps> = ({
       // We need to pass the student's phone to identify them.
       
       await createAcademyStudent({
-        name: student.name, // Required by validation but won't change existing student
-        phone: student.phone, // Used to find the student
-        gender: student.gender || 'male', // Required validation
+        name: student.name,
+        phone: student.phone,
         grade_id: formData.grade_id,
         group_id: formData.group_id,
         teacher_id: formData.teacher_id,
-        // Optional fields to satisfy validation if needed
-        parent_phone: student.parent_phone, 
       });
 
       toast.success('تم ربط الطالب بالمدرس بنجاح');
@@ -176,94 +172,70 @@ export const LinkTeacherModal: React.FC<LinkTeacherModalProps> = ({
   // Filter groups by grade
   const filteredGroups = groups.filter(g => g.grade_id == formData.grade_id);
 
-  if (!isOpen) return null;
-
-  return createPortal(
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-[#1E1E2D] border border-white/10 rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
-        <div className="p-4 border-b border-white/10 flex items-center justify-between">
-          <h3 className="text-lg font-bold text-white">ربط الطالب بمدرس</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
-            <i className="fas fa-times"></i>
-          </button>
+  return (
+    <FormModal
+      isOpen={isOpen}
+      onClose={onClose}
+      onSubmit={handleSubmit}
+      title="ربط الطالب بمدرس"
+      isLoading={isSubmitting}
+      submitText="ربط"
+      cancelText="إلغاء"
+      maxWidth="450px"
+    >
+      {isLoading ? (
+        <div className="flex justify-center py-8">
+          <LoadingSpinner size="sm" color="primary" />
         </div>
-
-        <form onSubmit={handleSubmit} className="p-4 space-y-4">
-          {isLoading ? (
-            <div className="flex justify-center py-8">
-              <i className="fas fa-spinner fa-spin text-2xl text-primary"></i>
+      ) : (
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm text-gray-400 mb-1">الطالب</label>
+            <div className="p-3 bg-white/5 rounded-lg text-white font-medium">
+              {student.name}
             </div>
-          ) : (
-            <>
-              <div>
-                <label className="block text-sm text-gray-400 mb-1">الطالب</label>
-                <div className="p-3 bg-white/5 rounded-lg text-white font-medium">
-                  {student.name}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm text-gray-400 mb-1">المدرس <span className="text-red-500">*</span></label>
-                <Filter
-                  options={teachers
-                    .filter(t => !student.teachers?.some((st: any) => st.id === t.id))
-                    .map(t => ({ value: t.id, label: t.name }))}
-                  value={formData.teacher_id}
-                  onChange={(val) => setFormData({ ...formData, teacher_id: val })}
-                  placeholder="اختر المدرس"
-                  searchable={true}
-                  onSearchChange={handleSearchTeachers}
-                  disableLocalFilter={true}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm text-gray-400 mb-1">الصف الدراسي <span className="text-red-500">*</span></label>
-                <Filter
-                  options={grades
-                    .filter(g => g?.id)
-                    .map(g => ({ value: g.id.toString(), label: g.name || 'Unknown' }))}
-                  value={formData.grade_id}
-                  onChange={(val) => setFormData({ ...formData, grade_id: val, group_id: '' })}
-                  placeholder="اختر الصف"
-                  disabled={!formData.teacher_id}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm text-gray-400 mb-1">المجموعة <span className="text-red-500">*</span></label>
-                <Filter
-                  options={filteredGroups.map(g => ({ value: g.id.toString(), label: g.name }))}
-                  value={formData.group_id}
-                  onChange={(val) => setFormData({ ...formData, group_id: val })}
-                  placeholder="اختر المجموعة"
-                  disabled={!formData.grade_id}
-                />
-              </div>
-            </>
-          )}
-
-          <div className="pt-4 flex gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 btn btn-outline justify-center"
-              disabled={isSubmitting}
-            >
-              إلغاء
-            </button>
-            <button
-              type="submit"
-              className="flex-1 btn btn-primary justify-center"
-              disabled={isSubmitting || isLoading}
-            >
-              {isSubmitting ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-link"></i>}
-              <span className="mr-2">ربط</span>
-            </button>
           </div>
-        </form>
-      </div>
-    </div>,
-    document.body
+
+          <div>
+            <label className="block text-sm text-gray-400 mb-1">المدرس <span className="text-red-500">*</span></label>
+            <Filter
+              options={teachers
+                .filter(t => !student.teachers?.some((st: any) => st.id === t.id))
+                .map(t => ({ value: t.id, label: t.name }))}
+              value={formData.teacher_id}
+              onChange={(val) => setFormData({ ...formData, teacher_id: val })}
+              placeholder="اختر المدرس"
+              searchable={true}
+              onSearchChange={handleSearchTeachers}
+              disableLocalFilter={true}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm text-gray-400 mb-1">الصف الدراسي <span className="text-red-500">*</span></label>
+            <Filter
+              options={grades
+                .filter(g => g?.id)
+                .map(g => ({ value: g.id.toString(), label: g.name || 'Unknown' }))}
+              value={formData.grade_id}
+              onChange={(val) => setFormData({ ...formData, grade_id: val, group_id: '' })}
+              placeholder="اختر الصف"
+              disabled={!formData.teacher_id}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm text-gray-400 mb-1">المجموعة <span className="text-red-500">*</span></label>
+            <Filter
+              options={filteredGroups.map(g => ({ value: g.id.toString(), label: g.name }))}
+              value={formData.group_id}
+              onChange={(val) => setFormData({ ...formData, group_id: val })}
+              placeholder="اختر المجموعة"
+              disabled={!formData.grade_id}
+            />
+          </div>
+        </div>
+      )}
+    </FormModal>
   );
 };

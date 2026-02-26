@@ -2,27 +2,30 @@
 
 import React from 'react';
 
-interface SkeletonProps {
+export interface SkeletonProps {
   width?: string;
   height?: string;
+  minHeight?: string;
   borderRadius?: string;
   className?: string;
   style?: React.CSSProperties;
 }
 
-export const Skeleton: React.FC<SkeletonProps> = ({ 
-  width = '100%', 
-  height = '20px', 
+export const Skeleton: React.FC<SkeletonProps> = ({
+  width = '100%',
+  height = '20px',
+  minHeight,
   borderRadius = '4px',
   className = '',
-  style 
+  style
 }) => {
   return (
-    <div 
+    <div
       className={`skeleton ${className}`}
       style={{
         width,
         height,
+        minHeight,
         borderRadius,
         backgroundColor: 'rgba(255, 255, 255, 0.05)',
         position: 'relative',
@@ -31,6 +34,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
       }}
     >
       <div 
+        className="skeleton-shimmer"
         style={{
           position: 'absolute',
           top: 0,
@@ -39,16 +43,11 @@ export const Skeleton: React.FC<SkeletonProps> = ({
           bottom: 0,
           background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent)',
           transform: 'translateX(-100%)',
-          animation: 'shimmer 1.5s infinite',
+          animation: 'skeletonShimmer 1.5s infinite',
         }}
       />
-      <style jsx>{`
-        @keyframes shimmer {
-          100% {
-            transform: translateX(100%);
-          }
-        }
-      `}</style>
     </div>
   );
 };
+
+export default Skeleton;

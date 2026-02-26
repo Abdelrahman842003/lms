@@ -2,6 +2,7 @@
 
 import React, { useRef } from 'react';
 import QRCode from 'react-qr-code';
+import { Button, Icon } from '@/components/ui';
 
 interface Props {
   code: string;
@@ -99,7 +100,7 @@ export default function PaymentCodeDisplay({ code, amount, studentName, onClose 
       >
         {/* Header */}
         <div className="bg-gradient-to-r from-primary to-primary/70 p-6 text-center">
-          <i className="fas fa-check-circle text-5xl text-white mb-3"></i>
+          <Icon name="check-circle" size="3x" className="text-white mb-3" />
           <h2 className="text-xl font-bold text-white">تم تسجيل الدفعة بنجاح</h2>
         </div>
 
@@ -128,7 +129,7 @@ export default function PaymentCodeDisplay({ code, amount, studentName, onClose 
           {/* Instructions */}
           <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 mb-6">
             <p className="text-yellow-400 text-sm">
-              <i className="fas fa-info-circle ml-2"></i>
+              <Icon name="info-circle" className="ml-2" />
               أعط هذا الكود للطالب ليؤكد الدفع من التطبيق
             </p>
             <p className="text-yellow-400/70 text-xs mt-2">
@@ -138,31 +139,34 @@ export default function PaymentCodeDisplay({ code, amount, studentName, onClose 
 
           {/* Actions */}
           <div className="flex gap-3">
-            <button
+            <Button
               onClick={handleCopy}
-              className="flex-1 py-3 bg-white/10 text-white rounded-lg hover:bg-white/20 transition-colors"
+              variant="outline"
+              className="flex-1 py-3"
             >
-              <i className="fas fa-copy ml-2"></i>
+              <Icon name="copy" className="ml-2" />
               نسخ الكود
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={handlePrint}
-              className="flex-1 py-3 bg-white/10 text-white rounded-lg hover:bg-white/20 transition-colors"
+              variant="outline"
+              className="flex-1 py-3"
             >
-              <i className="fas fa-print ml-2"></i>
+              <Icon name="print" className="ml-2" />
               طباعة
-            </button>
+            </Button>
           </div>
         </div>
 
         {/* Footer */}
         <div className="px-6 pb-6">
-          <button
+          <Button
             onClick={onClose}
-            className="w-full py-3 bg-primary text-white rounded-lg hover:bg-primary/80 transition-colors"
+            variant="primary"
+            className="w-full py-3"
           >
             تم
-          </button>
+          </Button>
         </div>
       </div>
     </div>

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
+import { Button, Icon } from '@/components/ui';
 
 interface QRScannerModalProps {
   isOpen: boolean;
@@ -92,7 +93,7 @@ const QRScannerModal: React.FC<QRScannerModalProps> = ({ isOpen, onClose, onScan
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-xl font-bold text-white">تسجيل حضور: {lectureTitle}</h3>
             <button onClick={onClose} className="text-gray-400 hover:text-white">
-              <i className="fas fa-times"></i>
+              <Icon name="times" />
             </button>
           </div>
           
@@ -104,12 +105,13 @@ const QRScannerModal: React.FC<QRScannerModalProps> = ({ isOpen, onClose, onScan
             {instructions || "وجه الكاميرا نحو رمز QR للطالب لتسجيل الحضور"}
           </p>
 
-          <button
+          <Button
+            variant="secondary"
             onClick={onClose}
-            className="w-full py-3 px-4 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors font-medium"
+            className="w-full"
           >
             إلغاء
-          </button>
+          </Button>
 
 
         </div>

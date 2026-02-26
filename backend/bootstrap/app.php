@@ -15,15 +15,15 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->api(prepend: [
             // \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
-            \App\Http\Middleware\CheckMaintenanceMode::class,
+            \App\Domains\Support\Http\Middleware\CheckMaintenanceMode::class,
         ]);
 
         $middleware->append(\Illuminate\Http\Middleware\HandleCors::class);
 
         // Register middleware aliases
         $middleware->alias([
-            'auth.cookies' => \App\Http\Middleware\SetAuthCookies::class,
-            'throttle.login' => \App\Http\Middleware\LoginThrottleMiddleware::class,
+            'auth.cookies' => \App\Domains\Auth\Http\Middleware\SetAuthCookies::class,
+            'throttle.login' => \App\Domains\Auth\Http\Middleware\LoginThrottleMiddleware::class,
         ]);
         
         $middleware->validateCsrfTokens(except: [

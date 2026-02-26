@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
-use App\Models\DeviceToken;
+use App\Domains\Auth\Models\DeviceToken;
 use Illuminate\Console\Command;
 
 class CleanDeviceTokens extends Command

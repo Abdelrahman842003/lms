@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Domains\Enrollments\Models\Enrollment;
 use App\Models\Academy;
-use App\Models\Enrollment;
-use App\Models\PaymentLog;
+use App\Domains\Subscriptions\Models\PaymentLog;
 use App\Models\Student;
-use App\Models\Subscription;
+use App\Domains\Subscriptions\Models\Subscription;
 use App\Models\Teacher;
 use App\Services\Admin\ReportService;
 use Carbon\Carbon;

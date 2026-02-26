@@ -4,6 +4,7 @@ import React, { useState, useEffect, use } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
+import { LoadingSpinner, Button, Icon } from '@/components/ui';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { getTeacherStudentDetails } from '@/services/authService';
 import { useRouter } from 'next/navigation';
@@ -57,7 +58,7 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
       >
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
-            <i className="fas fa-spinner fa-spin text-4xl text-primary mb-3"></i>
+            <LoadingSpinner size="lg" className="mx-auto mb-3" />
             <p className="text-gray-light">جاري التحميل...</p>
           </div>
         </div>
@@ -72,13 +73,13 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
         user={user || undefined}
       >
         <div className="alert alert-danger">
-          <i className="fas fa-exclamation-circle"></i>
+          <Icon name="exclamation-circle" />
           <span>{error || 'الطالب غير موجود'}</span>
         </div>
-        <button className="btn btn-secondary" onClick={() => router.back()}>
-          <i className="fas fa-arrow-right"></i>
+        <Button variant="secondary" onClick={() => router.back()}>
+          <Icon name="arrowRight" />
           <span>عودة</span>
-        </button>
+        </Button>
       </DashboardLayout>
     );
   }
@@ -95,7 +96,7 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
             {student.avatar ? (
               <img src={student.avatar} alt={student.name} className="w-full h-full object-cover" />
             ) : (
-              <i className="fas fa-user-graduate"></i>
+              <Icon name="graduationCap" />
             )}
           </div>
           <div className="flex-1 min-w-0">
@@ -104,16 +105,16 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
           </div>
         </div>
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
-          <button onClick={() => router.back()} className="btn btn-outline w-full sm:w-auto text-sm sm:text-base px-4 sm:px-5 py-3 sm:py-2.5">
-            <i className="fas fa-arrow-right text-sm sm:text-base"></i>
+          <Button variant="outline" onClick={() => router.back()} className="w-full sm:w-auto text-sm sm:text-base px-4 sm:px-5 py-3 sm:py-2.5">
+            <Icon name="arrowRight" className="text-sm sm:text-base" />
             <span className="whitespace-nowrap">عودة</span>
-          </button>
+          </Button>
           <Link href={`/teacher/students/${student.id}/payment`} className="btn btn-success w-full sm:w-auto text-sm sm:text-base px-4 sm:px-5 py-3 sm:py-2.5">
-            <i className="fas fa-money-bill-wave text-sm sm:text-base"></i>
+            <Icon name="money-bill-wave" className="text-sm sm:text-base" />
             <span className="whitespace-nowrap">تسجيل دفعة</span>
           </Link>
           <Link href={`/teacher/students/${student.id}/edit`} className="btn btn-primary w-full sm:w-auto text-sm sm:text-base px-4 sm:px-5 py-3 sm:py-2.5">
-            <i className="fas fa-edit text-sm sm:text-base"></i>
+            <Icon name="edit" className="text-sm sm:text-base" />
             <span className="whitespace-nowrap">تعديل الطالب</span>
           </Link>
         </div>
@@ -156,7 +157,7 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="bg-[#1a1f37] flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 sm:p-5 rounded-xl border border-white/5 hover:border-primary/50 transition-colors gap-2 sm:gap-0">
             <div className="flex items-center gap-2 text-gray-light order-2 sm:order-1">
-              <i className="fas fa-phone text-sm"></i>
+              <Icon name="phone" className="text-sm" />
               <span className="text-sm">رقم ولي الأمر</span>
             </div>
             <span className="text-white font-semibold ltr text-sm sm:text-base order-1 sm:order-2">{student.parent_phone || '-'}</span>
@@ -164,7 +165,7 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
 
           <div className="bg-[#1a1f37] flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 sm:p-5 rounded-xl border border-white/5 hover:border-primary/50 transition-colors gap-2 sm:gap-0">
             <div className="flex items-center gap-2 text-gray-light order-2 sm:order-1">
-              <i className="fas fa-venus-mars text-sm"></i>
+              <Icon name="venus-mars" className="text-sm" />
               <span className="text-sm">النوع</span>
             </div>
             <span className="text-white font-semibold text-sm sm:text-base order-1 sm:order-2">{student.gender === 'male' ? 'ذكر' : 'أنثى'}</span>
@@ -172,7 +173,7 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
 
           <div className="bg-[#1a1f37] flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 sm:p-5 rounded-xl border border-white/5 hover:border-primary/50 transition-colors gap-2 sm:gap-0">
             <div className="flex items-center gap-2 text-gray-light order-2 sm:order-1">
-              <i className="fas fa-university text-sm"></i>
+              <Icon name="university" className="text-sm" />
               <span className="text-sm">نوع التعليم</span>
             </div>
             <span className="text-white font-semibold text-sm sm:text-base order-1 sm:order-2">{student.education_type === 'general' ? 'عام' : student.education_type === 'azhar' ? 'أزهري' : '-'}</span>
@@ -180,7 +181,7 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
 
           <div className="bg-[#1a1f37] flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 sm:p-5 rounded-xl border border-white/5 hover:border-primary/50 transition-colors gap-2 sm:gap-0">
             <div className="flex items-center gap-2 text-gray-light order-2 sm:order-1">
-              <i className="fas fa-layer-group text-sm"></i>
+              <Icon name="layer-group" className="text-sm" />
               <span className="text-sm">الصف الدراسي</span>
             </div>
             <span className="text-white font-semibold text-sm sm:text-base order-1 sm:order-2">{student.grade_name || '-'}</span>
@@ -188,7 +189,7 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
 
           <div className="bg-[#1a1f37] flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 sm:p-5 rounded-xl border border-white/5 hover:border-primary/50 transition-colors gap-2 sm:gap-0">
             <div className="flex items-center gap-2 text-gray-light order-2 sm:order-1">
-              <i className="fas fa-users text-sm"></i>
+              <Icon name="users" className="text-sm" />
               <span className="text-sm">المجموعة</span>
             </div>
             <span className="text-white font-semibold text-sm sm:text-base order-1 sm:order-2">{student.group_name || '-'}</span>
@@ -196,7 +197,7 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
 
           <div className="bg-[#1a1f37] flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 sm:p-5 rounded-xl border border-white/5 hover:border-primary/50 transition-colors gap-2 sm:gap-0">
             <div className="flex items-center gap-2 text-gray-light order-2 sm:order-1">
-              <i className="fas fa-map-marker-alt text-sm"></i>
+              <Icon name="map-marker-alt" className="text-sm" />
               <span className="text-sm">الموقع</span>
             </div>
             <span className="text-white font-semibold text-sm sm:text-base order-1 sm:order-2">{student.location || '-'}</span>
@@ -204,7 +205,7 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
 
           <div className="bg-[#1a1f37] flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 sm:p-5 rounded-xl border border-white/5 hover:border-primary/50 transition-colors gap-2 sm:gap-0 sm:col-span-2">
             <div className="flex items-center gap-2 text-gray-light order-2 sm:order-1">
-              <i className="fas fa-calendar-alt text-sm"></i>
+              <Icon name="calendar" className="text-sm" />
               <span className="text-sm">تاريخ الإضافة</span>
             </div>
             <span className="text-white font-semibold text-sm sm:text-base order-1 sm:order-2">{new Date(student.created_at).toLocaleDateString('ar-EG')}</span>

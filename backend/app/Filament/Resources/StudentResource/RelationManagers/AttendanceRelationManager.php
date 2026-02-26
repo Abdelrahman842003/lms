@@ -2,7 +2,7 @@
 
 namespace App\Filament\Resources\StudentResource\RelationManagers;
 
-use App\Enums\StudentAttendanceStatus;
+use App\Domains\Lectures\Enums\StudentAttendanceStatus;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Toggle;

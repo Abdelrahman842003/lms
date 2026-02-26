@@ -22,13 +22,16 @@ class RoleResource extends BaseResource
 
     protected static ?string $navigationIcon = 'heroicon-o-shield-check';
 
-    protected static ?string $navigationGroup = 'الصلاحيات والأدوار';
-
     protected static ?int $navigationSort = 1;
 
     protected static ?string $modelLabel = 'دور';
 
     protected static ?string $pluralModelLabel = 'الأدوار';
+
+    public static function getNavigationGroup(): ?string
+    {
+        return 'الصلاحيات والأدوار';
+    }
 
     public static function form(Schema $schema): Schema
     {

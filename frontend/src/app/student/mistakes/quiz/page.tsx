@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { fetchApi } from '@/services/authService';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { Button, LoadingSpinner, Icon } from '@/components/ui/index';
 
 interface QuizQuestion {
   failed_question_id: string;
@@ -104,7 +105,7 @@ function QuizContent() {
       <div className="max-w-[700px] mx-auto">
         {loading ? (
           <div className="text-center py-16">
-            <i className="fas fa-spinner fa-spin text-4xl text-primary"></i>
+            <LoadingSpinner size="lg" className="mx-auto" />
             <p className="text-gray-400 mt-4">جاري تحميل الكويز...</p>
           </div>
         ) : !teacherId ? (
@@ -116,8 +117,10 @@ function QuizContent() {
             <div className="text-6xl mb-4">🎉</div>
             <h3 className="text-xl font-bold text-white mb-2">ما عندكش أخطاء للمراجعة!</h3>
             <p className="text-gray-400 mb-6">استمر في التفوق</p>
-            <Link href="/student/mistakes" className="btn btn-primary">
-              العودة لصفحة الأخطاء
+            <Link href="/student/mistakes" className="inline-flex">
+              <Button variant="primary">
+                العودة لصفحة الأخطاء
+              </Button>
             </Link>
           </div>
         ) : isComplete ? (
@@ -136,19 +139,21 @@ function QuizContent() {
                 : 'حاول مرة تانية للأسئلة اللي غلطت فيها'}
             </p>
             <div className="flex gap-4 justify-center">
-              <button onClick={() => {
+              <Button onClick={() => {
                 setCurrentIndex(0);
                 setScore({ correct: 0, total: 0 });
                 setIsComplete(false);
                 setSelectedAnswer(null);
                 setResult(null);
                 loadQuiz();
-              }} className="btn btn-primary">
-                <i className="fas fa-redo ml-2"></i>
+              }} variant="primary">
+                <Icon name="sync" className="ml-2" />
                 كويز جديد
-              </button>
-              <Link href="/student/mistakes" className="btn btn-outline">
-                العودة للأخطاء
+              </Button>
+              <Link href="/student/mistakes" className="inline-flex">
+                <Button variant="outline">
+                  العودة للأخطاء
+                </Button>
               </Link>
             </div>
           </div>
@@ -182,11 +187,12 @@ function QuizContent() {
                   const isWrong = showResult && isSelected && !result?.is_correct;
 
                   return (
-                    <button
+                    <Button
                       key={idx}
+                      variant={isSelected ? 'primary' : 'outline'}
                       onClick={() => !result && setSelectedAnswer(option)}
                       disabled={!!result}
-                      className={`w-full p-4 rounded-xl border text-right transition-all ${
+                      className={`w-full justify-start text-right mb-2 ${
                         showResult
                           ? isCorrect
                             ? 'bg-success/20 border-success text-success'
@@ -208,13 +214,13 @@ function QuizContent() {
                             ? 'border-primary bg-primary/20'
                             : 'border-white/30'
                         }`}>
-                          {showResult && isCorrect && <i className="fas fa-check text-success"></i>}
-                          {isWrong && <i className="fas fa-times text-danger"></i>}
+                          {showResult && isCorrect && <Icon name="check" className="text-success" />}
+                          {isWrong && <Icon name="times" className="text-danger" />}
                           {!showResult && String.fromCharCode(65 + idx)}
                         </div>
                         <span>{option}</span>
                       </div>
-                    </button>
+                    </Button>
                   );
                 })}
               </div>
@@ -223,34 +229,30 @@ function QuizContent() {
             {/* Actions */}
             <div className="flex gap-4">
               {!result ? (
-                <button
+                <Button
                   onClick={submitAnswer}
                   disabled={!selectedAnswer || submitting}
-                  className="btn btn-primary flex-1"
+                  loading={submitting}
+                  variant="primary"
+                  className="flex-1"
                 >
-                  {submitting ? (
-                    <i className="fas fa-spinner fa-spin"></i>
-                  ) : (
-                    <>
-                      <i className="fas fa-check ml-2"></i>
-                      تأكيد الإجابة
-                    </>
-                  )}
-                </button>
+                  <Icon name="check" className="ml-2" />
+                  تأكيد الإجابة
+                </Button>
               ) : (
-                <button onClick={nextQuestion} className="btn btn-primary flex-1">
+                <Button onClick={nextQuestion} variant="primary" className="flex-1">
                   {currentIndex < questions.length - 1 ? (
                     <>
                       السؤال التالي
-                      <i className="fas fa-arrow-left mr-2"></i>
+                      <Icon name="arrow-left" className="mr-2" />
                     </>
                   ) : (
                     <>
                       عرض النتيجة
-                      <i className="fas fa-flag-checkered mr-2"></i>
+                      <Icon name="flag-checkered" className="mr-2" />
                     </>
                   )}
-                </button>
+                </Button>
               )}
             </div>
 
@@ -289,7 +291,7 @@ export default function MistakesQuizPage() {
   return (
     <Suspense fallback={
       <div className="text-center py-16">
-        <i className="fas fa-spinner fa-spin text-4xl text-primary"></i>
+        <LoadingSpinner size="lg" className="mx-auto mb-4" />
         <p className="text-gray-400 mt-4">جاري تحميل الكويز...</p>
       </div>
     }>

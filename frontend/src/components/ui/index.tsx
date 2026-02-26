@@ -121,14 +121,14 @@ export function Avatar({ src, alt, name, size = 'md', className }: AvatarProps) 
   )
 }
 
-interface BadgeProps {
+interface LegacyBadgeProps {
   children: React.ReactNode
   variant?: 'default' | 'success' | 'warning' | 'danger'
   size?: 'sm' | 'md'
   className?: string
 }
 
-export function Badge({ children, variant = 'default', size = 'md', className }: BadgeProps) {
+export function Badge({ children, variant = 'default', size = 'md', className }: LegacyBadgeProps) {
   const variantClasses = {
     default: 'bg-gray-500/20 text-gray-300',
     success: 'bg-success/20 text-success',
@@ -243,7 +243,45 @@ export function Skeleton({ className, style }: SkeletonProps) {
   )
 }
 
+// Export all UI components
 export { default as AvatarUpload } from './AvatarUpload'
 export { default as ConfirmationModal } from './ConfirmationModal'
 export { default as ImageCropModal } from './ImageCropModal'
+export { default as FormModal } from './FormModal'
 export { MonthDropdown } from './MonthDropdown'
+export { LoadingSpinner, LoadingState } from './LoadingSpinner'
+
+// Re-export Button from Button.tsx (preferred implementation)
+export { Button as ButtonV2, default as ButtonComponent } from './Button'
+
+// Re-export Select from Select.tsx
+export { Select, type SelectProps } from './Select'
+
+// New standardized components
+export { Input, InputGroup, type InputProps, type InputGroupProps } from './Input'
+export { Textarea, AutoResizeTextarea, type TextareaProps, type AutoResizeTextareaProps } from './Textarea'
+export {
+  Badge as BadgeV2,
+  StatusBadge,
+  NotificationBadge,
+  type BadgeProps,
+  type BadgeVariant,
+  type BadgeSize,
+  type StatusBadgeProps,
+  type NotificationBadgeProps
+} from './Badge'
+export {
+  Icon,
+  IconButton,
+  IconText,
+  IconStack,
+  IconAvatar,
+  type IconProps,
+  type IconName,
+  type IconSet,
+  type IconButtonProps,
+  type IconTextProps,
+  type IconStackProps,
+  type IconAvatarProps
+} from './Icon'
+export { Skeleton as SkeletonV2, type SkeletonProps } from './Skeleton'

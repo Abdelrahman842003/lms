@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { getAcademyStudentDetails } from '@/services/academyService';
 import { useRouter } from 'next/navigation';
 
+import { LoadingSpinner, Button, Icon } from '@/components/ui';
 export default function StudentDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { user } = useAuth();
@@ -58,7 +59,7 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
       >
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
-            <i className="fas fa-spinner fa-spin text-4xl text-primary mb-3"></i>
+            <LoadingSpinner size="sm" color="primary" />
             <p className="text-gray-light">جاري التحميل...</p>
           </div>
         </div>
@@ -76,13 +77,13 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
         }}
       >
         <div className="alert alert-danger">
-          <i className="fas fa-exclamation-circle"></i>
+          <Icon name="exclamation-circle" />
           <span>{error || 'الطالب غير موجود'}</span>
         </div>
-        <button className="btn btn-secondary" onClick={() => router.back()}>
-          <i className="fas fa-arrow-right"></i>
+        <Button variant="secondary" onClick={() => router.back()}>
+          <Icon name="arrow-right" className="ml-2" />
           <span>عودة</span>
-        </button>
+        </Button>
       </DashboardLayout>
     );
   }
@@ -102,7 +103,7 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
             {student.avatar ? (
               <img src={student.avatar} alt={student.name} className="w-full h-full object-cover" />
             ) : (
-              <i className="fas fa-user-graduate"></i>
+              <Icon name="user-graduate" />
             )}
           </div>
           <div className="flex-1 min-w-0">
@@ -111,10 +112,10 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
           </div>
         </div>
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
-          <button onClick={() => router.back()} className="btn btn-outline w-full sm:w-auto text-sm sm:text-base px-4 sm:px-5 py-3 sm:py-2.5">
-            <i className="fas fa-arrow-right text-sm sm:text-base"></i>
+          <Button variant="outline" onClick={() => router.back()} className="w-full sm:w-auto">
+            <Icon name="arrow-right" className="ml-2 text-sm sm:text-base" />
             <span className="whitespace-nowrap">عودة</span>
-          </button>
+          </Button>
           <div className="flex flex-col gap-2">
             <div className="text-xs text-gray-500">
               Debug: {enrolledTeachers.length} teachers
@@ -137,9 +138,9 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
                 className="w-full sm:w-auto min-w-[200px]"
             />
           </div>
-          {/* 
+          {/*
           <Link href={`/academy/students/${student.enrollment_id}/edit`} className="btn btn-primary w-full sm:w-auto text-sm sm:text-base px-4 sm:px-5 py-3 sm:py-2.5">
-            <i className="fas fa-edit text-sm sm:text-base"></i>
+            <Icon name="edit" className="text-sm sm:text-base" />
             <span className="whitespace-nowrap">تعديل الطالب</span>
           </Link>
           */}
@@ -151,7 +152,7 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
         <StatCard
           title="حضور الشهر"
           value={`${student.attendance_stats?.present_count || 0} / ${student.attendance_stats?.total_lectures || 0}`}
-          icon="fas fa-calendar-check"
+          icon="calendar-check"
           color="primary"
           variant="centered"
         />
@@ -159,7 +160,7 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
         <StatCard
           title="متوسط الحضور"
           value={student.attendance_stats?.average || 0}
-          icon="fas fa-chart-pie"
+          icon="chart-pie"
           color="success"
           suffix="%"
           variant="centered"
@@ -168,7 +169,7 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
         <StatCard
           title="متوسط الامتحانات"
           value={student.exam_stats?.month_average || 0}
-          icon="fas fa-star"
+          icon="star"
           color="warning"
           suffix="%"
           variant="centered"
@@ -178,12 +179,12 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
       {/* Basic Data Section */}
       <DashboardCard
         title="البيانات الأساسية"
-        icon="fas fa-info-circle"
+        icon="info-circle"
       >
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="bg-[#1a1f37] flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 sm:p-5 rounded-xl border border-white/5 hover:border-primary/50 transition-colors gap-2 sm:gap-0">
             <div className="flex items-center gap-2 text-gray-light order-2 sm:order-1">
-              <i className="fas fa-chalkboard-teacher text-sm"></i>
+              <Icon name="chalkboard-teacher" className="text-sm" />
               <span className="text-sm">المدرس</span>
             </div>
             <span className="text-white font-semibold ltr text-sm sm:text-base order-1 sm:order-2">{student.teacher_name || '-'}</span>
@@ -191,7 +192,7 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
 
           <div className="bg-[#1a1f37] flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 sm:p-5 rounded-xl border border-white/5 hover:border-primary/50 transition-colors gap-2 sm:gap-0">
             <div className="flex items-center gap-2 text-gray-light order-2 sm:order-1">
-              <i className="fas fa-phone text-sm"></i>
+              <Icon name="phone" className="text-sm" />
               <span className="text-sm">رقم ولي الأمر</span>
             </div>
             <span className="text-white font-semibold ltr text-sm sm:text-base order-1 sm:order-2">{student.parent_phone || '-'}</span>
@@ -199,7 +200,7 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
 
           <div className="bg-[#1a1f37] flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 sm:p-5 rounded-xl border border-white/5 hover:border-primary/50 transition-colors gap-2 sm:gap-0">
             <div className="flex items-center gap-2 text-gray-light order-2 sm:order-1">
-              <i className="fas fa-venus-mars text-sm"></i>
+              <Icon name="venus-mars" className="text-sm" />
               <span className="text-sm">النوع</span>
             </div>
             <span className="text-white font-semibold text-sm sm:text-base order-1 sm:order-2">{student.gender === 'male' ? 'ذكر' : 'أنثى'}</span>
@@ -207,7 +208,7 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
 
           <div className="bg-[#1a1f37] flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 sm:p-5 rounded-xl border border-white/5 hover:border-primary/50 transition-colors gap-2 sm:gap-0">
             <div className="flex items-center gap-2 text-gray-light order-2 sm:order-1">
-              <i className="fas fa-university text-sm"></i>
+              <Icon name="university" className="text-sm" />
               <span className="text-sm">نوع التعليم</span>
             </div>
             <span className="text-white font-semibold text-sm sm:text-base order-1 sm:order-2">{student.education_type === 'general' ? 'عام' : student.education_type === 'azhar' ? 'أزهري' : '-'}</span>
@@ -215,7 +216,7 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
 
           <div className="bg-[#1a1f37] flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 sm:p-5 rounded-xl border border-white/5 hover:border-primary/50 transition-colors gap-2 sm:gap-0">
             <div className="flex items-center gap-2 text-gray-light order-2 sm:order-1">
-              <i className="fas fa-layer-group text-sm"></i>
+              <Icon name="layer-group" className="text-sm" />
               <span className="text-sm">الصف الدراسي</span>
             </div>
             <span className="text-white font-semibold text-sm sm:text-base order-1 sm:order-2">{student.grade_name || '-'}</span>
@@ -223,7 +224,7 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
 
           <div className="bg-[#1a1f37] flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 sm:p-5 rounded-xl border border-white/5 hover:border-primary/50 transition-colors gap-2 sm:gap-0">
             <div className="flex items-center gap-2 text-gray-light order-2 sm:order-1">
-              <i className="fas fa-users text-sm"></i>
+              <Icon name="users" className="text-sm" />
               <span className="text-sm">المجموعة</span>
             </div>
             <span className="text-white font-semibold text-sm sm:text-base order-1 sm:order-2">{student.group_name || '-'}</span>
@@ -231,7 +232,7 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
 
           <div className="bg-[#1a1f37] flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 sm:p-5 rounded-xl border border-white/5 hover:border-primary/50 transition-colors gap-2 sm:gap-0">
             <div className="flex items-center gap-2 text-gray-light order-2 sm:order-1">
-              <i className="fas fa-map-marker-alt text-sm"></i>
+              <Icon name="map-marker-alt" className="text-sm" />
               <span className="text-sm">الموقع</span>
             </div>
             <span className="text-white font-semibold text-sm sm:text-base order-1 sm:order-2">{student.location || '-'}</span>
@@ -239,7 +240,7 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
 
           <div className="bg-[#1a1f37] flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 sm:p-5 rounded-xl border border-white/5 hover:border-primary/50 transition-colors gap-2 sm:gap-0 sm:col-span-2">
             <div className="flex items-center gap-2 text-gray-light order-2 sm:order-1">
-              <i className="fas fa-calendar-alt text-sm"></i>
+              <Icon name="calendar-alt" className="text-sm" />
               <span className="text-sm">تاريخ الإضافة</span>
             </div>
             <span className="text-white font-semibold text-sm sm:text-base order-1 sm:order-2">{new Date(student.created_at).toLocaleDateString('ar-EG')}</span>
@@ -252,7 +253,7 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
       <div className="mt-4 sm:mt-6">
         <DashboardCard
           title="سجل الاشتراكات"
-          icon="fas fa-history"
+          icon="history"
         >
           {subscriptionHistory.length === 0 ? (
             <div className="text-center p-6 sm:p-8">
@@ -334,7 +335,7 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
       <div className="mt-4 sm:mt-6">
         <DashboardCard
           title="سجل الامتحانات"
-          icon="fas fa-file-alt"
+          icon="file-alt"
         >
           {(!student.exam_stats?.results || student.exam_stats.results.length === 0) ? (
             <div className="text-center p-6 sm:p-8">
@@ -356,7 +357,7 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
                       </span>
                     </div>
                     <div className="flex items-center justify-center mt-2 py-2 bg-white/5 rounded-lg">
-                      <i className="fas fa-percent text-primary text-xs ml-2"></i>
+                      <Icon name="percent" className="text-primary text-xs ml-2" />
                       <span className="text-white text-base font-bold">{exam.percentage}%</span>
                     </div>
                   </div>
@@ -385,7 +386,7 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
                         </td>
                         <td className="py-4 text-white">
                           <div className="flex items-center gap-2">
-                            <i className="fas fa-percent text-primary text-xs"></i>
+                            <Icon name="percent" className="text-primary text-xs" />
                             <span>{exam.percentage}%</span>
                           </div>
                         </td>

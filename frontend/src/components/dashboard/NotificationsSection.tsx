@@ -5,6 +5,7 @@ import NotificationDetailsModal from '@/components/ui/NotificationDetailsModal';
 import { sendNotification } from '@/services/notificationService';
 import { toast } from 'react-hot-toast';
 import { getAccessToken } from '@/lib/tokenManager';
+import { Button, Icon } from '@/components/ui';
 
 interface Notification {
   id: string;
@@ -187,22 +188,23 @@ export const NotificationsSection = () => {
         title="الإشعارات" 
         icon="fas fa-bell"
         action={
-          <button 
+          <Button
+            variant="ghost"
             onClick={() => {
               setFormData(prev => ({ ...prev, recipient_type: 'admin' }));
               setShowSupportModal(true);
-            }} 
+            }}
             className="px-3 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
           >
-            <i className="fas fa-headset"></i>
+            <Icon name="headset" />
             <span>تواصل مع الدعم</span>
-          </button>
+          </Button>
         }
       >
         <div className="space-y-4 max-h-[500px] overflow-y-auto custom-scrollbar">
           {notifications.length === 0 ? (
             <div className="text-center py-8 text-gray-400">
-              <i className="fas fa-bell-slash text-2xl mb-2"></i>
+              <Icon name="bell-slash" className="text-2xl mb-2" />
               <p>لا توجد إشعارات جديدة</p>
             </div>
           ) : (
@@ -235,7 +237,7 @@ export const NotificationsSection = () => {
                   
                   {isVoice ? (
                     <div className="flex items-center gap-2 text-primary mb-3">
-                      <i className="fas fa-microphone"></i>
+                      <Icon name="microphone" />
                       <span className="text-sm">رسالة صوتية</span>
                     </div>
                   ) : (
@@ -268,9 +270,9 @@ export const NotificationsSection = () => {
           <div className="bg-[#1e1e2d] rounded-xl w-full max-w-[600px] shadow-xl border border-white/10" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center p-6 border-b border-white/10">
               <h3 className="text-xl font-bold text-white m-0">إرسال رسالة للدعم الفني / المطور</h3>
-              <button className="text-gray-400 hover:text-white transition-colors bg-transparent border-none cursor-pointer text-xl" onClick={() => setShowSupportModal(false)}>
-                <i className="fas fa-times"></i>
-              </button>
+              <Button variant="ghost" className="text-gray-400 hover:text-white transition-colors bg-transparent border-none cursor-pointer text-xl" onClick={() => setShowSupportModal(false)}>
+                <Icon name="times" />
+              </Button>
             </div>
             <form onSubmit={handleSupportSubmit}>
               <div className="p-6">
@@ -301,19 +303,19 @@ export const NotificationsSection = () => {
                 </div>
               </div>
               <div className="flex justify-end gap-3 p-6 border-t border-white/10 bg-white/5 rounded-b-xl">
-                <button type="button" className="btn btn-secondary" onClick={() => setShowSupportModal(false)} disabled={isSending}>
+                <Button type="button" variant="secondary" onClick={() => setShowSupportModal(false)} disabled={isSending}>
                   إلغاء
-                </button>
-                <button type="submit" className="btn btn-primary" disabled={isSending}>
+                </Button>
+                <Button type="submit" variant="primary" disabled={isSending}>
                   {isSending ? (
                     <span>جاري الإرسال...</span>
                   ) : (
                     <>
-                      <i className="fas fa-paper-plane"></i>
+                      <Icon name="paper-plane" />
                       <span>إرسال الرسالة</span>
                     </>
                   )}
-                </button>
+                </Button>
               </div>
             </form>
           </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useMemo, useEffect, useCallback } from 'react';
+import { Icon, LoadingSpinner } from '@/components/ui';
 
 interface VoicePlayerProps {
   voiceUrl: string;
@@ -181,7 +182,7 @@ export const VoicePlayer: React.FC<VoicePlayerProps> = ({
   if (error) {
     return (
       <div className="flex items-center gap-2 px-3 py-2 bg-red-500/10 rounded-lg text-red-400 text-sm border border-red-500/20">
-        <i className="fas fa-exclamation-circle"></i>
+        <Icon name="exclamation-circle" />
         <span>{error}</span>
       </div>
     );
@@ -196,13 +197,13 @@ export const VoicePlayer: React.FC<VoicePlayerProps> = ({
           className="w-7 h-7 flex items-center justify-center rounded-full bg-primary text-white hover:bg-primary-dark transition-all shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 disabled:opacity-50"
         >
           {isLoading ? (
-            <i className="fas fa-spinner fa-spin text-xs"></i>
+            <LoadingSpinner size="sm" color="white" />
           ) : (
-            <i className={`fas ${isPlaying ? 'fa-pause' : 'fa-play'} text-xs`}></i>
+            <Icon name={isPlaying ? 'pause' : 'play'} size="xs" />
           )}
         </button>
         <div className="flex items-center gap-2 text-xs text-gray-300 font-medium">
-          <i className="fas fa-microphone text-primary"></i>
+          <Icon name="microphone" color="primary" />
           <span>رسالة صوتية</span>
           {durationState > 0 && <span className="text-gray-500">({formatTime(durationState)})</span>}
         </div>
@@ -221,9 +222,9 @@ export const VoicePlayer: React.FC<VoicePlayerProps> = ({
           className="w-12 h-12 flex-shrink-0 flex items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary-dark text-white shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:scale-105 active:scale-95 transition-all duration-300 disabled:opacity-50"
         >
           {isLoading ? (
-            <i className="fas fa-spinner fa-spin text-lg"></i>
+            <LoadingSpinner size="md" color="white" />
           ) : (
-            <i className={`fas ${isPlaying ? 'fa-pause' : 'fa-play'} text-lg ml-0.5`}></i>
+            <Icon name={isPlaying ? 'pause' : 'play'} size="lg" className="ml-0.5" />
           )}
         </button>
 

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
+import { Button, LoadingSpinner, Icon, Input } from '@/components/ui';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { secretaryService } from '@/services/secretaryService';
 import { getTeacherPermissions, Permission } from '@/services/roles';
@@ -113,7 +114,9 @@ export default function EditSecretaryPage() {
 
   if (isLoading) {
     return (
-      null
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner size="lg" />
+      </div>
     );
   }
 
@@ -133,14 +136,14 @@ export default function EditSecretaryPage() {
         <form onSubmit={handleSubmit}>
           {successMessage && (
             <div className="bg-green-500/10 border border-green-500/20 text-green-500 p-4 rounded-lg mb-6 flex items-center gap-3">
-              <i className="fas fa-check-circle text-xl"></i>
+              <Icon name="check-circle" className="text-xl" />
               <span>{successMessage}</span>
             </div>
           )}
 
           {formErrors.submit && (
             <div className="bg-red-500/10 border border-red-500/20 text-red-500 p-4 rounded-lg mb-6 flex items-center gap-3">
-              <i className="fas fa-exclamation-circle text-xl"></i>
+              <Icon name="exclamation-circle" className="text-xl" />
               <span>{formErrors.submit}</span>
             </div>
           )}
@@ -148,28 +151,22 @@ export default function EditSecretaryPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label htmlFor="name" className="block text-gray-light mb-2 text-sm">الاسم <span className="text-red-500">*</span></label>
-              <input
-                type="text"
+              <Input
                 id="name"
-                className={`w-full p-3 bg-white/5 border rounded-lg text-white focus:ring-1 outline-none transition-all ${
-                  formErrors.name ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-white/10 focus:border-primary focus:ring-primary'
-                }`}
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="أدخل اسم السكرتير"
                 disabled={isSubmitting}
+                className={formErrors.name ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}
               />
               {formErrors.name && <span className="text-red-500 text-sm mt-1 block">{formErrors.name}</span>}
             </div>
 
             <div>
               <label htmlFor="phone" className="block text-gray-light mb-2 text-sm">رقم الهاتف <span className="text-red-500">*</span></label>
-              <input
-                type="tel"
+              <Input
                 id="phone"
-                className={`w-full p-3 bg-white/5 border rounded-lg text-white focus:ring-1 outline-none transition-all ${
-                  formErrors.phone ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-white/10 focus:border-primary focus:ring-primary'
-                }`}
+                type="tel"
                 value={formData.phone}
                 onChange={(e) => {
                   const value = e.target.value.replace(/[^0-9]/g, '');
@@ -177,24 +174,21 @@ export default function EditSecretaryPage() {
                 }}
                 placeholder="أدخل رقم الهاتف"
                 disabled={isSubmitting}
+                className={formErrors.phone ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}
               />
               {formErrors.phone && <span className="text-red-500 text-sm mt-1 block">{formErrors.phone}</span>}
             </div>
 
-
-
             <div>
               <label htmlFor="password" className="block text-gray-light mb-2 text-sm">كلمة المرور (اتركها فارغة إذا لم ترد التغيير)</label>
-              <input
-                type="password"
+              <Input
                 id="password"
-                className={`w-full p-3 bg-white/5 border rounded-lg text-white focus:ring-1 outline-none transition-all ${
-                  formErrors.password ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-white/10 focus:border-primary focus:ring-primary'
-                }`}
+                type="password"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 placeholder="أدخل كلمة المرور الجديدة"
                 disabled={isSubmitting}
+                className={formErrors.password ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}
               />
               {formErrors.password && <span className="text-red-500 text-sm mt-1 block">{formErrors.password}</span>}
             </div>
@@ -225,21 +219,21 @@ export default function EditSecretaryPage() {
           </div>
 
           <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-white/10">
-            <button
+            <Button
               type="button"
-              className="btn btn-secondary"
+              variant="secondary"
               onClick={() => router.back()}
               disabled={isSubmitting}
             >
               إلغاء
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
-              className="btn btn-primary"
+              loading={isSubmitting}
               disabled={isSubmitting}
             >
               {isSubmitting ? 'جاري الحفظ...' : 'حفظ التعديلات'}
-            </button>
+            </Button>
           </div>
         </form>
       </DashboardCard>

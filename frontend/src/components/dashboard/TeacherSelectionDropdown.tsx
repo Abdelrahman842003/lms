@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 
-import { ConfirmationModal } from '@/components/ui';
+import { ConfirmationModal, Icon } from '@/components/ui';
 
 export const TeacherSelectionDropdown: React.FC = () => {
   const { user, selectedTeacher, selectTeacher } = useAuth();
@@ -110,13 +110,15 @@ export const TeacherSelectionDropdown: React.FC = () => {
             {selectedTeacher?.teacher_avatar ? (
             <img src={selectedTeacher.teacher_avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             ) : (
-            <i className="fas fa-chalkboard-teacher" style={{ fontSize: '16px', color: '#aaa' }}></i>
+            <span style={{ fontSize: '16px', color: '#aaa' }}><Icon name="chalkboard-teacher" /></span>
             )}
         </div>
         <span className="hidden md:block" style={{ fontSize: '0.9rem', fontWeight: 500, color: 'white', maxWidth: '100px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {selectedTeacher?.teacher_name || 'اختر مدرس'}
         </span>
-        <i className="fas fa-chevron-down hidden md:block" style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)', transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}></i>
+        <span className="hidden md:block" style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)', transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
+          <Icon name="chevron-down" />
+        </span>
       </div>
 
       {isOpen && (
@@ -166,7 +168,7 @@ export const TeacherSelectionDropdown: React.FC = () => {
             <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
               {(!user?.teachers || user.teachers.length === 0) ? (
                 <div style={{ padding: '2rem', textAlign: 'center', color: 'rgba(255, 255, 255, 0.5)' }}>
-                  <i className="fas fa-chalkboard-teacher" style={{ fontSize: '1.5rem', marginBottom: '0.5rem', display: 'block' }}></i>
+                  <span style={{ fontSize: '1.5rem', marginBottom: '0.5rem', display: 'block' }}><Icon name="chalkboard-teacher" /></span>
                   لا يوجد مدرسين مشترك معهم حالياً
                 </div>
               ) : (
@@ -245,11 +247,13 @@ const TeacherList = ({ teachers, selectedTeacher, onSelect }: { teachers: any[],
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <div style={{ width: '40px', height: '40px', borderRadius: '8px', background: 'rgba(66, 99, 235, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#4263eb' }}>
-                <i className="fas fa-university"></i>
+                <Icon name="university" />
               </div>
               <span style={{ color: 'white', fontWeight: 500 }}>{academy.name}</span>
             </div>
-            <i className={`fas fa-chevron-down ${expandedAcademy === academy.id ? 'fa-rotate-180' : ''}`} style={{ color: '#aaa', transition: 'transform 0.2s' }}></i>
+            <span style={{ color: '#aaa', transition: 'transform 0.2s' }}>
+              <Icon name="chevron-down" className={expandedAcademy === academy.id ? 'fa-rotate-180' : ''} />
+            </span>
           </div>
 
           {expandedAcademy === academy.id && (
@@ -302,7 +306,7 @@ const TeacherItem = ({ teacher, selectedTeacher, onSelect, isNested = false }: {
         {teacher.teacher_avatar ? (
             <img src={teacher.teacher_avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         ) : (
-            <i className="fas fa-chalkboard-teacher" style={{ fontSize: '18px', color: '#aaa' }}></i>
+            <span style={{ fontSize: '18px', color: '#aaa' }}><Icon name="chalkboard-teacher" /></span>
         )}
     </div>
     <div style={{ flex: 1 }}>
@@ -321,7 +325,7 @@ const TeacherItem = ({ teacher, selectedTeacher, onSelect, isNested = false }: {
         </p>
     </div>
     {selectedTeacher?.teacher_id === teacher.teacher_id && (
-        <i className="fas fa-check-circle" style={{ color: 'var(--primary)' }}></i>
+        <span style={{ color: 'var(--primary)' }}><Icon name="check-circle" /></span>
     )}
   </div>
 );

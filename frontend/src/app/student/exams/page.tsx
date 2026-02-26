@@ -7,7 +7,7 @@ import { StatCard } from '@/components/dashboard/StatCard';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { fetchApi } from '@/services/authService';
-import { Skeleton } from '@/components/ui/Skeleton';
+import { Skeleton, Button, Icon } from '@/components/ui/index';
 
 export default function StudentExamsPage() {
   const { user, selectedTeacher } = useAuth();
@@ -42,16 +42,6 @@ export default function StudentExamsPage() {
   const availableExams = exams.filter(e => !e.is_completed);
   const completedExams = exams.filter(e => e.is_completed);
 
-  // if (loading) {
-  //   return (
-  //     <DashboardLayout role="student" user={user || undefined}>
-  //       <div style={{ padding: '40px', textAlign: 'center', color: 'white' }}>
-  //         <i className="fas fa-spinner fa-spin" style={{ fontSize: '2rem', marginBottom: '16px' }}></i>
-  //         <p>جاري تحميل الامتحانات...</p>
-  //       </div>
-  //     </DashboardLayout>
-  //   );
-  // }
 
 
 
@@ -147,45 +137,49 @@ export default function StudentExamsPage() {
                 </div>
                 
                 <div className="flex flex-col gap-2 mb-4 text-[0.85rem] relative z-10">
-                  <div className="flex gap-2 text-light">
-                    <i className="fas fa-clock w-4 text-primary"></i>
-                    <span>{exam.time_per_question || 60} ثانية لكل سؤال</span>
-                  </div>
-                  <div className="flex gap-2 text-light">
-                    <i className="fas fa-list-ol w-4 text-info"></i>
-                    <span>{exam.actual_question_count || 10} سؤال</span>
-                  </div>
-                  <div className="flex gap-2 text-light">
-                    <i className="fas fa-star w-4 text-warning"></i>
-                    <span>{exam.max_score} درجة</span>
-                  </div>
-                  {exam.student_score !== null && exam.student_score !== undefined && (
-                    <div className="flex gap-2 text-success">
-                      <i className="fas fa-check-circle w-4"></i>
-                      <span>الدرجة: {exam.student_score}/{exam.max_score} ({exam.student_percentage}%)</span>
-                    </div>
-                  )}
+                <div className="flex gap-2 text-light">
+                  <Icon name="clock" className="w-4 text-primary" />
+                  <span>{exam.time_per_question || 60} ثانية لكل سؤال</span>
                 </div>
-
-                {!exam.is_completed && (
-                  exam.is_active ? (
-                    <button 
-                      className="btn btn-primary btn-sm w-full shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all relative z-10"
-                      onClick={() => router.push(`/student/exams/${exam.id}/take`)}
-                    >
-                      <i className="fas fa-play ml-2"></i>
-                      بدء الامتحان
-                    </button>
-                  ) : (
-                    <button 
-                      className="btn btn-secondary btn-sm w-full opacity-70 cursor-not-allowed relative z-10"
-                      disabled
-                    >
-                      <i className="fas fa-lock ml-2"></i>
-                      في انتظار التفعيل
-                    </button>
-                  )
+                <div className="flex gap-2 text-light">
+                  <Icon name="list-ol" className="w-4 text-info" />
+                  <span>{exam.actual_question_count || 10} سؤال</span>
+                </div>
+                <div className="flex gap-2 text-light">
+                  <Icon name="star" className="w-4 text-warning" />
+                  <span>{exam.max_score} درجة</span>
+                </div>
+                {exam.student_score !== null && exam.student_score !== undefined && (
+                  <div className="flex gap-2 text-success">
+                    <Icon name="check-circle" className="w-4" />
+                    <span>الدرجة: {exam.student_score}/{exam.max_score} ({exam.student_percentage}%)</span>
+                  </div>
                 )}
+              </div>
+
+              {!exam.is_completed && (
+                exam.is_active ? (
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    className="w-full shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all relative z-10"
+                    onClick={() => router.push(`/student/exams/${exam.id}/take`)}
+                  >
+                    <Icon name="play" className="ml-2" />
+                    بدء الامتحان
+                  </Button>
+                ) : (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="w-full opacity-70 cursor-not-allowed relative z-10"
+                    disabled
+                  >
+                    <Icon name="lock" className="ml-2" />
+                    في انتظار التفعيل
+                  </Button>
+                )
+              )}
               </div>
             ))
             )}

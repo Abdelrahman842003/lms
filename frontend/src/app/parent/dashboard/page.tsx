@@ -8,6 +8,7 @@ import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { fetchApi } from '@/services/authService';
 import Link from 'next/link';
+import { LoadingSpinner, Icon } from '@/components/ui';
 
 interface ChildSummary {
   id: string;
@@ -117,27 +118,27 @@ export default function ParentDashboard() {
           <StatCard
             title="إجمالي الأبناء"
             value={children.length}
-            icon="fas fa-users"
+            icon="users"
             color="primary"
           />
           <StatCard
             title="متوسط الحضور"
             value={avgAttendance}
             suffix="%"
-            icon="fas fa-check-circle"
+            icon="check-circle"
             color="success"
           />
           <StatCard
             title="متوسط الدرجات"
             value={avgExams}
             suffix="%"
-            icon="fas fa-chart-line"
+            icon="chart-line"
             color="info"
           />
           <StatCard
             title="إجمالي النقاط"
             value={overallStats.totalPoints}
-            icon="fas fa-star"
+            icon="star"
             color="warning"
           />
         </div>
@@ -148,21 +149,21 @@ export default function ParentDashboard() {
             <div className="bg-white/5 hover:bg-white/10 border border-white/10 hover:border-primary/50 rounded-2xl p-6 transition-all duration-300 flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center text-primary text-xl group-hover:scale-110 transition-transform">
-                  <i className="fas fa-users"></i>
+                  <Icon name="users" />
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-white mb-1">أبنائي</h3>
                   <p className="text-sm text-gray-400">عرض جميع الأبناء والتقارير</p>
                 </div>
               </div>
-              <i className="fas fa-arrow-left text-gray-500 group-hover:text-primary transition-colors"></i>
+              <Icon name="arrow-left" className="text-gray-500 group-hover:text-primary transition-colors" />
             </div>
           </Link>
 
           <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-red-500/20 flex items-center justify-center text-red-500 text-xl">
-                <i className="fas fa-exclamation-triangle"></i>
+                <Icon name="exclamation-triangle" />
               </div>
               <div>
                 <h3 className="text-lg font-bold text-white mb-1">أخطاء معلقة</h3>
@@ -175,7 +176,7 @@ export default function ParentDashboard() {
         {/* Children Summaries */}
         <DashboardCard
           title="آخر التحديثات"
-          icon="fas fa-chart-bar"
+          icon="chart-bar"
           action={
             <Link href="/parent/children" className="text-primary hover:underline text-sm">
               عرض الكل
@@ -184,12 +185,12 @@ export default function ParentDashboard() {
         >
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
+              <LoadingSpinner size="lg" color="primary" />
             </div>
           ) : childrenSummaries.length === 0 ? (
             <div className="text-center py-16">
               <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
-                <i className="fas fa-user-slash text-3xl text-gray-400"></i>
+                <Icon name="user-slash" size="2x" className="text-gray-400" />
               </div>
               <h3 className="text-lg font-bold text-white mb-2">لا يوجد أبناء</h3>
               <p className="text-gray-400">لم يتم تسجيل أي طالب برقم هاتفك</p>
@@ -215,7 +216,7 @@ export default function ParentDashboard() {
                     <div className="flex-1">
                       <h3 className="text-lg font-bold text-white mb-1">{child.name}</h3>
                       <p className="text-sm text-gray-400">
-                        <i className="fas fa-chalkboard-teacher ml-1"></i>
+                        <Icon name="chalkboard-teacher" className="ml-1" />
                         {child.teacher_count} مدرس
                       </p>
                     </div>
@@ -224,7 +225,7 @@ export default function ParentDashboard() {
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     <div className="bg-[#0D1120] rounded-lg p-3 text-center">
                       <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-2">
-                        <i className="fas fa-check text-green-400 text-sm"></i>
+                        <Icon name="check" className="text-green-400 text-sm" />
                       </div>
                       <p className="text-lg font-bold text-white">{child.attendance_rate}%</p>
                       <p className="text-xs text-gray-400">الحضور</p>
@@ -232,7 +233,7 @@ export default function ParentDashboard() {
 
                     <div className="bg-[#0D1120] rounded-lg p-3 text-center">
                       <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center mx-auto mb-2">
-                        <i className="fas fa-chart-line text-blue-400 text-sm"></i>
+                        <Icon name="chart-line" className="text-blue-400 text-sm" />
                       </div>
                       <p className="text-lg font-bold text-white">{child.exam_average}%</p>
                       <p className="text-xs text-gray-400">الدرجات</p>
@@ -240,7 +241,7 @@ export default function ParentDashboard() {
 
                     <div className="bg-[#0D1120] rounded-lg p-3 text-center">
                       <div className="w-8 h-8 rounded-full bg-yellow-500/20 flex items-center justify-center mx-auto mb-2">
-                        <i className="fas fa-star text-yellow-400 text-sm"></i>
+                        <Icon name="star" className="text-yellow-400 text-sm" />
                       </div>
                       <p className="text-lg font-bold text-white">{child.total_points}</p>
                       <p className="text-xs text-gray-400">النقاط</p>
@@ -248,7 +249,7 @@ export default function ParentDashboard() {
 
                     <div className="bg-[#0D1120] rounded-lg p-3 text-center">
                       <div className="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-2">
-                        <i className="fas fa-exclamation-triangle text-red-400 text-sm"></i>
+                        <Icon name="exclamation-triangle" className="text-red-400 text-sm" />
                       </div>
                       <p className="text-lg font-bold text-white">{child.pending_mistakes}</p>
                       <p className="text-xs text-gray-400">أخطاء</p>

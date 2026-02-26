@@ -4,6 +4,7 @@ import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { getAuthToken } from '@/services/authService';
+import { Button, LoadingSpinner, Icon } from '@/components/ui/index';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -70,7 +71,7 @@ function AttendanceContent() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background text-white">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <LoadingSpinner size="lg" className="mx-auto mb-4 w-12 h-12" />
           <p>جاري التحميل...</p>
         </div>
       </div>
@@ -83,7 +84,7 @@ function AttendanceContent() {
         <div className="p-8 text-center">
           {status === 'loading' && (
             <>
-              <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary mx-auto mb-6"></div>
+              <LoadingSpinner size="lg" className="mx-auto mb-6 w-16 h-16" />
               <h2 className="text-2xl font-bold text-white mb-2">جاري تسجيل الحضور</h2>
               <p className="text-gray-light">{message}</p>
             </>
@@ -92,7 +93,7 @@ function AttendanceContent() {
           {status === 'success' && (
             <>
               <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-                <i className="fas fa-check text-3xl text-green-500"></i>
+                <Icon name="check" size="2x" className="text-green-500" />
               </div>
               <h2 className="text-2xl font-bold text-white mb-2">تم بنجاح!</h2>
               <p className="text-gray-light mb-4">{message}</p>
@@ -102,28 +103,30 @@ function AttendanceContent() {
                   <p className="text-lg font-semibold text-white">{lectureTitle}</p>
                 </div>
               )}
-              <button
+              <Button
                 onClick={() => router.push('/student/dashboard')}
-                className="w-full py-3 px-4 bg-primary hover:bg-primary-dark text-white rounded-lg transition-colors font-medium"
+                variant="primary"
+                className="w-full"
               >
                 الذهاب للوحة التحكم
-              </button>
+              </Button>
             </>
           )}
 
           {status === 'error' && (
             <>
               <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-                <i className="fas fa-times text-3xl text-red-500"></i>
+                <Icon name="times" size="2x" className="text-red-500" />
               </div>
               <h2 className="text-2xl font-bold text-white mb-2">فشل</h2>
               <p className="text-red-400 mb-6">{message}</p>
-              <button
+              <Button
                 onClick={() => router.push('/student/dashboard')}
-                className="w-full py-3 px-4 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors font-medium"
+                variant="outline"
+                className="w-full"
               >
                 الذهاب للوحة التحكم
-              </button>
+              </Button>
             </>
           )}
         </div>

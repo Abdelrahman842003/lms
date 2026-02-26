@@ -6,10 +6,13 @@ import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { DataTable } from '@/components/dashboard/DataTable';
+import { Button, LoadingSpinner, Icon, Input } from '@/components/ui';
+import { Select } from '@/components/ui/Select';
+import ConfirmationModal from '@/components/ui/ConfirmationModal';
+import FormModal from '@/components/ui/FormModal';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { getGroups, createGroup, updateGroup, deleteGroup, Group, CreateGroupData } from '@/services/groupService';
 import { getGrades, Grade as GradeType } from '@/services/gradeService';
-import { Select } from '@/components/ui/Select';
 import toast from 'react-hot-toast';
 
 export default function GroupsPage() {
@@ -309,10 +312,10 @@ export default function GroupsPage() {
         title="جميع المجموعات"
         icon="fas fa-layer-group"
         action={
-          <button onClick={handleAddClick} className="btn btn-primary">
-            <i className="fas fa-plus"></i>
+          <Button onClick={handleAddClick}>
+            <Icon name="plus" className="ml-2" />
             <span>إضافة مجموعة</span>
-          </button>
+          </Button>
         }
       >
         <DataTable
@@ -332,168 +335,132 @@ export default function GroupsPage() {
       </DashboardCard>
 
       {/* Add/Edit Modal */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setShowModal(false)}>
-          <div className="bg-[#1e1e2d] rounded-2xl w-full max-w-lg border border-white/10 shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
-            <div className="flex justify-between items-center p-6 border-b border-white/10">
-              <h3 className="text-xl font-bold text-white">{isEditing ? 'تعديل المجموعة' : 'مجموعة جديدة'}</h3>
-              <button className="text-gray-400 hover:text-white transition-colors" onClick={() => setShowModal(false)}>
-                <i className="fas fa-times text-xl"></i>
-              </button>
+      <FormModal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        title={isEditing ? 'تعديل المجموعة' : 'مجموعة جديدة'}
+        onSubmit={handleSubmit}
+        isLoading={isSubmitting}
+        submitText={isSubmitting ? 'جاري الحفظ...' : isEditing ? 'حفظ التعديلات' : 'إضافة'}
+      >
+        <div className="space-y-4">
+          <div>
+            <label htmlFor="name" className="block text-gray-light mb-2 text-sm">اسم المجموعة</label>
+            <Input
+              type="text"
+              id="name"
+              className={`w-full p-3 bg-white/5 border rounded-lg text-white focus:ring-1 outline-none transition-all ${
+                touched.name && validationErrors.name
+                  ? 'border-danger focus:border-danger focus:ring-danger'
+                  : 'border-white/10 focus:border-primary focus:ring-primary'
+              }`}
+              value={formData.name}
+              onChange={(e) => handleInputChange('name', e.target.value)}
+              onBlur={() => handleBlur('name')}
+              required
+            />
+            {touched.name && validationErrors.name && (
+              <p className="text-danger text-xs mt-1 flex items-center gap-1">
+                <Icon name="exclamation-circle" />
+                {validationErrors.name}
+              </p>
+            )}
+          </div>
+          <div>
+            <label htmlFor="grade_id" className="block text-gray-light mb-2 text-sm">الصف الدراسي (اختياري)</label>
+            <Select
+              options={[
+                { value: '', label: 'لا يوجد' },
+                ...grades.map(g => ({ value: g.id, label: g.name }))
+              ]}
+              value={formData.grade_id || ''}
+              onChange={(value) => setFormData({ ...formData, grade_id: value || null })}
+              placeholder="اختر الصف الدراسي"
+              className="w-full"
+            />
+          </div>
+          <div>
+            <label htmlFor="time" className="block text-gray-light mb-2 text-sm">الموعد (اختياري)</label>
+            <Input
+              type="text"
+              id="time"
+              className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+              value={formData.time || ''}
+              onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+              placeholder="مثال: 4:00 عصراً"
+            />
+          </div>
+          <div>
+            <label htmlFor="type" className="block text-gray-light mb-2 text-sm">نوع المجموعة</label>
+            <Select
+              options={[
+                { value: 'general', label: 'عامة (سعر الصف)' },
+                { value: 'private', label: 'خاصة (سعر مخصص)' }
+              ]}
+              value={formData.type}
+              onChange={(value) => setFormData({ ...formData, type: value as 'general' | 'private' })}
+              placeholder="اختر نوع المجموعة"
+              className="w-full"
+            />
+          </div>
+          {formData.type === 'private' && (
+            <div>
+              <label htmlFor="price" className="block text-gray-light mb-2 text-sm">سعر الاشتراك الشهري</label>
+              <Input
+                type="number"
+                id="price"
+                className={`w-full p-3 bg-white/5 border rounded-lg text-white focus:ring-1 outline-none transition-all ${
+                  touched.price && validationErrors.price
+                    ? 'border-danger focus:border-danger focus:ring-danger'
+                    : 'border-white/10 focus:border-primary focus:ring-primary'
+                }`}
+                value={formData.price}
+                onChange={(e) => handleInputChange('price', Number(e.target.value))}
+                onBlur={() => handleBlur('price')}
+                min="0"
+                placeholder="0"
+              />
+              {touched.price && validationErrors.price && (
+                <p className="text-danger text-xs mt-1 flex items-center gap-1">
+                  <Icon name="exclamation-circle" />
+                  {validationErrors.price}
+                </p>
+              )}
             </div>
-            <form onSubmit={handleSubmit}>
-              <div className="p-6 space-y-4">
-                <div>
-                  <label htmlFor="name" className="block text-gray-light mb-2 text-sm">اسم المجموعة</label>
-                  <input
-                    type="text"
-                    id="name"
-                    className={`w-full p-3 bg-white/5 border rounded-lg text-white focus:ring-1 outline-none transition-all ${
-                      touched.name && validationErrors.name 
-                        ? 'border-danger focus:border-danger focus:ring-danger' 
-                        : 'border-white/10 focus:border-primary focus:ring-primary'
-                    }`}
-                    value={formData.name}
-                    onChange={(e) => handleInputChange('name', e.target.value)}
-                    onBlur={() => handleBlur('name')}
-                    required
-                  />
-                  {touched.name && validationErrors.name && (
-                    <p className="text-danger text-xs mt-1 flex items-center gap-1">
-                      <i className="fas fa-exclamation-circle"></i>
-                      {validationErrors.name}
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <label htmlFor="grade_id" className="block text-gray-light mb-2 text-sm">الصف الدراسي (اختياري)</label>
-                  <Select
-                    options={[
-                      { value: '', label: 'لا يوجد' },
-                      ...grades.map(g => ({ value: g.id, label: g.name }))
-                    ]}
-                    value={formData.grade_id || ''}
-                    onChange={(value) => setFormData({ ...formData, grade_id: value || null })}
-                    placeholder="اختر الصف الدراسي"
-                    className="w-full"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="time" className="block text-gray-light mb-2 text-sm">الموعد (اختياري)</label>
-                  <input
-                    type="text"
-                    id="time"
-                    className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
-                    value={formData.time || ''}
-                    onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                    placeholder="مثال: 4:00 عصراً"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="type" className="block text-gray-light mb-2 text-sm">نوع المجموعة</label>
-                  <Select
-                    options={[
-                      { value: 'general', label: 'عامة (سعر الصف)' },
-                      { value: 'private', label: 'خاصة (سعر مخصص)' }
-                    ]}
-                    value={formData.type}
-                    onChange={(value) => setFormData({ ...formData, type: value as 'general' | 'private' })}
-                    placeholder="اختر نوع المجموعة"
-                    className="w-full"
-                  />
-                </div>
-                {formData.type === 'private' && (
-                  <div>
-                    <label htmlFor="price" className="block text-gray-light mb-2 text-sm">سعر الاشتراك الشهري</label>
-                    <input
-                      type="number"
-                      id="price"
-                      className={`w-full p-3 bg-white/5 border rounded-lg text-white focus:ring-1 outline-none transition-all ${
-                        touched.price && validationErrors.price 
-                          ? 'border-danger focus:border-danger focus:ring-danger' 
-                          : 'border-white/10 focus:border-primary focus:ring-primary'
-                      }`}
-                      value={formData.price}
-                      onChange={(e) => handleInputChange('price', Number(e.target.value))}
-                      onBlur={() => handleBlur('price')}
-                      min="0"
-                      placeholder="0"
-                    />
-                    {touched.price && validationErrors.price && (
-                      <p className="text-danger text-xs mt-1 flex items-center gap-1">
-                        <i className="fas fa-exclamation-circle"></i>
-                        {validationErrors.price}
-                      </p>
-                    )}
-                  </div>
-                )}
-                <div>
-                  <label htmlFor="days" className="block text-gray-light mb-2 text-sm">الأيام (اختياري)</label>
-                  <input
-                    type="text"
-                    id="days"
-                    className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
-                    value={formData.days || ''}
-                    onChange={(e) => setFormData({ ...formData, days: e.target.value })}
-                    placeholder="مثال: سبت وثلاثاء"
-                  />
-                </div>
-              </div>
-              <div className="flex justify-end gap-3 p-6 border-t border-white/10 bg-white/5">
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={() => setShowModal(false)}
-                  disabled={isSubmitting}
-                >
-                  إلغاء
-                </button>
-                <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
-                  {isSubmitting ? 'جاري الحفظ...' : isEditing ? 'حفظ التعديلات' : 'إضافة'}
-                </button>
-              </div>
-            </form>
+          )}
+          <div>
+            <label htmlFor="days" className="block text-gray-light mb-2 text-sm">الأيام (اختياري)</label>
+            <Input
+              type="text"
+              id="days"
+              className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+              value={formData.days || ''}
+              onChange={(e) => setFormData({ ...formData, days: e.target.value })}
+              placeholder="مثال: سبت وثلاثاء"
+            />
           </div>
         </div>
-      )}
+      </FormModal>
 
       {/* Delete Confirmation Modal */}
-      {showDeleteModal && selectedGroup && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setShowDeleteModal(false)}>
-          <div className="bg-[#1e1e2d] rounded-2xl w-full max-w-md border border-white/10 shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
-            <div className="flex justify-between items-center p-6 border-b border-white/10">
-              <h3 className="text-xl font-bold text-white">تأكيد الحذف</h3>
-              <button className="text-gray-400 hover:text-white transition-colors" onClick={() => setShowDeleteModal(false)}>
-                <i className="fas fa-times text-xl"></i>
-              </button>
-            </div>
-            <div className="p-6">
-              <p className="text-gray-300">هل أنت متأكد من حذف المجموعة "{selectedGroup.name}"؟</p>
-              <p className="text-red-500 mt-2 text-sm">
-                سيتم حذف جميع البيانات المرتبطة بهذه المجموعة.
-              </p>
-            </div>
-            <div className="flex justify-end gap-3 p-6 border-t border-white/10 bg-white/5">
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={() => setShowDeleteModal(false)}
-                disabled={isSubmitting}
-              >
-                إلغاء
-              </button>
-              <button
-                type="button"
-                className="btn btn-danger"
-                onClick={confirmDelete}
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? 'جاري الحذف...' : 'حذف'}
-              </button>
-            </div>
+      <ConfirmationModal
+        isOpen={showDeleteModal}
+        title="تأكيد الحذف"
+        message={
+          <div>
+            <p className="text-gray-300">هل أنت متأكد من حذف المجموعة "{selectedGroup?.name}"؟</p>
+            <p className="text-red-500 mt-2 text-sm">
+              سيتم حذف جميع البيانات المرتبطة بهذه المجموعة.
+            </p>
           </div>
-        </div>
-      )}
+        }
+        confirmText={isSubmitting ? 'جاري الحذف...' : 'حذف'}
+        cancelText="إلغاء"
+        onConfirm={confirmDelete}
+        onCancel={() => setShowDeleteModal(false)}
+        isProcessing={isSubmitting}
+        variant="danger"
+      />
     </DashboardLayout>
   );
 }

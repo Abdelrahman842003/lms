@@ -7,8 +7,8 @@ import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { LoginContainer } from '@/components/auth/LoginContainer';
 import { LoginCard } from '@/components/auth/LoginCard';
 import { UserTypeSelector } from '@/components/auth/UserTypeSelector';
-import { AuthInput } from '@/components/auth/AuthInput';
-import { AuthButton } from '@/components/auth/AuthButton';
+import { Input } from '@/components/ui/Input';
+import { Button, Icon } from '@/components/ui';
 
 interface ValidationErrors {
   phone?: string;
@@ -279,11 +279,11 @@ export default function LoginPage() {
               <form onSubmit={handleSubmit} className="flex flex-col" noValidate>
                 {error && (
                   <div className={`flex items-center gap-[10px] p-[12px_16px] rounded-[10px] text-[0.9rem] mb-4 ${
-                    isBanned 
-                      ? 'bg-[#FF8C001A] border border-[#FF8C004D] text-[#FF8C00]' 
+                    isBanned
+                      ? 'bg-[#FF8C001A] border border-[#FF8C004D] text-[#FF8C00]'
                       : 'bg-[#FF5B5B1A] border border-[#FF5B5B4D] text-danger'
                   }`}>
-                    <i className={`fas ${isBanned ? 'fa-clock' : 'fa-exclamation-circle'} text-[1.1rem]`}></i>
+                    <Icon name={isBanned ? 'clock' : 'exclamation-circle'} size="md" className="text-[1.1rem]" />
                     <div className="flex flex-col">
                       <span>{error}</span>
                       {isBanned && countdown > 0 && (
@@ -296,7 +296,7 @@ export default function LoginPage() {
                 )}
 
                 <div className="mb-4">
-                  <AuthInput
+                  <Input
                     id="phone"
                     name="phone"
                     type="tel"
@@ -308,19 +308,20 @@ export default function LoginPage() {
                     onChange={handleInputChange}
                     onBlur={handleBlur}
                     onKeyDown={handleKeyDown}
-                    iconClass="fas fa-phone"
+                    icon="fas fa-phone"
                     required
+                    wrapperClassName="mb-0"
                   />
                   {touched.phone && validationErrors.phone && (
                     <p className="text-danger text-sm mt-1 flex items-center gap-1">
-                      <i className="fas fa-exclamation-circle text-xs"></i>
+                      <Icon name="exclamation-circle" size="xs" />
                       {validationErrors.phone}
                     </p>
                   )}
                 </div>
 
                 <div className="mb-4">
-                  <AuthInput
+                  <Input
                     id="password"
                     name="password"
                     type="password"
@@ -329,12 +330,13 @@ export default function LoginPage() {
                     value={formData.password}
                     onChange={handleInputChange}
                     onBlur={handleBlur}
-                    iconClass="fas fa-lock"
+                    icon="fas fa-lock"
                     required
+                    wrapperClassName="mb-0"
                   />
                   {touched.password && validationErrors.password && (
                     <p className="text-danger text-sm mt-1 flex items-center gap-1">
-                      <i className="fas fa-exclamation-circle text-xs"></i>
+                      <Icon name="exclamation-circle" size="xs" />
                       {validationErrors.password}
                     </p>
                   )}
@@ -347,23 +349,26 @@ export default function LoginPage() {
                   </label>
                 </div>
 
-                <AuthButton 
-                  isLoading={isLoading} 
-                  loadingText="جاري تسجيل الدخول..."
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="lg"
+                  loading={isLoading}
                   disabled={isBanned}
+                  className="flex items-center justify-center gap-[10px] p-4 bg-primary text-white border-none rounded-[12px] text-[1.05rem] font-bold font-tajawal cursor-pointer transition-all duration-300 mt-[10px] shadow-[0_5px_15px_rgba(66,99,235,0.3)] hover:bg-[#4263eb]/90 hover:-translate-y-0.5 hover:shadow-[0_8px_20px_rgba(66,99,235,0.4)] disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   {isBanned ? (
                     <>
-                      <i className="fas fa-clock text-[1rem]"></i>
+                      <Icon name="clock" size="md" className="text-[1rem]" />
                       <span>انتظر {countdown} ثانية</span>
                     </>
                   ) : (
                     <>
                       <span>تسجيل الدخول</span>
-                      <i className="fas fa-arrow-left text-[1rem]"></i>
+                      <Icon name="arrow-left" size="md" className="text-[1rem]" />
                     </>
                   )}
-                </AuthButton>
+                </Button>
               </form>
             </LoginCard>
           </div>

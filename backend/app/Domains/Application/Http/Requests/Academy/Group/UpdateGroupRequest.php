@@ -1,0 +1,41 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Domains\Application\Http\Requests\Academy\Group;
+
+use Illuminate\Foundation\Http\FormRequest;
+
+class UpdateGroupRequest extends FormRequest
+{
+    public function authorize(): bool
+    {
+        return true;
+    }
+
+    public function rules(): array
+    {
+        return [
+            'name' => ['required', 'string', 'max:255'],
+            'grade_id' => ['nullable', 'exists:grades,id'],
+            'time' => ['nullable', 'string'],
+            'days' => ['nullable', 'string'],
+            'type' => ['required', 'in:general,private'],
+            'price' => ['nullable', 'numeric', 'min:0'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'name.required' => 'اسم المجموعة مطلوب',
+            'name.string' => 'اسم المجموعة يجب أن يكون نصاً',
+            'name.max' => 'اسم المجموعة يجب ألا يتجاوز 255 حرفاً',
+            'grade_id.exists' => 'الصف الدراسي المختار غير موجود',
+            'type.required' => 'نوع المجموعة مطلوب',
+            'type.in' => 'نوع المجموعة غير صحيح',
+            'price.numeric' => 'سعر المجموعة يجب أن يكون رقماً',
+            'price.min' => 'سعر المجموعة لا يمكن أن يكون أقل من 0',
+        ];
+    }
+}

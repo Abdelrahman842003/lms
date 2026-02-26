@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { SidebarItem } from '@/types/dashboard';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
+import { Icon } from '@/components/ui';
 
 interface SidebarProps {
   role: 'admin' | 'teacher' | 'student' | 'secretary';
@@ -372,7 +373,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ role, user, isOpen, onClose, p
         <div className="sidebar-header">
           <div className="sidebar-logo">
             <div className="sidebar-logo-icon">
-              <i className="fas fa-graduation-cap"></i>
+              <Icon name="graduation-cap" />
             </div>
             <div className="sidebar-logo-text">
               <h2>منصة التعليم</h2>
@@ -396,7 +397,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ role, user, isOpen, onClose, p
                     >
                       <i className={item.icon}></i>
                       <span>{item.label}</span>
-                      <i className={`fas fa-chevron-down ms-auto sidebar-chevron ${expandedItems.includes(item.id) ? 'rotate-180' : ''}`}></i>
+                      <Icon name="chevron-down" className={`ms-auto sidebar-chevron ${expandedItems.includes(item.id) ? 'rotate-180' : ''}`} />
                     </a>
                     <div className="sidebar-nav-children">
                       {item.children.map((child) => (

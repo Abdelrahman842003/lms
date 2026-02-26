@@ -2,10 +2,10 @@
 
 namespace Tests\Feature;
 
-use App\Models\Academy;
-use App\Models\Lecture;
-use App\Models\Teacher;
-use App\Models\Grade;
+use App\Domains\Enrollments\Models\Grade;
+use App\Domains\Auth\Models\Academy;
+use App\Domains\Auth\Models\Teacher;
+use App\Domains\Lectures\Models\Lecture;
 use App\Services\Academy\LectureService;
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;

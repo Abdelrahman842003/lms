@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/Button';
 
 export default function InstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -46,18 +47,18 @@ export default function InstallPrompt() {
             قم بتثبيت التطبيق للوصول السريع وتلقي الإشعارات بشكل أفضل
           </p>
           <div className="flex gap-3">
-            <button
+            <Button
               onClick={handleInstall}
-              className="flex-1 bg-primary hover:bg-primary-dark text-white py-2 px-4 rounded-lg text-sm font-bold transition-colors"
+              className="flex-1"
             >
               تثبيت
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="ghost"
               onClick={() => setShowPrompt(false)}
-              className="px-4 py-2 text-gray-400 hover:text-white text-sm font-medium transition-colors"
             >
               لاحقاً
-            </button>
+            </Button>
           </div>
         </div>
       </div>

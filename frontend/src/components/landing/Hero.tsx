@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { fetchApi } from '@/services/authService';
+import { Icon, Button } from '@/components/ui';
 
 const animatedWords = ['معلم', 'طالب', 'ولي أمر', 'سكرتير'];
 
@@ -95,17 +96,17 @@ export default function Hero() {
             </div>
             <div className="stats-row-3d">
               <div className="stat-card-3d purple">
-                <div className="stat-icon-3d"><i className="fas fa-user-plus"></i></div>
+                <div className="stat-icon-3d"><Icon name="user-plus" /></div>
                 <div className="stat-number-3d">٢٥</div>
                 <div className="stat-label-3d">طالب جديد</div>
               </div>
               <div className="stat-card-3d blue">
-                <div className="stat-icon-3d"><i className="fas fa-user-check"></i></div>
+                <div className="stat-icon-3d"><Icon name="user-check" /></div>
                 <div className="stat-number-3d">١٢٠</div>
                 <div className="stat-label-3d">طالب نشط</div>
               </div>
               <div className="stat-card-3d green">
-                <div className="stat-icon-3d"><i className="fas fa-graduation-cap"></i></div>
+                <div className="stat-icon-3d"><Icon name="graduation-cap" /></div>
                 <div className="stat-number-3d">٩٥٪</div>
                 <div className="stat-label-3d">نسبة النجاح</div>
               </div>
@@ -146,17 +147,17 @@ export default function Hero() {
             </div>
             <div className="stats-row-3d">
               <div className="stat-card-3d blue">
-                <div className="stat-icon-3d"><i className="fas fa-calendar-check"></i></div>
+                <div className="stat-icon-3d"><Icon name="calendar-check" /></div>
                 <div className="stat-number-3d">٨</div>
                 <div className="stat-label-3d">محاضرة اليوم</div>
               </div>
               <div className="stat-card-3d purple">
-                <div className="stat-icon-3d"><i className="fas fa-clock"></i></div>
+                <div className="stat-icon-3d"><Icon name="clock" /></div>
                 <div className="stat-number-3d">٢٤</div>
                 <div className="stat-label-3d">ساعة أسبوعياً</div>
               </div>
               <div className="stat-card-3d green">
-                <div className="stat-icon-3d"><i className="fas fa-video"></i></div>
+                <div className="stat-icon-3d"><Icon name="video" /></div>
                 <div className="stat-number-3d">١٢</div>
                 <div className="stat-label-3d">تسجيل متاح</div>
               </div>
@@ -197,17 +198,17 @@ export default function Hero() {
             </div>
             <div className="stats-row-3d">
               <div className="stat-card-3d green">
-                <div className="stat-icon-3d"><i className="fas fa-check-circle"></i></div>
+                <div className="stat-icon-3d"><Icon name="check-circle" /></div>
                 <div className="stat-number-3d">١٥</div>
                 <div className="stat-label-3d">امتحان مكتمل</div>
               </div>
               <div className="stat-card-3d blue">
-                <div className="stat-icon-3d"><i className="fas fa-hourglass-half"></i></div>
+                <div className="stat-icon-3d"><Icon name="hourglass" /></div>
                 <div className="stat-number-3d">٣</div>
                 <div className="stat-label-3d">في الانتظار</div>
               </div>
               <div className="stat-card-3d purple">
-                <div className="stat-icon-3d"><i className="fas fa-star"></i></div>
+                <div className="stat-icon-3d"><Icon name="star" /></div>
                 <div className="stat-number-3d">٨٧٪</div>
                 <div className="stat-label-3d">متوسط الدرجات</div>
               </div>
@@ -248,17 +249,17 @@ export default function Hero() {
             </div>
             <div className="stats-row-3d">
               <div className="stat-card-3d purple">
-                <div className="stat-icon-3d"><i className="fas fa-chart-line"></i></div>
+                <div className="stat-icon-3d"><Icon name="chart-line" /></div>
                 <div className="stat-number-3d">↑ ١٥٪</div>
                 <div className="stat-label-3d">نمو شهري</div>
               </div>
               <div className="stat-card-3d green">
-                <div className="stat-icon-3d"><i className="fas fa-trophy"></i></div>
+                <div className="stat-icon-3d"><Icon name="trophy" /></div>
                 <div className="stat-number-3d">٤٥</div>
                 <div className="stat-label-3d">متفوق</div>
               </div>
               <div className="stat-card-3d blue">
-                <div className="stat-icon-3d"><i className="fas fa-file-pdf"></i></div>
+                <div className="stat-icon-3d"><Icon name="file-pdf" /></div>
                 <div className="stat-number-3d">٢٨</div>
                 <div className="stat-label-3d">تقرير جاهز</div>
               </div>
@@ -299,28 +300,28 @@ export default function Hero() {
             </div>
             <div className="settings-grid">
               <div className="setting-card">
-                <div className="setting-icon"><i className="fas fa-user-circle"></i></div>
+                <div className="setting-icon"><Icon name="user-circle" /></div>
                 <div className="setting-info">
                   <h4>الملف الشخصي</h4>
                   <p>تعديل بيانات الحساب</p>
                 </div>
               </div>
               <div className="setting-card">
-                <div className="setting-icon"><i className="fas fa-bell"></i></div>
+                <div className="setting-icon"><Icon name="bell" /></div>
                 <div className="setting-info">
                   <h4>الإشعارات</h4>
                   <p>إدارة تنبيهات التطبيق</p>
                 </div>
               </div>
               <div className="setting-card">
-                <div className="setting-icon"><i className="fas fa-lock"></i></div>
+                <div className="setting-icon"><Icon name="lock" /></div>
                 <div className="setting-info">
                   <h4>الأمان</h4>
                   <p>كلمة المرور والحماية</p>
                 </div>
               </div>
               <div className="setting-card">
-                <div className="setting-icon"><i className="fas fa-palette"></i></div>
+                <div className="setting-icon"><Icon name="palette" /></div>
                 <div className="setting-info">
                   <h4>المظهر</h4>
                   <p>تخصيص الألوان والثيم</p>
@@ -341,7 +342,7 @@ export default function Hero() {
                 <p>أدر منصتك التعليمية وارفع إنتاجية معلميك وتعاون بشكل أفضل لتحقيق أهداف التعليم المشتركة.</p>
                 <div className="mockup-buttons">
                   <Link href="/login" className="mockup-btn mockup-btn-primary">
-                    <i className="fas fa-sign-in-alt"></i>
+                    <Icon name="sign-in-alt" />
                     <span>تسجيل الدخول</span>
                   </Link>
                   <a 
@@ -367,17 +368,17 @@ export default function Hero() {
             </div>
             <div className="stats-row-3d">
               <div className="stat-card-3d purple">
-                <div className="stat-icon-3d"><i className="fas fa-users"></i></div>
+                <div className="stat-icon-3d"><Icon name="users" /></div>
                 <div className="stat-number-3d">١٥٠+</div>
                 <div className="stat-label-3d">طالب</div>
               </div>
               <div className="stat-card-3d blue">
-                <div className="stat-icon-3d"><i className="fas fa-book"></i></div>
+                <div className="stat-icon-3d"><Icon name="book" /></div>
                 <div className="stat-number-3d">٢٤</div>
                 <div className="stat-label-3d">محاضرة</div>
               </div>
               <div className="stat-card-3d green">
-                <div className="stat-icon-3d"><i className="fas fa-tasks"></i></div>
+                <div className="stat-icon-3d"><Icon name="tasks" /></div>
                 <div className="stat-number-3d">١٢</div>
                 <div className="stat-label-3d">واجب</div>
               </div>
@@ -434,7 +435,7 @@ export default function Hero() {
             {showMagic && (
               <div className="magic-overlay">
                 <div className="magic-wand">
-                  <i className="fas fa-magic"></i>
+                  <Icon name="magic" />
                   <div className="sparkles">
                     <span className="sparkle"></span>
                     <span className="sparkle"></span>
@@ -455,7 +456,7 @@ export default function Hero() {
                 <span className={mobileMenuOpen ? 'open' : ''}></span>
               </div>
               <span className="current-page-label">{getPageLabel(activePage)}</span>
-              <i className={`fas fa-chevron-down ${mobileMenuOpen ? 'rotate' : ''}`}></i>
+              <Icon name="chevron-down" className={mobileMenuOpen ? 'rotate' : ''} />
             </div>
 
             {/* Mobile Dropdown Menu */}
@@ -464,42 +465,42 @@ export default function Hero() {
                 className={`mobile-menu-item ${activePage === 'home' ? 'active' : ''}`}
                 onClick={() => handlePageChange('home')}
               >
-                <i className="fas fa-home"></i>
+                <Icon name="home" />
                 <span>الرئيسية</span>
               </div>
               <div 
                 className={`mobile-menu-item ${activePage === 'students' ? 'active' : ''}`}
                 onClick={() => handlePageChange('students')}
               >
-                <i className="fas fa-user-graduate"></i>
+                <Icon name="user-graduate" />
                 <span>الطلاب</span>
               </div>
               <div 
                 className={`mobile-menu-item ${activePage === 'lectures' ? 'active' : ''}`}
                 onClick={() => handlePageChange('lectures')}
               >
-                <i className="fas fa-book-open"></i>
+                <Icon name="book-open" />
                 <span>المحاضرات</span>
               </div>
               <div 
                 className={`mobile-menu-item ${activePage === 'exams' ? 'active' : ''}`}
                 onClick={() => handlePageChange('exams')}
               >
-                <i className="fas fa-clipboard-list"></i>
+                <Icon name="clipboard-list" />
                 <span>الامتحانات</span>
               </div>
               <div 
                 className={`mobile-menu-item ${activePage === 'reports' ? 'active' : ''}`}
                 onClick={() => handlePageChange('reports')}
               >
-                <i className="fas fa-chart-pie"></i>
+                <Icon name="chart-pie" />
                 <span>التقارير</span>
               </div>
               <div 
                 className={`mobile-menu-item ${activePage === 'settings' ? 'active' : ''}`}
                 onClick={() => handlePageChange('settings')}
               >
-                <i className="fas fa-cog"></i>
+                <Icon name="cog" />
                 <span>الإعدادات</span>
               </div>
             </div>
@@ -510,35 +511,35 @@ export default function Hero() {
                 className={`sidebar-item ${activePage === 'home' ? 'active' : ''}`}
                 onClick={() => handlePageChange('home')}
               >
-                <i className="fas fa-home"></i>
+                <Icon name="home" />
                 <span>الرئيسية</span>
               </div>
               <div 
                 className={`sidebar-item ${activePage === 'students' ? 'active' : ''}`}
                 onClick={() => handlePageChange('students')}
               >
-                <i className="fas fa-user-graduate"></i>
+                <Icon name="user-graduate" />
                 <span>الطلاب</span>
               </div>
               <div 
                 className={`sidebar-item ${activePage === 'lectures' ? 'active' : ''}`}
                 onClick={() => handlePageChange('lectures')}
               >
-                <i className="fas fa-book-open"></i>
+                <Icon name="book-open" />
                 <span>المحاضرات</span>
               </div>
               <div 
                 className={`sidebar-item ${activePage === 'exams' ? 'active' : ''}`}
                 onClick={() => handlePageChange('exams')}
               >
-                <i className="fas fa-clipboard-list"></i>
+                <Icon name="clipboard-list" />
                 <span>الامتحانات</span>
               </div>
               <div 
                 className={`sidebar-item ${activePage === 'reports' ? 'active' : ''}`}
                 onClick={() => handlePageChange('reports')}
               >
-                <i className="fas fa-chart-pie"></i>
+                <Icon name="chart-pie" />
                 <span>التقارير</span>
               </div>
               <div className="sidebar-divider"></div>
@@ -546,7 +547,7 @@ export default function Hero() {
                 className={`sidebar-item ${activePage === 'settings' ? 'active' : ''}`}
                 onClick={() => handlePageChange('settings')}
               >
-                <i className="fas fa-cog"></i>
+                <Icon name="cog" />
                 <span>الإعدادات</span>
               </div>
             </div>
@@ -559,7 +560,7 @@ export default function Hero() {
             {/* Left Notifications Panel */}
             <div className="notifications-panel-3d">
               <div className="panel-title-3d">
-                <i className="fas fa-bell"></i>
+                <Icon name="bell" />
                 <span>الإشعارات</span>
               </div>
               <div className="notification-list-3d">

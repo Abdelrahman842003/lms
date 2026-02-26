@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
+import { LoadingSpinner, Button, Icon, Input, Textarea } from '@/components/ui';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { createLecture, CreateLectureData } from '@/services/lectureService';
 import { getGrades } from '@/services/gradeService';
@@ -82,13 +83,14 @@ export default function CreateLecturePage() {
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <button
+          <Button
+            variant="ghost"
             onClick={() => router.back()}
             className="flex items-center gap-2 text-gray-400 hover:text-white mb-4 transition-colors"
           >
-            <i className="fas fa-arrow-right"></i>
+            <Icon name="arrowRight" />
             <span>رجوع</span>
-          </button>
+          </Button>
           <h1 className="text-3xl font-bold text-white">محاضرة جديدة</h1>
           <p className="text-gray-400 mt-2">أضف محاضرة جديدة للطلاب</p>
         </div>
@@ -99,14 +101,13 @@ export default function CreateLecturePage() {
             {/* Title */}
             <div className="form-group">
               <label htmlFor="title" className="block text-white mb-2">عنوان المحاضرة</label>
-              <input
-                type="text"
+              <Input
                 id="title"
-                className="form-input w-full"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 required
                 placeholder="مثال: مراجعة الفصل الأول"
+                className="w-full"
               />
             </div>
 
@@ -142,13 +143,13 @@ export default function CreateLecturePage() {
             {/* Description */}
             <div className="form-group">
               <label htmlFor="description" className="block text-white mb-2">الوصف (اختياري)</label>
-              <textarea
+              <Textarea
                 id="description"
-                className="form-input w-full"
                 value={formData.description || ''}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="وصف مختصر للمحاضرة..."
                 rows={3}
+                className="w-full"
               />
             </div>
 
@@ -209,25 +210,25 @@ export default function CreateLecturePage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="form-group">
                     <label htmlFor="recurrence_time" className="block text-white mb-2">وقت المحاضرة</label>
-                    <input
-                      type="time"
+                    <Input
                       id="recurrence_time"
-                      className="form-input w-full"
+                      type="time"
                       value={formData.recurrence_time}
                       onChange={(e) => setFormData({ ...formData, recurrence_time: e.target.value })}
                       required
+                      className="w-full"
                     />
                   </div>
                   <div className="form-group">
                     <label htmlFor="duration_minutes" className="block text-white mb-2">المدة (دقيقة)</label>
-                    <input
-                      type="number"
+                    <Input
                       id="duration_minutes"
-                      className="form-input w-full"
+                      type="number"
                       value={formData.duration_minutes}
                       onChange={(e) => setFormData({ ...formData, duration_minutes: parseInt(e.target.value) })}
                       min="1"
                       required
+                      className="w-full"
                     />
                   </div>
                 </div>
@@ -236,37 +237,37 @@ export default function CreateLecturePage() {
               <>
                 <div className="form-group">
                   <label htmlFor="date" className="block text-white mb-2">تاريخ المحاضرة</label>
-                  <input
-                    type="date"
+                  <Input
                     id="date"
-                    className="form-input w-full"
+                    type="date"
                     value={formData.date}
                     onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                     required
+                    className="w-full"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="form-group">
                     <label htmlFor="recurrence_time" className="block text-white mb-2">وقت المحاضرة</label>
-                    <input
-                      type="time"
+                    <Input
                       id="recurrence_time"
-                      className="form-input w-full"
+                      type="time"
                       value={formData.recurrence_time}
                       onChange={(e) => setFormData({ ...formData, recurrence_time: e.target.value })}
                       required
+                      className="w-full"
                     />
                   </div>
                   <div className="form-group">
                     <label htmlFor="duration_minutes" className="block text-white mb-2">المدة (دقيقة)</label>
-                    <input
-                      type="number"
+                    <Input
                       id="duration_minutes"
-                      className="form-input w-full"
+                      type="number"
                       value={formData.duration_minutes}
                       onChange={(e) => setFormData({ ...formData, duration_minutes: parseInt(e.target.value) })}
                       min="1"
                       required
+                      className="w-full"
                     />
                   </div>
                 </div>
@@ -276,31 +277,33 @@ export default function CreateLecturePage() {
 
           {/* Actions */}
           <div className="flex gap-4 mt-8 pt-6 border-t border-white/10">
-            <button
+            <Button
               type="button"
+              variant="secondary"
               onClick={() => router.back()}
-              className="btn btn-secondary flex-1"
+              className="flex-1"
               disabled={isSubmitting}
             >
               إلغاء
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
-              className="btn btn-primary flex-1"
+              variant="primary"
+              className="flex-1"
               disabled={isSubmitting}
             >
               {isSubmitting ? (
                 <>
-                  <i className="fas fa-spinner fa-spin ml-2"></i>
+                  <LoadingSpinner size="sm" color="white" className="ml-2" />
                   جاري الحفظ...
                 </>
               ) : (
                 <>
-                  <i className="fas fa-plus ml-2"></i>
+                  <Icon name="plus" className="ml-2" />
                   إضافة المحاضرة
                 </>
               )}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

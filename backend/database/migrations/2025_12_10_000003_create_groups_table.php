@@ -14,7 +14,7 @@ return new class extends Migration
             $table->foreignUuid('grade_id')->nullable()->constrained('grades')->onDelete('set null');
             $table->foreignUuid('teacher_id')->constrained('teachers')->onDelete('cascade');
             $table->uuid('academy_id')->nullable();
-            $table->string('type')->default(\App\Enums\GroupType::GENERAL->value);
+            $table->string('type')->default(\App\Domains\Enrollments\Enums\GroupType::GENERAL->value);
             $table->decimal('price', 8, 2)->nullable();
             $table->string('time')->nullable();
             $table->string('days')->nullable();

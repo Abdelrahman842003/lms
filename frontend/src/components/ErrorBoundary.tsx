@@ -1,6 +1,7 @@
 'use client';
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { Button } from '@/components/ui/Button';
 import { logger } from '@/utils/logger';
 
 interface Props {
@@ -99,19 +100,18 @@ export class ErrorBoundary extends Component<Props, State> {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <button
+              <Button
                 onClick={this.handleRetry}
-                className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
               >
                 حاول مرة أخرى
-              </button>
+              </Button>
               
-              <button
+              <Button
+                variant="secondary"
                 onClick={() => window.location.reload()}
-                className="px-6 py-2 bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
               >
                 إعادة تحميل الصفحة
-              </button>
+              </Button>
             </div>
 
             {/* Show error details in development */}

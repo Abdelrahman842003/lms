@@ -11,6 +11,7 @@ import * as academyService from '@/services/academyService';
 
 import QRCode from 'react-qr-code';
 import AttendanceDetailsModal from '@/components/dashboard/AttendanceDetailsModal';
+import { Button, Icon, Input, Textarea, Select, LoadingSpinner, Badge, FormModal } from '@/components/ui';
 
 export default function AttendancePage() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
@@ -139,7 +140,7 @@ export default function AttendancePage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <i className="fas fa-spinner fa-spin text-4xl text-primary mb-4"></i>
+          <LoadingSpinner size="sm" color="primary" />
           <p className="text-gray-400">جاري التحميل...</p>
         </div>
       </div>
@@ -190,20 +191,22 @@ export default function AttendancePage() {
           </p>
         </div>
         <div className="flex gap-3">
-          <button 
+          <Button 
+            variant="primary"
             onClick={() => openQrModal('check_in')}
-            className="btn btn-primary flex items-center gap-2"
+            className="flex items-center gap-2"
           >
-            <i className="fas fa-qrcode"></i>
+            <Icon name="qrcode" />
             <span>عرض QR الحضور</span>
-          </button>
-          <button 
+          </Button>
+          <Button
+            variant="outline"
             onClick={() => openQrModal('check_out')}
-            className="btn btn-danger flex items-center gap-2"
+            className="flex items-center gap-2 border-danger text-danger hover:bg-danger hover:text-white"
           >
-            <i className="fas fa-sign-out-alt"></i>
+            <Icon name="sign-out-alt" />
             <span>عرض QR الانصراف</span>
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -213,19 +216,19 @@ export default function AttendancePage() {
           <StatCard
             title="إجمالي الحضور"
             value={stats.summary?.total_present || 0}
-            icon="fas fa-check-circle"
+            icon="check-circle"
             color="success"
           />
           <StatCard
             title="إجمالي الغياب"
             value={stats.summary?.total_absent || 0}
-            icon="fas fa-times-circle"
+            icon="times-circle"
             color="danger"
           />
           <StatCard
             title="متوسط ساعات العمل"
             value={Math.floor((stats.summary?.average_duration_minutes || 0) / 60) + 'h'}
-            icon="fas fa-clock"
+            icon="clock"
             color="primary"
           />
         </div>
@@ -247,13 +250,11 @@ export default function AttendancePage() {
                     {log.checked_in_at ? new Date(log.checked_in_at).toLocaleTimeString('ar-EG') : ''}
                   </p>
                 </div>
-                <span
-                  className={`badge ${
-                    log.status === 'checked_in' ? 'badge-success' : 'badge-danger'
-                  }`}
+                <Badge
+                  variant={log.status === 'checked_in' ? 'success' : 'danger'}
                 >
                   {log.status === 'checked_in' ? 'حاضر' : 'انصرف'}
-                </span>
+                </Badge>
               </div>
             ))}
           </div>
@@ -270,11 +271,10 @@ export default function AttendancePage() {
           <div className="flex-1 w-full">
             <label className="block text-gray-400 text-sm mb-2">التاريخ</label>
             <div className="relative">
-              <input
+              <Input
                 type="date"
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
               />
             </div>
           </div>
@@ -293,38 +293,34 @@ export default function AttendancePage() {
       </DashboardCard>
 
       {/* QR Code Modal */}
-      {showQrModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[1000] p-4">
-          <div className="bg-[#1e1e2d] p-8 rounded-2xl w-full max-w-sm border border-white/10 text-center relative">
-            <button 
-              onClick={() => setShowQrModal(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
-            >
-              <i className="fas fa-times text-xl"></i>
-            </button>
-            
-            <h2 className="text-2xl font-bold text-white mb-2">
-              {qrType === 'check_in' ? 'رمز الحضور (QR)' : 'رمز الانصراف (QR)'}
-            </h2>
-            <p className="text-gray-400 mb-8 text-sm">
-              اطلب من المدرس مسح الرمز لتسجيل {qrType === 'check_in' ? 'الحضور' : 'الانصراف'}
-            </p>
-            
-            <div className="bg-white p-4 rounded-xl inline-block mb-6">
-              <QRCode 
-                value={qrValue}
-                size={200}
-                level="H"
-              />
-            </div>
-            
-            <div className="flex items-center justify-center gap-2 text-primary text-sm animate-pulse">
-              <i className="fas fa-sync-alt fa-spin"></i>
-              <span>يتم تحديث الرمز تلقائياً</span>
-            </div>
+      <FormModal
+        isOpen={showQrModal}
+        onClose={() => setShowQrModal(false)}
+        onSubmit={(e) => { e.preventDefault(); setShowQrModal(false); }}
+        title={qrType === 'check_in' ? 'رمز الحضور (QR)' : 'رمز الانصراف (QR)'}
+        submitText=""
+        cancelText="إغلاق"
+        maxWidth="400px"
+      >
+        <div className="text-center">
+          <p className="text-gray-400 mb-6 text-sm">
+            اطلب من المدرس مسح الرمز لتسجيل {qrType === 'check_in' ? 'الحضور' : 'الانصراف'}
+          </p>
+          
+          <div className="bg-white p-4 rounded-xl inline-block mb-6">
+            <QRCode
+              value={qrValue}
+              size={200}
+              level="H"
+            />
+          </div>
+          
+          <div className="flex items-center justify-center gap-2 text-primary text-sm animate-pulse">
+            <LoadingSpinner size="sm" color="primary" />
+            <span>يتم تحديث الرمز تلقائياً</span>
           </div>
         </div>
-      )}
+      </FormModal>
 
       {/* Attendance Details Modal */}
       <AttendanceDetailsModal

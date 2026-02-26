@@ -6,7 +6,7 @@ import { StatCard } from '@/components/dashboard/StatCard';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { fetchApi } from '@/services/authService';
-import { Skeleton } from '@/components/ui/Skeleton';
+import { Skeleton, Button, Icon } from '@/components/ui/index';
 import { Lecture, markStudentAttendance } from '@/services/lectureService';
 import QRScannerModal from '@/components/dashboard/QRScannerModal';
 import toast from 'react-hot-toast';
@@ -156,7 +156,7 @@ export default function StudentLecturesPage() {
           <div className="bg-[#1e1e2d] rounded-xl shadow-lg mb-8 border-2 border-success bg-success/5">
             <div className="p-4 md:p-6 border-b border-white/10 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <i className="fas fa-broadcast-tower text-success text-xl"></i>
+                <Icon name="broadcast-tower" className="text-success text-xl" />
                 <h2 className="text-xl font-bold text-success m-0">محاضرات جارية الآن</h2>
               </div>
             </div>
@@ -178,29 +178,34 @@ export default function StudentLecturesPage() {
                   </p>
                   <div className="grid gap-3 mb-4">
                     <div className="flex items-center gap-2 text-[0.9rem] text-light">
-                      <i className="fas fa-clock w-5 text-primary"></i>
+                      <Icon name="clock" className="w-5 text-primary" />
                       <span>{lecture.time} ({lecture.duration} دقيقة)</span>
                     </div>
                   </div>
 
                   {isAttended ? (
-                    <div 
-                      className="btn btn-outline-success btn-sm w-full cursor-default bg-success/10 border-success"
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full cursor-default bg-success/10 border-success text-success"
+                      disabled
                     >
-                      <i className="fas fa-check-circle"></i>
+                      <Icon name="check-circle" className="ml-2" />
                       <span>تم التسجيل</span>
-                    </div>
+                    </Button>
                   ) : (
-                    <button 
-                      className="btn btn-success btn-sm w-full" 
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      className="w-full"
                       onClick={() => {
                         setSelectedLectureForScan(lecture);
                         setShowScannerModal(true);
                       }}
                     >
-                      <i className="fas fa-qrcode"></i>
+                      <Icon name="qrcode" className="ml-2" />
                       <span>تسجيل حضور (Scan QR)</span>
-                    </button>
+                    </Button>
                   )}
                 </div>
               )})}
@@ -266,11 +271,11 @@ export default function StudentLecturesPage() {
                   </p>
                   <div className="grid gap-3 mb-4">
                     <div className="flex items-center gap-2 text-[0.9rem] text-light">
-                      <i className="fas fa-calendar w-5 text-primary"></i>
+                      <Icon name="calendar" className="w-5 text-primary" />
                       <span>{lecture.date}</span>
                     </div>
                     <div className="flex items-center gap-2 text-[0.9rem] text-light">
-                      <i className="fas fa-clock w-5 text-primary"></i>
+                      <Icon name="clock" className="w-5 text-primary" />
                       <span>{lecture.time} ({lecture.duration} دقيقة)</span>
                     </div>
                   </div>

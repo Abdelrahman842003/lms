@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { Button, Icon } from '@/components/ui';
 
 interface VoiceRecorderProps {
   maxDuration?: number;
@@ -188,7 +189,7 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
   if (!isSupported) {
     return (
       <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-center text-sm">
-        <i className="fas fa-exclamation-triangle mr-2"></i>
+        <Icon name="exclamation-triangle" className="mr-2" />
         {error || 'متصفحك لا يدعم تسجيل الصوت'}
       </div>
     );
@@ -198,7 +199,7 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
     <div className="relative w-full max-w-sm mx-auto">
       {error && (
         <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm flex items-center gap-2 animate-fadeIn">
-          <i className="fas fa-exclamation-circle"></i>
+          <Icon name="exclamation-circle" />
           <span>{error}</span>
         </div>
       )}
@@ -259,9 +260,9 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
                   ))}
                 </div>
               ) : recordingState === 'preview' ? (
-                <i className="fas fa-check text-4xl text-emerald-400 animate-scaleIn"></i>
+                <Icon name="check" size="3x" className="text-emerald-400 animate-scaleIn" />
               ) : (
-                <i className="fas fa-microphone text-3xl text-gray-400 group-hover:text-white transition-colors"></i>
+                <Icon name="microphone" size="2x" className="text-gray-400 group-hover:text-white transition-colors" />
               )}
             </div>
             
@@ -321,54 +322,58 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
           {/* Controls */}
           <div className="flex items-center gap-3 w-full">
             {recordingState === 'idle' && (
-              <button
+              <Button
                 onClick={startRecording}
                 disabled={disabled}
                 className="w-full py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl font-semibold shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:-translate-y-0.5 active:translate-y-0 transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
               >
-                <i className="fas fa-microphone mr-2 group-hover:scale-110 transition-transform"></i>
+                <Icon name="microphone" className="mr-2 group-hover:scale-110 transition-transform" />
                 ابدأ التسجيل
-              </button>
+              </Button>
             )}
 
             {recordingState === 'recording' && (
-              <button
+              <Button
                 onClick={stopRecording}
-                className="w-full py-3.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 border border-red-500/20 hover:border-red-500/30 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 group"
+                variant="outline"
+                className="w-full py-3.5 border-red-500/20 text-red-400 hover:text-red-300 hover:bg-red-500/20 hover:border-red-500/30 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 group"
               >
                 <div className="w-3 h-3 bg-current rounded-sm group-hover:scale-110 transition-transform" />
                 إيقاف التسجيل
-              </button>
+              </Button>
             )}
 
             {recordingState === 'preview' && (
               <>
-                <button 
+                <Button 
                   onClick={resetRecording} 
+                  variant="outline"
                   className="flex-1 py-3.5 bg-gray-700/50 hover:bg-gray-700 text-gray-300 hover:text-white rounded-xl font-medium transition-all flex items-center justify-center gap-2"
                 >
-                  <i className="fas fa-redo text-xs"></i>
+                  <Icon name="redo" size="xs" />
                   إعادة
-                </button>
-                <button 
+                </Button>
+                <Button 
                   onClick={confirmRecording} 
+                  variant="primary"
                   className="flex-[2] py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl font-semibold shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center justify-center gap-2"
                 >
-                  <i className="fas fa-paper-plane text-xs"></i>
+                  <Icon name="paper-plane" size="xs" />
                   إرسال
-                </button>
+                </Button>
               </>
             )}
           </div>
 
           {/* Cancel Button */}
           {onCancel && recordingState !== 'recording' && (
-            <button 
+            <Button 
               onClick={onCancel} 
+              variant="ghost"
               className="mt-4 text-gray-500 hover:text-gray-300 text-sm font-medium transition-colors"
             >
               إلغاء الأمر
-            </button>
+            </Button>
           )}
         </div>
       </div>

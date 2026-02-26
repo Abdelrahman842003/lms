@@ -3,10 +3,14 @@
 import React from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
+import { Button, Icon, Input } from '@/components/ui';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { uploadAvatar, deleteAvatar, getAvatarUrl } from '@/services/avatarService';
 import { getAuthToken } from '@/services/authService';
-import { ImageCropModal, ConfirmationModal, Skeleton } from '@/components/ui';
+import ImageCropModal from '@/components/ui/ImageCropModal';
+import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import { toast } from 'react-hot-toast';
 
 export default function TeacherProfile() {
@@ -331,13 +335,10 @@ export default function TeacherProfile() {
           title="المعلومات الشخصية"
           icon="fas fa-user"
           action={
-            <button
-              className="btn btn-primary"
-              onClick={() => setIsEditing(!isEditing)}
-            >
-              <i className={isEditing ? 'fas fa-times' : 'fas fa-edit'}></i>
+            <Button onClick={() => setIsEditing(!isEditing)}>
+              <Icon name={isEditing ? 'times' : 'edit'} className="ml-2" />
               <span>{isEditing ? 'إلغاء' : 'تعديل'}</span>
-            </button>
+            </Button>
           }
         >
           <div className="py-6">
@@ -347,9 +348,9 @@ export default function TeacherProfile() {
                 className={`w-[120px] h-[120px] rounded-full flex items-center justify-center text-5xl font-bold text-white relative overflow-hidden ${(avatarPreview || avatarUrl) ? '' : 'bg-gradient-to-br from-primary to-secondary'}`}
               >
                 {(avatarPreview || avatarUrl) ? (
-                  <img 
-                    src={avatarPreview || avatarUrl || ''} 
-                    alt="Avatar" 
+                  <img
+                    src={avatarPreview || avatarUrl || ''}
+                    alt="Avatar"
                     className="w-full h-full object-cover"
                   />
                 ) : (
@@ -357,7 +358,7 @@ export default function TeacherProfile() {
                 )}
                 {isUploadingAvatar && (
                   <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                    <div className="w-8 h-8 border-[3px] border-white/30 border-t-white rounded-full animate-spin"></div>
+                    <LoadingSpinner size="md" color="white" />
                   </div>
                 )}
               </div>
@@ -377,22 +378,25 @@ export default function TeacherProfile() {
                       onChange={handleAvatarChange}
                       className="hidden"
                     />
-                    <button 
-                      className="btn btn-sm btn-outline" 
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => fileInputRef.current?.click()}
                       disabled={isUploadingAvatar}
                     >
-                      <i className="fas fa-camera"></i>
+                      <Icon name="camera" className="ml-2" />
                       <span>{avatarUrl ? 'تغيير الصورة' : 'رفع صورة'}</span>
-                    </button>
+                    </Button>
                     {avatarUrl && (
-                      <button 
-                        className="btn btn-sm btn-outline bg-red-500/10 border-red-500 text-red-500 hover:bg-red-500/20" 
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="bg-red-500/10 border-red-500 text-red-500 hover:bg-red-500/20"
                         onClick={handleAvatarDelete}
                         disabled={isUploadingAvatar}
                       >
-                        <i className="fas fa-trash"></i>
-                      </button>
+                        <Icon name="trash" />
+                      </Button>
                     )}
                   </div>
                 )}
@@ -406,12 +410,11 @@ export default function TeacherProfile() {
                   <label className="block text-gray-light text-sm mb-2 font-semibold">
                     الاسم
                   </label>
-                  <input
-                    type="text"
+                  <Input
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     disabled={!isEditing}
-                    className={`w-full px-4 py-3 border border-white/10 rounded-lg text-white text-[0.95rem] font-tajawal ${isEditing ? 'bg-white/5' : 'bg-white/2'}`}
+                    className={`w-full ${isEditing ? 'bg-white/5' : 'bg-white/2'}`}
                   />
                 </div>
 
@@ -420,13 +423,13 @@ export default function TeacherProfile() {
 
               {isEditing && (
                 <div className="mt-6 flex gap-3 justify-end">
-                  <button type="button" className="btn btn-outline" onClick={() => setIsEditing(false)}>
+                  <Button type="button" variant="outline" onClick={() => setIsEditing(false)}>
                     إلغاء
-                  </button>
-                  <button type="submit" className="btn btn-primary">
-                    <i className="fas fa-save"></i>
+                  </Button>
+                  <Button type="submit">
+                    <Icon name="save" className="ml-2" />
                     <span>حفظ التغييرات</span>
-                  </button>
+                  </Button>
                 </div>
               )}
             </form>
@@ -446,13 +449,11 @@ export default function TeacherProfile() {
                   <label className="block text-gray-light text-sm mb-2 font-semibold">
                     كلمة المرور الحالية
                   </label>
-                  <input
+                  <Input
                     type="password"
                     value={formData.currentPassword}
                     onChange={(e) => setFormData({ ...formData, currentPassword: e.target.value })}
-                    className={`w-full px-4 py-3 bg-white/5 border rounded-lg text-white text-[0.95rem] font-tajawal ${
-                      errors.currentPassword ? 'border-red-500/50' : 'border-white/10'
-                    }`}
+                    className={errors.currentPassword ? 'border-red-500/50' : ''}
                   />
                   {errors.currentPassword && (
                     <p className="text-red-500 text-xs mt-1">{errors.currentPassword}</p>
@@ -463,13 +464,11 @@ export default function TeacherProfile() {
                   <label className="block text-gray-light text-sm mb-2 font-semibold">
                     كلمة المرور الجديدة
                   </label>
-                  <input
+                  <Input
                     type="password"
                     value={formData.newPassword}
                     onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
-                    className={`w-full px-4 py-3 bg-white/5 border rounded-lg text-white text-[0.95rem] font-tajawal ${
-                      errors.newPassword ? 'border-red-500/50' : 'border-white/10'
-                    }`}
+                    className={errors.newPassword ? 'border-red-500/50' : ''}
                   />
                   {errors.newPassword && (
                     <p className="text-red-500 text-xs mt-1">{errors.newPassword}</p>
@@ -502,17 +501,17 @@ export default function TeacherProfile() {
                   <label className="block text-gray-light text-sm mb-2 font-semibold">
                     تأكيد كلمة المرور الجديدة
                   </label>
-                  <input
+                  <Input
                     type="password"
                     value={formData.confirmPassword}
                     onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                    className={`w-full px-4 py-3 bg-white/5 border rounded-lg text-white text-[0.95rem] font-tajawal ${
+                    className={
                       errors.confirmPassword || (formData.confirmPassword && formData.newPassword !== formData.confirmPassword)
                         ? 'border-red-500/50'
                         : formData.confirmPassword && formData.newPassword === formData.confirmPassword
                         ? 'border-green-500/50'
-                        : 'border-white/10'
-                    }`}
+                        : ''
+                    }
                   />
                   {errors.confirmPassword && (
                     <p className="text-red-500 text-xs mt-1">{errors.confirmPassword}</p>
@@ -528,10 +527,10 @@ export default function TeacherProfile() {
               </div>
 
               <div className="mt-6">
-                <button type="submit" className="btn btn-primary">
-                  <i className="fas fa-key"></i>
+                <Button type="submit">
+                  <Icon name="key" className="ml-2" />
                   <span>تغيير كلمة المرور</span>
-                </button>
+                </Button>
               </div>
             </form>
           </div>

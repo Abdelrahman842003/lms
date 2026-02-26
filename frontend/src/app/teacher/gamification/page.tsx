@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
+import { Button, LoadingSpinner, Icon, Input } from '@/components/ui';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { fetchApi } from '@/services/authService';
 import { getGrades, getGroups } from '@/services/teacherService';
@@ -205,55 +206,51 @@ export default function TeacherGamificationPage() {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-2xl font-bold text-white mb-2 flex items-center gap-3">
-              <i className="fas fa-trophy text-yellow-500"></i>
+              <Icon name="trophy" className="text-yellow-500" />
               نظام النقاط والليدربورد
             </h1>
             <p className="text-gray-400">إدارة نقاط الطلاب ولوحة الشرف</p>
           </div>
-          <Link href="/teacher/dashboard" className="btn btn-outline btn-sm">
-            <i className="fas fa-arrow-right ml-2"></i>
-            العودة
+          <Link href="/teacher/dashboard">
+            <Button variant="outline" size="sm">
+              <Icon name="arrow-right" className="ml-2" />
+              العودة
+            </Button>
           </Link>
         </div>
 
         {/* Tabs */}
         <div className="flex gap-2 mb-6">
-          <button
+          <Button
             onClick={() => setActiveTab('leaderboard')}
-            className={`px-6 py-3 rounded-xl font-semibold transition-all ${
-              activeTab === 'leaderboard'
-                ? 'bg-primary text-white'
-                : 'bg-white/5 text-gray-400 hover:bg-white/10'
-            }`}
+            variant={activeTab === 'leaderboard' ? 'primary' : 'ghost'}
+            className={activeTab === 'leaderboard' ? 'bg-primary' : 'bg-white/5 text-gray-400 hover:bg-white/10'}
           >
-            <i className="fas fa-medal ml-2"></i>
+            <Icon name="medal" className="ml-2" />
             لوحة الشرف
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => setActiveTab('settings')}
-            className={`px-6 py-3 rounded-xl font-semibold transition-all ${
-              activeTab === 'settings'
-                ? 'bg-primary text-white'
-                : 'bg-white/5 text-gray-400 hover:bg-white/10'
-            }`}
+            variant={activeTab === 'settings' ? 'primary' : 'ghost'}
+            className={activeTab === 'settings' ? 'bg-primary' : 'bg-white/5 text-gray-400 hover:bg-white/10'}
           >
-            <i className="fas fa-cog ml-2"></i>
+            <Icon name="cog" className="ml-2" />
             الإعدادات
-          </button>
+          </Button>
         </div>
 
         {activeTab === 'leaderboard' && (
           <div className="space-y-6">
-            {/* Search Bar */}
+            {/* Search Bar - Uses Filter component with search */}
             <div className="relative">
-              <input
-                type="text"
-                placeholder="ابحث عن طالب..."
+              <Filter
+                options={[]}
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full p-3 pr-12 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                onChange={setSearchQuery}
+                placeholder="ابحث عن طالب..."
+                icon="search"
+                className="w-full"
               />
-              <i className="fas fa-search absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
             </div>
 
             {/* Filters */}
@@ -263,7 +260,7 @@ export default function TeacherGamificationPage() {
                 value={selectedGrade}
                 onChange={setSelectedGrade}
                 placeholder="اختر الصف"
-                icon="fas fa-graduation-cap"
+                icon="graduation-cap"
               />
 
               <Filter
@@ -271,54 +268,48 @@ export default function TeacherGamificationPage() {
                 value={selectedGroup}
                 onChange={setSelectedGroup}
                 placeholder="اختر المجموعة"
-                icon="fas fa-users"
+                icon="users"
                 disabled={!selectedGrade}
               />
             </div>
 
             {/* Leaderboard Type Toggle */}
             <div className="flex gap-2 justify-center">
-              <button
+              <Button
                 onClick={() => setLeaderboardType('weekly')}
-                className={`px-6 py-3 rounded-xl font-semibold transition-all ${
-                  leaderboardType === 'weekly'
-                    ? 'bg-primary text-white shadow-lg shadow-primary/20'
-                    : 'bg-white/5 text-gray-400 hover:bg-white/10'
-                }`}
+                variant={leaderboardType === 'weekly' ? 'primary' : 'ghost'}
+                className={leaderboardType === 'weekly' ? 'shadow-lg shadow-primary/20' : 'bg-white/5 text-gray-400 hover:bg-white/10'}
               >
-                <i className="fas fa-calendar-week ml-2"></i>
+                <Icon name="calendar" className="ml-2" />
                 أشطر الطلاب هذا الشهر
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => setLeaderboardType('all_time')}
-                className={`px-6 py-3 rounded-xl font-semibold transition-all ${
-                  leaderboardType === 'all_time'
-                    ? 'bg-secondary text-white shadow-lg shadow-secondary/20'
-                    : 'bg-white/5 text-gray-400 hover:bg-white/10'
-                }`}
+                variant={leaderboardType === 'all_time' ? 'primary' : 'ghost'}
+                className={leaderboardType === 'all_time' ? 'bg-secondary shadow-lg shadow-secondary/20' : 'bg-white/5 text-gray-400 hover:bg-white/10'}
               >
-                <i className="fas fa-infinity ml-2"></i>
+                <Icon name="infinity" className="ml-2" />
                 أشطر الطلاب على الإطلاق
-              </button>
+              </Button>
             </div>
 
             {loading ? (
               <div className="text-center py-16">
-                <i className="fas fa-spinner fa-spin text-4xl text-primary"></i>
+                <LoadingSpinner size="lg" />
                 <p className="text-gray-400 mt-4">جاري التحميل...</p>
               </div>
             ) : (
               <>
                 {/* Single Leaderboard */}
-                <DashboardCard 
-                  title={leaderboardType === 'weekly' ? 'أشطر الطلاب هذا الشهر' : 'أشطر الطلاب على الإطلاق'} 
+                <DashboardCard
+                  title={leaderboardType === 'weekly' ? 'أشطر الطلاب هذا الشهر' : 'أشطر الطلاب على الإطلاق'}
                   icon={leaderboardType === 'weekly' ? 'fas fa-calendar-week' : 'fas fa-infinity'}
                 >
                   {(leaderboardType === 'weekly' ? weeklyLeaderboard : allTimeLeaderboard)
                     .filter(entry => entry.student.name.toLowerCase().includes(searchQuery.toLowerCase()))
                     .length === 0 ? (
                     <div className="text-center py-8 text-gray-400">
-                      <i className="fas fa-chart-line text-3xl mb-3 opacity-50"></i>
+                      <Icon name="chart" className="text-3xl mb-3 opacity-50" />
                       <p>لا توجد بيانات بعد</p>
                     </div>
                   ) : (
@@ -346,23 +337,20 @@ export default function TeacherGamificationPage() {
                 {/* Load More Button */}
                 {hasMore && !searchQuery && (
                   <div className="flex justify-center">
-                    <button
+                    <Button
                       onClick={loadMore}
                       disabled={loadingMore}
-                      className="px-8 py-3 rounded-xl bg-primary hover:bg-primary/80 text-white font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                      loading={loadingMore}
                     >
                       {loadingMore ? (
-                        <>
-                          <i className="fas fa-spinner fa-spin"></i>
-                          <span>جاري التحميل...</span>
-                        </>
+                        <span>جاري التحميل...</span>
                       ) : (
                         <>
-                          <i className="fas fa-chevron-down"></i>
+                          <Icon name="chevron-down" className="ml-2" />
                           <span>عرض المزيد</span>
                         </>
                       )}
-                    </button>
+                    </Button>
                   </div>
                 )}
               </>
@@ -373,7 +361,7 @@ export default function TeacherGamificationPage() {
         {activeTab === 'settings' && (
           loading ? (
             <div className="text-center py-16">
-              <i className="fas fa-spinner fa-spin text-4xl text-primary"></i>
+              <LoadingSpinner size="lg" />
               <p className="text-gray-400 mt-4">جاري التحميل...</p>
             </div>
           ) : (
@@ -416,7 +404,7 @@ export default function TeacherGamificationPage() {
 
                     <div className="p-4 bg-white/5 rounded-xl">
                       <h4 className="font-medium text-white mb-2">عدد الطلاب في الليدربورد</h4>
-                      <input
+                      <Input
                         type="number"
                         min="3"
                         max="20"
@@ -445,7 +433,7 @@ export default function TeacherGamificationPage() {
                           <span>{item.icon}</span>
                           <span className="text-white text-sm">{item.label}</span>
                         </div>
-                        <input
+                        <Input
                           type="number"
                           min="0"
                           max="200"
@@ -464,7 +452,7 @@ export default function TeacherGamificationPage() {
 
         {saving && (
           <div className="fixed bottom-4 left-4 bg-primary text-white px-4 py-2 rounded-lg flex items-center gap-2">
-            <i className="fas fa-spinner fa-spin"></i>
+            <LoadingSpinner size="sm" color="white" />
             جاري الحفظ...
           </div>
         )}

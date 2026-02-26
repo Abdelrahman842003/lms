@@ -11,6 +11,7 @@ import * as academyService from '@/services/academyService';
 import { Group } from '@/services/groupService';
 import toast from 'react-hot-toast';
 import QRCode from 'react-qr-code';
+import { Button, Icon } from '@/components/ui';
 
 export default function StudentAttendanceSection() {
   const router = useRouter();
@@ -320,15 +321,15 @@ export default function StudentAttendanceSection() {
       <div className="flex justify-between items-center mb-6 max-md:flex-col max-md:items-stretch max-md:gap-4">
         <div className="flex items-center gap-3 max-md:w-full max-md:justify-center">
           <div className="w-12 h-12 rounded-xl bg-[rgba(66,99,235,0.1)] flex items-center justify-center text-primary text-2xl">
-            <i className="fas fa-video"></i>
+            <Icon name="video" />
           </div>
           <h2 className="text-2xl font-bold text-white m-0">إدارة المحاضرات</h2>
         </div>
         <div className="max-md:w-full">
-          <button onClick={handleAddClick} className="btn btn-primary max-md:w-full max-md:justify-center">
-            <i className="fas fa-plus"></i>
+          <Button variant="primary" onClick={handleAddClick} className="btn btn-primary max-md:w-full max-md:justify-center">
+            <Icon name="plus" />
             <span>محاضرة جديدة</span>
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -391,12 +392,12 @@ export default function StudentAttendanceSection() {
         </div>
       ) : lectures.length === 0 ? (
         <div className="text-center p-12 bg-white/2 rounded-2xl">
-          <i className="fas fa-video-slash text-5xl text-gray-light mb-4 opacity-50"></i>
+          <Icon name="video-slash" className="text-5xl text-gray-light mb-4 opacity-50" />
           <p className="text-gray-light text-lg">لا توجد محاضرات</p>
-          <button onClick={handleAddClick} className="btn btn-primary mt-4">
-            <i className="fas fa-plus"></i>
+          <Button variant="primary" onClick={handleAddClick} className="btn btn-primary mt-4">
+            <Icon name="plus" />
             <span>إضافة محاضرة جديدة</span>
-          </button>
+          </Button>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -482,23 +483,25 @@ export default function StudentAttendanceSection() {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex justify-center mt-6 gap-2">
-          <button
+          <Button
+            variant="outline"
             className="btn btn-outline btn-sm"
             disabled={currentPage === 1}
             onClick={() => fetchLectures(currentPage - 1)}
           >
             السابق
-          </button>
+          </Button>
           <span className="flex items-center text-gray-light">
             صفحة {currentPage} من {totalPages}
           </span>
-          <button
+          <Button
+            variant="outline"
             className="btn btn-outline btn-sm"
             disabled={currentPage === totalPages}
             onClick={() => fetchLectures(currentPage + 1)}
           >
             التالي
-          </button>
+          </Button>
         </div>
       )}
 
@@ -516,9 +519,9 @@ export default function StudentAttendanceSection() {
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>{isEditing ? 'تعديل المحاضرة' : 'محاضرة جديدة'}</h3>
-              <button className="modal-close" onClick={() => setShowModal(false)}>
-                <i className="fas fa-times"></i>
-              </button>
+              <Button variant="ghost" className="modal-close" onClick={() => setShowModal(false)}>
+                <Icon name="times" />
+              </Button>
             </div>
             <form onSubmit={handleSubmit}>
               <div className="modal-body">
@@ -705,17 +708,18 @@ export default function StudentAttendanceSection() {
                 )}
               </div>
               <div className="modal-footer">
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
                   className="btn btn-secondary"
                   onClick={() => setShowModal(false)}
                   disabled={isSubmitting}
                 >
                   إلغاء
-                </button>
-                <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+                </Button>
+                <Button type="submit" variant="primary" className="btn btn-primary" disabled={isSubmitting}>
                   {isSubmitting ? 'جاري الحفظ...' : isEditing ? 'حفظ التعديلات' : 'إضافة'}
-                </button>
+                </Button>
               </div>
             </form>
           </div>
@@ -733,12 +737,12 @@ export default function StudentAttendanceSection() {
               <p className="text-gray-300">هل أنت متأكد من حذف المحاضرة "{selectedLecture?.title}"؟</p>
             </div>
             <div className="modal-footer">
-              <button className="btn btn-ghost" onClick={() => setShowDeleteModal(false)}>
+              <Button variant="ghost" className="btn btn-ghost" onClick={() => setShowDeleteModal(false)}>
                 إلغاء
-              </button>
-              <button className="btn btn-danger" onClick={confirmDelete} disabled={isSubmitting}>
+              </Button>
+              <Button variant="primary" className="btn btn-danger" onClick={confirmDelete} disabled={isSubmitting}>
                 {isSubmitting ? 'جاري الحذف...' : 'حذف'}
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -757,12 +761,12 @@ export default function StudentAttendanceSection() {
               </p>
             </div>
             <div className="modal-footer">
-              <button className="btn btn-ghost" onClick={() => setShowActivationModal(false)}>
+              <Button variant="ghost" className="btn btn-ghost" onClick={() => setShowActivationModal(false)}>
                 إلغاء
-              </button>
-              <button className="btn btn-primary" onClick={confirmActivation}>
+              </Button>
+              <Button variant="primary" className="btn btn-primary" onClick={confirmActivation}>
                 تأكيد
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -781,12 +785,12 @@ export default function StudentAttendanceSection() {
               </p>
             </div>
             <div className="modal-footer">
-              <button className="btn btn-ghost" onClick={() => setShowEndLectureModal(false)}>
+              <Button variant="ghost" className="btn btn-ghost" onClick={() => setShowEndLectureModal(false)}>
                 إلغاء
-              </button>
-              <button className="btn btn-danger" onClick={confirmEndLecture}>
+              </Button>
+              <Button variant="primary" className="btn btn-danger" onClick={confirmEndLecture}>
                 إنهاء
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -812,12 +816,13 @@ export default function StudentAttendanceSection() {
                 </div>
               )}
 
-              <button
+              <Button
+                variant="primary"
                 onClick={() => setShowQRModal(false)}
                 className="w-full py-3 px-4 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors font-medium"
               >
                 إغلاق
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -836,12 +841,12 @@ export default function StudentAttendanceSection() {
               </p>
             </div>
             <div className="modal-footer">
-              <button className="btn btn-ghost" onClick={() => setShowCancelSessionModal(false)}>
+              <Button variant="ghost" className="btn btn-ghost" onClick={() => setShowCancelSessionModal(false)}>
                 إلغاء
-              </button>
-              <button className="btn btn-danger" onClick={confirmCancelSession}>
+              </Button>
+              <Button variant="primary" className="btn btn-danger" onClick={confirmCancelSession}>
                 تأكيد الإلغاء
-              </button>
+              </Button>
             </div>
           </div>
         </div>

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { StatCard } from '@/components/dashboard/StatCard';
+import { Button, LoadingSpinner, Icon, Badge } from '@/components/ui';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { useRouter } from 'next/navigation';
 import ScanAttendanceModal from '@/components/dashboard/ScanAttendanceModal';
@@ -52,8 +53,8 @@ export default function TeacherAttendancePage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <i className="fas fa-spinner fa-spin text-4xl text-primary mb-4"></i>
-          <p className="text-gray-400">جاري التحميل...</p>
+          <LoadingSpinner size="lg" />
+          <p className="text-gray-400 mt-4">جاري التحميل...</p>
         </div>
       </div>
     );
@@ -65,7 +66,7 @@ export default function TeacherAttendancePage() {
       <DashboardLayout role="teacher" user={user}>
         <div className="min-h-[60vh] flex items-center justify-center">
           <div className="text-center max-w-md">
-            <i className="fas fa-building text-6xl text-gray-600 mb-6"></i>
+            <Icon name="university" size="3x" className="text-gray-600 mb-6" />
             <h2 className="text-2xl font-bold text-white mb-4">
               هذه الميزة متاحة فقط للمدرسين في الأكاديميات
             </h2>
@@ -125,22 +126,23 @@ export default function TeacherAttendancePage() {
 
       {/* Scan Button */}
       <div className="mb-8">
-        <button
+        <Button
           onClick={() => setIsScanModalOpen(true)}
-          className="btn btn-primary btn-lg w-full md:w-auto"
+          variant="primary"
+          size="lg"
         >
-          <i className="fas fa-qrcode"></i>
-          <span>مسح رمز QR للحضور/الانصراف</span>
-        </button>
+          <Icon name="qrcode" className="ml-2" />
+          مسح رمز QR للحضور/الانصراف
+        </Button>
       </div>
 
       {/* Today's Attendance Logs */}
       <DashboardCard title="سجل الحضور اليوم">
         {isLoading ? (
-          <div className="text-center py-8">
-            <i className="fas fa-spinner fa-spin text-2xl text-primary"></i>
-          </div>
-        ) : todayLogs.length > 0 ? (
+            <div className="text-center py-8">
+              <LoadingSpinner size="lg" />
+            </div>
+          ) : todayLogs.length > 0 ? (
           <div className="space-y-4">
             {todayLogs.map((log, index) => (
               <div
@@ -149,19 +151,17 @@ export default function TeacherAttendancePage() {
               >
                 <div>
                   <div className="flex items-center gap-3 mb-2">
-                    <span
-                      className={`badge ${
-                        log.status === 'checked_in' ? 'badge-success' : 'badge-danger'
-                      }`}
+                    <Badge
+                      variant={log.status === 'checked_in' ? 'success' : 'danger'}
                     >
                       {log.status === 'checked_in' ? 'حضور' : 'انصراف'}
-                    </span>
+                    </Badge>
                     <span className="text-white font-semibold">
                       {log.academy?.name || selectedAcademy.name}
                     </span>
                   </div>
                   <div className="text-sm text-gray-400">
-                    <i className="fas fa-clock mr-2"></i>
+                    <Icon name="clock" className="mr-2" />
                     الحضور: {log.checked_in_at ? new Date(log.checked_in_at).toLocaleTimeString('ar-EG') : '-'}
                     {log.checked_out_at && (
                       <>
@@ -184,7 +184,7 @@ export default function TeacherAttendancePage() {
           </div>
         ) : (
           <div className="text-center py-12">
-            <i className="fas fa-calendar-times text-4xl text-gray-600 mb-4"></i>
+            <Icon name="calendar" size="2x" className="text-gray-600 mb-4" />
             <p className="text-gray-400">لا يوجد سجل حضور لليوم</p>
             <p className="text-sm text-gray-500 mt-2">
               قم بمسح رمز QR لتسجيل حضورك

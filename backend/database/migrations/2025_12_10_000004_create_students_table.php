@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('phone')->nullable()->unique();
             $table->string('parent_phone')->nullable();
             $table->uuid('guardian_id')->nullable();
-            $table->string('gender')->default(\App\Enums\StudentGender::MALE->value);
+            $table->string('gender')->default(\App\Domains\Auth\Enums\StudentGender::MALE->value);
             $table->string('education_type')->nullable();
             
             $table->timestamps();

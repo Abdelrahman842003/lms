@@ -2,7 +2,7 @@
 
 namespace App\Filament\Resources\StudentResource\RelationManagers;
 
-use App\Enums\ExamAttemptStatus;
+use App\Domains\Exams\Enums\ExamAttemptStatus;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\DateTimePicker;

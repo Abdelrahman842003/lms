@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import { Icon } from '@/components/ui';
 
 export default function ParentLayout({ children }: { children: ReactNode }) {
   const { user, isLoading, children: childrenList } = useAuth();
@@ -28,7 +29,7 @@ export default function ParentLayout({ children }: { children: ReactNode }) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center text-center p-8 relative z-10">
         <div className="w-24 h-24 rounded-full bg-white/5 flex items-center justify-center mb-6 backdrop-blur-sm border border-white/10">
-          <i className="fas fa-user-slash text-4xl text-gray-400"></i>
+          <Icon name="user-slash" size="3x" className="text-gray-400" />
         </div>
         <h2 className="text-2xl font-bold text-white mb-3">
           لا يوجد أبناء مسجلين

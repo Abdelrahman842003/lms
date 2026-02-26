@@ -7,9 +7,10 @@ import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { getAcademyExam, updateAcademyExam, getGrades, getGroups, getExamTeachers } from '@/services/academyService';
 import { toast } from 'react-hot-toast';
 import { Filter } from '@/components/Filter';
+import { Button, Icon, Input, LoadingSpinner, FormModal } from '@/components/ui';
 
 import {
-  DndContext, 
+  DndContext,
   closestCenter,
   KeyboardSensor,
   PointerSensor,
@@ -25,7 +26,6 @@ import {
   useSortable
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-
 interface Question {
   id: string;
   text: string;
@@ -57,21 +57,22 @@ function SortableItem(props: SortableItemProps) {
   
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="p-3 mb-2 bg-white/5 rounded border border-white/10 flex items-center gap-3 cursor-move touch-none">
-      <i className="fas fa-grip-vertical text-gray-400"></i>
+      <Icon name="grip-vertical" className="text-gray-400" />
       <div className="flex-1">
         <p className="font-medium text-white truncate">{props.text || 'سؤال جديد'}</p>
         <span className="text-xs text-gray-400">{props.duration} ثانية</span>
       </div>
-      <button 
+      <Button
+        variant="ghost"
         onClick={(e) => {
           e.stopPropagation();
           props.onRemove();
-        }} 
+        }}
         className="text-red-400 hover:text-red-300 p-2"
         onPointerDown={(e) => e.stopPropagation()}
       >
-        <i className="fas fa-trash"></i>
-      </button>
+        <Icon name="trash" />
+      </Button>
     </div>
   );
 }
@@ -402,7 +403,7 @@ export default function EditAcademyExamPage({ params }: { params: Promise<{ id: 
       >
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
-            <i className="fas fa-spinner fa-spin text-4xl text-primary mb-4"></i>
+            <LoadingSpinner size="sm" color="primary" />
             <p className="text-gray-light">جاري تحميل بيانات الامتحان...</p>
           </div>
         </div>
@@ -418,7 +419,7 @@ export default function EditAcademyExamPage({ params }: { params: Promise<{ id: 
       <div className="rounded-xl shadow-lg border border-white/5 p-6">
         <div className="dashboard-card-header">
           <div className="dashboard-card-title">
-            <i className="fas fa-edit"></i>
+            <Icon name="edit" />
             <h2>تعديل الامتحان</h2>
           </div>
           {step === 'questions' && (
@@ -441,27 +442,27 @@ export default function EditAcademyExamPage({ params }: { params: Promise<{ id: 
                     placeholder="اختر المدرس"
                     className={formErrors.teacherId ? 'border-red-500' : ''}
                   />
-                  {formErrors.teacherId && <span className="text-red-500 text-xs mt-1 block"><i className="fas fa-exclamation-circle ml-1"></i>{formErrors.teacherId}</span>}
+                  {formErrors.teacherId && <span className="text-red-500 text-xs mt-1 block"><Icon name="exclamation-circle" className="ml-1 inline" />{formErrors.teacherId}</span>}
                 </div>
                 <div className="form-group">
                   <label className="block text-sm font-medium text-white mb-2">عنوان الامتحان <span className="text-red-500">*</span></label>
-                  <input
+                  <Input
                     type="text"
-                    className={`form-input w-full ${formErrors.title ? 'border-red-500' : ''}`}
+                    className={formErrors.title ? 'border-red-500' : ''}
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                   />
-                  {formErrors.title && <span className="text-red-500 text-xs mt-1 block"><i className="fas fa-exclamation-circle ml-1"></i>{formErrors.title}</span>}
+                  {formErrors.title && <span className="text-red-500 text-xs mt-1 block"><Icon name="exclamation-circle" className="ml-1 inline" />{formErrors.title}</span>}
                 </div>
                 <div className="form-group">
                   <label className="block text-sm font-medium text-white mb-2">المادة <span className="text-red-500">*</span></label>
-                  <input
+                  <Input
                     type="text"
-                    className={`form-input w-full ${formErrors.subject ? 'border-red-500' : ''}`}
+                    className={formErrors.subject ? 'border-red-500' : ''}
                     value={subject}
                     onChange={(e) => setSubject(e.target.value)}
                   />
-                  {formErrors.subject && <span className="text-red-500 text-xs mt-1 block"><i className="fas fa-exclamation-circle ml-1"></i>{formErrors.subject}</span>}
+                  {formErrors.subject && <span className="text-red-500 text-xs mt-1 block"><Icon name="exclamation-circle" className="ml-1 inline" />{formErrors.subject}</span>}
                 </div>
                 <div className="form-group">
                   <label className="block text-sm font-medium text-white mb-2">الصف الدراسي <span className="text-red-500">*</span></label>
@@ -473,7 +474,7 @@ export default function EditAcademyExamPage({ params }: { params: Promise<{ id: 
                     className={formErrors.gradeId ? 'border-red-500' : ''}
                     disabled={!teacherId}
                   />
-                  {formErrors.gradeId && <span className="text-red-500 text-xs mt-1 block"><i className="fas fa-exclamation-circle ml-1"></i>{formErrors.gradeId}</span>}
+                  {formErrors.gradeId && <span className="text-red-500 text-xs mt-1 block"><Icon name="exclamation-circle" className="ml-1 inline" />{formErrors.gradeId}</span>}
                 </div>
                 <div className="form-group">
                   <label className="block text-sm font-medium text-white mb-2">المجموعة (اختياري)</label>
@@ -490,50 +491,51 @@ export default function EditAcademyExamPage({ params }: { params: Promise<{ id: 
                 </div>
                 <div className="form-group">
                   <label className="block text-sm font-medium text-white mb-2">تاريخ الامتحان <span className="text-red-500">*</span></label>
-                  <input
+                  <Input
                     type="datetime-local"
-                    className={`form-input w-full ${formErrors.date ? 'border-red-500' : ''}`}
+                    className={formErrors.date ? 'border-red-500' : ''}
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
                   />
-                  {formErrors.date && <span className="text-red-500 text-xs mt-1 block"><i className="fas fa-exclamation-circle ml-1"></i>{formErrors.date}</span>}
+                  {formErrors.date && <span className="text-red-500 text-xs mt-1 block"><Icon name="exclamation-circle" className="ml-1 inline" />{formErrors.date}</span>}
                 </div>
                 <div className="form-group">
                   <label className="block text-sm font-medium text-white mb-2">المدة (دقيقة) <span className="text-red-500">*</span></label>
-                  <input
+                  <Input
                     type="number"
-                    className={`form-input w-full ${formErrors.duration ? 'border-red-500' : ''}`}
+                    className={formErrors.duration ? 'border-red-500' : ''}
                     value={duration || ''}
                     onChange={(e) => setDuration(e.target.value === '' ? 0 : parseInt(e.target.value))}
                   />
-                  {formErrors.duration && <span className="text-red-500 text-xs mt-1 block"><i className="fas fa-exclamation-circle ml-1"></i>{formErrors.duration}</span>}
+                  {formErrors.duration && <span className="text-red-500 text-xs mt-1 block"><Icon name="exclamation-circle" className="ml-1 inline" />{formErrors.duration}</span>}
                 </div>
                 <div className="form-group">
                   <label className="block text-sm font-medium text-white mb-2">الدرجة الكلية <span className="text-red-500">*</span></label>
-                  <input
+                  <Input
                     type="number"
-                    className={`form-input w-full ${formErrors.totalMarks ? 'border-red-500' : ''}`}
+                    className={formErrors.totalMarks ? 'border-red-500' : ''}
                     value={totalMarks || ''}
                     onChange={(e) => setTotalMarks(e.target.value === '' ? 0 : parseInt(e.target.value))}
                   />
-                  {formErrors.totalMarks && <span className="text-red-500 text-xs mt-1 block"><i className="fas fa-exclamation-circle ml-1"></i>{formErrors.totalMarks}</span>}
+                  {formErrors.totalMarks && <span className="text-red-500 text-xs mt-1 block"><Icon name="exclamation-circle" className="ml-1 inline" />{formErrors.totalMarks}</span>}
                 </div>
               </div>
 
               <div className="flex flex-col-reverse sm:flex-row justify-between gap-4 mt-8">
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
                   onClick={() => router.push('/academy/exams')}
-                  className="btn btn-secondary px-8 py-3 text-lg w-full sm:w-auto"
+                  className="px-8 py-3 text-lg w-full sm:w-auto"
                 >
-                  <i className="fas fa-arrow-right ml-2"></i>
+                  <Icon name="arrow-right" className="ml-2" />
                   رجوع
-                </button>
+                </Button>
 
-                <button type="submit" className="btn btn-primary px-8 py-3 text-lg w-full sm:w-auto">
+                <Button type="submit" variant="primary" className="px-8 py-3 text-lg w-full sm:w-auto">
                   التالي: تعديل الأسئلة
-                  <i className="fas fa-arrow-left mr-2"></i>
-                </button>
+                  <Icon name="arrow-left" className="mr-2" />
+                </Button>
               </div>
             </form>
           ) : (
@@ -560,9 +562,9 @@ export default function EditAcademyExamPage({ params }: { params: Promise<{ id: 
                       <label className="block text-sm font-medium">نص السؤال</label>
                       <div className="flex items-center gap-2">
                         <label className="text-xs text-gray-400">مدة السؤال (ثانية):</label>
-                        <input
+                        <Input
                           type="number"
-                          className="form-input w-20 py-1 px-2 text-sm"
+                          className="w-20 py-1 px-2 text-sm"
                           value={questions[currentQuestionIndex]?.duration || 60}
                           onChange={(e) => handleQuestionChange('duration', parseInt(e.target.value))}
                           min="10"
@@ -570,9 +572,8 @@ export default function EditAcademyExamPage({ params }: { params: Promise<{ id: 
                         />
                       </div>
                     </div>
-                    <input
+                    <Input
                       type="text"
-                      className="form-input w-full"
                       value={questions[currentQuestionIndex]?.text || ''}
                       onChange={(e) => handleQuestionChange('text', e.target.value)}
                       required
@@ -596,13 +597,13 @@ export default function EditAcademyExamPage({ params }: { params: Promise<{ id: 
                                 : 'bg-white border-gray-300 hover:border-primary'
                             }`}>
                               {questions[currentQuestionIndex].correct_answer === option && option !== '' && (
-                                <i className="fas fa-check text-white text-xs"></i>
+                                <Icon name="check" className="text-white text-xs" />
                               )}
                             </div>
                           </div>
-                          <input
+                          <Input
                             type="text"
-                            className="form-input w-full border-none shadow-none focus:ring-0"
+                            className="border-none shadow-none focus:ring-0"
                             value={option}
                             onChange={(e) => handleOptionChange(oIndex, e.target.value)}
                             required
@@ -617,35 +618,38 @@ export default function EditAcademyExamPage({ params }: { params: Promise<{ id: 
 
               <div className="flex flex-col lg:flex-row lg:justify-between gap-4 mt-8">
                 <div className="flex flex-col sm:flex-row gap-3 order-1 lg:order-2 w-full lg:w-auto">
-                  <button
+                  <Button
                     type="button"
+                    variant="secondary"
                     onClick={() => setShowPreviewModal(true)}
-                    className="btn btn-secondary px-6 w-full sm:w-auto flex-1 lg:flex-none justify-center"
+                    className="px-6 w-full sm:w-auto flex-1 lg:flex-none justify-center"
                   >
                     معاينة وترتيب
-                    <i className="fas fa-sort mr-2"></i>
-                  </button>
+                    <Icon name="sort" className="mr-2" />
+                  </Button>
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-3 order-3 lg:order-3 w-full lg:w-auto">
-                  <button
+                  <Button
                     type="button"
+                    variant="primary"
                     onClick={handleNextQuestion}
-                    className="btn btn-primary px-6 w-full sm:w-auto flex-1 lg:flex-none justify-center"
+                    className="px-6 w-full sm:w-auto flex-1 lg:flex-none justify-center"
                   >
                     سؤال جديد
-                    <i className="fas fa-plus mr-2"></i>
-                  </button>
+                    <Icon name="plus" className="mr-2" />
+                  </Button>
 
-                  <button
+                  <Button
                     type="button"
+                    variant="primary"
                     onClick={handleSubmit}
-                    className="btn btn-success px-8 bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto flex-1 lg:flex-none justify-center"
+                    className="px-8 bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto flex-1 lg:flex-none justify-center"
                     disabled={loading}
                   >
                     حفظ التعديلات
-                    <i className="fas fa-check mr-2"></i>
-                  </button>
+                    <Icon name="check" className="mr-2" />
+                  </Button>
                 </div>
               </div>
             </div>
@@ -654,108 +658,76 @@ export default function EditAcademyExamPage({ params }: { params: Promise<{ id: 
       </div>
 
       {/* Finish Modal */}
-      {showFinishModal && (
-        <div className="modal-overlay" onClick={() => setShowFinishModal(false)}>
-          <div className="modal-content w-[95%] max-w-md" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>إعدادات الامتحان النهائية</h3>
-              <button className="modal-close" onClick={() => setShowFinishModal(false)}>
-                <i className="fas fa-times"></i>
-              </button>
-            </div>
-            <div className="modal-body">
-              <div className="form-group">
-                <label className="block text-sm font-medium text-white mb-2">
-                  عدد الأسئلة التي ستظهر للطالب
-                </label>
-                <input
-                  type="number"
-                  className="form-input w-full"
-                  value={actualQuestionCount}
-                  onChange={(e) => setActualQuestionCount(parseInt(e.target.value))}
-                  min="1"
-                  max={questions.length}
-                />
-                <p className="text-xs text-gray-400 mt-2">
-                  لديك {questions.length} سؤال في بنك الأسئلة.
-                  يمكنك اختيار عدد أقل ليتم اختيار الأسئلة عشوائياً لكل طالب.
-                </p>
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={() => setShowFinishModal(false)}
-              >
-                إلغاء
-              </button>
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={handleFinalSubmit}
-                disabled={loading}
-              >
-                {loading ? 'جاري الحفظ...' : 'حفظ التعديلات'}
-              </button>
-            </div>
-          </div>
+      <FormModal
+        isOpen={showFinishModal}
+        onClose={() => setShowFinishModal(false)}
+        onSubmit={(e) => { e.preventDefault(); handleFinalSubmit(); }}
+        title="إعدادات الامتحان النهائية"
+        isLoading={loading}
+        submitText="حفظ التعديلات"
+        cancelText="إلغاء"
+        maxWidth="450px"
+      >
+        <div className="form-group">
+          <label className="block text-sm font-medium text-white mb-2">
+            عدد الأسئلة التي ستظهر للطالب
+          </label>
+          <Input
+            type="number"
+            value={actualQuestionCount}
+            onChange={(e) => setActualQuestionCount(parseInt(e.target.value))}
+            min="1"
+            max={questions.length}
+          />
+          <p className="text-xs text-gray-400 mt-2">
+            لديك {questions.length} سؤال في بنك الأسئلة.
+            يمكنك اختيار عدد أقل ليتم اختيار الأسئلة عشوائياً لكل طالب.
+          </p>
         </div>
-      )}
+      </FormModal>
 
       {/* Preview & Reorder Modal */}
-      {showPreviewModal && (
-        <div className="modal-overlay" onClick={() => setShowPreviewModal(false)}>
-          <div className="modal-content w-[95%] max-w-2xl h-[80vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>معاينة وترتيب الأسئلة</h3>
-              <button className="modal-close" onClick={() => setShowPreviewModal(false)}>
-                <i className="fas fa-times"></i>
-              </button>
-            </div>
-            <div className="modal-body flex-1 overflow-y-auto">
-              <DndContext 
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={handleDragEnd}
-              >
-                <SortableContext 
-                  items={questions.map(q => q.id)}
-                  strategy={verticalListSortingStrategy}
-                >
-                  {questions.map((question) => (
-                    <SortableItem 
-                      key={question.id} 
-                      id={question.id} 
-                      text={question.text} 
-                      duration={question.duration}
-                      onRemove={() => {
-                        if (questions.length > 1) {
-                          setQuestions(questions.filter(q => q.id !== question.id));
-                          if (currentQuestionIndex >= questions.length - 1) {
-                            setCurrentQuestionIndex(Math.max(0, questions.length - 2));
-                          }
-                        } else {
-                          toast.error('يجب أن يحتوي الامتحان على سؤال واحد على الأقل');
-                        }
-                      }}
-                    />
-                  ))}
-                </SortableContext>
-              </DndContext>
-            </div>
-            <div className="modal-footer">
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={() => setShowPreviewModal(false)}
-              >
-                حفظ الترتيب
-              </button>
-            </div>
-          </div>
+      <FormModal
+        isOpen={showPreviewModal}
+        onClose={() => setShowPreviewModal(false)}
+        onSubmit={(e) => { e.preventDefault(); setShowPreviewModal(false); }}
+        title="معاينة وترتيب الأسئلة"
+        submitText="حفظ الترتيب"
+        cancelText=""
+        maxWidth="700px"
+      >
+        <div className="max-h-[50vh] overflow-y-auto">
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={questions.map(q => q.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              {questions.map((question) => (
+                <SortableItem
+                  key={question.id}
+                  id={question.id}
+                  text={question.text}
+                  duration={question.duration}
+                  onRemove={() => {
+                    if (questions.length > 1) {
+                      setQuestions(questions.filter(q => q.id !== question.id));
+                      if (currentQuestionIndex >= questions.length - 1) {
+                        setCurrentQuestionIndex(Math.max(0, questions.length - 2));
+                      }
+                    } else {
+                      toast.error('يجب أن يحتوي الامتحان على سؤال واحد على الأقل');
+                    }
+                  }}
+                />
+              ))}
+            </SortableContext>
+          </DndContext>
         </div>
-      )}
+      </FormModal>
     </DashboardLayout>
   );
 }

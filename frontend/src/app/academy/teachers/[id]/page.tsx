@@ -10,6 +10,7 @@ import academyService from '@/services/academyService';
 import { useRouter, useParams } from 'next/navigation';
 import toast from 'react-hot-toast';
 
+import { Button, Icon, LoadingSpinner, Badge } from '@/components/ui';
 export default function TeacherDetailsPage() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const router = useRouter();
@@ -53,7 +54,7 @@ export default function TeacherDetailsPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#0f111a]">
         <div className="text-center">
-          <i className="fas fa-spinner fa-spin text-4xl text-primary mb-4"></i>
+          <LoadingSpinner size="sm" color="primary" />
           <p className="text-gray-400">جاري التحميل...</p>
         </div>
       </div>
@@ -65,9 +66,9 @@ export default function TeacherDetailsPage() {
       <DashboardLayout role="academy" user={user || undefined}>
         <div className="text-center py-10">
           <p className="text-red-400">لم يتم العثور على بيانات المدرس</p>
-          <button onClick={() => router.back()} className="mt-4 btn btn-primary">
+          <Button onClick={() => router.back()} variant="primary" className="mt-4">
             عودة
-          </button>
+          </Button>
         </div>
       </DashboardLayout>
     );
@@ -136,12 +137,13 @@ export default function TeacherDetailsPage() {
       {/* Header Section */}
       <div className="mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <button 
+          <Button 
             onClick={() => router.back()} 
+            variant="ghost"
             className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white transition-all"
           >
-            <i className="fas fa-arrow-right"></i>
-          </button>
+            <Icon name="arrow-right" />
+          </Button>
           <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center overflow-hidden shrink-0 text-white text-2xl font-bold border-2 border-primary/20">
             {teacher.avatar ? (
               <img src={teacher.avatar} alt={teacher.name} className="w-full h-full object-cover" />
@@ -152,13 +154,13 @@ export default function TeacherDetailsPage() {
           <div>
             <h1 className="text-2xl font-bold text-white mb-1">{teacher.name}</h1>
             <div className="flex items-center gap-3 text-gray-400 text-sm">
-              <span><i className="fas fa-phone ml-1"></i>{teacher.phone}</span>
+              <span><Icon name="phone" className="ml-1" />{teacher.phone}</span>
               {teacher.subject && (
-                <span><i className="fas fa-book ml-1"></i>{teacher.subject}</span>
+                <span><Icon name="book" className="ml-1" />{teacher.subject}</span>
               )}
-              <span className={`px-2 py-0.5 rounded text-xs ${teacher.status === 'active' ? 'bg-green-500/20 text-green-300' : 'bg-red-500/20 text-red-300'}`}>
+              <Badge variant={teacher.status === 'active' ? 'success' : 'danger'} size="sm">
                 {teacher.status === 'active' ? 'نشط' : teacher.status}
-              </span>
+              </Badge>
             </div>
           </div>
         </div>
@@ -169,25 +171,25 @@ export default function TeacherDetailsPage() {
         <StatCard
           title="عدد الطلاب"
           value={stats.students_count || 0}
-          icon="fas fa-users"
+          icon="users"
           color="primary"
         />
         <StatCard
           title="المجموعات"
           value={groups?.length || 0}
-          icon="fas fa-layer-group"
+          icon="layer-group"
           color="secondary"
         />
         <StatCard
           title="الصفوف الدراسية"
           value={grades?.length || 0}
-          icon="fas fa-graduation-cap"
+          icon="graduation-cap"
           color="success"
         />
         <StatCard
           title="ساعات العمل (الشهر الحالي)"
           value={stats.total_duration_formatted || '0h 0m'}
-          icon="fas fa-clock"
+          icon="clock"
           color="warning"
         />
       </div>
@@ -195,10 +197,10 @@ export default function TeacherDetailsPage() {
       {/* Tabs Navigation */}
       <div className="flex overflow-x-auto gap-2 mb-6 border-b border-white/10 pb-1">
         {[
-          { id: 'overview', label: 'نظرة عامة', icon: 'fas fa-chart-pie' },
-          { id: 'groups', label: 'المجموعات', icon: 'fas fa-users-class' },
-          { id: 'grades', label: 'الصفوف الدراسية', icon: 'fas fa-book' },
-          { id: 'attendance', label: 'سجل الحضور', icon: 'fas fa-calendar-check' },
+          { id: 'overview', label: 'نظرة عامة', icon: 'chart-pie' },
+          { id: 'groups', label: 'المجموعات', icon: 'users-class' },
+          { id: 'grades', label: 'الصفوف الدراسية', icon: 'book' },
+          { id: 'attendance', label: 'سجل الحضور', icon: 'calendar-check' },
         ].map((tab) => (
           <button
             key={tab.id}
@@ -209,7 +211,7 @@ export default function TeacherDetailsPage() {
                 : 'text-gray-400 hover:text-white hover:bg-white/5'
             }`}
           >
-            <i className={tab.icon}></i>
+            <Icon name={tab.icon} />
             <span>{tab.label}</span>
           </button>
         ))}
@@ -219,7 +221,7 @@ export default function TeacherDetailsPage() {
       <div className="min-h-[300px]">
         {activeTab === 'overview' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <DashboardCard title="أحدث المجموعات" icon="fas fa-layer-group">
+            <DashboardCard title="أحدث المجموعات" icon="layer-group">
               {groups && groups.length > 0 ? (
                 <div className="space-y-4">
                   {groups.slice(0, 5).map((group: any) => (
@@ -228,7 +230,7 @@ export default function TeacherDetailsPage() {
                         <h4 className="text-white font-bold mb-1">{group.name}</h4>
                         <p className="text-xs text-gray-400 flex items-center gap-2">
                           <span className="bg-white/5 px-2 py-0.5 rounded flex items-center gap-1">
-                            <i className="fas fa-clock text-primary/70"></i>
+                            <Icon name="clock" className="text-primary/70" />
                             {group.time}
                           </span>
                           <span>{group.days ? group.days.join('، ') : ''}</span>
@@ -242,13 +244,13 @@ export default function TeacherDetailsPage() {
                 </div>
               ) : (
                 <div className="text-center py-8 text-gray-400">
-                  <i className="fas fa-layer-group text-4xl mb-3 opacity-30"></i>
+                  <Icon name="layer-group" className="text-4xl mb-3 opacity-30" />
                   <p>لا توجد مجموعات</p>
                 </div>
               )}
             </DashboardCard>
 
-            <DashboardCard title="آخر نشاط حضور" icon="fas fa-history">
+            <DashboardCard title="آخر نشاط حضور" icon="history">
               {attendance_logs && attendance_logs.length > 0 ? (
                 <div className="space-y-4">
                   {attendance_logs.slice(0, 5).map((log: any) => (
@@ -261,7 +263,7 @@ export default function TeacherDetailsPage() {
                           <span className="bg-white/5 px-2 py-0.5 rounded">
                             {log.check_in ? new Date(log.check_in).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) : '-'} 
                           </span>
-                          <i className="fas fa-arrow-left text-gray-600 text-[10px]"></i>
+                          <Icon name="arrow-left" className="text-gray-600 text-[10px]" />
                           <span className="bg-white/5 px-2 py-0.5 rounded">
                             {log.check_out ? new Date(log.check_out).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) : '-'}
                           </span>
@@ -278,7 +280,7 @@ export default function TeacherDetailsPage() {
                 </div>
               ) : (
                 <div className="text-center py-8 text-gray-400">
-                  <i className="fas fa-history text-4xl mb-3 opacity-30"></i>
+                  <Icon name="history" className="text-4xl mb-3 opacity-30" />
                   <p>لا يوجد سجل حضور</p>
                 </div>
               )}
@@ -287,7 +289,7 @@ export default function TeacherDetailsPage() {
         )}
 
         {activeTab === 'groups' && (
-          <DashboardCard title={`المجموعات (${groups?.length || 0})`} icon="fas fa-layer-group">
+          <DashboardCard title={`المجموعات (${groups?.length || 0})`} icon="layer-group">
             <DataTable
               columns={groupColumns}
               data={groups || []}
@@ -297,7 +299,7 @@ export default function TeacherDetailsPage() {
         )}
 
         {activeTab === 'grades' && (
-          <DashboardCard title={`الصفوف الدراسية (${grades?.length || 0})`} icon="fas fa-graduation-cap">
+          <DashboardCard title={`الصفوف الدراسية (${grades?.length || 0})`} icon="graduation-cap">
             <DataTable
               columns={gradeColumns}
               data={grades || []}
@@ -307,7 +309,7 @@ export default function TeacherDetailsPage() {
         )}
 
         {activeTab === 'attendance' && (
-          <DashboardCard title="سجل الحضور والانصراف" icon="fas fa-calendar-alt">
+          <DashboardCard title="سجل الحضور والانصراف" icon="calendar-alt">
             <DataTable
               columns={attendanceColumns}
               data={attendance_logs || []}

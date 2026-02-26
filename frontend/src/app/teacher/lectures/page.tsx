@@ -5,12 +5,12 @@ import { useRouter } from 'next/navigation';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
-import { 
-  getLectures, 
-  createLecture, 
-  updateLecture, 
-  deleteLecture, 
-  Lecture, 
+import {
+  getLectures,
+  createLecture,
+  updateLecture,
+  deleteLecture,
+  Lecture,
   CreateLectureData,
   generateQrCode,
   recordAttendance,
@@ -28,6 +28,7 @@ import { ManualAttendanceModal } from '@/components/dashboard/ManualAttendanceMo
 import { LectureSessionsModal } from '@/components/dashboard/LectureSessionsModal';
 import { Filter } from '@/components/Filter';
 import { getAuthToken } from '@/services/authService';
+import { Button, FormModal, ConfirmationModal, Icon, Input, Textarea } from '@/components/ui';
 
 import toast from 'react-hot-toast';
 
@@ -564,22 +565,22 @@ export default function TeacherLecturesPage() {
       <div className="header-section flex justify-between items-center mb-6 max-md:flex-col max-md:items-stretch max-md:gap-4">
         <div className="header-title flex items-center gap-3 max-md:w-full max-md:justify-center">
           <div className="w-12 h-12 rounded-xl bg-[rgba(66,99,235,0.1)] flex items-center justify-center text-primary text-2xl">
-            <i className="fas fa-video"></i>
+            <Icon name="video" />
           </div>
           <h2 className="text-2xl font-bold text-white m-0">إدارة المحاضرات</h2>
         </div>
         <div className="header-actions max-md:w-full">
-          <button onClick={handleAddClick} className="btn btn-primary max-md:w-full max-md:justify-center">
-            <i className="fas fa-plus"></i>
+          <Button onClick={handleAddClick} variant="primary" className="max-md:w-full max-md:justify-center">
+            <Icon name="plus" />
             <span>محاضرة جديدة</span>
-          </button>
+          </Button>
         </div>
       </div>
 
       {/* Filters */}
       <div className="flex gap-4 mb-6 max-md:flex-col">
         <div className="flex-1">
-          <input
+          <Input
             type="text"
             placeholder="بحث عن محاضرة..."
             value={searchQuery}
@@ -641,12 +642,12 @@ export default function TeacherLecturesPage() {
         </div>
       ) : lectures.length === 0 ? (
         <div className="text-center p-12 bg-white/2 rounded-2xl">
-          <i className="fas fa-video-slash text-5xl text-gray-light mb-4 opacity-50"></i>
+          <Icon name="video-slash" className="text-5xl text-gray-light mb-4 opacity-50" />
           <p className="text-gray-light text-lg">لا توجد محاضرات</p>
-          <button onClick={handleAddClick} className="btn btn-primary mt-4">
-            <i className="fas fa-plus"></i>
+          <Button onClick={handleAddClick} variant="primary" className="mt-4">
+            <Icon name="plus" />
             <span>إضافة محاضرة جديدة</span>
-          </button>
+          </Button>
         </div>
       ) : (
 <div className="lectures-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -702,23 +703,25 @@ export default function TeacherLecturesPage() {
       {/* Pagination Controls */}
       {totalPages > 1 && (
         <div className="flex justify-center mt-6 gap-2">
-          <button 
-            className="btn btn-outline btn-sm"
+          <Button
+            variant="outline"
+            size="sm"
             disabled={currentPage === 1}
             onClick={() => fetchLectures(currentPage - 1)}
           >
             السابق
-          </button>
+          </Button>
           <span className="flex items-center text-gray-light">
             صفحة {currentPage} من {totalPages}
           </span>
-          <button 
-            className="btn btn-outline btn-sm"
+          <Button
+            variant="outline"
+            size="sm"
             disabled={currentPage === totalPages}
             onClick={() => fetchLectures(currentPage + 1)}
           >
             التالي
-          </button>
+          </Button>
         </div>
       )}
 
@@ -739,244 +742,208 @@ export default function TeacherLecturesPage() {
       )}
 
       {/* Add/Edit Modal */}
-      {showModal && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>{isEditing ? 'تعديل المحاضرة' : 'محاضرة جديدة'}</h3>
-              <button className="modal-close" onClick={() => setShowModal(false)}>
-                <i className="fas fa-times"></i>
-              </button>
-            </div>
-            <form onSubmit={handleSubmit}>
-              <div className="modal-body">
-                <div className="form-group">
-                  <label htmlFor="title">عنوان المحاضرة</label>
-                  <input
-                    type="text"
-                    id="title"
-                    className="form-input"
-                    value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    required
-                    placeholder="مثال: مراجعة الفصل الأول"
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="grade">الصف الدراسي</label>
-                  <Filter
-                    options={grades.map((grade) => ({ value: String(grade.id), label: grade.name }))}
-                    value={String(formData.grade_id || '')}
-                    onChange={(value) => setFormData({ ...formData, grade_id: value })}
-                    placeholder="اختر الصف"
-                    className="w-full"
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="group">المجموعة (اختياري)</label>
-                  <Filter
-                    options={[
-                      { value: '', label: 'كل المجموعات' },
-                      ...groups
-                        .filter(g => !formData.grade_id || String(g.grade_id) === String(formData.grade_id))
-                        .map((group) => ({ value: String(group.id), label: group.name }))
-                    ]}
-                    value={String(formData.group_id || '')}
-                    onChange={(value) => setFormData({ ...formData, group_id: value })}
-                    placeholder="كل المجموعات"
-                    className="w-full"
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="description">الوصف (اختياري)</label>
-                  <textarea
-                    id="description"
-                    className="form-input"
-                    value={formData.description || ''}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    placeholder="وصف مختصر للمحاضرة..."
-                    rows={3}
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="lecture_type">نوع المحاضرة</label>
-                  <Filter
-                    options={[
-                      { value: 'extra', label: 'محاضرة إضافية' },
-                      { value: 'basic', label: 'محاضرة أساسية' }
-                    ]}
-                    value={formData.is_recurring ? 'basic' : 'extra'}
-                    onChange={(value) => {
-                      const isBasic = value === 'basic';
-                      setFormData({ 
-                        ...formData, 
-                        is_recurring: isBasic,
-                        // Reset fields if switching types
-                        date: isBasic ? '' : formData.date,
-                        recurrence_days: isBasic ? formData.recurrence_days : [],
-                      });
-                    }}
-                    placeholder="اختر نوع المحاضرة"
-                    className="w-full"
-                  />
-                </div>
-
-                {formData.is_recurring ? (
-                  <>
-                    <div className="form-group">
-                      <label>أيام التكرار</label>
-                      <div className="flex flex-wrap gap-2">
-                        {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((day) => {
-                          const dayLabels: Record<string, string> = {
-                            'Sunday': 'الأحد',
-                            'Monday': 'الاثنين',
-                            'Tuesday': 'الثلاثاء',
-                            'Wednesday': 'الأربعاء',
-                            'Thursday': 'الخميس',
-                            'Friday': 'الجمعة',
-                            'Saturday': 'السبت',
-                          };
-                          return (
-                            <label key={day} className={`px-3 py-1 rounded-lg border cursor-pointer ${
-                              formData.recurrence_days?.includes(day) 
-                                ? 'bg-primary text-white border-primary' 
-                                : 'bg-white/5 border-white/10'
-                            }`}>
-                              <input
-                                type="checkbox"
-                                className="hidden"
-                                checked={formData.recurrence_days?.includes(day)}
-                                onChange={(e) => {
-                                  const newDays = e.target.checked
-                                    ? [...(formData.recurrence_days || []), day]
-                                    : (formData.recurrence_days || []).filter(d => d !== day);
-                                  setFormData({ ...formData, recurrence_days: newDays });
-                                }}
-                              />
-                              {dayLabels[day]}
-                            </label>
-                          );
-                        })}
-                      </div>
-                    </div>
-                    <div className="form-group">
-                      <label htmlFor="recurrence_time">وقت المحاضرة</label>
-                      <input
-                        type="time"
-                        id="recurrence_time"
-                        className="form-input"
-                        value={formData.recurrence_time}
-                        onChange={(e) => setFormData({ ...formData, recurrence_time: e.target.value })}
-                        required={formData.is_recurring}
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label htmlFor="duration_minutes">مدة المحاضرة (دقيقة)</label>
-                      <input
-                        type="number"
-                        id="duration_minutes"
-                        className="form-input"
-                        value={formData.duration_minutes}
-                        onChange={(e) => setFormData({ ...formData, duration_minutes: parseInt(e.target.value) })}
-                        min="1"
-                        required={formData.is_recurring}
-                      />
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="form-group">
-                      <label htmlFor="date">تاريخ المحاضرة</label>
-                      <input
-                        type="date"
-                        id="date"
-                        className="form-input"
-                        value={formData.date}
-                        onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                        required={!formData.is_recurring}
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label htmlFor="recurrence_time">وقت المحاضرة</label>
-                      <input
-                        type="time"
-                        id="recurrence_time"
-                        className="form-input"
-                        value={formData.recurrence_time}
-                        onChange={(e) => setFormData({ ...formData, recurrence_time: e.target.value })}
-                        required={!formData.is_recurring}
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label htmlFor="duration_minutes">مدة المحاضرة (دقيقة)</label>
-                      <input
-                        type="number"
-                        id="duration_minutes"
-                        className="form-input"
-                        value={formData.duration_minutes}
-                        onChange={(e) => setFormData({ ...formData, duration_minutes: parseInt(e.target.value) })}
-                        min="1"
-                        required={!formData.is_recurring}
-                      />
-                    </div>
-                  </>
-                )}
-              </div>
-              <div className="modal-footer">
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={() => setShowModal(false)}
-                  disabled={isSubmitting}
-                >
-                  إلغاء
-                </button>
-                <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
-                  {isSubmitting ? 'جاري الحفظ...' : isEditing ? 'حفظ التعديلات' : 'إضافة'}
-                </button>
-              </div>
-            </form>
-          </div>
+      <FormModal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        onSubmit={handleSubmit}
+        title={isEditing ? 'تعديل المحاضرة' : 'محاضرة جديدة'}
+        isLoading={isSubmitting}
+        submitText={isSubmitting ? 'جاري الحفظ...' : isEditing ? 'حفظ التعديلات' : 'إضافة'}
+        cancelText="إلغاء"
+        maxWidth="600px"
+      >
+        <div className="form-group">
+          <label htmlFor="title">عنوان المحاضرة</label>
+          <Input
+            type="text"
+            id="title"
+            className="form-input"
+            value={formData.title}
+            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+            required
+            placeholder="مثال: مراجعة الفصل الأول"
+          />
         </div>
-      )}
+        <div className="form-group">
+          <label htmlFor="grade">الصف الدراسي</label>
+          <Filter
+            options={grades.map((grade) => ({ value: String(grade.id), label: grade.name }))}
+            value={String(formData.grade_id || '')}
+            onChange={(value) => setFormData({ ...formData, grade_id: value })}
+            placeholder="اختر الصف"
+            className="w-full"
+          />
+        </div>
+        <div className="form-group">
+          <label htmlFor="group">المجموعة (اختياري)</label>
+          <Filter
+            options={[
+              { value: '', label: 'كل المجموعات' },
+              ...groups
+                .filter(g => !formData.grade_id || String(g.grade_id) === String(formData.grade_id))
+                .map((group) => ({ value: String(group.id), label: group.name }))
+            ]}
+            value={String(formData.group_id || '')}
+            onChange={(value) => setFormData({ ...formData, group_id: value })}
+            placeholder="كل المجموعات"
+            className="w-full"
+          />
+        </div>
+        <div className="form-group">
+          <label htmlFor="description">الوصف (اختياري)</label>
+          <Textarea
+            id="description"
+            className="form-input"
+            value={formData.description || ''}
+            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            placeholder="وصف مختصر للمحاضرة..."
+            rows={3}
+          />
+        </div>
+        <div className="form-group">
+          <label htmlFor="lecture_type">نوع المحاضرة</label>
+          <Filter
+            options={[
+              { value: 'extra', label: 'محاضرة إضافية' },
+              { value: 'basic', label: 'محاضرة أساسية' }
+            ]}
+            value={formData.is_recurring ? 'basic' : 'extra'}
+            onChange={(value) => {
+              const isBasic = value === 'basic';
+              setFormData({
+                ...formData,
+                is_recurring: isBasic,
+                // Reset fields if switching types
+                date: isBasic ? '' : formData.date,
+                recurrence_days: isBasic ? formData.recurrence_days : [],
+              });
+            }}
+            placeholder="اختر نوع المحاضرة"
+            className="w-full"
+          />
+        </div>
+
+        {formData.is_recurring ? (
+          <>
+            <div className="form-group">
+              <label>أيام التكرار</label>
+              <div className="flex flex-wrap gap-2">
+                {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((day) => {
+                  const dayLabels: Record<string, string> = {
+                    'Sunday': 'الأحد',
+                    'Monday': 'الاثنين',
+                    'Tuesday': 'الثلاثاء',
+                    'Wednesday': 'الأربعاء',
+                    'Thursday': 'الخميس',
+                    'Friday': 'الجمعة',
+                    'Saturday': 'السبت',
+                  };
+                  return (
+                    <label key={day} className={`px-3 py-1 rounded-lg border cursor-pointer ${
+                      formData.recurrence_days?.includes(day)
+                        ? 'bg-primary text-white border-primary'
+                        : 'bg-white/5 border-white/10'
+                    }`}>
+                      <Input
+                        type="checkbox"
+                        className="hidden"
+                        checked={formData.recurrence_days?.includes(day)}
+                        onChange={(e) => {
+                          const newDays = e.target.checked
+                            ? [...(formData.recurrence_days || []), day]
+                            : (formData.recurrence_days || []).filter(d => d !== day);
+                          setFormData({ ...formData, recurrence_days: newDays });
+                        }}
+                      />
+                      {dayLabels[day]}
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="form-group">
+              <label htmlFor="recurrence_time">وقت المحاضرة</label>
+              <Input
+                type="time"
+                id="recurrence_time"
+                className="form-input"
+                value={formData.recurrence_time}
+                onChange={(e) => setFormData({ ...formData, recurrence_time: e.target.value })}
+                required={formData.is_recurring}
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="duration_minutes">مدة المحاضرة (دقيقة)</label>
+              <Input
+                type="number"
+                id="duration_minutes"
+                className="form-input"
+                value={formData.duration_minutes}
+                onChange={(e) => setFormData({ ...formData, duration_minutes: parseInt(e.target.value) })}
+                min="1"
+                required={formData.is_recurring}
+              />
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="form-group">
+              <label htmlFor="date">تاريخ المحاضرة</label>
+              <Input
+                type="date"
+                id="date"
+                className="form-input"
+                value={formData.date}
+                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                required={!formData.is_recurring}
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="recurrence_time">وقت المحاضرة</label>
+              <Input
+                type="time"
+                id="recurrence_time"
+                className="form-input"
+                value={formData.recurrence_time}
+                onChange={(e) => setFormData({ ...formData, recurrence_time: e.target.value })}
+                required={!formData.is_recurring}
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="duration_minutes">مدة المحاضرة (دقيقة)</label>
+              <Input
+                type="number"
+                id="duration_minutes"
+                className="form-input"
+                value={formData.duration_minutes}
+                onChange={(e) => setFormData({ ...formData, duration_minutes: parseInt(e.target.value) })}
+                min="1"
+                required={!formData.is_recurring}
+              />
+            </div>
+          </>
+        )}
+      </FormModal>
 
       {/* Delete Confirmation Modal */}
-      {showDeleteModal && selectedLecture && (
-        <div className="modal-overlay" onClick={() => setShowDeleteModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>تأكيد الحذف</h3>
-              <button className="modal-close" onClick={() => setShowDeleteModal(false)}>
-                <i className="fas fa-times"></i>
-              </button>
-            </div>
-            <div className="modal-body">
-              <p>هل أنت متأكد من حذف المحاضرة "{selectedLecture.title}"؟</p>
-              <p className="text-danger mt-2">
-                سيتم حذف جميع بيانات الحضور المرتبطة بهذه المحاضرة.
-              </p>
-            </div>
-            <div className="modal-footer">
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={() => setShowDeleteModal(false)}
-                disabled={isSubmitting}
-              >
-                إلغاء
-              </button>
-              <button
-                type="button"
-                className="btn btn-danger"
-                onClick={confirmDelete}
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? 'جاري الحذف...' : 'حذف'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmationModal
+        isOpen={showDeleteModal && !!selectedLecture}
+        title="تأكيد الحذف"
+        message={
+          <>
+            <p>هل أنت متأكد من حذف المحاضرة "{selectedLecture?.title}"؟</p>
+            <p className="text-danger mt-2">
+              سيتم حذف جميع بيانات الحضور المرتبطة بهذه المحاضرة.
+            </p>
+          </>
+        }
+        confirmText={isSubmitting ? 'جاري الحذف...' : 'حذف'}
+        cancelText="إلغاء"
+        onConfirm={confirmDelete}
+        onCancel={() => setShowDeleteModal(false)}
+        isProcessing={isSubmitting}
+        variant="danger"
+      />
       {/* QR Code Modal */}
       <QRCodeModal
         isOpen={showQRModal}
@@ -995,115 +962,64 @@ export default function TeacherLecturesPage() {
       />
 
       {/* Activation Confirmation Modal */}
-      {showActivationModal && selectedLectureForActivation && (
-        <div className="modal-overlay" onClick={() => setShowActivationModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>تفعيل المحاضرة</h3>
-              <button className="modal-close" onClick={() => setShowActivationModal(false)}>
-                <i className="fas fa-times"></i>
-              </button>
-            </div>
-            <div className="modal-body">
-              <p>هل أنت متأكد من {selectedLectureForActivation.is_active ? 'إلغاء تفعيل' : 'تفعيل'} المحاضرة "{selectedLectureForActivation.title}"؟</p>
-              <p className={`mt-2 ${selectedLectureForActivation.is_active ? 'text-warning' : 'text-success'}`}>
-                {selectedLectureForActivation.is_active 
-                  ? 'سيتم إخفاء خيارات QR Code والمسح الضوئي.' 
-                  : 'سيتم إظهار خيارات QR Code والمسح الضوئي.'}
-              </p>
-            </div>
-            <div className="modal-footer">
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={() => setShowActivationModal(false)}
-              >
-                إلغاء
-              </button>
-              <button
-                type="button"
-                className={`btn ${selectedLectureForActivation.is_active ? 'btn-warning' : 'btn-success'}`}
-                onClick={confirmActivation}
-              >
-                {selectedLectureForActivation.is_active ? 'إلغاء التفعيل' : 'تفعيل'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmationModal
+        isOpen={showActivationModal && !!selectedLectureForActivation}
+        title="تفعيل المحاضرة"
+        message={
+          <>
+            <p>هل أنت متأكد من {selectedLectureForActivation?.is_active ? 'إلغاء تفعيل' : 'تفعيل'} المحاضرة "{selectedLectureForActivation?.title}"؟</p>
+            <p className={selectedLectureForActivation?.is_active ? 'text-warning mt-2' : 'text-success mt-2'}>
+              {selectedLectureForActivation?.is_active
+                ? 'سيتم إخفاء خيارات QR Code والمسح الضوئي.'
+                : 'سيتم إظهار خيارات QR Code والمسح الضوئي.'}
+            </p>
+          </>
+        }
+        confirmText={selectedLectureForActivation?.is_active ? 'إلغاء التفعيل' : 'تفعيل'}
+        cancelText="إلغاء"
+        onConfirm={confirmActivation}
+        onCancel={() => setShowActivationModal(false)}
+        variant={selectedLectureForActivation?.is_active ? 'warning' : 'success'}
+      />
       {/* End Lecture Confirmation Modal */}
-      {showEndLectureModal && selectedLectureForEnd && (
-        <div className="modal-overlay" onClick={() => setShowEndLectureModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>إنهاء المحاضرة</h3>
-              <button className="modal-close" onClick={() => setShowEndLectureModal(false)}>
-                <i className="fas fa-times"></i>
-              </button>
+      <ConfirmationModal
+        isOpen={showEndLectureModal && !!selectedLectureForEnd}
+        title="إنهاء المحاضرة"
+        message={
+          <>
+            <p>هل أنت متأكد من إنهاء المحاضرة "{selectedLectureForEnd?.title}"؟</p>
+            <div className="alert alert-warning mt-4">
+              <Icon name="exclamation-triangle" />
+              <span>تنبيه: سيتم تسجيل جميع الطلاب الذين لم يحضروا كـ "غائب" وإرسال إشعارات لهم فوراً.</span>
             </div>
-            <div className="modal-body">
-              <p>هل أنت متأكد من إنهاء المحاضرة "{selectedLectureForEnd.title}"؟</p>
-              <div className="alert alert-warning mt-4">
-                <i className="fas fa-exclamation-triangle"></i>
-                <span>تنبيه: سيتم تسجيل جميع الطلاب الذين لم يحضروا كـ "غائب" وإرسال إشعارات لهم فوراً.</span>
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={() => setShowEndLectureModal(false)}
-              >
-                إلغاء
-              </button>
-              <button
-                type="button"
-                className="btn btn-danger"
-                onClick={confirmEndLecture}
-              >
-                تأكيد الإنهاء
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          </>
+        }
+        confirmText="تأكيد الإنهاء"
+        cancelText="إلغاء"
+        onConfirm={confirmEndLecture}
+        onCancel={() => setShowEndLectureModal(false)}
+        variant="danger"
+      />
 
       {/* Cancel Session Confirmation Modal */}
-      {showCancelSessionModal && selectedLectureForCancel && (
-        <div className="modal-overlay" onClick={() => setShowCancelSessionModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>إلغاء محاضرة اليوم</h3>
-              <button className="modal-close" onClick={() => setShowCancelSessionModal(false)}>
-                <i className="fas fa-times"></i>
-              </button>
+      <ConfirmationModal
+        isOpen={showCancelSessionModal && !!selectedLectureForCancel}
+        title="إلغاء محاضرة اليوم"
+        message={
+          <>
+            <p>هل أنت متأكد من إلغاء محاضرة "{selectedLectureForCancel?.title}" لهذا اليوم؟</p>
+            <div className="alert alert-warning mt-4">
+              <Icon name="exclamation-triangle" />
+              <span>سيتم إرسال إشعار للطلاب وأولياء الأمور بإلغاء المحاضرة.</span>
             </div>
-            <div className="modal-body">
-              <p>هل أنت متأكد من إلغاء محاضرة "{selectedLectureForCancel.title}" لهذا اليوم؟</p>
-              <div className="alert alert-warning mt-4">
-                <i className="fas fa-exclamation-triangle"></i>
-                <span>سيتم إرسال إشعار للطلاب وأولياء الأمور بإلغاء المحاضرة.</span>
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={() => setShowCancelSessionModal(false)}
-              >
-                إلغاء
-              </button>
-              <button
-                type="button"
-                className="btn btn-danger"
-                onClick={confirmCancelSession}
-              >
-                تأكيد الإلغاء
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          </>
+        }
+        confirmText="تأكيد الإلغاء"
+        cancelText="إلغاء"
+        onConfirm={confirmCancelSession}
+        onCancel={() => setShowCancelSessionModal(false)}
+        variant="danger"
+      />
 
       {/* Manual Attendance Modal */}
       <ManualAttendanceModal

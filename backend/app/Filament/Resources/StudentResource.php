@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources;
 
-use App\Enums\StudentGender;
-use App\Enums\StudentEducationType;
-use App\Models\Student;
-use App\Models\Grade;
-use App\Models\Group;
-use App\Models\Academy;
-use App\Models\Guardian;
-use App\Models\Teacher;
+use App\Domains\Enrollments\Models\Grade;
+use App\Domains\Enrollments\Models\Group;
+use App\Domains\Auth\Enums\StudentGender;
+use App\Domains\Auth\Enums\StudentEducationType;
+use App\Domains\Auth\Models\Student;
+use App\Domains\Auth\Models\Academy;
+use App\Domains\Auth\Models\Guardian;
+use App\Domains\Auth\Models\Teacher;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
@@ -30,13 +30,16 @@ class StudentResource extends BaseResource
 
     protected static ?string $navigationIcon = 'heroicon-o-users';
 
-    protected static ?string $navigationGroup = 'إدارة المستخدمين';
-
     protected static ?int $navigationSort = 4;
 
     protected static ?string $modelLabel = 'طالب';
 
     protected static ?string $pluralModelLabel = 'الطلاب';
+
+    public static function getNavigationGroup(): ?string
+    {
+        return 'إدارة المستخدمين';
+    }
 
     public static function form(Schema $schema): Schema
     {

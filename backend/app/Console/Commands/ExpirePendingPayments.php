@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
-use App\Models\PaymentLog;
+use App\Domains\Subscriptions\Models\PaymentLog;
 use Illuminate\Console\Command;
 
 class ExpirePendingPayments extends Command

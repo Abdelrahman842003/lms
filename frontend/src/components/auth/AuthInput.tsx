@@ -2,6 +2,16 @@ import React from 'react';
 
 import { Skeleton } from '@/components/ui/Skeleton';
 
+/**
+ * @deprecated Use the canonical Input component from '@/components/ui/Input' instead.
+ * AuthInput is kept for backwards compatibility but should not be used in new code.
+ * Migration guide:
+ * - `iconClass` → `icon`
+ * - `isLoading` → `isLoading`
+ * - `error` → `error`
+ * - `label` → `label`
+ * All other props are compatible.
+ */
 interface AuthInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string;
   iconClass?: string;
@@ -9,6 +19,9 @@ interface AuthInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   isLoading?: boolean;
 }
 
+/**
+ * @deprecated Use the canonical Input component from '@/components/ui/Input' instead.
+ */
 export const AuthInput: React.FC<AuthInputProps> = ({ label, iconClass, error, className, isLoading, ...props }) => {
   return (
     <div className="flex flex-col gap-4 mb-5">

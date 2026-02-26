@@ -4,7 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { DataTable } from '@/components/dashboard/DataTable';
-import { ConfirmationModal } from '@/components/ui';
+import { Button, Icon } from '@/components/ui';
+import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import { Filter } from '@/components/Filter';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { getSecretaries, deleteSecretary, toggleSecretaryStatus } from '@/services/authService';
@@ -115,7 +116,7 @@ export default function SecretariesPage() {
             {row.avatar ? (
               <img src={row.avatar} alt={row.name} className="w-full h-full rounded-full object-cover" />
             ) : (
-              <i className="fas fa-user-tie"></i>
+              <Icon name="user-tie" />
             )}
           </div>
 
@@ -193,9 +194,11 @@ export default function SecretariesPage() {
                 }}
                 className="w-full sm:w-auto min-w-[150px]"
               />
-              <Link href="/teacher/secretaries/add" className="btn btn-primary w-full sm:w-auto justify-center">
-                <i className="fas fa-plus"></i>
-                <span>إضافة سكرتير</span>
+              <Link href="/teacher/secretaries/add">
+                <Button className="w-full sm:w-auto justify-center">
+                  <Icon name="plus" className="ml-2" />
+                  <span>إضافة سكرتير</span>
+                </Button>
               </Link>
             </div>
           }

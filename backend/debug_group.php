@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\Group;
+use App\Domains\Enrollments\Models\Group;
 
 $group = Group::where('name', 'like', '%مج 1 م%')->first();
 

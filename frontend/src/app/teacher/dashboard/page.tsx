@@ -7,6 +7,7 @@ import { StatCard } from '@/components/dashboard/StatCard';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { TeacherStatsCharts } from '@/components/dashboard/TeacherStatsCharts';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
+import { LoadingSpinner } from '@/components/ui';
 
 
 export default function TeacherDashboard() {

@@ -5,6 +5,8 @@ import { createPayment } from '@/services/paymentService';
 import { fetchApi } from '@/services/authService';
 import toast from 'react-hot-toast';
 
+import { Button, Icon, LoadingSpinner, Input } from '@/components/ui';
+
 interface Student {
   id: string;
   name: string;
@@ -31,7 +33,7 @@ export default function NewPaymentModal({ onClose, onSuccess }: Props) {
   useEffect(() => {
     const fetchStudents = async () => {
       try {
-        const response = await fetchApi('/api/teacher/students?per_page=100');
+        const response: any = await fetchApi('/api/teacher/students?per_page=100');
         const enrollments = response.data.students?.data || response.data.students || [];
         const studentList = enrollments.map((e: any) => ({
           id: e.student?.id || e.id,
@@ -93,9 +95,9 @@ export default function NewPaymentModal({ onClose, onSuccess }: Props) {
         {/* Header */}
         <div className="flex justify-between items-center p-6 border-b border-white/10">
           <h2 className="text-xl font-bold text-white">تسجيل دفعة جديدة</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-white">
-            <i className="fas fa-times text-xl"></i>
-          </button>
+          <Button variant="ghost" onClick={onClose} className="text-gray-400 hover:text-white">
+            <Icon name="times" size="xl" />
+          </Button>
         </div>
 
         {/* Form */}
@@ -105,19 +107,19 @@ export default function NewPaymentModal({ onClose, onSuccess }: Props) {
             <label className="block text-gray-light mb-2">اختر الطالب</label>
             
             {/* Search */}
-            <input
+            <Input
               type="text"
               placeholder="بحث بالاسم أو الهاتف..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full p-3 mb-3 bg-white/5 border border-white/10 rounded-lg text-white focus:border-primary outline-none"
+              className="w-full p-3 mb-3"
             />
 
             {/* Student List */}
             <div className="max-h-48 overflow-y-auto bg-white/5 rounded-lg border border-white/10">
               {isLoading ? (
                 <div className="flex justify-center py-8">
-                  <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-primary"></div>
+                  <LoadingSpinner size="md" color="primary" />
                 </div>
               ) : filteredStudents.length === 0 ? (
                 <p className="text-center text-gray-400 py-4">لا يوجد طلاب</p>
@@ -141,7 +143,7 @@ export default function NewPaymentModal({ onClose, onSuccess }: Props) {
             {selectedStudent && (
               <div className="mt-3 p-3 bg-primary/10 border border-primary/30 rounded-lg">
                 <p className="text-primary text-sm">
-                  <i className="fas fa-check-circle ml-2"></i>
+                  <Icon name="check-circle" className="ml-2" />
                   تم اختيار: {selectedStudent.name}
                 </p>
               </div>
@@ -151,7 +153,7 @@ export default function NewPaymentModal({ onClose, onSuccess }: Props) {
           {/* Amount */}
           <div className="mb-6">
             <label className="block text-gray-light mb-2">المبلغ (ج.م)</label>
-            <input
+            <Input
               type="number"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
@@ -159,7 +161,7 @@ export default function NewPaymentModal({ onClose, onSuccess }: Props) {
               min="1"
               step="0.01"
               required
-              className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white text-xl text-center focus:border-primary outline-none"
+              className="w-full text-xl text-center"
             />
           </div>
 
@@ -177,30 +179,32 @@ export default function NewPaymentModal({ onClose, onSuccess }: Props) {
 
           {/* Submit */}
           <div className="flex gap-3">
-            <button
+            <Button
               type="button"
+              variant="outline"
               onClick={onClose}
-              className="flex-1 py-3 bg-white/5 text-gray-400 rounded-lg hover:bg-white/10 transition-colors"
+              className="flex-1"
             >
               إلغاء
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
+              variant="primary"
               disabled={isSubmitting || !selectedStudent || !amount}
-              className="flex-1 py-3 bg-primary text-white rounded-lg hover:bg-primary/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1"
             >
               {isSubmitting ? (
-                <span>
-                  <i className="fas fa-spinner fa-spin ml-2"></i>
+                <>
+                  <LoadingSpinner size="sm" color="white" />
                   جاري التسجيل...
-                </span>
+                </>
               ) : (
-                <span>
-                  <i className="fas fa-check ml-2"></i>
+                <>
+                  <Icon name="check" />
                   تسجيل الدفعة
-                </span>
+                </>
               )}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

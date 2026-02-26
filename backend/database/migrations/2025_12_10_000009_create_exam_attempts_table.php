@@ -16,7 +16,7 @@ return new class extends Migration
             $table->timestamp('completed_at')->nullable();
             $table->json('questions_order'); // Array of question IDs in randomized order
             $table->integer('current_question_index')->default(0);
-            $table->string('status')->default(\App\Enums\ExamAttemptStatus::IN_PROGRESS->value);
+            $table->string('status')->default(\App\Domains\Exams\Enums\ExamAttemptStatus::IN_PROGRESS->value);
             $table->string('terminated_reason')->nullable(); // 'visibility_change', 'screen_resize', 'time_expired'
             $table->timestamps();
 

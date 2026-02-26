@@ -9,6 +9,8 @@ import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { PageTransition } from '@/components/shared/PageTransition';
 import { fetchApi } from '@/services/authService';
 import { Filter } from '@/components/Filter';
+import { Button, Icon, LoadingSpinner, BadgeV2 as Badge } from '@/components/ui';
+import { Input } from '@/components/ui/Input';
 
 interface LectureItem {
   id: string;
@@ -138,25 +140,14 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
     !selectedTeacherId || t.teacher.id === selectedTeacherId
   ) || [];
 
-  const getAttendanceStatusStyle = (status: string) => {
+  const getAttendanceStatusBadge = (status: string) => {
     switch (status) {
       case 'present':
-        return 'bg-green-500/20 text-green-400 border-green-500/30';
+        return <Badge variant="success" size="sm">حاضر</Badge>;
       case 'absent':
-        return 'bg-red-500/20 text-red-400 border-red-500/30';
+        return <Badge variant="danger" size="sm">غائب</Badge>;
       default:
-        return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
-    }
-  };
-
-  const getAttendanceStatusLabel = (status: string) => {
-    switch (status) {
-      case 'present':
-        return 'حاضر';
-      case 'absent':
-        return 'غائب';
-      default:
-        return 'غير مسجل';
+        return <Badge variant="default" size="sm">غير مسجل</Badge>;
     }
   };
 
@@ -170,15 +161,16 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
           <div className="max-w-[1200px] mx-auto">
             <div className="text-center py-16">
               <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
-                <i className="fas fa-user-slash text-3xl text-gray-400"></i>
+                <Icon name="user-slash" size="2x" className="text-gray-400" />
               </div>
               <h3 className="text-lg font-bold text-white mb-2">الابن غير موجود</h3>
-              <button
+              <Button
+                variant="ghost"
                 onClick={() => router.push('/parent/children')}
-                className="mt-4 text-primary hover:underline"
+                className="mt-4"
               >
                 العودة لقائمة الأبناء
-              </button>
+              </Button>
             </div>
           </div>
         </DashboardLayout>
@@ -197,12 +189,13 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
           <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
             <div className="flex items-center justify-between flex-wrap gap-6">
               <div className="flex items-center gap-6">
-                <button
+                <Button
+                  variant="ghost"
                   onClick={() => router.push('/parent/children')}
-                  className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:bg-white/10 hover:text-white transition-colors"
+                  className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:bg-white/10 hover:text-white transition-colors p-0"
                 >
-                  <i className="fas fa-arrow-right text-lg"></i>
-                </button>
+                  <Icon name="arrow-right" size="lg" />
+                </Button>
                 <div className="flex items-center gap-4">
                   <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-primary/50 flex items-center justify-center text-white text-2xl font-bold border-2 border-white/10 shadow-lg shadow-primary/20">
                     {child.avatar ? (
@@ -218,7 +211,7 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
                   <div>
                     <h1 className="text-3xl font-bold text-white mb-2">تقارير {child.name}</h1>
                     <p className="text-gray-400 text-sm flex items-center gap-2">
-                      <i className="fas fa-chalkboard-teacher text-primary"></i>
+                      <Icon name="chalkboard-teacher" color="primary" />
                       {child.teachers.length} مدرس
                     </p>
                   </div>
@@ -232,12 +225,11 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-6">
               {/* Date Filter */}
               <div>
-                <label className="block text-gray-400 text-sm font-medium mb-3">التاريخ</label>
-                <input
+                <Input
                   type="date"
+                  label="التاريخ"
                   value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  className="w-full bg-[#0D1120] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-primary focus:outline-none transition-colors"
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDate(e.target.value)}
                 />
               </div>
 
@@ -245,26 +237,20 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
               <div>
                 <label className="block text-gray-400 text-sm font-medium mb-3">الفترة</label>
                 <div className="flex gap-3">
-                  <button
+                  <Button
                     onClick={() => setPeriod('day')}
-                    className={`flex-1 py-3 rounded-xl text-sm font-medium transition-all ${
-                      period === 'day'
-                        ? 'bg-primary text-white shadow-lg shadow-primary/30'
-                        : 'bg-[#0D1120] text-gray-400 hover:text-white hover:bg-white/5'
-                    }`}
+                    variant={period === 'day' ? 'primary' : 'outline'}
+                    className="flex-1 py-3 rounded-xl text-sm font-medium transition-all"
                   >
                     يومي
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     onClick={() => setPeriod('month')}
-                    className={`flex-1 py-3 rounded-xl text-sm font-medium transition-all ${
-                      period === 'month'
-                        ? 'bg-primary text-white shadow-lg shadow-primary/30'
-                        : 'bg-[#0D1120] text-gray-400 hover:text-white hover:bg-white/5'
-                    }`}
+                    variant={period === 'month' ? 'primary' : 'outline'}
+                    className="flex-1 py-3 rounded-xl text-sm font-medium transition-all"
                   >
                     شهري
-                  </button>
+                  </Button>
                 </div>
               </div>
 
@@ -290,7 +276,7 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
           {/* Loading State */}
           {isLoading && (
             <div className="flex items-center justify-center py-20">
-              <div className="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
+              <LoadingSpinner size="xl" color="primary" />
             </div>
           )}
 
@@ -301,14 +287,14 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
                 title="نسبة الحضور"
                 value={avgAttendance}
                 suffix="%"
-                icon="fas fa-check-circle"
+                icon="check-circle"
                 color="success"
               />
               <StatCard
                 title="متوسط الدرجات"
                 value={avgExams}
                 suffix="%"
-                icon="fas fa-chart-line"
+                icon="chart-line"
                 color="info"
               />
             </div>
@@ -330,7 +316,7 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
                         {teacherData.teacher.avatar ? (
                           <img src={teacherData.teacher.avatar} alt={teacherData.teacher.name} className="w-full h-full object-cover" />
                         ) : (
-                          <i className="fas fa-chalkboard-teacher text-white text-xl"></i>
+                          <Icon name="chalkboard-teacher" className="text-white text-xl" />
                         )}
                       </div>
                       <div>
@@ -344,13 +330,9 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
                         )}
                       </div>
                     </div>
-                    <span className={`px-4 py-1.5 rounded-full text-xs font-bold tracking-wide ${
-                      teacherData.subscription.is_active
-                        ? 'bg-green-500/10 text-green-400 border border-green-500/20'
-                        : 'bg-red-500/10 text-red-400 border border-red-500/20'
-                    }`}>
+                    <Badge variant={teacherData.subscription.is_active ? 'success' : 'danger'} size="sm">
                       {teacherData.subscription.is_active ? 'فعال' : 'غير فعال'}
-                    </span>
+                    </Badge>
                   </div>
 
                   {/* Stats Grid - Teacher Dashboard Style */}
@@ -358,7 +340,7 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
                     {/* Attendance */}
                     <div className="bg-[#0D1120] rounded-2xl p-6 text-center border border-white/5 hover:border-white/10 transition-colors">
                       <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center mx-auto mb-3">
-                        <i className="fas fa-check text-green-400 text-lg"></i>
+                        <Icon name="check" className="text-green-400 text-lg" />
                       </div>
                       <p className="text-2xl font-bold text-white mb-1">{teacherData.attendance.rate}%</p>
                       <p className="text-gray-400 text-sm font-medium">نسبة الحضور</p>
@@ -370,7 +352,7 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
                     {/* Exams */}
                     <div className="bg-[#0D1120] rounded-2xl p-6 text-center border border-white/5 hover:border-white/10 transition-colors">
                       <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center mx-auto mb-3">
-                        <i className="fas fa-file-alt text-blue-400 text-lg"></i>
+                        <Icon name="file-alt" className="text-blue-400 text-lg" />
                       </div>
                       <p className="text-2xl font-bold text-white mb-1">{teacherData.exams.average}%</p>
                       <p className="text-gray-400 text-sm font-medium">متوسط الدرجات</p>
@@ -382,7 +364,7 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
                     {/* Ranking */}
                     <div className="bg-[#0D1120] rounded-2xl p-6 text-center border border-white/5 hover:border-white/10 transition-colors">
                       <div className="w-12 h-12 rounded-full bg-purple-500/10 flex items-center justify-center mx-auto mb-3">
-                        <i className="fas fa-trophy text-purple-400 text-lg"></i>
+                        <Icon name="trophy" className="text-purple-400 text-lg" />
                       </div>
                       <p className="text-2xl font-bold text-white mb-1">
                         {teacherData.ranking.position ? `#${teacherData.ranking.position}` : '-'}
@@ -395,13 +377,14 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
                   </div>
 
                   {/* Expandable Details */}
-                  <button
+                  <Button
                     onClick={() => setExpandedTeacher(expandedTeacher === teacherData.teacher.id ? null : teacherData.teacher.id)}
+                    variant="ghost"
                     className="w-full py-3 text-primary text-sm font-bold hover:bg-primary/5 rounded-xl transition-colors flex items-center justify-center gap-2 group"
                   >
                     <span>{expandedTeacher === teacherData.teacher.id ? 'إخفاء التفاصيل' : 'عرض التفاصيل'}</span>
-                    <i className={`fas fa-chevron-down transition-transform duration-300 group-hover:translate-y-0.5 ${expandedTeacher === teacherData.teacher.id ? 'rotate-180' : ''}`}></i>
-                  </button>
+                    <Icon name="chevron-down" className={`transition-transform duration-300 group-hover:translate-y-0.5 ${expandedTeacher === teacherData.teacher.id ? 'rotate-180' : ''}`} />
+                  </Button>
 
                   <div className={`grid transition-[grid-template-rows,margin,opacity] duration-300 ease-in-out ${
                     expandedTeacher === teacherData.teacher.id ? 'grid-rows-[1fr] mt-8 opacity-100' : 'grid-rows-[0fr] mt-0 opacity-0'
@@ -412,7 +395,7 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
                         <div>
                           <h4 className="text-white font-bold mb-4 flex items-center gap-3 text-lg">
                             <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
-                              <i className="fas fa-book-open text-primary text-sm"></i>
+                              <Icon name="book-open" className="text-primary text-sm" />
                             </div>
                             المحاضرات ({teacherData.attendance.list.length})
                           </h4>
@@ -438,9 +421,7 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
                                       <td className="py-4 px-6 text-gray-400">{lecture.date}</td>
                                       <td className="py-4 px-6 text-gray-400">{lecture.time}</td>
                                       <td className="py-4 px-6">
-                                        <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getAttendanceStatusStyle(lecture.status)}`}>
-                                          {getAttendanceStatusLabel(lecture.status)}
-                                        </span>
+                                        {getAttendanceStatusBadge(lecture.status)}
                                       </td>
                                     </tr>
                                   ))}
@@ -454,7 +435,7 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
                         <div>
                           <h4 className="text-white font-bold mb-4 flex items-center gap-3 text-lg">
                             <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
-                              <i className="fas fa-file-alt text-primary text-sm"></i>
+                              <Icon name="file-alt" className="text-primary text-sm" />
                             </div>
                             الامتحانات ({teacherData.exams.list.length})
                           </h4>
@@ -490,15 +471,12 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
                                         ) : '-'}
                                       </td>
                                       <td className="py-4 px-6">
-                                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                          exam.percentage !== null
-                                            ? exam.percentage >= 50
-                                              ? 'bg-green-500/20 text-green-400'
-                                              : 'bg-red-500/20 text-red-400'
-                                            : 'bg-gray-500/20 text-gray-400'
-                                        }`}>
+                                        <Badge 
+                                          variant={exam.percentage !== null ? (exam.percentage >= 50 ? 'success' : 'danger') : 'default'}
+                                          size="sm"
+                                        >
                                           {exam.percentage !== null ? (exam.percentage >= 50 ? 'ناجح' : 'راسب') : 'لم يختبر'}
-                                        </span>
+                                        </Badge>
                                       </td>
                                     </tr>
                                   ))}
@@ -517,7 +495,7 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
               {displayedTeachers.length === 0 && (
                 <div className="text-center py-20 bg-white/5 rounded-2xl border border-white/10">
                   <div className="w-24 h-24 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-6">
-                    <i className="fas fa-filter text-4xl text-gray-400"></i>
+                    <Icon name="filter" size="3x" className="text-gray-400" />
                   </div>
                   <h3 className="text-xl font-bold text-white mb-2">لا توجد بيانات للمدرس المحدد</h3>
                   <p className="text-gray-400">جرب اختيار مدرس آخر أو عرض جميع المدرسين</p>

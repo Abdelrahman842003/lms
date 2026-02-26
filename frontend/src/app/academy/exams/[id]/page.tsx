@@ -11,6 +11,7 @@ import Link from 'next/link';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import { toast } from 'react-hot-toast';
 
+import { Button, Icon, Input, Textarea, Select, LoadingSpinner, Badge } from '@/components/ui';
 interface Question {
   id: number;
   text: string;
@@ -78,12 +79,12 @@ export default function AcademyExamDetailsPage({ params }: { params: Promise<{ i
     if (!exam) return null;
     
     if (exam.ended_at) {
-      return <span className="badge badge-danger">منتهي</span>;
+      return <Badge variant="danger">منتهي</Badge>;
     }
     return (
-      <span className={`badge badge-${exam.is_active ? 'success' : 'warning'}`}>
+      <Badge variant={exam.is_active ? 'success' : 'warning'}>
         {exam.is_active ? 'نشط' : 'غير نشط'}
-      </span>
+      </Badge>
     );
   };
 
@@ -166,7 +167,7 @@ export default function AcademyExamDetailsPage({ params }: { params: Promise<{ i
       >
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
-            <i className="fas fa-spinner fa-spin text-4xl text-primary mb-4"></i>
+            <LoadingSpinner size="sm" color="primary" />
             <p className="text-gray-light">جاري التحميل...</p>
           </div>
         </div>
@@ -181,13 +182,13 @@ export default function AcademyExamDetailsPage({ params }: { params: Promise<{ i
         user={user || undefined}
       >
         <div className="alert alert-danger mb-4">
-          <i className="fas fa-exclamation-circle"></i>
+          <Icon name="exclamation-circle" />
           <span>{error || 'الامتحان غير موجود'}</span>
         </div>
-        <button className="btn btn-secondary" onClick={() => router.back()}>
-          <i className="fas fa-arrow-right"></i>
+        <Button variant="secondary" onClick={() => router.back()}>
+          <Icon name="arrow-right" />
           <span>عودة</span>
-        </button>
+        </Button>
       </DashboardLayout>
     );
   }
@@ -202,7 +203,7 @@ export default function AcademyExamDetailsPage({ params }: { params: Promise<{ i
         <StatCard
           title="عدد الأسئلة"
           value={exam.questions?.length || 0}
-          icon="fas fa-question-circle"
+          icon="question-circle"
           color="primary"
           variant="centered"
         />
@@ -210,7 +211,7 @@ export default function AcademyExamDetailsPage({ params }: { params: Promise<{ i
         <StatCard
           title="عدد المحاولات"
           value={exam.stats?.total_attempts || 0}
-          icon="fas fa-users"
+          icon="users"
           color="success"
           variant="centered"
         />
@@ -218,7 +219,7 @@ export default function AcademyExamDetailsPage({ params }: { params: Promise<{ i
         <StatCard
           title="متوسط الدرجات"
           value={exam.stats?.average_score || 0}
-          icon="fas fa-chart-line"
+          icon="chart-line"
           color="warning"
           suffix="%"
           variant="centered"
@@ -227,7 +228,7 @@ export default function AcademyExamDetailsPage({ params }: { params: Promise<{ i
         <StatCard
           title="الدرجة الكلية"
           value={exam.max_score}
-          icon="fas fa-star"
+          icon="star"
           color="danger"
           variant="centered"
         />
@@ -237,82 +238,89 @@ export default function AcademyExamDetailsPage({ params }: { params: Promise<{ i
       <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary text-2xl">
-            <i className="fas fa-file-alt"></i>
+            <Icon name="file-alt" />
           </div>
           <div>
             <h2 className="text-2xl font-bold text-white m-0">{exam.title}</h2>
             <p className="m-0 text-gray-light text-sm">
-              {exam.subject} | {exam.grade?.name || '-'} 
+              {exam.subject} | {exam.grade?.name || '-'}
               {exam.teacher && <span className="mr-2">| المدرس: {exam.teacher.name}</span>}
             </p>
           </div>
           {getStatusBadge()}
         </div>
         <div className="flex flex-wrap gap-2 items-center">
-          <button onClick={() => router.back()} className="btn btn-outline">
-            <i className="fas fa-arrow-right"></i>
+          <Button variant="outline" onClick={() => router.back()}>
+            <Icon name="arrow-right" />
             <span>عودة</span>
-          </button>
+          </Button>
           
           {/* Toggle Status Button */}
           {!exam.ended_at && (
-            <button 
+            <Button
               onClick={handleToggleStatus}
               disabled={isProcessing}
-              className={`btn ${exam.is_active ? 'btn-warning' : 'btn-success'}`}
+              variant={exam.is_active ? 'primary' : 'primary'}
+              className={exam.is_active ? 'bg-warning hover:bg-warning' : ''}
             >
-              <i className={`fas fa-toggle-${exam.is_active ? 'on' : 'off'}`}></i>
+              <Icon name={exam.is_active ? 'toggle-on' : 'toggle-off'} />
               <span>{exam.is_active ? 'إلغاء التفعيل' : 'تفعيل'}</span>
-            </button>
+            </Button>
           )}
           
           {/* End Exam Button */}
           {exam.is_active && !exam.ended_at && (
-            <button 
+            <Button
               onClick={() => setIsEndModalOpen(true)}
               disabled={isProcessing}
-              className="btn btn-danger"
+              variant="outline"
+              className="border-danger text-danger hover:bg-danger hover:text-white"
             >
-              <i className="fas fa-stop-circle"></i>
+              <Icon name="stop-circle" />
               <span>إنهاء الامتحان</span>
-            </button>
+            </Button>
           )}
           
           {/* Results Button */}
-          <Link href={`/academy/exams/${exam.id}/results`} className="btn btn-primary">
-            <i className="fas fa-poll"></i>
-            <span>النتائج</span>
+          <Link href={`/academy/exams/${exam.id}/results`} className="inline-flex">
+            <Button variant="primary">
+              <Icon name="poll" />
+              <span>النتائج</span>
+            </Button>
           </Link>
           
           {/* Edit Button */}
-          <Link href={`/academy/exams/${exam.id}/edit`} className="btn btn-primary">
-            <i className="fas fa-edit"></i>
-            <span>تعديل</span>
+          <Link href={`/academy/exams/${exam.id}/edit`} className="inline-flex">
+            <Button variant="primary">
+              <Icon name="edit" />
+              <span>تعديل</span>
+            </Button>
           </Link>
           
           {/* Delete Button */}
-          <button 
+          <Button
             onClick={() => setIsDeleteModalOpen(true)}
             disabled={isProcessing}
-            className="btn btn-danger"
+            variant="outline"
+            className="border-danger text-danger hover:bg-danger hover:text-white"
           >
-            <i className="fas fa-trash"></i>
+            <Icon name="trash" />
             <span>حذف</span>
-          </button>
+          </Button>
         </div>
       </div>
 
       {/* Basic Data Section */}
       <DashboardCard
         title="البيانات الأساسية"
-        icon="fas fa-info-circle"
+        icon="info-circle"
       >
         <div className="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-4">
           <div className="bg-[#1a1f37] flex justify-between items-center p-5 rounded-xl border border-white/5 hover:border-primary/50 transition-colors">
             <span className="text-white font-semibold">{exam.title}</span>
             <div className="flex items-center gap-2 text-gray-light">
               <span>عنوان الامتحان</span>
-              <i className="fas fa-heading"></i>
+              <Icon name="heading" />
             </div>
           </div>
 
@@ -320,7 +328,7 @@ export default function AcademyExamDetailsPage({ params }: { params: Promise<{ i
             <span className="text-white font-semibold">{exam.subject}</span>
             <div className="flex items-center gap-2 text-gray-light">
               <span>المادة</span>
-              <i className="fas fa-book"></i>
+              <Icon name="book" />
             </div>
           </div>
 
@@ -328,7 +336,7 @@ export default function AcademyExamDetailsPage({ params }: { params: Promise<{ i
             <span className="text-white font-semibold">{exam.teacher?.name || '-'}</span>
             <div className="flex items-center gap-2 text-gray-light">
               <span>المدرس</span>
-              <i className="fas fa-chalkboard-teacher"></i>
+              <Icon name="chalkboard-teacher" />
             </div>
           </div>
 
@@ -336,7 +344,7 @@ export default function AcademyExamDetailsPage({ params }: { params: Promise<{ i
             <span className="text-white font-semibold">{exam.grade?.name || '-'}</span>
             <div className="flex items-center gap-2 text-gray-light">
               <span>الصف الدراسي</span>
-              <i className="fas fa-layer-group"></i>
+              <Icon name="layer-group" />
             </div>
           </div>
 
@@ -344,7 +352,7 @@ export default function AcademyExamDetailsPage({ params }: { params: Promise<{ i
             <span className="text-white font-semibold">{new Date(exam.date).toLocaleDateString('ar-EG')}</span>
             <div className="flex items-center gap-2 text-gray-light">
               <span>تاريخ الامتحان</span>
-              <i className="fas fa-calendar-alt"></i>
+              <Icon name="calendar-alt" />
             </div>
           </div>
 
@@ -352,7 +360,7 @@ export default function AcademyExamDetailsPage({ params }: { params: Promise<{ i
             <span className="text-white font-semibold">{exam.duration} دقيقة</span>
             <div className="flex items-center gap-2 text-gray-light">
               <span>المدة</span>
-              <i className="fas fa-clock"></i>
+              <Icon name="clock" />
             </div>
           </div>
 
@@ -360,7 +368,7 @@ export default function AcademyExamDetailsPage({ params }: { params: Promise<{ i
             <span className="text-white font-semibold">{exam.max_score}</span>
             <div className="flex items-center gap-2 text-gray-light">
               <span>الدرجة الكلية</span>
-              <i className="fas fa-star"></i>
+              <Icon name="star" />
             </div>
           </div>
 
@@ -369,7 +377,7 @@ export default function AcademyExamDetailsPage({ params }: { params: Promise<{ i
               <span className="text-white font-semibold">{exam.actual_question_count}</span>
               <div className="flex items-center gap-2 text-gray-light">
                 <span>عدد الأسئلة الفعلية</span>
-                <i className="fas fa-list-ol"></i>
+                <Icon name="list-ol" />
               </div>
             </div>
           )}
@@ -379,7 +387,7 @@ export default function AcademyExamDetailsPage({ params }: { params: Promise<{ i
               <span className="text-white font-semibold">{exam.time_per_question} ثانية</span>
               <div className="flex items-center gap-2 text-gray-light">
                 <span>وقت كل سؤال</span>
-                <i className="fas fa-stopwatch"></i>
+                <Icon name="stopwatch" />
               </div>
             </div>
           )}
@@ -391,15 +399,16 @@ export default function AcademyExamDetailsPage({ params }: { params: Promise<{ i
         <div className="mt-8">
           <DashboardCard
             title="الأسئلة"
-            icon="fas fa-question-circle"
+            icon="question-circle"
             action={
-              <button 
+              <Button
                 onClick={() => setShowQuestions(!showQuestions)}
-                className="btn btn-outline btn-sm"
+                variant="outline"
+                size="sm"
               >
-                <i className={`fas fa-${showQuestions ? 'eye-slash' : 'eye'}`}></i>
+                <Icon name={showQuestions ? 'eye-slash' : 'eye'} />
                 <span>{showQuestions ? 'إخفاء' : 'عرض'}</span>
-              </button>
+              </Button>
             }
           >
             {showQuestions ? (
@@ -426,7 +435,7 @@ export default function AcademyExamDetailsPage({ params }: { params: Promise<{ i
                           >
                             <div className="flex items-center gap-2">
                               {option === question.correct_answer && (
-                                <i className="fas fa-check-circle text-green-400"></i>
+                                <Icon name="check-circle" className="text-green-400" />
                               )}
                               <span>{option}</span>
                             </div>
@@ -439,7 +448,7 @@ export default function AcademyExamDetailsPage({ params }: { params: Promise<{ i
               </div>
             ) : (
               <div className="text-center py-8 text-gray-light">
-                <i className="fas fa-eye-slash text-4xl mb-3 opacity-50"></i>
+                <Icon name="eye-slash" size="2x" className="mb-3 opacity-50" />
                 <p>اضغط على "عرض" لرؤية الأسئلة</p>
               </div>
             )}

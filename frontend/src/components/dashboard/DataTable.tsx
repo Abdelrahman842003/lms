@@ -3,6 +3,8 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { DataTableProps } from '@/types/dashboard';
+import { Button } from '@/components/ui/Button';
+import { Icon } from '@/components/ui/Icon';
 
 export const DataTable: React.FC<DataTableProps> = ({
   columns,
@@ -167,7 +169,7 @@ export const DataTable: React.FC<DataTableProps> = ({
             ))
           ) : (
             <div className="empty-state">
-              <i className="fas fa-inbox"></i>
+              <Icon name="inbox" size="lg" />
               <h3>لا توجد بيانات</h3>
               <p>لم يتم العثور على أي نتائج</p>
             </div>
@@ -188,9 +190,11 @@ export const DataTable: React.FC<DataTableProps> = ({
                 >
                   {column.label}
                   {column.sortable && sortColumn === column.key && (
-                    <i
-                      className={`fas fa-sort-${sortDirection === 'asc' ? 'up' : 'down'} sort-icon`}
-                    ></i>
+                    <Icon
+                      name={sortDirection === 'asc' ? 'sort-up' : 'sort-down'}
+                      size="xs"
+                      className="sort-icon ml-1"
+                    />
                   )}
                 </th>
               ))}
@@ -230,7 +234,9 @@ export const DataTable: React.FC<DataTableProps> = ({
                   {actions && actions.length > 0 && (
                     <td>
                       <div className="actions-dropdown">
-                        <button
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           className="actions-trigger"
                           onClick={(e) => {
                             e.stopPropagation();
@@ -274,8 +280,8 @@ export const DataTable: React.FC<DataTableProps> = ({
                             )
                           }}
                         >
-                          <i className="fas fa-ellipsis-v"></i>
-                        </button>
+                          <Icon name="ellipsis-v" size="sm" />
+                        </Button>
                         {activeDropdown === rowIndex && typeof document !== 'undefined' && createPortal(
                           <div
                             ref={dropdownRef}
@@ -291,9 +297,16 @@ export const DataTable: React.FC<DataTableProps> = ({
                             {actions.map((action, actionIndex) => {
                               if (action.hidden && action.hidden(row)) return null;
                               
-                              const icon = typeof action.icon === 'function' ? action.icon(row) : action.icon;
+                              const iconName = typeof action.icon === 'function' ? action.icon(row) : action.icon;
                               const label = typeof action.label === 'function' ? action.label(row) : action.label;
                               const variant = typeof action.variant === 'function' ? action.variant(row) : action.variant;
+                              
+                              // Map FontAwesome class to Icon name
+                              const getIconName = (faClass: string): string => {
+                                if (!faClass) return 'circle';
+                                const match = faClass.match(/fa-(\S+)/);
+                                return match ? match[1] : 'circle';
+                              };
                               
                               return (
                                 <div
@@ -304,7 +317,7 @@ export const DataTable: React.FC<DataTableProps> = ({
                                     handleAction(action, row);
                                   }}
                                 >
-                                  <i className={icon}></i>
+                                  <Icon name={getIconName(iconName)} size="sm" />
                                   <span>{label}</span>
                                 </div>
                               );
@@ -324,7 +337,7 @@ export const DataTable: React.FC<DataTableProps> = ({
                   className="empty-state-cell"
                 >
                   <div className="empty-state">
-                    <i className="fas fa-inbox"></i>
+                    <Icon name="inbox" size="lg" />
                     <h3>لا توجد بيانات</h3>
                     <p>لم يتم العثور على أي نتائج</p>
                   </div>
@@ -348,29 +361,35 @@ export const DataTable: React.FC<DataTableProps> = ({
           </div>
           {totalPages > 1 && (
             <div className="pagination-buttons">
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
                 className="pagination-btn"
                 disabled={currentPage === 1}
                 onClick={() => handlePageChange(currentPage - 1)}
               >
-                <i className="fas fa-chevron-right"></i>
-              </button>
+                <Icon name="chevron-right" size="sm" />
+              </Button>
               {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                <button
+                <Button
                   key={page}
+                  variant={currentPage === page ? 'primary' : 'ghost'}
+                  size="sm"
                   className={`pagination-btn ${page === currentPage ? 'active' : ''}`}
                   onClick={() => handlePageChange(page)}
                 >
                   {page}
-                </button>
+                </Button>
               ))}
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
                 className="pagination-btn"
                 disabled={currentPage === totalPages}
                 onClick={() => handlePageChange(currentPage + 1)}
               >
-                <i className="fas fa-chevron-left"></i>
-              </button>
+                <Icon name="chevron-left" size="sm" />
+              </Button>
             </div>
           )}
         </div>

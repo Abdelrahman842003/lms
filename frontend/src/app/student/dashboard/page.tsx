@@ -7,6 +7,7 @@ import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { fetchApi } from '@/services/authService';
 import Link from 'next/link';
+import { Button, Icon } from '@/components/ui/index';
 
 export default function StudentDashboard() {
   const { user, selectedTeacher } = useAuth();
@@ -145,33 +146,39 @@ export default function StudentDashboard() {
       {/* Quick Access Section - Added for better navigation */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <Link href="/student/leaderboard" className="block group">
-          <div className="bg-white/5 hover:bg-white/10 border border-white/10 hover:border-primary/50 rounded-2xl p-6 transition-all duration-300 flex items-center justify-between">
+          <Button
+            variant="ghost"
+            className="w-full h-auto p-6 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-primary/50 rounded-2xl transition-all duration-300 flex items-center justify-between text-left"
+          >
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center text-primary text-xl group-hover:scale-110 transition-transform">
-                <i className="fas fa-trophy"></i>
+                <Icon name="trophy" className="text-xl" />
               </div>
               <div>
                 <h3 className="text-lg font-bold text-white mb-1">لوحة الشرف</h3>
                 <p className="text-sm text-gray-400">نافس زملاءك واجمع النقاط</p>
               </div>
             </div>
-            <i className="fas fa-arrow-left text-gray-500 group-hover:text-primary transition-colors"></i>
-          </div>
+            <Icon name="arrow-left" className="text-gray-500 group-hover:text-primary transition-colors" />
+          </Button>
         </Link>
 
         <Link href="/student/mistakes" className="block group">
-          <div className="bg-white/5 hover:bg-white/10 border border-white/10 hover:border-red-500/50 rounded-2xl p-6 transition-all duration-300 flex items-center justify-between">
+          <Button
+            variant="ghost"
+            className="w-full h-auto p-6 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-red-500/50 rounded-2xl transition-all duration-300 flex items-center justify-between text-left"
+          >
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-red-500/20 flex items-center justify-center text-red-500 text-xl group-hover:scale-110 transition-transform">
-                <i className="fas fa-exclamation-circle"></i>
+                <Icon name="exclamation-circle" className="text-xl" />
               </div>
               <div>
                 <h3 className="text-lg font-bold text-white mb-1">أخطائي</h3>
                 <p className="text-sm text-gray-400">راجع أخطاءك وتعلم منها</p>
               </div>
             </div>
-            <i className="fas fa-arrow-left text-gray-500 group-hover:text-red-500 transition-colors"></i>
-          </div>
+            <Icon name="arrow-left" className="text-gray-500 group-hover:text-red-500 transition-colors" />
+          </Button>
         </Link>
       </div>
 
@@ -182,8 +189,10 @@ export default function StudentDashboard() {
           title="المحاضرات القادمة"
           icon="fas fa-calendar-alt"
           action={
-            <Link href="/student/lectures" className="btn btn-sm btn-outline">
-              عرض الكل
+            <Link href="/student/lectures" className="inline-flex">
+              <Button variant="outline" size="sm">
+                عرض الكل
+              </Button>
             </Link>
           }
         >
@@ -217,7 +226,7 @@ export default function StudentDashboard() {
                             {lecture.title}
                         </h3>
                         <p className="text-sm text-gray-light">
-                            <i className="fas fa-calendar ml-1.5"></i>
+                            <Icon name="calendar" className="ml-1.5" />
                             {lecture.date} - {lecture.time}
                         </p>
                       </div>
@@ -246,15 +255,15 @@ export default function StudentDashboard() {
                 latestNews.map((item, index) => (
                 <div key={`${item.type}-${item.id}-${index}`} className="flex items-center gap-4 p-3 rounded-xl bg-white/5 border border-white/5">
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg ${
-                        item.type === 'attendance' 
+                        item.type === 'attendance'
                             ? (item.status === 'present' ? 'bg-success/20 text-success' : 'bg-danger/20 text-danger')
                             : 'bg-primary/20 text-primary'
                     }`}>
-                        <i className={`fas ${
-                            item.type === 'attendance' 
-                                ? (item.status === 'present' ? 'fa-check' : 'fa-times')
-                                : 'fa-file-alt'
-                        }`}></i>
+                        <Icon name={
+                            item.type === 'attendance'
+                                ? (item.status === 'present' ? 'check' : 'times')
+                                : 'file-alt'
+                        } />
                     </div>
                     <div className="flex-1">
                         <h4 className="text-white font-medium mb-1">{item.title}</h4>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { fetchApi } from '@/services/authService';
 import toast from 'react-hot-toast';
+import { LoadingSpinner, Button, Icon, Input } from '@/components/ui';
 
 interface Student {
   id: string;
@@ -123,7 +124,7 @@ export const ManualAttendanceModal: React.FC<ManualAttendanceModalProps> = ({
         <div className="p-6 border-b border-white/10 flex justify-between items-center">
           <h3 className="text-xl font-bold text-white">تسجيل حضور يدوي</h3>
           <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
-            <i className="fas fa-times text-xl"></i>
+            <Icon name="times" size="xl" />
           </button>
         </div>
 
@@ -147,12 +148,12 @@ export const ManualAttendanceModal: React.FC<ManualAttendanceModalProps> = ({
               }}
               maxLength={11}
             />
-            <i className="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"></i>
+            <Icon name="search" className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
           </div>
 
           {isLoading ? (
             <div className="text-center py-8">
-              <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+              <LoadingSpinner size="md" color="primary" className="mx-auto mb-2" />
               <p className="text-gray-500 text-sm">جاري البحث...</p>
             </div>
           ) : student ? (
@@ -169,47 +170,47 @@ export const ManualAttendanceModal: React.FC<ManualAttendanceModalProps> = ({
                 </div>
               </div>
 
-              <button
+              <Button
                 onClick={handleMarkAttendance}
                 disabled={isMarking || alreadyAttended}
-                className={`w-full py-3 rounded-lg font-bold flex items-center justify-center gap-2 transition-all ${
-                  alreadyAttended 
+                className={`w-full ${
+                  alreadyAttended
                     ? 'bg-green-500/20 text-green-500 cursor-not-allowed'
-                    : 'bg-primary hover:bg-primary-dark text-white shadow-lg hover:shadow-primary/50'
+                    : ''
                 }`}
               >
                 {isMarking ? (
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <LoadingSpinner size="sm" color="white" />
                 ) : alreadyAttended ? (
                   <>
-                    <i className="fas fa-check"></i>
+                    <Icon name="check" />
                     <span>تم التحضير</span>
                   </>
                 ) : (
                   <>
-                    <i className="fas fa-user-check"></i>
+                    <Icon name="user-check" />
                     <span>تسجيل حضور</span>
                   </>
                 )}
-              </button>
+              </Button>
             </div>
           ) : searchQuery.length > 0 ? (
             <div className="text-center py-8 text-gray-500">
               {/^01[0125][0-9]{8}$/.test(searchQuery) ? (
                 <>
-                  <i className="fas fa-user-slash text-3xl mb-2 opacity-50"></i>
+                  <Icon name="user-slash" size="3x" className="mb-2 opacity-50" />
                   <p>لم يتم العثور على طالب بهذا الرقم</p>
                 </>
               ) : (
                 <>
-                  <i className="fas fa-exclamation-circle text-3xl mb-2 opacity-50 text-warning"></i>
+                  <Icon name="exclamation-circle" size="3x" className="mb-2 opacity-50 text-warning" />
                   <p>الرجاء إدخال رقم هاتف مصري صحيح (11 رقم)</p>
                 </>
               )}
             </div>
           ) : (
             <div className="text-center py-8 text-gray-500">
-              <i className="fas fa-keyboard text-3xl mb-2 opacity-50"></i>
+              <Icon name="keyboard" size="3x" className="mb-2 opacity-50" />
               <p>ابدأ الكتابة للبحث...</p>
             </div>
           )}

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources;
 
-use App\Models\Admin;
+use App\Domains\Auth\Models\Admin;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Select;
@@ -21,13 +21,16 @@ class AdminResource extends BaseResource
 
     protected static ?string $navigationIcon = 'heroicon-o-shield-check';
 
-    protected static ?string $navigationGroup = 'إدارة المستخدمين';
-
     protected static ?int $navigationSort = 1;
 
     protected static ?string $modelLabel = 'مدير';
 
     protected static ?string $pluralModelLabel = 'المديرون';
+
+    public static function getNavigationGroup(): ?string
+    {
+        return 'إدارة المستخدمين';
+    }
 
     public static function form(Schema $schema): Schema
     {

@@ -1,4 +1,5 @@
 import React from 'react';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 interface AuthButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   isLoading?: boolean;
@@ -15,7 +16,7 @@ export const AuthButton: React.FC<AuthButtonProps> = ({ isLoading, loadingText =
     >
       {isLoading ? (
         <>
-          <i className="fas fa-spinner fa-spin"></i>
+          <LoadingSpinner size="sm" color="white" />
           <span>{loadingText}</span>
         </>
       ) : (

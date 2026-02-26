@@ -11,6 +11,8 @@ import academyService from '@/services/academyService';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
+import { Button, Icon, Input, Textarea, Select, LoadingSpinner, Badge } from '@/components/ui';
+
 function AcademyDashboard() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const router = useRouter();
@@ -66,7 +68,7 @@ function AcademyDashboard() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <i className="fas fa-spinner fa-spin text-4xl text-primary mb-4"></i>
+          <LoadingSpinner size="sm" color="primary" />
           <p className="text-gray-400">جاري التحميل...</p>
         </div>
       </div>
@@ -126,19 +128,19 @@ function AcademyDashboard() {
         <StatCard
           title="إجمالي المدرسين"
           value={stats.teachers_count || 0}
-          icon="fas fa-chalkboard-teacher"
+          icon="chalkboard-teacher"
           color="primary"
         />
         <StatCard
           title="إجمالي الطلاب"
           value={stats.students_count || 0}
-          icon="fas fa-user-graduate"
+          icon="user-graduate"
           color="secondary"
         />
         <StatCard
           title="إجمالي الارتباطات"
           value={stats.total_enrollments || 0}
-          icon="fas fa-link"
+          icon="link"
           color="info"
         />
 
@@ -171,7 +173,7 @@ function AcademyDashboard() {
             />
           ) : (
             <div className="p-8 text-center text-gray-400">
-              <i className="fas fa-users text-4xl mb-4 opacity-50"></i>
+              <Icon name="users" size="2x" className="mb-4 opacity-50" />
               <p>لا يوجد مدرسين مسجلين في الأكاديمية حالياً</p>
             </div>
           )}

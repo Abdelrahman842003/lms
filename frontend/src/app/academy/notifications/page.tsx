@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import * as academyService from '@/services/academyService';
 import toast from 'react-hot-toast';
 
+import { Button, Icon, LoadingSpinner, FormModal, Input, Textarea, Select } from '@/components/ui';
 export default function NotificationsPage() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const router = useRouter();
@@ -71,7 +72,7 @@ export default function NotificationsPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <i className="fas fa-spinner fa-spin text-4xl text-primary mb-4"></i>
+          <LoadingSpinner size="sm" color="primary" />
           <p className="text-gray-400">جاري التحميل...</p>
         </div>
       </div>
@@ -113,36 +114,33 @@ export default function NotificationsPage() {
     <DashboardLayout role="academy" user={user}>
       {/* Stats */}
       <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-6 mb-8">
-        <StatCard 
-          title="إجمالي الإشعارات المرسلة" 
-          value={notifications.length} 
-          icon="fas fa-paper-plane" 
-          color="primary" 
+        <StatCard
+          title="إجمالي الإشعارات المرسلة"
+          value={notifications.length}
+          icon="paper-plane"
+          color="primary"
         />
-        <StatCard 
-          title="إشعارات اليوم" 
+        <StatCard
+          title="إشعارات اليوم"
           value={notifications.filter(n => {
             const today = new Date().toDateString();
             const nDate = new Date(n.created_at).toDateString();
             return today === nDate;
-          }).length} 
-          icon="fas fa-calendar-day" 
-          color="secondary" 
+          }).length}
+          icon="calendar-day"
+          color="secondary"
         />
       </div>
 
       {/* Notifications List */}
       <DashboardCard
         title="سجل الإشعارات"
-        icon="fas fa-list"
+        icon="list"
         action={
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="btn btn-primary"
-          >
-            <i className="fas fa-paper-plane"></i>
+          <Button variant="primary" onClick={() => setShowCreateModal(true)}>
+            <Icon name="paper-plane" className="ml-2" />
             <span>إرسال إشعار جديد</span>
-          </button>
+          </Button>
         }
       >
         <DataTable
@@ -155,94 +153,50 @@ export default function NotificationsPage() {
       </DashboardCard>
 
       {/* Create Modal */}
-      {showCreateModal && (
-        <div 
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" 
-          onClick={() => setShowCreateModal(false)}
-        >
-          <div 
-            className="w-full max-w-[520px] bg-[#1a1a28] rounded-2xl shadow-2xl border border-white/10 animate-scaleIn max-h-[85vh] overflow-hidden flex flex-col" 
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 shrink-0">
-              <h3 className="text-lg font-bold text-white">إرسال إشعار جديد</h3>
-              <button 
-                className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors" 
-                onClick={() => setShowCreateModal(false)}
-              >
-                <i className="fas fa-times"></i>
-              </button>
-            </div>
-            
-            <form onSubmit={handleCreate} className="flex flex-col flex-1 overflow-hidden">
-              <div className="p-5 space-y-4 overflow-y-auto flex-1">
-                <div className="space-y-2">
-                  <label htmlFor="title" className="block text-sm font-medium text-gray-300">العنوان</label>
-                  <input
-                    type="text"
-                    id="title"
-                    className="w-full p-3 bg-[#151521] border border-white/10 rounded-lg text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
-                    value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    required
-                    placeholder="مثال: تنبيه هام"
-                  />
-                </div>
+      <FormModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSubmit={handleCreate}
+        title="إرسال إشعار جديد"
+        submitText="إرسال"
+        cancelText="إلغاء"
+        maxWidth="520px"
+      >
+        <div className="space-y-4">
+          <Input
+            id="title"
+            label="العنوان"
+            value={formData.title}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, title: e.target.value })}
+            required
+            placeholder="مثال: تنبيه هام"
+          />
 
-                <div className="space-y-2">
-                  <label htmlFor="message" className="block text-sm font-medium text-gray-300">الرسالة</label>
-                  <textarea
-                    id="message"
-                    className="w-full p-3 bg-[#151521] border border-white/10 rounded-lg text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all min-h-[120px] resize-y"
-                    value={formData.message}
-                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                    required
-                    rows={4}
-                    placeholder="اكتب رسالتك هنا..."
-                  />
-                </div>
+          <Textarea
+            id="message"
+            label="الرسالة"
+            value={formData.message}
+            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setFormData({ ...formData, message: e.target.value })}
+            required
+            rows={4}
+            placeholder="اكتب رسالتك هنا..."
+          />
 
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-300">الفئة المستهدفة</label>
-                  <div className="relative">
-                    <select
-                      value={formData.target_type}
-                      onChange={(e) => setFormData({ ...formData, target_type: e.target.value as any })}
-                      className="w-full p-3 bg-[#151521] border border-white/10 rounded-lg text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all appearance-none cursor-pointer"
-                    >
-                      <option value="all">الجميع</option>
-                      <option value="teachers">المدرسين</option>
-                      <option value="secretaries">السكرتيرات</option>
-                    </select>
-                    <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-                      <i className="fas fa-chevron-down"></i>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Footer */}
-              <div className="flex items-center justify-end gap-3 px-5 py-4 border-t border-white/10 bg-black/30 shrink-0">
-                <button 
-                  type="button" 
-                  className="px-5 py-2.5 rounded-xl border border-white/10 text-white hover:bg-white/5 transition-all font-medium" 
-                  onClick={() => setShowCreateModal(false)}
-                >
-                  إلغاء
-                </button>
-                <button 
-                  type="submit" 
-                  className="px-5 py-2.5 rounded-xl bg-primary text-white hover:bg-primary-dark shadow-lg shadow-primary/20 transition-all font-medium flex items-center gap-2"
-                >
-                  <i className="fas fa-paper-plane"></i>
-                  <span>إرسال</span>
-                </button>
-              </div>
-            </form>
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-300">الفئة المستهدفة</label>
+            <Select
+              options={[
+                { value: 'all', label: 'الجميع' },
+                { value: 'teachers', label: 'المدرسين' },
+                { value: 'secretaries', label: 'السكرتيرات' }
+              ]}
+              value={formData.target_type}
+              onChange={(value) => setFormData({ ...formData, target_type: value as 'teachers' | 'secretaries' | 'all' })}
+              placeholder="اختر الفئة المستهدفة"
+            />
           </div>
         </div>
-      )}
+      </FormModal>
     </DashboardLayout>
   );
 }

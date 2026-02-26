@@ -22,7 +22,7 @@ return new class extends Migration
             $table->decimal('discount', 5, 2)->default(0);
             $table->decimal('commission', 10, 2)->default(0);
             $table->string('confirmation_code', 20)->index(); // XXXX-XXXX
-            $table->string('status')->default(\App\Enums\PaymentLogStatus::PENDING->value);
+            $table->string('status')->default(\App\Domains\Subscriptions\Enums\PaymentLogStatus::PENDING->value);
             $table->string('payment_method')->default('cash');
             $table->uuid('received_by_id');
             $table->string('received_by_type'); // Teacher or Secretary

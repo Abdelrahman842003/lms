@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { StatCard } from '@/components/dashboard/StatCard';
+import { LoadingSpinner, FormModal, Button, Icon, Input, Badge } from '@/components/ui';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { toast } from 'react-hot-toast';
 import axios from '@/lib/axios';
@@ -125,13 +126,13 @@ export default function ExamResultsPage() {
   // Loading state
   if (loading) {
     return (
-      <DashboardLayout 
-        role={user?.userType as 'teacher' | 'secretary' || 'teacher'} 
+      <DashboardLayout
+        role={user?.userType as 'teacher' | 'secretary' || 'teacher'}
         user={{ name: user?.name || '', avatar: user?.avatar || '' }}
       >
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-primary mx-auto mb-4"></div>
+            <LoadingSpinner size="lg" className="mx-auto mb-4" />
             <p className="text-gray-400">جاري تحميل النتائج...</p>
           </div>
         </div>
@@ -149,32 +150,33 @@ export default function ExamResultsPage() {
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="flex-1 min-w-0">
             <h1 className="text-lg md:text-2xl font-bold text-white flex items-center gap-2">
-              <i className="fas fa-poll text-primary"></i>
+              <Icon name="poll" className="text-primary" />
               <span className="truncate">{exam?.title}</span>
             </h1>
             <div className="flex flex-wrap items-center gap-2 mt-2 text-xs text-gray-400">
               <span className="flex items-center gap-1 bg-gray-800/50 px-2 py-1 rounded">
-                <i className="fas fa-book"></i>
+                <Icon name="book" />
                 {exam?.subject}
               </span>
               <span className="flex items-center gap-1 bg-gray-800/50 px-2 py-1 rounded">
-                <i className="fas fa-clock"></i>
+                <Icon name="clock" />
                 {exam?.duration} دقيقة
               </span>
               {exam?.date && (
                 <span className="flex items-center gap-1 bg-gray-800/50 px-2 py-1 rounded">
-                  <i className="fas fa-calendar"></i>
+                  <Icon name="calendar" />
                   {new Date(exam.date).toLocaleDateString('ar-EG')}
                 </span>
               )}
             </div>
           </div>
-          <button 
+          <Button
             onClick={() => router.back()}
-            className="w-10 h-10 rounded-full bg-gray-800 border border-gray-700 flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-700 transition-colors"
+            variant="ghost"
+            className="w-10 h-10 rounded-full !p-0 flex items-center justify-center"
           >
-            <i className="fas fa-arrow-right"></i>
-          </button>
+            <Icon name="arrow-right" />
+          </Button>
         </div>
       </div>
 
@@ -183,26 +185,26 @@ export default function ExamResultsPage() {
         <StatCard
           title="عدد الطلاب"
           value={totalStudents}
-          icon="fas fa-users"
+          icon="users"
           color="primary"
         />
         <StatCard
           title="المتوسط"
           value={avgScore}
           suffix="%"
-          icon="fas fa-chart-line"
+          icon="chart-line"
           color="warning"
         />
         <StatCard
           title="الناجحين"
           value={passedStudents}
-          icon="fas fa-check-circle"
+          icon="check-circle"
           color="success"
         />
         <StatCard
           title="الراسبين"
           value={failedStudents}
-          icon="fas fa-times-circle"
+          icon="times-circle"
           color="danger"
         />
       </div>
@@ -210,7 +212,7 @@ export default function ExamResultsPage() {
       {/* Results Card */}
       <DashboardCard 
         title="نتائج الطلاب" 
-        icon="fas fa-list-alt"
+        icon="list-alt"
         action={
           <div className="text-sm text-gray-400">
             أعلى نتيجة: <span className="text-primary font-bold">{highestScore}%</span>
@@ -221,7 +223,7 @@ export default function ExamResultsPage() {
           // Empty State
           <div className="text-center py-12">
             <div className="w-20 h-20 rounded-full bg-gray-800 flex items-center justify-center mx-auto mb-4">
-              <i className="fas fa-inbox text-4xl text-gray-600"></i>
+              <Icon name="inbox" size="3x" className="text-gray-600" />
             </div>
             <h3 className="text-xl font-bold text-white mb-2">لا توجد نتائج</h3>
             <p className="text-gray-400">لم يحضر أي طالب هذا الامتحان بعد</p>
@@ -231,14 +233,14 @@ export default function ExamResultsPage() {
             {/* Search */}
             <div className="mb-4">
               <div className="relative">
-                <input
+                <Input
                   type="text"
                   placeholder="بحث بالاسم أو رقم الهاتف..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="input w-full pr-10"
+                  className="w-full pr-10"
                 />
-                <i className="fas fa-search absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                <Icon name="search" className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" />
               </div>
             </div>
 
@@ -254,12 +256,12 @@ export default function ExamResultsPage() {
                     {/* Student Info */}
                     <div className="flex items-center gap-3">
                       <div className={`w-12 h-12 rounded-full flex items-center justify-center ${getScoreBgColor(Number(result.percentage))}/20`}>
-                        <i className={`fas fa-user ${getScoreColor(Number(result.percentage))}`}></i>
+                        <Icon name="user" className={getScoreColor(Number(result.percentage))} />
                       </div>
                       <div>
                         <div className="font-medium text-white">{result.student.name}</div>
                         <div className="text-xs text-gray-500 flex items-center gap-1">
-                          <i className="fas fa-phone text-[10px]"></i>
+                          <Icon name="phone" className="text-[10px]" />
                           {result.student.phone}
                         </div>
                       </div>
@@ -288,18 +290,18 @@ export default function ExamResultsPage() {
 
                   {/* Quick Info */}
                   <div className="mt-3 flex items-center justify-between text-xs">
-                    <span className={`badge badge-sm ${Number(result.percentage) >= 50 ? 'badge-success' : 'badge-danger'}`}>
+                    <Badge variant={Number(result.percentage) >= 50 ? 'success' : 'danger'}>
                       {Number(result.percentage) >= 50 ? 'ناجح' : 'راسب'}
-                    </span>
+                    </Badge>
                     <span className="text-gray-500 flex items-center gap-1">
                       {result.failed_questions.length > 0 ? (
                         <>
-                          <i className="fas fa-times-circle text-warning"></i>
+                          <Icon name="times-circle" className="text-warning" />
                           {result.failed_questions.length} أخطاء
                         </>
                       ) : (
                         <>
-                          <i className="fas fa-check-circle text-green-500"></i>
+                          <Icon name="check-circle" className="text-green-500" />
                           بدون أخطاء
                         </>
                       )}
@@ -325,200 +327,180 @@ export default function ExamResultsPage() {
       </DashboardCard>
 
       {/* Student Details Modal */}
-      {selectedStudent && (
-        <div 
-          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end md:items-center justify-center p-0 md:p-4"
-          onClick={() => setSelectedStudent(null)}
-        >
-          <div 
-            className="bg-gray-900 w-full md:max-w-lg md:rounded-2xl rounded-t-2xl max-h-[90vh] overflow-hidden border-2 border-primary/50 shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Modal Header */}
-            <div className="bg-gradient-to-r from-primary/20 to-transparent p-6 border-b border-gray-800">
-              <div className="flex items-center justify-between mb-4">
-                <button 
-                  onClick={() => setSelectedStudent(null)}
-                  className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-colors"
-                >
-                  <i className="fas fa-times"></i>
-                </button>
-                <span className={`badge ${Number(selectedStudent.percentage) >= 50 ? 'badge-success' : 'badge-danger'}`}>
-                  {Number(selectedStudent.percentage) >= 50 ? 'ناجح' : 'راسب'}
+      <FormModal
+        isOpen={!!selectedStudent}
+        onClose={() => setSelectedStudent(null)}
+        onSubmit={(e) => { e.preventDefault(); setSelectedStudent(null); }}
+        title="تفاصيل الطالب"
+        cancelText="إغلاق"
+        maxWidth="600px"
+      >
+        {selectedStudent && (
+          <div className="space-y-6">
+            {/* Header Info */}
+            <div className="flex items-center justify-between mb-4">
+              <span className={`badge ${Number(selectedStudent.percentage) >= 50 ? 'badge-success' : 'badge-danger'}`}>
+                {Number(selectedStudent.percentage) >= 50 ? 'ناجح' : 'راسب'}
+              </span>
+            </div>
+            
+            <div className="flex items-center gap-4">
+              <div className={`w-16 h-16 rounded-full flex items-center justify-center ${getScoreBgColor(Number(selectedStudent.percentage))}/20 border-2 border-current`}>
+                <i className={`fas fa-user-graduate text-2xl ${getScoreColor(Number(selectedStudent.percentage))}`}></i>
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-white">{selectedStudent.student.name}</h2>
+                <p className="text-gray-400 flex items-center gap-2">
+                  <i className="fas fa-phone text-xs"></i>
+                  {selectedStudent.student.phone}
+                </p>
+              </div>
+            </div>
+
+            {/* Score Section */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-white/5 rounded-xl p-4 text-center border border-gray-800">
+                <div className={`text-3xl font-bold ${getScoreColor(Number(selectedStudent.percentage))}`}>
+                  {selectedStudent.percentage}%
+                </div>
+                <div className="text-xs text-gray-500 mt-1">النسبة المئوية</div>
+              </div>
+              <div className="bg-white/5 rounded-xl p-4 text-center border border-gray-800">
+                <div className="text-3xl font-bold text-primary">
+                  {selectedStudent.score}<span className="text-lg text-gray-500">/{exam?.max_score}</span>
+                </div>
+                <div className="text-xs text-gray-500 mt-1">الدرجة</div>
+              </div>
+            </div>
+
+            {/* Comparison with Average */}
+            <div className="bg-white/5 rounded-xl p-4 border border-gray-800">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-sm text-gray-400">مقارنة بالمتوسط</span>
+                <span className="text-sm font-medium">
+                  {Number(selectedStudent.percentage) > Number(avgScore) ? (
+                    <span className="text-green-500">
+                      <i className="fas fa-arrow-up ml-1"></i>
+                      أعلى من المتوسط
+                    </span>
+                  ) : Number(selectedStudent.percentage) < Number(avgScore) ? (
+                    <span className="text-red-500">
+                      <i className="fas fa-arrow-down ml-1"></i>
+                      أقل من المتوسط
+                    </span>
+                  ) : (
+                    <span className="text-yellow-500">
+                      <i className="fas fa-equals ml-1"></i>
+                      يساوي المتوسط
+                    </span>
+                  )}
                 </span>
               </div>
               
-              <div className="flex items-center gap-4">
-                <div className={`w-16 h-16 rounded-full flex items-center justify-center ${getScoreBgColor(Number(selectedStudent.percentage))}/20 border-2 border-current`}>
-                  <i className={`fas fa-user-graduate text-2xl ${getScoreColor(Number(selectedStudent.percentage))}`}></i>
+              {/* Student Score Bar */}
+              <div className="flex items-center gap-4 mb-2">
+                <div className="flex-1">
+                  <div className="text-xs text-gray-500 mb-1">درجة الطالب</div>
+                  <div className="w-full bg-gray-700 rounded-full h-2">
+                    <div
+                      className={`h-full rounded-full ${getScoreBgColor(Number(selectedStudent.percentage))}`}
+                      style={{ width: `${selectedStudent.percentage}%` }}
+                    ></div>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="text-xl font-bold text-white">{selectedStudent.student.name}</h2>
-                  <p className="text-gray-400 flex items-center gap-2">
-                    <i className="fas fa-phone text-xs"></i>
-                    {selectedStudent.student.phone}
-                  </p>
+                <div className={`text-lg font-bold w-12 text-left ${getScoreColor(Number(selectedStudent.percentage))}`}>
+                  {selectedStudent.percentage}%
+                </div>
+              </div>
+              
+              {/* Average Bar */}
+              <div className="flex items-center gap-4">
+                <div className="flex-1">
+                  <div className="text-xs text-gray-500 mb-1">متوسط الفصل</div>
+                  <div className="w-full bg-gray-700 rounded-full h-2">
+                    <div
+                      className="h-full rounded-full bg-primary"
+                      style={{ width: `${avgScore}%` }}
+                    ></div>
+                  </div>
+                </div>
+                <div className="text-lg font-bold text-primary w-12 text-left">
+                  {avgScore}%
                 </div>
               </div>
             </div>
 
-            {/* Modal Body */}
-            <div className="p-6 overflow-y-auto max-h-[60vh]">
-              {/* Score Section */}
-              <div className="grid grid-cols-2 gap-3 mb-6">
-                <div className="bg-white/5 rounded-xl p-4 text-center border border-gray-800">
-                  <div className={`text-3xl font-bold ${getScoreColor(Number(selectedStudent.percentage))}`}>
-                    {selectedStudent.percentage}%
-                  </div>
-                  <div className="text-xs text-gray-500 mt-1">النسبة المئوية</div>
-                </div>
-                <div className="bg-white/5 rounded-xl p-4 text-center border border-gray-800">
-                  <div className="text-3xl font-bold text-primary">
-                    {selectedStudent.score}<span className="text-lg text-gray-500">/{exam?.max_score}</span>
-                  </div>
-                  <div className="text-xs text-gray-500 mt-1">الدرجة</div>
+            {/* Info Grid */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-white/5 rounded-lg p-3 border border-gray-800">
+                <div className="text-xs text-gray-500">الامتحان</div>
+                <div className="text-sm font-medium text-white mt-1">{exam?.title}</div>
+              </div>
+              <div className="bg-white/5 rounded-lg p-3 border border-gray-800">
+                <div className="text-xs text-gray-500">المادة</div>
+                <div className="text-sm font-medium text-white mt-1">{exam?.subject}</div>
+              </div>
+              <div className="bg-white/5 rounded-lg p-3 border border-gray-800">
+                <div className="text-xs text-gray-500">عدد الأخطاء</div>
+                <div className={`text-sm font-medium mt-1 ${selectedStudent.failed_questions.length > 0 ? 'text-warning' : 'text-green-500'}`}>
+                  {selectedStudent.failed_questions.length > 0 ? `${selectedStudent.failed_questions.length} أسئلة` : 'لا توجد أخطاء'}
                 </div>
               </div>
-
-              {/* Comparison with Average */}
-              <div className="bg-white/5 rounded-xl p-4 mb-6 border border-gray-800">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm text-gray-400">مقارنة بالمتوسط</span>
-                  <span className="text-sm font-medium">
-                    {Number(selectedStudent.percentage) > Number(avgScore) ? (
-                      <span className="text-green-500">
-                        <i className="fas fa-arrow-up ml-1"></i>
-                        أعلى من المتوسط
-                      </span>
-                    ) : Number(selectedStudent.percentage) < Number(avgScore) ? (
-                      <span className="text-red-500">
-                        <i className="fas fa-arrow-down ml-1"></i>
-                        أقل من المتوسط
-                      </span>
-                    ) : (
-                      <span className="text-yellow-500">
-                        <i className="fas fa-equals ml-1"></i>
-                        يساوي المتوسط
-                      </span>
-                    )}
-                  </span>
-                </div>
-                
-                {/* Student Score Bar */}
-                <div className="flex items-center gap-4 mb-2">
-                  <div className="flex-1">
-                    <div className="text-xs text-gray-500 mb-1">درجة الطالب</div>
-                    <div className="w-full bg-gray-700 rounded-full h-2">
-                      <div 
-                        className={`h-full rounded-full ${getScoreBgColor(Number(selectedStudent.percentage))}`}
-                        style={{ width: `${selectedStudent.percentage}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                  <div className={`text-lg font-bold w-12 text-left ${getScoreColor(Number(selectedStudent.percentage))}`}>
-                    {selectedStudent.percentage}%
-                  </div>
-                </div>
-                
-                {/* Average Bar */}
-                <div className="flex items-center gap-4">
-                  <div className="flex-1">
-                    <div className="text-xs text-gray-500 mb-1">متوسط الفصل</div>
-                    <div className="w-full bg-gray-700 rounded-full h-2">
-                      <div 
-                        className="h-full rounded-full bg-primary"
-                        style={{ width: `${avgScore}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                  <div className="text-lg font-bold text-primary w-12 text-left">
-                    {avgScore}%
-                  </div>
+              <div className="bg-white/5 rounded-lg p-3 border border-gray-800">
+                <div className="text-xs text-gray-500">الترتيب</div>
+                <div className="text-sm font-medium text-white mt-1">
+                  {getStudentRank(selectedStudent.id)} / {totalStudents}
                 </div>
               </div>
+            </div>
 
-              {/* Info Grid */}
-              <div className="grid grid-cols-2 gap-3 mb-6">
-                <div className="bg-white/5 rounded-lg p-3 border border-gray-800">
-                  <div className="text-xs text-gray-500">الامتحان</div>
-                  <div className="text-sm font-medium text-white mt-1">{exam?.title}</div>
-                </div>
-                <div className="bg-white/5 rounded-lg p-3 border border-gray-800">
-                  <div className="text-xs text-gray-500">المادة</div>
-                  <div className="text-sm font-medium text-white mt-1">{exam?.subject}</div>
-                </div>
-                <div className="bg-white/5 rounded-lg p-3 border border-gray-800">
-                  <div className="text-xs text-gray-500">عدد الأخطاء</div>
-                  <div className={`text-sm font-medium mt-1 ${selectedStudent.failed_questions.length > 0 ? 'text-warning' : 'text-green-500'}`}>
-                    {selectedStudent.failed_questions.length > 0 ? `${selectedStudent.failed_questions.length} أسئلة` : 'لا توجد أخطاء'}
-                  </div>
-                </div>
-                <div className="bg-white/5 rounded-lg p-3 border border-gray-800">
-                  <div className="text-xs text-gray-500">الترتيب</div>
-                  <div className="text-sm font-medium text-white mt-1">
-                    {getStudentRank(selectedStudent.id)} / {totalStudents}
-                  </div>
-                </div>
-              </div>
-
-              {/* Failed Questions */}
-              {selectedStudent.failed_questions.length > 0 && (
-                <div>
-                  <h3 className="text-sm font-bold text-warning mb-3 flex items-center gap-2">
-                    <i className="fas fa-exclamation-triangle"></i>
-                    الأسئلة التي أخطأ فيها
-                  </h3>
-                  <div className="space-y-3">
-                    {selectedStudent.failed_questions.map((failed, idx) => (
-                      <div 
-                        key={failed.id} 
-                        className="bg-white/5 rounded-xl p-4 border border-gray-800"
-                      >
-                        <div className="flex items-start gap-3 mb-3">
-                          <span className="flex-shrink-0 w-6 h-6 rounded-full bg-warning/20 text-warning flex items-center justify-center text-xs font-bold">
-                            {idx + 1}
-                          </span>
-                          <p className="text-sm text-white">{failed.question_text}</p>
+            {/* Failed Questions */}
+            {selectedStudent.failed_questions.length > 0 && (
+              <div>
+                <h3 className="text-sm font-bold text-warning mb-3 flex items-center gap-2">
+                  <i className="fas fa-exclamation-triangle"></i>
+                  الأسئلة التي أخطأ فيها
+                </h3>
+                <div className="space-y-3 max-h-[40vh] overflow-y-auto">
+                  {selectedStudent.failed_questions.map((failed, idx) => (
+                    <div
+                      key={failed.id}
+                      className="bg-white/5 rounded-xl p-4 border border-gray-800"
+                    >
+                      <div className="flex items-start gap-3 mb-3">
+                        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-warning/20 text-warning flex items-center justify-center text-xs font-bold">
+                          {idx + 1}
+                        </span>
+                        <p className="text-sm text-white">{failed.question_text}</p>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 gap-2 mr-9">
+                        <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/30">
+                          <div className="flex items-center gap-1 mb-1">
+                            <i className="fas fa-check-circle text-green-500 text-xs"></i>
+                            <span className="text-xs text-green-500">الإجابة الصحيحة</span>
+                          </div>
+                          <span className="text-sm text-white">{failed.correct_answer}</span>
                         </div>
                         
-                        <div className="grid grid-cols-1 gap-2 mr-9">
-                          <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/30">
-                            <div className="flex items-center gap-1 mb-1">
-                              <i className="fas fa-check-circle text-green-500 text-xs"></i>
-                              <span className="text-xs text-green-500">الإجابة الصحيحة</span>
-                            </div>
-                            <span className="text-sm text-white">{failed.correct_answer}</span>
+                        <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30">
+                          <div className="flex items-center gap-1 mb-1">
+                            <i className="fas fa-times-circle text-red-500 text-xs"></i>
+                            <span className="text-xs text-red-500">إجابة الطالب</span>
                           </div>
-                          
-                          <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30">
-                            <div className="flex items-center gap-1 mb-1">
-                              <i className="fas fa-times-circle text-red-500 text-xs"></i>
-                              <span className="text-xs text-red-500">إجابة الطالب</span>
-                            </div>
-                            <span className="text-sm text-white">
-                              {failed.student_answer || 'لم يجب'}
-                            </span>
-                          </div>
+                          <span className="text-sm text-white">
+                            {failed.student_answer || 'لم يجب'}
+                          </span>
                         </div>
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  ))}
                 </div>
-              )}
-            </div>
-
-            {/* Modal Footer */}
-            <div className="p-4 border-t border-gray-800 bg-gray-900">
-              <button 
-                onClick={() => setSelectedStudent(null)}
-                className="btn btn-primary w-full"
-              >
-                إغلاق
-              </button>
-            </div>
+              </div>
+            )}
           </div>
-        </div>
-      )}
+        )}
+      </FormModal>
     </DashboardLayout>
   );
 }

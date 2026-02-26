@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/EnhancedAuthContext';
 import * as academyService from '@/services/academyService';
 import toast from 'react-hot-toast';
 
+import { Button, Icon, Input, Badge, LoadingSpinner } from '@/components/ui';
 interface Student {
   id: string;
   name: string;
@@ -94,13 +95,14 @@ export default function ManualAttendancePage() {
     >
       {/* Header */}
       <div className="mb-8">
-        <button
+        <Button
+          variant="ghost"
           onClick={() => router.back()}
           className="text-gray-400 hover:text-white mb-4 flex items-center gap-2"
         >
-          <i className="fas fa-arrow-right"></i>
+          <Icon name="arrow-right" />
           <span>رجوع</span>
-        </button>
+        </Button>
         <h1 className="text-2xl font-bold text-white mb-2">
           تسجيل الحضور اليدوي
         </h1>
@@ -111,12 +113,11 @@ export default function ManualAttendancePage() {
 
       {/* Search */}
       <div className="mb-6">
-        <input
+        <Input
           type="text"
           placeholder="بحث عن طالب..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white"
         />
       </div>
 
@@ -128,12 +129,12 @@ export default function ManualAttendancePage() {
 
         {isLoading ? (
           <div className="p-12 text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+            <LoadingSpinner size="lg" color="primary" />
             <p className="text-gray-400 mt-4">جاري التحميل...</p>
           </div>
         ) : filteredStudents.length === 0 ? (
           <div className="p-12 text-center">
-            <i className="fas fa-users text-5xl text-gray-500 mb-4"></i>
+            <Icon name="users" className="text-5xl text-gray-500 mb-4" />
             <p className="text-gray-400">لا يوجد طلاب</p>
           </div>
         ) : (
@@ -147,27 +148,28 @@ export default function ManualAttendancePage() {
                   <h3 className="text-white font-medium">{student.name}</h3>
                   <p className="text-gray-400 text-sm">{student.phone}</p>
                 </div>
-                <button
+                <Button
+                  variant={student.status === 'present' ? 'ghost' : 'primary'}
                   onClick={() => toggleAttendance(student.id, student.status)}
                   disabled={student.status === 'present'}
                   className={`px-4 py-2 rounded-lg font-medium transition-all ${
                     student.status === 'present'
                       ? 'bg-green-500/20 text-green-500 cursor-not-allowed'
-                      : 'bg-primary hover:bg-primary-dark text-white'
+                      : ''
                   }`}
                 >
                   {student.status === 'present' ? (
                     <>
-                      <i className="fas fa-check mr-2"></i>
+                      <Icon name="check" className="mr-2" />
                       حاضر
                     </>
                   ) : (
                     <>
-                      <i className="fas fa-user-check mr-2"></i>
+                      <Icon name="user-check" className="mr-2" />
                       تسجيل حضور
                     </>
                   )}
-                </button>
+                </Button>
               </div>
             ))}
           </div>

@@ -9,6 +9,8 @@ import { Group } from '@/services/groupService';
 import { Filter } from '@/components/Filter';
 import toast from 'react-hot-toast';
 
+import { Button, Icon, Input, Textarea } from '@/components/ui';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 export default function CreateLecturePage() {
   const { user } = useAuth();
   const router = useRouter();
@@ -111,7 +113,7 @@ export default function CreateLecturePage() {
             onClick={() => router.back()}
             className="flex items-center gap-2 text-gray-400 hover:text-white mb-4 transition-colors"
           >
-            <i className="fas fa-arrow-right"></i>
+            <Icon name="arrow-right" />
             <span>رجوع</span>
           </button>
           <h1 className="text-3xl font-bold text-white">محاضرة جديدة</h1>
@@ -136,10 +138,10 @@ export default function CreateLecturePage() {
             {/* Title */}
             <div className="form-group">
               <label htmlFor="title" className="block text-white mb-2">عنوان المحاضرة</label>
-              <input
+              <Input
                 type="text"
                 id="title"
-                className="form-input w-full"
+                className="w-full"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 required
@@ -179,9 +181,9 @@ export default function CreateLecturePage() {
             {/* Description */}
             <div className="form-group">
               <label htmlFor="description" className="block text-white mb-2">الوصف (اختياري)</label>
-              <textarea
+              <Textarea
                 id="description"
-                className="form-input w-full"
+                className="w-full"
                 value={formData.description || ''}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="وصف مختصر للمحاضرة..."
@@ -231,7 +233,7 @@ export default function CreateLecturePage() {
                           type="checkbox"
                           className="hidden"
                           checked={formData.recurrence_days?.includes(day)}
-                          onChange={(e) => {
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                             const newDays = e.target.checked
                               ? [...(formData.recurrence_days || []), day]
                               : (formData.recurrence_days || []).filter(d => d !== day);
@@ -246,10 +248,10 @@ export default function CreateLecturePage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="form-group">
                     <label htmlFor="recurrence_time" className="block text-white mb-2">وقت المحاضرة</label>
-                    <input
+                    <Input
                       type="time"
                       id="recurrence_time"
-                      className="form-input w-full"
+                      className="w-full"
                       value={formData.recurrence_time}
                       onChange={(e) => setFormData({ ...formData, recurrence_time: e.target.value })}
                       required
@@ -257,10 +259,10 @@ export default function CreateLecturePage() {
                   </div>
                   <div className="form-group">
                     <label htmlFor="duration_minutes" className="block text-white mb-2">المدة (دقيقة)</label>
-                    <input
+                    <Input
                       type="number"
                       id="duration_minutes"
-                      className="form-input w-full"
+                      className="w-full"
                       value={formData.duration_minutes}
                       onChange={(e) => setFormData({ ...formData, duration_minutes: parseInt(e.target.value) })}
                       min="1"
@@ -273,10 +275,10 @@ export default function CreateLecturePage() {
               <>
                 <div className="form-group">
                   <label htmlFor="date" className="block text-white mb-2">تاريخ المحاضرة</label>
-                  <input
+                  <Input
                     type="date"
                     id="date"
-                    className="form-input w-full"
+                    className="w-full"
                     value={formData.date}
                     onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                     required
@@ -285,10 +287,10 @@ export default function CreateLecturePage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="form-group">
                     <label htmlFor="recurrence_time" className="block text-white mb-2">وقت المحاضرة</label>
-                    <input
+                    <Input
                       type="time"
                       id="recurrence_time"
-                      className="form-input w-full"
+                      className="w-full"
                       value={formData.recurrence_time}
                       onChange={(e) => setFormData({ ...formData, recurrence_time: e.target.value })}
                       required
@@ -296,10 +298,10 @@ export default function CreateLecturePage() {
                   </div>
                   <div className="form-group">
                     <label htmlFor="duration_minutes" className="block text-white mb-2">المدة (دقيقة)</label>
-                    <input
+                    <Input
                       type="number"
                       id="duration_minutes"
-                      className="form-input w-full"
+                      className="w-full"
                       value={formData.duration_minutes}
                       onChange={(e) => setFormData({ ...formData, duration_minutes: parseInt(e.target.value) })}
                       min="1"
@@ -313,31 +315,33 @@ export default function CreateLecturePage() {
 
           {/* Actions */}
           <div className="flex gap-4 mt-8 pt-6 border-t border-white/10">
-            <button
+            <Button
               type="button"
+              variant="outline"
               onClick={() => router.back()}
-              className="btn btn-secondary flex-1"
+              className="flex-1"
               disabled={isSubmitting}
             >
               إلغاء
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
-              className="btn btn-primary flex-1"
+              variant="primary"
+              className="flex-1"
               disabled={isSubmitting}
             >
               {isSubmitting ? (
                 <>
-                  <i className="fas fa-spinner fa-spin ml-2"></i>
+                  <LoadingSpinner size="sm" color="primary" />
                   جاري الحفظ...
                 </>
               ) : (
                 <>
-                  <i className="fas fa-plus ml-2"></i>
+                  <Icon name="plus" className="ml-2" />
                   إضافة المحاضرة
                 </>
               )}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

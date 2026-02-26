@@ -5,6 +5,7 @@
 
 import type { Meta, StoryObj } from '@storybook/react';
 import { LoadingSpinner } from './LoadingSpinner';
+import { Button } from './Button';
 
 const meta = {
   title: 'UI/LoadingSpinner',
@@ -62,10 +63,10 @@ export const WhiteColor: Story = {
 
 export const InButton: Story = {
   render: () => (
-    <button className="bg-blue-600 text-white px-4 py-2 rounded-md flex items-center gap-2">
+    <Button variant="primary">
       <LoadingSpinner size="sm" color="white" />
       جاري التحميل...
-    </button>
+    </Button>
   ),
 };
 

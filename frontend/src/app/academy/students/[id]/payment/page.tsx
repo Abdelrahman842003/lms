@@ -9,7 +9,7 @@ import { withAcademyAuth } from '@/components/auth/withAcademyAuth';
 import { fetchApi } from '@/services/authService';
 import { getAcademyStudentDetails } from '@/services/academyService';
 import toast from 'react-hot-toast';
-
+import { Button, Icon, Textarea, LoadingSpinner, FormModal, Badge } from '@/components/ui';
 interface Teacher {
   id: string;
   name: string;
@@ -213,7 +213,7 @@ function PaymentPage({ params }: { params: Promise<{ id: string }> }) {
     return (
       <DashboardLayout role="academy" user={user || undefined}>
         <div className="flex items-center justify-center h-full">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+          <LoadingSpinner size="lg" color="primary" />
         </div>
       </DashboardLayout>
     );
@@ -227,22 +227,23 @@ function PaymentPage({ params }: { params: Promise<{ id: string }> }) {
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-            <i className="fas fa-money-bill-wave text-primary"></i>
+            <Icon name="money-bill-wave" className="text-primary" />
             تسجيل دفعة جديدة
           </h1>
-          <button
+          <Button
             onClick={() => router.back()}
+            variant="ghost"
             className="text-gray-400 hover:text-white transition-colors flex items-center gap-2"
           >
-            <i className="fas fa-arrow-right"></i>
+            <Icon name="arrow-right" />
             عودة
-          </button>
+          </Button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Student Info Card */}
           <div className="md:col-span-1">
-            <DashboardCard title="بيانات الطالب" icon="fas fa-user">
+            <DashboardCard title="بيانات الطالب" icon="user">
               <div className="text-center py-4">
                 <div className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4 text-primary text-2xl font-bold">
                   {student.name.charAt(0)}
@@ -255,7 +256,7 @@ function PaymentPage({ params }: { params: Promise<{ id: string }> }) {
 
           {/* Payment Form */}
           <div className="md:col-span-2">
-            <DashboardCard title="تفاصيل الدفع" icon="fas fa-receipt">
+            <DashboardCard title="تفاصيل الدفع" icon="receipt">
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Teacher Selection */}
                 <div>
@@ -282,14 +283,14 @@ function PaymentPage({ params }: { params: Promise<{ id: string }> }) {
                           </div>
                           {selectedTeacher?.id === teacher.id && (
                             <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white shadow-lg">
-                              <i className="fas fa-check"></i>
+                              <Icon name="check" />
                             </div>
                           )}
                         </button>
                       ))
                     ) : (
                       <div className="text-center py-8 text-gray-500 bg-white/5 rounded-xl border border-white/5 border-dashed">
-                        <i className="fas fa-chalkboard-teacher text-3xl mb-2 opacity-50"></i>
+                        <Icon name="chalkboard-teacher" className="text-3xl mb-2 opacity-50" />
                         <p>الطالب غير مرتبط بأي مدرس</p>
                       </div>
                     )}
@@ -462,7 +463,7 @@ function PaymentPage({ params }: { params: Promise<{ id: string }> }) {
                                   
                                   {isPaid && (
                                     <div className="absolute -top-1 -right-1 w-4 h-4 bg-success rounded-full flex items-center justify-center text-[10px] text-white">
-                                      <i className="fas fa-check"></i>
+                                      <Icon name="check" />
                                     </div>
                                   )}
                                 </button>
@@ -482,7 +483,7 @@ function PaymentPage({ params }: { params: Promise<{ id: string }> }) {
                                 onClick={() => setMonths(Math.max(1, months - 1))}
                                 className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors"
                               >
-                                <i className="fas fa-minus text-xs"></i>
+                                <Icon name="minus" className="text-xs" />
                               </button>
                               <span className="text-white font-bold w-8 text-center text-sm">{months}</span>
                               <button
@@ -490,7 +491,7 @@ function PaymentPage({ params }: { params: Promise<{ id: string }> }) {
                                 onClick={() => setMonths(months + 1)}
                                 className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors"
                               >
-                                <i className="fas fa-plus text-xs"></i>
+                                <Icon name="plus" className="text-xs" />
                               </button>
                             </div>
                         </div>
@@ -551,7 +552,7 @@ function PaymentPage({ params }: { params: Promise<{ id: string }> }) {
                     {/* Notes */}
                     <div>
                       <label className="block text-gray-300 text-sm mb-2">ملاحظات (اختياري)</label>
-                      <textarea
+                      <Textarea
                         value={notes}
                         onChange={(e) => setNotes(e.target.value)}
                         placeholder="ملاحظات إضافية..."
@@ -561,23 +562,24 @@ function PaymentPage({ params }: { params: Promise<{ id: string }> }) {
                     </div>
 
                     {/* Submit Button */}
-                    <button
+                    <Button
                       type="submit"
                       disabled={isSubmitting}
+                      variant="primary"
                       className="w-full py-4 bg-primary text-white rounded-xl hover:bg-primary/80 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-bold text-lg shadow-lg shadow-primary/20 flex items-center justify-center gap-3"
                     >
                       {isSubmitting ? (
                         <>
-                          <i className="fas fa-spinner fa-spin"></i>
+                          <LoadingSpinner size="sm" color="primary" />
                           جاري التسجيل...
                         </>
                       ) : (
                         <>
-                          <i className="fas fa-check-circle"></i>
+                          <Icon name="check-circle" />
                           تسجيل الدفعة
                         </>
                       )}
-                    </button>
+                    </Button>
                   </div>
                 )}
               </form>
@@ -586,148 +588,132 @@ function PaymentPage({ params }: { params: Promise<{ id: string }> }) {
         </div>
       </div>
       {/* History Modal */}
-      {showHistoryModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="bg-[#1e1e2d] rounded-xl border border-white/10 w-full max-w-lg overflow-hidden shadow-2xl scale-100 animate-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between p-4 border-b border-white/10 bg-white/5">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <i className="fas fa-history text-primary"></i>
-                سجل الدفعات - {selectedTeacher?.name}
-              </h3>
-              <button 
-                onClick={() => setShowHistoryModal(false)} 
-                className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-colors"
-              >
-                <i className="fas fa-times"></i>
-              </button>
-            </div>
-            <div className="max-h-[60vh] overflow-y-auto custom-scrollbar p-4 space-y-4">
-              {teacherHistory.length > 0 ? (
-                teacherHistory.map((log) => (
-                  <div key={log.id} className="bg-white/5 rounded-xl border border-white/10 overflow-hidden hover:border-primary/30 transition-all duration-300 group">
-                    {/* Header: Amount & Date */}
-                    <div className="p-4 bg-white/5 border-b border-white/5 flex justify-between items-center">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary">
-                          <i className="fas fa-receipt text-lg"></i>
-                        </div>
-                        <div>
-                          <div className="text-xl font-bold text-white flex items-center gap-2">
-                            {log.amount} ج.م
-                            {log.notes && log.notes.includes('خصم') && (
-                              <span className="text-[10px] bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full border border-red-500/20">خصم</span>
-                            )}
-                          </div>
-                          <div className="text-xs text-gray-400 flex items-center gap-2">
-                            <i className="far fa-clock"></i>
-                            {new Date(log.created_at).toLocaleDateString('ar-EG', {
-                              weekday: 'long',
-                              year: 'numeric',
-                              month: 'long',
-                              day: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
-                          </div>
-                        </div>
+      <FormModal
+        isOpen={showHistoryModal}
+        onClose={() => setShowHistoryModal(false)}
+        onSubmit={(e) => { e.preventDefault(); setShowHistoryModal(false); }}
+        title={`سجل الدفعات - ${selectedTeacher?.name || ''}`}
+        submitText=""
+        cancelText="إغلاق"
+        maxWidth="550px"
+      >
+        <div className="max-h-[60vh] overflow-y-auto custom-scrollbar space-y-4">
+          {teacherHistory.length > 0 ? (
+            teacherHistory.map((log) => (
+              <div key={log.id} className="bg-white/5 rounded-xl border border-white/10 overflow-hidden hover:border-primary/30 transition-all duration-300 group">
+                {/* Header: Amount & Date */}
+                <div className="p-4 bg-white/5 border-b border-white/5 flex justify-between items-center">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary">
+                      <Icon name="receipt" className="text-lg" />
+                    </div>
+                    <div>
+                      <div className="text-xl font-bold text-white flex items-center gap-2">
+                        {log.amount} ج.م
+                        {log.notes && log.notes.includes('خصم') && (
+                          <Badge variant="danger" size="sm">خصم</Badge>
+                        )}
                       </div>
-                      <div className="text-right">
-                         <span className={`px-3 py-1 rounded-full text-xs font-bold border ${
-                           log.payment_method === 'cash' || !log.payment_method
-                             ? 'bg-green-500/10 text-green-400 border-green-500/20' 
-                             : 'bg-blue-500/10 text-blue-400 border-blue-500/20'
-                         }`}>
-                           {log.payment_method === 'cash' || !log.payment_method ? 'نقدي' : log.payment_method}
-                         </span>
+                      <div className="text-xs text-gray-400 flex items-center gap-2">
+                        <Icon name="clock" className="far" />
+                        {new Date(log.created_at).toLocaleDateString('ar-EG', {
+                          weekday: 'long',
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
                       </div>
                     </div>
-
-                    {/* Details Grid */}
-                    <div className="p-4 grid grid-cols-2 gap-4">
-                      <div className="bg-black/20 rounded-lg p-3 border border-white/5">
-                        <div className="text-xs text-gray-500 mb-1">عدد الأشهر</div>
-                        <div className="text-white font-bold flex items-center gap-2">
-                          <i className="fas fa-calendar-check text-primary/70"></i>
-                          {log.months} شهور
-                        </div>
-                      </div>
-                      <div className="bg-black/20 rounded-lg p-3 border border-white/5">
-                        <div className="text-xs text-gray-500 mb-1">كود التأكيد</div>
-                        <div className="text-white font-bold flex items-center gap-2 font-mono">
-                          <i className="fas fa-hashtag text-primary/70"></i>
-                          {log.confirmation_code || '---'}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Period Info */}
-                    {log.start_date && log.end_date && (
-                      <div className="px-4 pb-4">
-                        <div className="bg-black/20 rounded-lg p-3 border border-white/5 flex items-center justify-between">
-                          <div className="text-xs text-gray-500">الفترة المغطاة</div>
-                          <div className="text-white font-bold flex items-center gap-2 text-sm">
-                            <i className="fas fa-calendar-alt text-primary/70"></i>
-                            <span dir="ltr">
-                              {new Date(log.start_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} 
-                              {' - '}
-                              {new Date(log.end_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                            </span>
-                          </div>
-                        </div>
-                        
-                        {/* List of Months */}
-                        <div className="mt-2 bg-black/20 rounded-lg p-3 border border-white/5">
-                          <div className="text-xs text-gray-500 mb-1">الأشهر المدفوعة</div>
-                          <div className="text-white text-sm leading-relaxed">
-                            {getCoveredMonths(log.start_date, log.end_date).map((month, idx) => (
-                              <span key={idx} className="inline-block bg-white/10 px-2 py-0.5 rounded text-xs mx-0.5 mb-1">
-                                {month}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Notes */}
-                    {log.notes && (
-                      <div className="px-4 pb-4">
-                        <div className="bg-black/40 rounded-lg p-3 border border-white/5 text-xs text-gray-300 leading-relaxed">
-                          <div className="flex items-center gap-2 text-gray-500 mb-2 border-b border-white/5 pb-1">
-                            <i className="fas fa-info-circle"></i>
-                            تفاصيل العملية
-                          </div>
-                          {log.notes.split('|').map((note, idx) => (
-                            <div key={idx} className="mb-1 last:mb-0 flex items-start gap-2">
-                              <span className="w-1 h-1 rounded-full bg-gray-500 mt-1.5 shrink-0"></span>
-                              <span>{note.trim()}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
                   </div>
-                ))
-              ) : (
-                <div className="text-center py-12 text-gray-500">
-                  <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <i className="fas fa-file-invoice text-2xl opacity-50"></i>
+                  <div className="text-right">
+                     <span className={`px-3 py-1 rounded-full text-xs font-bold border ${
+                       log.payment_method === 'cash' || !log.payment_method
+                         ? 'bg-green-500/10 text-green-400 border-green-500/20'
+                         : 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                     }`}>
+                       {log.payment_method === 'cash' || !log.payment_method ? 'نقدي' : log.payment_method}
+                     </span>
                   </div>
-                  <p>لا يوجد سجل دفعات لهذا المدرس</p>
                 </div>
-              )}
+
+                {/* Details Grid */}
+                <div className="p-4 grid grid-cols-2 gap-4">
+                  <div className="bg-black/20 rounded-lg p-3 border border-white/5">
+                    <div className="text-xs text-gray-500 mb-1">عدد الأشهر</div>
+                    <div className="text-white font-bold flex items-center gap-2">
+                      <Icon name="calendar-check" className="text-primary/70" />
+                      {log.months} شهور
+                    </div>
+                  </div>
+                  <div className="bg-black/20 rounded-lg p-3 border border-white/5">
+                    <div className="text-xs text-gray-500 mb-1">كود التأكيد</div>
+                    <div className="text-white font-bold flex items-center gap-2 font-mono">
+                      <Icon name="hashtag" className="text-primary/70" />
+                      {log.confirmation_code || '---'}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Period Info */}
+                {log.start_date && log.end_date && (
+                  <div className="px-4 pb-4">
+                    <div className="bg-black/20 rounded-lg p-3 border border-white/5 flex items-center justify-between">
+                      <div className="text-xs text-gray-500">الفترة المغطاة</div>
+                      <div className="text-white font-bold flex items-center gap-2 text-sm">
+                        <Icon name="calendar-alt" className="text-primary/70" />
+                        <span dir="ltr">
+                          {new Date(log.start_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                          {' - '}
+                          {new Date(log.end_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    {/* List of Months */}
+                    <div className="mt-2 bg-black/20 rounded-lg p-3 border border-white/5">
+                      <div className="text-xs text-gray-500 mb-1">الأشهر المدفوعة</div>
+                      <div className="text-white text-sm leading-relaxed">
+                        {getCoveredMonths(log.start_date, log.end_date).map((month, idx) => (
+                          <span key={idx} className="inline-block bg-white/10 px-2 py-0.5 rounded text-xs mx-0.5 mb-1">
+                            {month}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Notes */}
+                {log.notes && (
+                  <div className="px-4 pb-4">
+                    <div className="bg-black/40 rounded-lg p-3 border border-white/5 text-xs text-gray-300 leading-relaxed">
+                      <div className="flex items-center gap-2 text-gray-500 mb-2 border-b border-white/5 pb-1">
+                        <Icon name="info-circle" />
+                        تفاصيل العملية
+                      </div>
+                      {log.notes.split('|').map((note, idx) => (
+                        <div key={idx} className="mb-1 last:mb-0 flex items-start gap-2">
+                          <span className="w-1 h-1 rounded-full bg-gray-500 mt-1.5 shrink-0"></span>
+                          <span>{note.trim()}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-12 text-gray-500">
+              <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Icon name="file-invoice" className="text-2xl opacity-50" />
+              </div>
+              <p>لا يوجد سجل دفعات لهذا المدرس</p>
             </div>
-            <div className="p-4 border-t border-white/10 bg-white/5">
-              <button
-                onClick={() => setShowHistoryModal(false)}
-                className="w-full py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors font-medium"
-              >
-                إغلاق
-              </button>
-            </div>
-          </div>
+          )}
         </div>
-      )}
+      </FormModal>
     </DashboardLayout>
   );
 }

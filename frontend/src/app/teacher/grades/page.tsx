@@ -6,6 +6,8 @@ import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { DataTable } from '@/components/dashboard/DataTable';
+import { Button, LoadingSpinner, ConfirmationModal, FormModal, Icon } from '@/components/ui';
+import { Input } from '@/components/ui/Input';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { getGrades, createGrade, updateGrade, deleteGrade, Grade, CreateGradeData } from '@/services/gradeService';
 
@@ -261,10 +263,10 @@ export default function GradesPage() {
         title="جميع الصفوف"
         icon="fas fa-graduation-cap"
         action={
-          <button onClick={handleAddClick} className="btn btn-primary">
-            <i className="fas fa-plus"></i>
+          <Button onClick={handleAddClick}>
+            <Icon name="plus" className="ml-2" />
             <span>صف جديد</span>
-          </button>
+          </Button>
         }
       >
         <DataTable
@@ -284,131 +286,61 @@ export default function GradesPage() {
       </DashboardCard>
 
       {/* Add/Edit Modal */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setShowModal(false)}>
-          <div className="w-full max-w-[500px] bg-[#1e1e2d] rounded-xl shadow-2xl border border-white/10 animate-scaleIn" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-6 border-b border-white/10">
-              <h3 className="text-xl font-bold text-white m-0">{isEditing ? 'تعديل الصف الدراسي' : 'صف دراسي جديد'}</h3>
-              <button 
-                className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors" 
-                onClick={() => setShowModal(false)}
-              >
-                <i className="fas fa-times"></i>
-              </button>
-            </div>
-            <form onSubmit={handleSubmit}>
-              <div className="p-6 space-y-4">
-                <div className="space-y-2">
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-300">اسم الصف الدراسي</label>
-                  <input
-                    type="text"
-                    id="name"
-                    className={`w-full p-3 bg-[#151521] border rounded-lg text-white focus:ring-1 outline-none transition-all ${
-                      touched.name && validationErrors.name 
-                        ? 'border-danger focus:border-danger focus:ring-danger' 
-                        : 'border-white/10 focus:border-primary focus:ring-primary'
-                    }`}
-                    value={formData.name}
-                    onChange={(e) => handleInputChange('name', e.target.value)}
-                    onBlur={() => handleBlur('name')}
-                    required
-                    placeholder="مثال: الصف الأول الثانوي"
-                  />
-                  {touched.name && validationErrors.name && (
-                    <p className="text-danger text-xs mt-1 flex items-center gap-1">
-                      <i className="fas fa-exclamation-circle"></i>
-                      {validationErrors.name}
-                    </p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <label htmlFor="price" className="block text-sm font-medium text-gray-300">سعر الاشتراك الشهري</label>
-                  <input
-                    type="number"
-                    id="price"
-                    className={`w-full p-3 bg-[#151521] border rounded-lg text-white focus:ring-1 outline-none transition-all ${
-                      touched.price && validationErrors.price 
-                        ? 'border-danger focus:border-danger focus:ring-danger' 
-                        : 'border-white/10 focus:border-primary focus:ring-primary'
-                    }`}
-                    value={formData.price}
-                    onChange={(e) => handleInputChange('price', Number(e.target.value))}
-                    onBlur={() => handleBlur('price')}
-                    min="0"
-                    required
-                    placeholder="0"
-                  />
-                  {touched.price && validationErrors.price && (
-                    <p className="text-danger text-xs mt-1 flex items-center gap-1">
-                      <i className="fas fa-exclamation-circle"></i>
-                      {validationErrors.price}
-                    </p>
-                  )}
-                </div>
-              </div>
-              <div className="flex items-center justify-end gap-3 p-6 border-t border-white/10 bg-black/20 rounded-b-xl">
-                <button
-                  type="button"
-                  className="px-6 py-2.5 rounded-lg border border-white/10 text-white hover:bg-white/5 transition-all duration-200 font-medium"
-                  onClick={() => setShowModal(false)}
-                  disabled={isSubmitting}
-                >
-                  إلغاء
-                </button>
-                <button 
-                  type="submit" 
-                  className="px-6 py-2.5 rounded-lg bg-primary text-white hover:bg-primary-dark shadow-lg shadow-primary/20 transition-all duration-200 font-medium disabled:opacity-70 disabled:cursor-not-allowed" 
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? 'جاري الحفظ...' : isEditing ? 'حفظ التعديلات' : 'إضافة'}
-                </button>
-              </div>
-            </form>
-          </div>
+      <FormModal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        title={isEditing ? 'تعديل الصف الدراسي' : 'صف دراسي جديد'}
+        onSubmit={handleSubmit}
+        isLoading={isSubmitting}
+        submitText={isSubmitting ? 'جاري الحفظ...' : isEditing ? 'حفظ التعديلات' : 'إضافة'}
+      >
+        <div className="space-y-4">
+          <Input
+            id="name"
+            type="text"
+            label="اسم الصف الدراسي"
+            value={formData.name}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange('name', e.target.value)}
+            onBlur={() => handleBlur('name')}
+            required
+            placeholder="مثال: الصف الأول الثانوي"
+            error={touched.name && validationErrors.name ? validationErrors.name : undefined}
+          />
+          <Input
+            id="price"
+            type="number"
+            label="سعر الاشتراك الشهري"
+            value={formData.price}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange('price', Number(e.target.value))}
+            onBlur={() => handleBlur('price')}
+            min="0"
+            required
+            placeholder="0"
+            error={touched.price && validationErrors.price ? validationErrors.price : undefined}
+          />
         </div>
-      )}
+      </FormModal>
 
       {/* Delete Confirmation Modal */}
-      {showDeleteModal && selectedGrade && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setShowDeleteModal(false)}>
-          <div className="w-full max-w-[500px] bg-[#1e1e2d] rounded-xl shadow-2xl border border-white/10 animate-scaleIn" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-6 border-b border-white/10">
-              <h3 className="text-xl font-bold text-white m-0">تأكيد الحذف</h3>
-              <button 
-                className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors" 
-                onClick={() => setShowDeleteModal(false)}
-              >
-                <i className="fas fa-times"></i>
-              </button>
-            </div>
-            <div className="p-6">
-              <p className="text-gray-300 text-lg mb-2">هل أنت متأكد من حذف الصف "{selectedGrade.name}"؟</p>
-              <p className="text-red-400 text-sm bg-red-400/10 p-3 rounded-lg border border-red-400/20">
-                <i className="fas fa-exclamation-triangle ml-2"></i>
-                سيتم حذف جميع المجموعات والبيانات المرتبطة بهذا الصف.
-              </p>
-            </div>
-            <div className="flex items-center justify-end gap-3 p-6 border-t border-white/10 bg-black/20 rounded-b-xl">
-              <button
-                type="button"
-                className="px-6 py-2.5 rounded-lg border border-white/10 text-white hover:bg-white/5 transition-all duration-200 font-medium"
-                onClick={() => setShowDeleteModal(false)}
-                disabled={isSubmitting}
-              >
-                إلغاء
-              </button>
-              <button
-                type="button"
-                className="px-6 py-2.5 rounded-lg bg-red-500 text-white hover:bg-red-600 shadow-lg shadow-red-500/20 transition-all duration-200 font-medium disabled:opacity-70 disabled:cursor-not-allowed"
-                onClick={confirmDelete}
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? 'جاري الحذف...' : 'حذف'}
-              </button>
-            </div>
+      <ConfirmationModal
+        isOpen={showDeleteModal}
+        title="تأكيد الحذف"
+        message={
+          <div>
+            <p className="text-gray-300 text-lg mb-2">هل أنت متأكد من حذف الصف "{selectedGrade?.name}"؟</p>
+            <p className="text-red-400 text-sm bg-red-400/10 p-3 rounded-lg border border-red-400/20">
+              <Icon name="exclamation-triangle" className="ml-2 inline" />
+              سيتم حذف جميع المجموعات والبيانات المرتبطة بهذا الصف.
+            </p>
           </div>
-        </div>
-      )}
+        }
+        confirmText={isSubmitting ? 'جاري الحذف...' : 'حذف'}
+        cancelText="إلغاء"
+        onConfirm={confirmDelete}
+        onCancel={() => setShowDeleteModal(false)}
+        isProcessing={isSubmitting}
+        variant="danger"
+      />
     </DashboardLayout>
   );
 }

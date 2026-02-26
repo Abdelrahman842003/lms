@@ -3,7 +3,7 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\Lecture;
+use App\Domains\Lectures\Models\Lecture;
 
 class RemoveLectureNowSeeder extends Seeder
 {

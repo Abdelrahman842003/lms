@@ -8,6 +8,7 @@ import { getGrades, getGroups, getLeaderboard } from '@/services/academyService'
 import { Filter } from '@/components/Filter';
 import Link from 'next/link';
 
+import { Button, Icon, Input, Badge, LoadingSpinner } from '@/components/ui';
 interface LeaderboardEntry {
   rank: number;
   student_id: string;
@@ -167,13 +168,13 @@ export default function AcademyGamificationPage() {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-2xl font-bold text-white mb-2 flex items-center gap-3">
-              <i className="fas fa-trophy text-yellow-500"></i>
+              <Icon name="trophy" className="text-yellow-500" />
               لوحة الشرف للأكاديمية
             </h1>
             <p className="text-gray-400">ترتيب الطلاب في الأكاديمية</p>
           </div>
-          <Link href="/academy/dashboard" className="btn btn-outline btn-sm">
-            <i className="fas fa-arrow-right ml-2"></i>
+          <Link href="/academy/dashboard" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-white/20 text-white hover:bg-white/5 transition-colors text-sm">
+            <Icon name="arrow-right" className="ml-2" />
             العودة
           </Link>
         </div>
@@ -181,14 +182,14 @@ export default function AcademyGamificationPage() {
         <div className="space-y-6">
             {/* Search Bar */}
             <div className="relative">
-              <input
+              <Input
                 type="text"
                 placeholder="ابحث عن طالب..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full p-3 pr-12 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                className="w-full p-3 pr-12"
               />
-              <i className="fas fa-search absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+              <Icon name="search" className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400" />
             </div>
 
             {/* Filters */}
@@ -198,7 +199,7 @@ export default function AcademyGamificationPage() {
                 value={selectedGrade}
                 onChange={setSelectedGrade}
                 placeholder="اختر الصف"
-                icon="fas fa-graduation-cap"
+                icon="graduation-cap"
               />
 
               <Filter
@@ -206,40 +207,42 @@ export default function AcademyGamificationPage() {
                 value={selectedGroup}
                 onChange={setSelectedGroup}
                 placeholder="اختر المجموعة"
-                icon="fas fa-users"
+                icon="users"
                 disabled={!selectedGrade}
               />
             </div>
 
             {/* Leaderboard Type Toggle */}
             <div className="flex gap-2 justify-center">
-              <button
+              <Button
+                variant={leaderboardType === 'weekly' ? 'primary' : 'ghost'}
                 onClick={() => setLeaderboardType('weekly')}
                 className={`px-6 py-3 rounded-xl font-semibold transition-all ${
                   leaderboardType === 'weekly'
-                    ? 'bg-primary text-white shadow-lg shadow-primary/20'
+                    ? 'shadow-lg shadow-primary/20'
                     : 'bg-white/5 text-gray-400 hover:bg-white/10'
                 }`}
               >
-                <i className="fas fa-calendar-week ml-2"></i>
+                <Icon name="calendar-week" className="ml-2" />
                 أشطر الطلاب هذا الشهر
-              </button>
-              <button
+              </Button>
+              <Button
+                variant={leaderboardType === 'all_time' ? 'secondary' : 'ghost'}
                 onClick={() => setLeaderboardType('all_time')}
                 className={`px-6 py-3 rounded-xl font-semibold transition-all ${
                   leaderboardType === 'all_time'
-                    ? 'bg-secondary text-white shadow-lg shadow-secondary/20'
+                    ? 'shadow-lg shadow-secondary/20'
                     : 'bg-white/5 text-gray-400 hover:bg-white/10'
                 }`}
               >
-                <i className="fas fa-infinity ml-2"></i>
+                <Icon name="infinity" className="ml-2" />
                 أشطر الطلاب على الإطلاق
-              </button>
+              </Button>
             </div>
 
             {loading ? (
               <div className="text-center py-16">
-                <i className="fas fa-spinner fa-spin text-4xl text-primary"></i>
+                <LoadingSpinner size="sm" color="primary" />
                 <p className="text-gray-400 mt-4">جاري التحميل...</p>
               </div>
             ) : (
@@ -247,13 +250,13 @@ export default function AcademyGamificationPage() {
                 {/* Single Leaderboard */}
                 <DashboardCard 
                   title={leaderboardType === 'weekly' ? 'أشطر الطلاب هذا الشهر' : 'أشطر الطلاب على الإطلاق'} 
-                  icon={leaderboardType === 'weekly' ? 'fas fa-calendar-week' : 'fas fa-infinity'}
+                  icon={leaderboardType === 'weekly' ? 'calendar-week' : 'infinity'}
                 >
                   {(leaderboardType === 'weekly' ? weeklyLeaderboard : allTimeLeaderboard)
                     .filter(entry => entry.student.name.toLowerCase().includes(searchQuery.toLowerCase()))
                     .length === 0 ? (
                     <div className="text-center py-8 text-gray-400">
-                      <i className="fas fa-chart-line text-3xl mb-3 opacity-50"></i>
+                      <Icon name="chart-line" className="text-3xl mb-3 opacity-50" />
                       <p>لا توجد بيانات بعد</p>
                     </div>
                   ) : (
@@ -281,23 +284,24 @@ export default function AcademyGamificationPage() {
                 {/* Load More Button */}
                 {hasMore && !searchQuery && (
                   <div className="flex justify-center">
-                    <button
+                    <Button
+                      variant="primary"
                       onClick={loadMore}
                       disabled={loadingMore}
-                      className="px-8 py-3 rounded-xl bg-primary hover:bg-primary/80 text-white font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                      className="px-8 py-3 rounded-xl font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                     >
                       {loadingMore ? (
                         <>
-                          <i className="fas fa-spinner fa-spin"></i>
+                          <LoadingSpinner size="sm" color="primary" />
                           <span>جاري التحميل...</span>
                         </>
                       ) : (
                         <>
-                          <i className="fas fa-chevron-down"></i>
+                          <Icon name="chevron-down" />
                           <span>عرض المزيد</span>
                         </>
                       )}
-                    </button>
+                    </Button>
                   </div>
                 )}
               </>

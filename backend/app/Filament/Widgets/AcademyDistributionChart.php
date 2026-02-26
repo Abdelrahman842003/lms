@@ -2,7 +2,7 @@
 
 namespace App\Filament\Widgets;
 
-use App\Models\Academy;
+use App\Domains\Auth\Models\Academy;
 use Filament\Widgets\ChartWidget;
 use Illuminate\Support\Facades\DB;
 

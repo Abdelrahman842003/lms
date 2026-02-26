@@ -5,6 +5,7 @@ import { fetchApi } from '@/services/authService';
 import { toast } from 'react-hot-toast';
 import { ReceivedNotification as AppNotification } from '@/services/notificationService';
 import { getAccessToken } from '@/lib/tokenManager';
+import { Icon } from '@/components/ui';
 
 interface NotificationDropdownProps {
   role: string;
@@ -350,7 +351,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
         }}
         style={{ position: 'relative', padding: '0.5rem' }}
       >
-        <i className="fas fa-bell" style={{ fontSize: '1.2rem', color: 'var(--gray-light)' }}></i>
+        <Icon name="bell" className="text-[1.2rem] text-[var(--gray-light)]" />
         {unreadCount > 0 && (
           <span className="navbar-badge" style={{ 
             position: 'absolute', 

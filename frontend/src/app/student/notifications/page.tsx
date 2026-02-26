@@ -11,6 +11,7 @@ import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { getNotifications, sendNotification, Notification as SentNotification, ReceivedNotification } from '@/services/notificationService';
 import { toast } from 'react-hot-toast';
 import NotificationDetailsModal from '@/components/ui/NotificationDetailsModal';
+import { Button, FormModal, Icon, Input } from '@/components/ui/index';
 
 function StudentNotificationsContent() {
   const { user } = useAuth();
@@ -111,7 +112,7 @@ function StudentNotificationsContent() {
         if (isVoice) {
           return (
             <span className="inline-flex items-center gap-2 text-primary">
-              <i className="fas fa-microphone"></i>
+              <Icon name="microphone" />
               <span>رسالة صوتية</span>
             </span>
           );
@@ -230,16 +231,16 @@ function StudentNotificationsContent() {
         icon="fas fa-list"
         action={
           <div className="flex gap-3 flex-wrap">
-            <button 
+            <Button
               onClick={() => {
                 setFormData(prev => ({ ...prev, recipient_type: 'admin' }));
                 setShowModal(true);
-              }} 
-              className="btn btn-primary"
+              }}
+              variant="primary"
             >
-              <i className="fas fa-headset"></i>
+              <Icon name="headset" className="ml-2" />
               <span>تواصل مع الدعم</span>
-            </button>
+            </Button>
             
             <Filter
               options={[
@@ -283,12 +284,12 @@ function StudentNotificationsContent() {
                   <span className="flex items-center gap-1">
                     {filter === 'received' ? (
                       <>
-                        <i className="fas fa-user text-primary"></i>
+                        <Icon name="user" className="text-primary" />
                         <span>{(item as any).sender_name}</span>
                       </>
                     ) : (
                       <>
-                        <i className="fas fa-paper-plane text-info"></i>
+                        <Icon name="paper-plane" className="text-info" />
                         <span>الدعم الفني</span>
                       </>
                     )}
@@ -298,7 +299,7 @@ function StudentNotificationsContent() {
             ))
           ) : (
              <div className="text-center p-8 text-gray-400 bg-white/5 rounded-xl border border-white/10">
-               <i className="fas fa-inbox text-2xl mb-2 block opacity-50"></i>
+               <Icon name="inbox" size="lg" className="mb-2 block opacity-50" />
                لا توجد إخطارات
              </div>
           )}
@@ -306,62 +307,38 @@ function StudentNotificationsContent() {
       </DashboardCard>
 
       {/* Send Notification Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowModal(false)}>
-          <div className="bg-[#1e1e2d] rounded-xl w-full max-w-[600px] shadow-xl border border-white/10" onClick={(e) => e.stopPropagation()}>
-            <div className="flex justify-between items-center p-6 border-b border-white/10">
-              <h3 className="text-xl font-bold text-white m-0">إرسال رسالة للدعم الفني / المطور</h3>
-              <button className="text-gray-400 hover:text-white transition-colors bg-transparent border-none cursor-pointer text-xl" onClick={() => setShowModal(false)}>
-                <i className="fas fa-times"></i>
-              </button>
-            </div>
-            <form onSubmit={handleSubmit}>
-              <div className="p-6">
-                <div className="mb-4">
-                  <label htmlFor="title" className="block text-gray-light text-sm mb-2 font-medium">الموضوع</label>
-                  <input
-                    type="text"
-                    id="title"
-                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
-                    value={formData.title}
-                    onChange={(e) => setFormData({...formData, title: e.target.value})}
-                    required
-                    placeholder="مثال: مشكلة في تشغيل الفيديو"
-                  />
-                </div>
-                
-                <div className="mb-4">
-                  <label htmlFor="message" className="block text-gray-light text-sm mb-2 font-medium">تفاصيل المشكلة</label>
-                  <textarea
-                    id="message"
-                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
-                    value={formData.message}
-                    onChange={(e) => setFormData({...formData, message: e.target.value})}
-                    required
-                    rows={6}
-                    placeholder="اكتب تفاصيل المشكلة هنا..."
-                  />
-                </div>
-              </div>
-              <div className="flex justify-end gap-3 p-6 border-t border-white/10 bg-white/5 rounded-b-xl">
-                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)} disabled={isLoading}>
-                  إلغاء
-                </button>
-                <button type="submit" className="btn btn-primary" disabled={isLoading}>
-                  {isLoading ? (
-                    <span>جاري الإرسال...</span>
-                  ) : (
-                    <>
-                      <i className="fas fa-paper-plane"></i>
-                      <span>إرسال الرسالة</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
+      <FormModal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        onSubmit={handleSubmit}
+        title="إرسال رسالة للدعم الفني / المطور"
+        isLoading={isLoading}
+        submitText={isLoading ? 'جاري الإرسال...' : 'إرسال الرسالة'}
+      >
+        <div className="space-y-4">
+          <Input
+            id="title"
+            label="الموضوع"
+            value={formData.title}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, title: e.target.value})}
+            placeholder="مثال: مشكلة في تشغيل الفيديو"
+            required
+          />
+          
+          <div>
+            <label htmlFor="message" className="block text-gray-300 text-sm mb-2 font-medium">تفاصيل المشكلة</label>
+            <textarea
+              id="message"
+              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all resize-none"
+              value={formData.message}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setFormData({...formData, message: e.target.value})}
+              required
+              rows={6}
+              placeholder="اكتب تفاصيل المشكلة هنا..."
+            />
           </div>
         </div>
-      )}
+      </FormModal>
 
       {/* Notification Details Modal */}
       <NotificationDetailsModal

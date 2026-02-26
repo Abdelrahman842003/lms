@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { getAcademyStudentDetails, updateAcademyStudent, getGrades, getGroups, getExamTeachers } from '@/services/academyService';
 import { useRouter } from 'next/navigation';
 
+import { Button, Icon, Input, Select, LoadingSpinner } from '@/components/ui';
 interface Grade {
   id: string;
   name: string;
@@ -274,7 +275,7 @@ export default function EditStudentPage({ params }: { params: Promise<{ id: stri
       >
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
-            <i className="fas fa-spinner fa-spin text-4xl text-primary mb-3"></i>
+            <LoadingSpinner size="sm" color="primary" />
             <p className="text-gray-light">جاري التحميل...</p>
           </div>
         </div>
@@ -292,19 +293,19 @@ export default function EditStudentPage({ params }: { params: Promise<{ id: stri
     >
       <DashboardCard
         title="تعديل بيانات الطالب"
-        icon="fas fa-user-edit"
+        icon="user-edit"
       >
         <form onSubmit={handleSubmit}>
           {successMessage && (
             <div className="bg-green-500/10 border border-green-500/20 text-green-500 p-4 rounded-lg mb-6 flex items-center gap-3">
-              <i className="fas fa-check-circle text-xl"></i>
+              <Icon name="check-circle" size="lg" />
               <span>{successMessage}</span>
             </div>
           )}
 
           {formErrors.submit && (
             <div className="bg-red-500/10 border border-red-500/20 text-red-500 p-4 rounded-lg mb-6 flex items-center gap-3">
-              <i className="fas fa-exclamation-circle text-xl"></i>
+              <Icon name="exclamation-circle" size="lg" />
               <span>{formErrors.submit}</span>
             </div>
           )}
@@ -314,12 +315,10 @@ export default function EditStudentPage({ params }: { params: Promise<{ id: stri
               <label htmlFor="name" className="block text-gray-light mb-2 text-[0.95rem]">
                 الاسم <span className="text-red-500">*</span>
               </label>
-              <input
+              <Input
                 type="text"
                 id="name"
-                className={`w-full p-3 bg-white/5 border rounded-lg text-white text-[1rem] focus:ring-1 outline-none transition-all ${
-                  formErrors.name ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-white/10 focus:border-primary focus:ring-primary'
-                }`}
+                className={formErrors.name ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="أدخل اسم الطالب"
@@ -330,10 +329,9 @@ export default function EditStudentPage({ params }: { params: Promise<{ id: stri
 
             <div>
               <label htmlFor="parent_phone" className="block text-gray-light mb-2 text-[0.95rem]">رقم هاتف ولي الأمر</label>
-              <input
+              <Input
                 type="tel"
                 id="parent_phone"
-                className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white text-[1rem] focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
                 value={formData.parent_phone}
                 onChange={(e) => {
                   const value = e.target.value.replace(/[^0-9]/g, '');
@@ -350,28 +348,24 @@ export default function EditStudentPage({ params }: { params: Promise<{ id: stri
               <label htmlFor="gender" className="block text-gray-light mb-2 text-[0.95rem]">
                 النوع <span className="text-red-500">*</span>
               </label>
-              <select
+              <Select
                 id="gender"
-                className={`w-full p-3 bg-white/5 border rounded-lg text-white text-[1rem] focus:ring-1 outline-none transition-all ${
-                  formErrors.gender ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-white/10 focus:border-primary focus:ring-primary'
-                }`}
+                className={formErrors.gender ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}
                 value={formData.gender}
                 onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
                 disabled={isSubmitting}
               >
                 <option value="male" className="bg-[#1a1f37]">ذكر</option>
                 <option value="female" className="bg-[#1a1f37]">أنثى</option>
-              </select>
+              </Select>
               {formErrors.gender && <span className="text-red-500 text-sm mt-1 block">{formErrors.gender}</span>}
             </div>
 
             <div>
               <label htmlFor="teacher_id" className="block text-gray-light mb-2 text-[0.95rem]">المدرس</label>
-              <select
+              <Select
                 id="teacher_id"
-                className={`w-full p-3 bg-white/5 border rounded-lg text-white text-[1rem] focus:ring-1 outline-none transition-all ${
-                  formErrors.teacher_id ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-white/10 focus:border-primary focus:ring-primary'
-                }`}
+                className={formErrors.teacher_id ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}
                 value={formData.teacher_id}
                 onChange={(e) => setFormData({ ...formData, teacher_id: e.target.value })}
                 disabled={isSubmitting}
@@ -382,15 +376,14 @@ export default function EditStudentPage({ params }: { params: Promise<{ id: stri
                     {teacher.name}
                   </option>
                 ))}
-              </select>
+              </Select>
               {formErrors.teacher_id && <span className="text-red-500 text-sm mt-1 block">{formErrors.teacher_id}</span>}
             </div>
 
             <div>
               <label htmlFor="education_type" className="block text-gray-light mb-2 text-[0.95rem]">نوع التعليم</label>
-              <select
+              <Select
                 id="education_type"
-                className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white text-[1rem] focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
                 value={formData.education_type}
                 onChange={(e) => setFormData({ ...formData, education_type: e.target.value })}
                 disabled={isSubmitting}
@@ -398,14 +391,13 @@ export default function EditStudentPage({ params }: { params: Promise<{ id: stri
                 <option value="" className="bg-[#1a1f37]">اختر نوع التعليم</option>
                 <option value="general" className="bg-[#1a1f37]">عام</option>
                 <option value="azhar" className="bg-[#1a1f37]">أزهري</option>
-              </select>
+              </Select>
             </div>
 
             <div>
               <label htmlFor="grade_id" className="block text-gray-light mb-2 text-[0.95rem]">الصف الدراسي</label>
-              <select
+              <Select
                 id="grade_id"
-                className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white text-[1rem] focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
                 value={formData.grade_id}
                 onChange={(e) => setFormData({ ...formData, grade_id: e.target.value, group_id: '' })}
                 disabled={isSubmitting || !formData.teacher_id}
@@ -416,14 +408,13 @@ export default function EditStudentPage({ params }: { params: Promise<{ id: stri
                     {grade.name}
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
 
             <div>
               <label htmlFor="group_id" className="block text-gray-light mb-2 text-[0.95rem]">المجموعة</label>
-              <select
+              <Select
                 id="group_id"
-                className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white text-[1rem] focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
                 value={formData.group_id}
                 onChange={(e) => setFormData({ ...formData, group_id: e.target.value })}
                 disabled={isSubmitting || !formData.grade_id}
@@ -434,54 +425,53 @@ export default function EditStudentPage({ params }: { params: Promise<{ id: stri
                     {group.name} {group.grade_name && `(${group.grade_name})`}
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
 
             <div className="md:col-span-2">
               <label htmlFor="location" className="block text-gray-light mb-2 text-[0.95rem]">الموقع</label>
-              <input
+              <Input
                 type="text"
                 id="location"
-                className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white text-[1rem] focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
                 value={formData.location}
                 onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                 placeholder="أدخل موقع الطالب"
                 disabled={isSubmitting}
               />
               <span className="text-gray-light text-sm mt-1 block flex items-center gap-1">
-                <i className="fas fa-map-marker-alt"></i>
+                <Icon name="map-marker-alt" />
                 مكان إقامة الطالب
               </span>
             </div>
           </div>
 
           <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-white/10">
-            <button
+            <Button
               type="button"
-              className="btn btn-outline"
+              variant="outline"
               onClick={handleCancel}
               disabled={isSubmitting}
             >
-              <i className="fas fa-times"></i>
+              <Icon name="times" />
               <span>إلغاء</span>
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
-              className="btn btn-primary"
+              variant="primary"
               disabled={isSubmitting}
             >
               {isSubmitting ? (
                 <>
-                  <i className="fas fa-spinner fa-spin"></i>
+                  <LoadingSpinner size="sm" color="primary" />
                   <span>جاري الحفظ...</span>
                 </>
               ) : (
                 <>
-                  <i className="fas fa-save"></i>
+                  <Icon name="save" />
                   <span>حفظ التعديلات</span>
                 </>
               )}
-            </button>
+            </Button>
           </div>
         </form>
       </DashboardCard>

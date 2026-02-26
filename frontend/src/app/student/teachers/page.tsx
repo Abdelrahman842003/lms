@@ -6,6 +6,7 @@ import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { TeacherInfo } from '@/services/authService';
+import { LoadingSpinner, Icon } from '@/components/ui/index';
 
 export default function StudentTeachersPage() {
   const router = useRouter();
@@ -51,7 +52,7 @@ export default function StudentTeachersPage() {
   if (isLoading || authLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-5">
-        <div className="w-[50px] h-[50px] border-[3px] border-white/10 border-t-primary rounded-full animate-spin"></div>
+        <LoadingSpinner size="lg" className="w-12 h-12" />
         <p>جاري التحميل...</p>
       </div>
     );
@@ -65,7 +66,7 @@ export default function StudentTeachersPage() {
       <div className="p-5">
         <div className="text-center mb-10">
           <h1 className="text-[2rem] text-white flex items-center justify-center gap-3 mb-2">
-            <i className="fas fa-chalkboard-teacher text-primary"></i>
+            <Icon name="chalkboard-teacher" className="text-primary" />
             اختر المدرس
           </h1>
           <p className="text-gray-light text-base">اختر المدرس الذي تريد عرض بياناته</p>
@@ -73,7 +74,7 @@ export default function StudentTeachersPage() {
 
         {teachers.length === 0 ? (
           <div className="text-center p-[60px_20px] bg-white/3 rounded-2xl border border-white/5">
-            <i className="fas fa-user-slash text-[4rem] text-gray-light mb-5"></i>
+            <Icon name="user-slash" size="2x" className="text-[4rem] text-gray-light mb-5" />
             <h2 className="text-white mb-2.5">لا توجد اشتراكات</h2>
             <p className="text-gray-light">لم تقم بالاشتراك مع أي مدرس بعد. تواصل مع مدرسك للاشتراك.</p>
           </div>
@@ -95,26 +96,26 @@ export default function StudentTeachersPage() {
                     <img src={teacher.teacher_avatar} alt={teacher.teacher_name} className="w-full h-full object-cover" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary to-secondary text-white text-[2rem]">
-                      <i className="fas fa-user"></i>
+                      <Icon name="user" />
                     </div>
                   )}
                 </div>
                 {teacher.is_suspended && (
                   <div className="absolute top-4 right-4 text-red-500 bg-white/10 p-2 rounded-full">
-                    <i className="fas fa-ban"></i>
+                    <Icon name="ban" />
                   </div>
                 )}
                 <div className="mb-4">
                   <h3 className="text-white text-xl mb-2">{teacher.teacher_name}</h3>
                   {teacher.grade_name && (
                     <p className="text-gray-light text-sm flex items-center justify-center gap-1.5 mb-1">
-                      <i className="fas fa-graduation-cap"></i>
+                      <Icon name="graduation-cap" />
                       {teacher.grade_name}
                     </p>
                   )}
                   {teacher.group_name && (
                     <p className="text-gray-light text-sm flex items-center justify-center gap-1.5 mb-1">
-                      <i className="fas fa-users"></i>
+                      <Icon name="users" />
                       {teacher.group_name}
                     </p>
                   )}
@@ -124,7 +125,7 @@ export default function StudentTeachersPage() {
                   <span className="text-xl font-bold text-success">{teacher.balance} ج.م</span>
                 </div>
                 <div className="absolute left-5 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-                  <i className="fas fa-arrow-left"></i>
+                  <Icon name="arrow-left" />
                 </div>
               </div>
             ))}
@@ -137,7 +138,7 @@ export default function StudentTeachersPage() {
         message={
           <div className="text-center">
             <div className="w-16 h-16 bg-warning/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <i className="fas fa-exclamation-triangle text-2xl text-warning"></i>
+              <Icon name="exclamation-triangle" size="lg" className="text-warning" />
             </div>
             <p className="text-lg font-medium text-white mb-2">
               عفواً، هذا المدرس ({suspendedTeacher?.teacher_name}) معلق حالياً

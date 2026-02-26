@@ -9,6 +9,7 @@ import { DataTable } from '@/components/dashboard/DataTable';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import * as academyService from '@/services/academyService';
 import { Grade } from '@/services/gradeService';
+import { Button, Icon, Input, Badge, LoadingSpinner, FormModal, ConfirmationModal } from '@/components/ui';
 
 
 
@@ -144,7 +145,7 @@ export default function GradeDetailsPage() {
             <img src={row.teacher.avatar} alt={row.teacher.name} className="w-8 h-8 rounded-full object-cover" />
           ) : (
             <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-gray-400 text-xs">
-              <i className="fas fa-user"></i>
+              <Icon name="user" />
             </div>
           )}
           <span>{row.teacher?.name || (row.teacher_id ? 'جاري التحميل...' : 'عام (بدون مدرس)')}</span>
@@ -227,13 +228,13 @@ export default function GradeDetailsPage() {
   const tableActions = [
     {
       label: 'تعديل',
-      icon: 'fas fa-edit',
+      icon: 'edit',
       variant: 'default' as const,
       onClick: (row: Grade) => handleEditClick(row),
     },
     {
       label: 'حذف',
-      icon: 'fas fa-trash',
+      icon: 'trash',
       variant: 'danger' as const,
       onClick: (row: Grade) => handleDeleteClick(row),
     },
@@ -249,12 +250,13 @@ export default function GradeDetailsPage() {
       headerActions={null}
     >
       <div className="mb-6 flex items-center gap-4">
-        <button 
-          onClick={() => router.back()} 
-          className="w-10 h-10 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/10 text-white transition-colors"
+        <Button
+          variant="ghost"
+          onClick={() => router.back()}
+          className="w-10 h-10 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/10 text-white transition-colors p-0"
         >
-          <i className="fas fa-arrow-right"></i>
-        </button>
+          <Icon name="arrow-right" />
+        </Button>
         <div>
           <h1 className="text-2xl font-bold text-white mb-1">{gradeName}</h1>
           <p className="text-gray-400 text-sm">تفاصيل المدرسين والطلاب لهذا الصف</p>
@@ -266,19 +268,19 @@ export default function GradeDetailsPage() {
         <StatCard
           title="عدد المدرسين"
           value={totalTeachers}
-          icon="fas fa-chalkboard-teacher"
+          icon="chalkboard-teacher"
           color="primary"
         />
         <StatCard
           title="إجمالي المجموعات"
           value={totalGroups}
-          icon="fas fa-layer-group"
+          icon="layer-group"
           color="success"
         />
         <StatCard
           title="إجمالي الطلاب"
           value={totalStudents}
-          icon="fas fa-user-graduate"
+          icon="user-graduate"
           color="warning"
         />
       </div>
@@ -286,12 +288,12 @@ export default function GradeDetailsPage() {
       {/* Teachers Table */}
       <DashboardCard
         title={`مدرسين ${gradeName}`}
-        icon="fas fa-chalkboard-teacher"
+        icon="chalkboard-teacher"
         action={
-          <button onClick={handleAddClick} className="btn btn-primary">
-            <i className="fas fa-plus"></i>
+          <Button variant="primary" onClick={handleAddClick}>
+            <Icon name="plus" />
             <span>إضافة مدرس للصف</span>
-          </button>
+          </Button>
         }
       >
         <DataTable
@@ -310,74 +312,31 @@ export default function GradeDetailsPage() {
       </DashboardCard>
 
       {/* Edit Grade Modal */}
-      {showEditModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setShowEditModal(false)}>
-          <div className="w-full max-w-[500px] bg-[#1e1e2d] rounded-xl shadow-2xl border border-white/10 animate-scaleIn" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-6 border-b border-white/10">
-              <h3 className="text-xl font-bold text-white m-0">تعديل بيانات الصف</h3>
-              <button 
-                className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors" 
-                onClick={() => setShowEditModal(false)}
-              >
-                <i className="fas fa-times"></i>
-              </button>
-            </div>
-            
-            <form onSubmit={handleUpdateGrade}>
-              <div className="p-6 space-y-4">
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-300">اسم الصف</label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      className="w-full p-3 bg-[#151521]/50 border border-white/5 rounded-lg text-gray-400 cursor-not-allowed outline-none"
-                      value={editFormData.name}
-                      disabled
-                    />
-                    <i className="fas fa-lock absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"></i>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-300">سعر الاشتراك</label>
-                  <input
-                    type="number"
-                    className="w-full p-3 bg-[#151521] border border-white/10 rounded-lg text-white focus:border-primary focus:ring-primary outline-none transition-all"
-                    value={editFormData.price}
-                    onChange={(e) => setEditFormData({...editFormData, price: Number(e.target.value)})}
-                    min="0"
-                    required
-                  />
-                </div>
-              </div>
-              
-              <div className="flex items-center justify-end gap-3 p-6 border-t border-white/10 bg-black/20 rounded-b-xl">
-                <button
-                  type="button"
-                  onClick={() => setShowEditModal(false)}
-                  className="px-4 py-2 text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
-                  disabled={isSubmitting}
-                >
-                  إلغاء
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg transition-colors flex items-center gap-2"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                      <span>جاري الحفظ...</span>
-                    </>
-                  ) : (
-                    <span>حفظ التغييرات</span>
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <FormModal
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        onSubmit={handleUpdateGrade}
+        title="تعديل بيانات الصف"
+        isLoading={isSubmitting}
+        submitText={isSubmitting ? 'جاري الحفظ...' : 'حفظ التغييرات'}
+        cancelText="إلغاء"
+        maxWidth="500px"
+      >
+        <Input
+          label="اسم الصف"
+          value={editFormData.name}
+          disabled
+          className="!bg-[#151521]/50 !border-white/5 !text-gray-400 !cursor-not-allowed"
+        />
+        <Input
+          type="number"
+          label="سعر الاشتراك"
+          value={editFormData.price}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditFormData({...editFormData, price: Number(e.target.value)})}
+          min="0"
+          required
+        />
+      </FormModal>
 
       {/* Add Teacher Modal */}
       {showModal && (
@@ -385,25 +344,21 @@ export default function GradeDetailsPage() {
           <div className="w-full max-w-[500px] bg-[#1e1e2d] rounded-xl shadow-2xl border border-white/10 animate-scaleIn flex flex-col max-h-[80vh]" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between p-6 border-b border-white/10">
               <h3 className="text-xl font-bold text-white m-0">إضافة مدرس للصف</h3>
-              <button 
-                className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors" 
+              <Button
+                variant="ghost"
+                className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors p-0"
                 onClick={() => setShowModal(false)}
               >
-                <i className="fas fa-times"></i>
-              </button>
+                <Icon name="times" />
+              </Button>
             </div>
             
             <div className="p-4 border-b border-white/10">
-              <div className="relative">
-                <i className="fas fa-search absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                <input
-                  type="text"
-                  placeholder="ابحث عن مدرس..."
-                  className="w-full p-3 pr-10 bg-[#151521] border border-white/10 rounded-lg text-white focus:border-primary focus:ring-primary outline-none transition-all"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
+              <Input
+                placeholder="ابحث عن مدرس..."
+                value={searchQuery}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
+              />
             </div>
 
             <div className="flex-1 overflow-y-auto p-2 space-y-2">
@@ -415,7 +370,7 @@ export default function GradeDetailsPage() {
                         {teacher.avatar ? (
                           <img src={teacher.avatar} alt={teacher.name} className="w-full h-full object-cover" />
                         ) : (
-                          <i className="fas fa-user"></i>
+                          <Icon name="user" />
                         )}
                       </div>
                       <div>
@@ -423,18 +378,19 @@ export default function GradeDetailsPage() {
                         <p className="text-gray-400 text-xs">{teacher.phone || 'لا يوجد رقم هاتف'}</p>
                       </div>
                     </div>
-                    <button
+                    <Button
+                      variant="outline"
                       onClick={() => handleAddTeacher(teacher.id)}
                       disabled={isSubmitting}
                       className="px-4 py-2 rounded-lg bg-primary/20 text-primary hover:bg-primary hover:text-white transition-all text-sm font-medium"
                     >
                       إضافة
-                    </button>
+                    </Button>
                   </div>
                 ))
               ) : (
                 <div className="text-center py-8 text-gray-400">
-                  <i className="fas fa-search mb-2 text-2xl opacity-50 block"></i>
+                  <Icon name="search" className="mb-2 text-2xl opacity-50 block" />
                   لا يوجد مدرسين بهذا الاسم
                 </div>
               )}
@@ -444,49 +400,28 @@ export default function GradeDetailsPage() {
       )}
 
       {/* Delete Confirmation Modal */}
-      {showDeleteModal && selectedGrade && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setShowDeleteModal(false)}>
-          <div className="w-full max-w-[500px] bg-[#1e1e2d] rounded-xl shadow-2xl border border-white/10 animate-scaleIn" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-6 border-b border-white/10">
-              <h3 className="text-xl font-bold text-white m-0">تأكيد الحذف</h3>
-              <button 
-                className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors" 
-                onClick={() => setShowDeleteModal(false)}
-              >
-                <i className="fas fa-times"></i>
-              </button>
-            </div>
-            <div className="p-6">
-              <p className="text-gray-300 text-lg mb-2">
-                هل أنت متأكد من حذف هذا السجل 
-                {selectedGrade.teacher ? ` للمدرس "${selectedGrade.teacher.name}"` : ' (الصف العام)'}؟
-              </p>
-              <p className="text-red-400 text-sm bg-red-400/10 p-3 rounded-lg border border-red-400/20">
-                <i className="fas fa-exclamation-triangle ml-2"></i>
-                سيتم حذف جميع المجموعات والبيانات المرتبطة بهذا السجل.
-              </p>
-            </div>
-            <div className="flex items-center justify-end gap-3 p-6 border-t border-white/10 bg-black/20 rounded-b-xl">
-              <button
-                type="button"
-                className="px-6 py-2.5 rounded-lg border border-white/10 text-white hover:bg-white/5 transition-all duration-200 font-medium"
-                onClick={() => setShowDeleteModal(false)}
-                disabled={isSubmitting}
-              >
-                إلغاء
-              </button>
-              <button
-                type="button"
-                className="px-6 py-2.5 rounded-lg bg-red-500 text-white hover:bg-red-600 shadow-lg shadow-red-500/20 transition-all duration-200 font-medium disabled:opacity-70 disabled:cursor-not-allowed"
-                onClick={confirmDelete}
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? 'جاري الحذف...' : 'حذف'}
-              </button>
-            </div>
+      <ConfirmationModal
+        isOpen={showDeleteModal && !!selectedGrade}
+        title="تأكيد الحذف"
+        message={
+          <div>
+            <p className="text-gray-300 text-lg mb-2">
+              هل أنت متأكد من حذف هذا السجل
+              {selectedGrade?.teacher ? ` للمدرس "${selectedGrade.teacher.name}"` : ' (الصف العام)'}؟
+            </p>
+            <p className="text-red-400 text-sm bg-red-400/10 p-3 rounded-lg border border-red-400/20">
+              <Icon name="exclamation-triangle" className="ml-2 inline" />
+              سيتم حذف جميع المجموعات والبيانات المرتبطة بهذا السجل.
+            </p>
           </div>
-        </div>
-      )}
+        }
+        confirmText={isSubmitting ? 'جاري الحذف...' : 'حذف'}
+        cancelText="إلغاء"
+        onConfirm={confirmDelete}
+        onCancel={() => setShowDeleteModal(false)}
+        isProcessing={isSubmitting}
+        variant="danger"
+      />
     </DashboardLayout>
   );
 }

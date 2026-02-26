@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources;
 
-use App\Enums\TeacherStatus;
-use App\Models\Teacher;
+use App\Domains\Auth\Enums\TeacherStatus;
+use App\Domains\Auth\Models\Teacher;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
@@ -25,13 +25,16 @@ class TeacherResource extends BaseResource
 
     protected static ?string $navigationIcon = 'heroicon-o-academic-cap';
 
-    protected static ?string $navigationGroup = 'إدارة المستخدمين';
-
     protected static ?int $navigationSort = 3;
 
     protected static ?string $modelLabel = 'معلم';
 
     protected static ?string $pluralModelLabel = 'المعلمون';
+
+    public static function getNavigationGroup(): ?string
+    {
+        return 'إدارة المستخدمين';
+    }
 
     public static function form(Schema $schema): Schema
     {

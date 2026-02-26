@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
+import { LoadingSpinner, Button, Icon } from '@/components/ui';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { getAttendees, exportAttendeesPDF, AttendeesResponse } from '@/services/lectureService';
 import { Filter } from '@/components/Filter';
@@ -108,12 +109,13 @@ export default function LectureAttendancePage() {
     >
       <div className="mb-6 flex justify-between items-center max-md:flex-col max-md:items-start max-md:gap-4">
         <div className="flex items-center gap-4">
-          <button 
-            onClick={() => router.back()} 
+          <Button
+            onClick={() => router.back()}
+            variant="ghost"
             className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white hover:bg-white/10 transition-colors"
           >
-            <i className="fas fa-arrow-right"></i>
-          </button>
+            <Icon name="arrow-right" />
+          </Button>
           <div>
             <h1 className="text-2xl font-bold text-white mb-1">سجل الحضور</h1>
             <div className="flex flex-wrap items-center gap-2 text-gray-400 text-sm">
@@ -125,21 +127,22 @@ export default function LectureAttendancePage() {
               )}
               {data?.lecture?.is_recurring && data.lecture.recurrence_days && (
                 <span className="text-primary text-xs flex items-center gap-1">
-                  <i className="fas fa-redo"></i>
+                  <Icon name="redo" />
                   {data.lecture.recurrence_days.map(d => dayLabels[d]).join('، ')}
                 </span>
               )}
             </div>
           </div>
         </div>
-        <button 
+        <Button
           onClick={handleExportPDF}
-          className="btn btn-primary max-md:w-full"
+          variant="primary"
+          className="max-md:w-full"
           disabled={isLoading || !data || (selectedDateStatus !== 'active' && selectedDateFilter !== 'all' && selectedDateFilter !== 'last_month')}
         >
-          <i className="fas fa-file-pdf"></i>
+          <Icon name="file-pdf" />
           <span>تصدير PDF</span>
-        </button>
+        </Button>
       </div>
 
       {/* Filters */}
@@ -164,14 +167,14 @@ export default function LectureAttendancePage() {
 
       {isLoading ? (
         <div className="flex items-center justify-center min-h-[400px]">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+          <LoadingSpinner size="lg" />
         </div>
       ) : data ? (
         <div className="space-y-6">
           {selectedDateStatus === 'not_activated' ? (
             <div className="flex flex-col items-center justify-center py-16 bg-[#101426]/40 border border-white/5 rounded-2xl">
               <div className="w-20 h-20 rounded-full bg-yellow-500/10 flex items-center justify-center mb-4">
-                <i className="fas fa-exclamation-triangle text-3xl text-yellow-500"></i>
+                <Icon name="exclamation-triangle" className="text-3xl text-yellow-500" />
               </div>
               <h3 className="text-xl font-bold text-white mb-2">لم يتم تفعيل المحاضرة</h3>
               <p className="text-gray-400 text-center max-w-md">
@@ -181,7 +184,7 @@ export default function LectureAttendancePage() {
           ) : selectedDateStatus === 'cancelled' ? (
             <div className="flex flex-col items-center justify-center py-16 bg-[#101426]/40 border border-white/5 rounded-2xl">
               <div className="w-20 h-20 rounded-full bg-red-500/10 flex items-center justify-center mb-4">
-                <i className="fas fa-ban text-3xl text-red-500"></i>
+                <Icon name="ban" className="text-3xl text-red-500" />
               </div>
               <h3 className="text-xl font-bold text-white mb-2">تم إلغاء المحاضرة</h3>
               <p className="text-gray-400 text-center max-w-md">
@@ -198,7 +201,7 @@ export default function LectureAttendancePage() {
                     <h3 className="text-3xl font-bold text-white">{data.total_present}</h3>
                   </div>
                   <div className="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center text-green-500 text-xl group-hover:scale-110 transition-transform duration-300">
-                    <i className="fas fa-check"></i>
+                    <Icon name="check" />
                   </div>
                   <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-green-500/5 rounded-full blur-2xl group-hover:bg-green-500/10 transition-colors duration-300"></div>
                 </div>
@@ -209,7 +212,7 @@ export default function LectureAttendancePage() {
                     <h3 className="text-3xl font-bold text-white">{data.total_absent}</h3>
                   </div>
                   <div className="w-12 h-12 rounded-xl bg-red-500/10 flex items-center justify-center text-red-500 text-xl group-hover:scale-110 transition-transform duration-300">
-                    <i className="fas fa-times"></i>
+                    <Icon name="times" />
                   </div>
                   <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-red-500/5 rounded-full blur-2xl group-hover:bg-red-500/10 transition-colors duration-300"></div>
                 </div>
@@ -256,7 +259,7 @@ export default function LectureAttendancePage() {
                       {data.attendees.length === 0 && (
                         <tr>
                           <td colSpan={4} className="px-6 py-12 text-center text-gray-500">
-                            <i className="fas fa-users-slash text-4xl mb-3 opacity-50"></i>
+                            <Icon name="users-slash" className="text-4xl mb-3 opacity-50" />
                             <p>لا يوجد طلاب في هذه القائمة</p>
                           </td>
                         </tr>

@@ -1,5 +1,6 @@
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
+import { Icon } from './Icon';
 
 interface MonthDropdownProps {
   value: number;
@@ -45,7 +46,7 @@ export const MonthDropdown: React.FC<MonthDropdownProps> = ({ value, onChange, l
   return (
     <div ref={dropdownRef} className="relative">
       <label className="block text-gray-300 mb-2 font-semibold">
-        <i className="fas fa-calendar ml-2 text-primary"></i>
+        <Icon name="calendar" className="ml-2 text-primary" />
         {label}
       </label>
       
@@ -54,7 +55,7 @@ export const MonthDropdown: React.FC<MonthDropdownProps> = ({ value, onChange, l
         className="w-full p-3 bg-dark-lighter border-2 border-gray-700 rounded-lg text-white hover:border-primary transition-all cursor-pointer flex items-center justify-between"
       >
         <span>{selectedMonth?.label || 'اختر الشهر'}</span>
-        <i className={`fas fa-chevron-down transition-transform ${isOpen ? 'rotate-180' : ''}`}></i>
+        <Icon name="chevron-down" className={`transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </div>
 
       {isOpen && (
@@ -80,7 +81,7 @@ export const MonthDropdown: React.FC<MonthDropdownProps> = ({ value, onChange, l
                 <div className="flex items-center justify-between">
                   <span>{month.label}</span>
                   {value === month.value && (
-                    <i className="fas fa-check text-primary"></i>
+                    <Icon name="check" className="text-primary" />
                   )}
                 </div>
               </div>

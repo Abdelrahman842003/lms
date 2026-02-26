@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { createAcademyStudent, searchAcademyStudentByPhone, getGrades, getGroups, getTeachers } from '@/services/academyService';
 import { useRouter } from 'next/navigation';
 
+import { Button, Icon, Input, LoadingSpinner, Badge } from '@/components/ui';
 interface Grade {
   id: string;
   name: string;
@@ -376,26 +377,26 @@ export default function AddStudentPage() {
 
       <DashboardCard
         title="إضافة طالب جديد"
-        icon="fas fa-user-plus"
+        icon="user-plus"
       >
         <form onSubmit={handleSubmit}>
           {successMessage && (
             <div className="bg-green-500/10 border border-green-500/20 text-green-500 p-4 rounded-lg mb-6 flex items-center gap-3">
-              <i className="fas fa-check-circle text-xl"></i>
+              <Icon name="check-circle" size="lg" />
               <span>{successMessage}</span>
             </div>
           )}
 
           {formErrors.submit && (
             <div className="alert alert-danger">
-              <i className="fas fa-exclamation-circle"></i>
+              <Icon name="exclamation-circle" />
               <span>{formErrors.submit}</span>
             </div>
           )}
           
           {alreadyEnrolled && (
             <div className="bg-yellow-500/10 border border-yellow-500/20 text-yellow-500 p-4 rounded-lg mb-6 flex items-center gap-3">
-              <i className="fas fa-exclamation-triangle text-xl"></i>
+              <Icon name="exclamation-triangle" size="lg" />
               <span>هذا الطالب مسجل بالفعل.</span>
             </div>
           )}
@@ -404,7 +405,7 @@ export default function AddStudentPage() {
           {!existingStudentFound && Object.keys(formErrors).length > 0 && Object.keys(formErrors).some(k => ['education_type', 'grade_id', 'group_id', 'parent_phone', 'password'].includes(k)) && (
             <div className="bg-orange-500/10 border border-orange-500/20 text-orange-400 p-4 rounded-lg mb-6">
               <div className="flex items-center gap-2 mb-2">
-                <i className="fas fa-info-circle text-lg"></i>
+                <Icon name="info-circle" size="lg" />
                 <span className="font-bold">يرجى استكمال البيانات التالية:</span>
               </div>
               <ul className="list-disc list-inside text-sm space-y-1 mr-6">
@@ -424,12 +425,10 @@ export default function AddStudentPage() {
                 رقم الهاتف <span className="text-red-500">*</span>
               </label>
               <div className="relative">
-                <input
+                <Input
                   type="tel"
                   id="phone"
-                  className={`w-full p-3 pl-10 bg-transparent border rounded-lg text-white text-[1rem] focus:ring-1 outline-none transition-all ${
-                    formErrors.phone ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-white/10 focus:border-primary focus:ring-primary'
-                  }`}
+                  className={formErrors.phone ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}
                   value={formData.phone}
                   onChange={(e) => {
                     const value = e.target.value.replace(/[^0-9]/g, '');
@@ -487,12 +486,12 @@ export default function AddStudentPage() {
                 />
                 {isCheckingPhone && (
                   <div className="absolute left-3 top-1/2 -translate-y-1/2 text-primary">
-                    <i className="fas fa-spinner fa-spin"></i>
+                    <LoadingSpinner size="sm" color="primary" />
                   </div>
                 )}
                 {!isCheckingPhone && isPhoneChecked && !formErrors.phone && (
                   <div className="absolute left-3 top-1/2 -translate-y-1/2 text-success">
-                    <i className="fas fa-check"></i>
+                    <Icon name="check" />
                   </div>
                 )}
               </div>
@@ -506,12 +505,10 @@ export default function AddStudentPage() {
               <label htmlFor="name" className="block text-gray-light mb-2 text-[0.95rem]">
                 الاسم <span className="text-red-500">*</span>
               </label>
-              <input
+              <Input
                 type="text"
                 id="name"
-                className={`w-full p-3 bg-transparent border rounded-lg text-white text-[1rem] focus:ring-1 outline-none transition-all ${
-                  formErrors.name ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-white/10 focus:border-primary focus:ring-primary'
-                } disabled:opacity-60 disabled:cursor-not-allowed`}
+                className={formErrors.name ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="أدخل اسم الطالب"
@@ -528,19 +525,17 @@ export default function AddStudentPage() {
                 <label htmlFor="parent_name" className="block text-gray-light mb-2 text-[0.95rem]">
                   اسم ولي الأمر <span className="text-red-500">*</span>
                 </label>
-                <input
+                <Input
                   type="text"
                   id="parent_name"
-                  className={`w-full p-3 bg-transparent border rounded-lg text-white text-[1rem] focus:ring-1 outline-none transition-all ${
-                    formErrors.parent_name ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-white/10 focus:border-primary focus:ring-primary'
-                  } disabled:opacity-60 disabled:cursor-not-allowed`}
+                  className={formErrors.parent_name ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}
                   value={parentName}
                   onChange={(e) => setParentName(e.target.value)}
                   placeholder="اسم ولي الأمر الكامل"
                   disabled={isSubmitting || !isPhoneChecked}
                 />
                 <span className="text-gray-light text-sm mt-1 block flex items-center gap-1">
-                  <i className="fas fa-info-circle"></i>
+                  <Icon name="info-circle" />
                   تم استخراج الاسم تلقائياً - يمكنك تعديله
                 </span>
               </div>
@@ -550,12 +545,10 @@ export default function AddStudentPage() {
               <label htmlFor="parent_phone" className="block text-gray-light mb-2 text-[0.95rem]">
                 رقم هاتف ولي الأمر {!existingStudentFound && <span className="text-red-500">*</span>}
               </label>
-              <input
+              <Input
                 type="text"
                 id="parent_phone"
-                className={`w-full p-3 bg-transparent border rounded-lg text-white text-[1rem] focus:ring-1 outline-none transition-all ${
-                  formErrors.parent_phone ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-white/10 focus:border-primary focus:ring-primary'
-                } disabled:opacity-60 disabled:cursor-not-allowed`}
+                className={formErrors.parent_phone ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}
                 value={formData.parent_phone}
                 onChange={(e) => {
                   const value = e.target.value.replace(/[^0-9]/g, '');
@@ -577,12 +570,10 @@ export default function AddStudentPage() {
                   كلمة المرور (للطالب و ولي الأمر) <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
-                  <input
+                  <Input
                     type={showPassword ? "text" : "password"}
                     id="password"
-                    className={`w-full p-3 pe-12 bg-transparent border rounded-lg text-white text-[1rem] focus:ring-1 outline-none transition-all ${
-                      formErrors.password ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-white/10 focus:border-primary focus:ring-primary'
-                    } disabled:opacity-60 disabled:cursor-not-allowed`}
+                    className={formErrors.password ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     placeholder="أدخل كلمة المرور للطالب"
@@ -594,7 +585,7 @@ export default function AddStudentPage() {
                     className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-light hover:text-white transition-colors"
                     tabIndex={-1}
                   >
-                    <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'} text-lg`}></i>
+                    <Icon name={showPassword ? 'eye-slash' : 'eye'} className="text-lg" />
                   </button>
                 </div>
                 
@@ -616,22 +607,22 @@ export default function AddStudentPage() {
                 
                 {/* Shared Password Info */}
                 <div className="bg-blue-500/10 border border-blue-500/20 text-blue-400 p-3 rounded-lg mt-2 text-sm flex items-start gap-2">
-                  <i className="fas fa-info-circle mt-0.5"></i>
+                  <Icon name="info-circle" className="mt-0.5" />
                   <span>سيتم استخدام نفس كلمة المرور لحساب الطالب وولي الأمر</span>
                 </div>
                 
                 {/* Password Requirements */}
                 <div className="text-gray-light text-xs mt-2 space-y-1">
                   <p className={formData.password.length >= 6 ? 'text-green-500' : ''}>
-                    <i className={`fas ${formData.password.length >= 6 ? 'fa-check' : 'fa-circle'} me-1 text-[0.5rem]`}></i>
+                    <Icon name={formData.password.length >= 6 ? 'check' : 'circle'} className="me-1 text-[0.5rem]" />
                     6 أحرف على الأقل
                   </p>
                   <p className={/\d/.test(formData.password) ? 'text-green-500' : ''}>
-                    <i className={`fas ${/\d/.test(formData.password) ? 'fa-check' : 'fa-circle'} me-1 text-[0.5rem]`}></i>
+                    <Icon name={/\d/.test(formData.password) ? 'check' : 'circle'} className="me-1 text-[0.5rem]" />
                     تحتوي على أرقام
                   </p>
                   <p className={/[a-zA-Z\u0621-\u064a]/.test(formData.password) ? 'text-green-500' : ''}>
-                    <i className={`fas ${/[a-zA-Z\u0621-\u064a]/.test(formData.password) ? 'fa-check' : 'fa-circle'} me-1 text-[0.5rem]`}></i>
+                    <Icon name={/[a-zA-Z\u0621-\u064a]/.test(formData.password) ? 'check' : 'circle'} className="me-1 text-[0.5rem]" />
                     تحتوي على أحرف
                   </p>
                 </div>
@@ -671,7 +662,7 @@ export default function AddStudentPage() {
                 className={formErrors.education_type ? 'border-red-500' : ''}
                 disabled={isSubmitting || !isPhoneChecked || existingStudentFound}
               />
-              {formErrors.education_type && <span className="text-red-500 text-sm mt-1 block"><i className="fas fa-exclamation-circle ml-1"></i>{formErrors.education_type}</span>}
+              {formErrors.education_type && <span className="text-red-500 text-sm mt-1 block"><Icon name="exclamation-circle" className="ml-1" />{formErrors.education_type}</span>}
             </div>
 
             <div>
@@ -684,7 +675,7 @@ export default function AddStudentPage() {
                 className={formErrors.teacher_id ? 'border-red-500' : ''}
                 disabled={isSubmitting || !isPhoneChecked}
               />
-              {formErrors.teacher_id && <span className="text-red-500 text-sm mt-1 block"><i className="fas fa-exclamation-circle ml-1"></i>{formErrors.teacher_id}</span>}
+              {formErrors.teacher_id && <span className="text-red-500 text-sm mt-1 block"><Icon name="exclamation-circle" className="ml-1" />{formErrors.teacher_id}</span>}
             </div>
 
             <div>
@@ -698,7 +689,7 @@ export default function AddStudentPage() {
                 className={formErrors.grade_id ? 'border-red-500' : ''}
                 disabled={isSubmitting || !isPhoneChecked || !formData.teacher_id}
               />
-              {formErrors.grade_id && <span className="text-red-500 text-sm mt-1 block"><i className="fas fa-exclamation-circle ml-1"></i>{formErrors.grade_id}</span>}
+              {formErrors.grade_id && <span className="text-red-500 text-sm mt-1 block"><Icon name="exclamation-circle" className="ml-1" />{formErrors.grade_id}</span>}
             </div>
 
             <div>
@@ -716,10 +707,10 @@ export default function AddStudentPage() {
                 className={formErrors.group_id ? 'border-red-500' : ''}
                 disabled={isSubmitting || !isPhoneChecked || !formData.grade_id}
               />
-              {formErrors.group_id && <span className="text-red-500 text-sm mt-1 block"><i className="fas fa-exclamation-circle ml-1"></i>{formErrors.group_id}</span>}
+              {formErrors.group_id && <span className="text-red-500 text-sm mt-1 block"><Icon name="exclamation-circle" className="ml-1" />{formErrors.group_id}</span>}
               {formData.grade_id && filteredGroups.length === 0 && (
                 <span className="text-gray-light text-sm mt-1 block flex items-center gap-1">
-                  <i className="fas fa-info-circle"></i>
+                  <Icon name="info-circle" />
                   لا توجد مجموعات متاحة لهذا الصف الدراسي
                 </span>
               )}
@@ -727,12 +718,10 @@ export default function AddStudentPage() {
 
             <div className="md:col-span-2">
               <label htmlFor="location" className="block text-gray-light mb-2 text-[0.95rem]">الموقع</label>
-              <input
+              <Input
                 type="text"
                 id="location"
-                className={`w-full p-3 bg-transparent border rounded-lg text-white text-[1rem] focus:ring-1 outline-none transition-all ${
-                  formErrors.location ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-white/10 focus:border-primary focus:ring-primary'
-                } disabled:opacity-60 disabled:cursor-not-allowed`}
+                className={formErrors.location ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}
                 value={formData.location}
                 onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                 placeholder="أدخل موقع الطالب"
@@ -741,39 +730,39 @@ export default function AddStudentPage() {
               />
               {formErrors.location && <span className="text-red-500 text-sm mt-1 block">{formErrors.location}</span>}
               <span className="text-gray-light text-sm mt-1 block flex items-center gap-1">
-                <i className="fas fa-map-marker-alt"></i>
+                <Icon name="map-marker-alt" />
                 مكان إقامة الطالب
               </span>
             </div>
           </div>
 
           <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-white/10">
-            <button
+            <Button
               type="button"
-              className="btn btn-outline"
+              variant="outline"
               onClick={handleCancel}
               disabled={isSubmitting}
             >
-              <i className="fas fa-times"></i>
+              <Icon name="times" />
               <span>إلغاء</span>
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
-              className="btn btn-primary"
+              variant="primary"
               disabled={isSubmitting || alreadyEnrolled || !isPhoneChecked || isPasswordWeak}
             >
               {isSubmitting ? (
                 <>
-                  <i className="fas fa-spinner fa-spin"></i>
+                  <LoadingSpinner size="sm" color="primary" />
                   <span>جاري الحفظ...</span>
                 </>
               ) : (
                 <>
-                  <i className="fas fa-plus"></i>
+                  <Icon name="plus" />
                   <span>{existingStudentFound ? 'إضافة الطالب للمجموعة' : 'إضافة طالب جديد'}</span>
                 </>
               )}
-            </button>
+            </Button>
           </div>
         </form>
       </DashboardCard>

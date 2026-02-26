@@ -16,8 +16,6 @@ class PermissionResource extends BaseResource
 
     protected static ?string $navigationIcon = 'heroicon-o-lock-closed';
 
-    protected static ?string $navigationGroup = 'الصلاحيات والأدوار';
-
     protected static ?int $navigationSort = 2;
 
     protected static ?string $modelLabel = 'صلاحية';
@@ -45,6 +43,11 @@ class PermissionResource extends BaseResource
     public static function canDeleteAny(): bool
     {
         return false;
+    }
+
+    public static function getNavigationGroup(): ?string
+    {
+        return 'الصلاحيات والأدوار';
     }
 
     public static function form(Schema $schema): Schema

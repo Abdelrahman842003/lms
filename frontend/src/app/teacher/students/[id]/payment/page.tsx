@@ -3,6 +3,7 @@
 import React, { useState, useEffect, use } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
+import { LoadingSpinner, FormModal, Button, Icon, Input, Textarea, Badge } from '@/components/ui';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { getTeacherStudentDetails, getStudentActivationDetails, createTeacherStudentPayment } from '@/services/authService';
 import { useRouter } from 'next/navigation';
@@ -191,7 +192,7 @@ export default function PaymentPage({ params }: { params: Promise<{ id: string }
     return (
       <DashboardLayout role="teacher" user={user || undefined}>
         <div className="flex items-center justify-center min-h-[400px]">
-          <i className="fas fa-spinner fa-spin text-4xl text-primary"></i>
+          <LoadingSpinner size="lg" />
         </div>
       </DashboardLayout>
     );
@@ -206,22 +207,23 @@ export default function PaymentPage({ params }: { params: Promise<{ id: string }
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-            <i className="fas fa-money-bill-wave text-primary"></i>
+            <Icon name="money-bill-wave" className="text-primary" />
             تسجيل دفعة جديدة
           </h1>
-          <button
+          <Button
+            variant="ghost"
             onClick={() => router.back()}
             className="text-gray-400 hover:text-white transition-colors flex items-center gap-2"
           >
-            <i className="fas fa-arrow-right"></i>
+            <Icon name="arrow-right" />
             عودة
-          </button>
+          </Button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Student Info Card */}
           <div className="md:col-span-1">
-            <DashboardCard title="بيانات الطالب" icon="fas fa-user">
+            <DashboardCard title="بيانات الطالب" icon="user">
               <div className="text-center py-4">
                 <div className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4 text-primary text-2xl font-bold">
                   {student?.name?.charAt(0) || '؟'}
@@ -230,13 +232,13 @@ export default function PaymentPage({ params }: { params: Promise<{ id: string }
                 <p className="text-gray-400 text-sm">ID: {student?.id?.substring(0, 8)}</p>
                 {activationDetails?.grade_name && (
                   <p className="text-gray-400 text-sm mt-2">
-                    <i className="fas fa-graduation-cap ml-1"></i>
+                    <Icon name="graduation-cap" className="ml-1 inline" />
                     {activationDetails.grade_name}
                   </p>
                 )}
                 {activationDetails?.group_name && (
                   <p className="text-gray-400 text-sm">
-                    <i className="fas fa-users ml-1"></i>
+                    <Icon name="users" className="ml-1 inline" />
                     {activationDetails.group_name}
                   </p>
                 )}
@@ -246,7 +248,7 @@ export default function PaymentPage({ params }: { params: Promise<{ id: string }
 
           {/* Payment Form */}
           <div className="md:col-span-2">
-            <DashboardCard title="تفاصيل الدفع" icon="fas fa-receipt">
+            <DashboardCard title="تفاصيل الدفع" icon="receipt">
               <div className="space-y-6">
                 {/* Price Info */}
                 <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
@@ -365,8 +367,8 @@ export default function PaymentPage({ params }: { params: Promise<{ id: string }
                             className={`
                               relative p-2 text-sm font-medium transition-all border w-full rounded-lg
                               ${colSpanClass}
-                              ${isPaid 
-                                ? 'cursor-not-allowed opacity-90' 
+                              ${isPaid
+                                ? 'cursor-not-allowed opacity-90'
                                 : isSelected
                                   ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20'
                                   : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:border-white/20'
@@ -380,7 +382,7 @@ export default function PaymentPage({ params }: { params: Promise<{ id: string }
                             
                             {isPaid && (
                               <div className="absolute -top-1 -right-1 w-4 h-4 bg-success rounded-full flex items-center justify-center text-[10px] text-white">
-                                <i className="fas fa-check"></i>
+                                <Icon name="check" className="text-xs" />
                               </div>
                             )}
                           </button>
@@ -395,21 +397,23 @@ export default function PaymentPage({ params }: { params: Promise<{ id: string }
                   {/* Manual Counter */}
                   <div className="flex justify-center mt-2">
                     <div className="flex items-center gap-4 bg-white/5 rounded-lg p-1">
-                      <button
+                      <Button
                         type="button"
+                        variant="ghost"
                         onClick={() => setMonths(Math.max(1, months - 1))}
                         className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors"
                       >
-                        <i className="fas fa-minus text-xs"></i>
-                      </button>
+                        <Icon name="minus" className="text-xs" />
+                      </Button>
                       <span className="text-white font-bold w-8 text-center text-sm">{months}</span>
-                      <button
+                      <Button
                         type="button"
+                        variant="ghost"
                         onClick={() => setMonths(months + 1)}
                         className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors"
                       >
-                        <i className="fas fa-plus text-xs"></i>
-                      </button>
+                        <Icon name="plus" className="text-xs" />
+                      </Button>
                     </div>
                   </div>
 
@@ -430,7 +434,7 @@ export default function PaymentPage({ params }: { params: Promise<{ id: string }
                 <div className="flex justify-between items-center">
                   <span className="text-gray-300">خصم (%)</span>
                   <div className="relative w-32">
-                    <input
+                    <Input
                       type="number"
                       min="0"
                       max="100"
@@ -439,7 +443,7 @@ export default function PaymentPage({ params }: { params: Promise<{ id: string }
                         const val = isNaN(parseFloat(e.target.value)) ? 0 : parseFloat(e.target.value);
                         if (val >= 0 && val <= 100) setDiscount(val);
                       }}
-                      className="w-full p-3 bg-white/10 border border-white/10 rounded-lg text-center text-white outline-none focus:border-primary font-bold"
+                      className="w-full p-3 bg-white/10 border-white/10 rounded-lg text-center font-bold"
                     />
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold">%</span>
                   </div>
@@ -465,34 +469,27 @@ export default function PaymentPage({ params }: { params: Promise<{ id: string }
                 {/* Notes */}
                 <div>
                   <label className="block text-gray-300 text-sm mb-2">ملاحظات (اختياري)</label>
-                  <textarea
+                  <Textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     placeholder="ملاحظات إضافية..."
                     rows={3}
-                    className="w-full p-4 bg-white/5 border border-white/10 rounded-xl text-white focus:border-primary outline-none resize-none transition-all focus:bg-white/10"
                   />
                 </div>
 
                 {/* Submit Button */}
-                <button
+                <Button
                   type="button"
                   onClick={handleSubmit}
+                  loading={isSubmitting}
                   disabled={isSubmitting}
-                  className="w-full py-4 bg-primary text-white rounded-xl hover:bg-primary/80 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-bold text-lg shadow-lg shadow-primary/20 flex items-center justify-center gap-3"
+                  variant="primary"
+                  size="lg"
+                  className="w-full py-4 rounded-xl font-bold text-lg shadow-lg shadow-primary/20"
                 >
-                  {isSubmitting ? (
-                    <>
-                      <i className="fas fa-spinner fa-spin"></i>
-                      جاري التسجيل...
-                    </>
-                  ) : (
-                    <>
-                      <i className="fas fa-check-circle"></i>
-                      تأكيد وتفعيل
-                    </>
-                  )}
-                </button>
+                  <Icon name="check-circle" />
+                  تأكيد وتفعيل
+                </Button>
               </div>
             </DashboardCard>
           </div>
@@ -500,23 +497,16 @@ export default function PaymentPage({ params }: { params: Promise<{ id: string }
       </div>
 
       {/* History Modal */}
-      {showHistoryModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="bg-[#1e1e2d] rounded-xl border border-white/10 w-full max-w-lg overflow-hidden shadow-2xl scale-100 animate-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between p-4 border-b border-white/10 bg-white/5">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <i className="fas fa-history text-primary"></i>
-                سجل الدفعات
-              </h3>
-              <button 
-                onClick={() => setShowHistoryModal(false)} 
-                className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-colors"
-              >
-                <i className="fas fa-times"></i>
-              </button>
-            </div>
-            <div className="max-h-[60vh] overflow-y-auto custom-scrollbar p-4 space-y-4">
-              {paymentLogs.length > 0 ? (
+      <FormModal
+        isOpen={showHistoryModal}
+        onClose={() => setShowHistoryModal(false)}
+        onSubmit={() => setShowHistoryModal(false)}
+        title="سجل الدفعات"
+        submitText="إغلاق"
+        cancelText=""
+        maxWidth="500px"
+      >
+        {paymentLogs.length > 0 ? (
                 paymentLogs.map((log) => (
                   <div key={log.id} className="bg-white/5 rounded-xl border border-white/10 overflow-hidden hover:border-primary/30 transition-all duration-300 group">
                     {/* Header: Amount & Date */}
@@ -529,7 +519,7 @@ export default function PaymentPage({ params }: { params: Promise<{ id: string }
                           <div className="text-xl font-bold text-white flex items-center gap-2">
                             {log.amount} ج.م
                             {log.notes && log.notes.includes('خصم') && (
-                              <span className="text-[10px] bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full border border-red-500/20">خصم</span>
+                              <Badge variant="danger" size="sm">خصم</Badge>
                             )}
                           </div>
                           <div className="text-xs text-gray-400 flex items-center gap-2">
@@ -543,9 +533,7 @@ export default function PaymentPage({ params }: { params: Promise<{ id: string }
                           </div>
                         </div>
                       </div>
-                      <span className="px-3 py-1 rounded-full text-xs font-bold border bg-green-500/10 text-green-400 border-green-500/20">
-                        مكتمل
-                      </span>
+                      <Badge variant="success" size="sm">مكتمل</Badge>
                     </div>
 
                     {/* Details Grid */}
@@ -612,28 +600,17 @@ export default function PaymentPage({ params }: { params: Promise<{ id: string }
                         </div>
                       </div>
                     )}
-                  </div>
-                ))
-              ) : (
-                <div className="text-center py-12 text-gray-500">
-                  <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <i className="fas fa-file-invoice text-2xl opacity-50"></i>
-                  </div>
-                  <p>لا يوجد سجل دفعات</p>
-                </div>
-              )}
-            </div>
-            <div className="p-4 border-t border-white/10 bg-white/5">
-              <button
-                onClick={() => setShowHistoryModal(false)}
-                className="w-full py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors font-medium"
-              >
-                إغلاق
-              </button>
-            </div>
           </div>
-        </div>
-      )}
+        ))
+      ) : (
+          <div className="text-center py-12 text-gray-500">
+            <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-3">
+              <i className="fas fa-file-invoice text-2xl opacity-50"></i>
+            </div>
+            <p>لا يوجد سجل دفعات</p>
+          </div>
+        )}
+      </FormModal>
     </DashboardLayout>
   );
 }

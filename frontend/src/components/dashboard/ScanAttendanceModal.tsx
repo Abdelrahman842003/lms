@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
 import toast from 'react-hot-toast';
 import * as teacherService from '@/services/teacherService';
+import { LoadingSpinner, Button, Icon } from '@/components/ui';
 
 interface ScanAttendanceModalProps {
   isOpen: boolean;
@@ -133,12 +134,12 @@ const ScanAttendanceModal: React.FC<ScanAttendanceModalProps> = ({ isOpen, onClo
         <div className="p-6">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-xl font-bold text-white">تسجيل الحضور والانصراف</h3>
-            <button 
-              onClick={onClose} 
+            <button
+              onClick={onClose}
               className="text-gray-400 hover:text-white"
               disabled={isProcessing}
             >
-              <i className="fas fa-times"></i>
+              <Icon name="times" />
             </button>
           </div>
           
@@ -151,19 +152,20 @@ const ScanAttendanceModal: React.FC<ScanAttendanceModalProps> = ({ isOpen, onClo
           </p>
 
           {isProcessing && (
-            <div className="text-center text-primary mb-4">
-              <i className="fas fa-spinner fa-spin mr-2"></i>
-              جاري المعالجة...
+            <div className="text-center text-primary mb-4 flex items-center justify-center gap-2">
+              <LoadingSpinner size="sm" color="primary" />
+              <span>جاري المعالجة...</span>
             </div>
           )}
 
-          <button
+          <Button
+            variant="secondary"
             onClick={onClose}
             disabled={isProcessing}
-            className="w-full py-3 px-4 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full"
           >
             إلغاء
-          </button>
+          </Button>
         </div>
       </div>
     </div>

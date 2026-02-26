@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
-use App\Models\Exam;
+use App\Domains\Exams\Models\Exam;
 use Illuminate\Console\Command;
-use App\Http\Controllers\Teacher\ExamController;
+use App\Domains\Application\Http\Controllers\Teacher\ExamController;
 
 class EndExpiredExams extends Command
 {

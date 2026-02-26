@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
+import { LoadingSpinner, Button, Icon, Input, Select, Textarea } from '@/components/ui';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { getExam, updateExam } from '@/services/authService';
 import { getGrades } from '@/services/authService';
@@ -249,7 +250,7 @@ export default function EditExamPage() {
       >
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
-            <i className="fas fa-spinner fa-spin text-4xl text-primary mb-4"></i>
+            <LoadingSpinner size="lg" className="mx-auto mb-4" />
             <p className="text-gray-light">جاري التحميل...</p>
           </div>
         </div>
@@ -269,14 +270,14 @@ export default function EditExamPage() {
         <form onSubmit={handleSubmit}>
           {successMessage && (
             <div className="bg-green-500/10 border border-green-500/20 text-green-500 p-4 rounded-lg mb-6 flex items-center gap-3">
-              <i className="fas fa-check-circle text-xl"></i>
+              <Icon name="check-circle" size="lg" />
               <span>{successMessage}</span>
             </div>
           )}
 
           {formErrors.submit && (
             <div className="bg-red-500/10 border border-red-500/20 text-red-500 p-4 rounded-lg mb-6 flex items-center gap-3">
-              <i className="fas fa-exclamation-circle text-xl"></i>
+              <Icon name="exclamation-circle" size="lg" />
               <span>{formErrors.submit}</span>
             </div>
           )}
@@ -286,58 +287,45 @@ export default function EditExamPage() {
               <label htmlFor="title" className="block text-gray-light mb-2 text-[0.95rem]">
                 عنوان الامتحان <span className="text-red-500">*</span>
               </label>
-              <input
+              <Input
                 type="text"
                 id="title"
-                className={`w-full p-3 bg-white/5 border rounded-lg text-white text-[1rem] focus:ring-1 outline-none transition-all ${
-                  formErrors.title ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-white/10 focus:border-primary focus:ring-primary'
-                }`}
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 placeholder="أدخل عنوان الامتحان"
                 disabled={isSubmitting}
+                error={formErrors.title}
               />
-              {formErrors.title && <span className="text-red-500 text-sm mt-1 block">{formErrors.title}</span>}
             </div>
 
             <div>
               <label htmlFor="subject" className="block text-gray-light mb-2 text-[0.95rem]">
                 المادة <span className="text-red-500">*</span>
               </label>
-              <input
+              <Input
                 type="text"
                 id="subject"
-                className={`w-full p-3 bg-white/5 border rounded-lg text-white text-[1rem] focus:ring-1 outline-none transition-all ${
-                  formErrors.subject ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-white/10 focus:border-primary focus:ring-primary'
-                }`}
                 value={formData.subject}
                 onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
                 placeholder="أدخل اسم المادة"
                 disabled={isSubmitting}
+                error={formErrors.subject}
               />
-              {formErrors.subject && <span className="text-red-500 text-sm mt-1 block">{formErrors.subject}</span>}
             </div>
 
             <div>
               <label htmlFor="grade_id" className="block text-gray-light mb-2 text-[0.95rem]">
                 الصف الدراسي <span className="text-red-500">*</span>
               </label>
-              <select
-                id="grade_id"
-                className={`w-full p-3 bg-white/5 border rounded-lg text-white text-[1rem] focus:ring-1 outline-none transition-all ${
-                  formErrors.grade_id ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-white/10 focus:border-primary focus:ring-primary'
-                }`}
+              <Select
+                options={[
+                  { value: '', label: 'اختر الصف الدراسي' },
+                  ...grades.map((grade) => ({ value: grade.id, label: grade.name }))
+                ]}
                 value={formData.grade_id}
-                onChange={(e) => setFormData({ ...formData, grade_id: e.target.value })}
+                onChange={(value) => setFormData({ ...formData, grade_id: value })}
                 disabled={isSubmitting}
-              >
-                <option value="" className="bg-[#1a1f37]">اختر الصف الدراسي</option>
-                {grades.map((grade) => (
-                  <option key={grade.id} value={grade.id} className="bg-[#1a1f37]">
-                    {grade.name}
-                  </option>
-                ))}
-              </select>
+              />
               {formErrors.grade_id && <span className="text-red-500 text-sm mt-1 block">{formErrors.grade_id}</span>}
             </div>
 
@@ -345,64 +333,54 @@ export default function EditExamPage() {
               <label htmlFor="date" className="block text-gray-light mb-2 text-[0.95rem]">
                 تاريخ الامتحان <span className="text-red-500">*</span>
               </label>
-              <input
+              <Input
                 type="datetime-local"
                 id="date"
-                className={`w-full p-3 bg-white/5 border rounded-lg text-white text-[1rem] focus:ring-1 outline-none transition-all ${
-                  formErrors.date ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-white/10 focus:border-primary focus:ring-primary'
-                }`}
                 value={formData.date}
                 onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                 step="60"
                 disabled={isSubmitting}
+                error={formErrors.date}
               />
-              {formErrors.date && <span className="text-red-500 text-sm mt-1 block">{formErrors.date}</span>}
             </div>
 
             <div>
               <label htmlFor="duration" className="block text-gray-light mb-2 text-[0.95rem]">
                 المدة (دقيقة) <span className="text-red-500">*</span>
               </label>
-              <input
+              <Input
                 type="number"
                 id="duration"
-                className={`w-full p-3 bg-white/5 border rounded-lg text-white text-[1rem] focus:ring-1 outline-none transition-all ${
-                  formErrors.duration ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-white/10 focus:border-primary focus:ring-primary'
-                }`}
                 value={formData.duration || ''}
                 onChange={(e) => setFormData({ ...formData, duration: e.target.value === '' ? 0 : parseInt(e.target.value) })}
                 min="1"
                 disabled={isSubmitting}
+                error={formErrors.duration}
               />
-              {formErrors.duration && <span className="text-red-500 text-sm mt-1 block">{formErrors.duration}</span>}
             </div>
 
             <div>
               <label htmlFor="max_score" className="block text-gray-light mb-2 text-[0.95rem]">
                 الدرجة الكلية <span className="text-red-500">*</span>
               </label>
-              <input
+              <Input
                 type="number"
                 id="max_score"
-                className={`w-full p-3 bg-white/5 border rounded-lg text-white text-[1rem] focus:ring-1 outline-none transition-all ${
-                  formErrors.max_score ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-white/10 focus:border-primary focus:ring-primary'
-                }`}
                 value={formData.max_score || ''}
                 onChange={(e) => setFormData({ ...formData, max_score: e.target.value === '' ? 0 : parseInt(e.target.value) })}
                 min="1"
                 disabled={isSubmitting}
+                error={formErrors.max_score}
               />
-              {formErrors.max_score && <span className="text-red-500 text-sm mt-1 block">{formErrors.max_score}</span>}
             </div>
 
             <div>
               <label htmlFor="actual_question_count" className="block text-gray-light mb-2 text-[0.95rem]">
                 عدد الأسئلة الفعلية في الامتحان
               </label>
-              <input
+              <Input
                 type="number"
                 id="actual_question_count"
-                className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white text-[1rem] focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
                 value={formData.actual_question_count || ''}
                 onChange={(e) => setFormData({ ...formData, actual_question_count: e.target.value === '' ? 0 : parseInt(e.target.value) })}
                 min="1"
@@ -417,10 +395,9 @@ export default function EditExamPage() {
               <label htmlFor="time_per_question" className="block text-gray-light mb-2 text-[0.95rem]">
                 مدة كل سؤال (ثانية)
               </label>
-              <input
+              <Input
                 type="number"
                 id="time_per_question"
-                className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white text-[1rem] focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
                 value={formData.time_per_question || ''}
                 onChange={(e) => setFormData({ ...formData, time_per_question: e.target.value === '' ? 0 : parseInt(e.target.value) })}
                 min="10"
@@ -438,17 +415,18 @@ export default function EditExamPage() {
             <div className="mt-8 pt-6 border-t border-white/10">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                  <i className="fas fa-question-circle text-primary"></i>
+                  <Icon name="question-circle" className="text-primary" />
                   تعديل الأسئلة ({questions.length} سؤال)
                 </h3>
-                <button
+                <Button
                   type="button"
                   onClick={() => setShowQuestionEditor(!showQuestionEditor)}
-                  className="btn btn-outline btn-sm"
+                  variant="outline"
+                  size="sm"
                 >
-                  <i className={`fas fa-${showQuestionEditor ? 'chevron-up' : 'chevron-down'}`}></i>
+                  <Icon name={showQuestionEditor ? 'chevron-up' : 'chevron-down'} />
                   <span>{showQuestionEditor ? 'إخفاء' : 'عرض'}</span>
-                </button>
+                </Button>
               </div>
 
               {showQuestionEditor && (
@@ -456,10 +434,11 @@ export default function EditExamPage() {
                   {/* Question Navigation */}
                   <div className="flex flex-wrap gap-2 p-4 bg-white/5 rounded-lg">
                     {questions.map((_, index) => (
-                      <button
+                      <Button
                         key={index}
                         type="button"
                         onClick={() => setCurrentQuestionIndex(index)}
+                        variant="ghost"
                         className={`w-10 h-10 rounded-lg font-bold transition-all ${
                           currentQuestionIndex === index
                             ? 'bg-primary text-white'
@@ -467,7 +446,7 @@ export default function EditExamPage() {
                         }`}
                       >
                         {index + 1}
-                      </button>
+                      </Button>
                     ))}
                   </div>
 
@@ -482,9 +461,8 @@ export default function EditExamPage() {
 
                     <div className="form-group mb-6">
                       <label className="block text-gray-light mb-2 text-[0.95rem]">نص السؤال</label>
-                      <input
+                      <Input
                         type="text"
-                        className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white text-[1rem] focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
                         value={questions[currentQuestionIndex]?.text || ''}
                         onChange={(e) => handleQuestionChange('text', e.target.value)}
                         placeholder="اكتب السؤال هنا..."
@@ -514,17 +492,17 @@ export default function EditExamPage() {
                                   : 'bg-white/5 border-gray-500 hover:border-green-500'
                               }`}>
                                 {questions[currentQuestionIndex].correct_answer === option && option !== '' && (
-                                  <i className="fas fa-check text-white text-xs"></i>
+                                  <Icon name="check" className="text-white text-xs" />
                                 )}
                               </div>
                             </div>
-                            <input
+                            <Input
                               type="text"
-                              className="flex-1 p-2 bg-transparent border-none text-white focus:outline-none"
                               value={option}
                               onChange={(e) => handleOptionChange(oIndex, e.target.value)}
                               placeholder={`الخيار ${oIndex + 1}`}
                               disabled={isSubmitting}
+                              className="flex-1"
                             />
                           </div>
                         ))}
@@ -533,24 +511,26 @@ export default function EditExamPage() {
 
                     {/* Question Navigation Buttons */}
                     <div className="flex justify-between mt-6 pt-4 border-t border-white/10">
-                      <button
+                      <Button
                         type="button"
                         onClick={() => setCurrentQuestionIndex(prev => Math.max(0, prev - 1))}
-                        className={`btn btn-outline ${currentQuestionIndex === 0 ? 'invisible' : ''}`}
+                        variant="outline"
+                        className={currentQuestionIndex === 0 ? 'invisible' : ''}
                         disabled={isSubmitting}
                       >
-                        <i className="fas fa-arrow-right"></i>
+                        <Icon name="arrow-right" />
                         <span>السابق</span>
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         type="button"
                         onClick={() => setCurrentQuestionIndex(prev => Math.min(questions.length - 1, prev + 1))}
-                        className={`btn btn-outline ${currentQuestionIndex === questions.length - 1 ? 'invisible' : ''}`}
+                        variant="outline"
+                        className={currentQuestionIndex === questions.length - 1 ? 'invisible' : ''}
                         disabled={isSubmitting}
                       >
                         <span>التالي</span>
-                        <i className="fas fa-arrow-left"></i>
-                      </button>
+                        <Icon name="arrow-left" />
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -559,32 +539,24 @@ export default function EditExamPage() {
           )}
 
           <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-white/10">
-            <button
+            <Button
               type="button"
-              className="btn btn-outline"
+              variant="outline"
               onClick={handleCancel}
               disabled={isSubmitting}
             >
-              <i className="fas fa-times"></i>
+              <Icon name="times" />
               <span>إلغاء</span>
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
-              className="btn btn-primary"
+              variant="primary"
               disabled={isSubmitting}
+              loading={isSubmitting}
             >
-              {isSubmitting ? (
-                <>
-                  <i className="fas fa-spinner fa-spin"></i>
-                  <span>جاري الحفظ...</span>
-                </>
-              ) : (
-                <>
-                  <i className="fas fa-save"></i>
-                  <span>حفظ التعديلات</span>
-                </>
-              )}
-            </button>
+              <Icon name="save" />
+              <span>حفظ التعديلات</span>
+            </Button>
           </div>
         </form>
       </DashboardCard>

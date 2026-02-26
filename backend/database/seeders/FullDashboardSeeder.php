@@ -2,15 +2,15 @@
 
 namespace Database\Seeders;
 
+use App\Domains\Auth\Models\Student;
+use App\Domains\Auth\Models\Teacher;
+use App\Domains\Enrollments\Models\Grade;
+use App\Domains\Enrollments\Models\Group;
+use App\Domains\Lectures\Models\Attendance;
+use App\Domains\Lectures\Models\Lecture;
+use App\Domains\Exams\Models\Exam;
 use Illuminate\Database\Seeder;
-use App\Models\Teacher;
-use App\Models\Grade;
-use App\Models\Group;
-use App\Models\Student;
-use App\Models\Lecture;
-use App\Models\Attendance;
-use App\Models\Exam;
-use App\Models\ExamResult;
+use App\Domains\Exams\Models\ExamResult;
 use Illuminate\Support\Facades\Hash;
 use Carbon\Carbon;
 
@@ -50,7 +50,7 @@ class FullDashboardSeeder extends Seeder
                 $students = Student::factory(5)->create();
                 
                 foreach ($students as $student) {
-                    \App\Models\Enrollment::create([
+                    \App\Domains\Enrollments\Models\Enrollment::create([
                         'student_id' => $student->id,
                         'teacher_id' => $teacher->id,
                         'grade_id' => $grade->id,

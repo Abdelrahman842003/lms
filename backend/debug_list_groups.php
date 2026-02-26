@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\Group;
+use App\Domains\Enrollments\Models\Group;
 
 $groups = Group::latest()->take(5)->get();
 

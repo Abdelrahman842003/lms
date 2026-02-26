@@ -2,10 +2,10 @@
 
 namespace App\Filament\Widgets;
 
-use App\Models\Academy;
-use App\Models\Student;
-use App\Models\Subscription;
-use App\Models\Teacher;
+use App\Domains\Auth\Models\Academy;
+use App\Domains\Auth\Models\Student;
+use App\Domains\Subscriptions\Models\Subscription;
+use App\Domains\Auth\Models\Teacher;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Database\Eloquent\Builder;

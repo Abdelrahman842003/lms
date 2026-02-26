@@ -6,6 +6,7 @@ import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { fetchApi } from '@/services/authService';
 import { toast } from 'react-hot-toast';
+import { Button, LoadingSpinner, Icon } from '@/components/ui/index';
 
 interface Question {
   id: string;
@@ -295,7 +296,7 @@ export default function TakeExamPage() {
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[1000] p-5">
           <div className="bg-gradient-to-br from-[#1a1a2e] to-[#16213e] rounded-[20px] p-10 max-w-[500px] w-full text-center border-2 border-danger/30 shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
             <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#FF5B5B] to-[#E74C3C] flex items-center justify-center mx-auto mb-6">
-              <i className="fas fa-exclamation-triangle text-[2.5rem] text-white"></i>
+              <Icon name="exclamation-triangle" size="2x" className="text-white" />
             </div>
             
             <h2 className="text-white text-2xl mb-4 font-bold">
@@ -305,37 +306,39 @@ export default function TakeExamPage() {
             <div className="bg-danger/10 rounded-xl p-5 mb-6 text-right">
               <ul className="text-gray-light text-[0.95rem] leading-8 list-none p-0">
                 <li className="mb-2">
-                  <i className="fas fa-times-circle text-[#FF5B5B] ml-2"></i>
+                  <Icon name="times-circle" className="text-[#FF5B5B] ml-2" />
                   لا يمكنك الرجوع للأسئلة السابقة بعد الإجابة عليها
                 </li>
                 <li className="mb-2">
-                  <i className="fas fa-times-circle text-[#FF5B5B] ml-2"></i>
+                  <Icon name="times-circle" className="text-[#FF5B5B] ml-2" />
                   سيتم تفعيل وضع ملء الشاشة تلقائياً
                 </li>
                 <li className="mb-2">
-                  <i className="fas fa-times-circle text-[#FF5B5B] ml-2"></i>
+                  <Icon name="times-circle" className="text-[#FF5B5B] ml-2" />
                   الخروج من ملء الشاشة أو تغيير التبويب سينهي الامتحان فوراً
                 </li>
                 <li>
-                  <i className="fas fa-times-circle text-[#FF5B5B] ml-2"></i>
+                  <Icon name="times-circle" className="text-[#FF5B5B] ml-2" />
                   تم تعطيل النسخ واللصق والقائمة المختصرة
                 </li>
               </ul>
             </div>
             
             <div className="flex gap-4">
-              <button
+              <Button
+                variant="outline"
                 onClick={() => router.push('/student/exams')}
-                className="flex-1 py-3.5 px-6 rounded-xl bg-white/10 border border-white/20 text-white font-semibold cursor-pointer transition-all duration-300 hover:bg-white/20"
+                className="flex-1"
               >
                 إلغاء
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="primary"
                 onClick={handleAcceptWarning}
-                className="flex-1 py-3.5 px-6 rounded-xl bg-gradient-to-br from-[#00D68F] to-[#00B074] border-none text-white font-semibold cursor-pointer transition-all duration-300 hover:opacity-90"
+                className="flex-1"
               >
                 فهمت، ابدأ الامتحان
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -348,7 +351,7 @@ export default function TakeExamPage() {
     return (
       <DashboardLayout role="student" user={user || undefined}>
         <div className="flex flex-col items-center justify-center min-h-[60vh] text-white">
-          <i className="fas fa-spinner fa-spin text-5xl mb-4"></i>
+          <LoadingSpinner size="lg" className="mb-4" />
           <p className="text-xl">جاري تحميل الامتحان...</p>
         </div>
       </DashboardLayout>
@@ -365,17 +368,17 @@ export default function TakeExamPage() {
         <div className="max-w-[600px] mx-auto py-10 px-5">
           <div className="bg-[#1e1e2d] rounded-xl shadow-lg border border-white/5 text-center p-10">
             {/* Status Icon */}
-            <div 
+            <div
               className="w-[100px] h-[100px] rounded-full flex items-center justify-center mx-auto mb-6"
               style={{
-                background: result?.terminated 
+                background: result?.terminated
                   ? 'linear-gradient(135deg, #FF5B5B, #E74C3C)'
-                  : (result?.percentage || 0) >= 60 
+                  : (result?.percentage || 0) >= 60
                     ? 'linear-gradient(135deg, #00D68F, #00B074)'
                     : 'linear-gradient(135deg, #FFAA00, #FF8C00)',
               }}
             >
-              <i className={`fas ${result?.terminated ? 'fa-ban' : 'fa-trophy'} text-[2.5rem] text-white`}></i>
+              <Icon name={result?.terminated ? 'ban' : 'trophy'} size="2x" className="text-white" />
             </div>
 
             <h2 className="text-white text-2xl mb-2">
@@ -409,20 +412,25 @@ export default function TakeExamPage() {
             {/* Progress Comparison */}
             {progress?.has_previous && (
               <div className="bg-white/5 rounded-xl p-4 mb-6 flex items-center justify-center gap-3">
-                <i className={`fas fa-arrow-${progress.trend === 'up' ? 'up' : progress.trend === 'down' ? 'down' : 'minus'} text-xl`}
-                  style={{ 
+                <span
+                  className="text-xl"
+                  style={{
                     color: progress.trend === 'up' ? '#00D68F' : progress.trend === 'down' ? '#FF5B5B' : '#FFAA00',
-                  }}></i>
+                  }}
+                >
+                  <Icon name={progress.trend === 'up' ? 'arrow-up' : progress.trend === 'down' ? 'arrow-down' : 'minus'} size="lg" />
+                </span>
                 <span className="text-gray-light">{progress.message}</span>
               </div>
             )}
 
-            <button
+            <Button
+              variant="primary"
               onClick={() => router.push('/student/exams')}
-              className="btn btn-primary w-full p-3.5"
+              className="w-full"
             >
               العودة للامتحانات
-            </button>
+            </Button>
           </div>
         </div>
       </DashboardLayout>
@@ -490,49 +498,42 @@ export default function TakeExamPage() {
           {/* Options */}
           <div className="flex flex-col gap-3">
             {attemptData?.question?.options.map((option, index) => (
-              <button
-                key={index}
-                onClick={() => setSelectedAnswer(option)}
-                disabled={submitting}
-                className={`p-4 px-5 rounded-xl border-2 text-white text-right cursor-pointer transition-all duration-300 text-base flex items-center gap-3 ${
-                  selectedAnswer === option 
-                    ? 'border-[#4263EB] bg-[#4263EB]/20' 
-                    : 'border-white/10 bg-white/5'
-                } ${submitting ? 'cursor-not-allowed' : ''}`}
-              >
-                <span className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
-                  selectedAnswer === option 
-                    ? 'border-[#4263EB] bg-[#4263EB]' 
-                    : 'border-white/30 bg-transparent'
-                }`}>
-                  {selectedAnswer === option && (
-                    <i className="fas fa-check text-[0.7rem] text-white"></i>
-                  )}
-                </span>
-                {option}
-              </button>
-            ))}
+            <Button
+              key={index}
+              variant={selectedAnswer === option ? 'primary' : 'outline'}
+              onClick={() => setSelectedAnswer(option)}
+              disabled={submitting}
+              className={`w-full justify-start text-right mb-2 ${
+                selectedAnswer === option
+                  ? 'border-[#4263EB] bg-[#4263EB]/20'
+                  : 'border-white/10 bg-white/5 hover:bg-white/10'
+              }`}
+            >
+              <span className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 ml-3 ${
+                selectedAnswer === option
+                  ? 'border-[#4263EB] bg-[#4263EB]'
+                  : 'border-white/30 bg-transparent'
+              }`}>
+                {selectedAnswer === option && (
+                  <Icon name="check" size="xs" className="text-white" />
+                )}
+              </span>
+              {option}
+            </Button>
+          ))}
           </div>
 
           {/* Submit Button */}
-          <button
+          <Button
+            variant="primary"
             onClick={() => submitAnswer(selectedAnswer)}
             disabled={!selectedAnswer || submitting}
-            className={`mt-8 w-full p-4 rounded-xl border-none text-white text-lg font-semibold transition-all duration-300 ${
-              selectedAnswer 
-                ? 'bg-gradient-to-br from-[#4263EB] to-[#3730A3] cursor-pointer opacity-100' 
-                : 'bg-white/10 cursor-not-allowed opacity-50'
-            }`}
+            loading={submitting}
+            className="mt-8 w-full"
+            size="lg"
           >
-            {submitting ? (
-              <>
-                <i className="fas fa-spinner fa-spin ml-2"></i>
-                جاري الإرسال...
-              </>
-            ) : (
-              'التالي'
-            )}
-          </button>
+            {submitting ? 'جاري الإرسال...' : 'التالي'}
+          </Button>
         </div>
       </div>
     </DashboardLayout>

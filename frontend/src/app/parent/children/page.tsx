@@ -7,6 +7,7 @@ import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { NotificationsSection } from '@/components/dashboard/NotificationsSection';
+import { Icon, BadgeV2 as Badge } from '@/components/ui';
 
 export default function ParentChildrenPage() {
   const router = useRouter();
@@ -36,21 +37,21 @@ export default function ParentChildrenPage() {
           <StatCard
             title="إجمالي الأبناء"
             value={totalChildren}
-            icon="fas fa-users"
+            icon="users"
             color="primary"
             variant="centered"
           />
           <StatCard
             title="أبناء نشطين"
             value={activeChildren}
-            icon="fas fa-user-check"
+            icon="user-check"
             color="success"
             variant="centered"
           />
           <StatCard
             title="إجمالي المدرسين"
             value={totalTeachers}
-            icon="fas fa-chalkboard-teacher"
+            icon="chalkboard-teacher"
             color="info"
             variant="centered"
           />
@@ -60,12 +61,12 @@ export default function ParentChildrenPage() {
           {/* Children List */}
           <DashboardCard
             title="الأبناء"
-            icon="fas fa-users"
+            icon="users"
           >
             {children.length === 0 ? (
               <div className="text-center py-16">
                 <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
-                  <i className="fas fa-user-slash text-3xl text-gray-400"></i>
+                  <Icon name="user-slash" size="2x" className="text-gray-400" />
                 </div>
                 <h3 className="text-lg font-bold text-white mb-2">لا يوجد أبناء مسجلين</h3>
                 <p className="text-gray-400">لم يتم تسجيل أي طالب برقم هاتفك كولي أمر. تواصل مع المدرس لتسجيل رقمك.</p>
@@ -97,36 +98,33 @@ export default function ParentChildrenPage() {
                         <h3 className="text-lg font-bold text-white mb-1 truncate">{child.name}</h3>
                         {child.phone && (
                           <p className="text-sm text-gray-400 flex items-center gap-1.5">
-                            <i className="fas fa-phone text-xs"></i>
+                            <Icon name="phone" size="sm" />
                             {child.phone}
                           </p>
                         )}
                       </div>
                       <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                        <i className="fas fa-arrow-left text-primary"></i>
+                        <Icon name="arrow-left" color="primary" />
                       </div>
                     </div>
 
                     {/* Teachers Section */}
                     <div className="bg-white/5 rounded-lg p-3">
                       <div className="flex items-center gap-2 mb-2">
-                        <i className="fas fa-chalkboard-teacher text-primary text-sm"></i>
+                        <Icon name="chalkboard-teacher" color="primary" className="text-sm" />
                         <span className="text-xs text-gray-400 font-medium">المدرسين المشتركين</span>
                       </div>
                       {child.teachers && child.teachers.length > 0 ? (
                         <div className="flex flex-wrap gap-2">
                           {child.teachers.slice(0, 3).map((teacher) => (
-                            <span
-                              key={teacher.id}
-                              className="bg-primary/10 text-primary text-xs px-2.5 py-1 rounded-full border border-primary/20"
-                            >
+                            <Badge key={teacher.id} variant="outline-primary" size="sm">
                               {teacher.name}
-                            </span>
+                            </Badge>
                           ))}
                           {child.teachers.length > 3 && (
-                            <span className="bg-white/5 text-gray-300 text-xs px-2.5 py-1 rounded-full border border-white/10">
+                            <Badge variant="default" size="sm">
                               +{child.teachers.length - 3} المزيد
-                            </span>
+                            </Badge>
                           )}
                         </div>
                       ) : (

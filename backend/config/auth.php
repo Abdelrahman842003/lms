@@ -93,32 +93,32 @@ return [
 
         'admins' => [
             'driver' => 'eloquent',
-            'model' => App\Models\Admin::class,
+            'model' => App\Domains\Auth\Models\Admin::class,
         ],
 
         'teachers' => [
             'driver' => 'eloquent',
-            'model' => App\Models\Teacher::class,
+            'model' => App\Domains\Auth\Models\Teacher::class,
         ],
 
         'students' => [
             'driver' => 'eloquent',
-            'model' => App\Models\Student::class,
+            'model' => App\Domains\Auth\Models\Student::class,
         ],
 
         'secretaries' => [
             'driver' => 'eloquent',
-            'model' => App\Models\Secretary::class,
+            'model' => App\Domains\Auth\Models\Secretary::class,
         ],
 
         'guardians' => [
             'driver' => 'eloquent',
-            'model' => App\Models\Guardian::class,
+            'model' => App\Domains\Auth\Models\Guardian::class,
         ],
 
         'academies' => [
             'driver' => 'eloquent',
-            'model' => App\Models\Academy::class,
+            'model' => App\Domains\Auth\Models\Academy::class,
         ],
     ],
 

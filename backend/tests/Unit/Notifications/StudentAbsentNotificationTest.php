@@ -2,7 +2,7 @@
 
 namespace Tests\Unit\Notifications;
 
-use App\Notifications\StudentAbsentNotification;
+use App\Domains\Lectures\Notifications\StudentAbsentNotification;
 use Tests\TestCase;
 
 class StudentAbsentNotificationTest extends TestCase

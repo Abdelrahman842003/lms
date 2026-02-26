@@ -5,7 +5,7 @@ namespace Database\Factories;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Group>
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Domains\Enrollments\Models\Group>
  */
 class GroupFactory extends Factory
 {
@@ -19,7 +19,7 @@ class GroupFactory extends Factory
         return [
             'name' => fake()->unique()->word() . ' Group',
             'teacher_id' => \App\Models\Teacher::factory(),
-            'grade_id' => \App\Models\Grade::factory(),
+            'grade_id' => \App\Domains\Enrollments\Models\Grade::factory(),
         ];
     }
 }

@@ -1,4 +1,6 @@
 import React from 'react';
+import { Button } from './Button';
+import { Icon } from './Icon';
 
 interface FormModalProps {
   isOpen: boolean;
@@ -38,13 +40,14 @@ export default function FormModal({
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-white/10">
           <h3 className="text-xl font-bold text-white m-0">{title}</h3>
-          <button 
-            className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors" 
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-8 h-8 p-0 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
             onClick={onClose}
-            type="button"
           >
-            <i className="fas fa-times"></i>
-          </button>
+            <Icon name="times" size="sm" />
+          </Button>
         </div>
 
         <form onSubmit={onSubmit}>
@@ -56,22 +59,22 @@ export default function FormModal({
           {/* Footer */}
           <div className="flex items-center justify-end gap-3 p-6 border-t border-white/10 bg-black/20 rounded-b-xl">
             {cancelText && (
-              <button
+              <Button
                 type="button"
-                className="px-6 py-2.5 rounded-lg border border-white/10 text-white hover:bg-white/5 transition-all duration-200 font-medium"
+                variant="outline"
                 onClick={onClose}
                 disabled={isLoading}
               >
                 {cancelText}
-              </button>
+              </Button>
             )}
-            <button 
-              type="submit" 
-              className="px-6 py-2.5 rounded-lg bg-primary text-white hover:bg-primary-dark shadow-lg shadow-primary/20 transition-all duration-200 font-medium disabled:opacity-70 disabled:cursor-not-allowed" 
-              disabled={isLoading}
+            <Button
+              type="submit"
+              variant="primary"
+              loading={isLoading}
             >
-              {isLoading ? 'جاري المعالجة...' : submitText}
-            </button>
+              {submitText}
+            </Button>
           </div>
         </form>
       </div>

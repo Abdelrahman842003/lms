@@ -40,7 +40,7 @@ class AttachTeachersToAcademySeeder extends Seeder
                 $this->command->info(" Creating Hybrid Data for Teacher 1 ({$teacher->phone})...");
                 
                 // 1. Academy Grades (1st & 2nd Secondary)
-                $academyGrades = \App\Models\Grade::where('teacher_id', $teacher->id)
+                $academyGrades = \App\Domains\Enrollments\Models\Grade::where('teacher_id', $teacher->id)
                     ->whereIn('name', ['1st Secondary', '2nd Secondary'])->get();
                     
                 foreach ($academyGrades as $grade) {
@@ -50,7 +50,7 @@ class AttachTeachersToAcademySeeder extends Seeder
                 }
 
                 // 2. Independent Grades (3rd Secondary) - Ensure NULL
-                $independentGrades = \App\Models\Grade::where('teacher_id', $teacher->id)
+                $independentGrades = \App\Domains\Enrollments\Models\Grade::where('teacher_id', $teacher->id)
                     ->where('name', '3rd Secondary')->get();
                     
                 foreach ($independentGrades as $grade) {
@@ -61,13 +61,13 @@ class AttachTeachersToAcademySeeder extends Seeder
                 
             } else {
                 // Standard Logic for others (All Academy)
-                \App\Models\Grade::where('teacher_id', $teacher->id)
+                \App\Domains\Enrollments\Models\Grade::where('teacher_id', $teacher->id)
                     ->update(['academy_id' => $academy->id]);
                     
-                \App\Models\Group::where('teacher_id', $teacher->id)
+                \App\Domains\Enrollments\Models\Group::where('teacher_id', $teacher->id)
                     ->update(['academy_id' => $academy->id]);
 
-                \App\Models\Enrollment::where('teacher_id', $teacher->id)
+                \App\Domains\Enrollments\Models\Enrollment::where('teacher_id', $teacher->id)
                     ->update(['academy_id' => $academy->id]);
             }
         }

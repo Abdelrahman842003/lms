@@ -2,7 +2,7 @@
 
 namespace Database\Factories;
 
-use App\Models\Exam;
+use App\Domains\Exams\Models\Exam;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class ExamFactory extends Factory

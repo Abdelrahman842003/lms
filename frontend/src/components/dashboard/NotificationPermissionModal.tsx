@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { useSettings } from '@/contexts/SettingsContext';
+import { Icon } from '@/components/ui';
 
 export const NotificationPermissionModal = () => {
   const { enableNotifications } = useAuth();
@@ -124,7 +125,7 @@ export const NotificationPermissionModal = () => {
           fontSize: '2rem',
           color: '#4263eb'
         }}>
-          <i className="fas fa-bell"></i>
+          <Icon name="bell" size="2x" />
         </div>
 
         <h2 style={{ 

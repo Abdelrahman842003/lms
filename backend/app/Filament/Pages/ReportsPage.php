@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Filament\Pages;
 
-use App\Services\Admin\ReportService;
-use App\Models\Academy;
+use App\Domains\Application\Services\Admin\ReportService;
+use App\Domains\Auth\Models\Academy;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Section;

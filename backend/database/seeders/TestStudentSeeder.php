@@ -2,12 +2,12 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
+use App\Domains\Enrollments\Models\Enrollment;
+use App\Domains\Enrollments\Models\Grade;
+use App\Domains\Enrollments\Models\Group;
 use App\Models\Student;
 use App\Models\Teacher;
-use App\Models\Enrollment;
-use App\Models\Grade;
-use App\Models\Group;
+use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Carbon\Carbon;
 

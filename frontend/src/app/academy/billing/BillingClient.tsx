@@ -2,18 +2,19 @@
 
 import React from 'react';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
+import { Button, Icon, Input, Textarea, Select, LoadingSpinner, Badge } from '@/components/ui';
 
 export function BillingClient() {
 
   return (
     <div className="space-y-6">
-      <DashboardCard title="الاشتراك الحالي" icon="fas fa-credit-card">
+      <DashboardCard title="الاشتراك الحالي" icon="credit-card">
         <div className="flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="space-y-2 text-center md:text-right">
             <h3 className="text-xl font-bold text-white">باقة الأكاديمية</h3>
             <p className="text-gray-400">اشتراك شهري شامل جميع المميزات</p>
             <div className="flex items-center gap-2 text-primary">
-              <i className="fas fa-check-circle"></i>
+              <Icon name="check-circle" />
               <span>نشط حالياً</span>
             </div>
           </div>

@@ -15,7 +15,7 @@ return new class extends Migration
             $table->string('subject')->nullable();
             $table->string('password');
             $table->string('avatar_key')->nullable();
-            $table->string('status')->default(\App\Enums\TeacherStatus::PENDING->value);
+            $table->string('status')->default(\App\Domains\Auth\Enums\TeacherStatus::PENDING->value);
             $table->boolean('is_independent_active')->default(true);
             $table->decimal('subscription_fee', 10, 2)->default(0);
             $table->decimal('paid_amount', 10, 2)->default(0);

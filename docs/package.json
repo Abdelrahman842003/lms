@@ -1,0 +1,14 @@
+{
+  "name": "neetaq-docs",
+  "version": "1.0.0",
+  "description": "Documentation for Neetaq Educational Platform",
+  "scripts": {
+    "docs:dev": "vitepress dev",
+    "docs:build": "vitepress build",
+    "docs:preview": "vitepress preview"
+  },
+  "devDependencies": {
+    "vitepress": "^1.0.0",
+    "markdown-it-mermaid": "^0.1.0"
+  }
+}

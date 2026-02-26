@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
-use App\Models\Lecture;
+use App\Domains\Lectures\Models\Lecture;
+use App\Domains\Lectures\Events\LectureUpdated;
+use App\Domains\Lectures\Jobs\ProcessLectureEnd;
+use App\Domains\Lectures\Jobs\ProcessLectureStart;
 use Illuminate\Console\Command;
-use App\Events\LectureUpdated;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 
@@ -35,11 +37,11 @@ class CheckLectureStatus extends Command
                 LectureUpdated::dispatch($lecture); // Dispatch event
                 
                 // Notify teacher immediately
-                $lecture->teacher->notify(new \App\Notifications\LectureStatusNotification($lecture, 'active'));
+                $lecture->teacher->notify(new \App\Domains\Lectures\Notifications\LectureStatusNotification($lecture, 'active'));
                 
                 // Schedule end job
                 $delay = $now->diffInSeconds($lecture->end_time);
-                \App\Jobs\ProcessLectureEnd::dispatch($lecture)->delay($delay);
+                ProcessLectureEnd::dispatch($lecture)->delay($delay);
             }
             // Deactivation
             elseif ($lecture->is_active && $now->gt($lecture->end_time)) {
@@ -49,15 +51,15 @@ class CheckLectureStatus extends Command
                 LectureUpdated::dispatch($lecture); // Dispatch event
                 
                 // Notify teacher immediately
-                $lecture->teacher->notify(new \App\Notifications\LectureStatusNotification($lecture, 'finished'));
+                $lecture->teacher->notify(new \App\Domains\Lectures\Notifications\LectureStatusNotification($lecture, 'finished'));
 
                 // Dispatch job for end lecture processing (absent marking etc)
-                \App\Jobs\ProcessLectureEnd::dispatch($lecture);
+                ProcessLectureEnd::dispatch($lecture);
             }
             // Look-ahead Activation (One-time)
             elseif (!$lecture->is_active && $lecture->start_time->between($now, $now->copy()->addMinute())) {
                 $delay = $now->diffInSeconds($lecture->start_time);
-                \App\Jobs\ProcessLectureStart::dispatch($lecture)->delay($delay);
+                ProcessLectureStart::dispatch($lecture)->delay($delay);
                 $this->info("Scheduled activation for lecture: {$lecture->title} in {$delay} seconds");
             }
         }
@@ -100,11 +102,11 @@ class CheckLectureStatus extends Command
                 LectureUpdated::dispatch($lecture);
 
                 // Notify teacher immediately
-                $lecture->teacher->notify(new \App\Notifications\LectureStatusNotification($lecture, 'active'));
+                $lecture->teacher->notify(new \App\Domains\Lectures\Notifications\LectureStatusNotification($lecture, 'active'));
 
                 // Schedule end job
                 $delay = $now->diffInSeconds($endTime);
-                \App\Jobs\ProcessLectureEnd::dispatch($lecture)->delay($delay);
+                ProcessLectureEnd::dispatch($lecture)->delay($delay);
             } elseif (!$shouldBeActive && $lecture->is_active) {
                 $lecture->update(['is_active' => false]);
                 $this->info("Deactivated recurring lecture: {$lecture->title} ({$lecture->id})");
@@ -112,9 +114,9 @@ class CheckLectureStatus extends Command
                 LectureUpdated::dispatch($lecture);
                 
                 // Notify teacher immediately
-                $lecture->teacher->notify(new \App\Notifications\LectureStatusNotification($lecture, 'finished'));
+                $lecture->teacher->notify(new \App\Domains\Lectures\Notifications\LectureStatusNotification($lecture, 'finished'));
                 
-                \App\Jobs\ProcessLectureEnd::dispatch($lecture);
+                ProcessLectureEnd::dispatch($lecture);
             }
             
             // Look-ahead Activation (Recurring)
@@ -126,7 +128,7 @@ class CheckLectureStatus extends Command
                     
                     if ($startTime->between($now, $now->copy()->addMinute())) {
                         $delay = $now->diffInSeconds($startTime);
-                        \App\Jobs\ProcessLectureStart::dispatch($lecture)->delay($delay);
+                        ProcessLectureStart::dispatch($lecture)->delay($delay);
                         $this->info("Scheduled activation for recurring lecture: {$lecture->title} in {$delay} seconds");
                     }
                 }

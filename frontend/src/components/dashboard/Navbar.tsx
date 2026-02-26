@@ -10,6 +10,8 @@ import { TeacherSelectionDropdown } from './TeacherSelectionDropdown';
 import { AcademySelector } from './AcademySelector';
 import ScanAttendanceModal from './ScanAttendanceModal';
 import { getTeacherAcademies } from '@/services/authService';
+import { Button } from '@/components/ui/Button';
+import { Icon } from '@/components/ui/Icon';
 
 
 interface NavbarProps {
@@ -26,7 +28,7 @@ const getNavItems = (role: string): SidebarItem[] => {
     {
       id: 'dashboard',
       label: 'لوحة التحكم',
-      icon: 'fas fa-home',
+      icon: 'home',
       href: `/${role}/dashboard`,
     },
   ];
@@ -37,25 +39,25 @@ const getNavItems = (role: string): SidebarItem[] => {
       {
         id: 'users_management',
         label: 'المستخدمين',
-        icon: 'fas fa-users-cog',
+        icon: 'users-cog',
         href: '/admin/users-management',
         children: [
           {
             id: 'teachers',
             label: 'المدرسين',
-            icon: 'fas fa-chalkboard-teacher',
+            icon: 'chalkboard-teacher',
             href: '/admin/teachers',
           },
           {
             id: 'students',
             label: 'الطلاب',
-            icon: 'fas fa-user-graduate',
+            icon: 'user-graduate',
             href: '/admin/students',
           },
           {
             id: 'academies_list',
             label: 'الأكاديميات',
-            icon: 'fas fa-building',
+            icon: 'building',
             href: '/admin/academies',
           },
         ],
@@ -63,38 +65,38 @@ const getNavItems = (role: string): SidebarItem[] => {
       {
         id: 'notifications',
         label: 'الإخطارات',
-        icon: 'fas fa-bell',
+        icon: 'bell',
         href: '/admin/notifications',
       },
       {
         id: 'subscriptions',
         label: 'الاشتراكات',
-        icon: 'fas fa-id-card',
+        icon: 'id-card',
         href: '/admin/subscriptions',
       },
       {
         id: 'reports',
         label: 'التقارير',
-        icon: 'fas fa-chart-bar',
+        icon: 'chart-bar',
         href: '/admin/reports',
       },
 
       {
         id: 'users',
         label: 'الصلاحيات',
-        icon: 'fas fa-users',
+        icon: 'users',
         href: '/admin/users',
         children: [
           {
             id: 'roles',
             label: 'الأدوار (Roles)',
-            icon: 'fas fa-user-tag',
+            icon: 'user-tag',
             href: '/admin/roles',
           },
           {
             id: 'permissions',
             label: 'الصلاحيات (Permissions)',
-            icon: 'fas fa-key',
+            icon: 'key',
             href: '/admin/permissions',
           },
         ],
@@ -102,7 +104,7 @@ const getNavItems = (role: string): SidebarItem[] => {
       {
         id: 'settings',
         label: 'الإعدادات',
-        icon: 'fas fa-cogs',
+        icon: 'cogs',
         href: '/admin/settings',
       },
     ];
@@ -114,25 +116,25 @@ const getNavItems = (role: string): SidebarItem[] => {
       {
         id: 'persons',
         label: 'الأشخاص',
-        icon: 'fas fa-users',
+        icon: 'users',
         href: '#',
         children: [
           {
             id: 'teachers',
             label: 'المدرسين',
-            icon: 'fas fa-chalkboard-teacher',
+            icon: 'chalkboard-teacher',
             href: '/academy/teachers',
           },
           {
             id: 'students',
             label: 'الطلاب',
-            icon: 'fas fa-user-graduate',
+            icon: 'user-graduate',
             href: '/academy/students',
           },
           {
             id: 'secretaries',
             label: 'السكرتيرات',
-            icon: 'fas fa-user-tie',
+            icon: 'user-tie',
             href: '/academy/secretaries',
           },
         ],
@@ -140,19 +142,19 @@ const getNavItems = (role: string): SidebarItem[] => {
       {
         id: 'academics',
         label: 'الدراسة',
-        icon: 'fas fa-school',
+        icon: 'school',
         href: '#',
         children: [
           {
             id: 'groups',
             label: 'المجموعات',
-            icon: 'fas fa-layer-group',
+            icon: 'layer-group',
             href: '/academy/groups',
           },
           {
             id: 'grades',
             label: 'الصفوف',
-            icon: 'fas fa-graduation-cap',
+            icon: 'graduation-cap',
             href: '/academy/grades',
           },
         ],
@@ -160,37 +162,37 @@ const getNavItems = (role: string): SidebarItem[] => {
       {
         id: 'attendance',
         label: 'الحضور والانصراف',
-        icon: 'fas fa-calendar-check',
+        icon: 'calendar-check',
         href: '/academy/attendance',
       },
       {
         id: 'student_lectures',
         label: 'محاضرات الطلاب',
-        icon: 'fas fa-book-open',
+        icon: 'book-open',
         href: '/academy/lectures',
       },
       {
         id: 'exams',
         label: 'الامتحانات',
-        icon: 'fas fa-file-alt',
+        icon: 'file-alt',
         href: '/academy/exams',
       },
       {
         id: 'notifications_academy',
         label: 'الإشعارات',
-        icon: 'fas fa-bell',
+        icon: 'bell',
         href: '/academy/notifications',
       },
       {
         id: 'reports_academy',
         label: 'التقارير',
-        icon: 'fas fa-chart-bar',
+        icon: 'chart-bar',
         href: '/academy/reports',
       },
       {
         id: 'gamification',
         label: 'لوحة الشرف',
-        icon: 'fas fa-trophy',
+        icon: 'trophy',
         href: '/academy/gamification',
       },
     ];
@@ -202,19 +204,19 @@ const getNavItems = (role: string): SidebarItem[] => {
       {
         id: 'persons',
         label: 'الاشخاص',
-        icon: 'fas fa-users',
+        icon: 'users',
         href: '#',
         children: [
           {
             id: 'students',
             label: 'الطلاب',
-            icon: 'fas fa-user-graduate',
+            icon: 'user-graduate',
             href: '/teacher/students',
           },
           {
             id: 'secretaries',
             label: 'السكرتارية',
-            icon: 'fas fa-user-tie',
+            icon: 'user-tie',
             href: '/teacher/secretaries',
           },
 
@@ -223,19 +225,19 @@ const getNavItems = (role: string): SidebarItem[] => {
       {
         id: 'academics',
         label: 'الدراسة',
-        icon: 'fas fa-school',
+        icon: 'school',
         href: '#',
         children: [
           {
             id: 'groups',
             label: 'المجموعات',
-            icon: 'fas fa-layer-group',
+            icon: 'layer-group',
             href: '/teacher/groups',
           },
           {
             id: 'grades',
             label: 'الصفوف',
-            icon: 'fas fa-graduation-cap',
+            icon: 'graduation-cap',
             href: '/teacher/grades',
           },
         ],
@@ -243,37 +245,37 @@ const getNavItems = (role: string): SidebarItem[] => {
       {
         id: 'lectures',
         label: 'المحاضرات',
-        icon: 'fas fa-book-open',
+        icon: 'book-open',
         href: '/teacher/lectures',
       },
       {
         id: 'attendance',
         label: 'الحضور والانصراف',
-        icon: 'fas fa-calendar-check',
+        icon: 'calendar-check',
         href: '/teacher/attendance',
       },
       {
         id: 'exams',
         label: 'الامتحانات',
-        icon: 'fas fa-file-alt',
+        icon: 'file-alt',
         href: '/teacher/exams',
       },
       {
         id: 'notifications',
         label: 'الإخطارات',
-        icon: 'fas fa-bell',
+        icon: 'bell',
         href: '/teacher/notifications',
       },
       {
         id: 'gamification',
         label: 'لوحة الشرف',
-        icon: 'fas fa-trophy',
+        icon: 'trophy',
         href: '/teacher/gamification',
       },
       {
         id: 'reports',
         label: 'التقارير',
-        icon: 'fas fa-chart-bar',
+        icon: 'chart-bar',
         href: '/teacher/reports',
       },
 
@@ -286,31 +288,31 @@ const getNavItems = (role: string): SidebarItem[] => {
     {
       id: 'leaderboard',
       label: 'لوحة الشرف',
-      icon: 'fas fa-trophy',
+      icon: 'trophy',
       href: '/student/leaderboard',
     },
     {
       id: 'mistakes',
       label: 'أخطائي',
-      icon: 'fas fa-exclamation-circle',
+      icon: 'exclamation-circle',
       href: '/student/mistakes',
     },
     {
       id: 'lectures',
       label: 'المحاضرات',
-      icon: 'fas fa-book-open',
+      icon: 'book-open',
       href: '/student/lectures',
     },
     {
       id: 'exams',
       label: 'الامتحانات',
-      icon: 'fas fa-file-alt',
+      icon: 'file-alt',
       href: '/student/exams',
     },
     {
       id: 'notifications',
       label: 'الإخطارات والدعم',
-      icon: 'fas fa-bell',
+      icon: 'bell',
       href: '/student/notifications',
     },
   ];
@@ -552,6 +554,31 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
     if (onMenuClick) onMenuClick();
   };
 
+  const handleReturnToAdmin = () => {
+    const adminToken = localStorage.getItem('adminToken');
+    const adminUser = localStorage.getItem('adminUser');
+    const adminUserType = localStorage.getItem('adminUserType');
+
+    if (adminToken && adminUser && adminUserType) {
+      // Restore admin session
+      localStorage.setItem('token', adminToken);
+      localStorage.setItem('user', adminUser);
+      localStorage.setItem('userType', adminUserType);
+
+      // Clear admin backup
+      localStorage.removeItem('adminToken');
+      localStorage.removeItem('adminUser');
+      localStorage.removeItem('adminUserType');
+
+      // Set cookies
+      document.cookie = "auth_state=true; path=/; max-age=2592000; SameSite=Lax";
+      document.cookie = `user_role=${adminUserType}; path=/; max-age=2592000; SameSite=Lax`;
+
+      // Redirect
+      window.location.href = '/admin/teachers';
+    }
+  };
+
   return (
     <>
       <nav className={`navbar ${isScrolled ? 'scrolled' : ''}`}>
@@ -569,14 +596,19 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
             {items.map((item) => (
               item.children ? (
                 <div key={item.id} className="navbar-item-dropdown-container">
-                  <button
+                  <Button
+                    variant="ghost"
                     className={`navbar-link navbar-link-button ${pathname.startsWith(item.href) ? 'active' : ''}`}
                     onClick={() => setActiveSubMenu(activeSubMenu === item.id ? null : item.id)}
                   >
-                    <i className={item.icon}></i>
+                    <Icon name={item.icon as any} size="sm" />
                     <span>{item.label}</span>
-                    <i className={`fas fa-chevron-down navbar-chevron ${activeSubMenu === item.id ? 'rotate-180' : ''}`}></i>
-                  </button>
+                    <Icon 
+                      name="chevron-down" 
+                      size="sm" 
+                      className={`navbar-chevron ${activeSubMenu === item.id ? 'rotate-180' : ''}`}
+                    />
+                  </Button>
                   
                   {activeSubMenu === item.id && (
                     <div className="navbar-dropdown navbar-dropdown-menu">
@@ -587,7 +619,7 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
                           className={`navbar-dropdown-item ${pathname === child.href ? 'active' : ''}`}
                           onClick={() => setActiveSubMenu(null)}
                         >
-                          <i className={child.icon}></i>
+                          <Icon name={child.icon as any} size="sm" />
                           <span>{child.label}</span>
                         </Link>
                       ))}
@@ -600,7 +632,7 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
                   href={item.href}
                   className={`navbar-link ${pathname === item.href ? 'active' : ''}`}
                 >
-                  <i className={item.icon}></i>
+                  <Icon name={item.icon as any} size="sm" />
                   <span>{item.label}</span>
                   {item.badge && (
                     <span className="navbar-badge">{item.badge}</span>
@@ -615,36 +647,14 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
 
           {/* Return to Admin Button */}
           {isAdminImpersonating && (
-              <button
-                onClick={() => {
-                  const adminToken = localStorage.getItem('adminToken');
-                  const adminUser = localStorage.getItem('adminUser');
-                  const adminUserType = localStorage.getItem('adminUserType');
-
-                  if (adminToken && adminUser && adminUserType) {
-                    // Restore admin session
-                    localStorage.setItem('token', adminToken);
-                    localStorage.setItem('user', adminUser);
-                    localStorage.setItem('userType', adminUserType);
-
-                    // Clear admin backup
-                    localStorage.removeItem('adminToken');
-                    localStorage.removeItem('adminUser');
-                    localStorage.removeItem('adminUserType');
-
-                    // Set cookies
-                    document.cookie = "auth_state=true; path=/; max-age=2592000; SameSite=Lax";
-                    document.cookie = `user_role=${adminUserType}; path=/; max-age=2592000; SameSite=Lax`;
-
-                    // Redirect
-                    window.location.href = '/admin/teachers';
-                  }
-                }}
+              <Button
+                variant="ghost"
+                onClick={handleReturnToAdmin}
                 className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-lg transition-colors border border-red-500/20 text-sm font-medium ml-2"
               >
-                <i className="fas fa-user-shield"></i>
+                <Icon name="user-shield" size="sm" />
                 <span>العودة للأدمن</span>
-              </button>
+              </Button>
             )}
             
             {/* Teacher Selector (Student Only) */}
@@ -654,14 +664,15 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
 
             {/* Scan Attendance Button (Teacher in Academy Mode Only) */}
             {role === 'teacher' && selectedAcademy?.id && selectedAcademy.id !== 'independent' && (
-              <button
+              <Button
+                variant="ghost"
                 onClick={() => setIsScanAttendanceModalOpen(true)}
                 className="navbar-scan-btn"
                 title="تسجيل الحضور والانصراف"
               >
-                <i className="fas fa-qrcode"></i>
+                <Icon name="qrcode" size="sm" />
                 <span className="hidden lg:inline">تسجيل الحضور</span>
-              </button>
+              </Button>
             )}
 
             {/* Notification Dropdown */}
@@ -688,9 +699,14 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
                     </p>
                   )}
                 </div>
-                <i className={`fas fa-chevron-down navbar-user-chevron`} style={{ 
-                  transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)'
-                }}></i>
+                <span
+                  className="navbar-user-chevron"
+                  style={{
+                    transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)'
+                  }}
+                >
+                  <Icon name="chevron-down" size="sm" />
+                </span>
               </div>
 
               {/* Dropdown Menu */}
@@ -701,7 +717,7 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
                     className="navbar-dropdown-item"
                     onClick={() => setIsDropdownOpen(false)}
                   >
-                    <i className="fas fa-user"></i>
+                    <Icon name="user" size="sm" />
                     <span>الملف الشخصي</span>
                   </Link>
                   
@@ -716,7 +732,7 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
                       className="navbar-dropdown-item"
                       onClick={() => setIsDropdownOpen(false)}
                     >
-                      <i className="fas fa-id-card"></i>
+                      <Icon name="id-card" size="sm" />
                       <span>
                         {role === 'academy' ? 'الاشتراك' :
                          (selectedAcademy?.id && selectedAcademy.id !== 'independent') ? 'الاشتراك' :
@@ -729,37 +745,44 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
                   {role === 'teacher' && hasAcademies && (
                     <>
                       <div className="navbar-dropdown-divider"></div>
-                      <button 
-                        className="navbar-dropdown-item"
+                      <Button 
+                        variant="ghost"
+                        className="navbar-dropdown-item w-full justify-start"
                         onClick={() => {
                           console.log('Opening academy modal');
                           setIsAcademyModalOpen(true);
                           setIsDropdownOpen(false);
                         }}
                       >
-                        <i className="fas fa-building"></i>
+                        <Icon name="building" size="sm" />
                         <span>تغيير الأكاديمية</span>
-                      </button>
+                      </Button>
                     </>
                   )}
                   
                   <div className="navbar-dropdown-divider"></div>
-                  <button 
-                    className="navbar-dropdown-item logout-item navbar-logout-btn"
+                  <Button 
+                    variant="ghost"
+                    className="navbar-dropdown-item logout-item navbar-logout-btn w-full justify-start"
                     onClick={handleLogout}
                   >
-                    <i className="fas fa-sign-out-alt"></i>
+                    <Icon name="sign-out-alt" size="sm" />
                     <span>تسجيل الخروج</span>
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>
 
             {/* Mobile Menu Toggle */}
             {role !== 'parent' && (
-              <button className="navbar-menu-toggle" onClick={toggleMobileSidebar}>
-                <i className="fas fa-bars"></i>
-              </button>
+              <Button 
+                variant="ghost"
+                size="sm"
+                className="navbar-menu-toggle"
+                onClick={toggleMobileSidebar}
+              >
+                <Icon name="bars" />
+              </Button>
             )}
           </div>
         </div>
@@ -788,12 +811,14 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
               <p className="mobile-sidebar-user-name">{user?.name || ''}</p>
             </div>
           </div>
-          <button 
+          <Button 
+            variant="ghost"
+            size="sm"
             className="mobile-sidebar-close"
             onClick={() => setIsMobileSidebarOpen(false)}
           >
-            <i className="fas fa-times"></i>
-          </button>
+            <Icon name="times" />
+          </Button>
         </div>
 
         <div className="mobile-sidebar-nav">
@@ -806,10 +831,10 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
                     onClick={(e) => toggleMobileExpand(item.id, e)}
                   >
                     <div className="group-content">
-                      <i className={item.icon}></i>
+                      <Icon name={item.icon as any} size="sm" />
                       <span>{item.label}</span>
                     </div>
-                    <i className="fas fa-chevron-down chevron"></i>
+                    <Icon name="chevron-down" size="sm" className="chevron" />
                   </div>
                   <div className="mobile-sidebar-group-children">
                     {item.children.map((child) => (
@@ -819,7 +844,7 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
                         className={`mobile-sidebar-sublink ${pathname === child.href ? 'active' : ''}`}
                         onClick={() => setIsMobileSidebarOpen(false)}
                       >
-                        <i className={child.icon}></i>
+                        <Icon name={child.icon as any} size="sm" />
                         <span>{child.label}</span>
                       </Link>
                     ))}
@@ -832,7 +857,7 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
                   className={`mobile-sidebar-link ${pathname === item.href ? 'active' : ''}`}
                   onClick={() => setIsMobileSidebarOpen(false)}
                 >
-                  <i className={item.icon}></i>
+                  <Icon name={item.icon as any} size="sm" />
                   <span>{item.label}</span>
                   {item.badge && (
                     <span className="mobile-sidebar-badge">{item.badge}</span>
@@ -849,19 +874,20 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
             className="mobile-sidebar-link"
             onClick={() => setIsMobileSidebarOpen(false)}
           >
-            <i className="fas fa-user"></i>
+            <Icon name="user" size="sm" />
             <span>الملف الشخصي</span>
           </Link>
-          <button 
-            className="mobile-sidebar-link"
+          <Button 
+            variant="ghost"
+            className="mobile-sidebar-link w-full justify-start"
             onClick={() => {
               setIsMobileSidebarOpen(false);
               handleLogout();
             }}
           >
-            <i className="fas fa-sign-out-alt"></i>
+            <Icon name="sign-out-alt" size="sm" />
             <span>تسجيل الخروج</span>
-          </button>
+          </Button>
         </div>
       </div>
 

@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
+import { Button, Icon, Input } from '@/components/ui';
+import { Select } from '@/components/ui/Select';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { getTeacherStudentDetails, updateTeacherStudent, updateTeacherStudentPermissions } from '@/services/authService';
 import { getGrades, Grade } from '@/services/gradeService';
@@ -170,14 +172,14 @@ export default function EditStudentPage() {
         <form onSubmit={handleSubmit}>
           {successMessage && (
             <div className="bg-green-500/10 border border-green-500/20 text-green-500 p-4 rounded-lg mb-6 flex items-center gap-3">
-              <i className="fas fa-check-circle text-xl"></i>
+              <Icon name="check-circle" className="text-xl" />
               <span>{successMessage}</span>
             </div>
           )}
 
           {formErrors.submit && (
             <div className="bg-red-500/10 border border-red-500/20 text-red-500 p-4 rounded-lg mb-6 flex items-center gap-3">
-              <i className="fas fa-exclamation-circle text-xl"></i>
+              <Icon name="exclamation-circle" className="text-xl" />
               <span>{formErrors.submit}</span>
             </div>
           )}
@@ -187,12 +189,10 @@ export default function EditStudentPage() {
               <label htmlFor="name" className="block text-gray-light mb-2 text-[0.95rem]">
                 الاسم <span className="text-red-500">*</span>
               </label>
-              <input
+              <Input
                 type="text"
                 id="name"
-                className={`w-full p-3 bg-white/5 border rounded-lg text-white text-[1rem] focus:ring-1 outline-none transition-all ${
-                  formErrors.name ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-white/10 focus:border-primary focus:ring-primary'
-                }`}
+                className={formErrors.name ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="أدخل اسم الطالب"
@@ -205,10 +205,9 @@ export default function EditStudentPage() {
 
             <div>
               <label htmlFor="parent_phone" className="block text-gray-light mb-2 text-[0.95rem]">رقم هاتف ولي الأمر</label>
-              <input
+              <Input
                 type="tel"
                 id="parent_phone"
-                className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white text-[1rem] focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
                 value={formData.parent_phone}
                 onChange={(e) => {
                   const value = e.target.value.replace(/[^0-9]/g, '');
@@ -225,85 +224,66 @@ export default function EditStudentPage() {
               <label htmlFor="gender" className="block text-gray-light mb-2 text-[0.95rem]">
                 النوع <span className="text-red-500">*</span>
               </label>
-              <select
-                id="gender"
-                className={`w-full p-3 bg-white/5 border rounded-lg text-white text-[1rem] focus:ring-1 outline-none transition-all ${
-                  formErrors.gender ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-white/10 focus:border-primary focus:ring-primary'
-                }`}
+              <Select
+                options={[
+                  { value: 'male', label: 'ذكر' },
+                  { value: 'female', label: 'أنثى' }
+                ]}
                 value={formData.gender}
-                onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                onChange={(value) => setFormData({ ...formData, gender: value })}
                 disabled={isSubmitting}
-              >
-                <option value="male" className="bg-[#1a1f37]">ذكر</option>
-                <option value="female" className="bg-[#1a1f37]">أنثى</option>
-              </select>
+              />
               {formErrors.gender && <span className="text-red-500 text-sm mt-1 block">{formErrors.gender}</span>}
             </div>
 
             <div>
               <label htmlFor="education_type" className="block text-gray-light mb-2 text-[0.95rem]">نوع التعليم</label>
-              <select
-                id="education_type"
-                className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white text-[1rem] focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+              <Select
+                options={[
+                  { value: 'general', label: 'عام' },
+                  { value: 'azhar', label: 'أزهري' }
+                ]}
                 value={formData.education_type}
-                onChange={(e) => setFormData({ ...formData, education_type: e.target.value })}
+                onChange={(value) => setFormData({ ...formData, education_type: value })}
+                placeholder="اختر نوع التعليم"
                 disabled={isSubmitting}
-              >
-                <option value="" className="bg-[#1a1f37]">اختر نوع التعليم</option>
-                <option value="general" className="bg-[#1a1f37]">عام</option>
-                <option value="azhar" className="bg-[#1a1f37]">أزهري</option>
-              </select>
+              />
             </div>
 
             <div>
               <label htmlFor="grade_id" className="block text-gray-light mb-2 text-[0.95rem]">الصف الدراسي</label>
-              <select
-                id="grade_id"
-                className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white text-[1rem] focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+              <Select
+                options={grades.map((grade) => ({ value: grade.id, label: grade.name }))}
                 value={formData.grade_id}
-                onChange={(e) => setFormData({ ...formData, grade_id: e.target.value })}
+                onChange={(value) => setFormData({ ...formData, grade_id: value })}
+                placeholder="اختر الصف الدراسي"
                 disabled={isSubmitting}
-              >
-                <option value="" className="bg-[#1a1f37]">اختر الصف الدراسي</option>
-                {grades.map((grade) => (
-                  <option key={grade.id} value={grade.id} className="bg-[#1a1f37]">
-                    {grade.name}
-                  </option>
-                ))}
-              </select>
+              />
             </div>
 
             <div>
               <label htmlFor="group_id" className="block text-gray-light mb-2 text-[0.95rem]">المجموعة</label>
-              <select
-                id="group_id"
-                className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white text-[1rem] focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+              <Select
+                options={groups.map((group) => ({ value: group.id, label: `${group.name} ${group.grade_name ? `(${group.grade_name})` : ''}` }))}
                 value={formData.group_id}
-                onChange={(e) => setFormData({ ...formData, group_id: e.target.value })}
+                onChange={(value) => setFormData({ ...formData, group_id: value })}
+                placeholder="اختر المجموعة"
                 disabled={isSubmitting}
-              >
-                <option value="" className="bg-[#1a1f37]">اختر المجموعة</option>
-                {groups.map((group) => (
-                  <option key={group.id} value={group.id} className="bg-[#1a1f37]">
-                    {group.name} {group.grade_name && `(${group.grade_name})`}
-                  </option>
-                ))}
-              </select>
+              />
             </div>
 
             <div className="md:col-span-2">
               <label htmlFor="location" className="block text-gray-light mb-2 text-[0.95rem]">الموقع</label>
-              <input
+              <Input
                 type="text"
                 id="location"
-                className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white text-[1rem] focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
                 value={formData.location}
                 onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                 placeholder="أدخل موقع الطالب"
                 disabled={isSubmitting}
               />
               <span className="text-gray-light text-sm mt-1 block flex items-center gap-1">
-                <i className="fas fa-map-marker-alt"></i>
+                <Icon name="map-marker-alt" />
                 مكان إقامة الطالب
               </span>
             </div>
@@ -335,32 +315,24 @@ export default function EditStudentPage() {
           </div>
 
           <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-white/10">
-            <button
+            <Button
               type="button"
-              className="btn btn-outline"
+              variant="outline"
               onClick={handleCancel}
               disabled={isSubmitting}
             >
-              <i className="fas fa-times"></i>
+              <Icon name="times" />
               <span>إلغاء</span>
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
-              className="btn btn-primary"
+              variant="primary"
+              loading={isSubmitting}
               disabled={isSubmitting}
             >
-              {isSubmitting ? (
-                <>
-                  <i className="fas fa-spinner fa-spin"></i>
-                  <span>جاري الحفظ...</span>
-                </>
-              ) : (
-                <>
-                  <i className="fas fa-save"></i>
-                  <span>حفظ التعديلات</span>
-                </>
-              )}
-            </button>
+              <Icon name="save" />
+              <span>حفظ التعديلات</span>
+            </Button>
           </div>
         </form>
       </DashboardCard>

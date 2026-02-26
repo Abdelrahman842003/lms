@@ -5,8 +5,8 @@ import { DashboardLayout, DashboardCard } from '@/components/dashboard';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { uploadAvatar, deleteAvatar, getAvatarUrl } from '@/services/avatarService';
 import { getAuthToken } from '@/services/authService';
-import { ImageCropModal, ConfirmationModal, Skeleton } from '@/components/ui';
-import { AuthInput } from '@/components/auth/AuthInput';
+import { ImageCropModal, ConfirmationModal, Skeleton, Button, LoadingSpinner, Icon } from '@/components/ui';
+import { Input } from '@/components/ui/Input';
 import { toast } from 'react-hot-toast';
 
 import QRCode from 'react-qr-code';
@@ -306,13 +306,13 @@ export default function StudentProfilePage() {
           icon="fas fa-user"
           action={
             isLoading ? null : (
-              <button
-                className="btn btn-primary"
+              <Button
+                variant="primary"
                 onClick={() => setIsEditing(!isEditing)}
               >
-                <i className={isEditing ? 'fas fa-times' : 'fas fa-edit'}></i>
+                <Icon name={isEditing ? 'times' : 'edit'} className="ml-2" />
                 <span>{isEditing ? 'إلغاء' : 'تعديل'}</span>
-              </button>
+              </Button>
             )
           }
         >
@@ -337,7 +337,7 @@ export default function StudentProfilePage() {
                   )}
                   {isUploadingAvatar && (
                     <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                      <div className="w-8 h-8 border-[3px] border-white/30 border-t-white rounded-full animate-spin"></div>
+                      <LoadingSpinner size="md" color="white" />
                     </div>
                   )}
                 </div>
@@ -366,22 +366,25 @@ export default function StudentProfilePage() {
                           onChange={handleAvatarChange}
                           className="hidden"
                         />
-                        <button 
-                          className="btn btn-sm btn-outline" 
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() => fileInputRef.current?.click()}
                           disabled={isUploadingAvatar}
                         >
-                          <i className="fas fa-camera"></i>
+                          <Icon name="camera" className="ml-2" />
                           <span>{avatarUrl ? 'تغيير الصورة' : 'رفع صورة'}</span>
-                        </button>
+                        </Button>
                         {avatarUrl && (
-                          <button 
-                            className="btn btn-sm btn-outline bg-red-500/10 border-red-500 text-red-500 hover:bg-red-500/20" 
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="bg-red-500/10 border-red-500 text-red-500 hover:bg-red-500/20"
                             onClick={handleAvatarDelete}
                             disabled={isUploadingAvatar}
                           >
-                            <i className="fas fa-trash"></i>
-                          </button>
+                            <Icon name="trash" />
+                          </Button>
                         )}
                       </div>
                     )}
@@ -393,65 +396,65 @@ export default function StudentProfilePage() {
             <form onSubmit={handleSubmit}>
               <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-6">
                 <div>
-                  <AuthInput
+                  <Input
                     id="name"
                     label="الاسم"
                     value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, name: e.target.value })}
                     disabled={true}
                     isLoading={isLoading}
-                    className="w-full p-3 bg-white/2 border border-white/10 rounded-lg text-white text-[0.95rem] font-tajawal !text-center"
+                    className="!text-center"
                   />
                 </div>
 
 
 
                 <div>
-                  <AuthInput
+                  <Input
                     id="phone"
                     label="رقم الهاتف"
                     value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, phone: e.target.value })}
                     disabled={true}
                     isLoading={isLoading}
-                    className="w-full p-3 bg-white/2 border border-white/10 rounded-lg text-white text-[0.95rem] font-tajawal !text-center"
+                    className="!text-center"
                   />
                 </div>
 
                 <div>
-                  <AuthInput
+                  <Input
                     id="parent_phone"
                     label="رقم ولي الأمر"
                     value={formData.parent_phone}
-                    onChange={(e) => setFormData({ ...formData, parent_phone: e.target.value })}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, parent_phone: e.target.value })}
                     disabled={true}
                     isLoading={isLoading}
-                    className="w-full p-3 bg-white/2 border border-white/10 rounded-lg text-white text-[0.95rem] font-tajawal !text-center"
+                    className="!text-center"
                   />
                 </div>
 
                 <div className="full-width">
-                  <AuthInput
+                  <Input
                     id="location"
                     label="الموقع"
                     value={formData.location}
-                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, location: e.target.value })}
                     disabled={!isEditing}
                     isLoading={isLoading}
-                    className={`!w-[93%] mx-auto md:!w-full p-3 border border-white/10 rounded-lg text-white text-[0.95rem] font-tajawal !text-center ${isEditing ? 'bg-white/5' : 'bg-white/2'}`}
+                    className="!text-center"
                   />
                 </div>
               </div>
 
               {isEditing && (
                 <div className="mt-6 flex gap-3 justify-end">
-                  <button type="button" className="btn btn-outline" onClick={() => setIsEditing(false)}>
+                  <Button type="button" variant="outline" onClick={() => setIsEditing(false)}>
                     إلغاء
-                  </button>
-                  <button type="submit" className="btn btn-primary">
-                    <i className="fas fa-save"></i>
+                  </Button>
+                  <Button type="submit" variant="primary">
+                    <Icon name="save" className="ml-2" />
                     <span>حفظ التغييرات</span>
-                  </button>
+                  </Button>
                 </div>
               )}
             </form>
@@ -464,13 +467,13 @@ export default function StudentProfilePage() {
           title="رمز الحضور"
           icon="fas fa-qrcode"
           action={
-            <button
-              className="btn btn-primary"
+            <Button
+              variant="primary"
               onClick={downloadQRCode}
             >
-              <i className="fas fa-download"></i>
+              <Icon name="download" className="ml-2" />
               <span>تحميل الرمز</span>
-            </button>
+            </Button>
           }
         >
           <div className="py-8 flex flex-col items-center justify-center gap-6">
@@ -500,26 +503,26 @@ export default function StudentProfilePage() {
             <form onSubmit={handlePasswordChange}>
               <div className="grid gap-6 max-w-[600px] mx-auto">
                 <div>
-                  <AuthInput
+                  <Input
                     id="currentPassword"
                     type="password"
                     label="كلمة المرور الحالية"
                     value={formData.currentPassword}
-                    onChange={(e) => setFormData({ ...formData, currentPassword: e.target.value })}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, currentPassword: e.target.value })}
                     error={errors.currentPassword}
-                    className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white text-[0.95rem] font-tajawal !text-center"
+                    className="!text-center"
                   />
                 </div>
 
                 <div>
-                  <AuthInput
+                  <Input
                     id="newPassword"
                     type="password"
                     label="كلمة المرور الجديدة"
                     value={formData.newPassword}
-                    onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, newPassword: e.target.value })}
                     error={errors.newPassword}
-                    className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white text-[0.95rem] font-tajawal !text-center"
+                    className="!text-center"
                   />
                   {formData.newPassword && (
                     <div className="mt-2 flex gap-1 h-1 px-1">
@@ -546,20 +549,14 @@ export default function StudentProfilePage() {
                 </div>
 
                 <div>
-                  <AuthInput
+                  <Input
                     id="confirmPassword"
                     type="password"
                     label="تأكيد كلمة المرور الجديدة"
                     value={formData.confirmPassword}
-                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, confirmPassword: e.target.value })}
                     error={errors.confirmPassword}
-                    className={`w-full p-3 bg-white/5 border rounded-lg text-white text-[0.95rem] font-tajawal !text-center ${
-                      formData.confirmPassword && formData.newPassword !== formData.confirmPassword
-                        ? 'border-red-500/50'
-                        : formData.confirmPassword && formData.newPassword === formData.confirmPassword
-                        ? 'border-green-500/50'
-                        : 'border-white/10'
-                    }`}
+                    className="!text-center"
                   />
                   {formData.confirmPassword && (
                     <p className={`text-xs mt-1 text-center ${
@@ -572,10 +569,10 @@ export default function StudentProfilePage() {
               </div>
 
               <div className="mt-6 flex justify-center">
-                <button type="submit" className="btn btn-primary">
-                  <i className="fas fa-key"></i>
+                <Button type="submit" variant="primary">
+                  <Icon name="key" className="ml-2" />
                   <span>تغيير كلمة المرور</span>
-                </button>
+                </Button>
               </div>
             </form>
           </div>
