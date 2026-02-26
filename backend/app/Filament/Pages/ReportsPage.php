@@ -20,7 +20,7 @@ class ReportsPage extends Page implements HasForms
 {
     use InteractsWithForms;
 
-    protected static ?string $navigationIcon = 'heroicon-o-document-chart-bar';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-document-chart-bar';
 
     protected static ?string $navigationLabel = 'التقارير';
 
@@ -30,7 +30,7 @@ class ReportsPage extends Page implements HasForms
 
     protected static ?int $navigationSort = 50;
 
-    protected static string $view = 'filament.pages.reports';
+    protected string $view = 'filament.pages.reports';
 
     public ?array $data = [];
 

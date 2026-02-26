@@ -23,7 +23,7 @@ class TeacherResource extends BaseResource
 {
     protected static ?string $model = Teacher::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-academic-cap';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-academic-cap';
 
     protected static ?int $navigationSort = 3;
 
@@ -331,10 +331,10 @@ class TeacherResource extends BaseResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListTeachers::class,
-            'create' => Pages\CreateTeacher::class,
-            'edit' => Pages\EditTeacher::class,
-            'view' => Pages\ViewTeacher::class,
+            'index' => \App\Filament\Resources\TeacherResource\Pages\ListTeachers::route('/'),
+            'create' => \App\Filament\Resources\TeacherResource\Pages\CreateTeacher::route('/create'),
+            'edit' => \App\Filament\Resources\TeacherResource\Pages\EditTeacher::route('/{record}/edit'),
+            'view' => \App\Filament\Resources\TeacherResource\Pages\ViewTeacher::route('/{record}'),
         ];
     }
 

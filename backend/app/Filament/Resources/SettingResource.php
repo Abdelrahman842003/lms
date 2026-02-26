@@ -20,7 +20,7 @@ class SettingResource extends BaseResource
 {
     protected static ?string $model = Setting::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-cog-6-tooth';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-cog-6-tooth';
 
     protected static ?int $navigationSort = 99;
 
@@ -276,9 +276,9 @@ class SettingResource extends BaseResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListSettings::class,
-            'create' => Pages\CreateSetting::class,
-            'edit' => Pages\EditSetting::class,
+            'index' => \App\Filament\Resources\SettingResource\Pages\ListSettings::route('/'),
+            'create' => \App\Filament\Resources\SettingResource\Pages\CreateSetting::route('/create'),
+            'edit' => \App\Filament\Resources\SettingResource\Pages\EditSetting::route('/{record}/edit'),
         ];
     }
 

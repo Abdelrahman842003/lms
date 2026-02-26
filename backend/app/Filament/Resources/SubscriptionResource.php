@@ -24,7 +24,7 @@ class SubscriptionResource extends BaseResource
 {
     protected static ?string $model = Subscription::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-credit-card';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-credit-card';
 
     protected static ?int $navigationSort = 1;
 
@@ -318,10 +318,10 @@ class SubscriptionResource extends BaseResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListSubscriptions::class,
-            'create' => Pages\CreateSubscription::class,
-            'edit' => Pages\EditSubscription::class,
-            'view' => Pages\ViewSubscription::class,
+            'index' => \App\Filament\Resources\SubscriptionResource\Pages\ListSubscriptions::route('/'),
+            'create' => \App\Filament\Resources\SubscriptionResource\Pages\CreateSubscription::route('/create'),
+            'edit' => \App\Filament\Resources\SubscriptionResource\Pages\EditSubscription::route('/{record}/edit'),
+            'view' => \App\Filament\Resources\SubscriptionResource\Pages\ViewSubscription::route('/{record}'),
         ];
     }
 

@@ -20,7 +20,7 @@ class RoleResource extends BaseResource
 {
     protected static ?string $model = Role::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-shield-check';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-shield-check';
 
     protected static ?int $navigationSort = 1;
 
@@ -184,9 +184,9 @@ class RoleResource extends BaseResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListRoles::class,
-            'create' => Pages\CreateRole::class,
-            'edit' => Pages\EditRole::class,
+            'index' => \App\Filament\Resources\RoleResource\Pages\ListRoles::route('/'),
+            'create' => \App\Filament\Resources\RoleResource\Pages\CreateRole::route('/create'),
+            'edit' => \App\Filament\Resources\RoleResource\Pages\EditRole::route('/{record}/edit'),
         ];
     }
 

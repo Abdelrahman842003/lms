@@ -8,13 +8,13 @@ use Illuminate\Support\Facades\DB;
 
 class AcademyDistributionChart extends ChartWidget
 {
-    protected static ?string $heading = 'Academies by Subscription Plan';
+    protected ?string $heading = 'Academies by Subscription Plan';
 
     protected static ?int $sort = 4;
 
     protected int|string|array $columnSpan = 1;
 
-    protected static ?string $maxHeight = '300px';
+    protected ?string $maxHeight = '300px';
 
     protected function getData(): array
     {

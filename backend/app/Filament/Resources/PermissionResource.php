@@ -14,7 +14,7 @@ class PermissionResource extends BaseResource
 {
     protected static ?string $model = Permission::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-lock-closed';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-lock-closed';
 
     protected static ?int $navigationSort = 2;
 
@@ -111,7 +111,7 @@ class PermissionResource extends BaseResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListPermissions::class,
+            'index' => \App\Filament\Resources\PermissionResource\Pages\ListPermissions::route('/'),
         ];
     }
 

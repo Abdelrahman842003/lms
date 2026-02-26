@@ -19,7 +19,7 @@ class AdminResource extends BaseResource
 {
     protected static ?string $model = Admin::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-shield-check';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-shield-check';
 
     protected static ?int $navigationSort = 1;
 
@@ -194,10 +194,10 @@ class AdminResource extends BaseResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListAdmins::class,
-            'create' => Pages\CreateAdmin::class,
-            'edit' => Pages\EditAdmin::class,
-            'view' => Pages\ViewAdmin::class,
+            'index' => \App\Filament\Resources\AdminResource\Pages\ListAdmins::route('/'),
+            'create' => \App\Filament\Resources\AdminResource\Pages\CreateAdmin::route('/create'),
+            'edit' => \App\Filament\Resources\AdminResource\Pages\EditAdmin::route('/{record}/edit'),
+            'view' => \App\Filament\Resources\AdminResource\Pages\ViewAdmin::route('/{record}'),
         ];
     }
 

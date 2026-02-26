@@ -202,15 +202,33 @@ abstract class BaseResource extends Resource
 
     /**
      * Get the pages available for this resource.
+     * Each subclass must override this method with proper PageRegistration objects.
      */
     public static function getPages(): array
     {
-        return [
-            'index' => static::class . '\Pages\List' . class_basename(static::getModel()),
-            'create' => static::class . '\Pages\Create' . class_basename(static::getModel()),
-            'edit' => static::class . '\Pages\Edit' . class_basename(static::getModel()),
-            'view' => static::class . '\Pages\View' . class_basename(static::getModel()),
-        ];
+        $model = class_basename(static::getModel());
+        $resourceNamespace = static::class;
+
+        $pages = [];
+        $listClass = $resourceNamespace . '\\Pages\\List' . \Illuminate\Support\Str::plural($model);
+        $createClass = $resourceNamespace . '\\Pages\\Create' . $model;
+        $editClass = $resourceNamespace . '\\Pages\\Edit' . $model;
+        $viewClass = $resourceNamespace . '\\Pages\\View' . $model;
+
+        if (class_exists($listClass)) {
+            $pages['index'] = $listClass::route('/');
+        }
+        if (class_exists($createClass)) {
+            $pages['create'] = $createClass::route('/create');
+        }
+        if (class_exists($editClass)) {
+            $pages['edit'] = $editClass::route('/{record}/edit');
+        }
+        if (class_exists($viewClass)) {
+            $pages['view'] = $viewClass::route('/{record}');
+        }
+
+        return $pages;
     }
 
     /**

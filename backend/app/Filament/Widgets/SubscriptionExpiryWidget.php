@@ -15,7 +15,7 @@ class SubscriptionExpiryWidget extends Widget
 
     protected int|string|array $columnSpan = 1;
 
-    protected static string $view = 'filament.widgets.subscription-expiry-widget';
+    protected string $view = 'filament.widgets.subscription-expiry-widget';
 
     public function getExpiringSubscriptions(): Collection
     {

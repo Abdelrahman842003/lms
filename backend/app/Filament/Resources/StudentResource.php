@@ -28,7 +28,7 @@ class StudentResource extends BaseResource
 {
     protected static ?string $model = Student::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-users';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-users';
 
     protected static ?int $navigationSort = 4;
 
@@ -341,10 +341,10 @@ class StudentResource extends BaseResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListStudents::class,
-            'create' => Pages\CreateStudent::class,
-            'edit' => Pages\EditStudent::class,
-            'view' => Pages\ViewStudent::class,
+            'index' => \App\Filament\Resources\StudentResource\Pages\ListStudents::route('/'),
+            'create' => \App\Filament\Resources\StudentResource\Pages\CreateStudent::route('/create'),
+            'edit' => \App\Filament\Resources\StudentResource\Pages\EditStudent::route('/{record}/edit'),
+            'view' => \App\Filament\Resources\StudentResource\Pages\ViewStudent::route('/{record}'),
         ];
     }
 

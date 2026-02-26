@@ -20,7 +20,7 @@ class SecretaryResource extends BaseResource
 {
     protected static ?string $model = Secretary::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-clipboard-document-list';
 
     protected static ?int $navigationSort = 5;
 
@@ -236,10 +236,10 @@ class SecretaryResource extends BaseResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListSecretaries::class,
-            'create' => Pages\CreateSecretary::class,
-            'edit' => Pages\EditSecretary::class,
-            'view' => Pages\ViewSecretary::class,
+            'index' => \App\Filament\Resources\SecretaryResource\Pages\ListSecretaries::route('/'),
+            'create' => \App\Filament\Resources\SecretaryResource\Pages\CreateSecretary::route('/create'),
+            'edit' => \App\Filament\Resources\SecretaryResource\Pages\EditSecretary::route('/{record}/edit'),
+            'view' => \App\Filament\Resources\SecretaryResource\Pages\ViewSecretary::route('/{record}'),
         ];
     }
 

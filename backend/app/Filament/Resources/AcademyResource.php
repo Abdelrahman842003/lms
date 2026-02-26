@@ -22,7 +22,7 @@ class AcademyResource extends BaseResource
 {
     protected static ?string $model = Academy::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-building-library';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-building-library';
 
     protected static ?int $navigationSort = 2;
 
@@ -332,17 +332,17 @@ class AcademyResource extends BaseResource
     public static function getWidgets(): array
     {
         return [
-            Widgets\AcademyStatsWidget::class,
+            \App\Filament\Resources\AcademyResource\Widgets\AcademyStatsWidget::class,
         ];
     }
 
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListAcademies::class,
-            'create' => Pages\CreateAcademy::class,
-            'edit' => Pages\EditAcademy::class,
-            'view' => Pages\ViewAcademy::class,
+            'index' => \App\Filament\Resources\AcademyResource\Pages\ListAcademies::route('/'),
+            'create' => \App\Filament\Resources\AcademyResource\Pages\CreateAcademy::route('/create'),
+            'edit' => \App\Filament\Resources\AcademyResource\Pages\EditAcademy::route('/{record}/edit'),
+            'view' => \App\Filament\Resources\AcademyResource\Pages\ViewAcademy::route('/{record}'),
         ];
     }
 

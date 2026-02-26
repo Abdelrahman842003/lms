@@ -22,7 +22,7 @@ class SystemSettingsPage extends Page implements HasForms
 {
     use InteractsWithForms;
 
-    protected static ?string $navigationIcon = 'heroicon-o-wrench-screwdriver';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-wrench-screwdriver';
 
     protected static ?string $navigationLabel = 'إعدادات النظام';
 
@@ -32,7 +32,7 @@ class SystemSettingsPage extends Page implements HasForms
 
     protected static ?int $navigationSort = 100;
 
-    protected static string $view = 'filament.pages.system-settings';
+    protected string $view = 'filament.pages.system-settings';
 
     public ?array $data = [];
 
