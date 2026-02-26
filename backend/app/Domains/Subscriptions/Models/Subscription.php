@@ -159,6 +159,14 @@ class Subscription extends Model
     }
 
     /**
+     * Scope for active subscriptions
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('status', SubscriptionStatus::ACTIVE);
+    }
+
+    /**
      * Scope for pending subscriptions
      */
     public function scopePending($query)

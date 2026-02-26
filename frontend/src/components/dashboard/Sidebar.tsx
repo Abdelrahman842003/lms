@@ -8,7 +8,7 @@ import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { Icon } from '@/components/ui';
 
 interface SidebarProps {
-  role: 'admin' | 'teacher' | 'student' | 'secretary';
+  role: 'teacher' | 'student' | 'secretary';
   user: {
     name: string;
     avatar?: string;
@@ -27,85 +27,6 @@ const getSidebarItems = (role: string): SidebarItem[] => {
       href: `/${role}/dashboard`,
     },
   ];
-
-  if (role === 'admin') {
-    return [
-      ...commonItems,
-      {
-        id: 'users',
-        label: 'المستخدمين',
-        icon: 'fas fa-users',
-        href: '#',
-        children: [
-          {
-            id: 'teachers',
-            label: 'المدرسين',
-            icon: 'fas fa-chalkboard-teacher',
-            href: '/admin/teachers',
-          },
-          {
-            id: 'students',
-            label: 'الطلاب',
-            icon: 'fas fa-user-graduate',
-            href: '/admin/students',
-          },
-          {
-            id: 'academies_list',
-            label: 'الأكاديميات',
-            icon: 'fas fa-building',
-            href: '/admin/academies',
-          },
-
-        ],
-      },
-      {
-        id: 'reports',
-        label: 'التقارير',
-        icon: 'fas fa-chart-line',
-        href: '/admin/reports',
-      },
-
-      {
-        id: 'access_control',
-        label: 'الصلاحيات',
-        icon: 'fas fa-shield-alt',
-        href: '#',
-        children: [
-          {
-            id: 'permissions',
-            label: 'الصلاحيات',
-            icon: 'fas fa-key',
-            href: '/admin/permissions',
-          },
-          {
-            id: 'roles',
-            label: 'الادوار',
-            icon: 'fas fa-user-tag',
-            href: '/admin/roles',
-          },
-        ],
-      },
-
-      {
-        id: 'notifications',
-        label: 'الإخطارات',
-        icon: 'fas fa-bell',
-        href: '/admin/notifications',
-      },
-      {
-        id: 'subscriptions',
-        label: 'الاشتراكات',
-        icon: 'fas fa-id-card',
-        href: '/admin/subscriptions',
-      },
-      {
-        id: 'settings',
-        label: 'الإعدادات',
-        icon: 'fas fa-cogs',
-        href: '/admin/settings',
-      },
-    ];
-  }
 
   if (role === 'teacher') {
     return [
@@ -229,7 +150,6 @@ const getSidebarItems = (role: string): SidebarItem[] => {
 
 const getRoleLabel = (role: string): string => {
   const labels: Record<string, string> = {
-    admin: 'مدير النظام',
     teacher: 'مدرس',
     student: 'طالب',
     secretary: 'سكرتير',

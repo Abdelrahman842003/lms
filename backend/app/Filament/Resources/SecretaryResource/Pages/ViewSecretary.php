@@ -37,16 +37,11 @@ class ViewSecretary extends ViewRecord
                             ->label('الاسم')
                             ->icon('heroicon-m-user'),
 
-                        TextEntry::make('email')
-                            ->label('البريد الإلكتروني')
-                            ->icon('heroicon-m-envelope')
-                            ->placeholder('غير محدد'),
-
                         TextEntry::make('phone')
                             ->label('رقم الهاتف')
                             ->icon('heroicon-m-phone'),
                     ])
-                    ->columns(4),
+                    ->columns(3),
 
                 Section::make('الأكاديميات والمعلمون')
                     ->schema([

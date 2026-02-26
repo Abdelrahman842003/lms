@@ -19,6 +19,12 @@ use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\FileUpload;
 use Filament\Schemas\Schema;
+use Filament\Actions\Action;
+use Filament\Actions\ViewAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\BulkActionGroup;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -53,20 +59,13 @@ class StudentResource extends BaseResource
                             ->maxLength(255)
                             ->placeholder('أدخل اسم الطالب'),
 
-                        TextInput::make('email')
-                            ->label('البريد الإلكتروني')
-                            ->email()
-                            ->unique(ignoreRecord: true)
-                            ->maxLength(255)
-                            ->placeholder('student@example.com'),
-
                         TextInput::make('phone')
                             ->label('رقم الهاتف')
                             ->tel()
                             ->maxLength(20)
                             ->placeholder('01xxxxxxxxx'),
                     ])
-                    ->columns(3),
+                    ->columns(2),
 
                 Section::make('معلومات ولي الأمر')
                     ->schema([
@@ -76,12 +75,6 @@ class StudentResource extends BaseResource
                             ->maxLength(20)
                             ->placeholder('01xxxxxxxxx'),
 
-                        TextInput::make('parent_email')
-                            ->label('بريد ولي الأمر')
-                            ->email()
-                            ->maxLength(255)
-                            ->placeholder('parent@example.com'),
-
                         Select::make('guardian_id')
                             ->label('ولي الأمر')
                             ->relationship('guardian', 'name')
@@ -89,38 +82,41 @@ class StudentResource extends BaseResource
                             ->preload()
                             ->placeholder('اختر ولي الأمر'),
                     ])
-                    ->columns(3),
+                    ->columns(2),
 
                 Section::make('المعلومات الأكاديمية')
                     ->schema([
                         Select::make('academy_id')
                             ->label('الأكاديمية')
-                            ->relationship('academies', 'name')
+                            ->options(fn () => Academy::pluck('name', 'id'))
                             ->searchable()
                             ->preload()
-                            ->placeholder('اختر الأكاديمية'),
+                            ->placeholder('اختر الأكاديمية')
+                            ->dehydrated(false)
+                            ->helperText('يتم ربط الطالب بالأكاديمية عبر التسجيلات'),
 
                         Select::make('grade_id')
                             ->label('الصف الدراسي')
-                            ->relationship('grades', 'name')
+                            ->options(fn () => Grade::pluck('name', 'id'))
                             ->searchable()
                             ->preload()
                             ->placeholder('اختر الصف')
+                            ->dehydrated(false)
                             ->live(),
 
                         Select::make('group_id')
                             ->label('المجموعة')
-                            ->relationship(
-                                name: 'groups',
-                                titleAttribute: 'name',
-                                modifyQueryUsing: fn (Builder $query, \Filament\Forms\Get $get) =>
-                                    $query->when($get('grade_id'), fn ($q, $gradeId) =>
-                                        $q->where('grade_id', $gradeId)
-                                    )
-                            )
+                            ->options(function (\Filament\Forms\Get $get) {
+                                $gradeId = $get('grade_id');
+                                if ($gradeId) {
+                                    return Group::where('grade_id', $gradeId)->pluck('name', 'id');
+                                }
+                                return Group::pluck('name', 'id');
+                            })
                             ->searchable()
                             ->preload()
-                            ->placeholder('اختر المجموعة'),
+                            ->placeholder('اختر المجموعة')
+                            ->dehydrated(false),
                     ])
                     ->columns(3),
 
@@ -223,14 +219,6 @@ class StudentResource extends BaseResource
                     ->sortable()
                     ->weight('font-bold'),
 
-                Tables\Columns\TextColumn::make('email')
-                    ->label('البريد الإلكتروني')
-                    ->searchable()
-                    ->sortable()
-                    ->copyable()
-                    ->icon('heroicon-m-envelope')
-                    ->toggleable(),
-
                 Tables\Columns\TextColumn::make('phone')
                     ->label('الهاتف')
                     ->searchable()
@@ -296,15 +284,15 @@ class StudentResource extends BaseResource
                     ->falseLabel('غير نشط'),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make()
+                ViewAction::make()
                     ->label('عرض')
                     ->icon('heroicon-m-eye'),
 
-                Tables\Actions\EditAction::make()
+                EditAction::make()
                     ->label('تعديل')
                     ->icon('heroicon-m-pencil-square'),
 
-                Tables\Actions\Action::make('toggleActive')
+                Action::make('toggleActive')
                     ->label(fn (Student $record): string => $record->is_active ? 'إلغاء التنشيط' : 'تنشيط')
                     ->icon(fn (Student $record): string => $record->is_active ? 'heroicon-m-x-circle' : 'heroicon-m-check-circle')
                     ->color(fn (Student $record): string => $record->is_active ? 'danger' : 'success')
@@ -313,14 +301,14 @@ class StudentResource extends BaseResource
                         $record->update(['is_active' => ! $record->is_active]);
                     }),
 
-                Tables\Actions\DeleteAction::make()
+                DeleteAction::make()
                     ->label('حذف')
                     ->icon('heroicon-m-trash')
                     ->requiresConfirmation(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make()
+                BulkActionGroup::make([
+                    DeleteBulkAction::make()
                         ->label('حذف المحدد')
                         ->requiresConfirmation(),
                 ]),

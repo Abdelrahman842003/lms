@@ -17,16 +17,13 @@ class SubscriptionExpiryWidget extends Widget
 
     protected string $view = 'filament.widgets.subscription-expiry-widget';
 
-    public function getExpiringSubscriptions(): Collection
+    public function getPendingSubscriptions(): Collection
     {
-        $sevenDaysFromNow = Carbon::now()->addDays(7);
-
         return Subscription::query()
             ->with(['subscriber'])
-            ->where('status', SubscriptionStatus::ACTIVE)
-            ->where('end_date', '<=', $sevenDaysFromNow)
-            ->where('end_date', '>=', Carbon::now())
-            ->orderBy('end_date')
+            ->where('status', SubscriptionStatus::PENDING)
+            ->where('month', '>=', Carbon::now()->startOfMonth())
+            ->orderBy('month')
             ->limit(10)
             ->get()
             ->map(function (Subscription $subscription) {
@@ -36,23 +33,23 @@ class SubscriptionExpiryWidget extends Widget
                     'type' => $subscription->type instanceof SubscriptionType
                         ? $subscription->type->value
                         : $subscription->type,
-                    'plan' => $subscription->plan,
-                    'expiry_date' => $subscription->end_date,
-                    'days_remaining' => Carbon::now()->diffInDays($subscription->end_date, false),
-                    'status' => 'expiring',
+                    'month' => $subscription->month,
+                    'amount_due' => $subscription->amount_due,
+                    'amount_paid' => $subscription->amount_paid,
+                    'status' => 'pending',
                 ];
             });
     }
 
-    public function getRecentlyExpiredSubscriptions(): Collection
+    public function getRecentPaidSubscriptions(): Collection
     {
         $sevenDaysAgo = Carbon::now()->subDays(7);
 
         return Subscription::query()
             ->with(['subscriber'])
-            ->where('status', SubscriptionStatus::EXPIRED)
-            ->where('end_date', '>=', $sevenDaysAgo)
-            ->orderByDesc('end_date')
+            ->where('status', SubscriptionStatus::PAID)
+            ->where('paid_at', '>=', $sevenDaysAgo)
+            ->orderByDesc('paid_at')
             ->limit(10)
             ->get()
             ->map(function (Subscription $subscription) {
@@ -62,64 +59,63 @@ class SubscriptionExpiryWidget extends Widget
                     'type' => $subscription->type instanceof SubscriptionType
                         ? $subscription->type->value
                         : $subscription->type,
-                    'plan' => $subscription->plan,
-                    'expiry_date' => $subscription->end_date,
-                    'days_remaining' => Carbon::now()->diffInDays($subscription->end_date, false),
-                    'status' => 'expired',
+                    'month' => $subscription->month,
+                    'amount_due' => $subscription->amount_due,
+                    'amount_paid' => $subscription->amount_paid,
+                    'status' => 'paid',
                 ];
             });
     }
 
-    public function getExpiringAcademies(): Collection
+    public function getPendingAcademies(): Collection
     {
-        return $this->getExpiringSubscriptions()
+        return $this->getPendingSubscriptions()
             ->filter(fn ($item) => $item['type'] === SubscriptionType::ACADEMY->value);
     }
 
-    public function getExpiringTeachers(): Collection
+    public function getPendingTeachers(): Collection
     {
-        return $this->getExpiringSubscriptions()
+        return $this->getPendingSubscriptions()
             ->filter(fn ($item) => $item['type'] === SubscriptionType::TEACHER->value);
     }
 
-    public function getExpiredAcademies(): Collection
+    public function getPaidAcademies(): Collection
     {
-        return $this->getRecentlyExpiredSubscriptions()
+        return $this->getRecentPaidSubscriptions()
             ->filter(fn ($item) => $item['type'] === SubscriptionType::ACADEMY->value);
     }
 
-    public function getExpiredTeachers(): Collection
+    public function getPaidTeachers(): Collection
     {
-        return $this->getRecentlyExpiredSubscriptions()
+        return $this->getRecentPaidSubscriptions()
             ->filter(fn ($item) => $item['type'] === SubscriptionType::TEACHER->value);
     }
 
-    public function getExpiryBadgeColor(int $daysRemaining): string
+    public function getStatusBadgeColor(string $status): string
     {
-        return match (true) {
-            $daysRemaining <= 1 => 'danger',
-            $daysRemaining <= 3 => 'warning',
-            default => 'info',
+        return match ($status) {
+            'pending' => 'warning',
+            'paid' => 'success',
+            default => 'gray',
         };
     }
 
-    public function getExpiryBadgeText(int $daysRemaining): string
+    public function getStatusBadgeText(string $status): string
     {
-        return match (true) {
-            $daysRemaining === 0 => __('Today'),
-            $daysRemaining === 1 => __('Tomorrow'),
-            $daysRemaining < 0 => __('Expired :days days ago', ['days' => abs($daysRemaining)]),
-            default => __(':days days', ['days' => $daysRemaining]),
+        return match ($status) {
+            'pending' => __('Pending Payment'),
+            'paid' => __('Paid'),
+            default => $status,
         };
     }
 
     protected function getViewData(): array
     {
         return [
-            'expiringAcademies' => $this->getExpiringAcademies(),
-            'expiringTeachers' => $this->getExpiringTeachers(),
-            'expiredAcademies' => $this->getExpiredAcademies(),
-            'expiredTeachers' => $this->getExpiredTeachers(),
+            'pendingAcademies' => $this->getPendingAcademies(),
+            'pendingTeachers' => $this->getPendingTeachers(),
+            'paidAcademies' => $this->getPaidAcademies(),
+            'paidTeachers' => $this->getPaidTeachers(),
         ];
     }
 }

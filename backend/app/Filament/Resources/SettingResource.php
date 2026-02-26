@@ -11,6 +11,12 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Select;
 use Filament\Schemas\Schema;
+use Filament\Actions\Action;
+use Filament\Actions\ViewAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\BulkActionGroup;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -246,18 +252,18 @@ class SettingResource extends BaseResource
                     ->falseLabel('خاص'),
             ])
             ->actions([
-                Tables\Actions\EditAction::make()
+                EditAction::make()
                     ->label('تعديل')
                     ->icon('heroicon-m-pencil-square'),
 
-                Tables\Actions\DeleteAction::make()
+                DeleteAction::make()
                     ->label('حذف')
                     ->icon('heroicon-m-trash')
                     ->requiresConfirmation(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make()
+                BulkActionGroup::make([
+                    DeleteBulkAction::make()
                         ->label('حذف المحدد')
                         ->requiresConfirmation(),
                 ]),

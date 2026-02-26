@@ -45,7 +45,6 @@ export interface VoiceLimitResponse {
 
 const getNotificationEndpoint = () => {
   const userType = localStorage.getItem('userType');
-  if (userType === 'admin') return '/api/v1/admin/notifications';
   if (userType === 'student') return '/api/v1/student/notifications';
   if (userType === 'parent') return '/api/v1/parent/notifications';
   if (userType === 'secretary') return '/api/v1/secretary/notifications';

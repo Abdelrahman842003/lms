@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers\Filament;
 
+use App\Filament\Auth\Login;
 use App\Filament\Pages\Dashboard;
 use App\Filament\Widgets\StatsOverviewWidget;
 use App\Filament\Widgets\RecentAcademiesWidget;
@@ -32,7 +33,7 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->authGuard('admin')
-            ->login()
+            ->login(Login::class)
             ->profile()
             ->colors([
                 'primary' => Color::Indigo,
@@ -93,8 +94,6 @@ class AdminPanelProvider extends PanelProvider
             ->authMiddleware([
                 Authenticate::class,
             ])
-            // Admin-specific auth guard middleware
-            ->authGuard('admin')
             // RTL support for Arabic
             ->renderHook(
                 'panels::head.start',
@@ -105,7 +104,6 @@ class AdminPanelProvider extends PanelProvider
                 fn (): string => '<script>document.documentElement.setAttribute("dir", "rtl"); document.documentElement.setAttribute("lang", "ar");</script>',
             )
             // Custom theme settings
-            ->font('Tajawal')
-            ->theme(asset('css/filament/admin/theme.css'));
+            ->font('Tajawal');
     }
 }

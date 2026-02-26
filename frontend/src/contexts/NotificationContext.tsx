@@ -16,7 +16,7 @@ const NotificationContext = createContext<NotificationContextType | null>(null);
 interface NotificationProviderProps {
   children: ReactNode;
   userId: string;
-  userType: 'student' | 'teacher' | 'admin';
+  userType: 'student' | 'teacher';
   token: string;
   onNotification?: (notification: Notification) => void;
 }

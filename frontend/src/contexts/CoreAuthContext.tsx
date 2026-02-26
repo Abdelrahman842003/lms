@@ -12,7 +12,6 @@ import { useRouter } from "next/navigation";
 import {
   loginTeacher,
   loginStudent,
-  loginAdmin,
   loginSecretary,
   loginParent,
   logout as apiLogout,
@@ -27,7 +26,7 @@ interface CoreAuthContextType {
   login: (
     phone: string,
     password: string,
-    userType?: "teacher" | "student" | "secretary" | "admin" | "parent" | "academy"
+    userType?: "teacher" | "student" | "secretary" | "parent" | "academy"
   ) => Promise<void>;
   logout: () => void;
   updateUser: (userData: Partial<User>) => void;
@@ -63,7 +62,7 @@ export function CoreAuthProvider({ children }: { children: ReactNode }) {
     const validateSession = async () => {
       try {
         const userType = localStorage.getItem("userType") as
-          | "teacher" | "student" | "secretary" | "admin" | "academy" | "parent" | null;
+          | "teacher" | "student" | "secretary" | "academy" | "parent" | null;
 
         if (userType) {
           const response = await getCurrentUser(userType);
@@ -123,7 +122,7 @@ export function CoreAuthProvider({ children }: { children: ReactNode }) {
   const login = async (
     phone: string,
     password: string,
-    userType: "teacher" | "student" | "secretary" | "admin" | "parent" | "academy" = "teacher"
+    userType: "teacher" | "student" | "secretary" | "parent" | "academy" = "teacher"
   ) => {
     try {
       setIsLoading(true);
@@ -133,8 +132,6 @@ export function CoreAuthProvider({ children }: { children: ReactNode }) {
         response = await loginTeacher(phone, password);
       } else if (userType === "student") {
         response = await loginStudent(phone, password);
-      } else if (userType === "admin") {
-        response = await loginAdmin(phone, password);
       } else if (userType === "parent") {
         response = await loginParent(phone, password);
       } else if (userType === "academy") {
@@ -195,7 +192,7 @@ export function CoreAuthProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     try {
       const userType = localStorage.getItem("userType") as
-        | "teacher" | "student" | "secretary" | "admin" | "academy" | "parent" | null;
+        | "teacher" | "student" | "secretary" | "academy" | "parent" | null;
 
       let fcmToken = null;
       try {

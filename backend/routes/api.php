@@ -1,6 +1,5 @@
 <?php
 
-use App\Domains\Application\Http\Controllers\Admin\AuthController as AdminAuthController;
 use App\Domains\Application\Http\Controllers\Teacher\AuthController as TeacherAuthController;
 use App\Domains\Application\Http\Controllers\Student\AuthController as StudentAuthController;
 use App\Domains\Application\Http\Controllers\Secretary\AuthController as SecretaryAuthController;
@@ -18,101 +17,6 @@ Route::prefix('v1')->group(function () {
 // ============================================
 // Broadcasting Authentication Route
 // ============================================
-
-// ============================================
-// Admin Authentication Routes (Central DB)
-// ============================================
-Route::prefix('admin')->name('admin.')->group(function () {
-    Route::post('/login', [AdminAuthController::class, 'login'])
-        ->middleware(['throttle.login', 'auth.cookies']);
-    Route::post('/register', [AdminAuthController::class, 'register']);
-    
-    Route::middleware('auth:sanctum')->group(function () {
-        Route::post('/logout', [AdminAuthController::class, 'logout']);
-        Route::get('/me', [AdminAuthController::class, 'me']);
-        Route::put('/profile', [AdminAuthController::class, 'updateProfile']);
-        Route::post('/change-password', [AdminAuthController::class, 'changePassword']);
-        Route::get('/teachers', [\App\Domains\Application\Http\Controllers\Admin\TeacherController::class, 'index']);
-        Route::post('/teachers', [\App\Domains\Application\Http\Controllers\Admin\TeacherController::class, 'store']);
-        Route::put('/teachers/{teacher}', [\App\Domains\Application\Http\Controllers\Admin\TeacherController::class, 'update']);
-        Route::get('/teachers/{teacher}', [\App\Domains\Application\Http\Controllers\Admin\TeacherController::class, 'show']);
-        Route::delete('/teachers/{teacher}', [\App\Domains\Application\Http\Controllers\Admin\TeacherController::class, 'destroy']);
-        Route::post('/teachers/{teacher}/login', [\App\Domains\Application\Http\Controllers\Admin\TeacherController::class, 'loginAsTeacher']);
-        Route::get('/teachers/{teacher}/subscription', [\App\Domains\Application\Http\Controllers\Admin\TeacherController::class, 'getSubscription']);
-        Route::post('/teachers/{teacher}/subscription', [\App\Domains\Application\Http\Controllers\Admin\TeacherController::class, 'updateSubscription']);
-        Route::post('/teachers/{teacher}/plan', [\App\Domains\Application\Http\Controllers\Admin\TeacherController::class, 'updatePlan']);
-        Route::put('/teachers/{teacher}/toggle-status', [\App\Domains\Application\Http\Controllers\Admin\TeacherController::class, 'toggleStatus']);
-        Route::put('/teachers/{teacher}/independent-status/toggle', [\App\Domains\Application\Http\Controllers\Admin\TeacherController::class, 'toggleIndependentStatus']);
-        Route::put('/teachers/{teacher}/academies/{academy}/toggle-status', [\App\Domains\Application\Http\Controllers\Admin\TeacherController::class, 'toggleAcademyStatus']);
-        Route::post('/teachers/{teacher}/approve', [\App\Domains\Application\Http\Controllers\Admin\TeacherController::class, 'approve']);
-        Route::post('/teachers/{teacher}/enable-independent', [\App\Domains\Application\Http\Controllers\Admin\TeacherController::class, 'enableIndependent']);
-        Route::post('/teachers/{teacher}/disable-independent', [\App\Domains\Application\Http\Controllers\Admin\TeacherController::class, 'disableIndependent']);
-        Route::post('/teachers/{teacher}/academies', [\App\Domains\Application\Http\Controllers\Admin\TeacherController::class, 'addToAcademy']);
-        Route::delete('/teachers/{teacher}/academies/{academy}', [\App\Domains\Application\Http\Controllers\Admin\TeacherController::class, 'removeFromAcademy']);
-        Route::get('/students/statistics', [\App\Domains\Application\Http\Controllers\Admin\StudentController::class, 'statistics']);
-        Route::get('/students', [\App\Domains\Application\Http\Controllers\Admin\StudentController::class, 'index']);
-        Route::post('/students', [\App\Domains\Application\Http\Controllers\Admin\StudentController::class, 'store']);
-        Route::put('/students/{student}', [\App\Domains\Application\Http\Controllers\Admin\StudentController::class, 'update']);
-        Route::put('/exams/{exam}/toggle-status', [ExamController::class, 'toggleStatus']);
-        Route::put('/exams/{exam}/end', [ExamController::class, 'endExam']);
-        Route::get('/dashboard/stats', [AdminAuthController::class, 'dashboardStats']);
-        
-        // Roles and Permissions
-        Route::apiResource('roles', \App\Domains\Application\Http\Controllers\Admin\RoleController::class);
-        Route::apiResource('permissions', \App\Domains\Application\Http\Controllers\Admin\PermissionController::class);
-
-        // Notifications
-        Route::get('/notifications', [\App\Domains\Application\Http\Controllers\Admin\NotificationController::class, 'index']);
-        Route::post('/notifications', [\App\Domains\Application\Http\Controllers\Admin\NotificationController::class, 'store']);
-        Route::post('/notifications/{id}/read', [\App\Domains\Application\Http\Controllers\Admin\NotificationController::class, 'markAsRead']);
-        Route::get('/notifications/voice-limit', [\App\Domains\Application\Http\Controllers\Admin\NotificationController::class, 'checkVoiceLimit']);
-        Route::post('/notifications/voice', [\App\Domains\Application\Http\Controllers\Admin\NotificationController::class, 'storeVoice']);
-
-        // Settings
-        Route::get('/settings', [\App\Domains\Application\Http\Controllers\Admin\SettingsController::class, 'index']);
-        Route::post('/settings', [\App\Domains\Application\Http\Controllers\Admin\SettingsController::class, 'update']);
-
-        // Reports
-        Route::get('/reports/teachers', [\App\Domains\Application\Http\Controllers\Admin\ReportController::class, 'teachersList']);
-        Route::get('/reports/academies', [\App\Domains\Application\Http\Controllers\Admin\ReportController::class, 'academiesList']);
-        Route::get('/reports/teacher/{teacher}', [\App\Domains\Application\Http\Controllers\Admin\ReportController::class, 'teacherReport']);
-        Route::get('/reports/teacher/{teacher}/pdf', [\App\Domains\Application\Http\Controllers\Admin\ReportController::class, 'teacherReportPdf']);
-        Route::get('/reports/admin', [\App\Domains\Application\Http\Controllers\Admin\ReportController::class, 'adminReport']);
-        Route::get('/reports/admin/pdf', [\App\Domains\Application\Http\Controllers\Admin\ReportController::class, 'adminReportPdf']);
-        Route::get('/reports/academy/{academy}', [\App\Domains\Application\Http\Controllers\Admin\ReportController::class, 'academyReport']);
-        Route::get('/reports/academy/{academy}/pdf', [\App\Domains\Application\Http\Controllers\Admin\ReportController::class, 'academyReportPdf']);
-
-        // Academy Management
-        Route::apiResource('academies', \App\Domains\Application\Http\Controllers\Admin\AcademyController::class);
-        Route::put('/academies/{academy}/toggle-status', [\App\Domains\Application\Http\Controllers\Admin\AcademyController::class, 'toggleStatus']);
-        Route::get('/academies/{academy}/secretaries', [\App\Domains\Application\Http\Controllers\Admin\AcademyController::class, 'secretaries']);
-        Route::post('/academies/{academy}/secretaries', [\App\Domains\Application\Http\Controllers\Admin\AcademyController::class, 'addSecretary']);
-        Route::delete('/academies/{academy}/secretaries/{secretary}', [\App\Domains\Application\Http\Controllers\Admin\AcademyController::class, 'removeSecretary']);
-        Route::post('/academies/{academy}/regenerate-qr', [\App\Domains\Application\Http\Controllers\Admin\AcademyController::class, 'regenerateQrCodes']);
-        Route::post('/academies/{academy}/plan', [\App\Domains\Application\Http\Controllers\Admin\AcademyController::class, 'updatePlan']);
-        Route::get('/academies/{academy}/subscription', [\App\Domains\Application\Http\Controllers\Admin\AcademyController::class, 'getSubscription']);
-        Route::post('/academies/{academy}/subscription', [\App\Domains\Application\Http\Controllers\Admin\AcademyController::class, 'updateSubscription']);
-        Route::get('/academies/{academy}/subscriptions', [\App\Domains\Application\Http\Controllers\Admin\AcademyController::class, 'subscriptions']);
-
-        // Subscriptions List (Aggregated Teachers and Academies)
-        Route::get('/subscriptions', [\App\Domains\Application\Http\Controllers\Admin\SubscriptionController::class, 'index']);
-
-        // Subscriptions Management (Unified)
-        Route::get('/subscriptions/statistics', [\App\Domains\Application\Http\Controllers\Admin\SubscriptionController::class, 'statistics']);
-        Route::post('/subscriptions/{subscription}/pay', [\App\Domains\Application\Http\Controllers\Admin\SubscriptionController::class, 'recordPayment']);
-        
-        // Teacher Subscriptions
-        Route::get('/teachers/{teacher}/subscriptions', [\App\Domains\Application\Http\Controllers\Admin\SubscriptionController::class, 'teacherSubscriptions']);
-        Route::get('/teachers/{teacher}/subscriptions/current', [\App\Domains\Application\Http\Controllers\Admin\SubscriptionController::class, 'getTeacherSubscription']);
-        Route::get('/teachers/{teacher}/quota-check', [\App\Domains\Application\Http\Controllers\Admin\SubscriptionController::class, 'canTeacherAddStudent']);
-        
-        // Academy Subscriptions
-        Route::get('/academies/{academy}/subscriptions', [\App\Domains\Application\Http\Controllers\Admin\SubscriptionController::class, 'academySubscriptions']);
-        Route::get('/academies/{academy}/subscriptions/current', [\App\Domains\Application\Http\Controllers\Admin\SubscriptionController::class, 'getAcademySubscription']);
-        Route::get('/academies/{academy}/quota-check', [\App\Domains\Application\Http\Controllers\Admin\SubscriptionController::class, 'canAcademyAddEnrollment']);
-
-    });
-});
 
 // ============================================
 // Academy Authentication Routes
@@ -411,7 +315,7 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 // Public Settings
-Route::get('/public-settings', [\App\Domains\Application\Http\Controllers\Admin\SettingsController::class, 'getPublicSettings']);
+Route::get('/public-settings', [\App\Domains\Application\Http\Controllers\Api\PublicController::class, 'publicSettings']);
 
 // Fallback login route for unauthenticated API requests
 Route::get('/login', function () {

@@ -8,13 +8,13 @@ use App\Domains\Application\Services\Admin\ReportService;
 use App\Domains\Auth\Models\Academy;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Section;
+use Filament\Schemas\Components\Section;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
-use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Pages\Page;
-use Filament\Actions\Action;
-use Filament\Forms\Components\Actions\Action as FormAction;
+use Filament\Actions\Action as PageAction;
+use Filament\Schemas\Schema;
 
 class ReportsPage extends Page implements HasForms
 {
@@ -50,10 +50,10 @@ class ReportsPage extends Page implements HasForms
         ]);
     }
 
-    public function form(Form $form): Form
+    public function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 Section::make('فلاتر التقرير')
                     ->schema([
                         Select::make('report_type')
@@ -86,14 +86,13 @@ class ReportsPage extends Page implements HasForms
                     ])
                     ->columns(2)
                     ->footerActions([
-                        FormAction::make('generate')
+                        \Filament\Actions\Action::make('generate')
                             ->label('إنشاء التقرير')
                             ->icon('heroicon-m-document-chart-bar')
                             ->color('primary')
                             ->action(fn () => $this->generateReport()),
                     ]),
-            ])
-            ->statePath('data');
+            ]);
     }
 
     public function generateReport(): void
@@ -130,13 +129,16 @@ class ReportsPage extends Page implements HasForms
     protected function getHeaderActions(): array
     {
         return [
-            Action::make('export')
+            PageAction::make('export')
                 ->label('تصدير PDF')
                 ->icon('heroicon-m-document-arrow-down')
                 ->color('success')
                 ->action(function () {
                     // PDF export logic
-                    $this->notify('success', 'تم تصدير التقرير بنجاح');
+                    Notification::make()
+                        ->success()
+                        ->title('تم تصدير التقرير بنجاح')
+                        ->send();
                 }),
         ];
     }

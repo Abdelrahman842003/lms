@@ -32,16 +32,11 @@ class ViewAcademy extends ViewRecord
                             ->label('اسم الأكاديمية')
                             ->icon('heroicon-m-building-library'),
 
-                        TextEntry::make('email')
-                            ->label('البريد الإلكتروني')
-                            ->icon('heroicon-m-envelope')
-                            ->placeholder('غير محدد'),
-
                         TextEntry::make('phone')
                             ->label('رقم الهاتف')
                             ->icon('heroicon-m-phone'),
                     ])
-                    ->columns(4),
+                    ->columns(3),
 
                 Section::make('العنوان')
                     ->schema([

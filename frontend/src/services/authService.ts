@@ -65,9 +65,6 @@ export {
   downloadMyTeacherReportPdf,
 } from './teacher/teacherService';
 
-// Re-export everything from admin service
-export * from './admin/adminService';
-
 // Re-export base API utilities
 export { 
   fetchApi, 

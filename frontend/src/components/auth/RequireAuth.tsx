@@ -30,8 +30,7 @@ export const RequireAuth: React.FC<RequireAuthProps> = ({
     if (allowedRoles.length > 0 && !allowedRoles.includes(user.userType)) {
       // User is logged in but doesn't have permission
       // Redirect to their dashboard or home
-      if (user.userType === 'admin') router.push('/admin/dashboard');
-      else if (user.userType === 'teacher') router.push('/teacher/dashboard');
+      if (user.userType === 'teacher') router.push('/teacher/dashboard');
       else if (user.userType === 'student') router.push('/student/dashboard');
       else router.push('/');
       return;

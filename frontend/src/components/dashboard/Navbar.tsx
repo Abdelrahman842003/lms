@@ -15,7 +15,7 @@ import { Icon } from '@/components/ui/Icon';
 
 
 interface NavbarProps {
-  role: 'admin' | 'teacher' | 'student' | 'secretary' | 'parent' | 'academy';
+  role: 'teacher' | 'student' | 'secretary' | 'parent' | 'academy';
   user?: {
     name: string;
     avatar?: string;
@@ -32,83 +32,6 @@ const getNavItems = (role: string): SidebarItem[] => {
       href: `/${role}/dashboard`,
     },
   ];
-
-  if (role === 'admin') {
-    return [
-      ...commonItems,
-      {
-        id: 'users_management',
-        label: 'المستخدمين',
-        icon: 'users-cog',
-        href: '/admin/users-management',
-        children: [
-          {
-            id: 'teachers',
-            label: 'المدرسين',
-            icon: 'chalkboard-teacher',
-            href: '/admin/teachers',
-          },
-          {
-            id: 'students',
-            label: 'الطلاب',
-            icon: 'user-graduate',
-            href: '/admin/students',
-          },
-          {
-            id: 'academies_list',
-            label: 'الأكاديميات',
-            icon: 'building',
-            href: '/admin/academies',
-          },
-        ],
-      },
-      {
-        id: 'notifications',
-        label: 'الإخطارات',
-        icon: 'bell',
-        href: '/admin/notifications',
-      },
-      {
-        id: 'subscriptions',
-        label: 'الاشتراكات',
-        icon: 'id-card',
-        href: '/admin/subscriptions',
-      },
-      {
-        id: 'reports',
-        label: 'التقارير',
-        icon: 'chart-bar',
-        href: '/admin/reports',
-      },
-
-      {
-        id: 'users',
-        label: 'الصلاحيات',
-        icon: 'users',
-        href: '/admin/users',
-        children: [
-          {
-            id: 'roles',
-            label: 'الأدوار (Roles)',
-            icon: 'user-tag',
-            href: '/admin/roles',
-          },
-          {
-            id: 'permissions',
-            label: 'الصلاحيات (Permissions)',
-            icon: 'key',
-            href: '/admin/permissions',
-          },
-        ],
-      },
-      {
-        id: 'settings',
-        label: 'الإعدادات',
-        icon: 'cogs',
-        href: '/admin/settings',
-      },
-    ];
-  }
 
   if (role === 'academy') {
     return [
@@ -324,7 +247,6 @@ const getParentNavItems = (): SidebarItem[] => {
 
 const getRoleLabel = (role: string): string => {
   const labels: Record<string, string> = {
-    admin: 'مدير النظام',
     teacher: 'مدرس',
     student: 'طالب',
     secretary: 'سكرتير',
@@ -411,14 +333,6 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
   const pathname = usePathname();
   const router = useRouter();
   const { logout, user: authUser, selectedAcademy, isLoading } = useAuth();
-  
-  const [isAdminImpersonating, setIsAdminImpersonating] = useState(false);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setIsAdminImpersonating(!!localStorage.getItem('adminToken'));
-    }
-  }, []);
   
   // Use authUser from context if available, otherwise fall back to prop
   const user = authUser || userProp;
@@ -554,31 +468,6 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
     if (onMenuClick) onMenuClick();
   };
 
-  const handleReturnToAdmin = () => {
-    const adminToken = localStorage.getItem('adminToken');
-    const adminUser = localStorage.getItem('adminUser');
-    const adminUserType = localStorage.getItem('adminUserType');
-
-    if (adminToken && adminUser && adminUserType) {
-      // Restore admin session
-      localStorage.setItem('token', adminToken);
-      localStorage.setItem('user', adminUser);
-      localStorage.setItem('userType', adminUserType);
-
-      // Clear admin backup
-      localStorage.removeItem('adminToken');
-      localStorage.removeItem('adminUser');
-      localStorage.removeItem('adminUserType');
-
-      // Set cookies
-      document.cookie = "auth_state=true; path=/; max-age=2592000; SameSite=Lax";
-      document.cookie = `user_role=${adminUserType}; path=/; max-age=2592000; SameSite=Lax`;
-
-      // Redirect
-      window.location.href = '/admin/teachers';
-    }
-  };
-
   return (
     <>
       <nav className={`navbar ${isScrolled ? 'scrolled' : ''}`}>
@@ -645,18 +534,6 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
           {/* Right Side Group: Notifications + User + Mobile Toggle */}
           <div className="navbar-right-group">
 
-          {/* Return to Admin Button */}
-          {isAdminImpersonating && (
-              <Button
-                variant="ghost"
-                onClick={handleReturnToAdmin}
-                className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-lg transition-colors border border-red-500/20 text-sm font-medium ml-2"
-              >
-                <Icon name="user-shield" size="sm" />
-                <span>العودة للأدمن</span>
-              </Button>
-            )}
-            
             {/* Teacher Selector (Student Only) */}
             {role === 'student' && (
               <TeacherSelectionDropdown />

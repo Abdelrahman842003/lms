@@ -19,7 +19,7 @@ class StatsOverviewWidget extends BaseWidget
         $totalAcademies = Academy::count();
         $totalTeachers = Teacher::count();
         $totalStudents = Student::count();
-        $activeSubscriptions = Subscription::active()->count();
+        $activeSubscriptions = Subscription::paid()->count();
 
         // Get last month's data for trends
         $lastMonthStart = now()->subMonth()->startOfMonth();
@@ -43,10 +43,10 @@ class StatsOverviewWidget extends BaseWidget
 
         // Subscription trends
         $subscriptionsLastMonth = Subscription::whereBetween('created_at', [$lastMonthStart, $lastMonthEnd])
-            ->where('status', 'active')
+            ->paid()
             ->count();
         $subscriptionsThisMonth = Subscription::where('created_at', '>=', $thisMonthStart)
-            ->where('status', 'active')
+            ->paid()
             ->count();
         $subscriptionTrend = $this->calculateTrend($subscriptionsThisMonth, $subscriptionsLastMonth);
 
@@ -77,7 +77,7 @@ class StatsOverviewWidget extends BaseWidget
                 ->descriptionIcon($subscriptionTrend['icon'])
                 ->color($subscriptionTrend['color'])
                 ->icon('heroicon-o-credit-card')
-                ->chart($this->getTrendChart(Subscription::class, fn ($q) => $q->where('status', 'active'))),
+                ->chart($this->getTrendChart(Subscription::class, fn ($q) => $q->paid())),
         ];
     }
 

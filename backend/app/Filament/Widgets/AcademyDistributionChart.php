@@ -19,13 +19,14 @@ class AcademyDistributionChart extends ChartWidget
     protected function getData(): array
     {
         $data = Academy::query()
-            ->select('subscription_plan', DB::raw('COUNT(*) as count'))
-            ->groupBy('subscription_plan')
-            ->pluck('count', 'subscription_plan')
+            ->select('plan_type', DB::raw('COUNT(*) as count'))
+            ->whereNotNull('plan_type')
+            ->groupBy('plan_type')
+            ->pluck('count', 'plan_type')
             ->toArray();
 
         // Ensure we have all plan types with defaults
-        $plans = ['basic', 'standard', 'premium', 'enterprise'];
+        $plans = ['free', 'basic', 'pro', 'enterprise'];
         $chartData = [];
         $labels = [];
 
@@ -129,11 +130,12 @@ class AcademyDistributionChart extends ChartWidget
     public function getMostPopularPlan(): ?string
     {
         $plan = Academy::query()
-            ->select('subscription_plan', DB::raw('COUNT(*) as count'))
-            ->groupBy('subscription_plan')
+            ->select('plan_type', DB::raw('COUNT(*) as count'))
+            ->whereNotNull('plan_type')
+            ->groupBy('plan_type')
             ->orderByDesc('count')
             ->first();
 
-        return $plan?->subscription_plan;
+        return $plan?->plan_type;
     }
 }

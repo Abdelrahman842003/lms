@@ -18,36 +18,6 @@ import type {
 export type { AuthResponse, TeacherInfo, ChildInfo, AcademyInfo };
 
 /**
- * Login as an admin
- */
-export async function loginAdmin(
-  username: string,
-  password: string
-): Promise<AuthResponse> {
-  const data = await fetchApi<{
-    access_token: string;
-    refresh_token?: string;
-    user: AuthResponse['user'];
-    role: UserType;
-  }>(ENDPOINTS.LOGIN_ADMIN, {
-    method: 'POST',
-    body: JSON.stringify({ username, password }),
-  }, true);
-
-  // Store token in memory (secure) instead of localStorage
-  if (data.access_token) {
-    setAccessToken(data.access_token, 60);
-  }
-
-  return {
-    token: data.access_token || '',
-    refresh_token: data.refresh_token,
-    user: data.user,
-    role: data.role,
-  };
-}
-
-/**
  * Login as a teacher
  */
 export async function loginTeacher(
@@ -196,7 +166,6 @@ export async function logout(
   fcmToken?: string | null
 ): Promise<{ message: string }> {
   const endpointMap: Record<UserType, string> = {
-    admin: ENDPOINTS.LOGOUT_ADMIN,
     teacher: ENDPOINTS.LOGOUT_TEACHER,
     student: ENDPOINTS.LOGOUT_STUDENT,
     secretary: ENDPOINTS.LOGOUT_SECRETARY,
@@ -222,7 +191,6 @@ export async function getCurrentUser(
   userType: UserType
 ): Promise<AuthResponse> {
   const endpointMap: Record<UserType, string> = {
-    admin: ENDPOINTS.ME_ADMIN,
     teacher: ENDPOINTS.ME_TEACHER,
     student: ENDPOINTS.ME_STUDENT,
     secretary: ENDPOINTS.ME_SECRETARY,

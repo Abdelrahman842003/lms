@@ -39,15 +39,13 @@ export default function LoginPage() {
     if (authLoading) return;
     
     if (user) {
-      const dashboardPath = user.userType === 'admin' 
-        ? '/admin/dashboard'
-        : user.userType === 'secretary' 
-          ? '/teacher/dashboard'
-          : user.userType === 'academy'
-            ? '/academy/dashboard'
-            : user.userType === 'parent'
-              ? '/parent/children'
-              : `/${user.userType}/dashboard`;
+      const dashboardPath = user.userType === 'secretary' 
+        ? '/teacher/dashboard'
+        : user.userType === 'academy'
+          ? '/academy/dashboard'
+          : user.userType === 'parent'
+            ? '/parent/children'
+            : `/${user.userType}/dashboard`;
       router.replace(dashboardPath);
     }
   }, [user, authLoading, router]);

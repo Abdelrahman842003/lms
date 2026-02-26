@@ -37,17 +37,12 @@ class ViewStudent extends ViewRecord
                             ->label('الاسم')
                             ->icon('heroicon-m-user'),
 
-                        TextEntry::make('email')
-                            ->label('البريد الإلكتروني')
-                            ->icon('heroicon-m-envelope')
-                            ->placeholder('غير محدد'),
-
                         TextEntry::make('phone')
                             ->label('رقم الهاتف')
                             ->icon('heroicon-m-phone')
                             ->placeholder('غير محدد'),
                     ])
-                    ->columns(4),
+                    ->columns(3),
 
                 Section::make('معلومات ولي الأمر')
                     ->schema([
@@ -56,17 +51,12 @@ class ViewStudent extends ViewRecord
                             ->icon('heroicon-m-phone')
                             ->placeholder('غير محدد'),
 
-                        TextEntry::make('parent_email')
-                            ->label('بريد ولي الأمر')
-                            ->icon('heroicon-m-envelope')
-                            ->placeholder('غير محدد'),
-
                         TextEntry::make('guardian.name')
                             ->label('ولي الأمر')
                             ->icon('heroicon-m-user')
                             ->placeholder('غير محدد'),
                     ])
-                    ->columns(3),
+                    ->columns(2),
 
                 Section::make('المعلومات الأكاديمية')
                     ->schema([

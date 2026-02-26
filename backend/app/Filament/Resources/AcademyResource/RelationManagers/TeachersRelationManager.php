@@ -8,6 +8,11 @@ use Filament\Forms\Components\Select;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
 use Filament\Tables;
+use Filament\Actions\Action;
+use Filament\Actions\DetachAction;
+use Filament\Actions\AttachAction;
+use Filament\Actions\DetachBulkAction;
+use Filament\Actions\BulkActionGroup;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -25,11 +30,6 @@ class TeachersRelationManager extends RelationManager
         return $schema
             ->components([
                 TextInput::make('name')
-                    ->required()
-                    ->maxLength(255),
-
-                TextInput::make('email')
-                    ->email()
                     ->required()
                     ->maxLength(255),
 
@@ -65,11 +65,6 @@ class TeachersRelationManager extends RelationManager
                     ->searchable()
                     ->sortable()
                     ->weight('font-bold'),
-
-                Tables\Columns\TextColumn::make('email')
-                    ->searchable()
-                    ->sortable()
-                    ->icon('heroicon-o-envelope'),
 
                 Tables\Columns\TextColumn::make('phone')
                     ->searchable()
@@ -107,27 +102,27 @@ class TeachersRelationManager extends RelationManager
                     ->toggle(),
             ])
             ->headerActions([
-                Tables\Actions\AttachAction::make()
+                AttachAction::make()
                     ->preloadRecordSelect()
-                    ->recordSelectSearchColumns(['name', 'email'])
+                    ->recordSelectSearchColumns(['name', 'phone'])
                     ->modalHeading('Attach Teacher to Academy')
                     ->modalDescription('Search for a teacher to attach to this academy.'),
             ])
             ->actions([
-                Tables\Actions\Action::make('view')
+                Action::make('view')
                     ->url(fn (Model $record): string => TeacherResource::getUrl('view', ['record' => $record]))
                     ->icon('heroicon-o-eye')
                     ->color('primary'),
 
-                Tables\Actions\DetachAction::make()
+                DetachAction::make()
                     ->requiresConfirmation()
                     ->modalHeading('Detach Teacher')
                     ->modalDescription('Are you sure you want to detach this teacher from the academy?')
                     ->modalSubmitActionLabel('Yes, Detach'),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DetachBulkAction::make()
+                BulkActionGroup::make([
+                    DetachBulkAction::make()
                         ->requiresConfirmation()
                         ->modalHeading('Detach Selected Teachers')
                         ->modalDescription('Are you sure you want to detach the selected teachers from this academy?'),

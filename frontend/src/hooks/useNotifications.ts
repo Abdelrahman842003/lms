@@ -16,7 +16,7 @@ export interface Notification {
 
 interface UseNotificationsOptions {
   userId: string;
-  userType: 'student' | 'teacher' | 'admin';
+  userType: 'student' | 'teacher';
   token: string;
   onNotification?: (notification: Notification) => void;
   enableSound?: boolean;

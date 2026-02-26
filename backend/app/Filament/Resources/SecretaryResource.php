@@ -11,6 +11,12 @@ use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\FileUpload;
 use Filament\Schemas\Schema;
+use Filament\Actions\Action;
+use Filament\Actions\ViewAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\BulkActionGroup;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -45,13 +51,6 @@ class SecretaryResource extends BaseResource
                             ->maxLength(255)
                             ->placeholder('أدخل اسم السكرتير'),
 
-                        TextInput::make('email')
-                            ->label('البريد الإلكتروني')
-                            ->email()
-                            ->unique(ignoreRecord: true)
-                            ->maxLength(255)
-                            ->placeholder('secretary@example.com'),
-
                         TextInput::make('phone')
                             ->label('رقم الهاتف')
                             ->tel()
@@ -59,13 +58,14 @@ class SecretaryResource extends BaseResource
                             ->maxLength(20)
                             ->placeholder('01xxxxxxxxx'),
                     ])
-                    ->columns(3),
+                    ->columns(2),
 
                 Section::make('الأكاديمية')
                     ->schema([
                         Select::make('academy_id')
                             ->label('الأكاديمية')
                             ->relationship('academies', 'name')
+                            ->multiple()
                             ->searchable()
                             ->preload()
                             ->placeholder('اختر الأكاديمية'),
@@ -143,14 +143,6 @@ class SecretaryResource extends BaseResource
                     ->sortable()
                     ->weight('font-bold'),
 
-                Tables\Columns\TextColumn::make('email')
-                    ->label('البريد الإلكتروني')
-                    ->searchable()
-                    ->sortable()
-                    ->copyable()
-                    ->icon('heroicon-m-envelope')
-                    ->toggleable(),
-
                 Tables\Columns\TextColumn::make('phone')
                     ->label('الهاتف')
                     ->searchable()
@@ -191,15 +183,15 @@ class SecretaryResource extends BaseResource
                     ->falseLabel('غير نشط'),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make()
+                ViewAction::make()
                     ->label('عرض')
                     ->icon('heroicon-m-eye'),
 
-                Tables\Actions\EditAction::make()
+                EditAction::make()
                     ->label('تعديل')
                     ->icon('heroicon-m-pencil-square'),
 
-                Tables\Actions\Action::make('toggleActive')
+                Action::make('toggleActive')
                     ->label(fn (Secretary $record): string => $record->is_active ? 'إلغاء التنشيط' : 'تنشيط')
                     ->icon(fn (Secretary $record): string => $record->is_active ? 'heroicon-m-x-circle' : 'heroicon-m-check-circle')
                     ->color(fn (Secretary $record): string => $record->is_active ? 'danger' : 'success')
@@ -208,14 +200,14 @@ class SecretaryResource extends BaseResource
                         $record->update(['is_active' => ! $record->is_active]);
                     }),
 
-                Tables\Actions\DeleteAction::make()
+                DeleteAction::make()
                     ->label('حذف')
                     ->icon('heroicon-m-trash')
                     ->requiresConfirmation(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make()
+                BulkActionGroup::make([
+                    DeleteBulkAction::make()
                         ->label('حذف المحدد')
                         ->requiresConfirmation(),
                 ]),

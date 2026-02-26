@@ -9,6 +9,12 @@ use Filament\Forms\Components\Section;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Select;
 use Filament\Schemas\Schema;
+use Filament\Actions\Action;
+use Filament\Actions\ViewAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\BulkActionGroup;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -50,13 +56,6 @@ class AdminResource extends BaseResource
                             ->unique(ignoreRecord: true)
                             ->maxLength(255)
                             ->placeholder('أدخل اسم المستخدم'),
-
-                        TextInput::make('email')
-                            ->label('البريد الإلكتروني')
-                            ->email()
-                            ->unique(ignoreRecord: true)
-                            ->maxLength(255)
-                            ->placeholder('example@domain.com'),
                     ])
                     ->columns(2),
 
@@ -113,14 +112,6 @@ class AdminResource extends BaseResource
                     ->copyable()
                     ->icon('heroicon-m-user'),
 
-                Tables\Columns\TextColumn::make('email')
-                    ->label('البريد الإلكتروني')
-                    ->searchable()
-                    ->sortable()
-                    ->copyable()
-                    ->icon('heroicon-m-envelope')
-                    ->toggleable(),
-
                 Tables\Columns\TextColumn::make('roles.name')
                     ->label('الأدوار')
                     ->badge()
@@ -154,15 +145,15 @@ class AdminResource extends BaseResource
                     ->searchable(),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make()
+                ViewAction::make()
                     ->label('عرض')
                     ->icon('heroicon-m-eye'),
 
-                Tables\Actions\EditAction::make()
+                EditAction::make()
                     ->label('تعديل')
                     ->icon('heroicon-m-pencil-square'),
 
-                Tables\Actions\DeleteAction::make()
+                DeleteAction::make()
                     ->label('حذف')
                     ->icon('heroicon-m-trash')
                     ->requiresConfirmation()
@@ -172,8 +163,8 @@ class AdminResource extends BaseResource
                     ->modalCancelActionLabel('إلغاء'),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make()
+                BulkActionGroup::make([
+                    DeleteBulkAction::make()
                         ->label('حذف المحدد')
                         ->requiresConfirmation(),
                 ]),

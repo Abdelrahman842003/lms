@@ -31,7 +31,7 @@ export function useAuthState() {
     return roles.includes(auth.user?.userType as UserType);
   }, [auth.user?.userType]);
   
-  const isAdmin = useMemo(() => hasRole('admin'), [hasRole]);
+  const isAdmin = useMemo(() => false, []);  // Admin uses Filament, not frontend
   const isTeacher = useMemo(() => hasRole('teacher'), [hasRole]);
   const isStudent = useMemo(() => hasRole('student'), [hasRole]);
   const isParent = useMemo(() => hasRole('parent'), [hasRole]);
@@ -43,8 +43,6 @@ export function useAuthState() {
     if (!auth.user) return '/';
     
     switch (auth.user.userType) {
-      case 'admin':
-        return '/admin/dashboard';
       case 'teacher':
         return '/teacher/dashboard';
       case 'student':

@@ -185,7 +185,7 @@ export function storeSelectedChild(child: ChildInfo | null): void {
 /**
  * Get stored user type
  */
-export function getStoredUserType(): 'teacher' | 'student' | 'secretary' | 'admin' | 'academy' | 'parent' | null {
+export function getStoredUserType(): 'teacher' | 'student' | 'secretary' | 'academy' | 'parent' | null {
   if (typeof localStorage === 'undefined') return null;
   return localStorage.getItem(AUTH_STORAGE_KEYS.USER_TYPE) as ReturnType<typeof getStoredUserType>;
 }

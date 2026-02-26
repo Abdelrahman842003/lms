@@ -3,7 +3,7 @@
 /**
  * User type enum
  */
-export type UserType = 'admin' | 'teacher' | 'student' | 'secretary' | 'parent' | 'academy';
+export type UserType = 'teacher' | 'student' | 'secretary' | 'parent' | 'academy';
 
 /**
  * Base user interface
@@ -24,14 +24,6 @@ export interface BaseUser {
   permissions?: string[];
   is_independent_active?: boolean;
   academies?: any[];
-}
-
-/**
- * Admin user
- */
-export interface AdminUser extends BaseUser {
-  username: string;
-  permissions?: string[];
 }
 
 /**
@@ -147,17 +139,6 @@ export interface AuthResponse {
   children?: ChildInfo[];
   parent_phone?: string;
   academies?: AcademyInfo[];
-}
-
-/**
- * Admin specific auth response
- */
-export interface AdminAuthResponse {
-  access_token: string;
-  refresh_token?: string;
-  token_type: string;
-  user: AdminUser;
-  role: 'admin';
 }
 
 /**

@@ -3,7 +3,6 @@ export * from './api.types';
 export * from './auth.types';
 export * from './teacher.types';
 export * from './student.types';
-export * from './admin.types';
 export * from './components.types';
 
 // Legacy types for backward compatibility - prefer using specific type imports
@@ -12,7 +11,7 @@ export * from './components.types';
 /**
  * @deprecated Use UserType from auth.types instead
  */
-export type LegacyUserType = 'admin' | 'teacher' | 'student' | 'secretary' | 'parent' | 'academy';
+export type LegacyUserType = 'teacher' | 'student' | 'secretary' | 'parent' | 'academy';
 
 /**
  * @deprecated Use BaseUser from auth.types instead
@@ -22,7 +21,7 @@ export interface User {
     name: string
     username?: string
     avatar?: string
-    userType: 'admin' | 'teacher' | 'student' | 'secretary' | 'parent' | 'academy'
+    userType: 'teacher' | 'student' | 'secretary' | 'parent' | 'academy'
     createdAt: string
     updatedAt: string
     phone?: string

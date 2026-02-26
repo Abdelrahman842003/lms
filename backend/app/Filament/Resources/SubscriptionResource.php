@@ -16,6 +16,12 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Textarea;
 use Filament\Schemas\Schema;
+use Filament\Actions\Action;
+use Filament\Actions\ViewAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\BulkActionGroup;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -46,8 +52,8 @@ class SubscriptionResource extends BaseResource
                         Select::make('subscriber_type')
                             ->label('نوع المشترك')
                             ->options([
-                                'App\Models\Academy' => 'أكاديمية',
-                                'App\Models\Teacher' => 'مدرس',
+                                'App\Domains\Auth\Models\Academy' => 'أكاديمية',
+                                'App\Domains\Auth\Models\Teacher' => 'مدرس',
                             ])
                             ->required()
                             ->live(),
@@ -56,9 +62,9 @@ class SubscriptionResource extends BaseResource
                             ->label('المشترك')
                             ->options(function (\Filament\Forms\Get $get) {
                                 $type = $get('subscriber_type');
-                                if ($type === 'App\Models\Academy') {
+                                if ($type === 'App\Domains\Auth\Models\Academy') {
                                     return Academy::pluck('name', 'id');
-                                } elseif ($type === 'App\Models\Teacher') {
+                                } elseif ($type === 'App\Domains\Auth\Models\Teacher') {
                                     return Teacher::pluck('name', 'id');
                                 }
                                 return [];
@@ -131,10 +137,6 @@ class SubscriptionResource extends BaseResource
                             ->default('pending')
                             ->required(),
 
-                        Toggle::make('is_active')
-                            ->label('نشط')
-                            ->default(true),
-
                         DatePicker::make('paid_at')
                             ->label('تاريخ الدفع')
                             ->placeholder('اختر تاريخ الدفع'),
@@ -172,24 +174,28 @@ class SubscriptionResource extends BaseResource
                     ->sortable()
                     ->weight('font-bold'),
 
-                Tables\Columns\BadgeColumn::make('subscriber_type')
+                Tables\Columns\TextColumn::make('subscriber_type')
                     ->label('النوع')
-                    ->colors([
-                        'success' => 'App\Models\Academy',
-                        'primary' => 'App\Models\Teacher',
-                    ])
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'App\Domains\Auth\Models\Academy' => 'success',
+                        'App\Domains\Auth\Models\Teacher' => 'primary',
+                        default => 'gray',
+                    })
                     ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'App\Models\Academy' => 'أكاديمية',
-                        'App\Models\Teacher' => 'مدرس',
+                        'App\Domains\Auth\Models\Academy' => 'أكاديمية',
+                        'App\Domains\Auth\Models\Teacher' => 'مدرس',
                         default => $state,
                     }),
 
-                Tables\Columns\BadgeColumn::make('type')
+                Tables\Columns\TextColumn::make('type')
                     ->label('خطة الاشتراك')
-                    ->colors([
-                        'primary' => 'teacher',
-                        'success' => 'academy',
-                    ])
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'teacher' => 'primary',
+                        'academy' => 'success',
+                        default => 'gray',
+                    })
                     ->formatStateUsing(fn (string $state): string => match ($state) {
                         'teacher' => 'مدرس',
                         'academy' => 'أكاديمية',
@@ -211,14 +217,16 @@ class SubscriptionResource extends BaseResource
                     ->date('Y-m')
                     ->sortable(),
 
-                Tables\Columns\BadgeColumn::make('status')
+                Tables\Columns\TextColumn::make('status')
                     ->label('حالة الدفع')
-                    ->colors([
-                        'warning' => 'pending',
-                        'info' => 'partial',
-                        'success' => 'paid',
-                        'danger' => 'cancelled',
-                    ])
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'pending' => 'warning',
+                        'partial' => 'info',
+                        'paid' => 'success',
+                        'cancelled' => 'danger',
+                        default => 'gray',
+                    })
                     ->formatStateUsing(fn (string $state): string => match ($state) {
                         'pending' => 'غير مدفوع',
                         'partial' => 'مدفوع جزئياً',
@@ -226,12 +234,6 @@ class SubscriptionResource extends BaseResource
                         'cancelled' => 'ملغي',
                         default => $state,
                     }),
-
-                Tables\Columns\IconColumn::make('is_active')
-                    ->label('نشط')
-                    ->boolean()
-                    ->sortable()
-                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('تاريخ الإنشاء')
@@ -250,8 +252,8 @@ class SubscriptionResource extends BaseResource
                 Tables\Filters\SelectFilter::make('subscriber_type')
                     ->label('نوع المشترك')
                     ->options([
-                        'App\Models\Academy' => 'أكاديمية',
-                        'App\Models\Teacher' => 'مدرس',
+                        'App\Domains\Auth\Models\Academy' => 'أكاديمية',
+                        'App\Domains\Auth\Models\Teacher' => 'مدرس',
                     ]),
 
                 Tables\Filters\SelectFilter::make('status')
@@ -264,40 +266,34 @@ class SubscriptionResource extends BaseResource
                     ])
                     ->multiple()
                     ->preload(),
-
-                Tables\Filters\TernaryFilter::make('is_active')
-                    ->label('الحالة')
-                    ->placeholder('الكل')
-                    ->trueLabel('نشط')
-                    ->falseLabel('غير نشط'),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make()
+                ViewAction::make()
                     ->label('عرض')
                     ->icon('heroicon-m-eye'),
 
-                Tables\Actions\EditAction::make()
+                EditAction::make()
                     ->label('تعديل')
                     ->icon('heroicon-m-pencil-square'),
 
-                Tables\Actions\Action::make('cancel')
+                Action::make('cancel')
                     ->label('إلغاء الاشتراك')
                     ->icon('heroicon-m-x-circle')
                     ->color('danger')
                     ->requiresConfirmation()
-                    ->visible(fn (Subscription $record): bool => $record->status !== 'cancelled')
+                    ->visible(fn (Subscription $record): bool => $record->status !== \App\Domains\Subscriptions\Enums\SubscriptionStatus::CANCELLED)
                     ->action(function (Subscription $record): void {
-                        $record->update(['status' => 'cancelled', 'is_active' => false]);
+                        $record->update(['status' => 'cancelled']);
                     }),
 
-                Tables\Actions\DeleteAction::make()
+                DeleteAction::make()
                     ->label('حذف')
                     ->icon('heroicon-m-trash')
                     ->requiresConfirmation(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make()
+                BulkActionGroup::make([
+                    DeleteBulkAction::make()
                         ->label('حذف المحدد')
                         ->requiresConfirmation(),
                 ]),

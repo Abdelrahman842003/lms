@@ -35,6 +35,7 @@ class Student extends Authenticatable
         'gender',
         'education_type',
         'location',
+        'is_active',
     ];
 
     protected $hidden = [
@@ -48,6 +49,7 @@ class Student extends Authenticatable
             'password' => 'hashed',
             'gender' => \App\Domains\Auth\Enums\StudentGender::class,
             'education_type' => \App\Domains\Auth\Enums\StudentEducationType::class,
+            'is_active' => 'boolean',
         ];
     }
 
@@ -87,6 +89,25 @@ class Student extends Authenticatable
     {
         return $this->belongsToMany(Group::class, 'enrollments')
             ->withPivot(['teacher_id', 'grade_id', 'balance', 'is_active', 'subscription_start', 'subscription_end', 'teacher_notes'])
+            ->withTimestamps();
+    }
+
+    /**
+     * Academies through enrollments (via teacher -> academy_teacher)
+     */
+    public function academies()
+    {
+        return $this->belongsToMany(Academy::class, 'enrollments', 'student_id', 'academy_id')
+            ->withTimestamps();
+    }
+
+    /**
+     * Grades through enrollments
+     */
+    public function grades()
+    {
+        return $this->belongsToMany(\App\Domains\Enrollments\Models\Grade::class, 'enrollments')
+            ->withPivot(['teacher_id', 'group_id', 'balance', 'is_active'])
             ->withTimestamps();
     }
 

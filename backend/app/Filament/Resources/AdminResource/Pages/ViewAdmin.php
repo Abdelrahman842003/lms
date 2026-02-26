@@ -28,13 +28,8 @@ class ViewAdmin extends ViewRecord
                         TextEntry::make('username')
                             ->label('اسم المستخدم')
                             ->icon('heroicon-m-identification'),
-
-                        TextEntry::make('email')
-                            ->label('البريد الإلكتروني')
-                            ->icon('heroicon-m-envelope')
-                            ->placeholder('غير محدد'),
                     ])
-                    ->columns(3),
+                    ->columns(2),
 
                 Section::make('الأدوار والصلاحيات')
                     ->schema([

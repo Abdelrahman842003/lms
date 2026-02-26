@@ -65,21 +65,18 @@ export function getVersionedApiUrl(): string {
 export const API_ENDPOINTS = {
   // Authentication endpoints
   auth: {
-    loginAdmin: '/api/v1/admin/login',
     loginTeacher: '/api/v1/teacher/login',
     loginStudent: '/api/v1/student/login',
     loginSecretary: '/api/v1/login/secretary',
     loginParent: '/api/v1/parent/login',
     loginAcademy: '/api/v1/academy/login',
 
-    logoutAdmin: '/api/v1/admin/logout',
     logoutTeacher: '/api/v1/teacher/logout',
     logoutStudent: '/api/v1/student/logout',
     logoutSecretary: '/api/v1/secretary/logout',
     logoutParent: '/api/v1/parent/logout',
     logoutAcademy: '/api/v1/academy/logout',
 
-    meAdmin: '/api/v1/admin/me',
     meTeacher: '/api/v1/teacher/me',
     meStudent: '/api/v1/student/me',
     meSecretary: '/api/v1/secretary/me',
@@ -88,17 +85,6 @@ export const API_ENDPOINTS = {
 
     refreshToken: '/api/v1/auth/refresh',
     csrf: '/sanctum/csrf-cookie',
-  },
-
-  // Admin endpoints
-  admin: {
-    profile: '/api/v1/admin/profile',
-    changePassword: '/api/v1/admin/change-password',
-    dashboard: '/api/v1/admin/dashboard',
-    users: '/api/v1/admin/users',
-    academies: '/api/v1/admin/academies',
-    reports: '/api/v1/admin/reports',
-    settings: '/api/v1/admin/settings',
   },
 
   // Teacher endpoints
@@ -315,21 +301,18 @@ export function extractApiData<T>(response: any): T {
 // Flat endpoint references for backward compatibility
 export const FLAT_ENDPOINTS = {
   // Auth endpoints
-  LOGIN_ADMIN: API_ENDPOINTS.auth.loginAdmin,
   LOGIN_TEACHER: API_ENDPOINTS.auth.loginTeacher,
   LOGIN_STUDENT: API_ENDPOINTS.auth.loginStudent,
   LOGIN_SECRETARY: API_ENDPOINTS.auth.loginSecretary,
   LOGIN_PARENT: API_ENDPOINTS.auth.loginParent,
   LOGIN_ACADEMY: API_ENDPOINTS.auth.loginAcademy,
   
-  LOGOUT_ADMIN: API_ENDPOINTS.auth.logoutAdmin,
   LOGOUT_TEACHER: API_ENDPOINTS.auth.logoutTeacher,
   LOGOUT_STUDENT: API_ENDPOINTS.auth.logoutStudent,
   LOGOUT_SECRETARY: API_ENDPOINTS.auth.logoutSecretary,
   LOGOUT_PARENT: API_ENDPOINTS.auth.logoutParent,
   LOGOUT_ACADEMY: API_ENDPOINTS.auth.logoutAcademy,
   
-  ME_ADMIN: API_ENDPOINTS.auth.meAdmin,
   ME_TEACHER: API_ENDPOINTS.auth.meTeacher,
   ME_STUDENT: API_ENDPOINTS.auth.meStudent,
   ME_SECRETARY: API_ENDPOINTS.auth.meSecretary,

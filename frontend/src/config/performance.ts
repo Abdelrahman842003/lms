@@ -116,20 +116,6 @@ export const ROUTE_CHUNKS = {
     '/student/attend',
   ],
   
-  admin: [
-    '/admin/dashboard',
-    '/admin/academies',
-    '/admin/teachers',
-    '/admin/students',
-    '/admin/users',
-    '/admin/roles',
-    '/admin/permissions',
-    '/admin/reports',
-    '/admin/settings',
-    '/admin/notifications',
-    '/admin/profile',
-  ],
-  
   academy: [
     '/academy/dashboard',
     '/academy/teachers',
@@ -162,8 +148,6 @@ export const dynamicImports = {
         return import('@/app/teacher/dashboard/page');
       case 'student':
         return import('@/app/student/dashboard/page');
-      case 'admin':
-        return import('@/app/admin/dashboard/page');
       case 'academy':
         return import('@/app/academy/dashboard/page');
       case 'parent':

@@ -32,8 +32,7 @@ return new class extends Migration
             if (!Schema::hasColumn('academies', 'paid_amount')) {
                 $table->decimal('paid_amount', 10, 2)->default(0)->after('subscription_fee');
             }
-        });
-    }
+        });    }
 
     /**
      * Reverse the migrations.

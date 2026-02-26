@@ -15,7 +15,7 @@ const RATE_WINDOW_MS = 1000; // 1 second
 /**
  * Valid user roles for type checking
  */
-const VALID_ROLES = ['admin', 'teacher', 'student', 'secretary', 'parent', 'academy'] as const;
+const VALID_ROLES = ['teacher', 'student', 'secretary', 'parent', 'academy'] as const;
 type UserRole = typeof VALID_ROLES[number];
 
 /**
@@ -78,7 +78,6 @@ function getRedirectUrlForRole(role: string | undefined, baseUrl: string): strin
   const roleRoutes: Record<UserRole, string> = {
     student: '/student/dashboard',
     teacher: '/teacher/dashboard',
-    admin: '/admin/dashboard',
     secretary: '/secretary/dashboard',
     parent: '/parent/children',
     academy: '/academy/dashboard',
@@ -118,16 +117,15 @@ export function middleware(request: NextRequest) {
     isParent: pathname.startsWith('/parent'),
     isSecretary: pathname.startsWith('/secretary'),
     isAcademy: pathname.startsWith('/academy'),
-    isAdmin: pathname.startsWith('/admin') && !pathname.startsWith('/admin/login'),
   };
   
   const isProtectedRoute = Object.values(protectedRoutes).some(Boolean);
-  const isAuthRoute = pathname === '/login' || pathname === '/register' || pathname === '/admin/login';
+  const isAuthRoute = pathname === '/login' || pathname === '/register';
   const isLandingPage = pathname === '/';
 
   // 1. Redirect unauthenticated users from protected routes to login
   if (isProtectedRoute && !hasSession) {
-    const loginUrl = new URL(protectedRoutes.isAdmin ? '/admin/login' : '/login', request.url);
+    const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('redirect', pathname);
     return NextResponse.redirect(loginUrl);
   }

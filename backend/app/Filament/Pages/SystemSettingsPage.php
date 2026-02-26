@@ -5,18 +5,18 @@ declare(strict_types=1);
 namespace App\Filament\Pages;
 
 use App\Domains\Support\Models\Setting;
-use Filament\Forms\Components\Section;
+use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
-use Filament\Forms\Components\Grid;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
-use Filament\Forms\Form;
 use Filament\Pages\Page;
 use Filament\Actions\Action;
-use Filament\Forms\Components\Tabs;
+use Filament\Schemas\Components\Tabs;
 use Illuminate\Support\Facades\Cache;
+use Filament\Schemas\Schema;
+use Filament\Notifications\Notification;
 
 class SystemSettingsPage extends Page implements HasForms
 {
@@ -68,10 +68,10 @@ class SystemSettingsPage extends Page implements HasForms
         $this->form->fill($settings);
     }
 
-    public function form(Form $form): Form
+    public function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 Tabs::make('Settings')
                     ->tabs([
                         Tabs\Tab::make('general')
@@ -166,8 +166,7 @@ class SystemSettingsPage extends Page implements HasForms
                             ]),
                     ])
                     ->contained(false),
-            ])
-            ->statePath('data');
+            ]);
     }
 
     public function save(): void
@@ -189,9 +188,15 @@ class SystemSettingsPage extends Page implements HasForms
             // Clear settings cache
             Cache::flush();
 
-            $this->notify('success', 'تم حفظ الإعدادات بنجاح');
+            Notification::make()
+                ->success()
+                ->title('تم حفظ الإعدادات بنجاح')
+                ->send();
         } catch (\Exception $e) {
-            $this->notify('danger', 'حدث خطأ أثناء حفظ الإعدادات: ' . $e->getMessage());
+            Notification::make()
+                ->danger()
+                ->title('حدث خطأ أثناء حفظ الإعدادات: ' . $e->getMessage())
+                ->send();
         }
     }
 

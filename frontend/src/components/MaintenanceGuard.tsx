@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import { usePathname } from 'next/navigation';
 import { Icon } from '@/components/ui';
 
 interface MaintenanceGuardProps {
@@ -10,11 +9,8 @@ interface MaintenanceGuardProps {
 }
 
 export default function MaintenanceGuard({ children, maintenanceMode }: MaintenanceGuardProps) {
-  const pathname = usePathname();
-  const isAdminRoute = pathname?.startsWith('/admin');
-
-  // If maintenance mode is active, and we are NOT on an admin route
-  if (maintenanceMode && !isAdminRoute) {
+  // If maintenance mode is active, show maintenance page for all routes
+  if (maintenanceMode) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-[#0f111a] text-white p-4 text-center">
         <div className="w-24 h-24 bg-primary/20 rounded-full flex items-center justify-center mb-6 animate-pulse">

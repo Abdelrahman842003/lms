@@ -27,20 +27,10 @@ export type {
 } from './student.types';
 
 export type {
-  AdminDashboardStats,
-  AdminTeacher,
-  AdminAcademy,
-  AdminStudent,
-  SystemStats,
-  Role,
-} from './admin.types';
-
-export type {
   BaseUser,
 } from './auth.types';
 
 // Legacy type aliases for backward compatibility
-// These should be gradually replaced with imports from specific modules
 
 /**
  * @deprecated Use BaseUser from auth.types instead
@@ -49,7 +39,7 @@ export interface User {
   id: number;
   name: string;
   email: string;
-  role: 'admin' | 'teacher' | 'student';
+  role: 'teacher' | 'student';
   avatar?: string;
 }
 
@@ -65,18 +55,4 @@ export interface Student {
   attendance_rate: number;
   exam_average: number;
   is_active: boolean;
-}
-
-/**
- * @deprecated Use AdminTeacher from admin.types instead
- */
-export interface Tenant {
-  id: number;
-  teacher_name: string;
-  domain: string;
-  database_name: string;
-  created_at: string;
-  status: 'active' | 'suspended';
-  students_count: number;
-  revenue: number;
 }

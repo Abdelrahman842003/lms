@@ -14,6 +14,12 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\FileUpload;
 use Filament\Schemas\Schema;
+use Filament\Actions\Action;
+use Filament\Actions\ViewAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\BulkActionGroup;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -48,13 +54,6 @@ class TeacherResource extends BaseResource
                             ->maxLength(255)
                             ->placeholder('أدخل اسم المعلم'),
 
-                        TextInput::make('email')
-                            ->label('البريد الإلكتروني')
-                            ->email()
-                            ->unique(ignoreRecord: true)
-                            ->maxLength(255)
-                            ->placeholder('teacher@example.com'),
-
                         TextInput::make('phone')
                             ->label('رقم الهاتف')
                             ->tel()
@@ -62,7 +61,7 @@ class TeacherResource extends BaseResource
                             ->maxLength(20)
                             ->placeholder('01xxxxxxxxx'),
                     ])
-                    ->columns(3),
+                    ->columns(2),
 
                 Section::make('المعلومات الأكاديمية')
                     ->schema([
@@ -201,14 +200,6 @@ class TeacherResource extends BaseResource
                     ->sortable()
                     ->weight('font-bold'),
 
-                Tables\Columns\TextColumn::make('email')
-                    ->label('البريد الإلكتروني')
-                    ->searchable()
-                    ->sortable()
-                    ->copyable()
-                    ->icon('heroicon-m-envelope')
-                    ->toggleable(),
-
                 Tables\Columns\TextColumn::make('phone')
                     ->label('الهاتف')
                     ->searchable()
@@ -284,33 +275,33 @@ class TeacherResource extends BaseResource
                     ->falseLabel('غير نشط كمستقل'),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make()
+                ViewAction::make()
                     ->label('عرض')
                     ->icon('heroicon-m-eye'),
 
-                Tables\Actions\EditAction::make()
+                EditAction::make()
                     ->label('تعديل')
                     ->icon('heroicon-m-pencil-square'),
 
-                Tables\Actions\Action::make('toggleActive')
-                    ->label(fn (Teacher $record): string => $record->status === 'active' ? 'إلغاء التنشيط' : 'تنشيط')
-                    ->icon(fn (Teacher $record): string => $record->status === 'active' ? 'heroicon-m-x-circle' : 'heroicon-m-check-circle')
-                    ->color(fn (Teacher $record): string => $record->status === 'active' ? 'danger' : 'success')
+                Action::make('toggleActive')
+                    ->label(fn (Teacher $record): string => $record->status === TeacherStatus::ACTIVE ? 'إلغاء التنشيط' : 'تنشيط')
+                    ->icon(fn (Teacher $record): string => $record->status === TeacherStatus::ACTIVE ? 'heroicon-m-x-circle' : 'heroicon-m-check-circle')
+                    ->color(fn (Teacher $record): string => $record->status === TeacherStatus::ACTIVE ? 'danger' : 'success')
                     ->requiresConfirmation()
                     ->action(function (Teacher $record): void {
                         $record->update([
-                            'status' => $record->status === 'active' ? 'suspended' : 'active',
+                            'status' => $record->status === TeacherStatus::ACTIVE ? 'suspended' : 'active',
                         ]);
                     }),
 
-                Tables\Actions\DeleteAction::make()
+                DeleteAction::make()
                     ->label('حذف')
                     ->icon('heroicon-m-trash')
                     ->requiresConfirmation(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make()
+                BulkActionGroup::make([
+                    DeleteBulkAction::make()
                         ->label('حذف المحدد')
                         ->requiresConfirmation(),
                 ]),

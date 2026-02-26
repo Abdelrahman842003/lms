@@ -4,6 +4,12 @@ namespace App\Filament\Widgets;
 
 use App\Filament\Resources\AcademyResource;
 use App\Domains\Auth\Models\Academy;
+use Filament\Tables\Actions\Action;
+use Filament\Tables\Actions\ViewAction;
+use Filament\Tables\Actions\EditAction;
+use Filament\Tables\Actions\DeleteAction;
+use Filament\Tables\Actions\DeleteBulkAction;
+use Filament\Tables\Actions\BulkActionGroup;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
@@ -33,11 +39,6 @@ class RecentAcademiesWidget extends BaseWidget
                     ->icon('heroicon-o-building-office-2')
                     ->iconColor('primary'),
 
-                Tables\Columns\TextColumn::make('email')
-                    ->searchable()
-                    ->sortable()
-                    ->icon('heroicon-o-envelope'),
-
                 Tables\Columns\TextColumn::make('phone')
                     ->searchable()
                     ->toggleable()
@@ -57,18 +58,26 @@ class RecentAcademiesWidget extends BaseWidget
                     ->falseColor('danger')
                     ->label('Active'),
 
-                Tables\Columns\TextColumn::make('subscription.plan')
+                Tables\Columns\TextColumn::make('plan_type')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'premium' => 'success',
-                        'standard' => 'warning',
-                        'basic' => 'info',
+                    ->color(fn (?string $state): string => match ($state) {
+                        'pro' => 'success',
+                        'basic' => 'warning',
+                        'free' => 'info',
+                        'enterprise' => 'success',
                         default => 'gray',
                     })
-                    ->placeholder('No subscription'),
+                    ->formatStateUsing(fn (?string $state): string => match ($state) {
+                        'free' => 'مجاني',
+                        'basic' => 'أساسي',
+                        'pro' => 'احترافي',
+                        'enterprise' => 'مؤسسي',
+                        default => 'بدون اشتراك',
+                    })
+                    ->placeholder('بدون اشتراك'),
             ])
             ->actions([
-                Tables\Actions\Action::make('view')
+                Action::make('view')
                     ->url(fn (Academy $record): string => AcademyResource::getUrl('view', ['record' => $record]))
                     ->icon('heroicon-o-eye')
                     ->color('primary'),
@@ -86,7 +95,6 @@ class RecentAcademiesWidget extends BaseWidget
     protected function getTableQuery(): Builder
     {
         return Academy::query()
-            ->with('subscription')
             ->latest('created_at')
             ->limit(5);
     }

@@ -76,11 +76,14 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // معالجة AuthenticationException
         $exceptions->render(function (\Illuminate\Auth\AuthenticationException $e, $request) {
-            return response()->json([
-                'status' => false,
-                'status_code' => 401,
-                'message' => 'غير مصرح لك بالدخول. يرجى تسجيل الدخول.',
-            ], 401);
+            // Only return JSON for API requests; let Filament/web handle its own redirects
+            if ($request->is('api/*') || $request->expectsJson()) {
+                return response()->json([
+                    'status' => false,
+                    'status_code' => 401,
+                    'message' => 'غير مصرح لك بالدخول. يرجى تسجيل الدخول.',
+                ], 401);
+            }
         });
 
         // معالجة AuthorizationException

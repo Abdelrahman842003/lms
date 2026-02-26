@@ -60,6 +60,3 @@ export {
   getMyTeacherReport,
   downloadMyTeacherReportPdf,
 } from './teacher/teacherService';
-
-// Admin service
-export * from './admin/adminService';
