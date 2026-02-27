@@ -6,7 +6,7 @@ namespace App\Filament\Resources\SecretaryResource\Pages;
 
 use App\Filament\Resources\SecretaryResource;
 use Filament\Actions;
-use Filament\Infolists\Components\Section;
+use Filament\Schemas\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\ImageEntry;

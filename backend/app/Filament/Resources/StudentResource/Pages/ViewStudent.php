@@ -6,7 +6,7 @@ namespace App\Filament\Resources\StudentResource\Pages;
 
 use App\Filament\Resources\StudentResource;
 use Filament\Actions;
-use Filament\Infolists\Components\Section;
+use Filament\Schemas\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\ImageEntry;
@@ -110,16 +110,8 @@ class ViewStudent extends ViewRecord
                     ])
                     ->columns(2),
 
-                Section::make('الحالة')
+                Section::make('معلومات النظام')
                     ->schema([
-                        IconEntry::make('is_active')
-                            ->label('الحالة')
-                            ->boolean()
-                            ->trueColor('success')
-                            ->falseColor('danger')
-                            ->trueIcon('heroicon-m-check-circle')
-                            ->falseIcon('heroicon-m-x-circle'),
-
                         TextEntry::make('created_at')
                             ->label('تاريخ الإنشاء')
                             ->dateTime('Y-m-d H:i'),
@@ -128,7 +120,7 @@ class ViewStudent extends ViewRecord
                             ->label('آخر تحديث')
                             ->dateTime('Y-m-d H:i'),
                     ])
-                    ->columns(3),
+                    ->columns(2),
             ]);
     }
 

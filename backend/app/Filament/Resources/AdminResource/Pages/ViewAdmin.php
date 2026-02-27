@@ -6,7 +6,7 @@ namespace App\Filament\Resources\AdminResource\Pages;
 
 use App\Filament\Resources\AdminResource;
 use Filament\Actions;
-use Filament\Infolists\Components\Section;
+use Filament\Schemas\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Schema;
 use Filament\Resources\Pages\ViewRecord;
@@ -50,12 +50,6 @@ class ViewAdmin extends ViewRecord
 
                 Section::make('معلومات الحساب')
                     ->schema([
-                        TextEntry::make('last_login_at')
-                            ->label('آخر تسجيل دخول')
-                            ->dateTime('Y-m-d H:i:s')
-                            ->icon('heroicon-m-clock')
-                            ->placeholder('لم يسجل الدخول بعد'),
-
                         TextEntry::make('created_at')
                             ->label('تاريخ الإنشاء')
                             ->dateTime('Y-m-d H:i:s')
@@ -66,7 +60,7 @@ class ViewAdmin extends ViewRecord
                             ->dateTime('Y-m-d H:i:s')
                             ->icon('heroicon-m-arrow-path'),
                     ])
-                    ->columns(3),
+                    ->columns(2),
             ]);
     }
 

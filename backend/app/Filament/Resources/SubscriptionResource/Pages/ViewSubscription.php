@@ -6,7 +6,7 @@ namespace App\Filament\Resources\SubscriptionResource\Pages;
 
 use App\Filament\Resources\SubscriptionResource;
 use Filament\Actions;
-use Filament\Infolists\Components\Section;
+use Filament\Schemas\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\IconEntry;
 use Filament\Schemas\Schema;
@@ -97,14 +97,6 @@ class ViewSubscription extends ViewRecord
                                 'cancelled' => 'danger',
                                 default => 'gray',
                             }),
-
-                        IconEntry::make('is_active')
-                            ->label('نشط')
-                            ->boolean()
-                            ->trueColor('success')
-                            ->falseColor('danger')
-                            ->trueIcon('heroicon-m-check-circle')
-                            ->falseIcon('heroicon-m-x-circle'),
 
                         TextEntry::make('paid_at')
                             ->label('تاريخ الدفع')

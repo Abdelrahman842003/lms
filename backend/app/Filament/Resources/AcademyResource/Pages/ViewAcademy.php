@@ -6,7 +6,7 @@ namespace App\Filament\Resources\AcademyResource\Pages;
 
 use App\Filament\Resources\AcademyResource;
 use Filament\Actions;
-use Filament\Infolists\Components\Section;
+use Filament\Schemas\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\ImageEntry;
@@ -38,29 +38,13 @@ class ViewAcademy extends ViewRecord
                     ])
                     ->columns(3),
 
-                Section::make('العنوان')
-                    ->schema([
-                        TextEntry::make('address')
-                            ->label('')
-                            ->placeholder('لا يوجد عنوان محدد'),
-                    ]),
-
                 Section::make('حالة الأكاديمية')
                     ->schema([
                         IconEntry::make('is_active')
                             ->label('نشط')
                             ->boolean(),
-
-                        IconEntry::make('is_suspended')
-                            ->label('موقوف')
-                            ->boolean(),
-
-                        TextEntry::make('suspension_reason')
-                            ->label('سبب الإيقاف')
-                            ->placeholder('غير محدد')
-                            ->visible(fn ($record) => $record->is_suspended),
                     ])
-                    ->columns(3),
+                    ->columns(2),
 
                 Section::make('معلومات الاشتراك')
                     ->schema([
@@ -114,11 +98,6 @@ class ViewAcademy extends ViewRecord
 
                 Section::make('الإحصائيات')
                     ->schema([
-                        TextEntry::make('total_students_count')
-                            ->label('إجمالي الطلاب')
-                            ->state(fn ($record) => $record->total_students_count)
-                            ->icon('heroicon-m-users'),
-
                         TextEntry::make('total_enrollments_count')
                             ->label('إجمالي التسجيلات')
                             ->icon('heroicon-m-clipboard-document-list'),
@@ -128,7 +107,7 @@ class ViewAcademy extends ViewRecord
                             ->state(fn ($record) => $record->teachers()->count())
                             ->icon('heroicon-m-academic-cap'),
                     ])
-                    ->columns(3),
+                    ->columns(2),
 
                 Section::make('معلومات النظام')
                     ->schema([

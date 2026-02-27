@@ -30,6 +30,8 @@ class SettingResource extends BaseResource
 
     protected static ?string $pluralModelLabel = 'الإعدادات';
 
+    protected static ?string $recordTitleAttribute = 'key';
+
     public static function getNavigationGroup(): ?string
     {
         return 'إدارة المنصة';

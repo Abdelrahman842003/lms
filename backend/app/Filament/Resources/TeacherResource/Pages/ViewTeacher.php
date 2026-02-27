@@ -6,7 +6,7 @@ namespace App\Filament\Resources\TeacherResource\Pages;
 
 use App\Filament\Resources\TeacherResource;
 use Filament\Actions;
-use Filament\Infolists\Components\Section;
+use Filament\Schemas\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\ImageEntry;
@@ -43,11 +43,6 @@ class ViewTeacher extends ViewRecord
                         TextEntry::make('subject')
                             ->label('التخصص / المادة')
                             ->placeholder('غير محدد'),
-
-                        TextEntry::make('bio')
-                            ->label('نبذة عن المعلم')
-                            ->placeholder('لا يوجد نبذة')
-                            ->columnSpanFull(),
                     ])
                     ->columns(2),
 

@@ -38,6 +38,8 @@ class SubscriptionResource extends BaseResource
 
     protected static ?string $pluralModelLabel = 'الاشتراكات';
 
+    protected static ?string $recordTitleAttribute = 'type';
+
     public static function getNavigationGroup(): ?string
     {
         return 'إدارة الاشتراكات';
