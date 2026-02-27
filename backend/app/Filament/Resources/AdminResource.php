@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\Resources;
 
 use App\Domains\Auth\Models\Admin;
-use Filament\Forms\Components\Section;
+use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Select;
 use Filament\Schemas\Schema;
@@ -119,13 +119,6 @@ class AdminResource extends BaseResource
                     ->separator(',')
                     ->toggleable(),
 
-                Tables\Columns\TextColumn::make('last_login_at')
-                    ->label('آخر تسجيل دخول')
-                    ->dateTime('Y-m-d H:i')
-                    ->sortable()
-                    ->toggleable()
-                    ->placeholder('لم يسجل الدخول بعد'),
-
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('تاريخ الإنشاء')
                     ->dateTime('Y-m-d')
@@ -133,11 +126,6 @@ class AdminResource extends BaseResource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Tables\Filters\Filter::make('has_logged_in')
-                    ->label('سجل الدخول')
-                    ->query(fn (Builder $query): Builder => $query->whereNotNull('last_login_at'))
-                    ->toggle(),
-
                 Tables\Filters\SelectFilter::make('roles')
                     ->label('الدور')
                     ->relationship('roles', 'name')

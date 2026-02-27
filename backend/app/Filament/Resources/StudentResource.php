@@ -12,7 +12,7 @@ use App\Domains\Auth\Models\Student;
 use App\Domains\Auth\Models\Academy;
 use App\Domains\Auth\Models\Guardian;
 use App\Domains\Auth\Models\Teacher;
-use Filament\Forms\Components\Section;
+use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
@@ -106,7 +106,7 @@ class StudentResource extends BaseResource
 
                         Select::make('group_id')
                             ->label('المجموعة')
-                            ->options(function (\Filament\Forms\Get $get) {
+                            ->options(function (\Filament\Schemas\Components\Utilities\Get $get) {
                                 $gradeId = $get('grade_id');
                                 if ($gradeId) {
                                     return Group::where('grade_id', $gradeId)->pluck('name', 'id');
@@ -192,14 +192,6 @@ class StudentResource extends BaseResource
                     ])
                     ->columns(2)
                     ->visible(fn (string $operation): bool => $operation === 'create'),
-
-                Section::make('الحالة')
-                    ->schema([
-                        Toggle::make('is_active')
-                            ->label('نشط')
-                            ->default(true)
-                            ->helperText('تحديد ما إذا كان الطالب نشطاً أم لا'),
-                    ]),
             ]);
     }
 
@@ -246,12 +238,6 @@ class StudentResource extends BaseResource
                     ->expandableLimitedList()
                     ->toggleable(),
 
-                Tables\Columns\IconColumn::make('is_active')
-                    ->label('نشط')
-                    ->boolean()
-                    ->sortable()
-                    ->toggleable(),
-
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('تاريخ الإنشاء')
                     ->dateTime('Y-m-d')
@@ -276,12 +262,6 @@ class StudentResource extends BaseResource
                     ->relationship('groups', 'name')
                     ->preload()
                     ->searchable(),
-
-                Tables\Filters\TernaryFilter::make('is_active')
-                    ->label('الحالة')
-                    ->placeholder('الكل')
-                    ->trueLabel('نشط')
-                    ->falseLabel('غير نشط'),
             ])
             ->actions([
                 ViewAction::make()
@@ -291,15 +271,6 @@ class StudentResource extends BaseResource
                 EditAction::make()
                     ->label('تعديل')
                     ->icon('heroicon-m-pencil-square'),
-
-                Action::make('toggleActive')
-                    ->label(fn (Student $record): string => $record->is_active ? 'إلغاء التنشيط' : 'تنشيط')
-                    ->icon(fn (Student $record): string => $record->is_active ? 'heroicon-m-x-circle' : 'heroicon-m-check-circle')
-                    ->color(fn (Student $record): string => $record->is_active ? 'danger' : 'success')
-                    ->requiresConfirmation()
-                    ->action(function (Student $record): void {
-                        $record->update(['is_active' => ! $record->is_active]);
-                    }),
 
                 DeleteAction::make()
                     ->label('حذف')

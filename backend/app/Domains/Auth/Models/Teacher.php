@@ -31,7 +31,6 @@ class Teacher extends Authenticatable
         'name',
         'phone',
         'subject',
-        'bio',
         'password',
         'avatar_key',
         'status',

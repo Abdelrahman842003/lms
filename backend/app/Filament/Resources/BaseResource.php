@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources;
 
-use Filament\Forms\Components\Section;
+use Filament\Schemas\Components\Section;
 use Filament\Panel;
 use Filament\Resources\Resource;
 use Illuminate\Database\Eloquent\Builder;

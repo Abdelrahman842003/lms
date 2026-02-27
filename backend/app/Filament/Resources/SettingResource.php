@@ -5,14 +5,11 @@ declare(strict_types=1);
 namespace App\Filament\Resources;
 
 use App\Domains\Support\Models\Setting;
-use Filament\Forms\Components\Section;
+use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Select;
 use Filament\Schemas\Schema;
-use Filament\Actions\Action;
-use Filament\Actions\ViewAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -20,7 +17,6 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Str;
 
 class SettingResource extends BaseResource
 {
@@ -67,91 +63,17 @@ class SettingResource extends BaseResource
                             ])
                             ->required()
                             ->native(false),
-
-                        Select::make('type')
-                            ->label('النوع')
-                            ->options([
-                                'text' => 'نص',
-                                'number' => 'رقم',
-                                'toggle' => 'تبديل',
-                                'json' => 'JSON',
-                            ])
-                            ->default('text')
-                            ->required()
-                            ->live()
-                            ->native(false),
-
-                        Textarea::make('description')
-                            ->label('الوصف')
-                            ->rows(2)
-                            ->placeholder('وصف مختصر للإعداد'),
                     ])
                     ->columns(2),
 
                 Section::make('القيمة')
                     ->schema([
-                        TextInput::make('value')
+                        Textarea::make('value')
                             ->label('القيمة')
-                            ->maxLength(65535)
-                            ->visible(fn (\Filament\Forms\Get $get): bool => $get('type') === 'text')
-                            ->placeholder('أدخل القيمة النصية'),
-
-                        TextInput::make('value_number')
-                            ->label('القيمة')
-                            ->numeric()
-                            ->visible(fn (\Filament\Forms\Get $get): bool => $get('type') === 'number')
-                            ->placeholder('أدخل القيمة الرقمية'),
-
-                        Toggle::make('value_toggle')
-                            ->label('القيمة')
-                            ->visible(fn (\Filament\Forms\Get $get): bool => $get('type') === 'toggle')
-                            ->default(false),
-
-                        Textarea::make('value_json')
-                            ->label('القيمة (JSON)')
-                            ->visible(fn (\Filament\Forms\Get $get): bool => $get('type') === 'json')
-                            ->placeholder('{"key": "value"}')
-                            ->helperText('يجب أن تكون صيغة JSON صحيحة'),
-                    ])
-                    ->visible(fn (string $operation): bool => $operation === 'create')
-                    ->columns(1),
-
-                Section::make('القيمة')
-                    ->schema([
-                        // Dynamic value field based on existing type
-                        TextInput::make('value')
-                            ->label('القيمة')
-                            ->maxLength(65535)
                             ->placeholder('أدخل القيمة'),
                     ])
-                    ->visible(fn (string $operation): bool => $operation === 'edit')
                     ->columns(1),
-
-                Section::make('الإعدادات العامة')
-                    ->schema([
-                        Toggle::make('is_public')
-                            ->label('عام')
-                            ->default(true)
-                            ->helperText('إظهار في API للعموم'),
-                    ]),
             ]);
-    }
-
-    protected static function mutateFormDataBeforeCreate(array $data): array
-    {
-        // Handle different value types
-        $type = $data['type'] ?? 'text';
-        $data['value'] = match ($type) {
-            'number' => $data['value_number'] ?? '0',
-            'toggle' => ($data['value_toggle'] ?? false) ? '1' : '0',
-            'json' => $data['value_json'] ?? '{}',
-            default => $data['value'] ?? '',
-        };
-
-        // Remove temporary fields
-        unset($data['value_number'], $data['value_toggle'], $data['value_json']);
-
-        return $data;
     }
 
     public static function table(Table $table): Table
@@ -168,25 +90,19 @@ class SettingResource extends BaseResource
                 Tables\Columns\TextColumn::make('value')
                     ->label('القيمة')
                     ->limit(50)
-                    ->tooltip(fn ($record) => $record->value)
-                    ->formatStateUsing(function ($state, $record) {
-                        // Mask sensitive values
-                        if (in_array($record->key, Setting::$encryptedKeys)) {
-                            return '********';
-                        }
-                        return Str::limit($state, 50);
-                    }),
+                    ->tooltip(fn ($record) => $record->value),
 
-                Tables\Columns\BadgeColumn::make('group')
+                Tables\Columns\TextColumn::make('group')
                     ->label('المجموعة')
-                    ->colors([
-                        'primary' => 'general',
-                        'success' => 'payment',
-                        'warning' => 'notification',
-                        'danger' => 'security',
-                        'info' => 'integration',
-                        'gray' => 'academy',
-                    ])
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'general' => 'primary',
+                        'payment' => 'success',
+                        'notification' => 'warning',
+                        'security' => 'danger',
+                        'integration' => 'info',
+                        default => 'gray',
+                    })
                     ->formatStateUsing(fn (string $state): string => match ($state) {
                         'general' => 'عام',
                         'payment' => 'الدفع',
@@ -197,23 +113,6 @@ class SettingResource extends BaseResource
                         'subscription' => 'الاشتراكات',
                         default => $state,
                     }),
-
-                Tables\Columns\TextColumn::make('type')
-                    ->label('النوع')
-                    ->badge()
-                    ->formatStateUsing(fn (?string $state): string => match ($state) {
-                        'text' => 'نص',
-                        'number' => 'رقم',
-                        'toggle' => 'تبديل',
-                        'json' => 'JSON',
-                        default => $state ?? 'نص',
-                    }),
-
-                Tables\Columns\IconColumn::make('is_public')
-                    ->label('عام')
-                    ->boolean()
-                    ->sortable()
-                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('updated_at')
                     ->label('آخر تحديث')
@@ -235,21 +134,6 @@ class SettingResource extends BaseResource
                     ])
                     ->multiple()
                     ->preload(),
-
-                Tables\Filters\SelectFilter::make('type')
-                    ->label('النوع')
-                    ->options([
-                        'text' => 'نص',
-                        'number' => 'رقم',
-                        'toggle' => 'تبديل',
-                        'json' => 'JSON',
-                    ]),
-
-                Tables\Filters\TernaryFilter::make('is_public')
-                    ->label('الإظهار العام')
-                    ->placeholder('الكل')
-                    ->trueLabel('عام')
-                    ->falseLabel('خاص'),
             ])
             ->actions([
                 EditAction::make()

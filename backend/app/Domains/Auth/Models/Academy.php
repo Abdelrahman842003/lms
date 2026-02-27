@@ -22,12 +22,9 @@ class Academy extends Model implements AuthenticatableContract
     protected $fillable = [
         'name',
         'phone',
-        'address',
         'password',
         'logo_key',
         'is_active',
-        'is_suspended',
-        'suspension_reason',
         'billing_notes',
         'subscription_fee',
         'paid_amount',
@@ -43,7 +40,6 @@ class Academy extends Model implements AuthenticatableContract
 
     protected $casts = [
         'is_active' => 'boolean',
-        'is_suspended' => 'boolean',
         'password' => 'hashed',
         'plan_expires_at' => 'date',
         'plan_max_students' => 'integer',

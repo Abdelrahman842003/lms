@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\Resources;
 
 use App\Domains\Auth\Models\Secretary;
-use Filament\Forms\Components\Section;
+use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Select;
@@ -54,7 +54,6 @@ class SecretaryResource extends BaseResource
                         TextInput::make('phone')
                             ->label('رقم الهاتف')
                             ->tel()
-                            ->required()
                             ->maxLength(20)
                             ->placeholder('01xxxxxxxxx'),
                     ])

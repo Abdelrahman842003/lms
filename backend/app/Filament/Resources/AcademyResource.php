@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\Resources;
 
 use App\Domains\Auth\Models\Academy;
-use Filament\Forms\Components\Section;
+use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
@@ -62,15 +62,6 @@ class AcademyResource extends BaseResource
                     ])
                     ->columns(2),
 
-                Section::make('العنوان والموقع')
-                    ->schema([
-                        Textarea::make('address')
-                            ->label('العنوان')
-                            ->rows(3)
-                            ->placeholder('أدخل عنوان الأكاديمية')
-                            ->columnSpanFull(),
-                    ]),
-
                 Section::make('الشعار والصور')
                     ->schema([
                         FileUpload::make('logo_key')
@@ -112,17 +103,6 @@ class AcademyResource extends BaseResource
                             ->label('نشط')
                             ->default(true)
                             ->helperText('تحديد ما إذا كانت الأكاديمية نشطة أم لا'),
-
-                        Toggle::make('is_suspended')
-                            ->label('موقوف')
-                            ->default(false)
-                            ->helperText('تحديد ما إذا كانت الأكاديمية موقوفة أم لا'),
-
-                        Textarea::make('suspension_reason')
-                            ->label('سبب الإيقاف')
-                            ->rows(2)
-                            ->placeholder('أدخل سبب الإيقاف إذا كان موقوفاً')
-                            ->visible(fn ($get) => $get('is_suspended')),
                     ])
                     ->columns(2),
 
@@ -201,11 +181,6 @@ class AcademyResource extends BaseResource
                     ->boolean()
                     ->sortable(),
 
-                Tables\Columns\IconColumn::make('is_suspended')
-                    ->label('موقوف')
-                    ->boolean()
-                    ->sortable(),
-
                 Tables\Columns\TextColumn::make('plan_type')
                     ->label('الخطة')
                     ->badge()
@@ -232,12 +207,6 @@ class AcademyResource extends BaseResource
                     ->toggleable()
                     ->placeholder('غير محدد'),
 
-                Tables\Columns\TextColumn::make('total_enrollments_count')
-                    ->label('إجمالي التسجيلات')
-                    ->numeric()
-                    ->sortable()
-                    ->toggleable(),
-
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('تاريخ الإنشاء')
                     ->dateTime('Y-m-d')
@@ -250,12 +219,6 @@ class AcademyResource extends BaseResource
                     ->placeholder('الكل')
                     ->trueLabel('نشط فقط')
                     ->falseLabel('غير نشط فقط'),
-
-                Tables\Filters\TernaryFilter::make('is_suspended')
-                    ->label('حالة الإيقاف')
-                    ->placeholder('الكل')
-                    ->trueLabel('موقوف فقط')
-                    ->falseLabel('غير موقوف فقط'),
 
                 Tables\Filters\SelectFilter::make('plan_type')
                     ->label('نوع الخطة')
@@ -281,19 +244,6 @@ class AcademyResource extends BaseResource
                 EditAction::make()
                     ->label('تعديل')
                     ->icon('heroicon-m-pencil-square'),
-
-                Action::make('toggleSuspend')
-                    ->label(fn (Academy $record): string => $record->is_suspended ? 'إلغاء الإيقاف' : 'إيقاف')
-                    ->icon(fn (Academy $record): string => $record->is_suspended ? 'heroicon-m-play' : 'heroicon-m-pause')
-                    ->color(fn (Academy $record): string => $record->is_suspended ? 'success' : 'warning')
-                    ->requiresConfirmation()
-                    ->modalHeading(fn (Academy $record): string => $record->is_suspended ? 'إلغاء إيقاف الأكاديمية' : 'إيقاف الأكاديمية')
-                    ->modalDescription('هل أنت متأكد من هذا الإجراء؟')
-                    ->action(function (Academy $record): void {
-                        $record->update([
-                            'is_suspended' => ! $record->is_suspended,
-                        ]);
-                    }),
 
                 DeleteAction::make()
                     ->label('حذف')

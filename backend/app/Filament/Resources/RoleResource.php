@@ -6,7 +6,7 @@ namespace App\Filament\Resources;
 
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
-use Filament\Forms\Components\Section;
+use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\Hidden;

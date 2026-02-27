@@ -14,7 +14,7 @@ class AcademyStatsWidget extends BaseWidget
     {
         $totalAcademies = Academy::count();
         $activeAcademies = Academy::where('is_active', true)->count();
-        $suspendedAcademies = Academy::where('is_suspended', true)->count();
+        $inactiveAcademies = Academy::where('is_active', false)->count();
         $expiredSubscriptions = Academy::where('plan_expires_at', '<', now())->count();
 
         return [
@@ -28,8 +28,8 @@ class AcademyStatsWidget extends BaseWidget
                 ->descriptionIcon('heroicon-m-check-circle')
                 ->color('success'),
 
-            Stat::make('الأكاديميات الموقوفة', $suspendedAcademies)
-                ->description($totalAcademies > 0 ? number_format(($suspendedAcademies / $totalAcademies) * 100, 1) . '% من الإجمالي' : '0%')
+            Stat::make('الأكاديميات الغير نشطة', $inactiveAcademies)
+                ->description($totalAcademies > 0 ? number_format(($inactiveAcademies / $totalAcademies) * 100, 1) . '% من الإجمالي' : '0%')
                 ->descriptionIcon('heroicon-m-x-circle')
                 ->color('danger'),
 

@@ -9,7 +9,7 @@ use App\Domains\Subscriptions\Enums\SubscriptionType;
 use App\Domains\Subscriptions\Models\Subscription;
 use App\Domains\Auth\Models\Academy;
 use App\Domains\Auth\Models\Teacher;
-use Filament\Forms\Components\Section;
+use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
@@ -60,7 +60,7 @@ class SubscriptionResource extends BaseResource
 
                         Select::make('subscriber_id')
                             ->label('المشترك')
-                            ->options(function (\Filament\Forms\Get $get) {
+                            ->options(function (\Filament\Schemas\Components\Utilities\Get $get) {
                                 $type = $get('subscriber_type');
                                 if ($type === 'App\Domains\Auth\Models\Academy') {
                                     return Academy::pluck('name', 'id');

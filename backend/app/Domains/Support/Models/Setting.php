@@ -9,10 +9,10 @@ use Illuminate\Support\Facades\Crypt;
 
 class Setting extends Model
 {
-    protected $fillable = ['key', 'value', 'group', 'type', 'description', 'is_public'];
+    protected $fillable = ['key', 'value', 'group'];
 
     protected $casts = [
-        'is_public' => 'boolean',
+        //
     ];
 
     // List of keys that should be encrypted

@@ -6,7 +6,7 @@ namespace App\Filament\Resources;
 
 use App\Domains\Auth\Enums\TeacherStatus;
 use App\Domains\Auth\Models\Teacher;
-use Filament\Forms\Components\Section;
+use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
@@ -69,12 +69,6 @@ class TeacherResource extends BaseResource
                             ->label('التخصص / المادة')
                             ->maxLength(255)
                             ->placeholder('مثال: الرياضيات، الفيزياء'),
-
-                        Textarea::make('bio')
-                            ->label('نبذة عن المعلم')
-                            ->rows(3)
-                            ->placeholder('أدخل نبذة قصيرة عن المعلم')
-                            ->columnSpanFull(),
                     ])
                     ->columns(2),
 
