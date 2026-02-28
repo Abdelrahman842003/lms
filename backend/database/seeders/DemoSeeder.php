@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
-use App\Models\Teacher;
-use App\Models\Student;
-use App\Models\Secretary;
+use App\Domains\Auth\Models\Teacher;
+use App\Domains\Auth\Models\Student;
+use App\Domains\Auth\Models\Secretary;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -14,26 +14,26 @@ class DemoSeeder extends Seeder
     {
         // Create Demo Teacher
         $teacher = Teacher::firstOrCreate(
-            ['username' => 'teacher'],
+            ['phone' => '01000000000'],
             [
                 'name' => 'Demo Teacher',
                 'password' => Hash::make('password'),
+                'status' => 'active',
             ]
         );
 
         // Create Demo Student
         Student::firstOrCreate(
-            ['username' => 'student'],
+            ['phone' => '01100000000'],
             [
                 'name' => 'Demo Student',
                 'password' => Hash::make('password'),
-                'teacher_id' => $teacher->id,
             ]
         );
 
         // Create Demo Secretary
         Secretary::firstOrCreate(
-            ['username' => 'secretary'],
+            ['phone' => '01200000000'],
             [
                 'name' => 'Demo Secretary',
                 'password' => Hash::make('password'),

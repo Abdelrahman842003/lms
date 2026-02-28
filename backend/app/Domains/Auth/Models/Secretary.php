@@ -17,6 +17,11 @@ class Secretary extends Authenticatable
 {
     use HasFactory, Notifiable, HasApiTokens, HasUuids, HasRoles, HasDeviceTokens;
 
+    protected static function newFactory()
+    {
+        return \Database\Factories\SecretaryFactory::new();
+    }
+
     protected $fillable = [
         'teacher_id',
         'name',

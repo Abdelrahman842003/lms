@@ -184,19 +184,19 @@ class AcademyResource extends BaseResource
                 Tables\Columns\TextColumn::make('plan_type')
                     ->label('الخطة')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn ($state): string => match (is_string($state) ? $state : $state->value) {
                         'free' => 'gray',
                         'basic' => 'info',
                         'pro' => 'warning',
                         'enterprise' => 'success',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                    ->formatStateUsing(fn ($state): string => match (is_string($state) ? $state : $state->value) {
                         'free' => 'مجاني',
                         'basic' => 'أساسي',
                         'pro' => 'احترافي',
                         'enterprise' => 'مؤسسي',
-                        default => $state,
+                        default => is_string($state) ? $state : $state->value,
                     })
                     ->sortable(),
 

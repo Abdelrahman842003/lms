@@ -12,7 +12,7 @@ use App\Domains\Lectures\Models\Lecture;
 use App\Domains\Exams\Models\Exam;
 use Illuminate\Database\Seeder;
 use App\Domains\Exams\Models\ExamResult;
-use App\Models\Secretary;
+use App\Domains\Auth\Models\Secretary;
 use Illuminate\Support\Facades\Hash;
 use Carbon\Carbon;
 

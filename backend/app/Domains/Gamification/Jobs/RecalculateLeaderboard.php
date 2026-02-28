@@ -24,7 +24,6 @@ class RecalculateLeaderboard implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public string $queue = 'default';
 
     public function handle(): void
     {

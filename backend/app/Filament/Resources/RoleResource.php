@@ -131,10 +131,10 @@ class RoleResource extends BaseResource
                     ->searchable()
                     ->sortable()
                     ->weight('font-bold')
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                    ->formatStateUsing(fn ($state): string => match (is_string($state) ? $state : $state->value) {
                         'super-admin' => 'مدير النظام (Super Admin)',
                         'admin' => 'مدير (Admin)',
-                        default => $state,
+                        default => is_string($state) ? $state : $state->value,
                     }),
 
                 Tables\Columns\TextColumn::make('permissions_count')

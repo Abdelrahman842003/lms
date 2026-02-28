@@ -97,7 +97,7 @@ class SettingResource extends BaseResource
                 Tables\Columns\TextColumn::make('group')
                     ->label('المجموعة')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn ($state): string => match (is_string($state) ? $state : $state->value) {
                         'general' => 'primary',
                         'payment' => 'success',
                         'notification' => 'warning',
@@ -105,7 +105,7 @@ class SettingResource extends BaseResource
                         'integration' => 'info',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                    ->formatStateUsing(fn ($state): string => match (is_string($state) ? $state : $state->value) {
                         'general' => 'عام',
                         'payment' => 'الدفع',
                         'notification' => 'الإشعارات',
@@ -113,7 +113,7 @@ class SettingResource extends BaseResource
                         'integration' => 'التكاملات',
                         'academy' => 'الأكاديمية',
                         'subscription' => 'الاشتراكات',
-                        default => $state,
+                        default => is_string($state) ? $state : $state->value,
                     }),
 
                 Tables\Columns\TextColumn::make('updated_at')

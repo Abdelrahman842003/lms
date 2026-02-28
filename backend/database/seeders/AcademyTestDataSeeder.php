@@ -3,9 +3,9 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\Academy;
-use App\Models\Secretary;
-use App\Models\Teacher;
+use App\Domains\Auth\Models\Academy;
+use App\Domains\Auth\Models\Secretary;
+use App\Domains\Auth\Models\Teacher;
 use App\Domains\Support\Models\TeacherAttendanceLog;
 use App\Domains\Notifications\Models\AcademyNotification;
 use Illuminate\Support\Facades\Hash;

@@ -13,7 +13,6 @@ use Illuminate\Contracts\Queue\ShouldQueue;
  */
 class SuspendEnrollmentsOnExpiry implements ShouldQueue
 {
-    public string $queue = 'default';
 
     public function handle(SubscriptionExpired $event): void
     {

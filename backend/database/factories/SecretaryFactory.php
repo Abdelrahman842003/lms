@@ -2,14 +2,18 @@
 
 namespace Database\Factories;
 
+use App\Domains\Auth\Models\Secretary;
+use App\Domains\Auth\Models\Teacher;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Secretary>
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Domains\Auth\Models\Secretary>
  */
 class SecretaryFactory extends Factory
 {
+    protected $model = Secretary::class;
+
     /**
      * Define the model's default state.
      *
@@ -20,7 +24,7 @@ class SecretaryFactory extends Factory
         return [
             'name' => fake()->name(),
             'password' => Hash::make('password'),
-            'teacher_id' => \App\Models\Teacher::inRandomOrder()->first()->id ?? \App\Models\Teacher::factory(),
+            'teacher_id' => Teacher::inRandomOrder()->first()->id ?? Teacher::factory(),
         ];
     }
 }

@@ -2,7 +2,8 @@
 
 namespace Database\Seeders;
 
-use App\Models\Student;
+use App\Domains\Auth\Models\Student;
+use App\Domains\Auth\Models\Teacher;
 use Illuminate\Database\Seeder;
 
 class StudentSeeder extends Seeder
@@ -12,12 +13,10 @@ class StudentSeeder extends Seeder
      */
     public function run(): void
     {
-        $teachers = \App\Models\Teacher::all();
+        $teachers = Teacher::all();
 
         foreach ($teachers as $teacher) {
-            Student::factory(rand(5, 10))->create([
-                'teacher_id' => $teacher->id,
-            ]);
+            Student::factory(rand(5, 10))->create();
         }
     }
 }

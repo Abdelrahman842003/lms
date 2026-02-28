@@ -2,6 +2,8 @@
 
 namespace Database\Factories;
 
+use App\Domains\Auth\Models\Teacher;
+use App\Domains\Enrollments\Models\Grade;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -9,6 +11,8 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class GradeFactory extends Factory
 {
+    protected $model = Grade::class;
+
     /**
      * Define the model's default state.
      *
@@ -18,7 +22,7 @@ class GradeFactory extends Factory
     {
         return [
             'name' => fake()->unique()->word() . ' Grade',
-            'teacher_id' => \App\Models\Teacher::factory(),
+            'teacher_id' => Teacher::factory(),
         ];
     }
 }

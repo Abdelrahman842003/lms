@@ -14,7 +14,6 @@ use Illuminate\Contracts\Queue\ShouldQueue;
  */
 class LogLoginAudit implements ShouldQueue
 {
-    public string $queue = 'default';
 
     public function handle(UserLoggedIn $event): void
     {

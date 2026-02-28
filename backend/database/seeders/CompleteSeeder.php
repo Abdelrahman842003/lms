@@ -17,12 +17,12 @@ use App\Domains\Exams\Models\ExamAttempt;
 use App\Domains\Exams\Models\ExamResult;
 use App\Domains\Exams\Models\StudentAnswer;
 use App\Domains\Subscriptions\Models\PaymentLog;
-use App\Models\GamificationSetting;
-use App\Models\StudentPoint;
-use App\Models\PointTransaction;
+use App\Domains\Gamification\Models\GamificationSetting;
+use App\Domains\Gamification\Models\StudentPoint;
+use App\Domains\Gamification\Models\PointTransaction;
 use App\Domains\Exams\Models\FailedQuestion;
-use App\Models\StudentActivityLog;
-use App\Models\Guardian;
+use App\Domains\Enrollments\Models\StudentActivityLog;
+use App\Domains\Auth\Models\Guardian;
 use Illuminate\Support\Facades\Hash;
 use Carbon\Carbon;
 

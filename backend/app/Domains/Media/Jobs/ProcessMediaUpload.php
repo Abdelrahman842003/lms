@@ -26,7 +26,6 @@ class ProcessMediaUpload implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public string $queue = 'default';
 
     public int $tries = 3;
 

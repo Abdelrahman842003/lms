@@ -25,6 +25,11 @@ class Teacher extends Authenticatable
 {
     use HasFactory, Notifiable, HasApiTokens, HasUuids, HasDeviceTokens;
 
+    protected static function newFactory()
+    {
+        return \Database\Factories\TeacherFactory::new();
+    }
+
     protected $connection = 'mysql'; // Central DB
 
     protected $fillable = [

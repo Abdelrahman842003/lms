@@ -19,7 +19,6 @@ class ProcessExamStart implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public string $queue = 'default';
 
     public function __construct(
         protected Exam $exam,

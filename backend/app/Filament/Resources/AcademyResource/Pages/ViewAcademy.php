@@ -51,19 +51,19 @@ class ViewAcademy extends ViewRecord
                         TextEntry::make('plan_type')
                             ->label('نوع الخطة')
                             ->badge()
-                            ->color(fn (string $state): string => match ($state) {
+                            ->color(fn ($state): string => match (is_string($state) ? $state : $state->value) {
                                 'free' => 'gray',
                                 'basic' => 'info',
                                 'pro' => 'warning',
                                 'enterprise' => 'success',
                                 default => 'gray',
                             })
-                            ->formatStateUsing(fn (string $state): string => match ($state) {
+                            ->formatStateUsing(fn ($state): string => match (is_string($state) ? $state : $state->value) {
                                 'free' => 'مجاني',
                                 'basic' => 'أساسي',
                                 'pro' => 'احترافي',
                                 'enterprise' => 'مؤسسي',
-                                default => $state,
+                                default => is_string($state) ? $state : $state->value,
                             }),
 
                         TextEntry::make('plan_expires_at')

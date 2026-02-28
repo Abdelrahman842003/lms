@@ -16,6 +16,11 @@ class Lecture extends Model
 {
     use HasFactory, HasUuids;
 
+    protected static function newFactory()
+    {
+        return \Database\Factories\LectureFactory::new();
+    }
+
     protected $fillable = [
         'teacher_id',
         'academy_id',

@@ -60,14 +60,14 @@ class RecentAcademiesWidget extends BaseWidget
 
                 Tables\Columns\TextColumn::make('plan_type')
                     ->badge()
-                    ->color(fn (?string $state): string => match ($state) {
+                    ->color(fn ($state): string => match (is_string($state) ? $state : $state->value) {
                         'pro' => 'success',
                         'basic' => 'warning',
                         'free' => 'info',
                         'enterprise' => 'success',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn (?string $state): string => match ($state) {
+                    ->formatStateUsing(fn ($state): string => match (is_string($state) ? $state : $state->value) {
                         'free' => 'مجاني',
                         'basic' => 'أساسي',
                         'pro' => 'احترافي',

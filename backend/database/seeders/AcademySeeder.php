@@ -3,10 +3,10 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\Academy;
-use App\Models\Secretary;
-use App\Models\Teacher;
-use App\Models\Student;
+use App\Domains\Auth\Models\Academy;
+use App\Domains\Auth\Models\Secretary;
+use App\Domains\Auth\Models\Teacher;
+use App\Domains\Auth\Models\Student;
 use Illuminate\Support\Facades\Hash;
 
 class AcademySeeder extends Seeder

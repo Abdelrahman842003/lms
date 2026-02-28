@@ -179,29 +179,29 @@ class SubscriptionResource extends BaseResource
                 Tables\Columns\TextColumn::make('subscriber_type')
                     ->label('النوع')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn ($state): string => match (is_string($state) ? $state : $state->value) {
                         'App\Domains\Auth\Models\Academy' => 'success',
                         'App\Domains\Auth\Models\Teacher' => 'primary',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                    ->formatStateUsing(fn ($state): string => match (is_string($state) ? $state : $state->value) {
                         'App\Domains\Auth\Models\Academy' => 'أكاديمية',
                         'App\Domains\Auth\Models\Teacher' => 'مدرس',
-                        default => $state,
+                        default => is_string($state) ? $state : $state->value,
                     }),
 
                 Tables\Columns\TextColumn::make('type')
                     ->label('خطة الاشتراك')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn ($state): string => match (is_string($state) ? $state : $state->value) {
                         'teacher' => 'primary',
                         'academy' => 'success',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                    ->formatStateUsing(fn ($state): string => match (is_string($state) ? $state : $state->value) {
                         'teacher' => 'مدرس',
                         'academy' => 'أكاديمية',
-                        default => $state,
+                        default => is_string($state) ? $state : $state->value,
                     }),
 
                 Tables\Columns\TextColumn::make('amount_due')
@@ -222,19 +222,19 @@ class SubscriptionResource extends BaseResource
                 Tables\Columns\TextColumn::make('status')
                     ->label('حالة الدفع')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn ($state): string => match (is_string($state) ? $state : $state->value) {
                         'pending' => 'warning',
                         'partial' => 'info',
                         'paid' => 'success',
                         'cancelled' => 'danger',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                    ->formatStateUsing(fn ($state): string => match (is_string($state) ? $state : $state->value) {
                         'pending' => 'غير مدفوع',
                         'partial' => 'مدفوع جزئياً',
                         'paid' => 'مدفوع',
                         'cancelled' => 'ملغي',
-                        default => $state,
+                        default => is_string($state) ? $state : $state->value,
                     }),
 
                 Tables\Columns\TextColumn::make('created_at')

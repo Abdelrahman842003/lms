@@ -15,7 +15,6 @@ use Illuminate\Contracts\Queue\ShouldQueue;
  */
 class GrantExamXp implements ShouldQueue
 {
-    public string $queue = 'default';
 
     public function handle(ExamCompleted $event): void
     {

@@ -15,7 +15,6 @@ use Illuminate\Contracts\Queue\ShouldQueue;
  */
 class RecordMistakes implements ShouldQueue
 {
-    public string $queue = 'default';
 
     public function handle(ExamCompleted $event): void
     {

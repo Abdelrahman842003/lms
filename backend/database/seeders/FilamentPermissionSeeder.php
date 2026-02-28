@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\Admin;
+use App\Domains\Auth\Models\Admin;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Permission;
@@ -64,8 +64,6 @@ class FilamentPermissionSeeder extends Seeder
                 Permission::firstOrCreate([
                     'name' => "{$resource}.{$action}",
                     'guard_name' => 'admin',
-                ], [
-                    'group' => $resource,
                 ]);
             }
         }
@@ -83,8 +81,6 @@ class FilamentPermissionSeeder extends Seeder
                 Permission::firstOrCreate([
                     'name' => "{$resource}.{$action}",
                     'guard_name' => 'admin',
-                ], [
-                    'group' => $resource,
                 ]);
             }
         }
@@ -100,8 +96,6 @@ class FilamentPermissionSeeder extends Seeder
         $role = Role::firstOrCreate([
             'name' => 'filament-admin',
             'guard_name' => 'admin',
-        ], [
-            'description' => 'Full access to Filament admin panel with all permissions',
         ]);
 
         // Get all admin permissions
@@ -122,21 +116,19 @@ class FilamentPermissionSeeder extends Seeder
     {
         $adminData = [
             'name' => 'Super Admin',
-            'email' => 'admin@example.com',
+            'username' => 'admin',
             'password' => Hash::make('password'),
-            'is_active' => true,
-            'email_verified_at' => now(),
         ];
 
         $admin = Admin::firstOrCreate(
-            ['email' => $adminData['email']],
+            ['username' => $adminData['username']],
             $adminData
         );
 
         // Assign the filament-admin role
         $admin->assignRole($role);
 
-        $this->command->info("Created admin user: {$adminData['email']} / password: password");
+        $this->command->info("Created admin user: {$adminData['username']} / password: password");
         $this->command->warn('Please change the default password after first login!');
     }
 

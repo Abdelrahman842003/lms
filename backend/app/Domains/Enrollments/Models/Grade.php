@@ -13,6 +13,11 @@ class Grade extends Model
 {
     use HasFactory, HasUuids;
 
+    protected static function newFactory()
+    {
+        return \Database\Factories\GradeFactory::new();
+    }
+
     protected $keyType = 'string';
     public $incrementing = false;
 

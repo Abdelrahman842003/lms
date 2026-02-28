@@ -15,7 +15,6 @@ class SendBulkNotificationJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public string $queue = 'notifications';
 
     public function __construct(
         protected array  $tokens,

@@ -3,8 +3,8 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\Academy;
-use App\Models\Teacher;
+use App\Domains\Auth\Models\Academy;
+use App\Domains\Auth\Models\Teacher;
 
 class AttachTeachersToAcademySeeder extends Seeder
 {

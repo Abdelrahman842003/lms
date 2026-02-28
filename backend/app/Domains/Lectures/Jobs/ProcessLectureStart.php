@@ -18,7 +18,6 @@ class ProcessLectureStart implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public string $queue = 'default';
 
     public function __construct(
         protected Lecture $lecture,

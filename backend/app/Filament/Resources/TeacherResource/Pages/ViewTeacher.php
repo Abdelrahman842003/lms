@@ -51,17 +51,17 @@ class ViewTeacher extends ViewRecord
                         TextEntry::make('status')
                             ->label('الحالة')
                             ->badge()
-                            ->color(fn (string $state): string => match ($state) {
+                            ->color(fn ($state): string => match (is_string($state) ? $state : $state->value) {
                                 'active' => 'success',
                                 'suspended' => 'danger',
                                 'pending' => 'warning',
                                 default => 'gray',
                             })
-                            ->formatStateUsing(fn (string $state): string => match ($state) {
+                            ->formatStateUsing(fn ($state): string => match (is_string($state) ? $state : $state->value) {
                                 'active' => 'نشط',
                                 'suspended' => 'موقوف',
                                 'pending' => 'معلق',
-                                default => $state,
+                                default => is_string($state) ? $state : $state->value,
                             }),
 
                         IconEntry::make('is_independent_active')
@@ -113,17 +113,17 @@ class ViewTeacher extends ViewRecord
                         TextEntry::make('plan_type')
                             ->label('نوع الخطة')
                             ->badge()
-                            ->color(fn (string $state): string => match ($state) {
+                            ->color(fn ($state): string => match (is_string($state) ? $state : $state->value) {
                                 'free' => 'gray',
                                 'basic' => 'info',
                                 'pro' => 'warning',
                                 default => 'gray',
                             })
-                            ->formatStateUsing(fn (string $state): string => match ($state) {
+                            ->formatStateUsing(fn ($state): string => match (is_string($state) ? $state : $state->value) {
                                 'free' => 'مجاني',
                                 'basic' => 'أساسي',
                                 'pro' => 'احترافي',
-                                default => $state,
+                                default => is_string($state) ? $state : $state->value,
                             }),
 
                         TextEntry::make('plan_expires_at')

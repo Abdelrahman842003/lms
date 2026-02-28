@@ -21,7 +21,7 @@ class DatabaseSeeder extends Seeder
         \Illuminate\Support\Facades\Schema::disableForeignKeyConstraints();
 
         // Truncate tables
-        \App\Models\Admin::truncate();
+        \App\Domains\Auth\Models\Admin::truncate();
         \Spatie\Permission\Models\Role::truncate();
         \Spatie\Permission\Models\Permission::truncate();
         \Illuminate\Support\Facades\DB::table('model_has_roles')->truncate();

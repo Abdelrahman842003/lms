@@ -21,7 +21,6 @@ class CheckExpiringSubscriptions implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public string $queue = 'default';
 
     private const WARNING_DAYS = 7;
 

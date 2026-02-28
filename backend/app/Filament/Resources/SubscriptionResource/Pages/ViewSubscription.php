@@ -33,10 +33,10 @@ class ViewSubscription extends ViewRecord
 
                         TextEntry::make('subscriber_type')
                             ->label('النوع')
-                            ->formatStateUsing(fn (string $state): string => match ($state) {
+                            ->formatStateUsing(fn ($state): string => match (is_string($state) ? $state : $state->value) {
                                 'App\Models\Academy' => 'أكاديمية',
                                 'App\Models\Teacher' => 'مدرس',
-                                default => $state,
+                                default => is_string($state) ? $state : $state->value,
                             })
                             ->badge(),
                     ])
@@ -46,10 +46,10 @@ class ViewSubscription extends ViewRecord
                     ->schema([
                         TextEntry::make('type')
                             ->label('نوع الاشتراك')
-                            ->formatStateUsing(fn (string $state): string => match ($state) {
+                            ->formatStateUsing(fn ($state): string => match (is_string($state) ? $state : $state->value) {
                                 'teacher' => 'مدرس',
                                 'academy' => 'أكاديمية',
-                                default => $state,
+                                default => is_string($state) ? $state : $state->value,
                             })
                             ->badge(),
 
@@ -83,14 +83,14 @@ class ViewSubscription extends ViewRecord
                         TextEntry::make('status')
                             ->label('حالة الدفع')
                             ->badge()
-                            ->formatStateUsing(fn (string $state): string => match ($state) {
+                            ->formatStateUsing(fn ($state): string => match (is_string($state) ? $state : $state->value) {
                                 'pending' => 'غير مدفوع',
                                 'partial' => 'مدفوع جزئياً',
                                 'paid' => 'مدفوع',
                                 'cancelled' => 'ملغي',
-                                default => $state,
+                                default => is_string($state) ? $state : $state->value,
                             })
-                            ->color(fn (string $state): string => match ($state) {
+                            ->color(fn ($state): string => match (is_string($state) ? $state : $state->value) {
                                 'pending' => 'warning',
                                 'partial' => 'info',
                                 'paid' => 'success',
@@ -105,7 +105,7 @@ class ViewSubscription extends ViewRecord
 
                         TextEntry::make('payment_method')
                             ->label('طريقة الدفع')
-                            ->formatStateUsing(fn (?string $state): string => match ($state) {
+                            ->formatStateUsing(fn ($state): string => match (is_string($state) ? $state : $state->value) {
                                 'cash' => 'نقدي',
                                 'vodafone_cash' => 'فودافون كاش',
                                 'bank_transfer' => 'تحويل بنكي',

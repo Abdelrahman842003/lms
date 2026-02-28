@@ -6,6 +6,8 @@ export default defineConfig({
   
   base: '/',
   
+  lastUpdated: false,
+
   head: [
     ['link', { rel: 'icon', href: '/favicon.ico' }],
     ['meta', { name: 'theme-color', content: '#3c82f6' }],
@@ -91,25 +93,23 @@ export default defineConfig({
       provider: 'local',
     },
 
-    editLink: {
-      pattern: 'https://github.com/neetaq/platform/edit/main/docs/:path',
-      text: 'Edit this page on GitHub',
-    },
+    // editLink: {
+    //   pattern: 'https://github.com/neetaq/platform/edit/main/docs/:path',
+    //   text: 'Edit this page on GitHub',
+    // },
 
-    lastUpdated: {
-      text: 'Updated at',
-      formatOptions: {
-        dateStyle: 'full',
-        timeStyle: 'medium',
-      },
-    },
+    // lastUpdated disabled (requires git inside container)
+    // lastUpdated: {
+    //   text: 'Updated at',
+    //   formatOptions: {
+    //     dateStyle: 'full',
+    //     timeStyle: 'medium',
+    //   },
+    // },
   },
 
   markdown: {
-    config: (md) => {
-      // Enable Mermaid diagrams
-      md.use(require('markdown-it-mermaid'))
-    },
+    // Mermaid diagrams rendered via client-side script in theme
   },
 
   // Build configuration

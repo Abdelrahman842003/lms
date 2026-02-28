@@ -225,17 +225,17 @@ class TeacherResource extends BaseResource
                 Tables\Columns\TextColumn::make('status')
                     ->label('الحالة')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn ($state): string => match (is_string($state) ? $state : $state->value) {
                         'active' => 'success',
                         'suspended' => 'danger',
                         'pending' => 'warning',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                    ->formatStateUsing(fn ($state): string => match (is_string($state) ? $state : $state->value) {
                         'active' => 'نشط',
                         'suspended' => 'موقوف',
                         'pending' => 'معلق',
-                        default => $state,
+                        default => is_string($state) ? $state : $state->value,
                     })
                     ->sortable(),
 

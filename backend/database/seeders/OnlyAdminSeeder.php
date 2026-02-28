@@ -3,7 +3,7 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\Admin;
+use App\Domains\Auth\Models\Admin;
 use Illuminate\Support\Facades\Hash;
 
 class OnlyAdminSeeder extends Seeder

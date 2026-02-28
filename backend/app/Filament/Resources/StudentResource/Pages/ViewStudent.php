@@ -88,7 +88,7 @@ class ViewStudent extends ViewRecord
                     ->schema([
                         TextEntry::make('gender')
                             ->label('الجنس')
-                            ->formatStateUsing(fn (?string $state): string => match ($state) {
+                            ->formatStateUsing(fn ($state): string => match (is_string($state) ? $state : $state->value) {
                                 'male' => 'ذكر',
                                 'female' => 'أنثى',
                                 default => 'غير محدد',
@@ -96,7 +96,7 @@ class ViewStudent extends ViewRecord
 
                         TextEntry::make('education_type')
                             ->label('نوع التعليم')
-                            ->formatStateUsing(fn (?string $state): string => match ($state) {
+                            ->formatStateUsing(fn ($state): string => match (is_string($state) ? $state : $state->value) {
                                 'regular' => 'عادي',
                                 'private' => 'خاص',
                                 'homeschool' => 'تعليم منزلي',

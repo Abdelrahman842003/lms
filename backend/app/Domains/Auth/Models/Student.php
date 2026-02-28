@@ -22,6 +22,11 @@ class Student extends Authenticatable
 {
     use HasFactory, Notifiable, HasApiTokens, HasUuids, HasRoles, HasDeviceTokens;
 
+    protected static function newFactory()
+    {
+        return \Database\Factories\StudentFactory::new();
+    }
+
     protected $keyType = 'string';
     public $incrementing = false;
 

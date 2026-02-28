@@ -14,7 +14,6 @@ use Illuminate\Contracts\Queue\ShouldQueue;
  */
 class NotifyGroupOnActivation implements ShouldQueue
 {
-    public string $queue = 'notifications';
 
     public function handle(LectureActivated $event): void
     {

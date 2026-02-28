@@ -15,6 +15,11 @@ class Exam extends Model
 {
     use HasFactory, HasUuids;
 
+    protected static function newFactory()
+    {
+        return \Database\Factories\ExamFactory::new();
+    }
+
     protected $fillable = [
         'teacher_id',
         'academy_id',
