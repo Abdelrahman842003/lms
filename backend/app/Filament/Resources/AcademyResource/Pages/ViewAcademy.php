@@ -52,17 +52,17 @@ class ViewAcademy extends ViewRecord
                             ->label('نوع الخطة')
                             ->badge()
                             ->color(fn ($state): string => match (is_string($state) ? $state : $state->value) {
+                                'trial' => 'gray',
+                                'term' => 'info',
+                                'custom' => 'warning',
                                 'free' => 'gray',
-                                'basic' => 'info',
-                                'pro' => 'warning',
-                                'enterprise' => 'success',
                                 default => 'gray',
                             })
                             ->formatStateUsing(fn ($state): string => match (is_string($state) ? $state : $state->value) {
+                                'trial' => 'تجريبي',
+                                'term' => 'مدة محددة',
+                                'custom' => 'مخصص',
                                 'free' => 'مجاني',
-                                'basic' => 'أساسي',
-                                'pro' => 'احترافي',
-                                'enterprise' => 'مؤسسي',
                                 default => is_string($state) ? $state : $state->value,
                             }),
 

@@ -49,18 +49,44 @@ class HelperService
 
     /**
      * Get price per student from settings (Cached)
+     * @deprecated Use getTeacherPricePerStudent() or getAcademyPricePerStudent()
      */
     public static function getPricePerStudent(): float
     {
-        return (float) Setting::getValue('pricePerStudent', 0);
+        return self::getTeacherPricePerStudent();
     }
 
     /**
      * Get academy student price from settings (Cached)
+     * @deprecated Use getAcademyPricePerStudent()
      */
     public static function getAcademyStudentPrice(): float
     {
-        return (float) Setting::getValue('academy_student_price', 20);
+        return self::getAcademyPricePerStudent();
+    }
+
+    /**
+     * Get price per student (Teacher)
+     */
+    public static function getTeacherPricePerStudent(): float
+    {
+        return (float) \App\Domains\Support\Models\Setting::where('key', 'teacher_price_per_student')->value('value') ?: 60;
+    }
+
+    /**
+     * Get price per student (Academy)
+     */
+    public static function getAcademyPricePerStudent(): float
+    {
+        return (float) \App\Domains\Support\Models\Setting::where('key', 'academy_price_per_student')->value('value') ?: 40;
+    }
+
+    /**
+     * Get trial period days (Default 14)
+     */
+    public static function getTrialPeriodDays(): int
+    {
+        return (int) \App\Domains\Support\Models\Setting::where('key', 'trial_period_days')->value('value') ?: 14;
     }
 
     /**

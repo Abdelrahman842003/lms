@@ -63,7 +63,9 @@ class SystemSettingsPage extends Page implements HasForms
 
         // Subscription settings
         $settings['default_student_quota'] = Setting::getValue('default_student_quota', '100');
-        $settings['trial_days'] = Setting::getValue('trial_days', '14');
+        $settings['trial_period_days'] = Setting::getValue('trial_period_days', '14');
+        $settings['teacher_price_per_student'] = Setting::getValue('teacher_price_per_student', '60');
+        $settings['academy_price_per_student'] = Setting::getValue('academy_price_per_student', '40');
 
         $this->form->fill($settings);
     }
@@ -157,10 +159,22 @@ class SystemSettingsPage extends Page implements HasForms
                                             ->numeric()
                                             ->default('100'),
 
-                                        TextInput::make('trial_days')
+                                        TextInput::make('trial_period_days')
                                             ->label('فترة التجربة (بالأيام)')
                                             ->numeric()
                                             ->default('14'),
+
+                                        TextInput::make('teacher_price_per_student')
+                                            ->label('سعر الطالب للمدرس (شهرياً)')
+                                            ->numeric()
+                                            ->step(0.1)
+                                            ->default('60'),
+
+                                        TextInput::make('academy_price_per_student')
+                                            ->label('سعر الطالب للأكاديمية (شهرياً)')
+                                            ->numeric()
+                                            ->step(0.1)
+                                            ->default('40'),
                                     ])
                                     ->columns(2),
                             ]),
@@ -206,7 +220,7 @@ class SystemSettingsPage extends Page implements HasForms
             str_starts_with($key, 'site_') || in_array($key, ['contact_email', 'contact_phone']) => 'general',
             str_contains($key, 'payment') || str_contains($key, 'vat') || $key === 'currency' => 'payment',
             str_contains($key, 'notification') => 'notification',
-            str_contains($key, 'quota') || str_contains($key, 'trial') => 'subscription',
+            str_contains($key, 'quota') || str_contains($key, 'trial') || str_contains($key, 'price_per_student') => 'subscription',
             default => 'general',
         };
     }

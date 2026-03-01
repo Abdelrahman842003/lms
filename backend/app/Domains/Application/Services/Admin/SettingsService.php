@@ -60,6 +60,9 @@ class SettingsService
 
             'pricePerStudent',
             'academy_student_price',
+            'teacher_price_per_student',
+            'academy_price_per_student',
+
             'seo_title',
             'seo_description',
             'seo_keywords',
@@ -75,6 +78,8 @@ class SettingsService
             'firebase_storage_bucket',
             'firebase_messaging_sender_id',
             'firebase_app_id',
+
+            'trial_period_days',
         ];
 
         $settings = Setting::whereIn('key', $keys)

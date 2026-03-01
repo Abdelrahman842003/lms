@@ -24,6 +24,9 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Hash;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
+use App\Domains\Support\Models\Setting;
 
 class TeacherResource extends BaseResource
 {
@@ -139,40 +142,206 @@ class TeacherResource extends BaseResource
 
                 Section::make('معلومات الاشتراك')
                     ->schema([
-                        Select::make('plan_type')
-                            ->label('نوع الخطة')
-                            ->options([
-                                'free' => 'مجاني',
-                                'basic' => 'أساسي',
-                                'pro' => 'احترافي',
+                        Select::make('plan_selection')
+                            ->label('مدة الاشتراك')
+                            ->options(fn () => [
+                                'trial' => 'تجريبي (' . \App\Domains\Support\Services\HelperService::getTrialPeriodDays() . ' يوم)',
+                                'monthly' => 'شهري (1 شهر)',
+                                'quarterly' => 'ربع سنوي (3 شهور)',
+                                'semi_annual' => 'نصف سنوي (6 شهور)',
+                                'annual' => 'سنوي (1 سنة)',
+                                'custom' => 'مخصص (Custom)',
                             ])
-                            ->default('free'),
+                            ->default('trial')
+                            ->reactive()
+                            ->dehydrated(false)
+                            ->afterStateHydrated(function ($component, $state, $record) {
+                                if (!$record) return;
+                                
+                                if ($record->plan_type === 'trial') {
+                                    $component->state('trial');
+                                } elseif ($record->plan_type === 'custom') {
+                                    $component->state('custom');
+                                } elseif ($record->plan_type === 'term') {
+                                    $component->state($record->subscription_period);
+                                }
+                            })
+                            ->afterStateUpdated(function ($state, $set, $get) {
+                                if ($state === 'trial') {
+                                    $trialDays = \App\Domains\Support\Services\HelperService::getTrialPeriodDays();
+                                    $set('plan_type', 'trial');
+                                    $set('subscription_period', null);
+                                    $set('custom_period_months', null);
+                                    $set('plan_expires_at', now()->addDays($trialDays)->format('Y-m-d'));
+                                    $set('subscription_fee', 0);
+                                    $set('paid_amount', 0);
+                                } elseif (in_array($state, ['monthly', 'quarterly', 'semi_annual', 'annual'])) {
+                                    $set('plan_type', 'term');
+                                    $set('subscription_period', $state);
+                                    $set('custom_period_months', null);
+                                    
+                                    $months = match ($state) {
+                                        'monthly' => 1,
+                                        'quarterly' => 3,
+                                        'semi_annual' => 6,
+                                        'annual' => 12,
+                                        default => 0,
+                                    };
+                                    
+                                    $set('plan_expires_at', now()->addMonths($months)->format('Y-m-d'));
+                                    
+                                    // Calculate fee
+                                    $students = (int) $get('plan_max_students');
+                                    try {
+                                        $pricePerStudent = (float) Setting::where('key', 'teacher_price_per_student')->value('value') ?: 60;
+                                    } catch (\Exception $e) {
+                                        $pricePerStudent = 60;
+                                    }
+                                    
+                                    $set('subscription_fee', $students * $months * $pricePerStudent);
+                                } elseif ($state === 'custom') {
+                                    $set('plan_type', 'custom');
+                                    $set('subscription_period', null);
+                                }
+                            }),
+
+                        // Hidden fields to store actual model data
+                        TextInput::make('plan_type')->default('trial')->hidden()->dehydrated(),
+                        TextInput::make('subscription_period')->hidden()->dehydrated(),
+
+                        TextInput::make('custom_period_months')
+                            ->label('عدد الشهور (مخصص)')
+                            ->numeric()
+                            ->dehydrated(false)
+                            ->visible(fn ($get) => $get('plan_type') === 'custom')
+                            ->reactive()
+                            ->afterStateUpdated(function ($state, $set, $get) {
+                                if ($state) {
+                                    $months = (int) $state;
+                                    $set('plan_expires_at', now()->addMonths($months)->format('Y-m-d'));
+
+                                    // Calculate fee
+                                    $students = (int) $get('plan_max_students');
+                                    try {
+                                        $pricePerStudent = (float) Setting::where('key', 'teacher_price_per_student')->value('value') ?: 60;
+                                    } catch (\Exception $e) {
+                                        $pricePerStudent = 60;
+                                    }
+                                    
+                                    $set('subscription_fee', $students * $months * $pricePerStudent);
+                                }
+                            }),
 
                         DatePicker::make('plan_expires_at')
                             ->label('تاريخ انتهاء الاشتراك')
-                            ->placeholder('اختر التاريخ'),
+                            ->required()
+                            ->native(false)
+                            ->displayFormat('d/m/Y')
+                            ->readOnly(fn ($get) => $get('plan_selection') !== 'custom' && $get('plan_selection') !== null)
+                            ->closeOnDateSelection(),
 
                         Toggle::make('is_unlimited_students')
                             ->label('طلاب غير محدودين')
-                            ->default(false),
+                            ->default(false)
+                            ->reactive(),
 
                         TextInput::make('plan_max_students')
                             ->label('الحد الأقصى للطلاب')
                             ->numeric()
                             ->default(50)
-                            ->visible(fn ($get) => ! $get('is_unlimited_students')),
+                            ->visible(fn ($get) => ! $get('is_unlimited_students'))
+                            ->reactive()
+                            ->afterStateUpdated(function ($state, $set, $get) {
+                                if ($state) {
+                                    $months = match ($get('plan_selection')) {
+                                        'monthly' => 1,
+                                        'quarterly' => 3,
+                                        'semi_annual' => 6,
+                                        'annual' => 12,
+                                        default => (int) $get('custom_period_months'),
+                                    };
+                                    
+                                    if ($months > 0) {
+                                        try {
+                                            $pricePerStudent = (float) Setting::where('key', 'teacher_price_per_student')->value('value') ?: 60;
+                                        } catch (\Exception $e) {
+                                            $pricePerStudent = 60;
+                                        }
+                                        
+                                        $set('subscription_fee', $state * $months * $pricePerStudent);
+                                    }
+                                }
+                            }),
 
                         TextInput::make('subscription_fee')
                             ->label('رسوم الاشتراك')
                             ->numeric()
                             ->prefix('ج.م')
-                            ->default(0),
+                            ->default(0)
+                            ->reactive()
+                            ->afterStateUpdated(function ($state, $get, $set) {
+                                // Auto-update billing notes
+                                $limit = $get('is_unlimited_students') ? 'غير محدود' : ($get('plan_max_students') ?? '50');
+                                $trialDays = \App\Domains\Support\Services\HelperService::getTrialPeriodDays();
+                                $period = match($get('plan_selection')) {
+                                    'trial' => 'تجريبي (' . $trialDays . ' يوم)',
+                                    'monthly' => 'شهري',
+                                    'quarterly' => 'ربع سنوي',
+                                    'semi_annual' => 'نصف سنوي',
+                                    'annual' => 'سنوي',
+                                    'custom' => 'مخصص', 
+                                    default => 'تجريبي'
+                                };
+                                $fee = $state ?? 0;
+                                $paid = $get('paid_amount') ?? 0;
+                                $remaining = $fee - $paid;
+
+                                $note = "نوع الاشتراك: {$period}\n" .
+                                        "الحد الأقصى للطلاب: {$limit}\n" .
+                                        "الرسوم: {$fee} ج.م\n" .
+                                        "المدفوع: {$paid} ج.م\n" .
+                                        "المتبقي: {$remaining} ج.م";
+                                
+                                $set('billing_notes', $note);
+                            }),
 
                         TextInput::make('paid_amount')
                             ->label('المبلغ المدفوع')
                             ->numeric()
                             ->prefix('ج.م')
-                            ->default(0),
+                            ->default(0)
+                            ->reactive()
+                            ->afterStateUpdated(function ($state, $get, $set) {
+                                // Auto-update billing notes
+                                $limit = $get('is_unlimited_students') ? 'غير محدود' : ($get('plan_max_students') ?? '50');
+                                $trialDays = \App\Domains\Support\Services\HelperService::getTrialPeriodDays();
+                                $period = match($get('plan_selection')) {
+                                    'trial' => 'تجريبي (' . $trialDays . ' يوم)',
+                                    'monthly' => 'شهري',
+                                    'quarterly' => 'ربع سنوي',
+                                    'semi_annual' => 'نصف سنوي',
+                                    'annual' => 'سنوي',
+                                    'custom' => 'مخصص', 
+                                    default => 'تجريبي'
+                                };
+                                $fee = $get('subscription_fee') ?? 0;
+                                $paid = $state ?? 0;
+                                $remaining = $fee - $paid;
+
+                                $note = "نوع الاشتراك: {$period}\n" .
+                                        "الحد الأقصى للطلاب: {$limit}\n" .
+                                        "الرسوم: {$fee} ج.م\n" .
+                                        "المدفوع: {$paid} ج.م\n" .
+                                        "المتبقي: {$remaining} ج.م";
+                                
+                                $set('billing_notes', $note);
+                            }),
+
+                        Textarea::make('billing_notes')
+                            ->label('ملاحظات الفواتير')
+                            ->columnSpanFull()
+                            ->rows(4)
+                            ->placeholder('سيتم إنشاء الملاحظات تلقائياً عند تحديث الاشتراك'),
                     ])
                     ->columns(2),
             ]);
@@ -239,6 +408,33 @@ class TeacherResource extends BaseResource
                     })
                     ->sortable(),
 
+                Tables\Columns\TextColumn::make('plan_type')
+                    ->label('الخطة')
+                    ->badge()
+                    ->color(fn ($state): string => match (is_string($state) ? $state : $state->value) {
+                        'trial' => 'gray',
+                        'term' => 'info',
+                        'custom' => 'warning',
+                        'free' => 'gray',
+                        default => 'gray',
+                    })
+                    ->formatStateUsing(fn ($state): string => match (is_string($state) ? $state : $state->value) {
+                        'trial' => 'تجريبي',
+                        'term' => 'مدة محددة',
+                        'custom' => 'مخصص',
+                        'free' => 'مجاني',
+                        default => is_string($state) ? $state : $state->value,
+                    })
+                    ->sortable()
+                    ->toggleable(),
+
+                Tables\Columns\TextColumn::make('plan_expires_at')
+                    ->label('انتهاء الاشتراك')
+                    ->date('Y-m-d')
+                    ->sortable()
+                    ->toggleable()
+                    ->placeholder('غير محدد'),
+
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('تاريخ الإنشاء')
                     ->dateTime('Y-m-d')
@@ -246,6 +442,16 @@ class TeacherResource extends BaseResource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
+                Tables\Filters\SelectFilter::make('plan_type')
+                    ->label('نوع الخطة')
+                    ->options([
+                        'trial' => 'تجريبي',
+                        'term' => 'مدة محددة',
+                        'custom' => 'مخصص',
+                    ])
+                    ->multiple()
+                    ->preload(),
+
                 Tables\Filters\SelectFilter::make('status')
                     ->label('الحالة')
                     ->options([

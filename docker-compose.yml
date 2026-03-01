@@ -49,7 +49,7 @@ services:
     working_dir: /var/www/backend
     volumes:
       - ./backend:/var/www/backend
-      - /var/www/backend/vendor
+      # - /var/www/backend/vendor
       - ./secrets/neetaq-54091-firebase-adminsdk-fbsvc-b830b7b75f.json:/var/www/backend/storage/firebase-credentials.json:ro
     ports:
       - "8000:8000"
