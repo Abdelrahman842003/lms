@@ -15,6 +15,10 @@ use Illuminate\Support\Str;
 
 class NotificationService
 {
+    public function __construct(
+        private NotificationSettingsService $notificationSettings,
+    ) {}
+
     /**
      * Send hybrid notification (Reverb + FCM)
      *
@@ -38,43 +42,65 @@ class NotificationService
     ): string {
         // Generate unique notification ID for deduplication
         $notificationId = Str::uuid()->toString();
+        $sendInternal = $this->notificationSettings->isInternalEnabled();
+        $sendExternal = $sendFcm && $this->notificationSettings->isExternalEnabled();
 
-        // 1. Store in database
-        try {
-            $notifiable->notifications()->create([
-                'id'   => $notificationId,
-                'type' => 'App\\Notifications\\' . ucfirst($userType) . 'Notification',
-                'data' => [
-                    'title'   => $title,
-                    'message' => $message,
-                    'type'    => $type,
-                    ...$data,
-                ],
-                'read_at' => null,
+        if ($this->notificationSettings->isRecipientBlocked($notifiable)) {
+            Log::info('Notification skipped for blocked recipient', [
+                'recipient_class' => get_class($notifiable),
+                'recipient_id' => (string) ($notifiable->id ?? ''),
+                'notification_id' => $notificationId,
             ]);
-        } catch (\Exception $e) {
-            Log::error("Failed to store notification in database: " . $e->getMessage());
+
+            return $notificationId;
         }
 
-        // 2. Broadcast via Reverb (real-time for online users)
-        try {
-            broadcast(new NewNotificationEvent(
-                userId: (string) $notifiable->id,
-                userType: $userType,
-                notificationId: $notificationId,
-                title: $title,
-                message: $message,
-                data: $data,
-                type: $type,
-            ));
+        if (! $sendInternal && ! $sendExternal) {
+            Log::info('Notification skipped because all channels are disabled', [
+                'notification_id' => $notificationId,
+            ]);
 
-            Log::info("Reverb notification sent: {$notificationId}");
-        } catch (\Exception $e) {
-            Log::error("Reverb broadcast failed: " . $e->getMessage());
+            return $notificationId;
+        }
+
+        if ($sendInternal) {
+            // 1. Store in database
+            try {
+                $notifiable->notifications()->create([
+                    'id'   => $notificationId,
+                    'type' => 'App\\Notifications\\' . ucfirst($userType) . 'Notification',
+                    'data' => [
+                        'title'   => $title,
+                        'message' => $message,
+                        'type'    => $type,
+                        ...$data,
+                    ],
+                    'read_at' => null,
+                ]);
+            } catch (\Exception $e) {
+                Log::error("Failed to store notification in database: " . $e->getMessage());
+            }
+
+            // 2. Broadcast via Reverb (real-time for online users)
+            try {
+                broadcast(new NewNotificationEvent(
+                    userId: (string) $notifiable->id,
+                    userType: $userType,
+                    notificationId: $notificationId,
+                    title: $title,
+                    message: $message,
+                    data: $data,
+                    type: $type,
+                ));
+
+                Log::info("Reverb notification sent: {$notificationId}");
+            } catch (\Exception $e) {
+                Log::error("Reverb broadcast failed: " . $e->getMessage());
+            }
         }
 
         // 3. Send FCM for offline/background users
-        if ($sendFcm) {
+        if ($sendExternal) {
             try {
                 $this->sendFcm($notifiable, $notificationId, $title, $message, $data, $type);
             } catch (\Exception $e) {
@@ -186,17 +212,21 @@ class NotificationService
         bool $sendFcm = true
     ): array {
         $notificationIds = [];
+        $batchSize = $this->notificationSettings->maxBatchSize();
+        $allowedRecipients = $this->notificationSettings->filterRecipients($notifiables);
 
-        foreach ($notifiables as $notifiable) {
-            $notificationIds[] = $this->send(
-                $notifiable,
-                $userType,
-                $title,
-                $message,
-                $data,
-                $type,
-                $sendFcm
-            );
+        foreach ($allowedRecipients->chunk($batchSize) as $recipientChunk) {
+            foreach ($recipientChunk as $notifiable) {
+                $notificationIds[] = $this->send(
+                    $notifiable,
+                    $userType,
+                    $title,
+                    $message,
+                    $data,
+                    $type,
+                    $sendFcm
+                );
+            }
         }
 
         return $notificationIds;
@@ -221,9 +251,28 @@ class NotificationService
         bool $skipDb = false
     ): void {
         $parentPhone = $student->parent_phone;
+        $sendInternal = $this->notificationSettings->isInternalEnabled();
+        $sendExternal = $this->notificationSettings->isExternalEnabled();
 
         if (empty($parentPhone)) {
             Log::info("Student {$student->id} has no parent_phone, skipping parent notification");
+            return;
+        }
+
+        if ($this->notificationSettings->isTypeBlocked('guardian')) {
+            Log::info("Parent notification skipped because guardian category is blocked");
+            return;
+        }
+
+        $guardian = Guardian::where('phone', $parentPhone)->first();
+
+        if ($guardian && $this->notificationSettings->isRecipientBlocked($guardian)) {
+            Log::info("Parent notification skipped for blocked guardian: {$guardian->id}");
+            return;
+        }
+
+        if (! $sendInternal && ! $sendExternal) {
+            Log::info("Parent notification skipped because all channels are disabled");
             return;
         }
 
@@ -234,7 +283,7 @@ class NotificationService
         // Store notification in student's notifications (parent will aggregate from children)
         $notificationId = Str::uuid()->toString();
 
-        if (!$skipDb) {
+        if ($sendInternal && ! $skipDb) {
             try {
                 $student->notifications()->create([
                     'id'   => $notificationId,
@@ -254,29 +303,32 @@ class NotificationService
         }
 
         // Broadcast via Reverb for parent's channel
-        // Fix: Use Guardian ID if available, otherwise fallback to phone
-        $guardian        = Guardian::where('phone', $parentPhone)->first();
+        // Use Guardian ID if available, otherwise fallback to phone
         $broadcastUserId = $guardian ? $guardian->id : $parentPhone;
 
-        try {
-            broadcast(new NewNotificationEvent(
-                userId: $broadcastUserId,
-                userType: 'parent',
-                notificationId: $notificationId,
-                title: $title,
-                message: $message,
-                data: $data,
-                type: $type,
-            ));
-        } catch (\Exception $e) {
-            Log::error("Reverb broadcast to parent failed: " . $e->getMessage());
+        if ($sendInternal) {
+            try {
+                broadcast(new NewNotificationEvent(
+                    userId: $broadcastUserId,
+                    userType: 'parent',
+                    notificationId: $notificationId,
+                    title: $title,
+                    message: $message,
+                    data: $data,
+                    type: $type,
+                ));
+            } catch (\Exception $e) {
+                Log::error("Reverb broadcast to parent failed: " . $e->getMessage());
+            }
         }
 
         // Send FCM to parent
-        try {
-            $this->sendFcmToParent($parentPhone, $notificationId, $title, $message, $data, $type);
-        } catch (\Exception $e) {
-            Log::error("FCM to parent failed: " . $e->getMessage());
+        if ($sendExternal) {
+            try {
+                $this->sendFcmToParent($parentPhone, $notificationId, $title, $message, $data, $type);
+            } catch (\Exception $e) {
+                Log::error("FCM to parent failed: " . $e->getMessage());
+            }
         }
     }
 

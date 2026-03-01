@@ -5,11 +5,17 @@ declare(strict_types=1);
 namespace App\Domains\Application\Services\Academy;
 
 use App\Domains\Auth\Models\Academy;
+use App\Domains\Notifications\Services\NotificationSettingsService;
 use App\Domains\Notifications\Models\AcademyNotification;
 use Illuminate\Pagination\LengthAwarePaginator;
+use RuntimeException;
 
 class NotificationService
 {
+    public function __construct(
+        private NotificationSettingsService $notificationSettings,
+    ) {}
+
     /**
      * Get academy notifications
      */
@@ -49,6 +55,18 @@ class NotificationService
      */
     public function createNotification(Academy $academy, \App\Domains\Notifications\DTOs\NotificationData $data, ?string $creatorId = null): AcademyNotification
     {
+        if (! $this->notificationSettings->isInternalEnabled()) {
+            throw new RuntimeException('الإشعارات الداخلية متوقفة من إعدادات النظام.');
+        }
+
+        if ($data->target_type === 'teachers' && $this->notificationSettings->isTypeBlocked('teacher')) {
+            throw new RuntimeException('إرسال الإشعارات للمعلمين متوقف من إعدادات النظام.');
+        }
+
+        if ($data->target_type === 'secretaries' && $this->notificationSettings->isTypeBlocked('secretary')) {
+            throw new RuntimeException('إرسال الإشعارات للسكرتيرين متوقف من إعدادات النظام.');
+        }
+
         return AcademyNotification::create([
             'academy_id' => $academy->id,
             'created_by' => $creatorId,

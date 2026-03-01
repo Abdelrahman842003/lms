@@ -6,6 +6,7 @@ namespace App\Domains\Notifications\Channels;
 
 use App\Domains\Notifications\Contracts\NotificationChannelInterface;
 use App\Domains\Auth\Models\DeviceToken;
+use App\Domains\Notifications\Services\NotificationSettingsService;
 use Google\Client;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
@@ -14,6 +15,19 @@ class FcmChannelStrategy implements NotificationChannelInterface
 {
     public function send(Collection $recipients, string $title, string $message, array $data = []): void
     {
+        /** @var NotificationSettingsService $notificationSettings */
+        $notificationSettings = app(NotificationSettingsService::class);
+
+        if (! $notificationSettings->isExternalEnabled()) {
+            return;
+        }
+
+        $recipients = $notificationSettings->filterRecipients($recipients);
+
+        if ($recipients->isEmpty()) {
+            return;
+        }
+
         // Get credentials path from config or fallback to storage
         $credentialsPath = config('services.firebase.credentials')
             ?? env('GOOGLE_APPLICATION_CREDENTIALS')
@@ -67,6 +81,13 @@ class FcmChannelStrategy implements NotificationChannelInterface
 
     public function sendToTokens(array $tokens, string $title, string $message, array $data = []): void
     {
+        /** @var NotificationSettingsService $notificationSettings */
+        $notificationSettings = app(NotificationSettingsService::class);
+
+        if (! $notificationSettings->isExternalEnabled()) {
+            return;
+        }
+
         $credentialsPath = config('services.firebase.credentials')
             ?? env('GOOGLE_APPLICATION_CREDENTIALS')
             ?? storage_path('firebase-credentials.json');
@@ -85,39 +106,44 @@ class FcmChannelStrategy implements NotificationChannelInterface
             $projectId = $this->getProjectId($credentialsPath);
             $endpoint  = "https://fcm.googleapis.com/v1/projects/{$projectId}/messages:send";
 
-            $promises = [];
-            foreach ($tokens as $token) {
-                $payload = [
-                    'message' => [
-                        'token'        => $token,
-                        'notification' => [
-                            'title' => $title,
-                            'body'  => $message,
+            $batchSize = $notificationSettings->maxBatchSize();
+
+            foreach (array_chunk($tokens, $batchSize) as $tokenBatch) {
+                $promises = [];
+
+                foreach ($tokenBatch as $token) {
+                    $payload = [
+                        'message' => [
+                            'token'        => $token,
+                            'notification' => [
+                                'title' => $title,
+                                'body'  => $message,
+                            ],
+                            'data' => array_map(function ($value) {
+                                return is_array($value) ? json_encode($value) : (string) $value;
+                            }, $data),
                         ],
-                        'data' => array_map(function ($value) {
-                            return is_array($value) ? json_encode($value) : (string) $value;
-                        }, $data),
-                    ],
-                ];
+                    ];
 
-                $promises[$token] = $httpClient->postAsync($endpoint, ['json' => $payload]);
-            }
+                    $promises[$token] = $httpClient->postAsync($endpoint, ['json' => $payload]);
+                }
 
-            // Wait for all requests to complete
-            $results = \GuzzleHttp\Promise\Utils::settle($promises)->wait();
-            foreach ($results as $token => $result) {
-                if ($result['state'] === 'rejected') {
-                    $reason = $result['reason'];
-                    if ($reason instanceof \GuzzleHttp\Exception\ClientException) {
-                        $statusCode = $reason->getResponse()->getStatusCode();
-                        if ($statusCode == 404 || $statusCode == 400) {
-                            DeviceToken::where('token', $token)->delete();
-                            Log::info("Deleted invalid FCM token (Async): {$token}");
+                // Wait for current batch requests to complete
+                $results = \GuzzleHttp\Promise\Utils::settle($promises)->wait();
+                foreach ($results as $token => $result) {
+                    if ($result['state'] === 'rejected') {
+                        $reason = $result['reason'];
+                        if ($reason instanceof \GuzzleHttp\Exception\ClientException) {
+                            $statusCode = $reason->getResponse()->getStatusCode();
+                            if ($statusCode == 404 || $statusCode == 400) {
+                                DeviceToken::where('token', $token)->delete();
+                                Log::info("Deleted invalid FCM token (Async): {$token}");
+                            } else {
+                                Log::error("FCM Async Send Error for token {$token}: " . $reason->getMessage());
+                            }
                         } else {
                             Log::error("FCM Async Send Error for token {$token}: " . $reason->getMessage());
                         }
-                    } else {
-                        Log::error("FCM Async Send Error for token {$token}: " . $reason->getMessage());
                     }
                 }
             }

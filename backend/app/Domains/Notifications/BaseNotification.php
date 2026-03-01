@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Notifications;
 
-use App\Domains\Notifications\Channels\FcmChannelStrategy as FcmChannel;
+use App\Domains\Notifications\Services\NotificationSettingsService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Notifications\Messages\BroadcastMessage;
@@ -18,7 +18,11 @@ abstract class BaseNotification extends Notification implements ShouldBroadcast
 
     public function via(object $notifiable): array
     {
-        return ['database', FcmChannel::class, 'broadcast'];
+        return app(NotificationSettingsService::class)->channelsFor(
+            $notifiable,
+            ['database', 'broadcast'],
+            true
+        );
     }
 
     public function toArray(object $notifiable): array

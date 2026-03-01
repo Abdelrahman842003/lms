@@ -42,11 +42,15 @@ class NotificationController extends Controller
 
         $data = NotificationData::fromRequest($request);
 
-        $notification = $this->service->createNotification(
-            $academy,
-            $data,
-            null
-        );
+        try {
+            $notification = $this->service->createNotification(
+                $academy,
+                $data,
+                null
+            );
+        } catch (\RuntimeException $e) {
+            return $this->errorResponse($e->getMessage(), 422);
+        }
 
         return $this->successResponse(
             new NotificationResource($notification),
@@ -74,13 +78,17 @@ class NotificationController extends Controller
     {
         $academy = $request->user();
 
-        $notification = $this->service->sendToTeachers(
-            $academy,
-            $request->validated('title'),
-            $request->validated('message'),
-            $request->validated('type') ?? 'info',
-            null
-        );
+        try {
+            $notification = $this->service->sendToTeachers(
+                $academy,
+                $request->validated('title'),
+                $request->validated('message'),
+                $request->validated('type') ?? 'info',
+                null
+            );
+        } catch (\RuntimeException $e) {
+            return $this->errorResponse($e->getMessage(), 422);
+        }
 
         return $this->successResponse([
             'notification' => $notification,

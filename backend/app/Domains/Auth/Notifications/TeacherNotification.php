@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Auth\Notifications;
 
-use App\Domains\Notifications\Channels\FcmChannelStrategy;
+use App\Domains\Notifications\Services\NotificationSettingsService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Notifications\Notification;
@@ -33,7 +33,11 @@ class TeacherNotification extends Notification implements ShouldBroadcast
 
     public function via(object $notifiable): array
     {
-        return ['database', 'broadcast', FcmChannelStrategy::class];
+        return app(NotificationSettingsService::class)->channelsFor(
+            $notifiable,
+            ['database', 'broadcast'],
+            true
+        );
     }
 
     /**

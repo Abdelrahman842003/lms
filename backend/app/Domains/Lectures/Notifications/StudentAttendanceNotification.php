@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Lectures\Notifications;
 
-use App\Domains\Notifications\Channels\FcmChannelStrategy as FcmChannel;
+use App\Domains\Notifications\Services\NotificationSettingsService;
 use Illuminate\Broadcasting\BroadcastMessage;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
@@ -21,7 +21,11 @@ class StudentAttendanceNotification extends Notification implements ShouldBroadc
 
     public function via(object $notifiable): array
     {
-        return ['database', FcmChannel::class, 'broadcast'];
+        return app(NotificationSettingsService::class)->channelsFor(
+            $notifiable,
+            ['database', 'broadcast'],
+            true
+        );
     }
 
     public function toArray(object $notifiable): array

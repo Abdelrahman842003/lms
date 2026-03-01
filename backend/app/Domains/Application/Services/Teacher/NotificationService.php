@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Application\Services\Teacher;
 
 use App\Domains\Auth\Models\Admin;
+use App\Domains\Notifications\Services\NotificationSettingsService;
 use App\Domains\Notifications\Models\SentNotification;
 use App\Domains\Auth\Models\Student;
 use App\Domains\Auth\Models\Teacher;
@@ -13,6 +14,10 @@ use Illuminate\Support\Facades\Log;
 
 class NotificationService
 {
+    public function __construct(
+        private NotificationSettingsService $notificationSettings,
+    ) {}
+
     public function getRecipients(Teacher $teacher, string $recipientType, ?string $gradeId = null, ?string $groupId = null): Collection
     {
         return match ($recipientType) {
@@ -44,8 +49,16 @@ class NotificationService
 
     public function sendToParents(Collection $students, Teacher $teacher, array $data): void
     {
+        if ($this->notificationSettings->isTypeBlocked('guardian')) {
+            return;
+        }
+
         foreach ($students as $student) {
             if ($student->guardian) {
+                if ($this->notificationSettings->isRecipientBlocked($student->guardian)) {
+                    continue;
+                }
+
                 try {
                     $student->guardian->notify(new \App\Domains\Auth\Notifications\ParentNotification(
                         $student->guardian->id,

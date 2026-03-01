@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Exams\Notifications;
 
 use App\Domains\Exams\Models\ExamResult;
-use App\Domains\Notifications\Channels\FcmChannelStrategy as FcmChannel;
+use App\Domains\Notifications\Services\NotificationSettingsService;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
@@ -20,9 +20,13 @@ class ExamResultNotification extends Notification implements ShouldBroadcast
         protected array      $progress,
     ) {}
 
-    public function via($notifiable): array
+    public function via(object $notifiable): array
     {
-        return ['database', 'broadcast', FcmChannel::class];
+        return app(NotificationSettingsService::class)->channelsFor(
+            $notifiable,
+            ['database', 'broadcast'],
+            true
+        );
     }
 
     public function toArray($notifiable): array

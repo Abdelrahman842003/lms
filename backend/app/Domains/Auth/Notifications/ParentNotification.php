@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Auth\Notifications;
 
-use App\Domains\Notifications\Channels\FcmChannelStrategy;
+use App\Domains\Notifications\Services\NotificationSettingsService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Notifications\Notification;
@@ -42,14 +42,13 @@ class ParentNotification extends Notification implements ShouldBroadcast
      */
     public function via(object $notifiable): array
     {
-        $channels = ['database', 'broadcast'];
+        $allowExternal = in_array($this->type, ['absent', 'exam_result'], true);
 
-        // Only send FCM (Push) for attendance and exams
-        if (in_array($this->type, ['absent', 'exam_result'])) {
-            $channels[] = FcmChannelStrategy::class;
-        }
-
-        return $channels;
+        return app(NotificationSettingsService::class)->channelsFor(
+            $notifiable,
+            ['database', 'broadcast'],
+            $allowExternal
+        );
     }
 
     /**

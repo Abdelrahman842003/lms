@@ -10,6 +10,7 @@ use App\Domains\Application\Http\Requests\Teacher\Notification\SendNotificationR
 use App\Domains\Application\Http\Requests\Teacher\Notification\StoreVoiceNotificationRequest;
 use App\Domains\Notifications\Models\SentNotification;
 use App\Domains\Application\Services\Teacher\NotificationService;
+use App\Domains\Notifications\Services\NotificationSettingsService;
 use App\Domains\Notifications\Services\VoiceNotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -20,7 +21,8 @@ class NotificationController extends Controller
 
     public function __construct(
         private NotificationService $notificationService,
-        private VoiceNotificationService $voiceService
+        private VoiceNotificationService $voiceService,
+        private NotificationSettingsService $notificationSettings,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -67,9 +69,10 @@ class NotificationController extends Controller
             $validated['grade_id'] ?? null,
             $validated['group_id'] ?? null
         );
+        $recipients = $this->notificationSettings->filterRecipients($recipients);
 
         if ($recipients->isEmpty()) {
-            return $this->errorResponse('No recipients found', 404);
+            return $this->errorResponse('لا يوجد مستلمون متاحون بعد تطبيق إعدادات الإشعارات', 404);
         }
 
         $channel = NotificationFactory::make('database');
@@ -133,9 +136,10 @@ class NotificationController extends Controller
                 $request->input('grade_id'),
                 $request->input('group_id')
             );
+            $recipients = $this->notificationSettings->filterRecipients($recipients);
 
             if ($recipients->isEmpty()) {
-                return $this->errorResponse('No recipients found', 404);
+                return $this->errorResponse('لا يوجد مستلمون متاحون بعد تطبيق إعدادات الإشعارات', 404);
             }
 
             // Store voice file
