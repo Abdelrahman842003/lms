@@ -6,7 +6,6 @@ namespace App\Filament\Pages;
 
 use App\Domains\Support\Models\Setting;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Notifications\Notification;
@@ -15,29 +14,28 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Facades\Cache;
 
-class SystemSettingsPage extends Page implements HasForms
+class SubscriptionSettingsPage extends Page implements HasForms
 {
     use InteractsWithForms;
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-globe-alt';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-ticket';
 
-    protected static ?string $navigationLabel = 'العام';
+    protected static ?string $navigationLabel = 'الاشتراكات';
 
     protected static string | \UnitEnum | null $navigationGroup = 'إعدادات النظام';
 
-    protected static ?string $title = 'الإعدادات العامة';
+    protected static ?string $title = 'إعدادات الاشتراكات';
 
-    protected static ?string $slug = 'system-settings';
+    protected static ?string $slug = 'system-settings/subscriptions';
 
-    protected static ?int $navigationSort = 100;
+    protected static ?int $navigationSort = 102;
 
     protected string $view = 'filament.pages.system-settings';
 
     protected const SETTING_KEYS = [
-        'site_name',
-        'site_description',
-        'contact_email',
-        'contact_phone',
+        'trial_period_days',
+        'teacher_price_per_student',
+        'academy_price_per_student',
     ];
 
     public ?array $data = [];
@@ -45,10 +43,9 @@ class SystemSettingsPage extends Page implements HasForms
     public function mount(): void
     {
         $this->form->fill([
-            'site_name' => Setting::getValue('site_name', 'My Academy'),
-            'site_description' => Setting::getValue('site_description', ''),
-            'contact_email' => Setting::getValue('contact_email', ''),
-            'contact_phone' => Setting::getValue('contact_phone', ''),
+            'trial_period_days' => Setting::getValue('trial_period_days', '14'),
+            'teacher_price_per_student' => Setting::getValue('teacher_price_per_student', '60'),
+            'academy_price_per_student' => Setting::getValue('academy_price_per_student', '40'),
         ]);
     }
 
@@ -57,32 +54,30 @@ class SystemSettingsPage extends Page implements HasForms
         return $schema
             ->statePath('data')
             ->components([
-                Section::make('معلومات الموقع')
+                Section::make('إعدادات الاشتراكات')
                     ->schema([
-                        TextInput::make('site_name')
-                            ->label('اسم الموقع')
-                            ->required()
-                            ->maxLength(255),
+                        TextInput::make('trial_period_days')
+                            ->label('فترة التجربة (بالأيام)')
+                            ->numeric()
+                            ->default('14'),
 
-                        Textarea::make('site_description')
-                            ->label('وصف الموقع')
-                            ->rows(2),
+                        TextInput::make('teacher_price_per_student')
+                            ->label('سعر الطالب للمدرس (شهرياً)')
+                            ->numeric()
+                            ->step(0.1)
+                            ->default('60'),
 
-                        TextInput::make('contact_email')
-                            ->label('البريد الإلكتروني للتواصل')
-                            ->email()
-                            ->maxLength(255),
-
-                        TextInput::make('contact_phone')
-                            ->label('رقم الهاتف للتواصل')
-                            ->tel()
-                            ->maxLength(20),
+                        TextInput::make('academy_price_per_student')
+                            ->label('سعر الطالب للأكاديمية (شهرياً)')
+                            ->numeric()
+                            ->step(0.1)
+                            ->default('40'),
                     ])
                     ->columns(2)
                     ->footerActions([
-                        \Filament\Actions\Action::make('save_general')
-                            ->label('حفظ العام')
-                            ->icon('heroicon-m-globe-alt')
+                        \Filament\Actions\Action::make('save_subscriptions')
+                            ->label('حفظ الاشتراكات')
+                            ->icon('heroicon-m-ticket')
                             ->color('primary')
                             ->action(fn () => $this->save()),
                     ]),
@@ -103,7 +98,7 @@ class SystemSettingsPage extends Page implements HasForms
                     ['key' => $key],
                     [
                         'value' => (string) $state[$key],
-                        'group' => 'general',
+                        'group' => 'subscription',
                     ]
                 );
             }
@@ -112,7 +107,7 @@ class SystemSettingsPage extends Page implements HasForms
 
             Notification::make()
                 ->success()
-                ->title('تم حفظ الإعدادات العامة بنجاح')
+                ->title('تم حفظ إعدادات الاشتراكات بنجاح')
                 ->send();
         } catch (\Exception $e) {
             Notification::make()
