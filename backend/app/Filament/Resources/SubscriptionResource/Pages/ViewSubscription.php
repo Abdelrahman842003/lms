@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\SubscriptionResource\Pages;
 
+use App\Domains\Auth\Models\Academy;
+use App\Domains\Auth\Models\Teacher;
 use App\Filament\Resources\SubscriptionResource;
 use Filament\Actions;
 use Filament\Schemas\Components\Section;
 use Filament\Infolists\Components\TextEntry;
-use Filament\Infolists\Components\IconEntry;
 use Filament\Schemas\Schema;
 use Filament\Resources\Pages\ViewRecord;
+use Illuminate\Support\Carbon;
 
 class ViewSubscription extends ViewRecord
 {
@@ -25,45 +27,66 @@ class ViewSubscription extends ViewRecord
     {
         return $schema
             ->components([
-                Section::make('المشترك')
+                Section::make('ملخص الاشتراك')
                     ->schema([
                         TextEntry::make('subscriber.name')
                             ->label('الاسم')
                             ->icon('heroicon-m-user'),
 
                         TextEntry::make('subscriber_type')
-                            ->label('النوع')
+                            ->label('نوع المشترك')
                             ->formatStateUsing(fn ($state): string => match (is_string($state) ? $state : $state->value) {
-                                'App\Models\Academy' => 'أكاديمية',
-                                'App\Models\Teacher' => 'مدرس',
+                                'App\Domains\Auth\Models\Academy' => 'أكاديمية',
+                                'App\Domains\Auth\Models\Teacher' => 'مدرس',
                                 default => is_string($state) ? $state : $state->value,
                             })
                             ->badge(),
-                    ])
-                    ->columns(2),
 
-                Section::make('معلومات الاشتراك')
-                    ->schema([
                         TextEntry::make('type')
                             ->label('نوع الاشتراك')
-                            ->formatStateUsing(fn ($state): string => match (is_string($state) ? $state : $state->value) {
-                                'teacher' => 'مدرس',
-                                'academy' => 'أكاديمية',
-                                default => is_string($state) ? $state : $state->value,
-                            })
+                            ->state(fn (): string => $this->getSubscriptionPlanLabel())
                             ->badge(),
 
                         TextEntry::make('month')
                             ->label('الشهر')
                             ->date('Y-m'),
+                    ])
+                    ->columns(4)
+                    ->columnSpanFull(),
 
-                        TextEntry::make('seats_count')
-                            ->label('عدد المقاعد'),
+                Section::make('السعة والاستهلاك')
+                    ->schema([
+                        TextEntry::make('current_students_count')
+                            ->label('الطلاب الحاليون')
+                            ->state(fn (): int => $this->getCurrentStudentsCount()),
 
                         TextEntry::make('quota_limit')
                             ->label('الحد الأقصى')
                             ->placeholder('غير محدود'),
 
+                        TextEntry::make('quota_usage_percentage')
+                            ->label('نسبة استهلاك الباقة')
+                            ->state(fn (): string => $this->getQuotaUsageLabel())
+                            ->badge()
+                            ->color(fn (): string => $this->getQuotaUsageColor()),
+
+                        TextEntry::make('remaining_quota')
+                            ->label('المقاعد المتبقية')
+                            ->state(fn (): string => $this->getRemainingQuotaLabel()),
+
+                        TextEntry::make('plan_expires_at')
+                            ->label('تاريخ انتهاء الاشتراك')
+                            ->state(fn (): string => $this->getPlanExpiryLabel()),
+
+                        TextEntry::make('time_to_expiry')
+                            ->label('المتبقي حتى الانتهاء')
+                            ->state(fn (): string => $this->getRemainingDurationLabel()),
+                    ])
+                    ->columns(3)
+                    ->columnSpanFull(),
+
+                Section::make('البيانات المالية')
+                    ->schema([
                         TextEntry::make('cost_per_seat')
                             ->label('التكلفة لكل مقعد')
                             ->money('EGP'),
@@ -75,8 +98,14 @@ class ViewSubscription extends ViewRecord
                         TextEntry::make('amount_paid')
                             ->label('المبلغ المدفوع')
                             ->money('EGP'),
+
+                        TextEntry::make('remaining_amount')
+                            ->label('المبلغ المتبقي')
+                            ->state(fn (): float => $this->getRemainingAmount())
+                            ->money('EGP'),
                     ])
-                    ->columns(2),
+                    ->columns(2)
+                    ->columnSpanFull(),
 
                 Section::make('حالة الاشتراك')
                     ->schema([
@@ -102,27 +131,18 @@ class ViewSubscription extends ViewRecord
                             ->label('تاريخ الدفع')
                             ->date('Y-m-d')
                             ->placeholder('غير مدفوع'),
-
-                        TextEntry::make('payment_method')
-                            ->label('طريقة الدفع')
-                            ->formatStateUsing(fn ($state): string => match (is_string($state) ? $state : $state->value) {
-                                'cash' => 'نقدي',
-                                'vodafone_cash' => 'فودافون كاش',
-                                'bank_transfer' => 'تحويل بنكي',
-                                'online' => 'دفع إلكتروني',
-                                default => 'غير محدد',
-                            })
-                            ->placeholder('غير محدد'),
                     ])
-                    ->columns(2),
+                    ->columns(2)
+                    ->columnSpanFull(),
 
                 Section::make('ملاحظات')
                     ->schema([
                         TextEntry::make('notes')
                             ->label('الملاحظات')
-                            ->placeholder('لا توجد ملاحظات')
+                            ->state(fn (): string => $this->getNotesLabel())
                             ->columnSpanFull(),
-                    ]),
+                    ])
+                    ->columnSpanFull(),
 
                 Section::make('معلومات النظام')
                     ->schema([
@@ -134,7 +154,8 @@ class ViewSubscription extends ViewRecord
                             ->label('آخر تحديث')
                             ->dateTime('Y-m-d H:i'),
                     ])
-                    ->columns(2),
+                    ->columns(2)
+                    ->columnSpanFull(),
             ]);
     }
 
@@ -144,5 +165,151 @@ class ViewSubscription extends ViewRecord
             Actions\EditAction::make()
                 ->label('تعديل'),
         ];
+    }
+
+    private function getSubscriberPlanExpiryDate(): ?Carbon
+    {
+        $planExpiresAt = $this->getRecord()?->subscriber?->plan_expires_at;
+
+        if (! $planExpiresAt) {
+            return null;
+        }
+
+        return Carbon::parse($planExpiresAt)->startOfDay();
+    }
+
+    private function getCurrentStudentsCount(): int
+    {
+        $record = $this->getRecord();
+        $subscriber = $record->subscriber;
+
+        if ($subscriber instanceof Academy) {
+            return (int) ($subscriber->total_students_count ?? 0);
+        }
+
+        if ($subscriber instanceof Teacher) {
+            return (int) $subscriber->activeEnrollments()->count();
+        }
+
+        return (int) ($record->seats_count ?? 0);
+    }
+
+    private function getQuotaUsageLabel(): string
+    {
+        $record = $this->getRecord();
+        $quotaLimit = $record->quota_limit;
+
+        if ($quotaLimit === null || (int) $quotaLimit <= 0) {
+            return 'غير محدود';
+        }
+
+        $used = $this->getCurrentStudentsCount();
+        $percentage = round(min(100, ($used / (int) $quotaLimit) * 100), 2);
+
+        return "{$percentage}%";
+    }
+
+    private function getQuotaUsageColor(): string
+    {
+        $record = $this->getRecord();
+        $quotaLimit = $record->quota_limit;
+
+        if ($quotaLimit === null || (int) $quotaLimit <= 0) {
+            return 'gray';
+        }
+
+        $used = $this->getCurrentStudentsCount();
+        $percentage = ($used / (int) $quotaLimit) * 100;
+
+        if ($percentage >= 90) {
+            return 'danger';
+        }
+
+        if ($percentage >= 70) {
+            return 'warning';
+        }
+
+        return 'success';
+    }
+
+    private function getRemainingQuotaLabel(): string
+    {
+        $record = $this->getRecord();
+        $quotaLimit = $record->quota_limit;
+
+        if ($quotaLimit === null || (int) $quotaLimit <= 0) {
+            return 'غير محدود';
+        }
+
+        $remaining = max((int) $quotaLimit - $this->getCurrentStudentsCount(), 0);
+
+        return (string) $remaining;
+    }
+
+    private function getPlanExpiryLabel(): string
+    {
+        $expiresAt = $this->getSubscriberPlanExpiryDate();
+
+        if (! $expiresAt) {
+            return 'غير محدد';
+        }
+
+        return $expiresAt->format('Y-m-d');
+    }
+
+    private function getRemainingDurationLabel(): string
+    {
+        $expiresAt = $this->getSubscriberPlanExpiryDate();
+
+        if (! $expiresAt) {
+            return 'غير محدد';
+        }
+
+        $today = now()->startOfDay();
+
+        if ($expiresAt->lt($today)) {
+            $daysSinceExpiry = $expiresAt->diffInDays($today);
+            return "منتهي منذ {$daysSinceExpiry} يوم";
+        }
+
+        $interval = $today->diff($expiresAt);
+        $months = ($interval->y * 12) + $interval->m;
+        $days = $interval->d;
+
+        return "{$months} شهر و {$days} يوم";
+    }
+
+    private function getRemainingAmount(): float
+    {
+        $record = $this->getRecord();
+
+        return max(
+            0,
+            (float) ($record->amount_due ?? 0) - (float) ($record->amount_paid ?? 0)
+        );
+    }
+
+    private function getSubscriptionPlanLabel(): string
+    {
+        return SubscriptionResource::resolvePlanLabel($this->getRecord());
+    }
+
+    private function getNotesLabel(): string
+    {
+        $record = $this->getRecord();
+
+        if (filled($record->notes)) {
+            return (string) $record->notes;
+        }
+
+        $subscriberName = (string) ($record->subscriber?->name ?? 'مشترك');
+        $typeLabel = match ((string) ($record->type?->value ?? $record->type)) {
+            'academy' => 'أكاديمية',
+            'teacher' => 'مدرس',
+            default => 'اشتراك',
+        };
+        $monthLabel = $record->month?->format('Y-m') ?? now()->format('Y-m');
+
+        return "تم إنشاء اشتراك {$typeLabel} للمشترك {$subscriberName} - شهر {$monthLabel}";
     }
 }

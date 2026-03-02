@@ -20,6 +20,22 @@ class Subscription extends Model
 {
     use HasFactory, HasUuids;
 
+    protected static function booted(): void
+    {
+        static::saving(function (self $subscription): void {
+            $seats = max(0, (int) ($subscription->seats_count ?? 0));
+
+            if ($subscription->quota_limit === null) {
+                $subscription->seats_count = $seats;
+                return;
+            }
+
+            $quota = max(0, (int) $subscription->quota_limit);
+            $subscription->quota_limit = $quota;
+            $subscription->seats_count = min($seats, $quota);
+        });
+    }
+
     protected $fillable = [
         'subscriber_id',
         'subscriber_type',

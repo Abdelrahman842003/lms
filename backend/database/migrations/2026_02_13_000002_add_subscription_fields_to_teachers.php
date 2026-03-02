@@ -39,12 +39,18 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('teachers', function (Blueprint $table) {
-            $table->dropColumn([
-                'plan_type',
-                'plan_expires_at',
-                'plan_max_students',
-                'is_unlimited_students',
-            ]);
+            if (Schema::hasColumn('teachers', 'is_unlimited_students')) {
+                $table->dropColumn('is_unlimited_students');
+            }
+            if (Schema::hasColumn('teachers', 'plan_max_students')) {
+                $table->dropColumn('plan_max_students');
+            }
+            if (Schema::hasColumn('teachers', 'plan_expires_at')) {
+                $table->dropColumn('plan_expires_at');
+            }
+            if (Schema::hasColumn('teachers', 'plan_type')) {
+                $table->dropColumn('plan_type');
+            }
             // Note: subscription_fee and paid_amount are kept as they exist in create_teachers_table
         });
     }

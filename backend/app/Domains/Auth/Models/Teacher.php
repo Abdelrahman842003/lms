@@ -44,6 +44,8 @@ class Teacher extends Authenticatable
         'is_independent_active',
         'plan_type',
         'plan_expires_at',
+        'subscription_period',
+        'custom_expires_at',
         'plan_max_students',
         'is_unlimited_students',
     ];
@@ -60,6 +62,7 @@ class Teacher extends Authenticatable
             'is_independent_active' => 'boolean',
             'is_unlimited_students' => 'boolean',
             'plan_expires_at' => 'date',
+            'custom_expires_at' => 'date',
             'status' => \App\Domains\Auth\Enums\TeacherStatus::class,
         ];
     }

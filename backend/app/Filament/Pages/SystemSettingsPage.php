@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\Pages;
 
 use App\Domains\Support\Models\Setting;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Concerns\InteractsWithForms;
@@ -34,10 +35,32 @@ class SystemSettingsPage extends Page implements HasForms
     protected string $view = 'filament.pages.system-settings';
 
     protected const SETTING_KEYS = [
-        'site_name',
-        'site_description',
-        'contact_email',
-        'contact_phone',
+        // SEO
+        'seo_title',
+        'seo_description',
+        'seo_keywords',
+        'seo_canonical_url',
+        'seo_og_title',
+        'seo_og_description',
+        'seo_og_image',
+        'seo_twitter_handle',
+        'seo_twitter_card',
+        'seo_google_verification',
+        'seo_bing_verification',
+        'seo_robots_txt',
+        // GEO
+        'geo_business_name',
+        'geo_business_type',
+        'geo_country_code',
+        'geo_region',
+        'geo_city',
+        'geo_address',
+        'geo_latitude',
+        'geo_longitude',
+        'geo_service_radius_km',
+        'geo_place_id',
+        'geo_knowledge_panel_url',
+        'geo_service_areas',
     ];
 
     public ?array $data = [];
@@ -45,10 +68,32 @@ class SystemSettingsPage extends Page implements HasForms
     public function mount(): void
     {
         $this->form->fill([
-            'site_name' => Setting::getValue('site_name', 'My Academy'),
-            'site_description' => Setting::getValue('site_description', ''),
-            'contact_email' => Setting::getValue('contact_email', ''),
-            'contact_phone' => Setting::getValue('contact_phone', ''),
+            // SEO
+            'seo_title' => Setting::getValue('seo_title', ''),
+            'seo_description' => Setting::getValue('seo_description', ''),
+            'seo_keywords' => Setting::getValue('seo_keywords', ''),
+            'seo_canonical_url' => Setting::getValue('seo_canonical_url', ''),
+            'seo_og_title' => Setting::getValue('seo_og_title', ''),
+            'seo_og_description' => Setting::getValue('seo_og_description', ''),
+            'seo_og_image' => Setting::getValue('seo_og_image', ''),
+            'seo_twitter_handle' => Setting::getValue('seo_twitter_handle', ''),
+            'seo_twitter_card' => Setting::getValue('seo_twitter_card', 'summary_large_image'),
+            'seo_google_verification' => Setting::getValue('seo_google_verification', ''),
+            'seo_bing_verification' => Setting::getValue('seo_bing_verification', ''),
+            'seo_robots_txt' => Setting::getValue('seo_robots_txt', "User-agent: *\nAllow: /"),
+            // GEO
+            'geo_business_name' => Setting::getValue('geo_business_name', ''),
+            'geo_business_type' => Setting::getValue('geo_business_type', 'EducationalOrganization'),
+            'geo_country_code' => Setting::getValue('geo_country_code', 'EG'),
+            'geo_region' => Setting::getValue('geo_region', ''),
+            'geo_city' => Setting::getValue('geo_city', ''),
+            'geo_address' => Setting::getValue('geo_address', ''),
+            'geo_latitude' => Setting::getValue('geo_latitude', ''),
+            'geo_longitude' => Setting::getValue('geo_longitude', ''),
+            'geo_service_radius_km' => Setting::getValue('geo_service_radius_km', '50'),
+            'geo_place_id' => Setting::getValue('geo_place_id', ''),
+            'geo_knowledge_panel_url' => Setting::getValue('geo_knowledge_panel_url', ''),
+            'geo_service_areas' => Setting::getValue('geo_service_areas', ''),
         ]);
     }
 
@@ -57,26 +102,122 @@ class SystemSettingsPage extends Page implements HasForms
         return $schema
             ->statePath('data')
             ->components([
-                Section::make('معلومات الموقع')
+                Section::make('تحسين محركات البحث')
                     ->schema([
-                        TextInput::make('site_name')
-                            ->label('اسم الموقع')
-                            ->required()
-                            ->maxLength(255),
+                        TextInput::make('seo_title')
+                            ->label('عنوان SEO')
+                            ->maxLength(70),
 
-                        Textarea::make('site_description')
-                            ->label('وصف الموقع')
+                        Textarea::make('seo_description')
+                            ->label('وصف SEO')
+                            ->rows(2)
+                            ->maxLength(320),
+
+                        Textarea::make('seo_keywords')
+                            ->label('كلمات SEO المفتاحية (مفصولة بفواصل)')
                             ->rows(2),
 
-                        TextInput::make('contact_email')
-                            ->label('البريد الإلكتروني للتواصل')
-                            ->email()
+                        TextInput::make('seo_canonical_url')
+                            ->label('الرابط الأساسي (Canonical URL)')
+                            ->url()
+                            ->maxLength(500),
+
+                        TextInput::make('seo_og_title')
+                            ->label('عنوان Open Graph')
+                            ->maxLength(120),
+
+                        Textarea::make('seo_og_description')
+                            ->label('وصف Open Graph')
+                            ->rows(2)
+                            ->maxLength(320),
+
+                        TextInput::make('seo_og_image')
+                            ->label('رابط صورة Open Graph')
+                            ->url()
+                            ->maxLength(500),
+
+                        TextInput::make('seo_twitter_handle')
+                            ->label('معرّف تويتر')
+                            ->maxLength(100),
+
+                        Select::make('seo_twitter_card')
+                            ->label('نوع بطاقة تويتر')
+                            ->options([
+                                'summary' => 'ملخص',
+                                'summary_large_image' => 'ملخص مع صورة كبيرة',
+                            ])
+                            ->native(false),
+
+                        TextInput::make('seo_google_verification')
+                            ->label('رمز التحقق من Google')
                             ->maxLength(255),
 
-                        TextInput::make('contact_phone')
-                            ->label('رقم الهاتف للتواصل')
-                            ->tel()
-                            ->maxLength(20),
+                        TextInput::make('seo_bing_verification')
+                            ->label('رمز التحقق من Bing')
+                            ->maxLength(255),
+
+                        Textarea::make('seo_robots_txt')
+                            ->label('محتوى robots.txt')
+                            ->rows(5),
+                    ])
+                    ->columns(2),
+
+                Section::make('الاستهداف الجغرافي (GEO)')
+                    ->schema([
+                        TextInput::make('geo_business_name')
+                            ->label('اسم النشاط')
+                            ->maxLength(255),
+
+                        Select::make('geo_business_type')
+                            ->label('نوع النشاط (Schema.org)')
+                            ->options([
+                                'EducationalOrganization' => 'منظمة تعليمية',
+                                'School' => 'مدرسة',
+                                'CollegeOrUniversity' => 'كلية / جامعة',
+                                'LocalBusiness' => 'نشاط محلي',
+                            ])
+                            ->native(false),
+
+                        TextInput::make('geo_country_code')
+                            ->label('رمز الدولة (ISO)')
+                            ->maxLength(5),
+
+                        TextInput::make('geo_region')
+                            ->label('المنطقة / المحافظة')
+                            ->maxLength(255),
+
+                        TextInput::make('geo_city')
+                            ->label('المدينة')
+                            ->maxLength(255),
+
+                        TextInput::make('geo_address')
+                            ->label('العنوان')
+                            ->maxLength(500),
+
+                        TextInput::make('geo_latitude')
+                            ->label('خط العرض (Latitude)')
+                            ->numeric(),
+
+                        TextInput::make('geo_longitude')
+                            ->label('خط الطول (Longitude)')
+                            ->numeric(),
+
+                        TextInput::make('geo_service_radius_km')
+                            ->label('نطاق الخدمة (كم)')
+                            ->numeric(),
+
+                        TextInput::make('geo_place_id')
+                            ->label('معرّف المكان في Google')
+                            ->maxLength(255),
+
+                        TextInput::make('geo_knowledge_panel_url')
+                            ->label('رابط لوحة المعرفة')
+                            ->url()
+                            ->maxLength(500),
+
+                        Textarea::make('geo_service_areas')
+                            ->label('مناطق الخدمة (مفصولة بفواصل)')
+                            ->rows(2),
                     ])
                     ->columns(2)
                     ->footerActions([

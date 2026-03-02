@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
@@ -57,6 +58,17 @@ return new class extends Migration
             $table->index(['subscriber_type', 'status']);
             $table->index(['month', 'status']);
         });
+
+        // Enforce seats_count <= quota_limit at DB level when quota is المحدد
+        try {
+            DB::statement(
+                'ALTER TABLE subscriptions
+                 ADD CONSTRAINT chk_subscriptions_seats_lte_quota
+                 CHECK (quota_limit IS NULL OR seats_count <= quota_limit)'
+            );
+        } catch (\Throwable) {
+            // Keep migration portable in case DB engine/version does not support named CHECK constraints.
+        }
     }
 
     /**
