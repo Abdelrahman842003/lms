@@ -53,17 +53,30 @@ class StudentResource extends BaseResource
             ->components([
                 Section::make('المعلومات الأساسية')
                     ->schema([
+                        TextInput::make('phone')
+                            ->label('رقم الهاتف')
+                            ->tel()
+                            ->required()
+                            ->maxLength(11)
+                            ->minLength(11)
+                            ->placeholder('01xxxxxxxxx')
+                            ->helperText(function (?string $state): string {
+                                if ($state && strlen($state) === 11) {
+                                    $existing = Student::where('phone', $state)->first();
+                                    if ($existing) {
+                                        return '⚠️ هذا الطالب موجود بالفعل: ' . $existing->name;
+                                    }
+                                    return '✅ رقم الهاتف غير مسجل — يمكنك إضافة طالب جديد';
+                                }
+                                return 'أدخل 11 رقماً — سيتم التحقق تلقائياً';
+                            })
+                            ->live(debounce: 500),
+
                         TextInput::make('name')
                             ->label('الاسم')
                             ->required()
                             ->maxLength(255)
                             ->placeholder('أدخل اسم الطالب'),
-
-                        TextInput::make('phone')
-                            ->label('رقم الهاتف')
-                            ->tel()
-                            ->maxLength(20)
-                            ->placeholder('01xxxxxxxxx'),
                     ])
                     ->columns(2),
 
@@ -73,16 +86,10 @@ class StudentResource extends BaseResource
                             ->label('هاتف ولي الأمر')
                             ->tel()
                             ->maxLength(20)
-                            ->placeholder('01xxxxxxxxx'),
-
-                        Select::make('guardian_id')
-                            ->label('ولي الأمر')
-                            ->relationship('guardian', 'name')
-                            ->searchable()
-                            ->preload()
-                            ->placeholder('اختر ولي الأمر'),
+                            ->placeholder('01xxxxxxxxx')
+                            ->helperText('لو رقم ولي الأمر جديد، سيتم إنشاء حساب بنفس كلمة مرور الطالب تلقائياً.'),
                     ])
-                    ->columns(2),
+                    ->columns(1),
 
                 Section::make('المعلومات الأكاديمية')
                     ->schema([
@@ -93,16 +100,51 @@ class StudentResource extends BaseResource
                             ->preload()
                             ->placeholder('اختر الأكاديمية')
                             ->dehydrated(false)
-                            ->helperText('يتم ربط الطالب بالأكاديمية عبر التسجيلات'),
+                            ->live()
+                            ->afterStateUpdated(function (\Filament\Schemas\Components\Utilities\Set $set) {
+                                $set('grade_id', null);
+                                $set('group_id', null);
+                            }),
+
+                        Select::make('teacher_id')
+                            ->label('المعلم')
+                            ->options(function (\Filament\Schemas\Components\Utilities\Get $get) {
+                                $academyId = $get('academy_id');
+                                if ($academyId) {
+                                    $academy = Academy::find($academyId);
+                                    if ($academy) {
+                                        return $academy->teachers()->pluck('teachers.name', 'teachers.id');
+                                    }
+                                }
+                                return Teacher::pluck('name', 'id');
+                            })
+                            ->searchable()
+                            ->preload()
+                            ->placeholder(fn (\Filament\Schemas\Components\Utilities\Get $get) => $get('academy_id') ? 'اختر المعلم' : 'اختر الأكاديمية أولاً')
+                            ->disabled(fn (\Filament\Schemas\Components\Utilities\Get $get) => ! $get('academy_id'))
+                            ->dehydrated(false)
+                            ->live()
+                            ->afterStateUpdated(function (\Filament\Schemas\Components\Utilities\Set $set) {
+                                $set('grade_id', null);
+                                $set('group_id', null);
+                            }),
 
                         Select::make('grade_id')
                             ->label('الصف الدراسي')
-                            ->options(fn () => Grade::pluck('name', 'id'))
+                            ->options(function (\Filament\Schemas\Components\Utilities\Get $get) {
+                                $teacherId = $get('teacher_id');
+                                if ($teacherId) {
+                                    return Grade::where('teacher_id', $teacherId)->pluck('name', 'id');
+                                }
+                                return [];
+                            })
                             ->searchable()
                             ->preload()
-                            ->placeholder('اختر الصف')
+                            ->placeholder(fn (\Filament\Schemas\Components\Utilities\Get $get) => $get('teacher_id') ? 'اختر الصف' : 'اختر المعلم أولاً')
+                            ->disabled(fn (\Filament\Schemas\Components\Utilities\Get $get) => ! $get('teacher_id'))
                             ->dehydrated(false)
-                            ->live(),
+                            ->live()
+                            ->afterStateUpdated(fn (\Filament\Schemas\Components\Utilities\Set $set) => $set('group_id', null)),
 
                         Select::make('group_id')
                             ->label('المجموعة')
@@ -111,32 +153,22 @@ class StudentResource extends BaseResource
                                 if ($gradeId) {
                                     return Group::where('grade_id', $gradeId)->pluck('name', 'id');
                                 }
-                                return Group::pluck('name', 'id');
+                                return [];
                             })
                             ->searchable()
                             ->preload()
-                            ->placeholder('اختر المجموعة')
+                            ->placeholder(fn (\Filament\Schemas\Components\Utilities\Get $get) => $get('grade_id') ? 'اختر المجموعة' : 'اختر الصف أولاً')
+                            ->disabled(fn (\Filament\Schemas\Components\Utilities\Get $get) => ! $get('grade_id'))
                             ->dehydrated(false),
                     ])
-                    ->columns(3),
-
-                Section::make('المعلمون')
-                    ->schema([
-                        Select::make('teachers')
-                            ->label('المعلمون')
-                            ->relationship('teachers', 'name')
-                            ->multiple()
-                            ->preload()
-                            ->searchable()
-                            ->placeholder('اختر المعلمين'),
-                    ]),
+                    ->columns(2),
 
                 Section::make('المعلومات الشخصية')
                     ->schema([
                         Select::make('gender')
                             ->label('الجنس')
                             ->options([
-                                'male' => 'ذكر',
+                                'male'   => 'ذكر',
                                 'female' => 'أنثى',
                             ])
                             ->native(false),
@@ -144,9 +176,8 @@ class StudentResource extends BaseResource
                         Select::make('education_type')
                             ->label('نوع التعليم')
                             ->options([
-                                'regular' => 'عادي',
-                                'private' => 'خاص',
-                                'homeschool' => 'تعليم منزلي',
+                                'general' => 'عام',
+                                'azhar'   => 'أزهر',
                             ])
                             ->native(false),
 
@@ -179,7 +210,8 @@ class StudentResource extends BaseResource
                             ->dehydrateStateUsing(fn ($state) => filled($state) ? Hash::make($state) : null)
                             ->dehydrated(fn ($state) => filled($state))
                             ->placeholder('أدخل كلمة المرور')
-                            ->helperText(fn (string $operation): string => $operation === 'edit' ? 'اترك الحقل فارغاً إذا لم ترغب في تغيير كلمة المرور' : ''),
+                            ->helperText('ستُستخدم نفس كلمة المرور لحساب ولي الأمر إذا كان جديداً.')
+                            ->helperText(fn (string $operation): string => $operation === 'edit' ? 'اترك الحقل فارغاً إذا لم ترغب في تغيير كلمة المرور' : 'ستُستخدم نفس كلمة المرور لحساب ولي الأمر إذا كان جديداً.'),
 
                         TextInput::make('password_confirmation')
                             ->label('تأكيد كلمة المرور')
@@ -194,6 +226,7 @@ class StudentResource extends BaseResource
                     ->visible(fn (string $operation): bool => $operation === 'create'),
             ]);
     }
+
 
     public static function table(Table $table): Table
     {
