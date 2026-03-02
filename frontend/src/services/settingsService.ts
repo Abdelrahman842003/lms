@@ -1,4 +1,4 @@
-import { fetchApi } from './authService';
+import { fetchApi } from './api/baseApi';
 
 export interface Setting {
   key: string;

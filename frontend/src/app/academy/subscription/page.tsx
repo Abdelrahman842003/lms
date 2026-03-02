@@ -1,45 +1,56 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { withAcademyAuth } from '@/components/auth/withAcademyAuth';
 import { Button, Icon } from '@/components/ui';
-
-// Mock data - will be replaced with real API call
-const mockSubscription = {
-  status: 'active',
-  is_trial: false,
-  seats_purchased: 200,
-  seats_used: 180,
-  starts_at: '2026-01-15',
-  ends_at: '2027-01-15',
-  plan_name: 'باقة سنة',
-  price_per_seat: 18,
-  total_paid: 3600,
-};
+import SubscriptionRenewalModal from '@/components/subscription/SubscriptionRenewalModal';
+import { getAcademySubscription, requestAcademyRenewal } from '@/services/subscriptionService';
+import type { SubscriptionResponse } from '@/types/subscription.types';
 
 function SubscriptionPage() {
   const { user } = useAuth();
+  const [subscriptionData, setSubscriptionData] = useState<SubscriptionResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [renewalOpen, setRenewalOpen] = useState(false);
+  const [renewalSubmitting, setRenewalSubmitting] = useState(false);
+
+  const loadSubscription = async () => {
+    setLoading(true);
+    try {
+      const data = await getAcademySubscription();
+      setSubscriptionData(data);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadSubscription();
+  }, []);
 
   const getDaysRemaining = () => {
-    const today = new Date();
-    const endDate = new Date(mockSubscription.ends_at);
-    const diffTime = endDate.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
+    const days = subscriptionData?.subscription?.days_remaining ?? null;
+    if (days === null || Number.isNaN(days)) return 0;
+    return Math.max(0, Math.ceil(days));
   };
 
   const getSeatsPercentage = () => {
-    return Math.round((mockSubscription.seats_used / mockSubscription.seats_purchased) * 100);
+    const used = subscriptionData?.subscription?.seats_used ?? 0;
+    const limit = subscriptionData?.subscription?.seats_limit;
+    if (!limit || limit <= 0) return 0;
+    return Math.round((used / limit) * 100);
   };
 
   const daysRemaining = getDaysRemaining();
   const seatsPercentage = getSeatsPercentage();
+  const subscription = subscriptionData?.subscription;
+  const pendingRequest = subscriptionData?.pending_request;
 
   const getStatusColor = () => {
-    if (mockSubscription.is_trial) return 'blue';
+    if (subscription?.is_trial) return 'blue';
     if (daysRemaining < 7) return 'red';
     if (daysRemaining < 30) return 'warning';
     return 'green';
@@ -54,6 +65,18 @@ function SubscriptionPage() {
   const statusColor = getStatusColor();
   const seatsColor = getSeatsColor();
 
+  const handleRenewalSubmit = async (payload: { plan_selection: string; custom_months?: number | null }) => {
+    if (!payload.plan_selection) return;
+    setRenewalSubmitting(true);
+    try {
+      await requestAcademyRenewal(payload);
+      setRenewalOpen(false);
+      await loadSubscription();
+    } finally {
+      setRenewalSubmitting(false);
+    }
+  };
+
   return (
     <DashboardLayout role="academy" user={user || undefined}>
       <div className="max-w-4xl mx-auto space-y-6">
@@ -65,29 +88,47 @@ function SubscriptionPage() {
           </h1>
         </div>
 
+        {loading && (
+          <div className="bg-white/5 border border-white/10 rounded-xl p-4 text-gray-300">
+            جاري تحميل بيانات الاشتراك...
+          </div>
+        )}
+
+        {pendingRequest && (
+          <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 flex items-start gap-3">
+            <Icon name="hourglass-half" className="text-yellow-400 text-xl mt-1" />
+            <div className="flex-1">
+              <h3 className="text-yellow-400 font-bold mb-1">طلب التجديد قيد المراجعة</h3>
+              <p className="text-gray-300 text-sm">
+                تم إرسال طلب التجديد وسيظهر في لوحة الإدارة للموافقة.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className={`p-4 rounded-xl border ${
-            mockSubscription.is_trial 
+            subscription?.is_trial 
               ? 'bg-blue-500/10 border-blue-500/20' 
-              : mockSubscription.status === 'active'
+              : subscription?.status === 'active'
                 ? 'bg-green-500/10 border-green-500/20'
                 : 'bg-red-500/10 border-red-500/20'
           }`}>
             <div className="flex items-center justify-between mb-2">
               <span className={`text-sm font-medium ${
-                mockSubscription.is_trial ? 'text-blue-400' : mockSubscription.status === 'active' ? 'text-green-400' : 'text-red-400'
+                subscription?.is_trial ? 'text-blue-400' : subscription?.status === 'active' ? 'text-green-400' : 'text-red-400'
               }`}>حالة الاشتراك</span>
               <Icon name={
-                mockSubscription.is_trial ? 'flask' : mockSubscription.status === 'active' ? 'check-circle' : 'times-circle'
+                subscription?.is_trial ? 'flask' : subscription?.status === 'active' ? 'check-circle' : 'times-circle'
               } className={
-                mockSubscription.is_trial ? 'text-blue-400' : mockSubscription.status === 'active' ? 'text-green-400' : 'text-red-400'
+                subscription?.is_trial ? 'text-blue-400' : subscription?.status === 'active' ? 'text-green-400' : 'text-red-400'
               } />
             </div>
             <div className={`text-2xl font-bold ${
-              mockSubscription.is_trial ? 'text-blue-400' : mockSubscription.status === 'active' ? 'text-green-400' : 'text-red-400'
+              subscription?.is_trial ? 'text-blue-400' : subscription?.status === 'active' ? 'text-green-400' : 'text-red-400'
             }`}>
-              {mockSubscription.is_trial ? 'تجريبي' : mockSubscription.status === 'active' ? 'نشط' : 'منتهي'}
+              {subscription?.is_trial ? 'تجريبي' : subscription?.status === 'active' ? 'نشط' : 'منتهي'}
             </div>
           </div>
 
@@ -113,19 +154,19 @@ function SubscriptionPage() {
         </div>
 
         {/* Status Alert */}
-        {mockSubscription.is_trial && (
+        {subscription?.is_trial && (
           <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 flex items-start gap-3">
             <Icon name="flask" className="text-blue-400 text-xl mt-1" />
             <div className="flex-1">
               <h3 className="text-blue-400 font-bold mb-1">أنتم في الفترة التجريبية</h3>
               <p className="text-gray-300 text-sm">
-                يمكنكم إضافة عدد غير محدود من الطلاب حتى {new Date(mockSubscription.ends_at).toLocaleDateString('ar-EG')}
+                يمكنكم إضافة عدد غير محدود من الطلاب حتى {subscription?.ends_at ? new Date(subscription.ends_at).toLocaleDateString('ar-EG') : 'غير محدد'}
               </p>
             </div>
           </div>
         )}
 
-        {daysRemaining < 30 && !mockSubscription.is_trial && (
+        {daysRemaining < 30 && !subscription?.is_trial && (
           <div className={`bg-${statusColor}-500/10 border border-${statusColor}-500/20 rounded-xl p-4 flex items-start gap-3`}>
             <Icon name="exclamation-triangle" className={`text-${statusColor}-400 text-xl mt-1`} />
             <div className="flex-1">
@@ -146,20 +187,20 @@ function SubscriptionPage() {
             <div className="space-y-4">
               <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
                 <span className="text-gray-400">الباقة</span>
-                <span className="text-white font-bold">{mockSubscription.plan_name}</span>
+                <span className="text-white font-bold">{subscription?.plan_label || 'غير محدد'}</span>
               </div>
 
               <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
                 <span className="text-gray-400">تاريخ البداية</span>
                 <span className="text-white font-bold">
-                  {new Date(mockSubscription.starts_at).toLocaleDateString('ar-EG')}
+                  {subscription?.starts_at ? new Date(subscription.starts_at).toLocaleDateString('ar-EG') : 'غير محدد'}
                 </span>
               </div>
 
               <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
                 <span className="text-gray-400">تاريخ الانتهاء</span>
                 <span className="text-white font-bold">
-                  {new Date(mockSubscription.ends_at).toLocaleDateString('ar-EG')}
+                  {subscription?.ends_at ? new Date(subscription.ends_at).toLocaleDateString('ar-EG') : 'غير محدد'}
                 </span>
               </div>
             </div>
@@ -206,18 +247,18 @@ function SubscriptionPage() {
                 <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
                   <span className="text-gray-400">إجمالي الكراسي</span>
                   <span className="text-white font-bold text-xl">
-                    {mockSubscription.is_trial ? '∞' : mockSubscription.seats_purchased}
+                    {subscription?.is_unlimited ? '∞' : subscription?.seats_limit ?? 0}
                   </span>
                 </div>
 
                 <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
                   <span className="text-gray-400">الكراسي المستخدمة</span>
-                  <span className="text-primary font-bold text-xl">{mockSubscription.seats_used}</span>
+                  <span className="text-primary font-bold text-xl">{subscription?.seats_used ?? 0}</span>
                 </div>
               </div>
 
               {/* Warning if low seats */}
-              {!mockSubscription.is_trial && seatsPercentage >= 70 && (
+              {!subscription?.is_trial && seatsPercentage >= 70 && (
                 <div className={`bg-${seatsColor}-500/10 border border-${seatsColor}-500/20 rounded-lg p-3 text-center`}>
                   <Icon name="exclamation-circle" className={`text-${seatsColor}-400 mr-2`} />
                   <span className={`text-${seatsColor}-400 text-sm`}>
@@ -230,22 +271,22 @@ function SubscriptionPage() {
         </div>
 
         {/* Payment Info */}
-        {!mockSubscription.is_trial && (
+        {!subscription?.is_trial && (
           <DashboardCard title="معلومات الدفع" icon="money-bill-wave">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="p-4 bg-white/5 rounded-lg text-center">
                 <p className="text-gray-400 text-sm mb-2">سعر الكرسي</p>
-                <p className="text-2xl font-bold text-white">{mockSubscription.price_per_seat} ج.م</p>
+                <p className="text-2xl font-bold text-white">{subscription?.price_per_seat ?? 0} ج.م</p>
               </div>
 
               <div className="p-4 bg-white/5 rounded-lg text-center">
                 <p className="text-gray-400 text-sm mb-2">عدد الكراسي</p>
-                <p className="text-2xl font-bold text-white">{mockSubscription.seats_purchased}</p>
+                <p className="text-2xl font-bold text-white">{subscription?.seats_limit ?? 0}</p>
               </div>
 
               <div className="p-4 bg-primary/10 rounded-lg text-center border border-primary/20">
                 <p className="text-gray-400 text-sm mb-2">المبلغ المدفوع</p>
-                <p className="text-2xl font-bold text-primary">{mockSubscription.total_paid} ج.م</p>
+                <p className="text-2xl font-bold text-primary">{subscription?.amount_paid ?? 0} ج.م</p>
               </div>
             </div>
           </DashboardCard>
@@ -264,11 +305,25 @@ function SubscriptionPage() {
 
         {/* Renew Button */}
         <div className="flex justify-center">
-          <Button variant="primary" size="lg" className="px-8 py-4 bg-primary hover:bg-primary/80 text-white rounded-xl font-bold text-lg shadow-lg shadow-primary/20 transition-all flex items-center gap-3">
+          <Button
+            variant="primary"
+            size="lg"
+            className="px-8 py-4 bg-primary hover:bg-primary/80 text-white rounded-xl font-bold text-lg shadow-lg shadow-primary/20 transition-all flex items-center gap-3"
+            onClick={() => setRenewalOpen(true)}
+            disabled={!!pendingRequest || loading}
+          >
             <Icon name="sync" />
-            تجديد الاشتراك
+            {pendingRequest ? 'طلب التجديد قيد المراجعة' : 'تجديد الاشتراك'}
           </Button>
         </div>
+
+        <SubscriptionRenewalModal
+          isOpen={renewalOpen}
+          onClose={() => setRenewalOpen(false)}
+          onSubmit={handleRenewalSubmit}
+          planOptions={subscriptionData?.plan_options ?? []}
+          isLoading={renewalSubmitting}
+        />
       </div>
     </DashboardLayout>
   );

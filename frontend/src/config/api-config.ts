@@ -45,8 +45,11 @@ export function getApiBaseUrl(): string {
     return 'http://localhost:8000';
   }
   
-  // Strip trailing /api if present, then trailing slash
-  return baseUrl.replace(/\/api\/?$/, '').replace(/\/$/, '');
+  // Strip trailing /api or /api/v1 if present, then trailing slash
+  return baseUrl
+    .replace(/\/api\/v\d+\/?$/, '')
+    .replace(/\/api\/?$/, '')
+    .replace(/\/$/, '');
 }
 
 // Helper to get API URL with /api suffix

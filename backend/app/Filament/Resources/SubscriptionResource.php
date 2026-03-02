@@ -11,6 +11,7 @@ use App\Domains\Auth\Models\Academy;
 use App\Domains\Auth\Models\Teacher;
 use App\Domains\Support\Models\Setting;
 use App\Domains\Support\Services\HelperService;
+use App\Domains\Subscriptions\Services\SubscriptionRenewalService;
 use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\DatePicker;
@@ -371,6 +372,16 @@ class SubscriptionResource extends BaseResource
                 EditAction::make()
                     ->label('تعديل')
                     ->icon('heroicon-m-pencil-square'),
+
+                Action::make('approve')
+                    ->label('اعتماد التجديد')
+                    ->icon('heroicon-m-check-circle')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->visible(fn (Subscription $record): bool => $record->status === SubscriptionStatus::PENDING)
+                    ->action(function (Subscription $record): void {
+                        app(SubscriptionRenewalService::class)->approveRenewal($record);
+                    }),
 
                 Action::make('cancel')
                     ->label('إلغاء الاشتراك')

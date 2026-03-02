@@ -98,6 +98,10 @@ Route::middleware('auth:sanctum')->prefix('academy')->name('academy.')->group(fu
     // Payments
     Route::post('payments', [\App\Domains\Application\Http\Controllers\Academy\PaymentController::class, 'store']);
 
+    // Subscription
+    Route::get('subscription', [\App\Domains\Application\Http\Controllers\Academy\SubscriptionController::class, 'show']);
+    Route::post('subscription/renew', [\App\Domains\Application\Http\Controllers\Academy\SubscriptionController::class, 'requestRenewal']);
+
     // Gamification
     Route::get('/leaderboard', [\App\Domains\Application\Http\Controllers\Academy\GamificationController::class, 'leaderboard']);
 
@@ -202,6 +206,10 @@ Route::middleware(['auth:sanctum', \App\Domains\Auth\Http\Middleware\EnsureTeach
     // Reports
     Route::get('reports/my-report', [\App\Domains\Application\Http\Controllers\Teacher\TeacherReportController::class, 'myReport']);
     Route::get('reports/my-report/pdf', [\App\Domains\Application\Http\Controllers\Teacher\TeacherReportController::class, 'myReportPdf']);
+
+    // Subscription
+    Route::get('subscription', [\App\Domains\Application\Http\Controllers\Teacher\SubscriptionController::class, 'show']);
+    Route::post('subscription/renew', [\App\Domains\Application\Http\Controllers\Teacher\SubscriptionController::class, 'requestRenewal']);
 
     // QR Code Attendance Scanning
     Route::post('/scan/checkin', [\App\Domains\Application\Http\Controllers\Teacher\ScanController::class, 'checkin']);

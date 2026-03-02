@@ -40,7 +40,7 @@ export function getAuthToken(): string | null {
   // Try in-memory token first (new secure approach)
   const memoryToken = getAccessToken();
   if (memoryToken) {
-    console.log('[getAuthToken] Using memory token');
+    console.debug('[getAuthToken] Using memory token');
     return memoryToken;
   }
 
@@ -48,12 +48,12 @@ export function getAuthToken(): string | null {
   if (typeof window !== 'undefined') {
     const legacyToken = localStorage.getItem('token');
     if (legacyToken) {
-      console.log('[getAuthToken] Using localStorage token, migrating to memory');
+      console.debug('[getAuthToken] Using localStorage token, migrating to memory');
       // Migrate to in-memory storage
       setAccessToken(legacyToken, 60);
       return legacyToken;
     }
-    console.log('[getAuthToken] No token found in memory or localStorage');
+    console.debug('[getAuthToken] No token found in memory or localStorage');
   }
   return null;
 }
@@ -77,8 +77,8 @@ export function getAuthHeaders(additionalHeaders: Record<string, string> = {}): 
   const token = getAuthToken();
   
   // Debug logging
-  console.log('[getAuthHeaders] Token present:', !!token);
-  console.log('[getAuthHeaders] Token source:', token ? (getAccessToken() ? 'memory' : 'localStorage') : 'none');
+  console.debug('[getAuthHeaders] Token present:', !!token);
+  console.debug('[getAuthHeaders] Token source:', token ? (getAccessToken() ? 'memory' : 'localStorage') : 'none');
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
