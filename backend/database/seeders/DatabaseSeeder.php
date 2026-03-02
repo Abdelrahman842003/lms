@@ -32,9 +32,7 @@ class DatabaseSeeder extends Seeder
         \Illuminate\Support\Facades\Schema::enableForeignKeyConstraints();
 
         $this->call([
-            RolesAndPermissionsSeeder::class,
-            SuperAdminSeeder::class,
-            AdminSeeder::class,
+            FilamentPermissionSeeder::class,
             // AcademySeeder::class,
             // CompleteSeeder::class,
             // AttachTeachersToAcademySeeder::class,

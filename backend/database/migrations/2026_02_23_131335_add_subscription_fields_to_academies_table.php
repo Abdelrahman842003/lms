@@ -32,7 +32,8 @@ return new class extends Migration
             if (!Schema::hasColumn('academies', 'paid_amount')) {
                 $table->decimal('paid_amount', 10, 2)->default(0)->after('subscription_fee');
             }
-        });    }
+        });
+    }
 
     /**
      * Reverse the migrations.
@@ -40,14 +41,24 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('academies', function (Blueprint $table) {
-            $table->dropColumn([
-                'plan_type',
-                'plan_expires_at',
-                'plan_max_students',
-                'is_unlimited_students',
-                'subscription_fee',
-                'paid_amount',
-            ]);
+            if (Schema::hasColumn('academies', 'paid_amount')) {
+                $table->dropColumn('paid_amount');
+            }
+            if (Schema::hasColumn('academies', 'subscription_fee')) {
+                $table->dropColumn('subscription_fee');
+            }
+            if (Schema::hasColumn('academies', 'is_unlimited_students')) {
+                $table->dropColumn('is_unlimited_students');
+            }
+            if (Schema::hasColumn('academies', 'plan_max_students')) {
+                $table->dropColumn('plan_max_students');
+            }
+            if (Schema::hasColumn('academies', 'plan_expires_at')) {
+                $table->dropColumn('plan_expires_at');
+            }
+            if (Schema::hasColumn('academies', 'plan_type')) {
+                $table->dropColumn('plan_type');
+            }
         });
     }
 };

@@ -116,6 +116,18 @@ return new class extends Migration
 
         // Teacher attendance logs
         Schema::table('teacher_attendance_logs', function (Blueprint $table) {
+            $droppedAcademyForeign = false;
+            $droppedTeacherForeign = false;
+
+            if ($this->hasForeignKey('teacher_attendance_logs', 'teacher_attendance_logs_academy_id_foreign')) {
+                $table->dropForeign(['academy_id']);
+                $droppedAcademyForeign = true;
+            }
+            if ($this->hasForeignKey('teacher_attendance_logs', 'teacher_attendance_logs_teacher_id_foreign')) {
+                $table->dropForeign(['teacher_id']);
+                $droppedTeacherForeign = true;
+            }
+
             if ($this->hasIndex('teacher_attendance_logs', 'attendance_academy_date_index')) {
                 $table->dropIndex('attendance_academy_date_index');
             }
@@ -128,10 +140,34 @@ return new class extends Migration
             if ($this->hasIndex('teacher_attendance_logs', 'attendance_date_index')) {
                 $table->dropIndex('attendance_date_index');
             }
+
+            if ($droppedAcademyForeign) {
+                $table->foreign('academy_id')->references('id')->on('academies')->onDelete('cascade');
+            }
+            if ($droppedTeacherForeign) {
+                $table->foreign('teacher_id')->references('id')->on('teachers')->onDelete('cascade');
+            }
         });
 
         // Lectures
         Schema::table('lectures', function (Blueprint $table) {
+            $droppedTeacherForeign = false;
+            $droppedAcademyForeign = false;
+            $droppedGradeForeign = false;
+
+            if ($this->hasForeignKey('lectures', 'lectures_teacher_id_foreign')) {
+                $table->dropForeign(['teacher_id']);
+                $droppedTeacherForeign = true;
+            }
+            if ($this->hasForeignKey('lectures', 'lectures_academy_id_foreign')) {
+                $table->dropForeign(['academy_id']);
+                $droppedAcademyForeign = true;
+            }
+            if ($this->hasForeignKey('lectures', 'lectures_grade_id_foreign')) {
+                $table->dropForeign(['grade_id']);
+                $droppedGradeForeign = true;
+            }
+
             if ($this->hasIndex('lectures', 'lectures_teacher_start_time_index')) {
                 $table->dropIndex('lectures_teacher_start_time_index');
             }
@@ -147,10 +183,42 @@ return new class extends Migration
             if ($this->hasIndex('lectures', 'lectures_start_time_index')) {
                 $table->dropIndex('lectures_start_time_index');
             }
+
+            if ($droppedTeacherForeign) {
+                $table->foreign('teacher_id')->references('id')->on('teachers')->onDelete('cascade');
+            }
+            if ($droppedAcademyForeign) {
+                $table->foreign('academy_id')->references('id')->on('academies')->nullOnDelete();
+            }
+            if ($droppedGradeForeign) {
+                $table->foreign('grade_id')->references('id')->on('grades')->cascadeOnDelete();
+            }
         });
 
         // Exams
         Schema::table('exams', function (Blueprint $table) {
+            $droppedTeacherForeign = false;
+            $droppedAcademyForeign = false;
+            $droppedGradeForeign = false;
+            $droppedGroupForeign = false;
+
+            if ($this->hasForeignKey('exams', 'exams_teacher_id_foreign')) {
+                $table->dropForeign(['teacher_id']);
+                $droppedTeacherForeign = true;
+            }
+            if ($this->hasForeignKey('exams', 'exams_academy_id_foreign')) {
+                $table->dropForeign(['academy_id']);
+                $droppedAcademyForeign = true;
+            }
+            if ($this->hasForeignKey('exams', 'exams_grade_id_foreign')) {
+                $table->dropForeign(['grade_id']);
+                $droppedGradeForeign = true;
+            }
+            if ($this->hasForeignKey('exams', 'exams_group_id_foreign')) {
+                $table->dropForeign(['group_id']);
+                $droppedGroupForeign = true;
+            }
+
             if ($this->hasIndex('exams', 'exams_teacher_is_active_index')) {
                 $table->dropIndex('exams_teacher_is_active_index');
             }
@@ -162,6 +230,19 @@ return new class extends Migration
             }
             if ($this->hasIndex('exams', 'exams_date_index')) {
                 $table->dropIndex('exams_date_index');
+            }
+
+            if ($droppedTeacherForeign) {
+                $table->foreign('teacher_id')->references('id')->on('teachers')->onDelete('cascade');
+            }
+            if ($droppedAcademyForeign) {
+                $table->foreign('academy_id')->references('id')->on('academies')->nullOnDelete();
+            }
+            if ($droppedGradeForeign) {
+                $table->foreign('grade_id')->references('id')->on('grades')->onDelete('set null');
+            }
+            if ($droppedGroupForeign) {
+                $table->foreign('group_id')->references('id')->on('groups')->onDelete('set null');
             }
         });
 
@@ -188,6 +269,20 @@ return new class extends Migration
         $indexes = Schema::getIndexes($table);
         foreach ($indexes as $index) {
             if ($index['name'] === $indexName) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Check if a foreign key exists on a table.
+     */
+    private function hasForeignKey(string $table, string $foreignName): bool
+    {
+        $foreignKeys = Schema::getForeignKeys($table);
+        foreach ($foreignKeys as $foreignKey) {
+            if ($foreignKey['name'] === $foreignName) {
                 return true;
             }
         }
