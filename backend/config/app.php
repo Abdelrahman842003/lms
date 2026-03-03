@@ -138,6 +138,7 @@ return [
         /*
          * Package Service Providers...
          */
+        Kenepa\ResourceLock\ResourceLockServiceProvider::class,
 
         /*
          * Application Service Providers...

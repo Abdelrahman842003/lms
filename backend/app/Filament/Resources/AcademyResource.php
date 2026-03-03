@@ -348,6 +348,17 @@ class AcademyResource extends BaseResource
                 Tables\Columns\TextColumn::make('plan_type')
                     ->label('الخطة')
                     ->badge()
+                    ->getStateUsing(function (Academy $record): ?string {
+                        if (! empty($record->plan_type)) {
+                            return $record->plan_type;
+                        }
+
+                        if (! empty($record->subscription_period)) {
+                            return 'term';
+                        }
+
+                        return null;
+                    })
                     ->color(fn ($state): string => match (is_string($state) ? $state : $state->value) {
                         'trial' => 'gray',
                         'term' => 'info',
@@ -360,7 +371,7 @@ class AcademyResource extends BaseResource
                         'term' => 'مدة محددة',
                         'custom' => 'مخصص',
                         'free' => 'مجاني',
-                        default => is_string($state) ? $state : $state->value,
+                        default => 'غير محدد',
                     })
                     ->sortable(),
 
