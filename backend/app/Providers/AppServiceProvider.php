@@ -38,7 +38,6 @@ use Illuminate\Notifications\Events\NotificationSent;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -125,12 +124,6 @@ class AppServiceProvider extends ServiceProvider
         // Domain Events — Gamification (placeholder للـ Listeners المستقبلية)
         // Event::listen(XpGranted::class, NotifyXpGranted::class);
         // Event::listen(BadgeEarned::class, NotifyBadgeEarned::class);
-
-        // Ensure resource-lock views namespace is registered (package discovery can be stale)
-        $resourceLockViewsPath = base_path('vendor/kenepa/resource-lock/resources/views');
-        if (is_dir($resourceLockViewsPath)) {
-            View::addNamespace('resource-lock', $resourceLockViewsPath);
-        }
 
         // Configure Health Checks (if package is installed)
         if (class_exists(\Spatie\Health\Facades\Health::class) && app()->bound('health')) {

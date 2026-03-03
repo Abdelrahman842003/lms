@@ -7,11 +7,9 @@ namespace App\Filament\Resources\StudentResource\Pages;
 use App\Filament\Resources\StudentResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
-use Kenepa\ResourceLock\Resources\Pages\Concerns\UsesResourceLock;
 
 class EditStudent extends EditRecord
 {
-    use UsesResourceLock;
     protected static string $resource = StudentResource::class;
 
     public function getTitle(): string

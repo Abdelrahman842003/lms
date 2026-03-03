@@ -8,7 +8,6 @@ use App\Filament\Auth\Login;
 use App\Filament\Pages\Dashboard;
 use App\Filament\Widgets\StatsOverviewWidget;
 use App\Filament\Widgets\RecentAcademiesWidget;
-use App\Filament\Widgets\SubscriptionExpiryWidget;
 use App\Filament\Widgets\AcademyDistributionChart;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -24,11 +23,9 @@ use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
-use CharrafiMed\GlobalSearchModal\GlobalSearchModalPlugin;
 use ShuvroRoy\FilamentSpatieLaravelBackup\FilamentSpatieLaravelBackupPlugin;
 use ShuvroRoy\FilamentSpatieLaravelHealth\FilamentSpatieLaravelHealthPlugin;
 use AlizHarb\ActivityLog\ActivityLogPlugin;
-use Kenepa\ResourceLock\ResourceLockPlugin;
 use Openplain\FilamentShadcnTheme\Color as ShadcnColor;
 
 class AdminPanelProvider extends PanelProvider
@@ -36,7 +33,6 @@ class AdminPanelProvider extends PanelProvider
     public function panel(Panel $panel): Panel
     {
         $plugins = [
-            GlobalSearchModalPlugin::make(),
             FilamentSpatieLaravelBackupPlugin::make(),
             FilamentSpatieLaravelHealthPlugin::make()
                 ->navigationLabel('صحة النظام')
@@ -44,9 +40,6 @@ class AdminPanelProvider extends PanelProvider
             ActivityLogPlugin::make()
                 ->label('سجل النشاط')
                 ->pluralLabel('سجلات الأنشطة')
-                ->navigationGroup('الإعدادات'),
-            ResourceLockPlugin::make()
-                ->navigationLabel('مدير قفل الموارد')
                 ->navigationGroup('الإعدادات'),
         ];
 
@@ -74,7 +67,7 @@ class AdminPanelProvider extends PanelProvider
             ->topNavigation(false)
             ->databaseNotifications()
             ->databaseNotificationsPolling('30s')
-            ->globalSearch(true)
+            ->globalSearch(false)
             ->globalSearchDebounce('400ms')
             ->spa()
             // Resource Discovery
@@ -94,7 +87,6 @@ class AdminPanelProvider extends PanelProvider
                 // Row 2: Left column - Recent Academies (2/3 width)
                 //         Right column - Subscription Expiry (1/3 width)
                 RecentAcademiesWidget::class,
-                SubscriptionExpiryWidget::class,
                 // Row 3: Academy Distribution Chart
                 AcademyDistributionChart::class,
                 // Default widgets

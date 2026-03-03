@@ -47,7 +47,7 @@ class StudentService
                     'teacher_avatar' => $enrollment->teacher->avatar_key 
                         ? config('filesystems.disks.r2.url') . '/' . $enrollment->teacher->avatar_key 
                         : null,
-                    'is_suspended' => $enrollment->teacher->status === 'suspended',
+                    'is_suspended' => $enrollment->teacher->status === 'suspended' || $enrollment->teacher->isSubscriptionBlocked(),
                     'grade_name' => $enrollment->grade?->name,
                     'group_name' => $enrollment->group?->name,
                     'balance' => $enrollment->balance,
@@ -86,7 +86,7 @@ class StudentService
                 'teacher_avatar' => $enrollment->teacher->avatar_key 
                     ? config('filesystems.disks.r2.url') . '/' . $enrollment->teacher->avatar_key 
                     : null,
-                'is_suspended' => $enrollment->teacher->status === 'suspended',
+                'is_suspended' => $enrollment->teacher->status === 'suspended' || $enrollment->teacher->isSubscriptionBlocked(),
                 'grade_name' => $enrollment->grade?->name,
                 'group_name' => $enrollment->group?->name,
                 'balance' => $enrollment->balance,
@@ -132,8 +132,8 @@ class StudentService
             ->where('is_active', true)
             ->firstOrFail();
 
-        if ($enrollment->teacher->status === 'suspended') {
-            abort(403, "ممنوع الدخول علي المدرس {$enrollment->teacher->name} في الوقت الحالي");
+        if ($enrollment->teacher->status === 'suspended' || $enrollment->teacher->isSubscriptionBlocked()) {
+            abort(403, "لا يمكنك الدخول لهذا المدرس حالياً بسبب حالة الاشتراك. يرجى التواصل مع الإدارة.");
         }
 
         // Get exams for this teacher

@@ -99,7 +99,7 @@ class StudentDashboardService
     {
         // Validate Teacher & Enrollment Status
         $teacher = Teacher::find($teacherId);
-        if (!$teacher || $teacher->status === 'suspended') {
+        if (!$teacher || $teacher->status === 'suspended' || $teacher->isSubscriptionBlocked()) {
             return null;
         }
 

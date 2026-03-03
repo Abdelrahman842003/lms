@@ -31,6 +31,12 @@ class TeacherService
             ]);
         }
 
+        if ($teacher->isSubscriptionBlocked()) {
+            throw ValidationException::withMessages([
+                'phone' => ['عفواً، اشتراكك غير نشط أو منتهي. يرجى التواصل مع الإدارة.'],
+            ]);
+        }
+
         return [
             'user' => $teacher,
         ];

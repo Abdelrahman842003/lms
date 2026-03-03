@@ -13,7 +13,7 @@ class TeacherResource extends JsonResource
     {
         // Safely get values with null coalescing
         $isApproved = $this->status !== 'pending';
-        $isSuspended = $this->status === 'suspended';
+        $isSuspended = $this->status === 'suspended' || $this->resource->isSubscriptionBlocked();
         $isActive = $this->pivot?->is_active ?? true;
         
         // Safely get students count
@@ -27,7 +27,7 @@ class TeacherResource extends JsonResource
         $status = 'نشط';
         if ($this->status === 'pending') {
             $status = 'في انتظار الموافقة';
-        } elseif ($this->status === 'suspended') {
+        } elseif ($this->status === 'suspended' || $this->resource->isSubscriptionBlocked()) {
             $status = 'معلق';
         } elseif (!$isActive) {
             $status = 'معلق';

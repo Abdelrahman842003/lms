@@ -30,7 +30,7 @@ class TeacherResource extends JsonResource
             'status' => (function () {
                 if ($this->status === 'pending') {
                     return 'في انتظار الموافقة';
-                } elseif ($this->status === 'suspended') {
+                } elseif ($this->status === 'suspended' || $this->resource->isSubscriptionBlocked()) {
                     return 'معلق';
                 } elseif ($this->status === 'active') {
                     return 'نشط';
@@ -39,7 +39,7 @@ class TeacherResource extends JsonResource
             })(),
             'status_key' => $this->status,
             'is_approved' => $this->status !== 'pending',
-            'is_suspended' => $this->status === 'suspended',
+            'is_suspended' => $this->status === 'suspended' || $this->resource->isSubscriptionBlocked(),
             'is_independent_active' => (bool) $this->is_independent_active,
             'joined' => $this->created_at ? $this->created_at->format('Y-m-d') : null,
             'created_at' => $this->created_at ? $this->created_at->toIso8601String() : null,

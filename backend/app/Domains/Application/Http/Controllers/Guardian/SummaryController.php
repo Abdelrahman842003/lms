@@ -68,7 +68,7 @@ class SummaryController extends Controller
             $teacher = $enrollment->teacher;
             
             // Skip suspended teachers
-            if ($teacher->is_suspended) {
+            if ($teacher->is_suspended || $teacher->isSubscriptionBlocked()) {
                 continue;
             }
 

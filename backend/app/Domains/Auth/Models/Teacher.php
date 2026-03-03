@@ -10,6 +10,7 @@ use App\Domains\Enrollments\Models\Group;
 use App\Domains\Auth\Models\Student;
 use App\Domains\Subscriptions\Models\TeacherSubscription;
 use App\Domains\Subscriptions\Models\Subscription;
+use App\Domains\Subscriptions\Enums\SubscriptionStatus;
 use App\Domains\Auth\Models\Academy;
 use App\Domains\Lectures\Models\Lecture;
 use App\Domains\Support\Models\TeacherAttendanceLog;
@@ -162,6 +163,42 @@ class Teacher extends Authenticatable
     public function subscriptions()
     {
         return $this->morphMany(Subscription::class, 'subscriber');
+    }
+
+    public function latestSubscription(): ?Subscription
+    {
+        return $this->subscriptions()
+            ->orderByDesc('month')
+            ->orderByDesc('created_at')
+            ->first();
+    }
+
+    public function hasActiveSubscription(): bool
+    {
+        $latest = $this->latestSubscription();
+        if ($latest) {
+            $status = $latest->status instanceof SubscriptionStatus ? $latest->status->value : (string) $latest->status;
+            if (in_array($status, [
+                SubscriptionStatus::CANCELLED->value,
+                SubscriptionStatus::PENDING->value,
+                SubscriptionStatus::PARTIAL->value,
+                SubscriptionStatus::EXPIRED->value,
+            ], true)) {
+                return false;
+            }
+        }
+
+        $expiresAt = $this->plan_expires_at ? $this->plan_expires_at->copy()->startOfDay() : null;
+        if ($this->plan_type === 'trial') {
+            return $expiresAt !== null && $expiresAt->gte(now()->startOfDay());
+        }
+
+        return $expiresAt !== null && $expiresAt->gte(now()->startOfDay());
+    }
+
+    public function isSubscriptionBlocked(): bool
+    {
+        return ! $this->hasActiveSubscription();
     }
 
     /**

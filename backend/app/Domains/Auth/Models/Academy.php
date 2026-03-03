@@ -13,6 +13,7 @@ use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Auth\Authenticatable;
 use App\Domains\Subscriptions\Models\Subscription;
 use App\Domains\Subscriptions\Models\AcademySubscription;
+use App\Domains\Subscriptions\Enums\SubscriptionStatus;
 use App\Domains\Support\Models\TeacherAttendanceLog;
 
 class Academy extends Model implements AuthenticatableContract
@@ -107,6 +108,42 @@ class Academy extends Model implements AuthenticatableContract
     public function subscriptions()
     {
         return $this->morphMany(Subscription::class, 'subscriber');
+    }
+
+    public function latestSubscription(): ?Subscription
+    {
+        return $this->subscriptions()
+            ->orderByDesc('month')
+            ->orderByDesc('created_at')
+            ->first();
+    }
+
+    public function hasActiveSubscription(): bool
+    {
+        $latest = $this->latestSubscription();
+        if ($latest) {
+            $status = $latest->status instanceof SubscriptionStatus ? $latest->status->value : (string) $latest->status;
+            if (in_array($status, [
+                SubscriptionStatus::CANCELLED->value,
+                SubscriptionStatus::PENDING->value,
+                SubscriptionStatus::PARTIAL->value,
+                SubscriptionStatus::EXPIRED->value,
+            ], true)) {
+                return false;
+            }
+        }
+
+        $expiresAt = $this->plan_expires_at ? $this->plan_expires_at->copy()->startOfDay() : null;
+        if ($this->plan_type === 'trial') {
+            return $expiresAt !== null && $expiresAt->gte(now()->startOfDay());
+        }
+
+        return $expiresAt !== null && $expiresAt->gte(now()->startOfDay());
+    }
+
+    public function isSubscriptionBlocked(): bool
+    {
+        return ! $this->hasActiveSubscription();
     }
 
     /**

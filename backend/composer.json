@@ -21,7 +21,6 @@
         "google/apiclient": "^2.0",
         "guzzlehttp/guzzle": "^7.8",
         "intervention/image": "^3.0",
-        "kenepa/resource-lock": "^4.0",
         "laravel/framework": "^12.0",
         "laravel/horizon": "^5.40",
         "laravel/octane": "^2.0",

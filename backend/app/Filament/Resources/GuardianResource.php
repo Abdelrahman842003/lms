@@ -4,14 +4,11 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources;
 
-use App\Domains\Auth\Models\Secretary;
+use App\Domains\Auth\Models\Guardian;
 use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Toggle;
-use Filament\Forms\Components\Select;
 use Filament\Forms\Components\FileUpload;
 use Filament\Schemas\Schema;
-use Filament\Actions\Action;
 use Filament\Actions\ViewAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\DeleteAction;
@@ -22,17 +19,17 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Hash;
 
-class SecretaryResource extends BaseResource
+class GuardianResource extends BaseResource
 {
-    protected static ?string $model = Secretary::class;
+    protected static ?string $model = Guardian::class;
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-clipboard-document-list';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-user-group';
 
-    protected static ?int $navigationSort = 5;
+    protected static ?int $navigationSort = 6;
 
-    protected static ?string $modelLabel = 'سكرتير';
+    protected static ?string $modelLabel = 'ولي أمر';
 
-    protected static ?string $pluralModelLabel = 'السكرتيريون';
+    protected static ?string $pluralModelLabel = 'أولياء الأمور';
 
     public static function getNavigationGroup(): ?string
     {
@@ -49,44 +46,23 @@ class SecretaryResource extends BaseResource
                             ->label('الاسم')
                             ->required()
                             ->maxLength(255)
-                            ->placeholder('أدخل اسم السكرتير'),
+                            ->placeholder('أدخل اسم ولي الأمر'),
 
                         TextInput::make('phone')
                             ->label('رقم الهاتف')
                             ->tel()
+                            ->required()
                             ->maxLength(20)
                             ->placeholder('01xxxxxxxxx'),
                     ])
                     ->columns(2),
-
-                Section::make('الأكاديمية')
-                    ->schema([
-                        Select::make('academy_id')
-                            ->label('الأكاديمية')
-                            ->relationship('academies', 'name')
-                            ->multiple()
-                            ->searchable()
-                            ->preload()
-                            ->placeholder('اختر الأكاديمية'),
-                    ]),
-
-                Section::make('المعلمون')
-                    ->schema([
-                        Select::make('teachers')
-                            ->label('المعلمون المرتبطون')
-                            ->relationship('teachers', 'name')
-                            ->multiple()
-                            ->preload()
-                            ->searchable()
-                            ->placeholder('اختر المعلمين'),
-                    ]),
 
                 Section::make('الصورة الشخصية')
                     ->schema([
                         FileUpload::make('avatar_key')
                             ->label('الصورة الشخصية')
                             ->image()
-                            ->directory('secretaries/avatars')
+                            ->directory('guardians/avatars')
                             ->maxSize(2048)
                             ->imageEditor()
                             ->columnSpanFull(),
@@ -115,14 +91,6 @@ class SecretaryResource extends BaseResource
                     ])
                     ->columns(2)
                     ->visible(fn (string $operation): bool => $operation === 'create' || (auth()->user()?->hasRole('super-admin') || auth()->user()?->hasRole('admin') || auth()->user()?->hasRole('filament-admin'))),
-
-                Section::make('الحالة')
-                    ->schema([
-                        Toggle::make('is_active')
-                            ->label('نشط')
-                            ->default(true)
-                            ->helperText('تحديد ما إذا كان السكرتير نشطاً أم لا'),
-                    ]),
             ]);
     }
 
@@ -149,16 +117,9 @@ class SecretaryResource extends BaseResource
                     ->icon('heroicon-m-phone')
                     ->toggleable(),
 
-                Tables\Columns\TextColumn::make('academies.name')
-                    ->label('الأكاديمية')
-                    ->badge()
-                    ->separator(',')
-                    ->placeholder('غير محدد')
-                    ->toggleable(),
-
-                Tables\Columns\IconColumn::make('is_active')
-                    ->label('نشط')
-                    ->boolean()
+                Tables\Columns\TextColumn::make('students_count')
+                    ->label('عدد الأبناء')
+                    ->counts('students')
                     ->sortable()
                     ->toggleable(),
 
@@ -168,19 +129,6 @@ class SecretaryResource extends BaseResource
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
-            ->filters([
-                Tables\Filters\SelectFilter::make('academies')
-                    ->label('الأكاديمية')
-                    ->relationship('academies', 'name')
-                    ->preload()
-                    ->searchable(),
-
-                Tables\Filters\TernaryFilter::make('is_active')
-                    ->label('الحالة')
-                    ->placeholder('الكل')
-                    ->trueLabel('نشط')
-                    ->falseLabel('غير نشط'),
-            ])
             ->actions([
                 ViewAction::make()
                     ->label('عرض')
@@ -189,15 +137,6 @@ class SecretaryResource extends BaseResource
                 EditAction::make()
                     ->label('تعديل')
                     ->icon('heroicon-m-pencil-square'),
-
-                Action::make('toggleActive')
-                    ->label(fn (Secretary $record): string => $record->is_active ? 'إلغاء التنشيط' : 'تنشيط')
-                    ->icon(fn (Secretary $record): string => $record->is_active ? 'heroicon-m-x-circle' : 'heroicon-m-check-circle')
-                    ->color(fn (Secretary $record): string => $record->is_active ? 'danger' : 'success')
-                    ->requiresConfirmation()
-                    ->action(function (Secretary $record): void {
-                        $record->update(['is_active' => ! $record->is_active]);
-                    }),
 
                 DeleteAction::make()
                     ->label('حذف')
@@ -212,25 +151,18 @@ class SecretaryResource extends BaseResource
                 ]),
             ])
             ->defaultSort('created_at', 'desc')
-            ->emptyStateHeading('لا يوجد سكرتيريون')
-            ->emptyStateDescription('قم بإنشاء سكرتير جديد للبدء')
-            ->emptyStateIcon('heroicon-o-clipboard-document-list');
-    }
-
-    public static function getRelations(): array
-    {
-        return [
-            // Relations can be added here if needed
-        ];
+            ->emptyStateHeading('لا يوجد أولياء أمور')
+            ->emptyStateDescription('قم بإنشاء ولي أمر جديد للبدء')
+            ->emptyStateIcon('heroicon-o-user-group');
     }
 
     public static function getPages(): array
     {
         return [
-            'index' => \App\Filament\Resources\SecretaryResource\Pages\ListSecretaries::route('/'),
-            'create' => \App\Filament\Resources\SecretaryResource\Pages\CreateSecretary::route('/create'),
-            'edit' => \App\Filament\Resources\SecretaryResource\Pages\EditSecretary::route('/{record}/edit'),
-            'view' => \App\Filament\Resources\SecretaryResource\Pages\ViewSecretary::route('/{record}'),
+            'index' => \App\Filament\Resources\GuardianResource\Pages\ListGuardians::route('/'),
+            'create' => \App\Filament\Resources\GuardianResource\Pages\CreateGuardian::route('/create'),
+            'edit' => \App\Filament\Resources\GuardianResource\Pages\EditGuardian::route('/{record}/edit'),
+            'view' => \App\Filament\Resources\GuardianResource\Pages\ViewGuardian::route('/{record}'),
         ];
     }
 

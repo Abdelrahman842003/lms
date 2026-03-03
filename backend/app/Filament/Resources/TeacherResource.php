@@ -108,7 +108,7 @@ class TeacherResource extends BaseResource
                             ->placeholder('أعد إدخال كلمة المرور'),
                     ])
                     ->columns(2)
-                    ->visible(fn (string $operation): bool => $operation === 'create'),
+                    ->visible(fn (string $operation): bool => $operation === 'create' || (auth()->user()?->hasRole('super-admin') || auth()->user()?->hasRole('admin') || auth()->user()?->hasRole('filament-admin'))),
 
                 Section::make('حالة المعلم')
                     ->schema([

@@ -25,6 +25,12 @@ class AcademyAuthService
             ]);
         }
 
+        if ($academy->isSubscriptionBlocked()) {
+            throw ValidationException::withMessages([
+                'phone' => ['عفواً، اشتراك الأكاديمية غير نشط أو منتهي. يرجى التواصل مع الإدارة.'],
+            ]);
+        }
+
         return [
             'user' => $academy->load(['secretaries', 'teachers']),
         ];
