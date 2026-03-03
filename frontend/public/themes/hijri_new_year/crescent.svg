@@ -1,0 +1,13 @@
+<svg width="220" height="220" viewBox="0 0 220 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="moonBlue" x1="110" y1="34" x2="110" y2="184" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#9DE4FF"/>
+      <stop offset="1" stop-color="#4FA8E8"/>
+    </linearGradient>
+  </defs>
+  <path d="M170 105C170 146.42 136.42 180 95 180C59.7 180 30.09 155.62 21.66 122.93C38.03 139.22 60.57 149.26 85.46 149.26C126.88 149.26 160.46 115.68 160.46 74.26C160.46 61.57 157.31 49.61 151.73 39.14C163.15 52.66 170 70.13 170 89.2V105Z" fill="url(#moonBlue)"/>
+  <circle cx="64" cy="48" r="4" fill="#A5F3FC"/>
+  <circle cx="170" cy="60" r="3.8" fill="#A5F3FC"/>
+  <circle cx="148" cy="170" r="3.8" fill="#A5F3FC"/>
+  <path d="M42 162L46 170L54 174L46 178L42 186L38 178L30 174L38 170L42 162Z" fill="#A5F3FC"/>
+</svg>

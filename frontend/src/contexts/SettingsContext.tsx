@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { getPublicSettings } from '@/services/settingsService';
 import { initializeFirebase } from '@/lib/firebase';
+import { applySeasonalThemeToBody } from '@/lib/seasonalTheme';
 
 interface SettingsContextType {
   settings: Record<string, string>;
@@ -20,6 +21,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       try {
         const data = await getPublicSettings();
         setSettings(data);
+        applySeasonalThemeToBody(data);
         
         // Initialize Firebase with fetched settings
         if (data) {
@@ -49,6 +51,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         }
       } catch (error) {
         console.error('Failed to fetch public settings:', error);
+        applySeasonalThemeToBody({});
       } finally {
         setIsLoading(false);
       }

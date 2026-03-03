@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\Pages;
 
 use App\Domains\Support\Models\Setting;
+use App\Domains\Support\Services\SeasonalThemeService;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
@@ -67,7 +68,7 @@ class SystemSettingsPage extends Page implements HasForms
 
     public function mount(): void
     {
-        $this->form->fill([
+        $this->form->fill(array_merge([
             // SEO
             'seo_title' => Setting::getValue('seo_title', ''),
             'seo_description' => Setting::getValue('seo_description', ''),
@@ -94,7 +95,11 @@ class SystemSettingsPage extends Page implements HasForms
             'geo_place_id' => Setting::getValue('geo_place_id', ''),
             'geo_knowledge_panel_url' => Setting::getValue('geo_knowledge_panel_url', ''),
             'geo_service_areas' => Setting::getValue('geo_service_areas', ''),
-        ]);
+        ], [
+            'seasonal_theme' => SeasonalThemeService::normalizeTheme(
+                Setting::getValue('seasonal_theme', SeasonalThemeService::DEFAULT_THEME)
+            ),
+        ]));
     }
 
     public function form(Schema $schema): Schema
@@ -219,6 +224,16 @@ class SystemSettingsPage extends Page implements HasForms
                             ->label('مناطق الخدمة (مفصولة بفواصل)')
                             ->rows(2),
                     ])
+                    ->columns(2),
+
+                Section::make('الثيم الموسمي')
+                    ->schema([
+                        Select::make('seasonal_theme')
+                            ->label('الموسم النشط')
+                            ->options(SeasonalThemeService::options())
+                            ->required()
+                            ->native(false),
+                    ])
                     ->columns(2)
                     ->footerActions([
                         \Filament\Actions\Action::make('save_general')
@@ -249,6 +264,8 @@ class SystemSettingsPage extends Page implements HasForms
                 );
             }
 
+            $this->saveSeasonalThemeSettings($state);
+
             Cache::flush();
 
             Notification::make()
@@ -261,5 +278,22 @@ class SystemSettingsPage extends Page implements HasForms
                 ->title('حدث خطأ أثناء حفظ الإعدادات: ' . $e->getMessage())
                 ->send();
         }
+    }
+
+    protected function saveSeasonalThemeSettings(array $state): void
+    {
+        $activeTheme = SeasonalThemeService::normalizeTheme(
+            isset($state['seasonal_theme']) && is_string($state['seasonal_theme'])
+                ? $state['seasonal_theme']
+                : null
+        );
+
+        Setting::updateOrCreate(
+            ['key' => 'seasonal_theme'],
+            [
+                'value' => $activeTheme,
+                'group' => 'general',
+            ]
+        );
     }
 }

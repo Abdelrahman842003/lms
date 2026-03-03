@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Application\Services\Admin;
 
 use App\Domains\Support\Models\Setting;
+use App\Domains\Support\Services\SeasonalThemeService;
 use Illuminate\Support\Collection;
 
 class SettingsService
@@ -97,20 +98,41 @@ class SettingsService
             'firebase_app_id',
 
             'trial_period_days',
+            'seasonal_theme',
         ];
 
         $settings = Setting::whereIn('key', $keys)
             ->get()
             ->pluck('value', 'key');
-        
+
         // Map snake_case keys to camelCase for frontend compatibility
         // Also keep original keys for backward compatibility
         $mapped = $settings->toArray();
+
+        $activeTheme = SeasonalThemeService::normalizeTheme(
+            is_string($settings->get('seasonal_theme')) ? $settings->get('seasonal_theme') : null
+        );
+        $resolvedPalette = SeasonalThemeService::resolvePalette(
+            $activeTheme,
+            Setting::getValue('seasonal_theme_palettes', null)
+        );
+
+        $mapped['seasonal_theme'] = $activeTheme;
+        $mapped['seasonal_theme_primary'] = $resolvedPalette['primary'];
+        $mapped['seasonal_theme_secondary'] = $resolvedPalette['secondary'];
+        $mapped['seasonal_theme_bg_start'] = $resolvedPalette['bg_start'];
+        $mapped['seasonal_theme_bg_end'] = $resolvedPalette['bg_end'];
+
         foreach ($settings as $key => $value) {
             if (str_contains($key, '_')) {
                 $camelKey = str_replace('_', '', lcfirst(ucwords($key, '_')));
                 $mapped[$camelKey] = $value;
             }
+        }
+
+        foreach (['seasonal_theme', 'seasonal_theme_primary', 'seasonal_theme_secondary', 'seasonal_theme_bg_start', 'seasonal_theme_bg_end'] as $key) {
+            $camelKey = str_replace('_', '', lcfirst(ucwords($key, '_')));
+            $mapped[$camelKey] = $mapped[$key];
         }
         
         return collect($mapped);

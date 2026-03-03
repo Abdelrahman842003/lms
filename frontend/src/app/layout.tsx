@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { cache } from 'react'
+import type { CSSProperties } from 'react'
 import '@/styles/globals.css'
 import '@/styles/components.css'
 import '@/styles/layout.css'
@@ -10,9 +10,11 @@ import { Toaster } from 'react-hot-toast'
 import ServiceWorkerCleanup from '@/components/ServiceWorkerCleanup'
 import InstallPrompt from '@/components/InstallPrompt'
 import MaintenanceGuard from '@/components/MaintenanceGuard';
+import SeasonalDecorations from '@/components/SeasonalDecorations';
+import { resolveSeasonalThemeFromSettings } from '@/lib/seasonalTheme';
 
 // Fetch SEO settings from API
-const getSeoSettings = cache(async () => {
+const getSeoSettings = async () => {
     try {
         let apiUrl = process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
         // Ensure apiUrl doesn't end with /api to avoid double /api
@@ -23,7 +25,7 @@ const getSeoSettings = cache(async () => {
         const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
 
         const res = await fetch(`${apiUrl}/api/v1/public-settings`, {
-            next: { revalidate: 60 },
+            cache: 'no-store',
             signal: controller.signal
         });
         
@@ -36,7 +38,7 @@ const getSeoSettings = cache(async () => {
         console.warn('Failed to fetch SEO settings (using defaults):', error);
         return null;
     }
-});
+};
 
 export async function generateMetadata(): Promise<Metadata> {
     const settings = await getSeoSettings();
@@ -75,6 +77,7 @@ export default async function RootLayout({
     children: React.ReactNode
 }) {
     const settings = await getSeoSettings();
+    const seasonalTheme = resolveSeasonalThemeFromSettings(settings ?? {});
     
     const jsonLd = {
         '@context': 'https://schema.org',
@@ -113,15 +116,18 @@ export default async function RootLayout({
             </head>
             <body
                 className="max-w-[2000px] mx-auto"
+                data-season-theme={seasonalTheme.theme}
+                style={seasonalTheme.cssVariables as CSSProperties}
                 suppressHydrationWarning={true}
             >
                 <div className="grid-pattern" />
+                <SeasonalDecorations theme={seasonalTheme.theme} />
                 <SettingsProvider>
                 <AuthProvider>
                   <ServiceWorkerCleanup />
                   <InstallPrompt />
                   <MaintenanceGuard maintenanceMode={maintenanceMode}>
-                    <div className="max-w-[1200px] mx-auto">
+                    <div className="relative z-10 max-w-[1200px] mx-auto">
                         {children}
                         <Toaster position="top-center" />
                     </div>

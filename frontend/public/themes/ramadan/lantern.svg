@@ -1,0 +1,40 @@
+<svg width="188" height="292" viewBox="0 0 188 292" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="metal" x1="94" y1="46" x2="94" y2="260" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F7B34D"/>
+      <stop offset="0.48" stop-color="#E69031"/>
+      <stop offset="1" stop-color="#BE6222"/>
+    </linearGradient>
+    <linearGradient id="metalEdge" x1="56" y1="48" x2="56" y2="250" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFD78A"/>
+      <stop offset="1" stop-color="#E08A2F"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="94" y1="105" x2="94" y2="208" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#9AF6E5"/>
+      <stop offset="1" stop-color="#39CFBB"/>
+    </linearGradient>
+    <radialGradient id="glassGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(94 158) rotate(90) scale(52 40)">
+      <stop stop-color="#F6FFE3" stop-opacity="0.8"/>
+      <stop offset="1" stop-color="#A4F7DF" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="blur" x="34" y="70" width="120" height="176" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="10"/>
+    </filter>
+  </defs>
+  <path d="M94 0V24" stroke="#F4A53A" stroke-width="5.8" stroke-linecap="round"/>
+  <path d="M74 26H114" stroke="#F4A53A" stroke-width="7.4" stroke-linecap="round"/>
+  <path d="M67 35H121" stroke="#D9802F" stroke-width="4.4" stroke-linecap="round"/>
+  <g filter="url(#blur)">
+    <rect x="63" y="102" width="62" height="122" rx="22" fill="#D7FFDD" fill-opacity="0.44"/>
+  </g>
+  <path d="M50 60C50 49.51 58.51 41 69 41H119C129.49 41 138 49.51 138 60V233C138 243.49 129.49 252 119 252H69C58.51 252 50 243.49 50 233V60Z" fill="url(#metal)"/>
+  <path d="M50 60C50 49.51 58.51 41 69 41H75V252H69C58.51 252 50 243.49 50 233V60Z" fill="url(#metalEdge)"/>
+  <path d="M138 60C138 49.51 129.49 41 119 41H113V252H119C129.49 252 138 243.49 138 233V60Z" fill="#C76A27"/>
+  <path d="M63 97C63 92.58 66.58 89 71 89H117C121.42 89 125 92.58 125 97V211C125 215.42 121.42 219 117 219H71C66.58 219 63 215.42 63 211V97Z" fill="url(#glass)"/>
+  <ellipse cx="94" cy="157" rx="30" ry="40" fill="url(#glassGlow)"/>
+  <path d="M74 67H114" stroke="#6F3D1A" stroke-opacity="0.45" stroke-width="4.2" stroke-linecap="round"/>
+  <path d="M74 238H114" stroke="#6F3D1A" stroke-opacity="0.45" stroke-width="4.2" stroke-linecap="round"/>
+  <path d="M58 261H130" stroke="#F3AA43" stroke-width="8.4" stroke-linecap="round"/>
+  <path d="M82 121H106M82 193H106" stroke="#FFF7D6" stroke-opacity="0.55" stroke-width="3.2" stroke-linecap="round"/>
+  <circle cx="94" cy="157" r="11" fill="#B8FFE7" fill-opacity="0.75"/>
+</svg>
