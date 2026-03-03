@@ -24,11 +24,9 @@ const DESKTOP_ITEMS: Record<SeasonalTheme, DecorationItem[]> = {
   default: [],
   ramadan: [
     { src: '/themes/ramadan/lantern.png', width: 170, top: '0.15rem', left: '2.2%', rope: 176, motion: 'wide' },
-    { src: '/themes/ramadan/lantern.svg', width: 156, top: '0.2rem', right: '2.8%', rope: 166, delay: '0.6s' },
-    { src: '/themes/ramadan/ramadan.png', width: 156, top: '0.2rem', right: '15.5%', rope: 140, motion: 'gentle', delay: '0.2s' },
-    { src: '/themes/ramadan/muslim.png', width: 150, top: '0.2rem', left: '13.5%', rope: 136, motion: 'gentle', delay: '0.8s' },
-    { src: '/themes/ramadan/muslim1.png', width: 134, top: '0.25rem', left: '27%', rope: 124, motion: 'gentle', delay: '0.35s' },
-    { src: '/themes/hijri_new_year/crescent.svg', width: 138, top: '0.2rem', right: '7.8%', rope: 160, motion: 'gentle', delay: '0.5s' },
+    { src: '/themes/ramadan/muslim1.png', width: 134, top: '0.25rem', left: '13.2%', rope: 124, motion: 'gentle', delay: '0.35s' },
+    { src: '/themes/ramadan/ramadan.png', width: 156, top: '0.2rem', right: '14.5%', rope: 140, motion: 'gentle', delay: '0.2s' },
+    { src: '/themes/hijri_new_year/crescent.svg', width: 138, top: '0.2rem', right: '2.8%', rope: 160, motion: 'gentle', delay: '0.5s' },
   ],
   eid: [
     { src: '/themes/eid/eid.png', width: 164, top: '0.2rem', left: '2.8%', rope: 154, motion: 'wide' },
