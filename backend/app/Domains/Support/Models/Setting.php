@@ -45,6 +45,9 @@ class Setting extends Model
         // Cloudflare Turnstile (Security)
         'turnstile_site_key',
         'turnstile_secret_key',
+
+        // Google Analytics
+        'analytics_service_account_json',
     ];
 
     public static function getValue($key, $default = null)

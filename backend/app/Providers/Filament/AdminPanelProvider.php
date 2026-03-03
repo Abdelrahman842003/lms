@@ -24,11 +24,32 @@ use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use CharrafiMed\GlobalSearchModal\GlobalSearchModalPlugin;
+use ShuvroRoy\FilamentSpatieLaravelBackup\FilamentSpatieLaravelBackupPlugin;
+use ShuvroRoy\FilamentSpatieLaravelHealth\FilamentSpatieLaravelHealthPlugin;
+use AlizHarb\ActivityLog\ActivityLogPlugin;
+use Kenepa\ResourceLock\ResourceLockPlugin;
+use Openplain\FilamentShadcnTheme\Color as ShadcnColor;
 
 class AdminPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
     {
+        $plugins = [
+            GlobalSearchModalPlugin::make(),
+            FilamentSpatieLaravelBackupPlugin::make(),
+            FilamentSpatieLaravelHealthPlugin::make()
+                ->navigationLabel('صحة النظام')
+                ->navigationGroup('الإعدادات'),
+            ActivityLogPlugin::make()
+                ->label('سجل النشاط')
+                ->pluralLabel('سجلات الأنشطة')
+                ->navigationGroup('الإعدادات'),
+            ResourceLockPlugin::make()
+                ->navigationLabel('مدير قفل الموارد')
+                ->navigationGroup('الإعدادات'),
+        ];
+
         return $panel
             ->id('admin')
             ->path('admin')
@@ -36,12 +57,13 @@ class AdminPanelProvider extends PanelProvider
             ->login(Login::class)
             ->profile()
             ->colors([
-                'primary' => Color::Indigo,
+                'primary' => ShadcnColor::Default,
                 'danger' => Color::Rose,
                 'warning' => Color::Amber,
                 'success' => Color::Emerald,
                 'gray' => Color::Slate,
             ])
+            ->plugins($plugins)
             ->brandName('إدارة المنصة')
             ->brandLogo(null)
             ->favicon(null)
@@ -103,6 +125,9 @@ class AdminPanelProvider extends PanelProvider
                 'panels::body.end',
                 fn (): string => '<script>document.documentElement.setAttribute("dir", "rtl"); document.documentElement.setAttribute("lang", "ar");</script>',
             )
+            ->bootUsing(function (): void {
+                app()->setLocale('ar');
+            })
             // Custom theme settings
             ->font('Tajawal')
             ->darkMode()

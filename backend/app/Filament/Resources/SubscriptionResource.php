@@ -45,7 +45,14 @@ class SubscriptionResource extends BaseResource
 
     protected static ?string $pluralModelLabel = 'الاشتراكات';
 
-    protected static ?string $recordTitleAttribute = null;
+    protected static ?string $recordTitleAttribute = 'id';
+
+    protected static array $globalSearchAttributes = ['subscriber.name'];
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return static::$globalSearchAttributes;
+    }
 
     public static function getRecordTitle(?Model $record): string | Htmlable | null
     {

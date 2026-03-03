@@ -30,6 +30,7 @@ use App\Domains\Exams\Policies\ExamPolicy;
 use App\Domains\Enrollments\Policies\GradePolicy;
 use App\Domains\Enrollments\Policies\GroupPolicy;
 use App\Domains\Lectures\Policies\LecturePolicy;
+use App\Domains\Support\Models\Setting;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
@@ -38,6 +39,14 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use Spatie\Health\Facades\Health;
+use Spatie\Health\Checks\Checks\OptimizedAppCheck;
+use Spatie\Health\Checks\Checks\DebugModeCheck;
+use Spatie\Health\Checks\Checks\EnvironmentCheck;
+use Spatie\Health\Checks\Checks\DatabaseCheck;
+use Spatie\Health\Checks\Checks\UsedDiskSpaceCheck;
+use Spatie\Health\Checks\Checks\RedisMemoryUsageCheck;
+use Spatie\Health\Checks\Checks\HorizonCheck;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -124,8 +133,49 @@ class AppServiceProvider extends ServiceProvider
         // Event::listen(XpGranted::class, NotifyXpGranted::class);
         // Event::listen(BadgeEarned::class, NotifyBadgeEarned::class);
 
+        // Configure Health Checks
+        Health::checks([
+            OptimizedAppCheck::new(),
+            DebugModeCheck::new(),
+            EnvironmentCheck::new(),
+            DatabaseCheck::new(),
+            UsedDiskSpaceCheck::new(),
+            RedisMemoryUsageCheck::new(),
+            HorizonCheck::new(),
+        ]);
+
         // Configure Rate Limiters
         $this->configureRateLimiting();
+
+        // Configure Google Analytics from saved settings if available
+        try {
+            $propertyId = Setting::getValue('analytics_property_id');
+            if (! empty($propertyId)) {
+                config(['analytics.property_id' => $propertyId]);
+            }
+
+            $serviceAccountJson = Setting::getValue('analytics_service_account_json');
+            if (! empty($serviceAccountJson)) {
+                $decoded = json_decode($serviceAccountJson, true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                    config(['analytics.service_account_credentials_json' => $decoded]);
+                }
+            }
+        } catch (\Throwable $e) {
+            // Ignore if settings table isn't ready yet
+        }
+
+        // Force Arabic translations for plugins
+        $this->app->extend('translator', function ($translator) {
+            $translator->addLines([
+                'google-analytics::widgets.navigation_label' => 'تحليلات جوجل',
+                'google-analytics::widgets.title' => 'تحليلات جوجل',
+                'filament-spatie-backup::backup.pages.backups.navigation.label' => 'النسخ الاحتياطي',
+                'filament-spatie-backup::backup.pages.backups.heading' => 'النسخ الاحتياطي',
+                'filament-spatie-backup::backup.pages.backups.navigation.group' => 'الإعدادات',
+            ], 'ar');
+            return $translator;
+        });
     }
 
     /**
@@ -144,4 +194,3 @@ class AppServiceProvider extends ServiceProvider
         });
     }
 }
-

@@ -11,6 +11,7 @@ use App\Domains\Exams\Models\ExamResult;
 use App\Domains\Enrollments\Models\StudentActivityLog;
 use App\Domains\Notifications\Models\SentNotification;
 use App\Domains\Support\Traits\HasDeviceTokens;
+use Kenepa\ResourceLock\Models\Concerns\HasLocks;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -20,7 +21,7 @@ use Spatie\Permission\Traits\HasRoles;
 
 class Student extends Authenticatable
 {
-    use HasFactory, Notifiable, HasApiTokens, HasUuids, HasRoles, HasDeviceTokens;
+    use HasFactory, Notifiable, HasApiTokens, HasUuids, HasRoles, HasDeviceTokens, HasLocks;
 
     protected static function newFactory()
     {

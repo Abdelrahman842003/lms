@@ -38,5 +38,10 @@
     "The :attribute field must be accepted.": "يجب قبول حقل :attribute.",
     "The :attribute must be an array.": ":attribute يجب أن يكون قائمة.",
     "The :attribute does not exist.": ":attribute غير موجود.",
-    "validation.exists": "القيمة المختارة غير موجودة."
+    "validation.exists": "القيمة المختارة غير موجودة.",
+    "Google Analytics Dashboard": "لوحة تحليلات جوجل",
+    "Backups": "النسخ الاحتياطي",
+    "User Activities": "أنشطة المستخدمين",
+    "Settings": "الإعدادات",
+    "Activity Logs": "سجلات الأنشطة"
 }
