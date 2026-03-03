@@ -57,7 +57,7 @@ class AdminPanelProvider extends PanelProvider
             ->login(Login::class)
             ->profile()
             ->colors([
-                'primary' => ShadcnColor::Default,
+                'primary' => Color::Blue,
                 'danger' => Color::Rose,
                 'warning' => Color::Amber,
                 'success' => Color::Emerald,

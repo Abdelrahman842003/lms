@@ -39,14 +39,6 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
-use Spatie\Health\Facades\Health;
-use Spatie\Health\Checks\Checks\OptimizedAppCheck;
-use Spatie\Health\Checks\Checks\DebugModeCheck;
-use Spatie\Health\Checks\Checks\EnvironmentCheck;
-use Spatie\Health\Checks\Checks\DatabaseCheck;
-use Spatie\Health\Checks\Checks\UsedDiskSpaceCheck;
-use Spatie\Health\Checks\Checks\RedisMemoryUsageCheck;
-use Spatie\Health\Checks\Checks\HorizonCheck;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -133,16 +125,29 @@ class AppServiceProvider extends ServiceProvider
         // Event::listen(XpGranted::class, NotifyXpGranted::class);
         // Event::listen(BadgeEarned::class, NotifyBadgeEarned::class);
 
-        // Configure Health Checks
-        Health::checks([
-            OptimizedAppCheck::new(),
-            DebugModeCheck::new(),
-            EnvironmentCheck::new(),
-            DatabaseCheck::new(),
-            UsedDiskSpaceCheck::new(),
-            RedisMemoryUsageCheck::new(),
-            HorizonCheck::new(),
-        ]);
+        // Configure Health Checks (if package is installed)
+        if (class_exists(\Spatie\Health\Facades\Health::class) && app()->bound('health')) {
+            $checkClasses = [
+                'Spatie\\Health\\Checks\\Checks\\OptimizedAppCheck',
+                'Spatie\\Health\\Checks\\Checks\\DebugModeCheck',
+                'Spatie\\Health\\Checks\\Checks\\EnvironmentCheck',
+                'Spatie\\Health\\Checks\\Checks\\DatabaseCheck',
+                'Spatie\\Health\\Checks\\Checks\\UsedDiskSpaceCheck',
+                'Spatie\\Health\\Checks\\Checks\\RedisMemoryUsageCheck',
+                'Spatie\\Health\\Checks\\Checks\\HorizonCheck',
+            ];
+
+            $checks = [];
+            foreach ($checkClasses as $checkClass) {
+                if (class_exists($checkClass)) {
+                    $checks[] = $checkClass::new();
+                }
+            }
+
+            if ($checks !== []) {
+                \Spatie\Health\Facades\Health::checks($checks);
+            }
+        }
 
         // Configure Rate Limiters
         $this->configureRateLimiting();
