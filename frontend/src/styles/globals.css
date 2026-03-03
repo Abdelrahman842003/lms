@@ -239,7 +239,7 @@ body[data-season-theme="hijri_new_year"]::after {
   inset: 0;
   overflow: hidden;
   pointer-events: none;
-  z-index: 28;
+  z-index: 1;
 }
 
 .seasonal-hanger {
@@ -264,6 +264,10 @@ body[data-season-theme="hijri_new_year"]::after {
   animation-name: seasonalSwing3dGentle;
 }
 
+.seasonal-hanger--mobile {
+  display: none;
+}
+
 .seasonal-rope {
   display: block;
   width: 2px;
@@ -281,7 +285,7 @@ body[data-season-theme="hijri_new_year"]::after {
   width: 100%;
   height: auto;
   margin-top: 4px;
-  opacity: 0.98;
+  opacity: 0.82;
   filter: drop-shadow(0 9px 18px rgba(0, 0, 0, 0.35))
     drop-shadow(0 2px 7px rgba(0, 0, 0, 0.35));
   transform: translateZ(2px);
@@ -721,6 +725,14 @@ select:focus {
   .step-indicators {
     flex-direction: column;
     gap: 0.5rem;
+  }
+
+  .seasonal-hanger--desktop {
+    display: none !important;
+  }
+
+  .seasonal-hanger--mobile {
+    display: flex;
   }
 }
 

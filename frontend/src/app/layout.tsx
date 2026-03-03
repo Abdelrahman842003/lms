@@ -121,8 +121,8 @@ export default async function RootLayout({
                 suppressHydrationWarning={true}
             >
                 <div className="grid-pattern" />
-                <SeasonalDecorations theme={seasonalTheme.theme} />
                 <SettingsProvider>
+                <SeasonalDecorations initialTheme={seasonalTheme.theme} />
                 <AuthProvider>
                   <ServiceWorkerCleanup />
                   <InstallPrompt />
