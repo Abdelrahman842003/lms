@@ -37,9 +37,9 @@ const DESKTOP_ITEMS: Record<SeasonalTheme, DecorationItem[]> = {
     { src: '/themes/eid/butcher.png', width: 140, top: '0.2rem', left: '15.5%', rope: 126, motion: 'gentle', delay: '0.3s' },
   ],
   gregorian_new_year: [
-    { src: '/themes/gregorian_new_year/happy-new-year.png', width: 168, top: '0.25rem', left: '3.2%', rope: 148, motion: 'wide' },
-    { src: '/themes/gregorian_new_year/happy-new-year%20(1).png', width: 154, top: '0.25rem', right: '3.4%', rope: 146, motion: 'wide', delay: '0.4s' },
-    { src: '/themes/gregorian_new_year/firework.svg', width: 140, top: '0.2rem', right: '17%', rope: 120, motion: 'gentle', delay: '0.8s' },
+    { src: '/themes/gregorian_new_year/firework.svg', width: 126, top: '0.2rem', left: '4.2%', rope: 132, motion: 'wide' },
+    { src: '/themes/gregorian_new_year/happy-new-year%20(1).png', width: 152, top: '0.25rem', right: '4.2%', rope: 146, motion: 'wide', delay: '0.4s' },
+    { src: '/themes/gregorian_new_year/firework.svg', width: 114, top: '0.22rem', right: '19%', rope: 116, motion: 'gentle', delay: '0.8s' },
   ],
   hijri_new_year: [
     { src: '/themes/hijri_new_year/lantern.png', width: 148, top: '0.2rem', left: '3%', rope: 164, motion: 'wide' },

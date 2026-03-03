@@ -385,10 +385,11 @@ body[data-season-theme="gregorian_new_year"] .grid-pattern {
       transparent 1px
     ),
     linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px),
-    url("/themes/gregorian_new_year/firework.svg");
-  background-size: 50px 50px, 50px 50px, 740px 380px;
-  background-position: center center, center center, top center;
-  background-repeat: repeat, repeat, repeat;
+    radial-gradient(circle, rgba(253, 224, 71, 0.22) 1px, transparent 1.4px),
+    radial-gradient(circle, rgba(248, 113, 113, 0.16) 1px, transparent 1.5px);
+  background-size: 50px 50px, 50px 50px, 34px 34px, 46px 46px;
+  background-position: center center, center center, 0 0, 17px 13px;
+  background-repeat: repeat, repeat, repeat, repeat;
 }
 
 body[data-season-theme="hijri_new_year"] .grid-pattern {
