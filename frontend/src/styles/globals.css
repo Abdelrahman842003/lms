@@ -91,6 +91,17 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+body[data-season-theme] {
+  --primary: var(--seasonal-primary);
+  --primary-light: var(--seasonal-primary);
+  --primary-dark: var(--seasonal-primary);
+  --secondary: var(--seasonal-secondary);
+  --secondary-light: var(--seasonal-secondary);
+  --secondary-dark: var(--seasonal-secondary);
+  --dark: var(--seasonal-bg-start);
+  --darker: var(--seasonal-bg-end);
+}
+
 /* Enhanced background with better visual depth */
 body::before {
   content: "";
