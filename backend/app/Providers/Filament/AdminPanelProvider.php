@@ -104,6 +104,8 @@ class AdminPanelProvider extends PanelProvider
                 fn (): string => '<script>document.documentElement.setAttribute("dir", "rtl"); document.documentElement.setAttribute("lang", "ar");</script>',
             )
             // Custom theme settings
-            ->font('Tajawal');
+            ->font('Tajawal')
+            ->darkMode()
+            ->defaultThemeMode(\Filament\Enums\ThemeMode::System);
     }
 }
