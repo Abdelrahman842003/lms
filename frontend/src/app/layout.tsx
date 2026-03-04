@@ -17,8 +17,11 @@ import { resolveSeasonalThemeFromSettings } from '@/lib/seasonalTheme';
 const getSeoSettings = async () => {
     try {
         let apiUrl = process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-        // Ensure apiUrl doesn't end with /api to avoid double /api
-        apiUrl = apiUrl.replace(/\/$/, '');
+        // Normalize base URL to avoid double /api when INTERNAL_API_URL contains /api.
+        apiUrl = apiUrl
+            .replace(/\/api\/v\d+\/?$/, '')
+            .replace(/\/api\/?$/, '')
+            .replace(/\/$/, '');
         
         // Add timeout to prevent build hangs
         const controller = new AbortController();
