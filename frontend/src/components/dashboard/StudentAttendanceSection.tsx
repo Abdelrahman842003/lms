@@ -809,7 +809,7 @@ export default function StudentAttendanceSection() {
               </div>
 
               {qrCodeExpiresAt && (
-                <div className={`ux-mb-6 ux-text-sm ${new Date(qrCodeExpiresAt) < new Date() ? 'text-red-400' : 'text-emerald-400'}`}>
+                <div className={`ux-mb-6 ux-text-sm ${new Date(qrCodeExpiresAt) < new Date() ? 'ux-text-red-400' : 'ux-text-emerald-400'}`}>
                   {new Date(qrCodeExpiresAt) < new Date() 
                     ? 'انتهت صلاحية الرمز' 
                     : `ينتهي في: ${new Date(qrCodeExpiresAt).toLocaleTimeString('ar-EG')}`}

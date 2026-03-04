@@ -299,7 +299,7 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
           </div>
 
           {/* Progress Bar (Only when recording) */}
-          <div className={`ux-w-full ux-h-1dot5 ux-bg-gray-800 ux-rounded-full ux-overflow-hidden ux-mb-6 ux-transition-opacity ux-duration-300 ${recordingState === 'recording' ? 'opacity-100' : 'opacity-0 ux-h-0 mb-0'}`}>
+          <div className={`ux-w-full ux-h-1dot5 ux-bg-gray-800 ux-rounded-full ux-overflow-hidden ux-mb-6 ux-transition-opacity ux-duration-300 ${recordingState === 'recording' ? 'ux-opacity-100' : 'ux-opacity-0 ux-h-0 ux-mb-0'}`}>
             <div 
               className="ux-h-full ux-rounded-full ux-transition-all ux-duration-1000 linear"
               style={{ 

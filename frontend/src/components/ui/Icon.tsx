@@ -181,7 +181,7 @@ export const IconButton: React.FC<IconButtonProps> = ({
   ...iconProps
 }) => {
   const baseStyles = [
-    'inline-flex',
+    'ux-inline-flex',
     'ux-items-center',
     'ux-justify-center',
     'ux-rounded-lg',
@@ -265,7 +265,7 @@ export const IconText: React.FC<IconTextProps> = ({
   return (
     <span
       className={clsx(
-        'inline-flex',
+        'ux-inline-flex',
         'ux-items-center',
         gapStyles[gap],
         iconPosition === 'right' && 'ux-flex-row-reverse',
@@ -378,7 +378,7 @@ export const IconAvatar: React.FC<IconAvatarProps> = ({
   return (
     <span
       className={clsx(
-        'inline-flex',
+        'ux-inline-flex',
         'ux-items-center',
         'ux-justify-center',
         sizeStyles[size],

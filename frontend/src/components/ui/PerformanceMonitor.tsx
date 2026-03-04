@@ -105,7 +105,7 @@ export default function PerformanceMonitor({
       {/* Header */}
       <div className="ux-flex ux-items-center ux-justify-between ux-p-3 ux-bg-gray-800 ux-border-b ux-border-gray-700">
         <div className="ux-flex ux-items-center ux-space-x-2">
-          <div className={`ux-w-2 ux-h-2 ux-rounded-full ${isSupported ? 'bg-green-400' : 'bg-yellow-400'} ux-animate-pulse`}></div>
+          <div className={`ux-w-2 ux-h-2 ux-rounded-full ${isSupported ? 'ux-bg-green-400' : 'badge-warning'} ux-animate-pulse`}></div>
           <h3 className="ux-text-sm ux-font-medium ux-text-gray-200">Performance Monitor</h3>
         </div>
         <div className="ux-flex ux-items-center ux-space-x-2">

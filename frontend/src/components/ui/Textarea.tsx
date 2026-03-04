@@ -103,7 +103,7 @@ export const Textarea: React.FC<TextareaProps> = ({
 
       {/* Show counter below if no label */}
       {showCounter && maxLength && !label && (
-        <div style={{ display: 'flex', justifyContent: 'ux-flex-end' }}>
+        <div className="ux-flex ux-justify-end">
           <span
             className={clsx(
               currentLength > maxLength && 'textarea-counter-error',

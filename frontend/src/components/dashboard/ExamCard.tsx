@@ -222,7 +222,7 @@ export const ExamCard: React.FC<ExamCardProps> = ({
       </h3>
 
       {/* Subject */}
-      <p className="ux-text-sm text-gray-light/80 ux-mb-6 ux-line-clamp-2 ux-min-h-40px">
+      <p className="ux-text-sm ux-text-gray-light-80 ux-mb-6 ux-line-clamp-2 ux-min-h-40px">
         {exam.subject || 'مادة الامتحان'}
       </p>
 

@@ -26,7 +26,7 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({ isOpen, onClose, url, expires
           </div>
 
           {expiresAt && (
-            <div className={`ux-mb-6 ux-text-sm ${isExpired ? 'text-red-400' : 'text-emerald-400'}`}>
+            <div className={`ux-mb-6 ux-text-sm ${isExpired ? 'ux-text-red-400' : 'ux-text-emerald-400'}`}>
               {isExpired ? 'انتهت صلاحية الرمز' : `ينتهي في: ${new Date(expiresAt).toLocaleTimeString('ar-EG')}`}
             </div>
           )}

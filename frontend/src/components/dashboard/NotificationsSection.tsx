@@ -226,7 +226,7 @@ export const NotificationsSection = () => {
                       {!notification.read_at && (
                         <span className="ux-w-2 ux-h-2 ux-rounded-full ux-bg-primary ux-animate-pulse"></span>
                       )}
-                      <h4 className={`ux-font-bold ${notification.read_at ? 'text-gray-300' : 'text-white'}`}>
+                      <h4 className={`ux-font-bold ${notification.read_at ? 'ux-text-gray-light' : 'ux-text-white'}`}>
                         {notification.title}
                       </h4>
                     </div>
@@ -245,7 +245,7 @@ export const NotificationsSection = () => {
                   )}
 
                   <div className="ux-flex ux-justify-between ux-items-center ux-text-xs">
-                    <span className="text-primary/80 ux-font-medium">{notification.sender_name}</span>
+                    <span className="ux-text-primary ux-opacity-80 ux-font-medium">{notification.sender_name}</span>
                     <span className="ux-bg-white-10 ux-px-2 ux-py-1 ux-rounded-full ux-text-gray-400">
                       {notification.child_name}
                     </span>
@@ -281,7 +281,7 @@ export const NotificationsSection = () => {
                   <input
                     type="text"
                     id="title"
-                    className="ux-w-full ux-px-4 ux-py-3 ux-bg-white-5 ux-border ux-border-white-10 ux-rounded-lg ux-text-white ux-focus-border-primary ux-focus-ring-1 ux-focus-ring-primary outline-none ux-transition-all"
+                    className="ux-w-full ux-px-4 ux-py-3 ux-bg-white-5 ux-border ux-border-white-10 ux-rounded-lg ux-text-white ux-focus-border-primary ux-focus-ring-1 ux-focus-ring-primary ux-focus-outline-none ux-transition-all"
                     value={formData.title}
                     onChange={(e) => setFormData({...formData, title: e.target.value})}
                     required
@@ -293,7 +293,7 @@ export const NotificationsSection = () => {
                   <label htmlFor="message" className="ux-block ux-text-gray-light ux-text-sm ux-mb-2 ux-font-medium">تفاصيل الرسالة</label>
                   <textarea
                     id="message"
-                    className="ux-w-full ux-px-4 ux-py-3 ux-bg-white-5 ux-border ux-border-white-10 ux-rounded-lg ux-text-white ux-focus-border-primary ux-focus-ring-1 ux-focus-ring-primary outline-none ux-transition-all"
+                    className="ux-w-full ux-px-4 ux-py-3 ux-bg-white-5 ux-border ux-border-white-10 ux-rounded-lg ux-text-white ux-focus-border-primary ux-focus-ring-1 ux-focus-ring-primary ux-focus-outline-none ux-transition-all"
                     value={formData.message}
                     onChange={(e) => setFormData({...formData, message: e.target.value})}
                     required

@@ -33,7 +33,7 @@ export const AuthInput: React.FC<AuthInputProps> = ({ label, iconClass, error, c
           <Skeleton className="ux-w-full" height="50px" borderRadius="12px" />
         ) : (
           <>
-            {iconClass && <i className={`${iconClass} ${error ? 'text-red-500' : ''}`}></i>}
+            {iconClass && <i className={`${iconClass} ${error ? 'ux-text-red-500' : ''}`}></i>}
             <input
               {...props}
               className={`${className || ''} ${!iconClass ? 'ui-auth-no-icon' : ''} ${error ? 'input-error' : ''}`}

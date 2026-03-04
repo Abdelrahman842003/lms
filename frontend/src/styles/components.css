@@ -3116,6 +3116,10 @@
   @apply inline-block;
 }
 
+.ux-inline-flex {
+  @apply inline-flex;
+}
+
 .ux-inset-0 {
   @apply inset-0;
 }
@@ -3282,6 +3286,10 @@
   @apply mb-4;
 }
 
+.ux-mb-0 {
+  @apply mb-0;
+}
+
 .ux-mb-6 {
   @apply mb-6;
 }
@@ -3376,6 +3384,10 @@
 
 .ux-opacity-0 {
   @apply opacity-0;
+}
+
+.ux-opacity-100 {
+  @apply opacity-100;
 }
 
 .ux-opacity-20 {
@@ -3680,6 +3692,10 @@
   @apply text-lg;
 }
 
+.ux-text-primary {
+  color: var(--primary);
+}
+
 .ux-text-red-400 {
   @apply text-red-400;
 }
@@ -3698,6 +3714,14 @@
 
 .ux-text-sm {
   @apply text-sm;
+}
+
+.ux-text-gray-light {
+  color: var(--gray-light);
+}
+
+.ux-text-gray-light-80 {
+  color: color-mix(in srgb, var(--gray-light) 80%, transparent);
 }
 
 .ux-text-white {

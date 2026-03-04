@@ -133,7 +133,7 @@ export const ManualAttendanceModal: React.FC<ManualAttendanceModalProps> = ({
             محاضرة: <span className="manual-attendance-lecture-name">{lectureTitle}</span>
           </p>
 
-          <div className="ui-input-container" style={{ marginBottom: '24px' }}>
+          <div className="ui-input-container ux-mb-6">
             <input
               ref={inputRef}
               type="text"

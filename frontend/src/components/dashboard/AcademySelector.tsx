@@ -174,7 +174,7 @@ export function AcademySelector({ isOpen, onClose }: AcademySelectorProps) {
                         <img
                           src={academy.logo}
                           alt={academy.name}
-                          className={`ux-w-12 ux-h-12 ux-rounded-full ux-object-cover ux-ring-2 ${isSuspended ? 'ring-red-500/30' : 'ring-white/10'}`}
+                          className={`ux-w-12 ux-h-12 ux-rounded-full ux-object-cover ux-border-2 ${isSuspended ? 'ux-border-red-500-30' : 'ux-border-white-10'}`}
                         />
                       ) : (
                         <div className={`ux-w-12 ux-h-12 ux-rounded-full ux-flex ux-items-center ux-justify-center ux-ring-2 ${
@@ -185,7 +185,7 @@ export function AcademySelector({ isOpen, onClose }: AcademySelectorProps) {
                           <i
                             className={`fas ${
                               academy.id ? 'fa-building' : 'fa-user-tie'
-                            } ${isSuspended ? 'text-red-400' : 'text-white'} ux-text-lg`}
+                            } ${isSuspended ? 'ux-text-red-400' : 'ux-text-white'} ux-text-lg`}
                           ></i>
                         </div>
                       )}
@@ -193,7 +193,7 @@ export function AcademySelector({ isOpen, onClose }: AcademySelectorProps) {
 
                     {/* Academy Info */}
                     <div className="ux-flex-1 ux-text-right">
-                      <div className={`ux-font-semibold ux-text-base ux-mb-1 ${isSuspended ? 'text-red-400' : 'text-white'}`}>
+                      <div className={`ux-font-semibold ux-text-base ux-mb-1 ${isSuspended ? 'ux-text-red-400' : 'ux-text-white'}`}>
                         {academy.name} {isSuspended && '(معطل)'}
                       </div>
 

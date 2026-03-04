@@ -40,9 +40,8 @@ export default function NotificationModal({
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div 
-        className="modal-content"
-        style={{ maxWidth: '600px' }}
+      <div
+        className="modal-content ux-max-w-600px"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="modal-header">
