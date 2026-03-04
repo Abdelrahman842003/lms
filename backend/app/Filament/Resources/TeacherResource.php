@@ -234,6 +234,7 @@ class TeacherResource extends BaseResource
 
                         DatePicker::make('plan_expires_at')
                             ->label('تاريخ انتهاء الاشتراك')
+                            ->default(now()->addDays(\App\Domains\Support\Services\HelperService::getTrialPeriodDays())->format('Y-m-d'))
                             ->required()
                             ->native(false)
                             ->displayFormat('d/m/Y')
@@ -410,20 +411,21 @@ class TeacherResource extends BaseResource
 
                 Tables\Columns\TextColumn::make('plan_type')
                     ->label('الخطة')
+                    ->state(fn (Teacher $record): string => static::resolvePlanTypeForDisplay($record))
                     ->badge()
-                    ->color(fn ($state): string => match (is_string($state) ? $state : $state->value) {
+                    ->color(fn (string $state): string => match ($state) {
                         'trial' => 'gray',
                         'term' => 'info',
                         'custom' => 'warning',
                         'free' => 'gray',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn ($state): string => match (is_string($state) ? $state : $state->value) {
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
                         'trial' => 'تجريبي',
                         'term' => 'مدة محددة',
                         'custom' => 'مخصص',
                         'free' => 'مجاني',
-                        default => is_string($state) ? $state : $state->value,
+                        default => 'غير محدد',
                     })
                     ->sortable()
                     ->toggleable(),
@@ -532,5 +534,28 @@ class TeacherResource extends BaseResource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery();
+    }
+
+    public static function resolvePlanTypeForDisplay(Teacher $teacher): string
+    {
+        $planType = trim((string) ($teacher->plan_type ?? ''));
+        if (in_array($planType, ['trial', 'term', 'custom', 'free'], true)) {
+            return $planType;
+        }
+
+        $subscriptionPeriod = trim((string) ($teacher->subscription_period ?? ''));
+        if (in_array($subscriptionPeriod, ['monthly', 'quarterly', 'semi_annual', 'annual'], true)) {
+            return 'term';
+        }
+
+        $hasExpiryDate = ! is_null($teacher->plan_expires_at);
+        $amountDue = (float) ($teacher->subscription_fee ?? 0);
+        $amountPaid = (float) ($teacher->paid_amount ?? 0);
+
+        if ($hasExpiryDate && $amountDue <= 0.0 && $amountPaid <= 0.0) {
+            return 'trial';
+        }
+
+        return '';
     }
 }

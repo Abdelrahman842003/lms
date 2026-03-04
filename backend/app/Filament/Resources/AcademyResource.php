@@ -33,7 +33,7 @@ class AcademyResource extends BaseResource
 
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-building-library';
 
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 8;
 
     protected static ?string $modelLabel = 'أكاديمية';
 
@@ -41,7 +41,7 @@ class AcademyResource extends BaseResource
 
     public static function getNavigationGroup(): ?string
     {
-        return 'إدارة المنصة';
+        return 'إدارة المستخدمين';
     }
 
     public static function form(Schema $schema): Schema
@@ -204,6 +204,7 @@ class AcademyResource extends BaseResource
 
                         DatePicker::make('plan_expires_at')
                             ->label('تاريخ انتهاء الاشتراك')
+                            ->default(now()->addDays(\App\Domains\Support\Services\HelperService::getTrialPeriodDays())->format('Y-m-d'))
                             ->required()
                             ->native(false)
                             ->displayFormat('d/m/Y')

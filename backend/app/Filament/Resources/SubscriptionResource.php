@@ -39,7 +39,7 @@ class SubscriptionResource extends BaseResource
 
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-credit-card';
 
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 7;
 
     protected static ?string $modelLabel = 'اشتراك';
 
@@ -76,7 +76,7 @@ class SubscriptionResource extends BaseResource
 
     public static function getNavigationGroup(): ?string
     {
-        return 'إدارة الاشتراكات';
+        return 'إدارة المستخدمين';
     }
 
     public static function form(Schema $schema): Schema

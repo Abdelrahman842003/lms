@@ -13,7 +13,6 @@ $resources = [
     'SubscriptionResource' => \App\Filament\Resources\SubscriptionResource::class,
     'AcademyResource' => \App\Filament\Resources\AcademyResource::class,
     'RoleResource' => \App\Filament\Resources\RoleResource::class,
-    'SettingResource' => \App\Filament\Resources\SettingResource::class,
     'PermissionResource' => \App\Filament\Resources\PermissionResource::class,
 ];
 
