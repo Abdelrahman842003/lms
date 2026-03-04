@@ -9,6 +9,7 @@ use App\Domains\Auth\Models\DeviceToken;
 use App\Domains\Auth\Models\Guardian;
 use App\Domains\Auth\Models\ParentDeviceToken;
 use App\Domains\Auth\Models\Student;
+use App\Domains\Notifications\Support\FirebaseCredentialsResolver;
 use Google\Client;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -140,23 +141,20 @@ class NotificationService
             ...$data,
         ];
 
-        $credentialsPath = config('services.firebase.credentials')
-            ?? env('GOOGLE_APPLICATION_CREDENTIALS')
-            ?? storage_path('firebase-credentials.json');
+        $credentials = FirebaseCredentialsResolver::resolve();
 
-        if (!file_exists($credentialsPath)) {
-            Log::error("Firebase credentials not found at: {$credentialsPath}");
+        if ($credentials === null) {
+            Log::error('Firebase credentials are not configured');
             return;
         }
 
         try {
             $client = new Client();
-            $client->setAuthConfig($credentialsPath);
+            $client->setAuthConfig($credentials['auth_config']);
             $client->addScope('https://www.googleapis.com/auth/firebase.messaging');
             $httpClient = $client->authorize();
 
-            $json      = json_decode(file_get_contents($credentialsPath), true);
-            $projectId = $json['project_id'] ?? null;
+            $projectId = $credentials['project_id'] ?: null;
 
             if (!$projectId) {
                 Log::error("Firebase project_id not found in credentials");
@@ -358,23 +356,20 @@ class NotificationService
             ...$data,
         ];
 
-        $credentialsPath = config('services.firebase.credentials')
-            ?? env('GOOGLE_APPLICATION_CREDENTIALS')
-            ?? storage_path('firebase-credentials.json');
+        $credentials = FirebaseCredentialsResolver::resolve();
 
-        if (!file_exists($credentialsPath)) {
-            Log::error("Firebase credentials not found at: {$credentialsPath}");
+        if ($credentials === null) {
+            Log::error('Firebase credentials are not configured');
             return;
         }
 
         try {
             $client = new Client();
-            $client->setAuthConfig($credentialsPath);
+            $client->setAuthConfig($credentials['auth_config']);
             $client->addScope('https://www.googleapis.com/auth/firebase.messaging');
             $httpClient = $client->authorize();
 
-            $json      = json_decode(file_get_contents($credentialsPath), true);
-            $projectId = $json['project_id'] ?? null;
+            $projectId = $credentials['project_id'] ?: null;
 
             if (!$projectId) {
                 Log::error("Firebase project_id not found in credentials");

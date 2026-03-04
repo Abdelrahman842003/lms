@@ -7,6 +7,7 @@ namespace App\Domains\Notifications\Channels;
 use App\Domains\Notifications\Contracts\NotificationChannelInterface;
 use App\Domains\Auth\Models\DeviceToken;
 use App\Domains\Notifications\Services\NotificationSettingsService;
+use App\Domains\Notifications\Support\FirebaseCredentialsResolver;
 use Google\Client;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
@@ -28,23 +29,25 @@ class FcmChannelStrategy implements NotificationChannelInterface
             return;
         }
 
-        // Get credentials path from config or fallback to storage
-        $credentialsPath = config('services.firebase.credentials')
-            ?? env('GOOGLE_APPLICATION_CREDENTIALS')
-            ?? storage_path('firebase-credentials.json');
+        $credentials = FirebaseCredentialsResolver::resolve();
 
-        if (!file_exists($credentialsPath)) {
-            Log::error("Firebase credentials not found at: " . $credentialsPath);
+        if ($credentials === null) {
+            Log::error('Firebase credentials are not configured');
             return;
         }
 
         try {
             $client = new Client();
-            $client->setAuthConfig($credentialsPath);
+            $client->setAuthConfig($credentials['auth_config']);
             $client->addScope('https://www.googleapis.com/auth/firebase.messaging');
             $httpClient = $client->authorize();
 
-            $projectId = $this->getProjectId($credentialsPath);
+            $projectId = $credentials['project_id'] ?: null;
+            if ($projectId === null) {
+                Log::error('Firebase project_id not found in credentials');
+                return;
+            }
+
             $endpoint  = "https://fcm.googleapis.com/v1/projects/{$projectId}/messages:send";
 
             foreach ($recipients as $recipient) {
@@ -88,22 +91,25 @@ class FcmChannelStrategy implements NotificationChannelInterface
             return;
         }
 
-        $credentialsPath = config('services.firebase.credentials')
-            ?? env('GOOGLE_APPLICATION_CREDENTIALS')
-            ?? storage_path('firebase-credentials.json');
+        $credentials = FirebaseCredentialsResolver::resolve();
 
-        if (!file_exists($credentialsPath)) {
-            Log::error("Firebase credentials not found at: " . $credentialsPath);
+        if ($credentials === null) {
+            Log::error('Firebase credentials are not configured');
             return;
         }
 
         try {
             $client = new Client();
-            $client->setAuthConfig($credentialsPath);
+            $client->setAuthConfig($credentials['auth_config']);
             $client->addScope('https://www.googleapis.com/auth/firebase.messaging');
             $httpClient = $client->authorize();
 
-            $projectId = $this->getProjectId($credentialsPath);
+            $projectId = $credentials['project_id'] ?: null;
+            if ($projectId === null) {
+                Log::error('Firebase project_id not found in credentials');
+                return;
+            }
+
             $endpoint  = "https://fcm.googleapis.com/v1/projects/{$projectId}/messages:send";
 
             $batchSize = $notificationSettings->maxBatchSize();
@@ -152,9 +158,4 @@ class FcmChannelStrategy implements NotificationChannelInterface
         }
     }
 
-    private function getProjectId(string $path): ?string
-    {
-        $json = json_decode(file_get_contents($path), true);
-        return $json['project_id'] ?? null;
-    }
 }
