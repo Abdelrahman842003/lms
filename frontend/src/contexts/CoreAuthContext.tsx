@@ -19,6 +19,13 @@ import {
 } from "@/services/authService";
 import { User } from "@/types";
 
+const VALID_USER_TYPES = ['teacher', 'student', 'secretary', 'parent', 'academy'] as const;
+type ValidUserType = typeof VALID_USER_TYPES[number];
+
+function isValidUserType(value: unknown): value is ValidUserType {
+  return typeof value === 'string' && VALID_USER_TYPES.includes(value as ValidUserType);
+}
+
 interface CoreAuthContextType {
   user: User | null;
   isAuthenticated: boolean;
@@ -45,13 +52,19 @@ export function CoreAuthProvider({ children }: { children: ReactNode }) {
     try {
       const storedUser = localStorage.getItem("user");
       if (storedUser) {
-        setUser(JSON.parse(storedUser));
-        // Ensure cookie is set
-        document.cookie = "auth_state=true; path=/; max-age=2592000; SameSite=Lax";
-
         const storedUserObj = JSON.parse(storedUser);
-        if (storedUserObj.userType) {
+        if (isValidUserType(storedUserObj?.userType)) {
+          setUser(storedUserObj);
+          // Ensure cookie is set only for supported frontend roles
+          document.cookie = "auth_state=true; path=/; max-age=2592000; SameSite=Lax";
           document.cookie = `user_role=${storedUserObj.userType}; path=/; max-age=2592000; SameSite=Lax`;
+        } else {
+          localStorage.removeItem("user");
+          localStorage.removeItem("userType");
+          localStorage.removeItem("token");
+          localStorage.removeItem("refreshToken");
+          document.cookie = "auth_state=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+          document.cookie = "user_role=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
         }
       }
     } catch (error) {
@@ -61,10 +74,9 @@ export function CoreAuthProvider({ children }: { children: ReactNode }) {
     // Validate user session in background
     const validateSession = async () => {
       try {
-        const userType = localStorage.getItem("userType") as
-          | "teacher" | "student" | "secretary" | "academy" | "parent" | null;
+        const userType = localStorage.getItem("userType");
 
-        if (userType) {
+        if (userType && isValidUserType(userType)) {
           const response = await getCurrentUser(userType);
           const userData: User = {
             id: response.user.id,
@@ -87,6 +99,8 @@ export function CoreAuthProvider({ children }: { children: ReactNode }) {
 
           setUser(userData);
           localStorage.setItem("user", JSON.stringify(userData));
+        } else if (userType && !isValidUserType(userType)) {
+          clearAuth();
         }
       } catch (apiError: any) {
         if (apiError.status === 401) {

@@ -39,14 +39,20 @@ export default function LoginPage() {
     if (authLoading) return;
     
     if (user) {
-      const dashboardPath = user.userType === 'secretary' 
-        ? '/teacher/dashboard'
-        : user.userType === 'academy'
-          ? '/academy/dashboard'
-          : user.userType === 'parent'
-            ? '/parent/children'
-            : `/${user.userType}/dashboard`;
-      router.replace(dashboardPath);
+      const dashboardByRole: Record<string, string> = {
+        teacher: '/teacher/dashboard',
+        student: '/student/dashboard',
+        secretary: '/teacher/dashboard',
+        parent: '/parent/children',
+        academy: '/academy/dashboard',
+      };
+
+      const dashboardPath = dashboardByRole[user.userType];
+
+      // Guard against unsupported/legacy roles (e.g. admin) that don't exist in Next frontend routes.
+      if (dashboardPath) {
+        router.replace(dashboardPath);
+      }
     }
   }, [user, authLoading, router]);
 
@@ -375,4 +381,3 @@ export default function LoginPage() {
     </>
   );
 }
-
