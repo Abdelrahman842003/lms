@@ -66,42 +66,42 @@ export const StatCard: React.FC<StatCardProps> = ({
   children,
 }) => {
   const colorMap: Record<string, { bg: string; text: string }> = {
-    primary: { bg: 'bg-primary/10', text: 'text-primary' },
-    secondary: { bg: 'bg-secondary/10', text: 'text-secondary' },
-    warning: { bg: 'bg-warning/10', text: 'text-warning' },
-    success: { bg: 'bg-success/10', text: 'text-success' },
-    danger: { bg: 'bg-danger/10', text: 'text-danger' },
-    info: { bg: 'bg-blue-500/10', text: 'text-blue-500' },
-    blue: { bg: 'bg-blue-500/10', text: 'text-blue-500' },
-    green: { bg: 'bg-green-500/10', text: 'text-green-500' },
-    red: { bg: 'bg-red-500/10', text: 'text-red-500' },
-    purple: { bg: 'bg-purple-500/10', text: 'text-purple-500' },
+    primary: { bg: 'stat-icon-primary', text: 'stat-text-primary' },
+    secondary: { bg: 'stat-icon-secondary', text: 'stat-text-secondary' },
+    warning: { bg: 'stat-icon-warning', text: 'stat-text-warning' },
+    success: { bg: 'stat-icon-success', text: 'stat-text-success' },
+    danger: { bg: 'stat-icon-danger', text: 'stat-text-danger' },
+    info: { bg: 'stat-icon-info', text: 'stat-text-info' },
+    blue: { bg: 'stat-icon-info', text: 'stat-text-info' },
+    green: { bg: 'stat-icon-success', text: 'stat-text-success' },
+    red: { bg: 'stat-icon-danger', text: 'stat-text-danger' },
+    purple: { bg: 'stat-icon-primary', text: 'stat-text-primary' },
   };
 
   const theme = colorMap[color] || colorMap.primary;
 
   if (variant === 'centered') {
     return (
-      <div className="stat-card group text-center">
-        <Icon name={icon.replace('fas fa-', '')} size="2x" className={`${theme.text} mb-3 block transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3`} />
-        <h3 className="text-[2rem] font-bold text-white mb-2">
+      <div className="stat-card stat-card-centered">
+        <Icon name={icon.replace('fas fa-', '')} size="2x" className={`stat-card-centered-icon ${theme.text}`} />
+        <h3 className="stat-card-centered-value">
           {typeof value === 'number' ? (
             <CountUp end={value} prefix={prefix} suffix={suffix} />
           ) : (
             value
           )}
         </h3>
-        <p className="text-gray-400 text-[0.95rem]">{title}</p>
+        <p className="stat-card-centered-title">{title}</p>
       </div>
     );
   }
 
   return (
-    <div className="stat-card group">
-      <div className="flex justify-between items-start mb-4">
+    <div className="stat-card">
+      <div className="stat-card-main-row">
         <div>
-          <p className="text-gray-400 text-[0.9rem] mb-2 font-medium">{title}</p>
-          <h3 className="text-[1.75rem] font-bold text-white">
+          <p className="stat-card-label">{title}</p>
+          <h3 className="stat-card-main-value">
             {typeof value === 'number' ? (
               <CountUp end={value} prefix={prefix} suffix={suffix} />
             ) : (
@@ -109,17 +109,17 @@ export const StatCard: React.FC<StatCardProps> = ({
             )}
           </h3>
         </div>
-        <div className={`w-12 h-12 rounded-xl ${theme.bg} flex items-center justify-center ${theme.text} text-xl transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3`}>
+        <div className={`stat-card-main-icon ${theme.bg} ${theme.text}`}>
           <i className={icon}></i>
         </div>
       </div>
       {trend && (
-        <div className="flex items-center gap-2 text-[0.85rem]">
-          <span className={`${trend.isPositive ? 'text-emerald-400' : 'text-rose-400'} flex items-center gap-1 font-medium`}>
+        <div className="stat-card-trend-row">
+          <span className={`stat-card-trend-icon ${trend.isPositive ? 'positive' : 'negative'}`}>
             <i className={`fas fa-arrow-${trend.isPositive ? 'up' : 'down'}`}></i>
             <span>{Math.abs(trend.value)}</span>
           </span>
-          <span className="text-gray-500">{trend.label}</span>
+          <span className="stat-card-trend-label">{trend.label}</span>
         </div>
       )}
       {children}

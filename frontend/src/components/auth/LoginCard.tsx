@@ -9,17 +9,17 @@ interface LoginCardProps {
 
 export const LoginCard: React.FC<LoginCardProps> = ({ children, title, subtitle, icon }) => {
   return (
-    <div className="p-[50px_45px] rounded-[24px] border border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.3)] transition-all duration-300 hover:backdrop-blur-[3px] hover:border-[0.5px] hover:border-[#4163eb2e]">
-      <div className="text-center mb-[35px]">
+    <div className="login-card">
+      <div className="login-header">
         {icon && (
-          <div className="w-[110px] h-[110px] mx-auto mb-5 flex items-center justify-center">
+          <div className="login-icon">
             {icon}
           </div>
         )}
-        <h1 className="text-[2rem] font-[800] mb-3 bg-[linear-gradient(to_right,#fff_40%,var(--secondary)_100%)] bg-clip-text text-transparent">
+        <h1 className="login-title">
           {title}
         </h1>
-        <p className="text-[1rem] text-[#E9ECEF] leading-[1.6]">{subtitle}</p>
+        <p className="login-subtitle">{subtitle}</p>
       </div>
       {children}
     </div>

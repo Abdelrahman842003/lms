@@ -36,39 +36,39 @@ export default function PerformanceMonitor({
   if (!enabled) return null;
 
   const positionClasses = {
-    'top-left': 'top-4 left-4',
-    'top-right': 'top-4 right-4',
-    'bottom-left': 'bottom-4 left-4',
-    'bottom-right': 'bottom-4 right-4',
+    'top-left': 'ux-top-4 ux-left-4',
+    'top-right': 'ux-top-4 ux-right-4',
+    'bottom-left': 'ux-bottom-4 ux-left-4',
+    'bottom-right': 'ux-bottom-4 ux-right-4',
   };
 
   const getScoreColor = (score: number) => {
-    if (score >= 90) return 'text-green-500';
-    if (score >= 80) return 'text-yellow-500';
-    if (score >= 70) return 'text-orange-500';
-    return 'text-red-500';
+    if (score >= 90) return 'ux-text-green-500';
+    if (score >= 80) return 'ux-text-yellow-500';
+    if (score >= 70) return 'ux-text-orange-500';
+    return 'ux-text-red-500';
   };
 
   const getMetricColor = (metric: string, value: number) => {
     switch (metric) {
       case 'lcp':
-        if (value <= 2500) return 'text-green-500';
-        if (value <= 4000) return 'text-yellow-500';
-        return 'text-red-500';
+        if (value <= 2500) return 'ux-text-green-500';
+        if (value <= 4000) return 'ux-text-yellow-500';
+        return 'ux-text-red-500';
       case 'fid':
-        if (value <= 100) return 'text-green-500';
-        if (value <= 300) return 'text-yellow-500';
-        return 'text-red-500';
+        if (value <= 100) return 'ux-text-green-500';
+        if (value <= 300) return 'ux-text-yellow-500';
+        return 'ux-text-red-500';
       case 'cls':
-        if (value <= 0.1) return 'text-green-500';
-        if (value <= 0.25) return 'text-yellow-500';
-        return 'text-red-500';
+        if (value <= 0.1) return 'ux-text-green-500';
+        if (value <= 0.25) return 'ux-text-yellow-500';
+        return 'ux-text-red-500';
       case 'fcp':
-        if (value <= 1800) return 'text-green-500';
-        if (value <= 3000) return 'text-yellow-500';
-        return 'text-red-500';
+        if (value <= 1800) return 'ux-text-green-500';
+        if (value <= 3000) return 'ux-text-yellow-500';
+        return 'ux-text-red-500';
       default:
-        return 'text-gray-300';
+        return 'ux-text-gray-300';
     }
   };
 
@@ -84,14 +84,14 @@ export default function PerformanceMonitor({
   if (minimized) {
     return (
       <div 
-        className={`fixed ${positionClasses[position]} z-50 bg-gray-900 border border-gray-700 rounded-lg p-2 cursor-pointer hover:bg-gray-800 transition-colors`}
+        className={`ux-fixed ${positionClasses[position]} ux-z-50 ux-bg-gray-900 ux-border ux-border-gray-700 ux-rounded-lg ux-p-2 ux-cursor-pointer ux-hover-bg-gray-800 ux-transition-colors`}
         onClick={() => setMinimized(false)}
       >
-        <div className="flex items-center space-x-2 text-xs">
-          <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-          <span className="text-gray-300">Perf</span>
+        <div className="ux-flex ux-items-center ux-space-x-2 ux-text-xs">
+          <div className="ux-w-2 ux-h-2 ux-bg-green-400 ux-rounded-full ux-animate-pulse"></div>
+          <span className="ux-text-gray-300">Perf</span>
           <span className={getScoreColor(metrics.score)}>{metrics.score}</span>
-          <span className="text-gray-400">({getPerformanceGrade()})</span>
+          <span className="ux-text-gray-400">({getPerformanceGrade()})</span>
         </div>
       </div>
     );
@@ -99,22 +99,22 @@ export default function PerformanceMonitor({
 
   return (
     <div 
-      className={`fixed ${positionClasses[position]} z-50 bg-gray-900 border border-gray-700 rounded-lg shadow-xl w-80 max-h-96 overflow-hidden`}
+      className={`ux-fixed ${positionClasses[position]} ux-z-50 ux-bg-gray-900 ux-border ux-border-gray-700 ux-rounded-lg ux-shadow-xl ux-w-80 ux-max-h-96 ux-overflow-hidden`}
       dir="ltr"
     >
       {/* Header */}
-      <div className="flex items-center justify-between p-3 bg-gray-800 border-b border-gray-700">
-        <div className="flex items-center space-x-2">
-          <div className={`w-2 h-2 rounded-full ${isSupported ? 'bg-green-400' : 'bg-yellow-400'} animate-pulse`}></div>
-          <h3 className="text-sm font-medium text-gray-200">Performance Monitor</h3>
+      <div className="ux-flex ux-items-center ux-justify-between ux-p-3 ux-bg-gray-800 ux-border-b ux-border-gray-700">
+        <div className="ux-flex ux-items-center ux-space-x-2">
+          <div className={`ux-w-2 ux-h-2 ux-rounded-full ${isSupported ? 'bg-green-400' : 'bg-yellow-400'} ux-animate-pulse`}></div>
+          <h3 className="ux-text-sm ux-font-medium ux-text-gray-200">Performance Monitor</h3>
         </div>
-        <div className="flex items-center space-x-2">
-          <span className={`text-lg font-bold ${getScoreColor(metrics.score)}`}>
+        <div className="ux-flex ux-items-center ux-space-x-2">
+          <span className={`ux-text-lg ux-font-bold ${getScoreColor(metrics.score)}`}>
             {metrics.score}
           </span>
           <button
             onClick={() => setMinimized(true)}
-            className="text-gray-400 hover:text-gray-200 text-lg leading-none"
+            className="ux-text-gray-400 ux-hover-text-gray-200 ux-text-lg ux-leading-none"
           >
             ×
           </button>
@@ -122,7 +122,7 @@ export default function PerformanceMonitor({
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-gray-700">
+      <div className="ux-flex ux-border-b ux-border-gray-700">
         {[
           { key: 'vitals', label: 'Vitals' },
           { key: 'memory', label: 'Memory' },
@@ -132,10 +132,10 @@ export default function PerformanceMonitor({
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key as any)}
-            className={`flex-1 px-3 py-2 text-xs font-medium transition-colors ${
+            className={`ux-flex-1 ux-px-3 ux-py-2 ux-text-xs ux-font-medium ux-transition-colors ${
               activeTab === tab.key
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-800 text-gray-400 hover:text-gray-200'
+                ? 'ux-bg-blue-600 ux-text-white'
+                : 'ux-bg-gray-800 ux-text-gray-400 ux-hover-text-gray-200'
             }`}
           >
             {tab.label}
@@ -144,10 +144,10 @@ export default function PerformanceMonitor({
       </div>
 
       {/* Content */}
-      <div className="p-3 max-h-64 overflow-y-auto">
+      <div className="ux-p-3 ux-max-h-64 ux-overflow-y-auto">
         {/* Core Web Vitals Tab */}
         {activeTab === 'vitals' && (
-          <div className="space-y-2">
+          <div className="ux-space-y-2">
             {[
               { key: 'lcp', label: 'LCP', value: metrics.lcp, unit: 'ms' },
               { key: 'fid', label: 'FID', value: metrics.fid, unit: 'ms' },
@@ -156,9 +156,9 @@ export default function PerformanceMonitor({
               { key: 'ttfb', label: 'TTFB', value: metrics.ttfb, unit: 'ms' },
               { key: 'inp', label: 'INP', value: metrics.inp, unit: 'ms' }
             ].map(({ key, label, value, unit }) => (
-              <div key={key} className="flex justify-between items-center text-xs">
-                <span className="text-gray-400">{label}:</span>
-                <span className={value !== undefined ? getMetricColor(key, value) : 'text-gray-500'}>
+              <div key={key} className="ux-flex ux-justify-between ux-items-center ux-text-xs">
+                <span className="ux-text-gray-400">{label}:</span>
+                <span className={value !== undefined ? getMetricColor(key, value) : 'ux-text-gray-500'}>
                   {value !== undefined ? `${Math.round(value)}${unit}` : 'N/A'}
                 </span>
               </div>
@@ -168,29 +168,29 @@ export default function PerformanceMonitor({
 
         {/* Memory Tab */}
         {activeTab === 'memory' && (
-          <div className="space-y-2">
+          <div className="ux-space-y-2">
             {memoryUsage ? (
               <>
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-gray-400">Used:</span>
-                  <span className="text-gray-300">{memoryUsage.usedJSHeapSize.toFixed(1)} MB</span>
+                <div className="ux-flex ux-justify-between ux-items-center ux-text-xs">
+                  <span className="ux-text-gray-400">Used:</span>
+                  <span className="ux-text-gray-300">{memoryUsage.usedJSHeapSize.toFixed(1)} MB</span>
                 </div>
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-gray-400">Total:</span>
-                  <span className="text-gray-300">{memoryUsage.totalJSHeapSize.toFixed(1)} MB</span>
+                <div className="ux-flex ux-justify-between ux-items-center ux-text-xs">
+                  <span className="ux-text-gray-400">Total:</span>
+                  <span className="ux-text-gray-300">{memoryUsage.totalJSHeapSize.toFixed(1)} MB</span>
                 </div>
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-gray-400">Limit:</span>
-                  <span className="text-gray-300">{memoryUsage.jsHeapSizeLimit.toFixed(1)} MB</span>
+                <div className="ux-flex ux-justify-between ux-items-center ux-text-xs">
+                  <span className="ux-text-gray-400">Limit:</span>
+                  <span className="ux-text-gray-300">{memoryUsage.jsHeapSizeLimit.toFixed(1)} MB</span>
                 </div>
-                <div className="mt-2">
-                  <div className="flex justify-between text-xs text-gray-400 mb-1">
+                <div className="ux-mt-2">
+                  <div className="ux-flex ux-justify-between ux-text-xs ux-text-gray-400 ux-mb-1">
                     <span>Usage</span>
                     <span>{((memoryUsage.usedJSHeapSize / memoryUsage.jsHeapSizeLimit) * 100).toFixed(1)}%</span>
                   </div>
-                  <div className="w-full bg-gray-700 rounded-full h-2">
+                  <div className="ux-w-full ux-bg-gray-700 ux-rounded-full ux-h-2">
                     <div 
-                      className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                      className="ux-bg-blue-600 ux-h-2 ux-rounded-full ux-transition-all ux-duration-300"
                       style={{
                         width: `${Math.min(100, (memoryUsage.usedJSHeapSize / memoryUsage.jsHeapSizeLimit) * 100)}%`
                       }}
@@ -199,7 +199,7 @@ export default function PerformanceMonitor({
                 </div>
               </>
             ) : (
-              <div className="text-xs text-gray-500 text-center py-4">
+              <div className="ux-text-xs ux-text-gray-500 ux-text-center ux-py-4">
                 Memory info not available
               </div>
             )}
@@ -208,30 +208,30 @@ export default function PerformanceMonitor({
 
         {/* Network Tab */}
         {activeTab === 'network' && (
-          <div className="space-y-2">
+          <div className="ux-space-y-2">
             {connectionInfo ? (
               <>
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-gray-400">Type:</span>
-                  <span className="text-gray-300">{connectionInfo.effectiveType}</span>
+                <div className="ux-flex ux-justify-between ux-items-center ux-text-xs">
+                  <span className="ux-text-gray-400">Type:</span>
+                  <span className="ux-text-gray-300">{connectionInfo.effectiveType}</span>
                 </div>
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-gray-400">Downlink:</span>
-                  <span className="text-gray-300">{connectionInfo.downlink} Mbps</span>
+                <div className="ux-flex ux-justify-between ux-items-center ux-text-xs">
+                  <span className="ux-text-gray-400">Downlink:</span>
+                  <span className="ux-text-gray-300">{connectionInfo.downlink} Mbps</span>
                 </div>
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-gray-400">RTT:</span>
-                  <span className="text-gray-300">{connectionInfo.rtt} ms</span>
+                <div className="ux-flex ux-justify-between ux-items-center ux-text-xs">
+                  <span className="ux-text-gray-400">RTT:</span>
+                  <span className="ux-text-gray-300">{connectionInfo.rtt} ms</span>
                 </div>
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-gray-400">Preload:</span>
-                  <span className={shouldPreload ? 'text-green-400' : 'text-red-400'}>
+                <div className="ux-flex ux-justify-between ux-items-center ux-text-xs">
+                  <span className="ux-text-gray-400">Preload:</span>
+                  <span className={shouldPreload ? 'ux-text-green-400' : 'ux-text-red-400'}>
                     {shouldPreload ? 'Enabled' : 'Disabled'}
                   </span>
                 </div>
               </>
             ) : (
-              <div className="text-xs text-gray-500 text-center py-4">
+              <div className="ux-text-xs ux-text-gray-500 ux-text-center ux-py-4">
                 Network info not available
               </div>
             )}
@@ -240,22 +240,22 @@ export default function PerformanceMonitor({
 
         {/* Bundle Tab */}
         {activeTab === 'bundle' && (
-          <div className="space-y-2">
+          <div className="ux-space-y-2">
             {bundleSize ? (
               <>
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-gray-400">Total Size:</span>
-                  <span className="text-gray-300">{bundleSize.totalSize} MB</span>
+                <div className="ux-flex ux-justify-between ux-items-center ux-text-xs">
+                  <span className="ux-text-gray-400">Total Size:</span>
+                  <span className="ux-text-gray-300">{bundleSize.totalSize} MB</span>
                 </div>
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-gray-400">Gzip Size:</span>
-                  <span className="text-gray-300">{bundleSize.gzipSize} MB</span>
+                <div className="ux-flex ux-justify-between ux-items-center ux-text-xs">
+                  <span className="ux-text-gray-400">Gzip Size:</span>
+                  <span className="ux-text-gray-300">{bundleSize.gzipSize} MB</span>
                 </div>
-                <div className="mt-2">
-                  <span className="text-xs text-gray-400 block mb-1">Chunks:</span>
-                  <div className="space-y-1">
+                <div className="ux-mt-2">
+                  <span className="ux-text-xs ux-text-gray-400 ux-block ux-mb-1">Chunks:</span>
+                  <div className="ux-space-y-1">
                     {bundleSize.chunks.map((chunk, index) => (
-                      <div key={index} className="text-xs text-gray-300 bg-gray-800 px-2 py-1 rounded">
+                      <div key={index} className="ux-text-xs ux-text-gray-300 ux-bg-gray-800 ux-px-2 ux-py-1 ux-rounded">
                         {chunk}
                       </div>
                     ))}
@@ -263,7 +263,7 @@ export default function PerformanceMonitor({
                 </div>
               </>
             ) : (
-              <div className="text-xs text-gray-500 text-center py-4">
+              <div className="ux-text-xs ux-text-gray-500 ux-text-center ux-py-4">
                 Bundle info not available
               </div>
             )}

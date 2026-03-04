@@ -129,30 +129,30 @@ const ScanAttendanceModal: React.FC<ScanAttendanceModalProps> = ({ isOpen, onClo
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="w-full max-w-md bg-gray-900 border border-gray-800 rounded-xl shadow-2xl overflow-hidden">
-        <div className="p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-bold text-white">تسجيل الحضور والانصراف</h3>
+    <div className="ux-fixed ux-inset-0 ux-z-50 ux-flex ux-items-center ux-justify-center ux-bg-black-50 ux-backdrop-blur-sm">
+      <div className="ux-w-full ux-max-w-md ux-bg-gray-900 ux-border ux-border-gray-800 ux-rounded-xl ux-shadow-2xl ux-overflow-hidden">
+        <div className="ux-p-6">
+          <div className="ux-flex ux-justify-between ux-items-center ux-mb-4">
+            <h3 className="ux-text-xl ux-font-bold ux-text-white">تسجيل الحضور والانصراف</h3>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-white"
+              className="ux-text-gray-400 ux-hover-text-white"
               disabled={isProcessing}
             >
               <Icon name="times" />
             </button>
           </div>
           
-          <div className="bg-black rounded-lg overflow-hidden mb-4 relative min-h-[300px] flex items-center justify-center">
-            <div id="attendance-reader" className="w-full h-full"></div>
+          <div className="ux-bg-black ux-rounded-lg ux-overflow-hidden ux-mb-4 ux-relative ux-min-h-300px ux-flex ux-items-center ux-justify-center">
+            <div id="attendance-reader" className="ux-w-full ux-h-full"></div>
           </div>
 
-          <p className="text-center text-gray-400 text-sm mb-4">
+          <p className="ux-text-center ux-text-gray-400 ux-text-sm ux-mb-4">
             وجه الكاميرا نحو رمز QR المعروض من قبل الأكاديمية
           </p>
 
           {isProcessing && (
-            <div className="text-center text-primary mb-4 flex items-center justify-center gap-2">
+            <div className="ux-text-center ux-text-primary ux-mb-4 ux-flex ux-items-center ux-justify-center ux-gap-2">
               <LoadingSpinner size="sm" color="primary" />
               <span>جاري المعالجة...</span>
             </div>
@@ -162,7 +162,7 @@ const ScanAttendanceModal: React.FC<ScanAttendanceModalProps> = ({ isOpen, onClo
             variant="secondary"
             onClick={onClose}
             disabled={isProcessing}
-            className="w-full"
+            className="ux-w-full"
           >
             إلغاء
           </Button>

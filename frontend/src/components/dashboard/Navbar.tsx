@@ -474,7 +474,7 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
         <div className="navbar-container">
           {/* Logo */}
           <div className="navbar-logo">
-            <img src="/logo.png" alt="منصة التعليم" className="h-12 w-auto object-contain" />
+            <img src="/logo.png" alt="منصة التعليم" className="ux-h-12 ux-w-auto ux-object-contain" />
             <div className="navbar-logo-text">
               <span>{getRoleLabel(role)}</span>
             </div>
@@ -548,7 +548,7 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
                 title="تسجيل الحضور والانصراف"
               >
                 <Icon name="qrcode" size="sm" />
-                <span className="hidden lg:inline">تسجيل الحضور</span>
+                <span className="ux-hidden ux-lg-inline">تسجيل الحضور</span>
               </Button>
             )}
 
@@ -571,16 +571,13 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
                 <div className="navbar-user-info">
                   <p className="navbar-user-name">{user?.name || ''}</p>
                   {role === 'teacher' && selectedAcademy && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                    <p className="ux-text-xs ux-text-gray-500 ux-dark-text-gray-400">
                       {selectedAcademy.name}
                     </p>
                   )}
                 </div>
                 <span
-                  className="navbar-user-chevron"
-                  style={{
-                    transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)'
-                  }}
+                  className={`navbar-user-chevron ${isDropdownOpen ? 'open' : ''}`}
                 >
                   <Icon name="chevron-down" size="sm" />
                 </span>
@@ -624,7 +621,7 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
                       <div className="navbar-dropdown-divider"></div>
                       <Button 
                         variant="ghost"
-                        className="navbar-dropdown-item w-full justify-start"
+                        className="navbar-dropdown-item ux-w-full ux-justify-start"
                         onClick={() => {
                           console.log('Opening academy modal');
                           setIsAcademyModalOpen(true);
@@ -640,7 +637,7 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
                   <div className="navbar-dropdown-divider"></div>
                   <Button 
                     variant="ghost"
-                    className="navbar-dropdown-item logout-item navbar-logout-btn w-full justify-start"
+                    className="navbar-dropdown-item logout-item navbar-logout-btn ux-w-full ux-justify-start"
                     onClick={handleLogout}
                   >
                     <Icon name="sign-out-alt" size="sm" />
@@ -756,7 +753,7 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
           </Link>
           <Button 
             variant="ghost"
-            className="mobile-sidebar-link w-full justify-start"
+            className="mobile-sidebar-link ux-w-full ux-justify-start"
             onClick={() => {
               setIsMobileSidebarOpen(false);
               handleLogout();

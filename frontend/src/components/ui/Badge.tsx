@@ -59,67 +59,37 @@ export const Badge: React.FC<BadgeProps> = ({
   className,
   pulse = false,
   dot = false,
-  dotColor = 'bg-current',
+  dotColor = 'currentColor',
 }) => {
-  // Solid variant styles
-  const solidVariants: Record<string, string[]> = {
-    primary: ['bg-primary/20', 'text-primary', 'border-primary/30'],
-    success: ['bg-success/20', 'text-success', 'border-success/30'],
-    warning: ['bg-warning/20', 'text-warning', 'border-warning/30'],
-    danger: ['bg-danger/20', 'text-danger', 'border-danger/30'],
-    info: ['bg-blue-500/20', 'text-blue-400', 'border-blue-500/30'],
-    secondary: ['bg-gray-500/20', 'text-gray-300', 'border-gray-500/30'],
-    default: ['bg-white/10', 'text-gray-300', 'border-white/10'],
+  const variantStyles: Record<string, string> = {
+    primary: 'badge-primary',
+    success: 'badge-success',
+    warning: 'badge-warning',
+    danger: 'badge-danger',
+    info: 'badge-info',
+    secondary: 'badge-secondary',
+    default: 'badge-secondary',
+    'outline-primary': 'badge-outline-primary',
+    'outline-success': 'badge-outline-success',
+    'outline-warning': 'badge-outline-warning',
+    'outline-danger': 'badge-outline-danger',
+    'outline-info': 'badge-outline-info',
   };
 
-  // Outline variant styles
-  const outlineVariants: Record<string, string[]> = {
-    'outline-primary': ['bg-transparent', 'text-primary', 'border-primary/50'],
-    'outline-success': ['bg-transparent', 'text-success', 'border-success/50'],
-    'outline-warning': ['bg-transparent', 'text-warning', 'border-warning/50'],
-    'outline-danger': ['bg-transparent', 'text-danger', 'border-danger/50'],
-    'outline-info': ['bg-transparent', 'text-blue-400', 'border-blue-500/50'],
+  const sizeStyles: Record<BadgeSize, string> = {
+    sm: 'badge-sm',
+    md: '',
+    lg: 'badge-lg',
   };
 
-  // Combine all variants
-  const variantStyles: Record<string, string[]> = {
-    ...solidVariants,
-    ...outlineVariants,
-  };
-
-  const sizeStyles = {
-    sm: ['px-2', 'py-0.5', 'text-xs'],
-    md: ['px-3', 'py-1', 'text-sm'],
-    lg: ['px-4', 'py-1.5', 'text-base'],
-  };
-
-  const baseStyles = [
-    'inline-flex',
-    'items-center',
-    'gap-1.5',
-    'rounded-full',
-    'font-medium',
-    'border',
-    'transition-all',
-    'duration-200',
-  ];
-
-  const clickableStyles = clickable
-    ? ['cursor-pointer', 'hover:opacity-80', 'active:scale-95']
-    : [];
-
-  const pulseStyles = pulse ? ['animate-pulse'] : [];
-
-  const isOutline = variant.startsWith('outline-');
+  const clickableStyles = clickable ? 'badge-clickable' : '';
+  const pulseStyles = pulse ? 'badge-pulse' : '';
   const currentVariant = variantStyles[variant] || variantStyles.default;
 
   const iconElement = icon && (
     <i
       className={clsx(
-        icon,
-        size === 'sm' && 'text-[10px]',
-        size === 'md' && 'text-xs',
-        size === 'lg' && 'text-sm'
+        icon
       )}
     />
   );
@@ -127,11 +97,9 @@ export const Badge: React.FC<BadgeProps> = ({
   const dotElement = dot && (
     <span
       className={clsx(
-        'w-1.5',
-        'h-1.5',
-        'rounded-full',
-        dotColor
+        'badge-dot'
       )}
+      style={{ backgroundColor: dotColor }}
     />
   );
 
@@ -139,7 +107,7 @@ export const Badge: React.FC<BadgeProps> = ({
     <span
       onClick={onClick}
       className={clsx(
-        baseStyles,
+        'badge',
         currentVariant,
         sizeStyles[size],
         clickableStyles,
@@ -219,7 +187,7 @@ export interface NotificationBadgeProps {
   /** Badge color variant */
   variant?: 'primary' | 'danger' | 'warning';
   /** Position relative to parent */
-  position?: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left';
+  position?: 'ux-top-right' | 'ux-top-left' | 'ux-bottom-right' | 'ux-bottom-left';
   /** Additional className */
   className?: string;
 }
@@ -228,22 +196,22 @@ export const NotificationBadge: React.FC<NotificationBadgeProps> = ({
   count = 0,
   maxCount = 99,
   variant = 'danger',
-  position = 'top-right',
+  position = 'ux-top-right',
   className,
 }) => {
   if (count <= 0) return null;
 
   const variantStyles = {
-    primary: 'bg-primary',
-    danger: 'bg-red-500',
-    warning: 'bg-warning',
+    primary: 'notification-badge-primary',
+    danger: 'notification-badge-danger',
+    warning: 'notification-badge-warning',
   };
 
   const positionStyles = {
-    'top-right': '-top-1 -right-1',
-    'top-left': '-top-1 -left-1',
-    'bottom-right': '-bottom-1 -right-1',
-    'bottom-left': '-bottom-1 -left-1',
+    'ux-top-right': 'notification-badge-top-right',
+    'ux-top-left': 'notification-badge-top-left',
+    'ux-bottom-right': 'notification-badge-bottom-right',
+    'ux-bottom-left': 'notification-badge-bottom-left',
   };
 
   const displayCount = count > maxCount ? `${maxCount}+` : count;
@@ -251,18 +219,8 @@ export const NotificationBadge: React.FC<NotificationBadgeProps> = ({
   return (
     <span
       className={clsx(
-        'absolute',
+        'notification-badge',
         positionStyles[position],
-        'min-w-[18px]',
-        'h-[18px]',
-        'flex',
-        'items-center',
-        'justify-center',
-        'px-1',
-        'text-[10px]',
-        'font-bold',
-        'text-white',
-        'rounded-full',
         variantStyles[variant],
         className
       )}

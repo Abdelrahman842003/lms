@@ -9,7 +9,7 @@ import React, { memo, Suspense, lazy } from 'react';
 
 // Loading spinner component
 export const LoadingSpinner = memo(() => (
-  <div className="flex items-center justify-center p-8">
+  <div className="ux-flex ux-items-center ux-justify-center ux-p-8">
     <LoadingSpinner size="md" color="primary" />
   </div>
 ));
@@ -19,19 +19,19 @@ LoadingSpinner.displayName = 'LoadingSpinner';
 // Enhanced loading fallback with skeleton
 export const LoadingSkeleton = memo(({ 
   lines = 3, 
-  height = 'h-4',
-  className = ''
+  height = 'ux-h-4',
+  className=''
 }: {
   lines?: number;
   height?: string;
   className?: string;
 }) => (
-  <div className={`animate-pulse space-y-2 ${className}`}>
+  <div className={`ux-animate-pulse ux-space-y-2 ${className}`}>
     {Array.from({ length: lines }).map((_, index) => (
       <div 
         key={index}
-        className={`bg-gray-300 dark:bg-gray-600 rounded ${height} ${
-          index === lines - 1 ? 'w-3/4' : 'w-full'
+        className={`ux-bg-gray-300 ux-dark-bg-gray-600 ux-rounded ${height} ${
+          index === lines - 1 ? 'ux-w-3-4' : 'ux-w-full'
         }`}
       />
     ))}
@@ -76,7 +76,7 @@ export const LazyDashboardRoutes = {
 export const LazyWrapper = memo(({ 
   children, 
   fallback = <LoadingSkeleton />,
-  errorFallback = <div className="text-red-500 p-4">خطأ في تحميل المحتوى</div>
+  errorFallback = <div className="ux-text-red-500 ux-p-4">خطأ في تحميل المحتوى</div>
 }: {
   children: React.ReactNode;
   fallback?: React.ReactNode;
@@ -104,24 +104,24 @@ export const DataTableRow = memo(({
   isSelected?: boolean;
 }) => {
   return (
-    <tr className={`${isSelected ? 'bg-blue-50' : 'hover:bg-gray-50'} transition-colors`}>
+    <tr className={`${isSelected ? 'ux-bg-blue-50' : 'ux-hover-bg-gray-50'} ux-transition-colors`}>
       {columns.map((column, index) => (
-        <td key={column.key || index} className="px-4 py-3 text-sm">
+        <td key={column.key || index} className="ux-px-4 ux-py-3 ux-text-sm">
           {column.render ? column.render(item[column.key], item) : item[column.key]}
         </td>
       ))}
       {onAction && (
-        <td className="px-4 py-3 text-sm">
-          <div className="flex space-x-2">
+        <td className="ux-px-4 ux-py-3 ux-text-sm">
+          <div className="ux-flex ux-space-x-2">
             <button
               onClick={() => onAction('view', item)}
-              className="text-blue-600 hover:text-blue-800 transition-colors"
+              className="ux-text-blue-600 ux-hover-text-blue-800 ux-transition-colors"
             >
               عرض
             </button>
             <button
               onClick={() => onAction('edit', item)}
-              className="text-green-600 hover:text-green-800 transition-colors"
+              className="ux-text-green-600 ux-hover-text-green-800 ux-transition-colors"
             >
               تعديل
             </button>
@@ -135,26 +135,26 @@ export const DataTableRow = memo(({
 DataTableRow.displayName = 'DataTableRow';
 
 // Memoized card component
-export const MemoCard = memo(({ 
-  title, 
-  children, 
-  className = '', 
-  loading = false 
+export const MemoCard = memo(({
+  title,
+  children,
+  className='',
+  loading = false
 }: {
   title?: string;
   children: React.ReactNode;
   className?: string;
   loading?: boolean;
 }) => (
-  <div className={`bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 ${className}`}>
+  <div className={`ux-bg-white ux-dark-bg-gray-800 ux-rounded-lg ux-shadow-sm ux-border ux-border-gray-200 ux-dark-border-gray-700 ${className}`}>
     {title && (
-      <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+      <div className="ux-px-6 ux-py-4 ux-border-b ux-border-gray-200 ux-dark-border-gray-700">
+        <h3 className="ux-text-lg ux-font-semibold ux-text-gray-900 ux-dark-text-white">
           {title}
         </h3>
       </div>
     )}
-    <div className="p-6">
+    <div className="ux-p-6">
       {loading ? <LoadingSkeleton lines={3} /> : children}
     </div>
   </div>
@@ -177,33 +177,33 @@ export const StatCard = memo(({
   color?: 'blue' | 'green' | 'red' | 'yellow' | 'purple';
 }) => {
   const colorClasses = {
-    blue: 'bg-blue-500',
-    green: 'bg-green-500',
-    red: 'bg-red-500',
-    yellow: 'bg-yellow-500',
-    purple: 'bg-purple-500',
+    blue: 'ux-bg-blue-500',
+    green: 'ux-bg-green-500',
+    red: 'ux-bg-red-500',
+    yellow: 'ux-bg-yellow-500',
+    purple: 'ux-bg-purple-500',
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-      <div className="flex items-center justify-between">
+    <div className="ux-bg-white ux-dark-bg-gray-800 ux-rounded-lg ux-shadow-sm ux-border ux-border-gray-200 ux-dark-border-gray-700 ux-p-6">
+      <div className="ux-flex ux-items-center ux-justify-between">
         <div>
-          <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
+          <p className="ux-text-sm ux-font-medium ux-text-gray-600 ux-dark-text-gray-400 ux-mb-1">
             {title}
           </p>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">
+          <p className="ux-text-2xl ux-font-bold ux-text-gray-900 ux-dark-text-white">
             {typeof value === 'number' ? value.toLocaleString() : value}
           </p>
           {trend && (
-            <p className={`text-xs mt-1 ${
-              trend.isPositive ? 'text-green-600' : 'text-red-600'
+            <p className={`ux-text-xs ux-mt-1 ${
+              trend.isPositive ? 'ux-text-green-600' : 'ux-text-red-600'
             }`}>
               {trend.isPositive ? '↗' : '↘'} {Math.abs(trend.value)}%
             </p>
           )}
         </div>
         {icon && (
-          <div className={`p-3 rounded-full ${colorClasses[color]} text-white`}>
+          <div className={`ux-p-3 ux-rounded-full ${colorClasses[color]} ux-text-white`}>
             {icon}
           </div>
         )}
@@ -239,7 +239,7 @@ export const VirtualizedList = memo(({
   return (
     <div
       style={{ height: containerHeight }}
-      className="overflow-auto"
+      className="ux-overflow-auto"
       onScroll={(e) => setScrollTop(e.currentTarget.scrollTop)}
     >
       <div style={{ height: items.length * itemHeight, position: 'relative' }}>
@@ -271,7 +271,7 @@ export const OptimizedImage = memo(({
   alt, 
   width, 
   height, 
-  className = '',
+  className='',
   placeholder = '/placeholder.jpg' 
 }: {
   src: string;
@@ -285,10 +285,10 @@ export const OptimizedImage = memo(({
   const [hasError, setHasError] = React.useState(false);
   
   return (
-    <div className={`relative overflow-hidden ${className}`}>
+    <div className={`ux-relative ux-overflow-hidden ${className}`}>
       {!isLoaded && !hasError && (
-        <div className="absolute inset-0 bg-gray-200 animate-pulse flex items-center justify-center">
-          <div className="text-gray-400 text-xs">جاري التحميل...</div>
+        <div className="ux-absolute ux-inset-0 ux-bg-gray-200 ux-animate-pulse ux-flex ux-items-center ux-justify-center">
+          <div className="ux-text-gray-400 ux-text-xs">جاري التحميل...</div>
         </div>
       )}
       <img
@@ -297,8 +297,8 @@ export const OptimizedImage = memo(({
         width={width}
         height={height}
         loading="lazy"
-        className={`transition-opacity duration-300 ${
-          isLoaded ? 'opacity-100' : 'opacity-0'
+        className={`ux-transition-opacity ux-duration-300 ${
+          isLoaded ? 'ux-opacity-100' : 'ux-opacity-0'
         } ${className}`}
         onLoad={() => setIsLoaded(true)}
         onError={() => setHasError(true)}

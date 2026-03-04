@@ -73,11 +73,11 @@ export class ErrorBoundary extends Component<Props, State> {
 
       // Default error UI
       return (
-        <div className="min-h-[400px] flex items-center justify-center p-4">
-          <div className="text-center max-w-md mx-auto">
-            <div className="mb-6">
+        <div className="ux-min-h-400px ux-flex ux-items-center ux-justify-center ux-p-4">
+          <div className="ux-text-center ux-max-w-md ux-mx-auto">
+            <div className="ux-mb-6">
               <svg
-                className="w-16 h-16 mx-auto text-red-500"
+                className="ux-w-16 ux-h-16 ux-mx-auto ux-text-red-500"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -91,15 +91,15 @@ export class ErrorBoundary extends Component<Props, State> {
               </svg>
             </div>
             
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+            <h2 className="ux-text-xl ux-font-bold ux-text-gray-900 ux-dark-text-white ux-mb-2">
               حدث خطأ غير متوقع
             </h2>
             
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
+            <p className="ux-text-gray-600 ux-dark-text-gray-400 ux-mb-6">
               نعتذر عن هذا الخطأ. يرجى المحاولة مرة أخرى.
             </p>
             
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <div className="ux-flex ux-flex-col ux-sm-flex-row ux-gap-3 ux-justify-center">
               <Button
                 onClick={this.handleRetry}
               >
@@ -116,11 +116,11 @@ export class ErrorBoundary extends Component<Props, State> {
 
             {/* Show error details in development */}
             {process.env.NODE_ENV === 'development' && this.state.error && (
-              <details className="mt-6 text-left">
-                <summary className="cursor-pointer text-sm text-gray-500 hover:text-gray-700">
+              <details className="ux-mt-6 ux-text-left">
+                <summary className="ux-cursor-pointer ux-text-sm ux-text-gray-500 ux-hover-text-gray-700">
                   تفاصيل الخطأ (للمطورين)
                 </summary>
-                <pre className="mt-2 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg text-xs overflow-auto text-red-600 dark:text-red-400">
+                <pre className="ux-mt-2 ux-p-4 ux-bg-gray-100 ux-dark-bg-gray-800 ux-rounded-lg ux-text-xs ux-overflow-auto ux-text-red-600 ux-dark-text-red-400">
                   {this.state.error.toString()}
                   {this.state.errorInfo?.componentStack}
                 </pre>

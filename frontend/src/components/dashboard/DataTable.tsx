@@ -26,11 +26,11 @@ export const DataTable: React.FC<DataTableProps> = ({
   breakpoint = 'xl',
 }) => {
   const breakpointClasses = {
-    sm: { mobile: 'block sm:hidden', table: '!hidden sm:table' },
-    md: { mobile: 'block md:hidden', table: '!hidden md:table' },
-    lg: { mobile: 'block lg:hidden', table: '!hidden lg:table' },
-    xl: { mobile: 'block xl:hidden', table: '!hidden xl:table' },
-    '2xl': { mobile: 'block 2xl:hidden', table: '!hidden 2xl:table' },
+    sm: { mobile: 'ux-block ux-sm-hidden', table: 'ux-hidden ux-sm-table' },
+    md: { mobile: 'ux-block ux-md-hidden', table: 'ux-hidden ux-md-table' },
+    lg: { mobile: 'ux-block ux-lg-hidden', table: 'ux-hidden ux-lg-table' },
+    xl: { mobile: 'ux-block ux-xl-hidden', table: 'ux-hidden ux-xl-table' },
+    '2xl': { mobile: 'ux-block ux-2xl-hidden', table: 'ux-hidden ux-2xl-table' },
   };
   const currentBreakpoint = breakpointClasses[breakpoint] || breakpointClasses.xl;
   const [internalSearchQuery, setInternalSearchQuery] = useState('');
@@ -120,12 +120,12 @@ export const DataTable: React.FC<DataTableProps> = ({
     <div>
       {/* Search and Actions */}
       {(searchable || headerActions) && (
-        <div className="table-search flex flex-col sm:flex-row justify-between items-center gap-4 mb-4">
+        <div className="table-search ux-flex ux-flex-col ux-sm-flex-row ux-justify-between ux-items-center ux-gap-4 ux-mb-4">
           {searchable && (
-            <div className="table-search-wrapper flex-1">
+            <div className="table-search-wrapper ux-flex-1">
               <input
                 type="text"
-                className="table-search-input w-full"
+                className="table-search-input ux-w-full"
                 placeholder="بحث..."
                 value={onSearch ? undefined : searchQuery}
                 onChange={(e) => {
@@ -150,14 +150,14 @@ export const DataTable: React.FC<DataTableProps> = ({
       {/* Table */}
       {/* Mobile View */}
       {mobileRenderer && (
-        <div className={`${currentBreakpoint.mobile} space-y-4`}>
+        <div className={`${currentBreakpoint.mobile} ux-space-y-4`}>
           {isLoading ? (
             Array.from({ length: 3 }).map((_, index) => (
-              <div key={index} className="bg-white/5 rounded-xl p-4 animate-pulse">
-                <div className="h-6 bg-white/10 rounded w-3/4 mb-3"></div>
-                <div className="space-y-2">
-                  <div className="h-4 bg-white/10 rounded w-1/2"></div>
-                  <div className="h-4 bg-white/10 rounded w-2/3"></div>
+              <div key={index} className="ux-bg-white-5 ux-rounded-xl ux-p-4 ux-animate-pulse">
+                <div className="ux-h-6 ux-bg-white-10 ux-rounded ux-w-3-4 ux-mb-3"></div>
+                <div className="ux-space-y-2">
+                  <div className="ux-h-4 ux-bg-white-10 ux-rounded ux-w-1-2"></div>
+                  <div className="ux-h-4 ux-bg-white-10 ux-rounded ux-w-2-3"></div>
                 </div>
               </div>
             ))
@@ -178,7 +178,7 @@ export const DataTable: React.FC<DataTableProps> = ({
       )}
 
       {/* Desktop Table */}
-      <div className="overflow-x-auto">
+      <div className="ux-overflow-x-auto">
         <table className={`data-table ${mobileRenderer ? currentBreakpoint.table : ''}`}>
           <thead>
             <tr>
@@ -193,7 +193,7 @@ export const DataTable: React.FC<DataTableProps> = ({
                     <Icon
                       name={sortDirection === 'asc' ? 'sort-up' : 'sort-down'}
                       size="xs"
-                      className="sort-icon ml-1"
+                      className="sort-icon ux-ml-1"
                     />
                   )}
                 </th>
@@ -207,7 +207,7 @@ export const DataTable: React.FC<DataTableProps> = ({
                 <tr key={index}>
                   {columns.map((column, colIndex) => (
                     <td key={colIndex} className={column.className || ''}>
-                      <div className="skeleton skeleton-text" style={{ width: '80%', height: '20px' }}></div>
+                      <div className="skeleton skeleton-item-table"></div>
                     </td>
                   ))}
                   {actions && actions.length > 0 && (
@@ -221,7 +221,7 @@ export const DataTable: React.FC<DataTableProps> = ({
               paginatedData.map((row, rowIndex) => (
                 <tr 
                   key={rowIndex} 
-                  className={`${rowClassName ? rowClassName(row) : ''} ${onRowClick ? 'cursor-pointer hover:bg-white/5 transition-colors' : ''}`}
+                  className={`${rowClassName ? rowClassName(row) : ''} ${onRowClick ? 'ux-cursor-pointer ux-hover-bg-white-5 ux-transition-colors' : ''}`}
                   onClick={() => onRowClick && onRowClick(row)}
                 >
                   {columns.map((column) => (
@@ -291,7 +291,6 @@ export const DataTable: React.FC<DataTableProps> = ({
                               top: dropdownPosition.top,
                               left: dropdownPosition.left,
                               zIndex: 9999,
-                              minWidth: '180px',
                             }}
                           >
                             {actions.map((action, actionIndex) => {

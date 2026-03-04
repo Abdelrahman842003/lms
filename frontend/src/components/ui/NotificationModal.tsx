@@ -39,28 +39,27 @@ export default function NotificationModal({
   if (!isOpen) return null;
 
   return (
-    <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" 
-      onClick={onClose}
-    >
+    <div className="modal-overlay" onClick={onClose}>
       <div 
-        className="w-full max-w-[600px] bg-[#1e1e2d] rounded-xl shadow-2xl border border-white/10 animate-scaleIn" 
+        className="modal-content"
+        style={{ maxWidth: '600px' }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between p-6 border-b border-white/10">
-          <h3 className="text-xl font-bold text-white m-0">{title}</h3>
+        <div className="modal-header">
+          <h3>{title}</h3>
           <Button
             variant="ghost"
             size="sm"
-            className="w-8 h-8 p-0 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
+            className="modal-close"
             onClick={onClose}
+            aria-label="إغلاق"
           >
             <Icon name="times" size="sm" />
           </Button>
         </div>
 
         <form onSubmit={onSubmit}>
-          <div className="p-6 space-y-4">
+          <div className="modal-body notification-modal-body">
             {/* Title Field */}
             <Input
               id="notification-title"
@@ -84,8 +83,8 @@ export default function NotificationModal({
 
             {/* Recipient Type (only for non-developer mode) */}
             {!isDeveloperMode && (
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-300">المستقبلين</label>
+              <div className="form-group ui-form-group">
+                <label>المستقبلين</label>
                 <Select
                   value={formData.recipient_type}
                   onChange={(value) => setFormData({...formData, recipient_type: value, grade_id: '', group_id: ''})}
@@ -100,8 +99,8 @@ export default function NotificationModal({
 
             {/* Grade Selection */}
             {formData.recipient_type === 'grade' && grades.length > 0 && (
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-300">اختر الصف</label>
+              <div className="form-group ui-form-group">
+                <label>اختر الصف</label>
                 <Select
                   value={formData.grade_id || ''}
                   onChange={(value) => setFormData({...formData, grade_id: value})}
@@ -115,8 +114,8 @@ export default function NotificationModal({
 
             {/* Group Selection */}
             {formData.recipient_type === 'group' && groups.length > 0 && (
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-300">اختر المجموعة</label>
+              <div className="form-group ui-form-group">
+                <label>اختر المجموعة</label>
                 <Select
                   value={formData.group_id || ''}
                   onChange={(value) => setFormData({...formData, group_id: value})}
@@ -130,7 +129,7 @@ export default function NotificationModal({
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-end gap-3 p-6 border-t border-white/10 bg-black/20 rounded-b-xl">
+          <div className="modal-footer">
             <Button
               type="button"
               variant="outline"

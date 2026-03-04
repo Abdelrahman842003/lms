@@ -90,21 +90,21 @@ export default function NewPaymentModal({ onClose, onSuccess }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-dark-lighter rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+    <div className="modal-overlay">
+      <div className="modal-content payment-modal">
         {/* Header */}
-        <div className="flex justify-between items-center p-6 border-b border-white/10">
-          <h2 className="text-xl font-bold text-white">تسجيل دفعة جديدة</h2>
-          <Button variant="ghost" onClick={onClose} className="text-gray-400 hover:text-white">
+        <div className="modal-header">
+          <h3>تسجيل دفعة جديدة</h3>
+          <Button variant="ghost" onClick={onClose} className="modal-close" aria-label="إغلاق">
             <Icon name="times" size="xl" />
           </Button>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6">
+        <form onSubmit={handleSubmit} className="modal-body payment-form">
           {/* Student Selection */}
-          <div className="mb-6">
-            <label className="block text-gray-light mb-2">اختر الطالب</label>
+          <div className="form-group ui-form-group">
+            <label>اختر الطالب</label>
             
             {/* Search */}
             <Input
@@ -112,38 +112,38 @@ export default function NewPaymentModal({ onClose, onSuccess }: Props) {
               placeholder="بحث بالاسم أو الهاتف..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full p-3 mb-3"
+              className="payment-search-input"
             />
 
             {/* Student List */}
-            <div className="max-h-48 overflow-y-auto bg-white/5 rounded-lg border border-white/10">
+            <div className="payment-student-list">
               {isLoading ? (
-                <div className="flex justify-center py-8">
+                <div className="payment-list-loading">
                   <LoadingSpinner size="md" color="primary" />
                 </div>
               ) : filteredStudents.length === 0 ? (
-                <p className="text-center text-gray-400 py-4">لا يوجد طلاب</p>
+                <p className="payment-empty">لا يوجد طلاب</p>
               ) : (
                 filteredStudents.map((student) => (
                   <button
                     key={student.id}
                     type="button"
                     onClick={() => setSelectedStudent(student)}
-                    className={`w-full p-3 text-right hover:bg-white/10 transition-colors border-b border-white/5 last:border-b-0 ${
-                      selectedStudent?.id === student.id ? 'bg-primary/20' : ''
+                    className={`payment-student-item ${
+                      selectedStudent?.id === student.id ? 'selected' : ''
                     }`}
                   >
-                    <p className="text-white font-medium">{student.name}</p>
-                    <p className="text-gray-400 text-sm">{student.phone || 'بدون هاتف'}</p>
+                    <p className="payment-student-name">{student.name}</p>
+                    <p className="payment-student-phone">{student.phone || 'بدون هاتف'}</p>
                   </button>
                 ))
               )}
             </div>
 
             {selectedStudent && (
-              <div className="mt-3 p-3 bg-primary/10 border border-primary/30 rounded-lg">
-                <p className="text-primary text-sm">
-                  <Icon name="check-circle" className="ml-2" />
+              <div className="payment-selected-note">
+                <p>
+                  <Icon name="check-circle" />
                   تم اختيار: {selectedStudent.name}
                 </p>
               </div>
@@ -151,8 +151,8 @@ export default function NewPaymentModal({ onClose, onSuccess }: Props) {
           </div>
 
           {/* Amount */}
-          <div className="mb-6">
-            <label className="block text-gray-light mb-2">المبلغ (ج.م)</label>
+          <div className="form-group ui-form-group">
+            <label>المبلغ (ج.م)</label>
             <Input
               type="number"
               value={amount}
@@ -161,29 +161,28 @@ export default function NewPaymentModal({ onClose, onSuccess }: Props) {
               min="1"
               step="0.01"
               required
-              className="w-full text-xl text-center"
+              className="payment-amount-input"
             />
           </div>
 
           {/* Notes */}
-          <div className="mb-6">
-            <label className="block text-gray-light mb-2">ملاحظات (اختياري)</label>
+          <div className="form-group ui-form-group">
+            <label>ملاحظات (اختياري)</label>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="ملاحظات إضافية..."
               rows={3}
-              className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white focus:border-primary outline-none resize-none"
+              className="form-input ui-textarea"
             />
           </div>
 
           {/* Submit */}
-          <div className="flex gap-3">
+          <div className="modal-footer">
             <Button
               type="button"
               variant="outline"
               onClick={onClose}
-              className="flex-1"
             >
               إلغاء
             </Button>
@@ -191,7 +190,6 @@ export default function NewPaymentModal({ onClose, onSuccess }: Props) {
               type="submit"
               variant="primary"
               disabled={isSubmitting || !selectedStudent || !amount}
-              className="flex-1"
             >
               {isSubmitting ? (
                 <>

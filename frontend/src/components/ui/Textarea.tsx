@@ -52,57 +52,20 @@ export const Textarea: React.FC<TextareaProps> = ({
   const textareaId = id || props.name || Math.random().toString(36).substring(7);
   const currentLength = typeof value === 'string' ? value.length : 0;
 
-  const baseTextareaStyles = [
-    'w-full',
-    'min-h-[80px]',
-    'bg-white/5',
-    'border',
-    'border-white/10',
-    'rounded-lg',
-    'px-4',
-    'py-3',
-    'text-white',
-    'placeholder:text-gray-500',
-    'transition-all',
-    'duration-200',
-    'focus:outline-none',
-    'focus:border-primary/50',
-    'focus:ring-1',
-    'focus:ring-primary/50',
-    'hover:border-white/20',
-    'disabled:opacity-50',
-    'disabled:cursor-not-allowed',
-    'resize-y',
-  ];
-
-  const errorStyles = error
-    ? [
-        '!border-red-500',
-        'focus:!border-red-500',
-        'focus:!ring-red-500/50',
-        'hover:!border-red-500/70',
-      ]
-    : [];
-
   return (
-    <div className={clsx('flex flex-col gap-1.5', wrapperClassName)}>
+    <div className={clsx('form-group ui-form-group', wrapperClassName)}>
       {label && (
-        <div className="flex items-center justify-between">
+        <div className="ui-textarea-label-row">
           <label
             htmlFor={textareaId}
-            className={clsx(
-              'text-sm font-medium text-gray-300',
-              'mb-1',
-              labelClassName
-            )}
+            className={clsx(labelClassName)}
           >
             {label}
           </label>
           {showCounter && maxLength && (
             <span
               className={clsx(
-                'text-xs text-gray-500',
-                currentLength > maxLength && 'text-red-500',
+                currentLength > maxLength && 'textarea-counter-error',
                 counterClassName
               )}
             >
@@ -112,13 +75,13 @@ export const Textarea: React.FC<TextareaProps> = ({
         </div>
       )}
 
-      <div className="relative">
+      <div className="ux-relative">
         {isLoading ? (
           <Skeleton
             height={`${rows * 24}px`}
             minHeight="80px"
             borderRadius="8px"
-            className="w-full"
+            className="ux-w-full"
           />
         ) : (
           <textarea
@@ -129,8 +92,8 @@ export const Textarea: React.FC<TextareaProps> = ({
             value={value}
             onChange={onChange}
             className={clsx(
-              baseTextareaStyles,
-              errorStyles,
+              'form-input ui-textarea',
+              error && 'error',
               className
             )}
             {...props}
@@ -140,11 +103,10 @@ export const Textarea: React.FC<TextareaProps> = ({
 
       {/* Show counter below if no label */}
       {showCounter && maxLength && !label && (
-        <div className="flex justify-end">
+        <div style={{ display: 'flex', justifyContent: 'ux-flex-end' }}>
           <span
             className={clsx(
-              'text-xs text-gray-500',
-              currentLength > maxLength && 'text-red-500',
+              currentLength > maxLength && 'textarea-counter-error',
               counterClassName
             )}
           >
@@ -154,13 +116,7 @@ export const Textarea: React.FC<TextareaProps> = ({
       )}
 
       {error && !isLoading && (
-        <span
-          className={clsx(
-            'text-red-500 text-sm mt-1 font-medium',
-            'flex items-center gap-1.5',
-            errorClassName
-          )}
-        >
+        <span className={clsx('error-message', errorClassName)}>
           <Icon name="exclamation-circle" size="xs" />
           {error}
         </span>
@@ -209,7 +165,7 @@ export const AutoResizeTextarea: React.FC<AutoResizeTextareaProps> = ({
     <Textarea
       rows={minRows}
       onChange={handleChange}
-      className={clsx('overflow-hidden', props.className)}
+      className={clsx('ui-textarea-auto', props.className)}
       {...props}
     />
   );

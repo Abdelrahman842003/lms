@@ -16,7 +16,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
   height = '20px',
   minHeight,
   borderRadius = '4px',
-  className = '',
+  className='',
   style
 }) => {
   return (
@@ -27,26 +27,9 @@ export const Skeleton: React.FC<SkeletonProps> = ({
         height,
         minHeight,
         borderRadius,
-        backgroundColor: 'rgba(255, 255, 255, 0.05)',
-        position: 'relative',
-        overflow: 'hidden',
         ...style
       }}
-    >
-      <div 
-        className="skeleton-shimmer"
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent)',
-          transform: 'translateX(-100%)',
-          animation: 'skeletonShimmer 1.5s infinite',
-        }}
-      />
-    </div>
+    />
   );
 };
 

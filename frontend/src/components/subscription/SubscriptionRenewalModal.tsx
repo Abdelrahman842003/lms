@@ -49,9 +49,9 @@ export default function SubscriptionRenewalModal({
       isLoading={isLoading}
       maxWidth="640px"
     >
-      <div className="space-y-4">
-        <div className="flex items-center gap-2 text-sm text-gray-300">
-          <Icon name="info-circle" className="text-primary" />
+      <div className="ux-space-y-4">
+        <div className="ux-flex ux-items-center ux-gap-2 ux-text-sm ux-text-gray-300">
+          <Icon name="info-circle" className="ux-text-primary" />
           اختر مدة الاشتراك المطلوبة، وسيتم إرسال الطلب للوحة الإدارة للموافقة.
         </div>
 
@@ -60,7 +60,7 @@ export default function SubscriptionRenewalModal({
           value={planSelection}
           onChange={setPlanSelection}
           placeholder="اختر مدة الاشتراك"
-          className="w-full"
+          className="ux-w-full"
           icon="calendar"
         />
 

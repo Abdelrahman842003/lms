@@ -116,28 +116,28 @@ export const ManualAttendanceModal: React.FC<ManualAttendanceModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onClick={onClose}>
+    <div className="modal-overlay" onClick={onClose}>
       <div 
-        className="bg-[#1a1f37] border border-white/10 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl transform transition-all"
+        className="modal-content manual-attendance-modal"
         onClick={e => e.stopPropagation()}
       >
-        <div className="p-6 border-b border-white/10 flex justify-between items-center">
-          <h3 className="text-xl font-bold text-white">تسجيل حضور يدوي</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
+        <div className="modal-header">
+          <h3>تسجيل حضور يدوي</h3>
+          <button onClick={onClose} className="modal-close" type="button" aria-label="إغلاق">
             <Icon name="times" size="xl" />
           </button>
         </div>
 
-        <div className="p-6">
-          <p className="text-gray-light mb-4 text-sm">
-            محاضرة: <span className="text-primary font-semibold">{lectureTitle}</span>
+        <div className="modal-body">
+          <p className="manual-attendance-lecture">
+            محاضرة: <span className="manual-attendance-lecture-name">{lectureTitle}</span>
           </p>
 
-          <div className="relative mb-6">
+          <div className="ui-input-container" style={{ marginBottom: '24px' }}>
             <input
               ref={inputRef}
               type="text"
-              className="w-full bg-[#101426] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-primary transition-colors pl-10"
+              className="form-input manual-attendance-input"
               placeholder="اكتب رقم هاتف الطالب..."
               value={searchQuery}
               onChange={(e) => {
@@ -148,34 +148,32 @@ export const ManualAttendanceModal: React.FC<ManualAttendanceModalProps> = ({
               }}
               maxLength={11}
             />
-            <Icon name="search" className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
+            <Icon name="search" className="manual-attendance-search-icon" />
           </div>
 
           {isLoading ? (
-            <div className="text-center py-8">
-              <LoadingSpinner size="md" color="primary" className="mx-auto mb-2" />
-              <p className="text-gray-500 text-sm">جاري البحث...</p>
+            <div className="manual-attendance-state">
+              <LoadingSpinner size="md" color="primary" />
+              <p className="manual-attendance-muted">جاري البحث...</p>
             </div>
           ) : student ? (
-            <div className="bg-[#101426] rounded-xl p-4 border border-white/10 animate-fade-in">
-              <div className="flex items-center gap-4 mb-4">
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold ${
-                  student.gender === 'female' ? 'bg-pink-500/20 text-pink-500' : 'bg-blue-500/20 text-blue-500'
-                }`}>
+            <div className="manual-attendance-student-card">
+              <div className="manual-attendance-student-head">
+                <div className={`manual-attendance-avatar ${student.gender === 'female' ? 'female' : 'male'}`}>
                   {student.name.charAt(0)}
                 </div>
                 <div>
-                  <h4 className="text-white font-bold">{student.name}</h4>
-                  <p className="text-gray-500 text-sm">{student.phone}</p>
+                  <h4 className="manual-attendance-student-name">{student.name}</h4>
+                  <p className="manual-attendance-muted">{student.phone}</p>
                 </div>
               </div>
 
               <Button
                 onClick={handleMarkAttendance}
                 disabled={isMarking || alreadyAttended}
-                className={`w-full ${
+                className={`manual-attendance-action ${
                   alreadyAttended
-                    ? 'bg-green-500/20 text-green-500 cursor-not-allowed'
+                    ? 'manual-attendance-action-done'
                     : ''
                 }`}
               >
@@ -195,22 +193,22 @@ export const ManualAttendanceModal: React.FC<ManualAttendanceModalProps> = ({
               </Button>
             </div>
           ) : searchQuery.length > 0 ? (
-            <div className="text-center py-8 text-gray-500">
+            <div className="manual-attendance-state">
               {/^01[0125][0-9]{8}$/.test(searchQuery) ? (
                 <>
-                  <Icon name="user-slash" size="3x" className="mb-2 opacity-50" />
+                  <Icon name="user-slash" size="3x" className="manual-attendance-state-icon" />
                   <p>لم يتم العثور على طالب بهذا الرقم</p>
                 </>
               ) : (
                 <>
-                  <Icon name="exclamation-circle" size="3x" className="mb-2 opacity-50 text-warning" />
+                  <Icon name="exclamation-circle" size="3x" className="manual-attendance-state-icon warning" />
                   <p>الرجاء إدخال رقم هاتف مصري صحيح (11 رقم)</p>
                 </>
               )}
             </div>
           ) : (
-            <div className="text-center py-8 text-gray-500">
-              <Icon name="keyboard" size="3x" className="mb-2 opacity-50" />
+            <div className="manual-attendance-state">
+              <Icon name="keyboard" size="3x" className="manual-attendance-state-icon" />
               <p>ابدأ الكتابة للبحث...</p>
             </div>
           )}

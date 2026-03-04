@@ -23,9 +23,9 @@ interface TeacherStatsChartsProps {
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-gray-900/90 border border-white/10 p-3 rounded-lg shadow-xl backdrop-blur-sm">
-        <p className="text-gray-300 text-xs mb-1">{label}</p>
-        <p className="text-white font-bold text-sm">
+      <div className="ux-bg-gray-900-90 ux-border ux-border-white-10 ux-p-3 ux-rounded-lg ux-shadow-xl ux-backdrop-blur-sm">
+        <p className="ux-text-gray-300 ux-text-xs ux-mb-1">{label}</p>
+        <p className="ux-text-white ux-font-bold ux-text-sm">
           {payload[0].value}%
         </p>
       </div>
@@ -36,23 +36,23 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 export const TeacherStatsCharts: React.FC<TeacherStatsChartsProps> = ({ stats }) => {
   return (
-    <div className="w-full">
+    <div className="ux-w-full">
       {/* Attendance Chart */}
-      <div className="bg-gray-900/50 backdrop-blur-md border border-white/5 rounded-2xl p-6 relative overflow-hidden group hover:border-white/10 transition-all duration-300">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
+      <div className="ux-bg-gray-900-50 ux-backdrop-blur-md ux-border ux-border-white-5 ux-rounded-2xl ux-p-6 ux-relative ux-overflow-hidden group ux-hover-border-white-10 ux-transition-all ux-duration-300">
+        <div className="ux-absolute ux-top-0 ux-right-0 ux-w-32 ux-h-32 ux-bg-emerald-500-10 ux-rounded-full ux-blur-3xl ux-mr-16 ux-mt-16 ux-pointer-events-none"></div>
         
-        <div className="flex justify-between items-start mb-6 relative z-10">
+        <div className="ux-flex ux-justify-between ux-items-start ux-mb-6 ux-relative ux-z-10">
           <div>
-            <h3 className="text-lg font-bold text-white mb-1">إحصائيات الحضور</h3>
-            <p className="text-gray-400 text-xs">تطور نسبة الحضور في آخر 7 محاضرات</p>
+            <h3 className="ux-text-lg ux-font-bold ux-text-white ux-mb-1">إحصائيات الحضور</h3>
+            <p className="ux-text-gray-400 ux-text-xs">تطور نسبة الحضور في آخر 7 محاضرات</p>
           </div>
-          <div className="text-left">
-            <span className="text-2xl font-bold text-emerald-400">{stats.averageAttendance}%</span>
-            <p className="text-emerald-500/60 text-[10px] font-medium">المتوسط العام</p>
+          <div className="ux-text-left">
+            <span className="ux-text-2xl ux-font-bold ux-text-emerald-400">{stats.averageAttendance}%</span>
+            <p className="ux-text-emerald-500-60 ux-text-10px ux-font-medium">المتوسط العام</p>
           </div>
         </div>
 
-        <div className="h-[200px] w-full" dir="ltr">
+        <div className="ux-h-200px ux-w-full" dir="ltr">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={stats.attendanceTrend}>
               <defs>

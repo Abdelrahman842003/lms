@@ -181,7 +181,7 @@ export const VoicePlayer: React.FC<VoicePlayerProps> = ({
 
   if (error) {
     return (
-      <div className="flex items-center gap-2 px-3 py-2 bg-red-500/10 rounded-lg text-red-400 text-sm border border-red-500/20">
+      <div className="alert alert-danger voice-player-error">
         <Icon name="exclamation-circle" />
         <span>{error}</span>
       </div>
@@ -190,11 +190,11 @@ export const VoicePlayer: React.FC<VoicePlayerProps> = ({
 
   if (compact) {
     return (
-      <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-primary/20 to-primary/10 rounded-full border border-primary/20 backdrop-blur-sm">
+      <div className="voice-player-compact">
         <button
           onClick={togglePlay}
           disabled={isLoading}
-          className="w-7 h-7 flex items-center justify-center rounded-full bg-primary text-white hover:bg-primary-dark transition-all shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 disabled:opacity-50"
+          className="voice-player-compact-btn"
         >
           {isLoading ? (
             <LoadingSpinner size="sm" color="white" />
@@ -202,34 +202,34 @@ export const VoicePlayer: React.FC<VoicePlayerProps> = ({
             <Icon name={isPlaying ? 'pause' : 'play'} size="xs" />
           )}
         </button>
-        <div className="flex items-center gap-2 text-xs text-gray-300 font-medium">
+        <div className="voice-player-compact-text">
           <Icon name="microphone" color="primary" />
           <span>رسالة صوتية</span>
-          {durationState > 0 && <span className="text-gray-500">({formatTime(durationState)})</span>}
+          {durationState > 0 && <span className="voice-player-duration">({formatTime(durationState)})</span>}
         </div>
       </div>
     );
   }
 
   return (
-    <div className="relative overflow-hidden bg-[#1e1e2d] rounded-xl border border-white/5 p-3 group hover:border-primary/30 transition-colors duration-300">
-      <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+    <div className="voice-player">
+      <div className="voice-player-hover-bg" />
       
-      <div className="relative flex items-center gap-4">
+      <div className="voice-player-content">
         <button
           onClick={togglePlay}
           disabled={isLoading}
-          className="w-12 h-12 flex-shrink-0 flex items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary-dark text-white shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:scale-105 active:scale-95 transition-all duration-300 disabled:opacity-50"
+          className="voice-player-main-btn"
         >
           {isLoading ? (
             <LoadingSpinner size="md" color="white" />
           ) : (
-            <Icon name={isPlaying ? 'pause' : 'play'} size="lg" className="ml-0.5" />
+            <Icon name={isPlaying ? 'pause' : 'play'} size="lg" />
           )}
         </button>
 
-        <div className="flex-1 min-w-0 space-y-2">
-          <div className="h-8 flex items-center justify-start gap-px cursor-pointer" onClick={handleSeek}>
+        <div className="voice-player-main">
+          <div className="voice-player-wave" onClick={handleSeek}>
             {waveHeights.map((height, i) => {
               const isActive = ((i + 1) / 40) * 100 <= progressPercent;
               const barHeight = 20 + (height / 100) * 80;
@@ -237,7 +237,7 @@ export const VoicePlayer: React.FC<VoicePlayerProps> = ({
               return (
                 <div
                   key={i}
-                  className={`w-1 rounded-full transition-all duration-300 ease-out ${isPlaying ? 'animate-wave' : ''}`}
+                  className={`voice-player-bar ${isPlaying ? 'animate-wave' : ''}`}
                   style={{ 
                     height: `${barHeight}%`,
                     backgroundColor: isActive ? 'var(--primary, #6366f1)' : 'rgba(107, 114, 128, 0.4)',
@@ -248,22 +248,12 @@ export const VoicePlayer: React.FC<VoicePlayerProps> = ({
             })}
           </div>
 
-          <div className="flex justify-between text-xs font-medium">
-            <span className="text-primary">{formatTime(currentTime)}</span>
-            <span className="text-gray-500">{durationState > 0 ? formatTime(durationState) : '0:00'}</span>
+          <div className="voice-player-timer">
+            <span className="voice-player-current">{formatTime(currentTime)}</span>
+            <span className="voice-player-duration">{durationState > 0 ? formatTime(durationState) : '0:00'}</span>
           </div>
         </div>
       </div>
-      
-      <style jsx>{`
-        @keyframes wave {
-          0%, 100% { transform: scaleY(1); }
-          50% { transform: scaleY(0.5); }
-        }
-        .animate-wave {
-          animation: wave 0.8s ease-in-out infinite;
-        }
-      `}</style>
     </div>
   );
 };

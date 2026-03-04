@@ -8,13 +8,13 @@ interface SectionHeaderProps {
 
 export const SectionHeader: React.FC<SectionHeaderProps> = ({ title, subtitle, action }) => {
   return (
-    <div className="flex justify-between items-end mb-6">
+    <div className="section-header">
       <div>
-        <h2 className="text-[1.25rem] font-bold text-white mb-1">{title}</h2>
-        {subtitle && <p className="text-gray-400 text-[0.9rem]">{subtitle}</p>}
+        <h2 className="section-header-title">{title}</h2>
+        {subtitle && <p className="section-header-subtitle">{subtitle}</p>}
       </div>
       {action && (
-        <div className="flex-shrink-0">
+        <div className="section-header-action">
           {action}
         </div>
       )}

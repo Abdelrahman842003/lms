@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { useSettings } from '@/contexts/SettingsContext';
-import { Icon } from '@/components/ui';
+import { Icon, Button } from '@/components/ui';
 
 export const NotificationPermissionModal = () => {
   const { enableNotifications } = useAuth();
@@ -89,110 +89,36 @@ export const NotificationPermissionModal = () => {
   if (!isVisible) return null;
 
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      width: '100vw',
-      height: '100vh',
-      backgroundColor: 'rgba(0, 0, 0, 0.85)',
-      backdropFilter: 'blur(8px)',
-      zIndex: 9999,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '20px'
-    }}>
-      <div style={{
-        backgroundColor: '#1a1f37',
-        border: '1px solid rgba(255, 255, 255, 0.1)',
-        borderRadius: '16px',
-        padding: '32px',
-        maxWidth: '500px',
-        width: '100%',
-        textAlign: 'center',
-        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
-      }}>
-        <div style={{
-          width: '80px',
-          height: '80px',
-          backgroundColor: 'rgba(66, 99, 235, 0.1)',
-          borderRadius: '50%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          margin: '0 auto 24px auto',
-          fontSize: '2rem',
-          color: '#4263eb'
-        }}>
+    <div className="modal-overlay notification-permission-overlay">
+      <div className="notification-permission-content">
+        <div className="notification-permission-icon">
           <Icon name="bell" size="2x" />
         </div>
 
-        <h2 style={{ 
-          color: 'white', 
-          fontSize: '1.5rem', 
-          fontWeight: '700', 
-          marginBottom: '16px' 
-        }}>
+        <h2 className="notification-permission-title">
           تفعيل الإشعارات
         </h2>
 
-        <p style={{ 
-          color: 'rgba(255, 255, 255, 0.7)', 
-          fontSize: '1rem', 
-          lineHeight: '1.6',
-          marginBottom: '32px' 
-        }}>
+        <p className="notification-permission-text">
           لضمان عدم تفويت أي تحديثات مهمة أو امتحانات أو محاضرات، يرجى تفعيل الإشعارات.
         </p>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <button
+        <div className="notification-permission-actions">
+          <Button
             onClick={requestPermission}
-            style={{
-              background: 'linear-gradient(135deg, #4263eb 0%, #6366f1 100%)',
-              color: 'white',
-              border: 'none',
-              padding: '14px 32px',
-              borderRadius: '12px',
-              fontSize: '1rem',
-              fontWeight: '600',
-              cursor: 'pointer',
-              width: '100%',
-              transition: 'transform 0.2s',
-              boxShadow: '0 4px 15px rgba(66, 99, 235, 0.3)'
-            }}
-            onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
-            onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+            variant="primary"
+            className="btn-lg"
           >
             تفعيل الإشعارات
-          </button>
+          </Button>
 
-          <button
+          <Button
             onClick={handleDismiss}
-            style={{
-              background: 'transparent',
-              color: 'rgba(255, 255, 255, 0.6)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              padding: '12px 32px',
-              borderRadius: '12px',
-              fontSize: '0.9rem',
-              fontWeight: '500',
-              cursor: 'pointer',
-              width: '100%',
-              transition: 'all 0.2s'
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
-              e.currentTarget.style.color = 'white';
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.backgroundColor = 'transparent';
-              e.currentTarget.style.color = 'rgba(255, 255, 255, 0.6)';
-            }}
+            variant="ghost"
+            className="btn-lg"
           >
             ليس الآن
-          </button>
+          </Button>
         </div>
       </div>
     </div>

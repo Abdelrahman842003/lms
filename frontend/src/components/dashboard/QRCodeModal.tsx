@@ -15,25 +15,25 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({ isOpen, onClose, url, expires
   const isExpired = expiresAt ? new Date(expiresAt) < new Date() : false;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="w-full max-w-md bg-gray-900 border border-gray-800 rounded-xl shadow-2xl overflow-hidden">
-        <div className="p-6 text-center">
-          <h3 className="text-xl font-bold text-white mb-2">{lectureTitle}</h3>
-          <p className="text-gray-400 mb-6">امسح الرمز لتسجيل الحضور</p>
+    <div className="ux-fixed ux-inset-0 ux-z-50 ux-flex ux-items-center ux-justify-center ux-bg-black-50 ux-backdrop-blur-sm">
+      <div className="ux-w-full ux-max-w-md ux-bg-gray-900 ux-border ux-border-gray-800 ux-rounded-xl ux-shadow-2xl ux-overflow-hidden">
+        <div className="ux-p-6 ux-text-center">
+          <h3 className="ux-text-xl ux-font-bold ux-text-white ux-mb-2">{lectureTitle}</h3>
+          <p className="ux-text-gray-400 ux-mb-6">امسح الرمز لتسجيل الحضور</p>
 
-          <div className="bg-white p-4 rounded-xl inline-block mb-6">
+          <div className="ux-bg-white ux-p-4 ux-rounded-xl ux-inline-block ux-mb-6">
             <QRCode value={url} size={256} />
           </div>
 
           {expiresAt && (
-            <div className={`mb-6 text-sm ${isExpired ? 'text-red-400' : 'text-emerald-400'}`}>
+            <div className={`ux-mb-6 ux-text-sm ${isExpired ? 'text-red-400' : 'text-emerald-400'}`}>
               {isExpired ? 'انتهت صلاحية الرمز' : `ينتهي في: ${new Date(expiresAt).toLocaleTimeString('ar-EG')}`}
             </div>
           )}
 
           <button
             onClick={onClose}
-            className="w-full py-3 px-4 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors font-medium"
+            className="ux-w-full ux-py-3 ux-px-4 ux-bg-gray-800 ux-hover-bg-gray-700 ux-text-white ux-rounded-lg ux-transition-colors ux-font-medium"
           >
             إغلاق
           </button>

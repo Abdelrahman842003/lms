@@ -338,7 +338,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
   return (
     <div className="navbar-user" ref={dropdownRef}>
       <div 
-        className="navbar-user-clickable notification-trigger"
+        className="navbar-user-clickable notification-trigger-btn"
         onClick={() => {
           setIsOpen(!isOpen);
           // Try to play sound on interaction to unlock audio context for future notifications
@@ -349,24 +349,10 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
             }).catch(() => {});
           }
         }}
-        style={{ position: 'relative', padding: '0.5rem' }}
       >
-        <Icon name="bell" className="text-[1.2rem] text-[var(--gray-light)]" />
+        <Icon name="bell" className="notification-trigger-icon" />
         {unreadCount > 0 && (
-          <span className="navbar-badge" style={{ 
-            position: 'absolute', 
-            top: '0', 
-            right: '0',
-            width: '18px',
-            height: '18px',
-            fontSize: '0.7rem',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: 'var(--danger)',
-            color: 'var(--white)',
-            borderRadius: '50%'
-          }}>
+          <span className="navbar-badge notification-count-badge">
             {unreadCount}
           </span>
         )}
@@ -374,109 +360,42 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
 
       {isOpen && (
         <>
-          {/* Full screen blur overlay */}
-          <div 
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              width: '100vw',
-              height: '100vh',
-              backgroundColor: 'rgba(0, 0, 0, 0.72)',
-              // backdropFilter: 'blur(20px)',
-              WebkitBackdropFilter: 'blur(20px)',
-              zIndex: 998,
-              cursor: 'default'
-            }}
-            onClick={() => setIsOpen(false)}
-          />
+          <div className="dropdown-backdrop" onClick={() => setIsOpen(false)} />
           
-          <div className="navbar-dropdown notification-dropdown" style={{ 
-            width: '500px',
-            maxWidth: '90vw', 
-            padding: '0', 
-            left: '50%', 
-            top: '80px',
-            transform: 'translateX(-50%)',
-            backgroundColor: 'rgba(0, 0, 0, 1)',
-            backdropFilter: 'blur(20px)',
-            WebkitBackdropFilter: 'blur(20px)',
-            border: '1px solid rgba(0, 128, 255, 0.1)',
-            borderRadius: 'var(--radius-lg)',
-            overflow: 'hidden',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
-            zIndex: 999,
-            position: 'fixed',
-            animation: 'none'
-          }}>
-            <div style={{ 
-              padding: '1.25rem', 
-              borderBottom: '1px solid rgba(255, 255, 255, 0.1)', 
-              display: 'flex', 
-              justifyContent: 'space-between', 
-              alignItems: 'center',
-              background: 'linear-gradient(to right, rgba(255, 255, 255, 0.05), transparent)'
-            }}>
-              <h3 style={{ fontWeight: '700', color: '#ffffff', margin: 0, fontSize: '1.1rem' }}>الإخطارات</h3>
+          <div className="navbar-dropdown notification-dropdown">
+            <div className="notification-dropdown-header">
+              <h3 className="notification-dropdown-title">الإخطارات</h3>
               {unreadCount > 0 && (
-                <span style={{ 
-                  fontSize: '0.75rem', 
-                  color: '#ffffffff', 
-                  backgroundColor: 'var(--primary)', 
-                  padding: '0.25rem 0.75rem', 
-                  borderRadius: '9999px',
-                  fontWeight: '600',
-                  boxShadow: '0 2px 5px rgba(66, 99, 235, 0.4)'
-                }}>
+                <span className="notification-dropdown-unread">
                   {unreadCount} جديد
                 </span>
               )}
             </div>
             
-            <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+            <div className="notification-dropdown-list">
               {notifications.length === 0 ? (
-                <div style={{ padding: '2rem', textAlign: 'center', color: 'rgba(255, 255, 255, 0.5)' }}>
-                  <i className="fas fa-inbox" style={{ fontSize: '1.5rem', marginBottom: '0.5rem', display: 'block' }}></i>
+                <div className="notification-dropdown-empty">
+                  <i className="fas fa-inbox notification-dropdown-empty-icon"></i>
                   لا توجد إخطارات
                 </div>
               ) : (
                 notifications.map((notification) => (
                   <div 
                     key={notification.id}
-                    style={{ 
-                      padding: '1rem', 
-                      borderBottom: '1px solid rgba(255, 255, 255, 0.05)', 
-                      cursor: 'pointer',
-                      backgroundColor: !notification.read_at ? 'rgba(255, 255, 255, 0.05)' : 'transparent',
-                      transition: 'background-color 0.2s'
-                    }}
+                    className={`notification-dropdown-item ${!notification.read_at ? 'unread' : ''}`}
                     onClick={() => handleNotificationClick(notification)}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = !notification.read_at ? 'rgba(255, 255, 255, 0.05)' : 'transparent'}
                   >
-                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
-                      <div style={{ 
-                        marginTop: '0.25rem', 
-                        width: '0.5rem', 
-                        height: '0.5rem', 
-                        borderRadius: '50%', 
-                        flexShrink: 0,
-                        backgroundColor: !notification.read_at ? 'var(--primary)' : 'rgba(255, 255, 255, 0.3)' 
-                      }}></div>
-                      <div style={{ flex: 1 }}>
-                        <h4 style={{ 
-                          fontSize: '0.875rem', 
-                          fontWeight: !notification.read_at ? '700' : '400', 
-                          color: '#ffffff',
-                          margin: '0 0 0.25rem 0'
-                        }}>
+                    <div className="notification-dropdown-content">
+                      <div className={`notification-dropdown-dot ${!notification.read_at ? 'unread' : ''}`}></div>
+                      <div className="notification-dropdown-main">
+                        <h4 className={`notification-dropdown-item-title ${!notification.read_at ? 'unread' : ''}`}>
                           {notification.data.title}
                         </h4>
-                        <p style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.8)', margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                        <p className="notification-dropdown-item-message">
                           {notification.data.message}
                         </p>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem', flexWrap: 'wrap', gap: '0.25rem' }}>
-                          <span style={{ fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.5)' }}>
+                        <div className="notification-dropdown-meta">
+                          <span className="notification-dropdown-date">
                             {new Date(notification.created_at).toLocaleDateString('ar-EG', {
                               day: 'numeric',
                               month: 'short',
@@ -484,34 +403,15 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
                               minute: '2-digit'
                             })}
                           </span>
-                          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                          <div className="notification-dropdown-tags">
                             {notification.data.child_name && (
-                              <span style={{ 
-                                fontSize: '0.75rem', 
-                                fontWeight: '600',
-                                color: '#6ea8fe', 
-                                backgroundColor: 'rgba(13, 110, 253, 0.2)', 
-                                border: '1px solid rgba(13, 110, 253, 0.3)',
-                                padding: '0.15rem 0.5rem', 
-                                borderRadius: '0.35rem',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.35rem'
-                              }}>
-                                <i className="fas fa-user-graduate" style={{ fontSize: '0.7rem' }}></i>
+                              <span className="notification-dropdown-tag child-tag">
+                                <i className="fas fa-user-graduate"></i>
                                 {notification.data.child_name}
                               </span>
                             )}
                             {notification.data.sender_name && (
-                              <span style={{ 
-                                fontSize: '0.75rem', 
-                                fontWeight: '600',
-                                color: '#75b798', 
-                                backgroundColor: 'rgba(25, 135, 84, 0.2)', 
-                                border: '1px solid rgba(25, 135, 84, 0.3)',
-                                padding: '0.15rem 0.5rem', 
-                                borderRadius: '0.35rem' 
-                              }}>
+                              <span className="notification-dropdown-tag sender-tag">
                                 {notification.data.sender_name}
                                 {notification.data.sender_subject && ` - ${notification.data.sender_subject}`}
                               </span>
@@ -525,10 +425,10 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
               )}
             </div>
             
-            <div style={{ padding: '0.75rem', borderTop: '1px solid var(--glass-border)', textAlign: 'center' }}>
+            <div className="notification-dropdown-footer">
               <Link 
                 href={role === 'parent' ? '/parent/children' : `/${role}/notifications`}
-                style={{ fontSize: '0.85rem', color: '#ffffff', textDecoration: 'none', fontWeight: '600' }}
+                className="notification-dropdown-link"
                 onClick={() => setIsOpen(false)}
               >
                 عرض كل الإخطارات

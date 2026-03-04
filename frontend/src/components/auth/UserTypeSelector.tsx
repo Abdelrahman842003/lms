@@ -1,5 +1,4 @@
 import React from 'react';
-import { Button } from '@/components/ui';
 import { Icon } from '@/components/ui/Icon';
 
 interface UserTypeSelectorProps {
@@ -19,30 +18,18 @@ export const UserTypeSelector: React.FC<UserTypeSelectorProps> = ({ userType, on
   const isSelected = (type: string) => userType === type;
 
   return (
-    <div className="mb-[30px]">
-      {/* Mobile: 2 rows with 3 items first row, 2 items second row */}
-      <div className="grid grid-cols-3 md:grid-cols-5 gap-2">
+    <div>
+      <div className="user-type-selector">
         {userTypes.map((item) => (
-          <Button
+          <button
             key={item.type}
             type="button"
-            variant={isSelected(item.type) ? 'primary' : 'outline'}
-            size="md"
             onClick={() => onChange(item.type)}
-            className={`
-              flex flex-col items-center gap-2 p-3 
-              border-2 border-[#0D1120] rounded-[14px] 
-              text-[#E9ECEF] cursor-pointer 
-              transition-all duration-300 
-              text-[0.85rem] font-semibold 
-              hover:border-primary/40 hover:-translate-y-0.5
-              active:scale-95
-              ${isSelected(item.type) ? 'bg-primary text-white -translate-y-0.5 shadow-lg shadow-primary/30' : ''}
-            `}
+            className={`user-type-btn ${isSelected(item.type) ? 'active' : ''}`}
           >
-            <Icon name={item.icon.replace('fa-', '')} size="lg" className="mb-[3px]" />
-            <span className="text-[0.75rem] md:text-[0.85rem]">{item.label}</span>
-          </Button>
+            <Icon name={item.icon.replace('fa-', '')} size="lg" />
+            <span>{item.label}</span>
+          </button>
         ))}
       </div>
     </div>

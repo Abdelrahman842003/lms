@@ -33,91 +33,67 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
   text,
   textPosition = 'bottom',
 }) => {
-  const sizeStyles = {
-    sm: 'h-4 w-4',
-    md: 'h-6 w-6',
-    lg: 'h-8 w-8',
-    xl: 'h-12 w-12',
+  const sizeStyles: Record<NonNullable<LoadingSpinnerProps['size']>, number> = {
+    sm: 16,
+    md: 24,
+    lg: 32,
+    xl: 48,
   };
 
-  const colorStyles = {
-    blue: 'text-blue-600',
-    white: 'text-white',
-    gray: 'text-gray-400',
-    primary: 'text-primary',
+  const colorStyles: Record<NonNullable<LoadingSpinnerProps['color']>, string> = {
+    blue: '#2563eb',
+    white: '#ffffff',
+    gray: '#9ca3af',
+    primary: 'var(--primary)',
   };
 
-  const SpinnerSVG = (
-    <svg
-      className={clsx(
-        'animate-spin',
-        sizeStyles[size],
-        colorStyles[color],
-        className
-      )}
-      fill="none"
-      viewBox="0 0 24 24"
-    >
-      <circle
-        className="opacity-25"
-        cx="12"
-        cy="12"
-        r="10"
-        stroke="currentColor"
-        strokeWidth="4"
-      />
-      <path
-        className="opacity-75"
-        fill="currentColor"
-        d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-      />
-    </svg>
-  );
+  const spinnerStyle: React.CSSProperties = {
+    width: sizeStyles[size],
+    height: sizeStyles[size],
+    borderWidth: Math.max(2, Math.round(sizeStyles[size] / 8)),
+    borderStyle: 'solid',
+    borderColor: 'rgba(255, 255, 255, 0.18)',
+    borderTopColor: colorStyles[color],
+  };
 
-  // Full page spinner with overlay
+  const spinner = <span className={clsx('spinner', className)} style={spinnerStyle} aria-hidden="true" />;
+
   if (fullPage) {
     return (
-      <div className="fixed inset-0 bg-black/50 flex flex-col items-center justify-center z-50">
-        {SpinnerSVG}
-        {text && (
-          <p className="mt-4 text-white text-lg">{text}</p>
-        )}
+      <div className="loading-fullpage">
+        {spinner}
+        {text && <p style={{ color: 'white' }}>{text}</p>}
       </div>
     );
   }
 
-  // Overlay spinner (for cards/sections)
   if (overlay) {
     return (
-      <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center z-10">
-        {SpinnerSVG}
-        {text && (
-          <p className="mt-2 text-white text-sm">{text}</p>
-        )}
+      <div className="loading-overlay">
+        {spinner}
+        {text && <p style={{ color: 'white' }}>{text}</p>}
       </div>
     );
   }
 
-  // Inline spinner with optional text
   if (text) {
     if (textPosition === 'right') {
       return (
-        <div className="flex items-center gap-2">
-          {SpinnerSVG}
+        <div className="loading-state" style={{ flexDirection: 'row' }}>
+          {spinner}
           <span>{text}</span>
         </div>
       );
     }
     return (
-      <div className="flex flex-col items-center gap-2">
-        {SpinnerSVG}
+      <div className="loading-state">
+        {spinner}
         <span>{text}</span>
       </div>
     );
   }
 
-  // Simple inline spinner
-  return SpinnerSVG;
+  return spinner;
 };
 
 /**
@@ -140,17 +116,9 @@ export const LoadingState: React.FC<LoadingStateProps> = ({
   minHeight = '400px',
 }) => {
   return (
-    <div
-      className={clsx(
-        'flex flex-col items-center justify-center',
-        className
-      )}
-      style={{ minHeight }}
-    >
+    <div className={clsx('loading-state', className)} style={{ minHeight }}>
       <LoadingSpinner size={size} color={color} />
-      {text && (
-        <p className="mt-4 text-gray-400">{text}</p>
-      )}
+      {text && <p style={{ color: 'var(--gray-light)' }}>{text}</p>}
     </div>
   );
 };

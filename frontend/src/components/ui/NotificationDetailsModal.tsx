@@ -63,32 +63,30 @@ export default function NotificationDetailsModal({
   const voiceDuration = Number(notification.voice_duration || notification.data?.voice_duration || 0);
 
   return (
-    <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" 
-      onClick={onClose}
-    >
+    <div className="modal-overlay" onClick={onClose}>
       <div 
-        className="w-full max-w-[480px] bg-[#1e1e2d] rounded-xl shadow-2xl border border-white/10 animate-scaleIn flex flex-col max-h-[70vh]" 
+        className="modal-content notification-details-modal"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between p-4 border-b border-white/10 shrink-0">
-          <h3 className="text-lg font-bold text-white m-0">تفاصيل الإخطار</h3>
+        <div className="modal-header">
+          <h3>تفاصيل الإخطار</h3>
           <Button
             variant="ghost"
             size="sm"
-            className="w-8 h-8 p-0 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
+            className="modal-close"
             onClick={onClose}
+            aria-label="إغلاق"
           >
             <Icon name="times" size="sm" />
           </Button>
         </div>
 
-        <div className="p-4 space-y-4 overflow-y-auto custom-scrollbar">
+        <div className="modal-body notification-details-body custom-scrollbar">
           {/* Header Info */}
-          <div className="flex flex-wrap gap-3 justify-between items-start">
-            <div className="space-y-1">
-              <h4 className="text-base font-semibold text-white">{notification.title}</h4>
-              <div className="flex items-center gap-2 text-xs text-gray-400">
+          <div className="notification-details-header">
+            <div>
+              <h4 className="notification-details-title">{notification.title}</h4>
+              <div className="notification-details-time">
                 <Icon name="clock" set="regular" />
                 <span>{new Date(notification.created_at).toLocaleDateString('ar-EG', {
                   year: 'numeric',
@@ -121,15 +119,15 @@ export default function NotificationDetailsModal({
 
           {/* Voice Player for voice notifications */}
           {isVoice && voiceUrl && (
-            <div className="bg-[#151521] p-3 rounded-lg border border-white/5">
+            <div className="notification-details-box">
               <VoicePlayer voiceUrl={voiceUrl} duration={voiceDuration} />
             </div>
           )}
 
           {/* Message Body - show if NOT voice, OR if voice but missing URL (fallback) */}
           {(!isVoice || (isVoice && !voiceUrl)) && (
-            <div className="bg-[#151521] p-3 rounded-lg border border-white/5">
-              <p className={`text-gray-300 leading-relaxed whitespace-pre-wrap text-sm transition-all duration-300 ${!isExpanded ? 'line-clamp-2' : ''}`}>
+            <div className="notification-details-box">
+              <p className={`notification-details-message ${!isExpanded ? 'line-clamp-2' : ''}`}>
                 {notification.message}
               </p>
               {notification.message.length > 100 && (
@@ -137,7 +135,7 @@ export default function NotificationDetailsModal({
                   variant="ghost"
                   size="sm"
                   onClick={() => setIsExpanded(!isExpanded)}
-                  className="mt-1.5 text-primary text-xs hover:underline"
+                  className="notification-details-toggle"
                 >
                   {isExpanded ? 'عرض أقل' : 'عرض المزيد'}
                 </Button>
@@ -147,7 +145,7 @@ export default function NotificationDetailsModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-2 p-4 border-t border-white/10 bg-black/20 rounded-b-xl shrink-0">
+        <div className="modal-footer">
           <Button
             variant="outline"
             size="sm"

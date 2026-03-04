@@ -34,25 +34,25 @@ export const CreativeDatePicker: React.FC<DatePickerProps> = ({
   };
 
   return (
-    <div className="relative">
+    <div className="ux-relative">
       {label && (
-        <label className="block text-gray-300 mb-2 font-semibold">
-          <Icon name="calendar-alt" className="ml-2 text-primary" />
+        <label className="ux-block ux-text-gray-300 ux-mb-2 ux-font-semibold">
+          <Icon name="calendar-alt" className="ux-ml-2 ux-text-primary" />
           {label}
         </label>
       )}
       
-      <div className="relative">
+      <div className="ux-relative">
         <Button
           type="button"
           variant="outline"
           onClick={() => setIsOpen(!isOpen)}
-          className="w-full px-4 py-3 bg-dark-lighter border-2 border-gray-700 rounded-lg text-white text-right hover:border-primary transition-all duration-200 flex items-center justify-between group"
+          className="ux-w-full ux-px-4 ux-py-3 ux-bg-dark-lighter ux-border-2 ux-border-gray-700 ux-rounded-lg ux-text-white ux-text-right ux-hover-border-primary ux-transition-all ux-duration-200 ux-flex ux-items-center ux-justify-between group"
         >
-          <span className={value ? 'text-white' : 'text-gray-400'}>
+          <span className={value ? 'ux-text-white' : 'ux-text-gray-400'}>
             {formatDate(value)}
           </span>
-          <Icon name="calendar-alt" className="text-primary group-hover:scale-110 transition-transform duration-200" />
+          <Icon name="calendar-alt" className="ux-text-primary ux-group-hover-scale-110 ux-transition-transform ux-duration-200" />
         </Button>
 
         {/* Native date input (hidden but functional) */}
@@ -66,13 +66,13 @@ export const CreativeDatePicker: React.FC<DatePickerProps> = ({
           }}
           min={minDate}
           max={maxDate}
-          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+          className="ux-absolute ux-inset-0 ux-w-full ux-h-full ux-opacity-0 ux-cursor-pointer"
         />
       </div>
 
       {/* Modern overlay indicator */}
-      <div className="absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
-        <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+      <div className="ux-absolute ux-left-3 ux-top-1-2 transform ux-translate-y-1-2 ux-pointer-events-none">
+        <div className="ux-w-2 ux-h-2 ux-bg-primary ux-rounded-full ux-animate-pulse"></div>
       </div>
     </div>
   );

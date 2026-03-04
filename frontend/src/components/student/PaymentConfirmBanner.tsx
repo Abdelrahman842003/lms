@@ -23,24 +23,24 @@ export default function PaymentConfirmBanner() {
   if (pendingCount === 0) return null;
 
   return (
-    <div className="bg-gradient-to-r from-primary/20 to-primary/10 border border-primary/30 rounded-xl p-4 mb-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center">
+    <div className="ux-bg-gradient-to-r ux-from-primary-20 ux-to-primary-10 ux-border ux-border-primary-30 ux-rounded-xl ux-p-4 ux-mb-6">
+      <div className="ux-flex ux-items-center ux-justify-between">
+        <div className="ux-flex ux-items-center ux-gap-3">
+          <div className="ux-w-12 ux-h-12 ux-bg-primary-20 ux-rounded-full ux-flex ux-items-center ux-justify-center">
             <Icon name="receipt" size="xl" color="primary" />
           </div>
           <div>
-            <p className="text-white font-medium">
+            <p className="ux-text-white ux-font-medium">
               لديك {pendingCount} دفعة في انتظار التأكيد
             </p>
-            <p className="text-gray-400 text-sm">
+            <p className="ux-text-gray-400 ux-text-sm">
               أدخل الكود المستلم لتفعيل اشتراكك
             </p>
           </div>
         </div>
         <Link
           href="/student/payments/confirm"
-          className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/80 transition-colors flex items-center gap-2"
+          className="ux-px-4 ux-py-2 ux-bg-primary ux-text-white ux-rounded-lg ux-hover-bg-primary-80 ux-transition-colors ux-flex ux-items-center ux-gap-2"
         >
           <span>تأكيد الآن</span>
           <Icon name="arrow-left" size="sm" />

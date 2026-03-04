@@ -175,9 +175,9 @@ export const NotificationsSection = () => {
 
   if (isLoading) return (
     <DashboardCard title="الإشعارات" icon="fas fa-bell">
-      <div className="animate-pulse space-y-4">
-        <div className="h-20 bg-white/5 rounded-lg"></div>
-        <div className="h-20 bg-white/5 rounded-lg"></div>
+      <div className="ux-animate-pulse ux-space-y-4">
+        <div className="ux-h-20 ux-bg-white-5 ux-rounded-lg"></div>
+        <div className="ux-h-20 ux-bg-white-5 ux-rounded-lg"></div>
       </div>
     </DashboardCard>
   );
@@ -194,17 +194,17 @@ export const NotificationsSection = () => {
               setFormData(prev => ({ ...prev, recipient_type: 'admin' }));
               setShowSupportModal(true);
             }}
-            className="px-3 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+            className="ux-px-3 ux-py-1dot5 ux-bg-primary-10 ux-hover-bg-primary-20 ux-text-primary ux-rounded-lg ux-text-sm ux-font-medium ux-transition-colors ux-flex ux-items-center ux-gap-2"
           >
             <Icon name="headset" />
             <span>تواصل مع الدعم</span>
           </Button>
         }
       >
-        <div className="space-y-4 max-h-[500px] overflow-y-auto custom-scrollbar">
+        <div className="ux-space-y-4 ux-max-h-500px ux-overflow-y-auto custom-scrollbar">
           {notifications.length === 0 ? (
-            <div className="text-center py-8 text-gray-400">
-              <Icon name="bell-slash" className="text-2xl mb-2" />
+            <div className="ux-text-center ux-py-8 ux-text-gray-400">
+              <Icon name="bell-slash" className="ux-text-2xl ux-mb-2" />
               <p>لا توجد إشعارات جديدة</p>
             </div>
           ) : (
@@ -214,39 +214,39 @@ export const NotificationsSection = () => {
               return (
                 <div
                   key={notification.id}
-                  className={`p-4 rounded-lg border transition-all cursor-pointer ${
+                  className={`ux-p-4 ux-rounded-lg ux-border ux-transition-all ux-cursor-pointer ${
                     notification.read_at
-                      ? 'bg-white/5 border-white/5 hover:bg-white/10'
-                      : 'bg-primary/10 border-primary/20 hover:bg-primary/20'
+                      ? 'ux-bg-white-5 ux-border-white-5 ux-hover-bg-white-10'
+                      : 'ux-bg-primary-10 ux-border-primary-20 ux-hover-bg-primary-20'
                   }`}
                   onClick={() => handleNotificationClick(notification)}
                 >
-                  <div className="flex justify-between items-start mb-2">
-                    <div className="flex items-center gap-2">
+                  <div className="ux-flex ux-justify-between ux-items-start ux-mb-2">
+                    <div className="ux-flex ux-items-center ux-gap-2">
                       {!notification.read_at && (
-                        <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+                        <span className="ux-w-2 ux-h-2 ux-rounded-full ux-bg-primary ux-animate-pulse"></span>
                       )}
-                      <h4 className={`font-bold ${notification.read_at ? 'text-gray-300' : 'text-white'}`}>
+                      <h4 className={`ux-font-bold ${notification.read_at ? 'text-gray-300' : 'text-white'}`}>
                         {notification.title}
                       </h4>
                     </div>
-                    <span className="text-xs text-gray-500" dir="ltr">
+                    <span className="ux-text-xs ux-text-gray-500" dir="ltr">
                       {new Date(notification.created_at).toLocaleDateString('ar-EG')}
                     </span>
                   </div>
                   
                   {isVoice ? (
-                    <div className="flex items-center gap-2 text-primary mb-3">
+                    <div className="ux-flex ux-items-center ux-gap-2 ux-text-primary ux-mb-3">
                       <Icon name="microphone" />
-                      <span className="text-sm">رسالة صوتية</span>
+                      <span className="ux-text-sm">رسالة صوتية</span>
                     </div>
                   ) : (
-                    <p className="text-gray-400 text-sm mb-3 leading-relaxed line-clamp-2">{notification.message}</p>
+                    <p className="ux-text-gray-400 ux-text-sm ux-mb-3 ux-leading-relaxed ux-line-clamp-2">{notification.message}</p>
                   )}
 
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-primary/80 font-medium">{notification.sender_name}</span>
-                    <span className="bg-white/10 px-2 py-1 rounded-full text-gray-400">
+                  <div className="ux-flex ux-justify-between ux-items-center ux-text-xs">
+                    <span className="text-primary/80 ux-font-medium">{notification.sender_name}</span>
+                    <span className="ux-bg-white-10 ux-px-2 ux-py-1 ux-rounded-full ux-text-gray-400">
                       {notification.child_name}
                     </span>
                   </div>
@@ -266,22 +266,22 @@ export const NotificationsSection = () => {
 
       {/* Support Modal */}
       {showSupportModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowSupportModal(false)}>
-          <div className="bg-[#1e1e2d] rounded-xl w-full max-w-[600px] shadow-xl border border-white/10" onClick={(e) => e.stopPropagation()}>
-            <div className="flex justify-between items-center p-6 border-b border-white/10">
-              <h3 className="text-xl font-bold text-white m-0">إرسال رسالة للدعم الفني / المطور</h3>
-              <Button variant="ghost" className="text-gray-400 hover:text-white transition-colors bg-transparent border-none cursor-pointer text-xl" onClick={() => setShowSupportModal(false)}>
+        <div className="ux-fixed ux-inset-0 ux-bg-black-50 ux-flex ux-items-center ux-justify-center ux-z-50 ux-p-4" onClick={() => setShowSupportModal(false)}>
+          <div className="ux-bg-1e1e2d ux-rounded-xl ux-w-full ux-max-w-600px ux-shadow-xl ux-border ux-border-white-10" onClick={(e) => e.stopPropagation()}>
+            <div className="ux-flex ux-justify-between ux-items-center ux-p-6 ux-border-b ux-border-white-10">
+              <h3 className="ux-text-xl ux-font-bold ux-text-white ux-m-0">إرسال رسالة للدعم الفني / المطور</h3>
+              <Button variant="ghost" className="ux-text-gray-400 ux-hover-text-white ux-transition-colors ux-bg-transparent ux-border-none ux-cursor-pointer ux-text-xl" onClick={() => setShowSupportModal(false)}>
                 <Icon name="times" />
               </Button>
             </div>
             <form onSubmit={handleSupportSubmit}>
-              <div className="p-6">
-                <div className="mb-4">
-                  <label htmlFor="title" className="block text-gray-light text-sm mb-2 font-medium">الموضوع</label>
+              <div className="ux-p-6">
+                <div className="ux-mb-4">
+                  <label htmlFor="title" className="ux-block ux-text-gray-light ux-text-sm ux-mb-2 ux-font-medium">الموضوع</label>
                   <input
                     type="text"
                     id="title"
-                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                    className="ux-w-full ux-px-4 ux-py-3 ux-bg-white-5 ux-border ux-border-white-10 ux-rounded-lg ux-text-white ux-focus-border-primary ux-focus-ring-1 ux-focus-ring-primary outline-none ux-transition-all"
                     value={formData.title}
                     onChange={(e) => setFormData({...formData, title: e.target.value})}
                     required
@@ -289,11 +289,11 @@ export const NotificationsSection = () => {
                   />
                 </div>
                 
-                <div className="mb-4">
-                  <label htmlFor="message" className="block text-gray-light text-sm mb-2 font-medium">تفاصيل الرسالة</label>
+                <div className="ux-mb-4">
+                  <label htmlFor="message" className="ux-block ux-text-gray-light ux-text-sm ux-mb-2 ux-font-medium">تفاصيل الرسالة</label>
                   <textarea
                     id="message"
-                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                    className="ux-w-full ux-px-4 ux-py-3 ux-bg-white-5 ux-border ux-border-white-10 ux-rounded-lg ux-text-white ux-focus-border-primary ux-focus-ring-1 ux-focus-ring-primary outline-none ux-transition-all"
                     value={formData.message}
                     onChange={(e) => setFormData({...formData, message: e.target.value})}
                     required
@@ -302,7 +302,7 @@ export const NotificationsSection = () => {
                   />
                 </div>
               </div>
-              <div className="flex justify-end gap-3 p-6 border-t border-white/10 bg-white/5 rounded-b-xl">
+              <div className="ux-flex ux-justify-end ux-gap-3 ux-p-6 ux-border-t ux-border-white-10 ux-bg-white-5 ux-rounded-b-xl">
                 <Button type="button" variant="secondary" onClick={() => setShowSupportModal(false)} disabled={isSending}>
                   إلغاء
                 </Button>

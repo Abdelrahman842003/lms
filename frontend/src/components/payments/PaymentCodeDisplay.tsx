@@ -93,77 +93,75 @@ export default function PaymentCodeDisplay({ code, amount, studentName, onClose 
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+    <div className="modal-overlay payment-code-overlay">
       <div 
         ref={printRef}
-        className="bg-dark-lighter rounded-2xl w-full max-w-md overflow-hidden"
+        className="modal-content payment-code-modal"
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-primary to-primary/70 p-6 text-center">
-          <Icon name="check-circle" size="3x" className="text-white mb-3" />
-          <h2 className="text-xl font-bold text-white">تم تسجيل الدفعة بنجاح</h2>
+        <div className="payment-code-header">
+          <Icon name="check-circle" size="3x" className="payment-code-header-icon" />
+          <h2 className="payment-code-header-title">تم تسجيل الدفعة بنجاح</h2>
         </div>
 
         {/* Content */}
-        <div className="p-6 text-center">
+        <div className="modal-body payment-code-body">
           {/* Student & Amount */}
-          <p className="text-gray-400 mb-2">الطالب</p>
-          <p className="text-xl text-white font-medium mb-4">{studentName}</p>
+          <p className="payment-code-label">الطالب</p>
+          <p className="payment-code-student">{studentName}</p>
           
-          <p className="text-gray-400 mb-2">المبلغ</p>
-          <p className="text-3xl text-primary font-bold mb-6">{amount} ج.م</p>
+          <p className="payment-code-label">المبلغ</p>
+          <p className="payment-code-amount">{amount} ج.م</p>
 
           {/* Code Display */}
-          <p className="text-gray-400 mb-3">كود التأكيد</p>
-          <div className="bg-white/10 border-2 border-dashed border-primary/50 rounded-xl p-6 mb-6">
-            <p className="text-4xl font-mono font-bold text-white tracking-widest">
+          <p className="payment-code-label">كود التأكيد</p>
+          <div className="payment-code-box">
+            <p className="payment-code-value">
               {code}
             </p>
           </div>
 
           {/* QR Code */}
-          <div className="bg-white p-4 rounded-xl inline-block mb-6">
+          <div className="payment-code-qr">
             <QRCode value={code} size={120} />
           </div>
 
           {/* Instructions */}
-          <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 mb-6">
-            <p className="text-yellow-400 text-sm">
-              <Icon name="info-circle" className="ml-2" />
+          <div className="payment-code-note">
+            <p className="payment-code-note-text">
+              <Icon name="info-circle" />
               أعط هذا الكود للطالب ليؤكد الدفع من التطبيق
             </p>
-            <p className="text-yellow-400/70 text-xs mt-2">
+            <p className="payment-code-note-subtext">
               صالح لمدة 7 أيام
             </p>
           </div>
 
           {/* Actions */}
-          <div className="flex gap-3">
+          <div className="payment-code-actions">
             <Button
               onClick={handleCopy}
               variant="outline"
-              className="flex-1 py-3"
             >
-              <Icon name="copy" className="ml-2" />
+              <Icon name="copy" />
               نسخ الكود
             </Button>
             <Button
               onClick={handlePrint}
               variant="outline"
-              className="flex-1 py-3"
             >
-              <Icon name="print" className="ml-2" />
+              <Icon name="print" />
               طباعة
             </Button>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="px-6 pb-6">
+        <div className="modal-footer">
           <Button
             onClick={onClose}
             variant="primary"
-            className="w-full py-3"
+            className="payment-code-done"
           >
             تم
           </Button>

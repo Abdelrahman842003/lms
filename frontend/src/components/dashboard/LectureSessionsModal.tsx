@@ -106,44 +106,44 @@ export const LectureSessionsModal: React.FC<LectureSessionsModalProps> = ({ lect
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={onClose}>
-      <div className="bg-[#1a1f37] border border-white/10 rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between p-6 border-b border-white/10">
-          <h3 className="text-xl font-bold text-white">إدارة جلسات المحاضرة</h3>
-          <div className="flex bg-black/20 rounded-lg p-1">
+    <div className="ux-fixed ux-inset-0 ux-z-50 ux-flex ux-items-center ux-justify-center ux-p-4 ux-bg-black-50 ux-backdrop-blur-sm" onClick={onClose}>
+      <div className="ux-bg-1a1f37 ux-border ux-border-white-10 ux-rounded-2xl ux-w-full ux-max-w-2xl ux-max-h-80vh ux-flex ux-flex-col ux-shadow-2xl" onClick={e => e.stopPropagation()}>
+        <div className="ux-flex ux-items-center ux-justify-between ux-p-6 ux-border-b ux-border-white-10">
+          <h3 className="ux-text-xl ux-font-bold ux-text-white">إدارة جلسات المحاضرة</h3>
+          <div className="ux-flex ux-bg-black-20 ux-rounded-lg ux-p-1">
             <button
               onClick={() => setFilter('upcoming')}
-              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
+              className={`ux-px-4 ux-py-1dot5 ux-rounded-md ux-text-sm ux-font-medium ux-transition-all ${
                 filter === 'upcoming' 
-                  ? 'bg-primary text-white shadow-lg' 
-                  : 'text-gray-400 hover:text-white'
+                  ? 'ux-bg-primary ux-text-white ux-shadow-lg'
+                  : 'ux-text-gray-400 ux-hover-text-white'
               }`}
             >
               القادمة
             </button>
             <button
               onClick={() => setFilter('past')}
-              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
+              className={`ux-px-4 ux-py-1dot5 ux-rounded-md ux-text-sm ux-font-medium ux-transition-all ${
                 filter === 'past' 
-                  ? 'bg-primary text-white shadow-lg' 
-                  : 'text-gray-400 hover:text-white'
+                  ? 'ux-bg-primary ux-text-white ux-shadow-lg'
+                  : 'ux-text-gray-400 ux-hover-text-white'
               }`}
             >
               الماضية
             </button>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
+          <button onClick={onClose} className="ux-text-gray-400 ux-hover-text-white ux-transition-colors">
             <Icon name="times" size="xl" />
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="ux-flex-1 ux-overflow-y-auto ux-p-6">
           {loading ? (
-            <div className="flex justify-center py-8">
+            <div className="ux-flex ux-justify-center ux-py-8">
               <LoadingSpinner size="md" color="primary" />
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="ux-space-y-4">
               {displayedDates.map(date => {
                 const session = sessions.find(s => s.date === date);
                 const isEditing = editingDate === date;
@@ -151,40 +151,40 @@ export const LectureSessionsModal: React.FC<LectureSessionsModalProps> = ({ lect
                 const dayName = dateObj.toLocaleDateString('ar-EG', { weekday: 'long' });
 
                 return (
-                  <div key={date} className="bg-white/5 rounded-xl p-4 border border-white/5">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="text-primary font-bold">{dayName}</span>
-                          <span className="text-gray-400 text-sm">{date}</span>
+                  <div key={date} className="ux-bg-white-5 ux-rounded-xl ux-p-4 ux-border ux-border-white-5">
+                    <div className="ux-flex ux-items-start ux-justify-between ux-gap-4">
+                      <div className="ux-flex-1">
+                        <div className="ux-flex ux-items-center ux-gap-2 ux-mb-2">
+                          <span className="ux-text-primary ux-font-bold">{dayName}</span>
+                          <span className="ux-text-gray-400 ux-text-sm">{date}</span>
                           {session?.is_cancelled && (
                             <Badge variant="danger" size="sm">ملغاة</Badge>
                           )}
                         </div>
 
                         {isEditing ? (
-                          <div className="space-y-3 mt-3">
+                          <div className="ux-space-y-3 ux-mt-3">
                             <div>
-                              <label className="block text-xs text-gray-400 mb-1">عنوان مخصص (اختياري)</label>
+                              <label className="ux-block ux-text-xs ux-text-gray-400 ux-mb-1">عنوان مخصص (اختياري)</label>
                               <input
                                 type="text"
                                 value={editForm.title}
                                 onChange={e => setEditForm(prev => ({ ...prev, title: e.target.value }))}
-                                className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:border-primary focus:outline-none"
+                                className="ux-w-full ux-bg-black-20 ux-border ux-border-white-10 ux-rounded-lg ux-px-3 ux-py-2 ux-text-white ux-text-sm ux-focus-border-primary ux-focus-outline-none"
                                 placeholder="عنوان الجلسة"
                               />
                             </div>
                             <div>
-                              <label className="block text-xs text-gray-400 mb-1">وصف مخصص</label>
+                              <label className="ux-block ux-text-xs ux-text-gray-400 ux-mb-1">وصف مخصص</label>
                               <textarea
                                 value={editForm.description}
                                 onChange={e => setEditForm(prev => ({ ...prev, description: e.target.value }))}
-                                className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:border-primary focus:outline-none"
+                                className="ux-w-full ux-bg-black-20 ux-border ux-border-white-10 ux-rounded-lg ux-px-3 ux-py-2 ux-text-white ux-text-sm ux-focus-border-primary ux-focus-outline-none"
                                 rows={2}
                                 placeholder="وصف الجلسة..."
                               />
                             </div>
-                            <div className="flex justify-end gap-2">
+                            <div className="ux-flex ux-justify-end ux-gap-2">
                               <Button
                                 variant="ghost"
                                 onClick={() => setEditingDate(null)}
@@ -203,14 +203,14 @@ export const LectureSessionsModal: React.FC<LectureSessionsModalProps> = ({ lect
                             </div>
                           </div>
                         ) : (
-                          <div className="mt-2">
+                          <div className="ux-mt-2">
                             {session?.title && (
-                              <div className="text-white font-medium mb-1">{session.title}</div>
+                              <div className="ux-text-white ux-font-medium ux-mb-1">{session.title}</div>
                             )}
                             {session?.description ? (
-                              <p className="text-gray-300 text-sm">{session.description}</p>
+                              <p className="ux-text-gray-300 ux-text-sm">{session.description}</p>
                             ) : (
-                              <p className="text-gray-500 text-sm italic">لا يوجد وصف مخصص</p>
+                              <p className="ux-text-gray-500 ux-text-sm ux-italic">لا يوجد وصف مخصص</p>
                             )}
                           </div>
                         )}
@@ -219,7 +219,7 @@ export const LectureSessionsModal: React.FC<LectureSessionsModalProps> = ({ lect
                       {!isEditing && (
                         <button
                           onClick={() => handleEdit(date)}
-                          className="p-2 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
+                          className="ux-p-2 ux-rounded-lg ux-hover-bg-white-10 ux-text-gray-400 ux-hover-text-white ux-transition-colors"
                         >
                           <Icon name="edit" />
                         </button>

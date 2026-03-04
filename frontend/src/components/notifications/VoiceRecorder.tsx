@@ -188,26 +188,26 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
 
   if (!isSupported) {
     return (
-      <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-center text-sm">
-        <Icon name="exclamation-triangle" className="mr-2" />
+      <div className="ux-p-3 ux-bg-red-500-10 ux-border ux-border-red-500-20 ux-rounded-xl ux-text-red-400 ux-text-center ux-text-sm">
+        <Icon name="exclamation-triangle" className="ux-mr-2" />
         {error || 'متصفحك لا يدعم تسجيل الصوت'}
       </div>
     );
   }
 
   return (
-    <div className="relative w-full max-w-sm mx-auto">
+    <div className="ux-relative ux-w-full ux-max-w-sm ux-mx-auto">
       {error && (
-        <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm flex items-center gap-2 animate-fadeIn">
+        <div className="ux-mb-4 ux-p-3 ux-bg-red-500-10 ux-border ux-border-red-500-20 ux-rounded-xl ux-text-red-400 ux-text-sm ux-flex ux-items-center ux-gap-2 ux-animate-fadein">
           <Icon name="exclamation-circle" />
           <span>{error}</span>
         </div>
       )}
 
-      <div className="relative overflow-hidden rounded-2xl bg-[#13131f] border border-white/5 shadow-2xl transition-all duration-500">
+      <div className="ux-relative ux-overflow-hidden ux-rounded-2xl ux-bg-13131f ux-border ux-border-white-5 ux-shadow-2xl ux-transition-all ux-duration-500">
         {/* Ambient Background Glow */}
         <div 
-          className="absolute inset-0 opacity-30 transition-opacity duration-700"
+          className="ux-absolute ux-inset-0 ux-opacity-30 ux-transition-opacity ux-duration-700"
           style={{
             background: recordingState === 'recording' 
               ? `radial-gradient(circle at 50% 50%, ${dynamicColor}20 0%, transparent 70%)`
@@ -215,13 +215,13 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
           }}
         />
 
-        <div className="relative z-10 p-6 flex flex-col items-center">
+        <div className="ux-relative ux-z-10 ux-p-6 ux-flex ux-flex-col ux-items-center">
           
           {/* Main Visualizer Circle */}
-          <div className="relative mb-6 group">
+          <div className="ux-relative ux-mb-6 group">
             {/* Outer Glow Ring */}
             <div 
-              className="absolute inset-0 rounded-full transition-all duration-300"
+              className="ux-absolute ux-inset-0 ux-rounded-full ux-transition-all ux-duration-300"
               style={{
                 boxShadow: recordingState === 'recording' 
                   ? `0 0 ${30 + smoothLevel * 30}px ${dynamicColor}40` 
@@ -233,7 +233,7 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
 
             {/* The Circle Itself */}
             <div 
-              className="w-32 h-32 rounded-full flex items-center justify-center relative z-10 transition-all duration-500"
+              className="ux-w-32 ux-h-32 ux-rounded-full ux-flex ux-items-center ux-justify-center ux-relative ux-z-10 ux-transition-all ux-duration-500"
               style={{
                 background: recordingState === 'recording'
                   ? `linear-gradient(135deg, #1e293b 0%, #0f172a 100%)`
@@ -245,11 +245,11 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
               }}
             >
               {recordingState === 'recording' ? (
-                <div className="flex items-end justify-center gap-1 h-12">
+                <div className="ux-flex ux-items-end ux-justify-center ux-gap-1 ux-h-12">
                   {bars.map((height, i) => (
                     <div 
                       key={i}
-                      className="w-1.5 rounded-full transition-all duration-75 ease-out"
+                      className="ux-w-1dot5 ux-rounded-full ux-transition-all ux-duration-75 ux-ease-out"
                       style={{ 
                         height: `${Math.max(8, height * 0.8)}px`,
                         background: dynamicColor,
@@ -260,22 +260,22 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
                   ))}
                 </div>
               ) : recordingState === 'preview' ? (
-                <Icon name="check" size="3x" className="text-emerald-400 animate-scaleIn" />
+                <Icon name="check" size="3x" className="ux-text-emerald-400 ux-animate-scalein" />
               ) : (
-                <Icon name="microphone" size="2x" className="text-gray-400 group-hover:text-white transition-colors" />
+                <Icon name="microphone" size="2x" className="ux-text-gray-400 ux-group-hover-text-white ux-transition-colors" />
               )}
             </div>
             
             {/* Ripple Effect when recording */}
             {recordingState === 'recording' && (
-               <div className="absolute inset-0 rounded-full border border-blue-500/30 animate-ping opacity-20" />
+               <div className="ux-absolute ux-inset-0 ux-rounded-full ux-border ux-border-blue-500-30 ux-animate-ping ux-opacity-20" />
             )}
           </div>
 
           {/* Timer Display */}
-          <div className="text-center mb-6 space-y-1">
+          <div className="ux-text-center ux-mb-6 ux-space-y-1">
             <div 
-              className="text-4xl font-bold font-mono tracking-wider transition-colors duration-300"
+              className="ux-text-4xl ux-font-bold ux-font-mono ux-tracking-wider ux-transition-colors ux-duration-300"
               style={{ 
                 color: recordingState === 'recording' 
                   ? (isNearLimit ? '#ef4444' : '#ffffff') 
@@ -285,13 +285,13 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
             >
               {formatTime(duration)}
             </div>
-            <div className="text-xs font-medium uppercase tracking-widest text-gray-500">
+            <div className="ux-text-xs ux-font-medium ux-uppercase ux-tracking-widest ux-text-gray-500">
               {recordingState === 'recording' ? (
-                <span className={isNearLimit ? 'text-red-400 animate-pulse' : 'text-blue-400'}>
+                <span className={isNearLimit ? 'ux-text-red-400 ux-animate-pulse' : 'ux-text-blue-400'}>
                   جاري التسجيل • الحد {formatTime(maxDuration)}
                 </span>
               ) : recordingState === 'preview' ? (
-                <span className="text-emerald-500">تم التسجيل بنجاح</span>
+                <span className="ux-text-emerald-500">تم التسجيل بنجاح</span>
               ) : (
                 'جاهز للتسجيل'
               )}
@@ -299,9 +299,9 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
           </div>
 
           {/* Progress Bar (Only when recording) */}
-          <div className={`w-full h-1.5 bg-gray-800 rounded-full overflow-hidden mb-6 transition-opacity duration-300 ${recordingState === 'recording' ? 'opacity-100' : 'opacity-0 h-0 mb-0'}`}>
+          <div className={`ux-w-full ux-h-1dot5 ux-bg-gray-800 ux-rounded-full ux-overflow-hidden ux-mb-6 ux-transition-opacity ux-duration-300 ${recordingState === 'recording' ? 'opacity-100' : 'opacity-0 ux-h-0 mb-0'}`}>
             <div 
-              className="h-full rounded-full transition-all duration-1000 linear"
+              className="ux-h-full ux-rounded-full ux-transition-all ux-duration-1000 linear"
               style={{ 
                 width: `${progress}%`,
                 background: isNearLimit 
@@ -314,20 +314,20 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
 
           {/* Audio Preview Player */}
           {recordingState === 'preview' && audioUrl && (
-            <div className="w-full mb-6 bg-white/5 rounded-xl p-3 border border-white/5 animate-fadeIn">
-              <audio src={audioUrl} controls className="w-full h-8 opacity-80 hover:opacity-100 transition-opacity" />
+            <div className="ux-w-full ux-mb-6 ux-bg-white-5 ux-rounded-xl ux-p-3 ux-border ux-border-white-5 ux-animate-fadein">
+              <audio src={audioUrl} controls className="ux-w-full ux-h-8 ux-opacity-80 ux-hover-opacity-100 ux-transition-opacity" />
             </div>
           )}
 
           {/* Controls */}
-          <div className="flex items-center gap-3 w-full">
+          <div className="ux-flex ux-items-center ux-gap-3 ux-w-full">
             {recordingState === 'idle' && (
               <Button
                 onClick={startRecording}
                 disabled={disabled}
-                className="w-full py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl font-semibold shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:-translate-y-0.5 active:translate-y-0 transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
+                className="ux-w-full ux-py-3dot5 ux-bg-gradient-to-r ux-from-blue-600 ux-to-indigo-600 ux-hover-from-blue-500 ux-hover-to-indigo-500 ux-text-white ux-rounded-xl ux-font-semibold ux-shadow-lg ux-shadow-blue-500-25 ux-hover-shadow-blue-500-40 ux-hover-translate-y-0dot5 ux-active-translate-y-0 ux-transition-all ux-disabled-opacity-50 ux-disabled-cursor-not-allowed group"
               >
-                <Icon name="microphone" className="mr-2 group-hover:scale-110 transition-transform" />
+                <Icon name="microphone" className="ux-mr-2 ux-group-hover-scale-110 ux-transition-transform" />
                 ابدأ التسجيل
               </Button>
             )}
@@ -336,9 +336,9 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
               <Button
                 onClick={stopRecording}
                 variant="outline"
-                className="w-full py-3.5 border-red-500/20 text-red-400 hover:text-red-300 hover:bg-red-500/20 hover:border-red-500/30 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 group"
+                className="ux-w-full ux-py-3dot5 ux-border-red-500-20 ux-text-red-400 ux-hover-text-red-300 ux-hover-bg-red-500-20 ux-hover-border-red-500-30 ux-rounded-xl ux-font-semibold ux-transition-all ux-flex ux-items-center ux-justify-center ux-gap-2 group"
               >
-                <div className="w-3 h-3 bg-current rounded-sm group-hover:scale-110 transition-transform" />
+                <div className="ux-w-3 ux-h-3 ux-bg-current ux-rounded-sm ux-group-hover-scale-110 ux-transition-transform" />
                 إيقاف التسجيل
               </Button>
             )}
@@ -348,7 +348,7 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
                 <Button 
                   onClick={resetRecording} 
                   variant="outline"
-                  className="flex-1 py-3.5 bg-gray-700/50 hover:bg-gray-700 text-gray-300 hover:text-white rounded-xl font-medium transition-all flex items-center justify-center gap-2"
+                  className="ux-flex-1 ux-py-3dot5 ux-bg-gray-700-50 ux-hover-bg-gray-700 ux-text-gray-300 ux-hover-text-white ux-rounded-xl ux-font-medium ux-transition-all ux-flex ux-items-center ux-justify-center ux-gap-2"
                 >
                   <Icon name="redo" size="xs" />
                   إعادة
@@ -356,7 +356,7 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
                 <Button 
                   onClick={confirmRecording} 
                   variant="primary"
-                  className="flex-[2] py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl font-semibold shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center justify-center gap-2"
+                  className="ux-flex-2 ux-py-3dot5 ux-bg-gradient-to-r ux-from-emerald-600 ux-to-teal-600 ux-hover-from-emerald-500 ux-hover-to-teal-500 ux-text-white ux-rounded-xl ux-font-semibold ux-shadow-lg ux-shadow-emerald-500-25 ux-hover-shadow-emerald-500-40 ux-hover-translate-y-0dot5 ux-active-translate-y-0 ux-transition-all ux-flex ux-items-center ux-justify-center ux-gap-2"
                 >
                   <Icon name="paper-plane" size="xs" />
                   إرسال
@@ -370,7 +370,7 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
             <Button 
               onClick={onCancel} 
               variant="ghost"
-              className="mt-4 text-gray-500 hover:text-gray-300 text-sm font-medium transition-colors"
+              className="ux-mt-4 ux-text-gray-500 ux-hover-text-gray-300 ux-text-sm ux-font-medium ux-transition-colors"
             >
               إلغاء الأمر
             </Button>

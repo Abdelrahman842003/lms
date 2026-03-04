@@ -118,19 +118,19 @@ export const Icon: React.FC<IconProps> = ({
     pulse && 'fa-pulse',
     rotate && `fa-rotate-${rotate}`,
     flip && `fa-flip-${flip}`,
-    (onClick || clickable) && 'cursor-pointer',
+    (onClick || clickable) && 'ux-cursor-pointer',
     className
   );
 
   const colorStyles = {
     inherit: '',
-    primary: 'text-primary',
-    secondary: 'text-gray-400',
-    success: 'text-success',
-    warning: 'text-warning',
-    danger: 'text-danger',
-    info: 'text-blue-400',
-    muted: 'text-gray-500',
+    primary: 'ux-text-primary',
+    secondary: 'ux-text-gray-400',
+    success: 'ux-text-success',
+    warning: 'ux-text-warning',
+    danger: 'ux-text-danger',
+    info: 'ux-text-blue-400',
+    muted: 'ux-text-gray-500',
   };
 
   return (
@@ -182,31 +182,31 @@ export const IconButton: React.FC<IconButtonProps> = ({
 }) => {
   const baseStyles = [
     'inline-flex',
-    'items-center',
-    'justify-center',
-    'rounded-lg',
-    'transition-all',
-    'duration-200',
-    'focus:outline-none',
-    'focus:ring-2',
-    'focus:ring-offset-2',
-    'focus:ring-offset-dark',
-    'disabled:opacity-50',
-    'disabled:cursor-not-allowed',
+    'ux-items-center',
+    'ux-justify-center',
+    'ux-rounded-lg',
+    'ux-transition-all',
+    'ux-duration-200',
+    'ux-focus-outline-none',
+    'ux-focus-ring-2',
+    'ux-focus-ring-offset-2',
+    'ux-focus-ring-offset-dark',
+    'ux-disabled-opacity-50',
+    'ux-disabled-cursor-not-allowed',
   ];
 
   const variantStyles = {
-    default: 'bg-white/5 text-gray-300 hover:bg-white/10 focus:ring-gray-500',
-    primary: 'bg-primary/20 text-primary hover:bg-primary/30 focus:ring-primary',
-    secondary: 'bg-gray-600 text-white hover:bg-gray-500 focus:ring-gray-500',
-    ghost: 'bg-transparent text-gray-400 hover:text-white hover:bg-white/5 focus:ring-gray-500',
-    danger: 'bg-red-500/20 text-red-500 hover:bg-red-500/30 focus:ring-red-500',
+    default: 'ux-bg-white-5 ux-text-gray-300 ux-hover-bg-white-10 ux-focus-ring-gray-500',
+    primary: 'ux-bg-primary-20 ux-text-primary ux-hover-bg-primary-30 ux-focus-ring-primary',
+    secondary: 'ux-bg-gray-600 ux-text-white ux-hover-bg-gray-500 ux-focus-ring-gray-500',
+    ghost: 'ux-bg-transparent ux-text-gray-400 ux-hover-text-white ux-hover-bg-white-5 ux-focus-ring-gray-500',
+    danger: 'ux-bg-red-500-20 ux-text-red-500 ux-hover-bg-red-500-30 ux-focus-ring-red-500',
   };
 
   const sizeStyles = {
-    sm: 'w-8 h-8',
-    md: 'w-10 h-10',
-    lg: 'w-12 h-12',
+    sm: 'ux-w-8 ux-h-8',
+    md: 'ux-w-10 ux-h-10',
+    lg: 'ux-w-12 ux-h-12',
   };
 
   return (
@@ -257,18 +257,18 @@ export const IconText: React.FC<IconTextProps> = ({
   ...iconProps
 }) => {
   const gapStyles = {
-    sm: 'gap-1',
-    md: 'gap-2',
-    lg: 'gap-3',
+    sm: 'ux-gap-1',
+    md: 'ux-gap-2',
+    lg: 'ux-gap-3',
   };
 
   return (
     <span
       className={clsx(
         'inline-flex',
-        'items-center',
+        'ux-items-center',
         gapStyles[gap],
-        iconPosition === 'right' && 'flex-row-reverse',
+        iconPosition === 'right' && 'ux-flex-row-reverse',
         wrapperClassName
       )}
     >
@@ -301,9 +301,9 @@ export const IconStack: React.FC<IconStackProps> = ({
   className,
 }) => {
   const sizeStyles = {
-    sm: 'text-sm',
-    md: 'text-base',
-    lg: 'text-lg',
+    sm: 'ux-text-sm',
+    md: 'ux-text-base',
+    lg: 'ux-text-lg',
   };
 
   return (
@@ -344,27 +344,27 @@ export const IconAvatar: React.FC<IconAvatarProps> = ({
   ...iconProps
 }) => {
   const sizeStyles = {
-    xs: 'w-6 h-6',
-    sm: 'w-8 h-8',
-    md: 'w-10 h-10',
-    lg: 'w-12 h-12',
-    xl: 'w-16 h-16',
+    xs: 'ux-w-6 ux-h-6',
+    sm: 'ux-w-8 ux-h-8',
+    md: 'ux-w-10 ux-h-10',
+    lg: 'ux-w-12 ux-h-12',
+    xl: 'ux-w-16 ux-h-16',
   };
 
   const bgStyles = {
-    primary: 'bg-primary/20 text-primary',
-    secondary: 'bg-gray-600 text-white',
-    success: 'bg-success/20 text-success',
-    warning: 'bg-warning/20 text-warning',
-    danger: 'bg-danger/20 text-danger',
-    info: 'bg-blue-500/20 text-blue-400',
-    default: 'bg-white/10 text-gray-400',
+    primary: 'ux-bg-primary-20 ux-text-primary',
+    secondary: 'ux-bg-gray-600 ux-text-white',
+    success: 'ux-bg-success-20 ux-text-success',
+    warning: 'ux-bg-warning-20 ux-text-warning',
+    danger: 'ux-bg-danger-20 ux-text-danger',
+    info: 'ux-bg-blue-500-20 ux-text-blue-400',
+    default: 'ux-bg-white-10 ux-text-gray-400',
   };
 
   const shapeStyles = {
-    circle: 'rounded-full',
-    square: 'rounded-none',
-    rounded: 'rounded-lg',
+    circle: 'ux-rounded-full',
+    square: 'ux-rounded-none',
+    rounded: 'ux-rounded-lg',
   };
 
   const iconSizes = {
@@ -379,12 +379,12 @@ export const IconAvatar: React.FC<IconAvatarProps> = ({
     <span
       className={clsx(
         'inline-flex',
-        'items-center',
-        'justify-center',
+        'ux-items-center',
+        'ux-justify-center',
         sizeStyles[size],
         bgStyles[bg],
         shapeStyles[shape],
-        bordered && 'border-2 border-white/10',
+        bordered && 'ux-border-2 ux-border-white-10',
         className
       )}
     >

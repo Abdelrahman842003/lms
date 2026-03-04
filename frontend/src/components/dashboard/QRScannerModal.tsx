@@ -87,28 +87,28 @@ const QRScannerModal: React.FC<QRScannerModalProps> = ({ isOpen, onClose, onScan
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="w-full max-w-md bg-gray-900 border border-gray-800 rounded-xl shadow-2xl overflow-hidden">
-        <div className="p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-bold text-white">تسجيل حضور: {lectureTitle}</h3>
-            <button onClick={onClose} className="text-gray-400 hover:text-white">
+    <div className="modal-overlay">
+      <div className="modal-content qr-scanner-modal">
+        <div className="modal-body">
+          <div className="qr-scanner-header">
+            <h3 className="qr-scanner-title">تسجيل حضور: {lectureTitle}</h3>
+            <button onClick={onClose} className="modal-close" type="button" aria-label="إغلاق">
               <Icon name="times" />
             </button>
           </div>
           
-          <div className="bg-black rounded-lg overflow-hidden mb-4 relative min-h-[300px] flex items-center justify-center">
-            <div id="reader" className="w-full h-full"></div>
+          <div className="qr-scanner-reader-wrap">
+            <div id="reader" className="ux-w-full ux-h-full"></div>
           </div>
 
-          <p className="text-center text-gray-400 text-sm mb-4">
+          <p className="qr-scanner-instructions">
             {instructions || "وجه الكاميرا نحو رمز QR للطالب لتسجيل الحضور"}
           </p>
 
           <Button
             variant="secondary"
             onClick={onClose}
-            className="w-full"
+            className="qr-scanner-cancel"
           >
             إلغاء
           </Button>

@@ -113,17 +113,17 @@ export const ExamCard: React.FC<ExamCardProps> = ({
   };
 
   return (
-    <div 
-      className={`relative rounded-2xl p-6 transition-all duration-500 ease-in-out flex flex-col ${isMenuOpen ? 'z-10' : ''} ${
-        isActive 
-          ? 'bg-[#101426]/15 border-2 border-primary shadow-[0_0_30px_rgba(66,99,235,0.3)]' 
-          : 'bg-[#101426]/15 border border-white/10 hover:shadow-[0_12px_40px_rgba(0,0,0,0.3)] hover:-translate-y-[1px] hover:backdrop-blur-[20px] hover:border-[#1bc5f8]/50'
+    <div
+      className={`ux-relative ux-rounded-2xl ux-p-6 ux-transition-all ux-duration-500 ux-ease-in-out ux-flex ux-flex-col ${isMenuOpen ? 'ux-z-10' : ''} ${
+        isActive
+          ? 'ux-bg-101426-15 ux-border-2 ux-border-primary ux-shadow-0-0-30px-rgba-66-99-235-0dot3'
+          : 'ux-bg-101426-15 ux-border ux-border-white-10 ux-hover-shadow-0-12px-40px-rgba-0-0-0-0dot3 ux-hover-translate-y-1px ux-hover-backdrop-blur-20px ux-hover-border-1bc5f8-50'
       }`}
     >
       {/* Top Section: Menu and Status */}
-      <div className="flex justify-between items-start mb-6">
+      <div className="ux-flex ux-justify-between ux-items-start ux-mb-6">
         {/* Status Badge */}
-        <div className="flex gap-2 flex-wrap">
+        <div className="ux-flex ux-gap-2 ux-flex-wrap">
           <Badge variant={getStatusVariant()} size="sm">
             {getStatusText()}
           </Badge>
@@ -142,11 +142,11 @@ export const ExamCard: React.FC<ExamCardProps> = ({
         </div>
 
         {/* Three-dot Menu */}
-        <div className="relative">
+        <div className="ux-relative">
           <Button 
             variant="ghost"
             size="sm"
-            className="w-10 h-10 rounded-xl bg-[rgba(16,20,38,0.8)] hover:bg-[rgba(66,99,235,0.2)] border border-white/10 hover:border-primary/50 flex items-center justify-center transition-all p-0"
+            className="ux-w-10 ux-h-10 ux-rounded-xl ux-bg-rgba-16-20-38-0dot8 ux-hover-bg-rgba-66-99-235-0dot2 ux-border ux-border-white-10 ux-hover-border-primary-50 ux-flex ux-items-center ux-justify-center ux-transition-all ux-p-0"
             onClick={onMenuToggle}
           >
             <Icon name="ellipsis-v" color="inherit" />
@@ -154,9 +154,9 @@ export const ExamCard: React.FC<ExamCardProps> = ({
           
           {/* Dropdown Menu */}
           {isMenuOpen && (
-            <div className="actions-menu show" style={{ minWidth: '200px', left: '0', right: 'auto', position: 'absolute', top: '100%', marginTop: '8px' }}>
+            <div className="actions-menu show actions-menu-card">
               <button
-                className="actions-menu-item w-full"
+                className="actions-menu-item ux-w-full"
                 onClick={(e) => {
                   e.stopPropagation();
                   onViewDetails();
@@ -167,7 +167,7 @@ export const ExamCard: React.FC<ExamCardProps> = ({
               </button>
               
               <button
-                className="actions-menu-item w-full"
+                className="actions-menu-item ux-w-full"
                 onClick={(e) => {
                   e.stopPropagation();
                   onViewResults();
@@ -179,7 +179,7 @@ export const ExamCard: React.FC<ExamCardProps> = ({
 
               {!isEnded && (
                 <button
-                  className="actions-menu-item w-full"
+                  className="actions-menu-item ux-w-full"
                   onClick={(e) => {
                     e.stopPropagation();
                     onEdit();
@@ -191,7 +191,7 @@ export const ExamCard: React.FC<ExamCardProps> = ({
               )}
               
               <button
-                className="actions-menu-item w-full"
+                className="actions-menu-item ux-w-full"
                 onClick={(e) => {
                   e.stopPropagation();
                   onCopy();
@@ -202,7 +202,7 @@ export const ExamCard: React.FC<ExamCardProps> = ({
               </button>
               
               <button
-                className="actions-menu-item danger w-full"
+                className="actions-menu-item danger ux-w-full"
                 onClick={(e) => {
                   e.stopPropagation();
                   onDelete();
@@ -217,50 +217,50 @@ export const ExamCard: React.FC<ExamCardProps> = ({
       </div>
 
       {/* Title */}
-      <h3 className="text-2xl font-bold text-white mb-3 leading-tight">
+      <h3 className="ux-text-2xl ux-font-bold ux-text-white ux-mb-3 ux-leading-tight">
         {exam.title}
       </h3>
 
       {/* Subject */}
-      <p className="text-sm text-gray-light/80 mb-6 line-clamp-2 min-h-[40px]">
+      <p className="ux-text-sm text-gray-light/80 ux-mb-6 ux-line-clamp-2 ux-min-h-40px">
         {exam.subject || 'مادة الامتحان'}
       </p>
 
       {/* Exam Info */}
-      <div className="grid gap-3.5 mb-6">
-        <div className="flex items-center gap-3 text-sm text-gray-light">
-          <Icon name="calendar" className="w-5 text-primary text-base" />
+      <div className="ux-grid ux-gap-3dot5 ux-mb-6">
+        <div className="ux-flex ux-items-center ux-gap-3 ux-text-sm ux-text-gray-light">
+          <Icon name="calendar" className="ux-w-5 ux-text-primary ux-text-base" />
           <span>{examDate.toLocaleDateString('ar-EG')}</span>
         </div>
-        <div className="flex items-center gap-3 text-sm text-gray-light">
-          <Icon name="clock" className="w-5 text-primary text-base" />
+        <div className="ux-flex ux-items-center ux-gap-3 ux-text-sm ux-text-gray-light">
+          <Icon name="clock" className="ux-w-5 ux-text-primary ux-text-base" />
           <span>{examDate.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })} ({exam.duration} دقيقة)</span>
         </div>
         {exam.teacher && (
-          <div className="flex items-center gap-3 text-sm text-gray-light">
-            <Icon name="chalkboard-teacher" className="w-5 text-primary text-base" />
+          <div className="ux-flex ux-items-center ux-gap-3 ux-text-sm ux-text-gray-light">
+            <Icon name="chalkboard-teacher" className="ux-w-5 ux-text-primary ux-text-base" />
             <span>{exam.teacher.name}</span>
           </div>
         )}
         {exam.grade && (
-          <div className="flex items-center gap-3 text-sm text-gray-light">
-            <Icon name="graduation-cap" className="w-5 text-primary text-base" />
+          <div className="ux-flex ux-items-center ux-gap-3 ux-text-sm ux-text-gray-light">
+            <Icon name="graduation-cap" className="ux-w-5 ux-text-primary ux-text-base" />
             <span>{exam.grade.name}</span>
           </div>
         )}
         {exam.group && (
-          <div className="flex items-center gap-3 text-sm text-gray-light">
-            <Icon name="users" className="w-5 text-primary text-base" />
+          <div className="ux-flex ux-items-center ux-gap-3 ux-text-sm ux-text-gray-light">
+            <Icon name="users" className="ux-w-5 ux-text-primary ux-text-base" />
             <span>{exam.group.name}</span>
           </div>
         )}
-        <div className="flex items-center gap-3 text-sm text-gray-light">
-          <Icon name="star" className="w-5 text-primary text-base" />
+        <div className="ux-flex ux-items-center ux-gap-3 ux-text-sm ux-text-gray-light">
+          <Icon name="star" className="ux-w-5 ux-text-primary ux-text-base" />
           <span>الدرجة الكلية: {exam.max_score}</span>
         </div>
         {exam.attended_students && exam.attended_students.length > 0 && (
-          <div className="flex items-center gap-3 text-sm text-gray-light">
-            <Icon name="user-check" className="w-5 text-primary text-base" />
+          <div className="ux-flex ux-items-center ux-gap-3 ux-text-sm ux-text-gray-light">
+            <Icon name="user-check" className="ux-w-5 ux-text-primary ux-text-base" />
             <span>{exam.attended_students.length} طالب حضر</span>
           </div>
         )}
@@ -268,12 +268,12 @@ export const ExamCard: React.FC<ExamCardProps> = ({
 
       {/* Action Buttons */}
       {!isEnded && (
-        <div className="mt-auto grid gap-3">
+        <div className="ux-mt-auto ux-grid ux-gap-3">
           {!isActive ? (
-            <div className="flex items-center gap-3">
+            <div className="ux-flex ux-items-center ux-gap-3">
               <Button 
                 variant="ghost"
-                className="flex-1 py-3 rounded-xl text-gray-light hover:text-white hover:bg-white/5 transition-all flex items-center justify-center gap-2"
+                className="ux-flex-1 ux-py-3 ux-rounded-xl ux-text-gray-light ux-hover-text-white ux-hover-bg-white-5 ux-transition-all ux-flex ux-items-center ux-justify-center ux-gap-2"
                 onClick={(e: React.MouseEvent) => {
                   e.stopPropagation();
                   onToggleStatus();
@@ -284,10 +284,10 @@ export const ExamCard: React.FC<ExamCardProps> = ({
               </Button>
             </div>
           ) : (
-            <div className="flex items-center gap-2">
+            <div className="ux-flex ux-items-center ux-gap-2">
               <Button 
                 variant="outline"
-                className="flex-1 py-3 rounded-xl bg-[rgba(66,99,235,0.15)] hover:bg-[rgba(66,99,235,0.25)] text-primary border-primary/30 hover:border-primary/50 font-medium text-xs flex flex-col items-center justify-center gap-1.5 transition-all h-auto"
+                className="ux-flex-1 ux-py-3 ux-rounded-xl ux-bg-rgba-66-99-235-0dot15 ux-hover-bg-rgba-66-99-235-0dot25 ux-text-primary ux-border-primary-30 ux-hover-border-primary-50 ux-font-medium ux-text-xs ux-flex ux-flex-col ux-items-center ux-justify-center ux-gap-1dot5 ux-transition-all ux-h-auto"
                 onClick={onViewResults}
               >
                 <Icon name="chart-bar" size="sm" />
@@ -295,7 +295,7 @@ export const ExamCard: React.FC<ExamCardProps> = ({
               </Button>
               <Button 
                 variant="destructive"
-                className="flex-1 py-3 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-500 border-red-500/30 hover:border-red-500/50 font-medium text-xs flex flex-col items-center justify-center gap-1.5 transition-all h-auto"
+                className="ux-flex-1 ux-py-3 ux-rounded-xl ux-bg-red-500-10 ux-hover-bg-red-500-20 ux-text-red-500 ux-border-red-500-30 ux-hover-border-red-500-50 ux-font-medium ux-text-xs ux-flex ux-flex-col ux-items-center ux-justify-center ux-gap-1dot5 ux-transition-all ux-h-auto"
                 onClick={onEnd}
               >
                 <Icon name="stop-circle" size="sm" />

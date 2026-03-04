@@ -103,72 +103,36 @@ export const TeacherSelectionDropdown: React.FC = () => {
       <div 
         className="navbar-user-clickable teacher-selector-trigger"
         onClick={() => setIsOpen(!isOpen)}
-        style={{ position: 'relative', padding: '0.5rem', display: 'flex', alignItems: 'center', gap: '8px' }}
         title="تغيير المدرس"
       >
-        <div style={{ width: '32px', height: '32px', borderRadius: '50%', overflow: 'hidden', background: '#333', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="teacher-selector-avatar">
             {selectedTeacher?.teacher_avatar ? (
-            <img src={selectedTeacher.teacher_avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <img src={selectedTeacher.teacher_avatar} alt="" className="teacher-selector-avatar-img" />
             ) : (
-            <span style={{ fontSize: '16px', color: '#aaa' }}><Icon name="chalkboard-teacher" /></span>
+            <span className="teacher-selector-avatar-placeholder"><Icon name="chalkboard-teacher" /></span>
             )}
         </div>
-        <span className="hidden md:block" style={{ fontSize: '0.9rem', fontWeight: 500, color: 'white', maxWidth: '100px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        <span className="teacher-selector-name">
             {selectedTeacher?.teacher_name || 'اختر مدرس'}
         </span>
-        <span className="hidden md:block" style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)', transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
+        <span className={`teacher-selector-chevron ${isOpen ? 'open' : ''}`}>
           <Icon name="chevron-down" />
         </span>
       </div>
 
       {isOpen && (
         <>
-          {/* Full screen blur overlay */}
-          <div 
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              width: '100vw',
-              height: '100vh',
-              backgroundColor: 'rgba(0, 0, 0, 0.72)',
-              WebkitBackdropFilter: 'blur(20px)',
-              zIndex: 998,
-              cursor: 'default'
-            }}
-            onClick={() => setIsOpen(false)}
-          />
+          <div className="dropdown-backdrop" onClick={() => setIsOpen(false)} />
           
-          <div className="navbar-dropdown teacher-dropdown" style={{ 
-            width: '400px',
-            maxWidth: '90vw', 
-            padding: '0', 
-            left: '50%', 
-            top: '80px',
-            transform: 'translateX(-50%)',
-            backgroundColor: '#0D1120',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            borderRadius: '16px',
-            overflow: 'hidden',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
-            zIndex: 999,
-            position: 'fixed'
-          }}>
-            <div style={{ 
-              padding: '1.25rem', 
-              borderBottom: '1px solid rgba(255, 255, 255, 0.1)', 
-              display: 'flex', 
-              justifyContent: 'space-between', 
-              alignItems: 'center',
-              background: 'linear-gradient(to right, rgba(255, 255, 255, 0.05), transparent)'
-            }}>
-              <h3 style={{ fontWeight: '700', color: '#ffffff', margin: 0, fontSize: '1.1rem' }}>اختر المدرس</h3>
+          <div className="navbar-dropdown teacher-dropdown">
+            <div className="notification-dropdown-header">
+              <h3 className="notification-dropdown-title">اختر المدرس</h3>
             </div>
             
-            <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+            <div className="teacher-dropdown-list">
               {(!user?.teachers || user.teachers.length === 0) ? (
-                <div style={{ padding: '2rem', textAlign: 'center', color: 'rgba(255, 255, 255, 0.5)' }}>
-                  <span style={{ fontSize: '1.5rem', marginBottom: '0.5rem', display: 'block' }}><Icon name="chalkboard-teacher" /></span>
+                <div className="teacher-dropdown-empty">
+                  <span className="notification-dropdown-empty-icon"><Icon name="chalkboard-teacher" /></span>
                   لا يوجد مدرسين مشترك معهم حالياً
                 </div>
               ) : (
@@ -230,34 +194,24 @@ const TeacherList = ({ teachers, selectedTeacher, onSelect }: { teachers: any[],
     <>
       {/* Academies */}
       {grouped.academies.map(academy => (
-        <div key={academy.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
+        <div key={academy.id} className="teacher-dropdown-academy">
           <div 
             onClick={() => toggleAcademy(academy.id)}
-            style={{
-              padding: '1rem',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              backgroundColor: expandedAcademy === academy.id ? 'rgba(255, 255, 255, 0.03)' : 'transparent',
-              transition: 'background-color 0.2s'
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = expandedAcademy === academy.id ? 'rgba(255, 255, 255, 0.03)' : 'transparent'}
+            className={`teacher-dropdown-academy-header ${expandedAcademy === academy.id ? 'expanded' : ''}`}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ width: '40px', height: '40px', borderRadius: '8px', background: 'rgba(66, 99, 235, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#4263eb' }}>
+            <div className="teacher-dropdown-academy-info">
+              <div className="teacher-dropdown-academy-icon">
                 <Icon name="university" />
               </div>
-              <span style={{ color: 'white', fontWeight: 500 }}>{academy.name}</span>
+              <span className="teacher-dropdown-academy-name">{academy.name}</span>
             </div>
-            <span style={{ color: '#aaa', transition: 'transform 0.2s' }}>
+            <span className={`teacher-dropdown-academy-chevron ${expandedAcademy === academy.id ? 'open' : ''}`}>
               <Icon name="chevron-down" className={expandedAcademy === academy.id ? 'fa-rotate-180' : ''} />
             </span>
           </div>
 
           {expandedAcademy === academy.id && (
-            <div style={{ backgroundColor: 'rgba(0, 0, 0, 0.2)' }}>
+            <div className="teacher-dropdown-nested-wrap">
               {academy.teachers.map(teacher => (
                 <TeacherItem 
                   key={teacher.teacher_id} 
@@ -287,45 +241,33 @@ const TeacherList = ({ teachers, selectedTeacher, onSelect }: { teachers: any[],
 
 const TeacherItem = ({ teacher, selectedTeacher, onSelect, isNested = false }: { teacher: any, selectedTeacher: any, onSelect: (t: any) => void, isNested?: boolean }) => (
   <div 
-    style={{ 
-      padding: isNested ? '0.75rem 1rem 0.75rem 3.5rem' : '1rem', 
-      borderBottom: '1px solid rgba(255, 255, 255, 0.05)', 
-      cursor: 'pointer',
-      backgroundColor: selectedTeacher?.teacher_id === teacher.teacher_id ? 'rgba(66, 99, 235, 0.1)' : 'transparent',
-      transition: 'background-color 0.2s',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '12px',
-      opacity: teacher.status === 'expired' || teacher.status === 'inactive' ? 0.7 : 1
-    }}
+    className={`teacher-dropdown-item ${selectedTeacher?.teacher_id === teacher.teacher_id ? 'teacher-dropdown-item-selected' : ''} ${isNested ? 'teacher-dropdown-item-nested' : ''} ${(teacher.status === 'expired' || teacher.status === 'inactive') ? 'teacher-dropdown-item-disabled' : ''}`}
     onClick={() => onSelect(teacher)}
-    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)'}
-    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = selectedTeacher?.teacher_id === teacher.teacher_id ? 'rgba(66, 99, 235, 0.1)' : 'transparent'}
   >
-    <div style={{ width: '40px', height: '40px', borderRadius: '50%', overflow: 'hidden', background: '#333', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div className="teacher-item-avatar">
         {teacher.teacher_avatar ? (
-            <img src={teacher.teacher_avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <img src={teacher.teacher_avatar} alt="" className="teacher-item-avatar-img" />
         ) : (
-            <span style={{ fontSize: '18px', color: '#aaa' }}><Icon name="chalkboard-teacher" /></span>
+            <span className="teacher-item-avatar-placeholder"><Icon name="chalkboard-teacher" /></span>
         )}
     </div>
-    <div style={{ flex: 1 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h4 style={{ margin: 0, fontSize: '1rem', color: 'white' }}>{teacher.teacher_name}</h4>
+    <div className="teacher-item-main">
+        <div className="teacher-item-header">
+            <h4 className="teacher-item-name">{teacher.teacher_name}</h4>
             {teacher.status === 'grace_period' && (
-                <span className="text-warning text-xs px-2 py-0.5 bg-warning/10 rounded-full">فترة سماح</span>
+                <span className="teacher-item-state warning">فترة سماح</span>
             )}
             {teacher.status === 'expired' && (
-                <span className="text-danger text-xs px-2 py-0.5 bg-danger/10 rounded-full">منتهي</span>
+                <span className="teacher-item-state danger">منتهي</span>
             )}
         </div>
-        <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: '#aaa' }}>
+        <p className="teacher-item-meta">
             {teacher.grade_name} - {teacher.group_name}
             {teacher.subject && ` • ${teacher.subject}`}
         </p>
     </div>
     {selectedTeacher?.teacher_id === teacher.teacher_id && (
-        <span style={{ color: 'var(--primary)' }}><Icon name="check-circle" /></span>
+        <span className="teacher-item-check"><Icon name="check-circle" /></span>
     )}
   </div>
 );

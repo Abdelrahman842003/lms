@@ -99,20 +99,20 @@ export function AcademySelector({ isOpen, onClose }: AcademySelectorProps) {
 
   return (
     <div 
-      className="fixed inset-0 z-[9998] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" 
+      className="ux-fixed ux-inset-0 ux-z-9998 ux-flex ux-items-center ux-justify-center ux-p-4 ux-bg-black-50 ux-backdrop-blur-sm"
       onClick={onClose}
     >
       <div 
-        className="w-full max-w-[500px] bg-[#1e1e2d] rounded-xl shadow-2xl border border-white/10 animate-scaleIn" 
+        className="ux-w-full ux-max-w-500px ux-bg-1e1e2d ux-rounded-xl ux-shadow-2xl ux-border ux-border-white-10 ux-animate-scalein"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-white/10">
-          <h3 className="text-xl font-bold text-white m-0">اختر الأكاديمية</h3>
+        <div className="ux-flex ux-items-center ux-justify-between ux-p-6 ux-border-b ux-border-white-10">
+          <h3 className="ux-text-xl ux-font-bold ux-text-white ux-m-0">اختر الأكاديمية</h3>
           <Button
             variant="ghost"
             size="sm"
-            className="w-8 h-8 p-0 flex items-center justify-center rounded-lg"
+            className="ux-w-8 ux-h-8 ux-p-0 ux-flex ux-items-center ux-justify-center ux-rounded-lg"
             onClick={onClose}
             aria-label="إغلاق"
           >
@@ -121,20 +121,20 @@ export function AcademySelector({ isOpen, onClose }: AcademySelectorProps) {
         </div>
 
         {/* Body */}
-        <div className="p-6 overflow-y-auto max-h-[60vh]">
+        <div className="ux-p-6 ux-overflow-y-auto ux-max-h-60vh">
           {isLoading ? (
-            <div className="flex flex-col items-center justify-center py-8">
+            <div className="ux-flex ux-flex-col ux-items-center ux-justify-center ux-py-8">
               <LoadingSpinner size="lg" color="primary" />
-              <p className="text-sm text-gray-400">جاري التحميل...</p>
+              <p className="ux-text-sm ux-text-gray-400">جاري التحميل...</p>
             </div>
           ) : academies.length === 0 ? (
-            <div className="text-center py-8">
-              <i className="fas fa-building text-5xl text-gray-600 mb-4"></i>
-              <p className="text-gray-300 text-lg mb-2">لا توجد أكاديميات متاحة</p>
-              <p className="text-sm text-gray-500">أنت تعمل كمدرس مستقل</p>
+            <div className="ux-text-center ux-py-8">
+              <i className="fas fa-building ux-text-5xl ux-text-gray-600 ux-mb-4"></i>
+              <p className="ux-text-gray-300 ux-text-lg ux-mb-2">لا توجد أكاديميات متاحة</p>
+              <p className="ux-text-sm ux-text-gray-500">أنت تعمل كمدرس مستقل</p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="ux-space-y-3">
               {academies.map((academy) => {
                 // Helper to check if active (handles boolean, string 'true'/'false', 1/0)
                 const isActive = (val: any) => {
@@ -160,46 +160,46 @@ export function AcademySelector({ isOpen, onClose }: AcademySelectorProps) {
                     key={academy.id || 'independent'}
                     onClick={() => !isSuspended && handleSelectAcademy(academy)}
                     disabled={isSuspended}
-                    className={`w-full flex items-center gap-4 p-4 rounded-xl border transition-all ${
+                    className={`ux-w-full ux-flex ux-items-center ux-gap-4 ux-p-4 ux-rounded-xl ux-border ux-transition-all ${
                       isSuspended 
-                        ? 'border-red-500/50 bg-red-500/5 cursor-not-allowed opacity-75'
+                        ? 'ux-border-red-500-50 ux-bg-red-500-5 ux-cursor-not-allowed ux-opacity-75'
                         : selectedAcademy?.id === academy.id
-                          ? 'border-primary-600 bg-primary-600/10'
-                          : 'border-white/10 hover:border-primary-600/50 hover:bg-white/5'
+                          ? 'ux-border-primary-600 ux-bg-primary-600-10'
+                          : 'ux-border-white-10 ux-hover-border-primary-600-50 ux-hover-bg-white-5'
                     }`}
                   >
                     {/* Logo/Icon */}
-                    <div className="flex-shrink-0">
+                    <div className="ux-flex-shrink-0">
                       {academy.logo ? (
                         <img
                           src={academy.logo}
                           alt={academy.name}
-                          className={`w-12 h-12 rounded-full object-cover ring-2 ${isSuspended ? 'ring-red-500/30' : 'ring-white/10'}`}
+                          className={`ux-w-12 ux-h-12 ux-rounded-full ux-object-cover ux-ring-2 ${isSuspended ? 'ring-red-500/30' : 'ring-white/10'}`}
                         />
                       ) : (
-                        <div className={`w-12 h-12 rounded-full flex items-center justify-center ring-2 ${
+                        <div className={`ux-w-12 ux-h-12 ux-rounded-full ux-flex ux-items-center ux-justify-center ux-ring-2 ${
                           isSuspended 
-                            ? 'bg-red-500/10 ring-red-500/20' 
-                            : 'bg-gradient-to-br from-primary-500 to-primary-600 ring-primary-400/20'
+                            ? 'ux-bg-red-500-10 ux-ring-red-500-20'
+                            : 'ux-bg-gradient-to-br ux-from-primary-500 ux-to-primary-600 ux-ring-primary-400-20'
                         }`}>
                           <i
                             className={`fas ${
                               academy.id ? 'fa-building' : 'fa-user-tie'
-                            } ${isSuspended ? 'text-red-400' : 'text-white'} text-lg`}
+                            } ${isSuspended ? 'text-red-400' : 'text-white'} ux-text-lg`}
                           ></i>
                         </div>
                       )}
                     </div>
 
                     {/* Academy Info */}
-                    <div className="flex-1 text-right">
-                      <div className={`font-semibold text-base mb-1 ${isSuspended ? 'text-red-400' : 'text-white'}`}>
+                    <div className="ux-flex-1 ux-text-right">
+                      <div className={`ux-font-semibold ux-text-base ux-mb-1 ${isSuspended ? 'text-red-400' : 'text-white'}`}>
                         {academy.name} {isSuspended && '(معطل)'}
                       </div>
 
 
                       {isSuspended && (
-                        <div className="text-xs text-red-400/70 flex items-center justify-end gap-1">
+                        <div className="ux-text-xs ux-text-red-400-70 ux-flex ux-items-center ux-justify-end ux-gap-1">
                           <i className="fas fa-ban"></i>
                           <span>تم تعليق الحساب</span>
                         </div>
@@ -208,9 +208,9 @@ export function AcademySelector({ isOpen, onClose }: AcademySelectorProps) {
 
                     {/* Selected Indicator */}
                     {selectedAcademy?.id === academy.id && !isSuspended && (
-                      <div className="flex-shrink-0">
-                        <div className="w-6 h-6 rounded-full bg-primary-600 flex items-center justify-center">
-                          <i className="fas fa-check text-white text-xs"></i>
+                      <div className="ux-flex-shrink-0">
+                        <div className="ux-w-6 ux-h-6 ux-rounded-full ux-bg-primary-600 ux-flex ux-items-center ux-justify-center">
+                          <i className="fas fa-check ux-text-white ux-text-xs"></i>
                         </div>
                       </div>
                     )}
@@ -222,10 +222,10 @@ export function AcademySelector({ isOpen, onClose }: AcademySelectorProps) {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 p-6 border-t border-white/10">
+        <div className="ux-flex ux-items-center ux-justify-end ux-gap-3 ux-p-6 ux-border-t ux-border-white-10">
           <button
             onClick={onClose}
-            className="px-5 py-2.5 text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+            className="ux-px-5 ux-py-2dot5 ux-text-sm ux-font-medium ux-text-gray-300 ux-hover-text-white ux-hover-bg-white-5 ux-rounded-lg ux-transition-colors"
             type="button"
           >
             إلغاء

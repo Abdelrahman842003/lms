@@ -25,9 +25,9 @@ export default function AvatarUpload({
 
   // Size mapping
   const sizeClasses = {
-    small: 'w-20 h-20',
-    medium: 'w-32 h-32',
-    large: 'w-48 h-48',
+    small: 'avatar-size-small',
+    medium: 'avatar-size-medium',
+    large: 'avatar-size-large',
   };
 
   // Load avatar URL on mount
@@ -126,8 +126,8 @@ export default function AvatarUpload({
   };
 
   return (
-    <div className="avatar-upload-container">
-      <div className="avatar-preview-section">
+    <div className="avatar-upload">
+      <div className="avatar-upload-preview">
         {/* Avatar Display */}
         <div className={`avatar-circle ${sizeClasses[size]}`}>
           {previewUrl || avatarUrl ? (
@@ -157,7 +157,7 @@ export default function AvatarUpload({
           
           {/* Loading Overlay */}
           {isUploading && (
-            <div className="avatar-loading">
+            <div className="avatar-upload-overlay">
               <div className="spinner"></div>
             </div>
           )}
@@ -170,13 +170,14 @@ export default function AvatarUpload({
             type="file"
             accept="image/*"
             onChange={handleFileSelect}
-            className="hidden"
+            className="ux-hidden"
           />
           
           <button
             onClick={handleButtonClick}
             disabled={isUploading}
-            className="btn-upload"
+            className="btn btn-primary btn-sm"
+            type="button"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -198,7 +199,8 @@ export default function AvatarUpload({
           {avatarUrl && !isUploading && (
             <button
               onClick={handleDelete}
-              className="btn-delete"
+              className="btn btn-danger btn-sm"
+              type="button"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -222,165 +224,16 @@ export default function AvatarUpload({
 
       {/* Messages */}
       {error && (
-        <div className="message message-error">
+        <div className="alert alert-danger">
           {error}
         </div>
       )}
       
       {success && (
-        <div className="message message-success">
+        <div className="alert alert-success">
           {success}
         </div>
       )}
-
-      <style jsx>{`
-        .avatar-upload-container {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 1rem;
-        }
-
-        .avatar-preview-section {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 1rem;
-        }
-
-        .avatar-circle {
-          position: relative;
-          border-radius: 50%;
-          overflow: hidden;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
-                      0 2px 4px -1px rgba(0, 0, 0, 0.06);
-        }
-
-        .avatar-image {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-        }
-
-        .avatar-placeholder {
-          width: 100%;
-          height: 100%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: white;
-        }
-
-        .avatar-icon {
-          width: 60%;
-          height: 60%;
-        }
-
-        .avatar-loading {
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          background: rgba(0, 0, 0, 0.5);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .spinner {
-          width: 2rem;
-          height: 2rem;
-          border: 3px solid rgba(255, 255, 255, 0.3);
-          border-top-color: white;
-          border-radius: 50%;
-          animation: spin 0.6s linear infinite;
-        }
-
-        @keyframes spin {
-          to {
-            transform: rotate(360deg);
-          }
-        }
-
-        .avatar-actions {
-          display: flex;
-          gap: 0.5rem;
-          align-items: center;
-        }
-
-        .btn-upload,
-        .btn-delete {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          padding: 0.5rem 1rem;
-          border-radius: 0.5rem;
-          font-weight: 500;
-          transition: all 0.2s;
-          cursor: pointer;
-          border: none;
-        }
-
-        .btn-upload {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          color: white;
-        }
-
-        .btn-upload:hover:not(:disabled) {
-          transform: translateY(-2px);
-          box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-        }
-
-        .btn-upload:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-
-        .btn-delete {
-          background: #ef4444;
-          color: white;
-        }
-
-        .btn-delete:hover {
-          background: #dc2626;
-          transform: translateY(-2px);
-        }
-
-        .btn-icon {
-          width: 1.25rem;
-          height: 1.25rem;
-        }
-
-        .hidden {
-          display: none;
-        }
-
-        .message {
-          padding: 0.75rem 1rem;
-          border-radius: 0.5rem;
-          font-size: 0.875rem;
-          text-align: center;
-          width: 100%;
-          max-width: 20rem;
-        }
-
-        .message-error {
-          background: #fee2e2;
-          color: #991b1b;
-          border: 1px solid #fecaca;
-        }
-
-        .message-success {
-          background: #d1fae5;
-          color: #065f46;
-          border: 1px solid #a7f3d0;
-        }
-      `}</style>
     </div>
   );
 }

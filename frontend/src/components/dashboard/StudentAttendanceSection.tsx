@@ -293,7 +293,7 @@ export default function StudentAttendanceSection() {
   return (
     <div>
       {/* Stats Grid */}
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-6 mb-8">
+      <div className="ux-grid ux-grid-cols-repeat-auto-fit-minmax-260px-1fr ux-gap-6 ux-mb-8">
         <StatCard
           title="إجمالي المحاضرات"
           value={totalLectures}
@@ -318,15 +318,15 @@ export default function StudentAttendanceSection() {
       </div>
 
       {/* Header Section */}
-      <div className="flex justify-between items-center mb-6 max-md:flex-col max-md:items-stretch max-md:gap-4">
-        <div className="flex items-center gap-3 max-md:w-full max-md:justify-center">
-          <div className="w-12 h-12 rounded-xl bg-[rgba(66,99,235,0.1)] flex items-center justify-center text-primary text-2xl">
+      <div className="ux-flex ux-justify-between ux-items-center ux-mb-6 ux-max-md-flex-col ux-max-md-items-stretch ux-max-md-gap-4">
+        <div className="ux-flex ux-items-center ux-gap-3 ux-max-md-w-full ux-max-md-justify-center">
+          <div className="ux-w-12 ux-h-12 ux-rounded-xl ux-bg-rgba-66-99-235-0dot1 ux-flex ux-items-center ux-justify-center ux-text-primary ux-text-2xl">
             <Icon name="video" />
           </div>
-          <h2 className="text-2xl font-bold text-white m-0">إدارة المحاضرات</h2>
+          <h2 className="ux-text-2xl ux-font-bold ux-text-white ux-m-0">إدارة المحاضرات</h2>
         </div>
-        <div className="max-md:w-full">
-          <Button variant="primary" onClick={handleAddClick} className="btn btn-primary max-md:w-full max-md:justify-center">
+        <div className="ux-max-md-w-full">
+          <Button variant="primary" onClick={handleAddClick} className="btn btn-primary ux-max-md-w-full ux-max-md-justify-center">
             <Icon name="plus" />
             <span>محاضرة جديدة</span>
           </Button>
@@ -334,17 +334,17 @@ export default function StudentAttendanceSection() {
       </div>
 
       {/* Filters */}
-      <div className="flex gap-4 mb-6 max-md:flex-col">
-        <div className="flex-1">
+      <div className="ux-flex ux-gap-4 ux-mb-6 ux-max-md-flex-col">
+        <div className="ux-flex-1">
           <input
             type="text"
             placeholder="بحث عن محاضرة..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="form-input w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white"
+            className="form-input ux-w-full ux-p-3 ux-bg-white-5 ux-border ux-border-white-10 ux-rounded-lg ux-text-white"
           />
         </div>
-        <div className="w-64 max-md:w-full">
+        <div className="ux-w-64 ux-max-md-w-full">
           <Filter
             options={[
               { value: '', label: 'كل المدرسين' },
@@ -353,10 +353,10 @@ export default function StudentAttendanceSection() {
             value={selectedTeacherId}
             onChange={(value) => setSelectedTeacherId(value)}
             placeholder="كل المدرسين"
-            className="w-full"
+            className="ux-w-full"
           />
         </div>
-        <div className="w-48 max-md:w-full">
+        <div className="ux-w-48 ux-max-md-w-full">
           <Filter
             options={[
               { value: '', label: 'كل الحالات' },
@@ -368,39 +368,39 @@ export default function StudentAttendanceSection() {
             value={selectedStatus}
             onChange={(value) => setSelectedStatus(value)}
             placeholder="الحالة"
-            className="w-full"
+            className="ux-w-full"
           />
         </div>
       </div>
 
       {/* Lectures Grid */}
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="ux-grid ux-grid-cols-1 ux-md-grid-cols-2 ux-lg-grid-cols-3 ux-xl-grid-cols-4 ux-gap-6">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="rounded-2xl bg-[#101426]/15 border border-white/10 h-[280px] flex flex-col gap-4 p-6 animate-pulse">
-              <div className="flex justify-between items-start">
-                <div className="bg-white/10 w-[60%] h-6 rounded"></div>
-                <div className="bg-white/10 w-[20%] h-6 rounded-xl"></div>
+            <div key={i} className="ux-rounded-2xl ux-bg-101426-15 ux-border ux-border-white-10 ux-h-280px ux-flex ux-flex-col ux-gap-4 ux-p-6 ux-animate-pulse">
+              <div className="ux-flex ux-justify-between ux-items-start">
+                <div className="ux-bg-white-10 ux-w-60 ux-h-6 ux-rounded"></div>
+                <div className="ux-bg-white-10 ux-w-20 ux-h-6 ux-rounded-xl"></div>
               </div>
-              <div className="bg-white/10 w-full h-10 rounded"></div>
-              <div className="flex flex-col gap-3 mt-auto">
-                <div className="bg-white/10 w-[40%] h-4 rounded"></div>
-                <div className="bg-white/10 w-[50%] h-4 rounded"></div>
+              <div className="ux-bg-white-10 ux-w-full ux-h-10 ux-rounded"></div>
+              <div className="ux-flex ux-flex-col ux-gap-3 ux-mt-auto">
+                <div className="ux-bg-white-10 ux-w-40 ux-h-4 ux-rounded"></div>
+                <div className="ux-bg-white-10 ux-w-50 ux-h-4 ux-rounded"></div>
               </div>
             </div>
           ))}
         </div>
       ) : lectures.length === 0 ? (
-        <div className="text-center p-12 bg-white/2 rounded-2xl">
-          <Icon name="video-slash" className="text-5xl text-gray-light mb-4 opacity-50" />
-          <p className="text-gray-light text-lg">لا توجد محاضرات</p>
-          <Button variant="primary" onClick={handleAddClick} className="btn btn-primary mt-4">
+        <div className="ux-text-center ux-p-12 ux-bg-white-2 ux-rounded-2xl">
+          <Icon name="video-slash" className="ux-text-5xl ux-text-gray-light ux-mb-4 ux-opacity-50" />
+          <p className="ux-text-gray-light ux-text-lg">لا توجد محاضرات</p>
+          <Button variant="primary" onClick={handleAddClick} className="btn btn-primary ux-mt-4">
             <Icon name="plus" />
             <span>إضافة محاضرة جديدة</span>
           </Button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="ux-grid ux-grid-cols-1 ux-md-grid-cols-2 ux-lg-grid-cols-3 ux-xl-grid-cols-4 ux-gap-6">
           {lectures.map((lecture) => {
             const isMenuOpen = openMenuId === lecture.id;
             return (
@@ -482,7 +482,7 @@ export default function StudentAttendanceSection() {
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex justify-center mt-6 gap-2">
+        <div className="ux-flex ux-justify-center ux-mt-6 ux-gap-2">
           <Button
             variant="outline"
             className="btn btn-outline btn-sm"
@@ -491,7 +491,7 @@ export default function StudentAttendanceSection() {
           >
             السابق
           </Button>
-          <span className="flex items-center text-gray-light">
+          <span className="ux-flex ux-items-center ux-text-gray-light">
             صفحة {currentPage} من {totalPages}
           </span>
           <Button
@@ -508,7 +508,7 @@ export default function StudentAttendanceSection() {
       {/* Menu Backdrop */}
       {openMenuId && (
         <div
-          className="fixed inset-0 z-[5]"
+          className="ux-fixed ux-inset-0 ux-z-5"
           onClick={() => setOpenMenuId(null)}
         />
       )}
@@ -532,7 +532,7 @@ export default function StudentAttendanceSection() {
                     value={formData.teacher_id}
                     onChange={(value) => setFormData({ ...formData, teacher_id: value })}
                     placeholder="اختر المدرس"
-                    className="w-full"
+                    className="ux-w-full"
                   />
                 </div>
                 <div className="form-group">
@@ -554,7 +554,7 @@ export default function StudentAttendanceSection() {
                     value={String(formData.grade_id || '')}
                     onChange={(value) => setFormData({ ...formData, grade_id: value })}
                     placeholder="اختر الصف"
-                    className="w-full"
+                    className="ux-w-full"
                   />
                 </div>
                 <div className="form-group">
@@ -569,7 +569,7 @@ export default function StudentAttendanceSection() {
                     value={String(formData.group_id || '')}
                     onChange={(value) => setFormData({ ...formData, group_id: value })}
                     placeholder="كل المجموعات"
-                    className="w-full"
+                    className="ux-w-full"
                   />
                 </div>
                 <div className="form-group">
@@ -601,7 +601,7 @@ export default function StudentAttendanceSection() {
                       });
                     }}
                     placeholder="اختر نوع المحاضرة"
-                    className="w-full"
+                    className="ux-w-full"
                   />
                 </div>
 
@@ -609,7 +609,7 @@ export default function StudentAttendanceSection() {
                   <>
                     <div className="form-group">
                       <label>أيام التكرار</label>
-                      <div className="flex flex-wrap gap-2">
+                      <div className="ux-flex ux-flex-wrap ux-gap-2">
                         {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((day) => {
                           const dayLabels: Record<string, string> = {
                             'Sunday': 'الأحد',
@@ -621,14 +621,14 @@ export default function StudentAttendanceSection() {
                             'Saturday': 'السبت',
                           };
                           return (
-                            <label key={day} className={`px-3 py-1 rounded-lg border cursor-pointer ${
+                            <label key={day} className={`ux-px-3 ux-py-1 ux-rounded-lg ux-border ux-cursor-pointer ${
                               formData.recurrence_days?.includes(day) 
-                                ? 'bg-primary text-white border-primary' 
-                                : 'bg-white/5 border-white/10'
+                                ? 'ux-bg-primary ux-text-white ux-border-primary'
+                                : 'ux-bg-white-5 ux-border-white-10'
                             }`}>
                               <input
                                 type="checkbox"
-                                className="hidden"
+                                className="ux-hidden"
                                 checked={formData.recurrence_days?.includes(day)}
                                 onChange={(e) => {
                                   const newDays = e.target.checked
@@ -734,7 +734,7 @@ export default function StudentAttendanceSection() {
               <h3>حذف المحاضرة</h3>
             </div>
             <div className="modal-body">
-              <p className="text-gray-300">هل أنت متأكد من حذف المحاضرة "{selectedLecture?.title}"؟</p>
+              <p className="ux-text-gray-300">هل أنت متأكد من حذف المحاضرة "{selectedLecture?.title}"؟</p>
             </div>
             <div className="modal-footer">
               <Button variant="ghost" className="btn btn-ghost" onClick={() => setShowDeleteModal(false)}>
@@ -756,7 +756,7 @@ export default function StudentAttendanceSection() {
               <h3>{selectedLectureForActivation?.is_active ? 'إيقاف المحاضرة' : 'تفعيل المحاضرة'}</h3>
             </div>
             <div className="modal-body">
-              <p className="text-gray-300">
+              <p className="ux-text-gray-300">
                 هل تريد {selectedLectureForActivation?.is_active ? 'إيقاف' : 'تفعيل'} المحاضرة "{selectedLectureForActivation?.title}"؟
               </p>
             </div>
@@ -780,7 +780,7 @@ export default function StudentAttendanceSection() {
               <h3>إنهاء المحاضرة</h3>
             </div>
             <div className="modal-body">
-              <p className="text-gray-300">
+              <p className="ux-text-gray-300">
                 هل تريد إنهاء المحاضرة "{selectedLectureForEnd?.title}"؟ سيتم تسجيل الغياب للطلاب المتغيبين.
               </p>
             </div>
@@ -798,18 +798,18 @@ export default function StudentAttendanceSection() {
 
       {/* QR Code Modal */}
       {showQRModal && selectedLectureForQR && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="w-full max-w-md bg-gray-900 border border-gray-800 rounded-xl shadow-2xl overflow-hidden">
-            <div className="p-6 text-center">
-              <h3 className="text-xl font-bold text-white mb-2">{selectedLectureForQR.title}</h3>
-              <p className="text-gray-400 mb-6">امسح الرمز لتسجيل الحضور</p>
+        <div className="ux-fixed ux-inset-0 ux-z-50 ux-flex ux-items-center ux-justify-center ux-bg-black-50 ux-backdrop-blur-sm">
+          <div className="ux-w-full ux-max-w-md ux-bg-gray-900 ux-border ux-border-gray-800 ux-rounded-xl ux-shadow-2xl ux-overflow-hidden">
+            <div className="ux-p-6 ux-text-center">
+              <h3 className="ux-text-xl ux-font-bold ux-text-white ux-mb-2">{selectedLectureForQR.title}</h3>
+              <p className="ux-text-gray-400 ux-mb-6">امسح الرمز لتسجيل الحضور</p>
 
-              <div className="bg-white p-4 rounded-xl inline-block mb-6">
+              <div className="ux-bg-white ux-p-4 ux-rounded-xl ux-inline-block ux-mb-6">
                 <QRCode value={qrCodeUrl} size={256} />
               </div>
 
               {qrCodeExpiresAt && (
-                <div className={`mb-6 text-sm ${new Date(qrCodeExpiresAt) < new Date() ? 'text-red-400' : 'text-emerald-400'}`}>
+                <div className={`ux-mb-6 ux-text-sm ${new Date(qrCodeExpiresAt) < new Date() ? 'text-red-400' : 'text-emerald-400'}`}>
                   {new Date(qrCodeExpiresAt) < new Date() 
                     ? 'انتهت صلاحية الرمز' 
                     : `ينتهي في: ${new Date(qrCodeExpiresAt).toLocaleTimeString('ar-EG')}`}
@@ -819,7 +819,7 @@ export default function StudentAttendanceSection() {
               <Button
                 variant="primary"
                 onClick={() => setShowQRModal(false)}
-                className="w-full py-3 px-4 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors font-medium"
+                className="ux-w-full ux-py-3 ux-px-4 ux-bg-gray-800 ux-hover-bg-gray-700 ux-text-white ux-rounded-lg ux-transition-colors ux-font-medium"
               >
                 إغلاق
               </Button>
@@ -836,7 +836,7 @@ export default function StudentAttendanceSection() {
               <h3>إلغاء محاضرة اليوم</h3>
             </div>
             <div className="modal-body">
-              <p className="text-gray-300">
+              <p className="ux-text-gray-300">
                 هل تريد إلغاء محاضرة اليوم من "{selectedLecture.title}"؟
               </p>
             </div>
