@@ -23,7 +23,12 @@ class PublicSettingsSeasonalThemeTest extends TestCase
             ->assertJsonPath('data.seasonal_theme_primary', $defaultPalette['primary'])
             ->assertJsonPath('data.seasonal_theme_secondary', $defaultPalette['secondary'])
             ->assertJsonPath('data.seasonal_theme_bg_start', $defaultPalette['bg_start'])
-            ->assertJsonPath('data.seasonal_theme_bg_end', $defaultPalette['bg_end']);
+            ->assertJsonPath('data.seasonal_theme_bg_end', $defaultPalette['bg_end'])
+            ->assertJsonPath('data.seasonal_theme_enabled', '1')
+            ->assertJsonPath('data.seasonal_theme_apply_primary', '1')
+            ->assertJsonPath('data.seasonal_theme_apply_secondary', '1')
+            ->assertJsonPath('data.seasonal_theme_apply_bg_start', '1')
+            ->assertJsonPath('data.seasonal_theme_apply_bg_end', '1');
     }
 
     public function test_public_settings_returns_custom_palette_for_active_theme(): void
@@ -47,6 +52,11 @@ class PublicSettingsSeasonalThemeTest extends TestCase
                 'group' => 'general',
             ]
         );
+        Setting::updateOrCreate(['key' => 'seasonal_theme_enabled'], ['value' => '0', 'group' => 'general']);
+        Setting::updateOrCreate(['key' => 'seasonal_theme_apply_primary'], ['value' => '0', 'group' => 'general']);
+        Setting::updateOrCreate(['key' => 'seasonal_theme_apply_secondary'], ['value' => '1', 'group' => 'general']);
+        Setting::updateOrCreate(['key' => 'seasonal_theme_apply_bg_start'], ['value' => '1', 'group' => 'general']);
+        Setting::updateOrCreate(['key' => 'seasonal_theme_apply_bg_end'], ['value' => '0', 'group' => 'general']);
 
         $response = $this->getJson('/api/v1/public-settings');
 
@@ -55,7 +65,12 @@ class PublicSettingsSeasonalThemeTest extends TestCase
             ->assertJsonPath('data.seasonal_theme_primary', '#123456')
             ->assertJsonPath('data.seasonal_theme_secondary', '#654321')
             ->assertJsonPath('data.seasonal_theme_bg_start', '#0a0a0a')
-            ->assertJsonPath('data.seasonal_theme_bg_end', '#121212');
+            ->assertJsonPath('data.seasonal_theme_bg_end', '#121212')
+            ->assertJsonPath('data.seasonal_theme_enabled', '0')
+            ->assertJsonPath('data.seasonal_theme_apply_primary', '0')
+            ->assertJsonPath('data.seasonal_theme_apply_secondary', '1')
+            ->assertJsonPath('data.seasonal_theme_apply_bg_start', '1')
+            ->assertJsonPath('data.seasonal_theme_apply_bg_end', '0');
     }
 
     public function test_public_settings_falls_back_to_default_when_theme_is_invalid(): void

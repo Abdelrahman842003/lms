@@ -82,7 +82,7 @@ export const StatCard: React.FC<StatCardProps> = ({
 
   if (variant === 'centered') {
     return (
-      <div className="bg-[#101426]/15 rounded-2xl p-[28px] border border-white/10 transition-all duration-500 ease-in-out hover:shadow-[0_12px_40px_rgba(0,0,0,0.3)] hover:-translate-y-[1px] hover:backdrop-blur-[20px] hover:border-[#1bc5f8]/50 group text-center">
+      <div className="stat-card group text-center">
         <Icon name={icon.replace('fas fa-', '')} size="2x" className={`${theme.text} mb-3 block transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3`} />
         <h3 className="text-[2rem] font-bold text-white mb-2">
           {typeof value === 'number' ? (
@@ -97,7 +97,7 @@ export const StatCard: React.FC<StatCardProps> = ({
   }
 
   return (
-    <div className="bg-[#101426]/15 rounded-2xl p-[28px] border border-white/10 transition-all duration-500 ease-in-out hover:shadow-[0_12px_40px_rgba(0,0,0,0.3)] hover:-translate-y-[1px] hover:backdrop-blur-[20px] hover:border-[#1bc5f8]/50 group">
+    <div className="stat-card group">
       <div className="flex justify-between items-start mb-4">
         <div>
           <p className="text-gray-400 text-[0.9rem] mb-2 font-medium">{title}</p>

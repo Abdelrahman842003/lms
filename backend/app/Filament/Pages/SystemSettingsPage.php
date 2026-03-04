@@ -6,14 +6,17 @@ namespace App\Filament\Pages;
 
 use App\Domains\Support\Models\Setting;
 use App\Domains\Support\Services\SeasonalThemeService;
+use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Facades\Cache;
 
@@ -68,6 +71,14 @@ class SystemSettingsPage extends Page implements HasForms
 
     public function mount(): void
     {
+        $activeTheme = SeasonalThemeService::normalizeTheme(
+            Setting::getValue('seasonal_theme', SeasonalThemeService::DEFAULT_THEME)
+        );
+        $resolvedPalette = SeasonalThemeService::resolvePalette(
+            $activeTheme,
+            Setting::getValue('seasonal_theme_palettes', null)
+        );
+
         $this->form->fill(array_merge([
             // SEO
             'seo_title' => Setting::getValue('seo_title', ''),
@@ -96,9 +107,16 @@ class SystemSettingsPage extends Page implements HasForms
             'geo_knowledge_panel_url' => Setting::getValue('geo_knowledge_panel_url', ''),
             'geo_service_areas' => Setting::getValue('geo_service_areas', ''),
         ], [
-            'seasonal_theme' => SeasonalThemeService::normalizeTheme(
-                Setting::getValue('seasonal_theme', SeasonalThemeService::DEFAULT_THEME)
-            ),
+            'seasonal_theme' => $activeTheme,
+            'seasonal_theme_enabled' => $this->toBoolean(Setting::getValue('seasonal_theme_enabled', '1')),
+            'seasonal_theme_primary' => $resolvedPalette['primary'],
+            'seasonal_theme_apply_primary' => $this->toBoolean(Setting::getValue('seasonal_theme_apply_primary', '1')),
+            'seasonal_theme_secondary' => $resolvedPalette['secondary'],
+            'seasonal_theme_apply_secondary' => $this->toBoolean(Setting::getValue('seasonal_theme_apply_secondary', '1')),
+            'seasonal_theme_bg_start' => $resolvedPalette['bg_start'],
+            'seasonal_theme_apply_bg_start' => $this->toBoolean(Setting::getValue('seasonal_theme_apply_bg_start', '1')),
+            'seasonal_theme_bg_end' => $resolvedPalette['bg_end'],
+            'seasonal_theme_apply_bg_end' => $this->toBoolean(Setting::getValue('seasonal_theme_apply_bg_end', '1')),
         ]));
     }
 
@@ -232,7 +250,58 @@ class SystemSettingsPage extends Page implements HasForms
                             ->label('الموسم النشط')
                             ->options(SeasonalThemeService::options())
                             ->required()
-                            ->native(false),
+                            ->native(false)
+                            ->live()
+                            ->afterStateUpdated(function ($state, Set $set): void {
+                                $activeTheme = SeasonalThemeService::normalizeTheme(
+                                    is_string($state) ? $state : null
+                                );
+                                $resolvedPalette = SeasonalThemeService::resolvePalette(
+                                    $activeTheme,
+                                    Setting::getValue('seasonal_theme_palettes', null)
+                                );
+
+                                $set('seasonal_theme_primary', $resolvedPalette['primary']);
+                                $set('seasonal_theme_secondary', $resolvedPalette['secondary']);
+                                $set('seasonal_theme_bg_start', $resolvedPalette['bg_start']);
+                                $set('seasonal_theme_bg_end', $resolvedPalette['bg_end']);
+                            }),
+
+                        Toggle::make('seasonal_theme_enabled')
+                            ->label('تنفيذ الثيم')
+                            ->default(true),
+
+                        ColorPicker::make('seasonal_theme_primary')
+                            ->label('اللون الأساسي')
+                            ->required(),
+
+                        Toggle::make('seasonal_theme_apply_primary')
+                            ->label('تنفيذ')
+                            ->default(true),
+
+                        ColorPicker::make('seasonal_theme_secondary')
+                            ->label('اللون الثانوي')
+                            ->required(),
+
+                        Toggle::make('seasonal_theme_apply_secondary')
+                            ->label('تنفيذ')
+                            ->default(true),
+
+                        ColorPicker::make('seasonal_theme_bg_start')
+                            ->label('لون الخلفية (البداية)')
+                            ->required(),
+
+                        Toggle::make('seasonal_theme_apply_bg_start')
+                            ->label('تنفيذ')
+                            ->default(true),
+
+                        ColorPicker::make('seasonal_theme_bg_end')
+                            ->label('لون الخلفية (النهاية)')
+                            ->required(),
+
+                        Toggle::make('seasonal_theme_apply_bg_end')
+                            ->label('تنفيذ')
+                            ->default(true),
                     ])
                     ->columns(2)
                     ->footerActions([
@@ -287,6 +356,17 @@ class SystemSettingsPage extends Page implements HasForms
                 ? $state['seasonal_theme']
                 : null
         );
+        $palette = SeasonalThemeService::sanitizePalette([
+            'primary' => $state['seasonal_theme_primary'] ?? null,
+            'secondary' => $state['seasonal_theme_secondary'] ?? null,
+            'bg_start' => $state['seasonal_theme_bg_start'] ?? null,
+            'bg_end' => $state['seasonal_theme_bg_end'] ?? null,
+        ], $activeTheme);
+        $palettesJson = SeasonalThemeService::updatePaletteJson(
+            $activeTheme,
+            $palette,
+            Setting::getValue('seasonal_theme_palettes', null)
+        );
 
         Setting::updateOrCreate(
             ['key' => 'seasonal_theme'],
@@ -295,5 +375,48 @@ class SystemSettingsPage extends Page implements HasForms
                 'group' => 'general',
             ]
         );
+
+        Setting::updateOrCreate(
+            ['key' => 'seasonal_theme_palettes'],
+            [
+                'value' => $palettesJson,
+                'group' => 'general',
+            ]
+        );
+
+        foreach ([
+            'seasonal_theme_enabled',
+            'seasonal_theme_apply_primary',
+            'seasonal_theme_apply_secondary',
+            'seasonal_theme_apply_bg_start',
+            'seasonal_theme_apply_bg_end',
+        ] as $toggleKey) {
+            Setting::updateOrCreate(
+                ['key' => $toggleKey],
+                [
+                    'value' => $this->toBoolean($state[$toggleKey] ?? true) ? '1' : '0',
+                    'group' => 'general',
+                ]
+            );
+        }
+    }
+
+    protected function toBoolean(mixed $value): bool
+    {
+        if (is_bool($value)) {
+            return $value;
+        }
+
+        if (is_int($value)) {
+            return $value !== 0;
+        }
+
+        if (! is_string($value)) {
+            return false;
+        }
+
+        $normalized = strtolower(trim($value));
+
+        return in_array($normalized, ['1', 'true', 'yes', 'on'], true);
     }
 }

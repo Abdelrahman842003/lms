@@ -60,6 +60,8 @@ const DEFAULT_PALETTES: Record<SeasonalTheme, SeasonalPalette> = {
   },
 };
 
+const BASE_COLORS = DEFAULT_PALETTES.default;
+
 const HEX_COLOR_REGEX = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
 
 type SettingsMap = Record<string, string | null | undefined>;
@@ -89,14 +91,28 @@ function normalizeColor(value: string | undefined, fallback: string): string {
   return HEX_COLOR_REGEX.test(trimmed) ? trimmed : fallback;
 }
 
+function toBooleanFlag(value: string | undefined, fallback = true): boolean {
+  if (value === undefined) return fallback;
+  const normalized = value.trim().toLowerCase();
+
+  if (normalized === '') return fallback;
+
+  return !['0', 'false', 'off', 'no'].includes(normalized);
+}
+
 export function resolveSeasonalThemeFromSettings(
   settings?: SettingsMap
 ): SeasonalThemeResolution {
-  const theme = normalizeTheme(
+  const selectedTheme = normalizeTheme(
     pickSetting(settings, 'seasonal_theme', 'seasonalTheme')
   );
+  const themeEnabled = toBooleanFlag(
+    pickSetting(settings, 'seasonal_theme_enabled', 'seasonalThemeEnabled'),
+    true
+  );
+  const theme = themeEnabled ? selectedTheme : DEFAULT_THEME;
 
-  const defaults = DEFAULT_PALETTES[theme];
+  const defaults = DEFAULT_PALETTES[selectedTheme];
   const palette: SeasonalPalette = {
     primary: normalizeColor(
       pickSetting(settings, 'seasonal_theme_primary', 'seasonalThemePrimary'),
@@ -116,14 +132,35 @@ export function resolveSeasonalThemeFromSettings(
     ),
   };
 
+  const applyPrimary = themeEnabled
+    && toBooleanFlag(
+      pickSetting(settings, 'seasonal_theme_apply_primary', 'seasonalThemeApplyPrimary'),
+      true
+    );
+  const applySecondary = themeEnabled
+    && toBooleanFlag(
+      pickSetting(settings, 'seasonal_theme_apply_secondary', 'seasonalThemeApplySecondary'),
+      true
+    );
+  const applyBgStart = themeEnabled
+    && toBooleanFlag(
+      pickSetting(settings, 'seasonal_theme_apply_bg_start', 'seasonalThemeApplyBgStart'),
+      true
+    );
+  const applyBgEnd = themeEnabled
+    && toBooleanFlag(
+      pickSetting(settings, 'seasonal_theme_apply_bg_end', 'seasonalThemeApplyBgEnd'),
+      true
+    );
+
   return {
     theme,
     palette,
     cssVariables: {
-      '--seasonal-primary': palette.primary,
-      '--seasonal-secondary': palette.secondary,
-      '--seasonal-bg-start': palette.bg_start,
-      '--seasonal-bg-end': palette.bg_end,
+      '--seasonal-primary': applyPrimary ? palette.primary : BASE_COLORS.primary,
+      '--seasonal-secondary': applySecondary ? palette.secondary : BASE_COLORS.secondary,
+      '--seasonal-bg-start': applyBgStart ? palette.bg_start : BASE_COLORS.bg_start,
+      '--seasonal-bg-end': applyBgEnd ? palette.bg_end : BASE_COLORS.bg_end,
     },
   };
 }

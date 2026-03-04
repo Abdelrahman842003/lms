@@ -66,4 +66,34 @@ describe('seasonalTheme helpers', () => {
     expect(document.body.style.getPropertyValue('--seasonal-bg-start')).toBe('#111111');
     expect(document.body.style.getPropertyValue('--seasonal-bg-end')).toBe('#222222');
   });
+
+  it('can disable the full seasonal theme from settings', () => {
+    const result = resolveSeasonalThemeFromSettings({
+      seasonal_theme: 'eid',
+      seasonal_theme_enabled: '0',
+      seasonal_theme_primary: '#1a2b3c',
+    });
+
+    expect(result.theme).toBe('default');
+    expect(result.cssVariables['--seasonal-primary']).toBe('#4264ebab');
+    expect(result.cssVariables['--seasonal-secondary']).toBe('#5b72e8');
+  });
+
+  it('can disable applying specific seasonal colors only', () => {
+    const result = resolveSeasonalThemeFromSettings({
+      seasonal_theme: 'ramadan',
+      seasonal_theme_apply_primary: 'false',
+      seasonal_theme_apply_bg_start: '0',
+      seasonal_theme_primary: '#112233',
+      seasonal_theme_secondary: '#445566',
+      seasonal_theme_bg_start: '#010203',
+      seasonal_theme_bg_end: '#040506',
+    });
+
+    expect(result.theme).toBe('ramadan');
+    expect(result.cssVariables['--seasonal-primary']).toBe('#4264ebab');
+    expect(result.cssVariables['--seasonal-secondary']).toBe('#445566');
+    expect(result.cssVariables['--seasonal-bg-start']).toBe('#000000');
+    expect(result.cssVariables['--seasonal-bg-end']).toBe('#040506');
+  });
 });

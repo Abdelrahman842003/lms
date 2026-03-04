@@ -99,6 +99,11 @@ class SettingsService
 
             'trial_period_days',
             'seasonal_theme',
+            'seasonal_theme_enabled',
+            'seasonal_theme_apply_primary',
+            'seasonal_theme_apply_secondary',
+            'seasonal_theme_apply_bg_start',
+            'seasonal_theme_apply_bg_end',
         ];
 
         $settings = Setting::whereIn('key', $keys)
@@ -122,6 +127,11 @@ class SettingsService
         $mapped['seasonal_theme_secondary'] = $resolvedPalette['secondary'];
         $mapped['seasonal_theme_bg_start'] = $resolvedPalette['bg_start'];
         $mapped['seasonal_theme_bg_end'] = $resolvedPalette['bg_end'];
+        $mapped['seasonal_theme_enabled'] = (string) ($settings->get('seasonal_theme_enabled') ?? '1');
+        $mapped['seasonal_theme_apply_primary'] = (string) ($settings->get('seasonal_theme_apply_primary') ?? '1');
+        $mapped['seasonal_theme_apply_secondary'] = (string) ($settings->get('seasonal_theme_apply_secondary') ?? '1');
+        $mapped['seasonal_theme_apply_bg_start'] = (string) ($settings->get('seasonal_theme_apply_bg_start') ?? '1');
+        $mapped['seasonal_theme_apply_bg_end'] = (string) ($settings->get('seasonal_theme_apply_bg_end') ?? '1');
 
         foreach ($settings as $key => $value) {
             if (str_contains($key, '_')) {
@@ -130,7 +140,18 @@ class SettingsService
             }
         }
 
-        foreach (['seasonal_theme', 'seasonal_theme_primary', 'seasonal_theme_secondary', 'seasonal_theme_bg_start', 'seasonal_theme_bg_end'] as $key) {
+        foreach ([
+            'seasonal_theme',
+            'seasonal_theme_primary',
+            'seasonal_theme_secondary',
+            'seasonal_theme_bg_start',
+            'seasonal_theme_bg_end',
+            'seasonal_theme_enabled',
+            'seasonal_theme_apply_primary',
+            'seasonal_theme_apply_secondary',
+            'seasonal_theme_apply_bg_start',
+            'seasonal_theme_apply_bg_end',
+        ] as $key) {
             $camelKey = str_replace('_', '', lcfirst(ucwords($key, '_')));
             $mapped[$camelKey] = $mapped[$key];
         }

@@ -675,28 +675,19 @@
 .stat-card {
   padding: 24px;
   background: rgba(16, 20, 38, 0.151);
-  backdrop-filter: blur(20px);
   border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.02);
-  transition: all 0.5s ease-in-out;
+  border: 1px solid rgba(27, 197, 248, 0.123);
+  transition: all 0.3s ease-in-out;
   position: relative;
   overflow: hidden;
+  backdrop-filter: blur(10px);
+
 }
 
-.stat-card::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 3px;
-  background: linear-gradient(90deg, var(--primary), var(--secondary));
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
+
 
 .stat-card:hover {
-  transform: translateY(-1px);
+  /* transform: translateY(-1px); */
   backdrop-filter: blur(20px);
   border: 1px solid rgba(27, 197, 248, 0.507);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
@@ -773,8 +764,10 @@
   padding: 28px;
   background: rgba(16, 20, 38, 0.151);
   border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(27, 197, 248, 0.274);
   transition: all 0.5s ease-in-out;
+  backdrop-filter: blur(10px);
+
 }
 .dashboard-card:hover {
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
