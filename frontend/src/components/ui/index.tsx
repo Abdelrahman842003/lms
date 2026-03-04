@@ -17,12 +17,13 @@ export function Card({ children, className, onClick, hover = false, style }: Car
     <div
       className={cn(
         'glass-effect',
+        'ux-p-6',
         hover && 'card-hover',
         onClick && 'card-hover',
         className
       )}
       onClick={onClick}
-      style={{ padding: '24px', ...style }}
+      style={style}
     >
       {children}
     </div>

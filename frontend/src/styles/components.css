@@ -1007,6 +1007,10 @@
   gap: 12px;
 }
 
+.loading-state-row {
+  flex-direction: row;
+}
+
 .confirmation-modal-content {
   max-width: 400px;
 }

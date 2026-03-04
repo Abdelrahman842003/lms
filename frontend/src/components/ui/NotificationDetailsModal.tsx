@@ -127,7 +127,7 @@ export default function NotificationDetailsModal({
           {/* Message Body - show if NOT voice, OR if voice but missing URL (fallback) */}
           {(!isVoice || (isVoice && !voiceUrl)) && (
             <div className="notification-details-box">
-              <p className={`notification-details-message ${!isExpanded ? 'line-clamp-2' : ''}`}>
+              <p className={`notification-details-message ${!isExpanded ? 'ux-line-clamp-2' : ''}`}>
                 {notification.message}
               </p>
               {notification.message.length > 100 && (

@@ -62,7 +62,7 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
     return (
       <div className="loading-fullpage">
         {spinner}
-        {text && <p style={{ color: 'white' }}>{text}</p>}
+        {text && <p className="ux-text-white">{text}</p>}
       </div>
     );
   }
@@ -71,7 +71,7 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
     return (
       <div className="loading-overlay">
         {spinner}
-        {text && <p style={{ color: 'white' }}>{text}</p>}
+        {text && <p className="ux-text-white">{text}</p>}
       </div>
     );
   }
@@ -79,7 +79,7 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
   if (text) {
     if (textPosition === 'right') {
       return (
-        <div className="loading-state" style={{ flexDirection: 'row' }}>
+        <div className="loading-state loading-state-row">
           {spinner}
           <span>{text}</span>
         </div>
@@ -118,7 +118,7 @@ export const LoadingState: React.FC<LoadingStateProps> = ({
   return (
     <div className={clsx('loading-state', className)} style={{ minHeight }}>
       <LoadingSpinner size={size} color={color} />
-      {text && <p style={{ color: 'var(--gray-light)' }}>{text}</p>}
+      {text && <p className="ux-text-gray-light">{text}</p>}
     </div>
   );
 };
