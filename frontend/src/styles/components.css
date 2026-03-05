@@ -1183,19 +1183,96 @@
 }
 
 .notification-dropdown {
+  --notification-navbar-offset: 80px;
+  --notification-gap: 8px;
   width: 500px;
   max-width: 90vw;
   padding: 0;
   left: 50%;
-  top: 80px;
+  right: auto;
+  top: calc(var(--notification-navbar-offset) + var(--notification-gap));
   transform: translateX(-50%);
-  background: rgba(0, 0, 0, 1);
+  background: rgba(16, 20, 38, 0.95);
   border: 1px solid rgba(0, 128, 255, 0.1);
   border-radius: 12px;
   overflow: hidden;
+  max-height: calc(100vh - var(--notification-navbar-offset) - var(--notification-gap) - 16px);
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-  z-index: 999;
+  z-index: 2002;
   position: fixed;
+}
+
+.notification-dropdown.is-open {
+  animation: notificationDropdownFadeIn 0.22s ease-out forwards;
+}
+
+.notification-dropdown.is-closing {
+  animation: notificationDropdownFadeOut 0.22s ease-in forwards;
+  pointer-events: none;
+}
+
+@keyframes notificationDropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -8px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+@keyframes notificationDropdownFadeOut {
+  from {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -8px);
+  }
+}
+
+@keyframes notificationBackdropFadeIn {
+  from {
+    opacity: 0;
+    -webkit-backdrop-filter: blur(0) saturate(100%);
+    backdrop-filter: blur(0) saturate(100%);
+  }
+  to {
+    opacity: 1;
+    -webkit-backdrop-filter: blur(12px) saturate(115%);
+    backdrop-filter: blur(12px) saturate(115%);
+  }
+}
+
+.notification-dropdown-backdrop.is-open {
+  animation: notificationBackdropFadeIn 0.22s ease-out forwards;
+}
+
+@keyframes notificationBackdropFadeOut {
+  from {
+    opacity: 1;
+    -webkit-backdrop-filter: blur(12px) saturate(115%);
+    backdrop-filter: blur(12px) saturate(115%);
+  }
+  to {
+    opacity: 0;
+    -webkit-backdrop-filter: blur(0) saturate(100%);
+    backdrop-filter: blur(0) saturate(100%);
+  }
+}
+
+.notification-dropdown-backdrop.is-closing {
+  animation: notificationBackdropFadeOut 0.22s ease-in forwards;
+}
+
+.notification-dropdown-backdrop {
+  top: 80px;
+  background: rgba(6, 10, 24, 0.34);
+  -webkit-backdrop-filter: blur(12px) saturate(115%);
+  backdrop-filter: blur(12px) saturate(115%);
+  z-index: 2001;
 }
 
 .notification-dropdown-header {
@@ -1361,7 +1438,27 @@
 
 .notification-trigger-btn {
   position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 0.5rem;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+  box-shadow: none;
+}
+
+.notification-trigger-btn:focus,
+.notification-trigger-btn:active {
+  outline: none;
+  box-shadow: none;
+}
+
+.notification-trigger-btn:focus-visible {
+  border-radius: 10px;
+  box-shadow: 0 0 0 2px rgba(66, 99, 235, 0.35);
 }
 
 .notification-trigger-icon {
@@ -1382,6 +1479,16 @@
   background: var(--danger);
   color: white;
   border-radius: 50%;
+}
+
+@media (max-width: 768px) {
+  .notification-dropdown {
+    --notification-navbar-offset: 70px;
+  }
+
+  .notification-dropdown-backdrop {
+    top: 70px;
+  }
 }
 
 .teacher-dropdown {

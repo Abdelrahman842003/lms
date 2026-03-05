@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { createPortal } from 'react-dom';
 import { fetchApi } from '@/services/authService';
 import { toast } from 'react-hot-toast';
 import { ReceivedNotification as AppNotification } from '@/services/notificationService';
@@ -13,11 +14,16 @@ interface NotificationDropdownProps {
 }
 
 export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role }) => {
+  const CLOSE_ANIMATION_MS = 220;
   const { isLoading: authLoading, isAuthenticated } = useAuth();
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const closeTimerRef = useRef<number | null>(null);
 
   // Deduplication: Track received notification IDs to prevent duplicates
   const receivedIdsRef = useRef<Set<string>>(new Set());
@@ -28,12 +34,45 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
 
   useEffect(() => {
     audioRef.current = new Audio('/sounds/notification.mp3');
+    setIsMounted(true);
     
     // Request notification permission
     if ('Notification' in window && Notification.permission === 'default') {
       Notification.requestPermission();
     }
+
+    return () => {
+      if (closeTimerRef.current) {
+        window.clearTimeout(closeTimerRef.current);
+      }
+    };
   }, []);
+
+  const closeDropdown = () => {
+    if (!isOpen || isClosing) return;
+
+    setIsClosing(true);
+
+    if (closeTimerRef.current) {
+      window.clearTimeout(closeTimerRef.current);
+    }
+
+    closeTimerRef.current = window.setTimeout(() => {
+      setIsOpen(false);
+      setIsClosing(false);
+      closeTimerRef.current = null;
+    }, CLOSE_ANIMATION_MS);
+  };
+
+  const openDropdown = () => {
+    if (closeTimerRef.current) {
+      window.clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+
+    setIsClosing(false);
+    setIsOpen(true);
+  };
 
   const fetchNotifications = async () => {
     if (!role || authLoading || !isAuthenticated) return;
@@ -310,8 +349,12 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
+      const target = event.target as Node;
+      const clickedTrigger = dropdownRef.current?.contains(target);
+      const clickedPanel = panelRef.current?.contains(target);
+
+      if (!clickedTrigger && !clickedPanel) {
+        closeDropdown();
       }
     };
 
@@ -322,7 +365,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isOpen]);
+  }, [isOpen, isClosing]);
 
   const markAsRead = async (id: string) => {
     try {
@@ -344,11 +387,19 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
   };
 
   return (
-    <div className="navbar-user" ref={dropdownRef}>
-      <div 
+    <div className="navbar-user notification-dropdown-container" ref={dropdownRef}>
+      <button
+        type="button"
         className="navbar-user-clickable notification-trigger-btn"
+        aria-haspopup="dialog"
+        aria-expanded={isOpen}
         onClick={() => {
-          setIsOpen(!isOpen);
+          if (isOpen) {
+            closeDropdown();
+          } else {
+            openDropdown();
+          }
+
           // Try to play sound on interaction to unlock audio context for future notifications
           if (audioRef.current) {
             audioRef.current.volume = 0; // Silent play
@@ -364,13 +415,21 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
             {unreadCount}
           </span>
         )}
-      </div>
+      </button>
 
-      {isOpen && (
+      {isMounted && isOpen && createPortal(
         <>
-          <div className="dropdown-backdrop" onClick={() => setIsOpen(false)} />
+          <div
+            className={`dropdown-backdrop notification-dropdown-backdrop ${isClosing ? 'is-closing' : 'is-open'}`}
+            onClick={closeDropdown}
+          />
           
-          <div className="navbar-dropdown notification-dropdown">
+          <div
+            ref={panelRef}
+            className={`notification-dropdown ${isClosing ? 'is-closing' : 'is-open'}`}
+            role="dialog"
+            aria-label="الإخطارات"
+          >
             <div className="notification-dropdown-header">
               <h3 className="notification-dropdown-title">الإخطارات</h3>
               {unreadCount > 0 && (
@@ -437,13 +496,14 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
               <Link 
                 href={role === 'parent' ? '/parent/children' : `/${role}/notifications`}
                 className="notification-dropdown-link"
-                onClick={() => setIsOpen(false)}
+                onClick={closeDropdown}
               >
                 عرض كل الإخطارات
               </Link>
             </div>
           </div>
-        </>
+        </>,
+        document.body
       )}
     </div>
   );
