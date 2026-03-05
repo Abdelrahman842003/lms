@@ -14,7 +14,27 @@ use Illuminate\Support\Facades\Log;
 
 class FcmChannelStrategy implements NotificationChannelInterface
 {
-    public function send(Collection $recipients, string $title, string $message, array $data = []): void
+    public function send(mixed $recipients, mixed $titleOrNotification, ?string $message = null, array $data = []): void
+    {
+        // Strategy-style usage: send(Collection $recipients, string $title, string $message, array $data)
+        if ($recipients instanceof Collection && is_string($titleOrNotification) && is_string($message)) {
+            $this->sendBulk($recipients, $titleOrNotification, $message, $data);
+            return;
+        }
+
+        // Laravel channel usage: send(object $notifiable, Notification $notification)
+        if (is_object($recipients) && is_object($titleOrNotification)) {
+            $this->sendNotifiable($recipients, $titleOrNotification);
+            return;
+        }
+
+        Log::warning('Invalid FCM send signature usage', [
+            'recipients_type' => is_object($recipients) ? $recipients::class : gettype($recipients),
+            'title_or_notification_type' => is_object($titleOrNotification) ? $titleOrNotification::class : gettype($titleOrNotification),
+        ]);
+    }
+
+    private function sendBulk(Collection $recipients, string $title, string $message, array $data = []): void
     {
         /** @var NotificationSettingsService $notificationSettings */
         $notificationSettings = app(NotificationSettingsService::class);
@@ -80,6 +100,57 @@ class FcmChannelStrategy implements NotificationChannelInterface
         } catch (\Exception $e) {
             Log::error("FCM Initialization Error: " . $e->getMessage());
         }
+    }
+
+    private function sendNotifiable(object $notifiable, object $notification): void
+    {
+        /** @var NotificationSettingsService $notificationSettings */
+        $notificationSettings = app(NotificationSettingsService::class);
+
+        if (! $notificationSettings->isExternalEnabled()) {
+            return;
+        }
+
+        if ($notificationSettings->isRecipientBlocked($notifiable)) {
+            return;
+        }
+
+        $payload = [];
+        if (method_exists($notification, 'toFcm')) {
+            $payload = (array) $notification->toFcm($notifiable);
+        } elseif (method_exists($notification, 'toArray')) {
+            $payload = (array) $notification->toArray($notifiable);
+        }
+
+        $title = (string) (
+            $payload['title']
+            ?? data_get($payload, 'notification.title')
+            ?? 'إشعار جديد'
+        );
+        $message = (string) (
+            $payload['message']
+            ?? $payload['body']
+            ?? data_get($payload, 'notification.body')
+            ?? ''
+        );
+
+        $data = [];
+        if (isset($payload['data']) && is_array($payload['data'])) {
+            $data = $payload['data'];
+        } elseif (!empty($payload)) {
+            $data = $payload;
+            unset($data['title'], $data['message'], $data['body'], $data['notification']);
+        }
+
+        $tokens = method_exists($notifiable, 'routeNotificationForFcm')
+            ? (array) $notifiable->routeNotificationForFcm()
+            : [];
+
+        if (empty($tokens)) {
+            return;
+        }
+
+        $this->sendToTokens($tokens, $title, $message, $data);
     }
 
     public function sendToTokens(array $tokens, string $title, string $message, array $data = []): void
