@@ -6,13 +6,16 @@ namespace App\Domains\Application\Http\Controllers\Academy;
 
 use App\Domains\Auth\DTOs\LoginData;
 use App\Domains\Application\Http\Controllers\Controller;
+use App\Domains\Application\Http\Requests\Auth\ChangePasswordRequest;
 use App\Domains\Application\Http\Requests\Auth\AcademyLoginRequest;
+use App\Domains\Application\Http\Requests\Academy\Auth\UpdateProfileRequest;
 use App\Domains\Application\Http\Resources\Academy\AcademyResource;
 use App\Domains\Application\Services\Academy\AcademyAuthService;
 use App\Domains\Auth\Services\DeviceLimitService;
 use App\Domains\Auth\Services\LoginAttemptService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
@@ -89,5 +92,32 @@ class AuthController extends Controller
             'user' => new AcademyResource($request->user()->load(['secretaries', 'teachers'])),
             'role' => 'academy'
         ]);
+    }
+
+    public function changePassword(ChangePasswordRequest $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if (!Hash::check($request->validated('current_password'), $user->password)) {
+            return $this->errorResponse('كلمة المرور الحالية غير صحيحة', 422);
+        }
+
+        $user->update([
+            'password' => Hash::make($request->validated('new_password'))
+        ]);
+
+        return $this->successResponse(null, 'تم تغيير كلمة المرور بنجاح');
+    }
+
+    public function updateProfile(UpdateProfileRequest $request): JsonResponse
+    {
+        $user = $request->user();
+        $validated = $request->validated();
+
+        $user->update($validated);
+
+        return $this->successResponse([
+            'user' => new AcademyResource($user->fresh()),
+        ], 'تم تحديث الملف الشخصي بنجاح');
     }
 }

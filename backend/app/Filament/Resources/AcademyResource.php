@@ -106,6 +106,14 @@ class AcademyResource extends BaseResource
                             ->label('نشط')
                             ->default(true)
                             ->helperText('تحديد ما إذا كانت الأكاديمية نشطة أم لا'),
+
+                        TextInput::make('trial_period_days')
+                            ->label('مدة الفترة التجريبية (أيام)')
+                            ->numeric()
+                            ->minValue(1)
+                            ->maxValue(365)
+                            ->nullable()
+                            ->helperText(fn (): string => 'اتركه فارغًا لاستخدام الإعداد العام (' . \App\Domains\Support\Services\HelperService::getTrialPeriodDays() . ' يوم)'),
                     ])
                     ->columns(2),
 

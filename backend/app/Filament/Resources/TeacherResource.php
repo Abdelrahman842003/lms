@@ -126,6 +126,14 @@ class TeacherResource extends BaseResource
                             ->label('نشط كمعلم مستقل')
                             ->default(false)
                             ->helperText('يمكن للمعلم العمل كمعلم مستقل خارج الأكاديميات'),
+
+                        TextInput::make('trial_period_days')
+                            ->label('مدة الفترة التجريبية (أيام)')
+                            ->numeric()
+                            ->minValue(1)
+                            ->maxValue(365)
+                            ->nullable()
+                            ->helperText(fn (): string => 'اتركه فارغًا لاستخدام الإعداد العام (' . \App\Domains\Support\Services\HelperService::getTrialPeriodDays() . ' يوم)'),
                     ])
                     ->columns(2),
 

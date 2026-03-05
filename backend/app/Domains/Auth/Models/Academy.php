@@ -27,6 +27,7 @@ class Academy extends Model implements AuthenticatableContract
         'logo_key',
         'is_active',
         'billing_notes',
+        'trial_period_days',
         'subscription_fee',
         'paid_amount',
         'plan_type',
@@ -42,6 +43,7 @@ class Academy extends Model implements AuthenticatableContract
     protected $casts = [
         'is_active' => 'boolean',
         'password' => 'hashed',
+        'trial_period_days' => 'integer',
         'plan_expires_at' => 'date',
         'plan_max_students' => 'integer',
         'is_unlimited_students' => 'boolean',

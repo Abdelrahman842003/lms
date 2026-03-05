@@ -108,6 +108,8 @@ export function CoreAuthProvider({ children }: { children: ReactNode }) {
             permissions: response.user.permissions,
             is_independent_active: response.user.is_independent_active,
             academies: response.academies || response.user.academies,
+            trial_period_days: response.user.trial_period_days ?? null,
+            effective_trial_period_days: response.user.effective_trial_period_days ?? response.user.trial_period_days ?? undefined,
           };
 
           setUser(userData);
@@ -167,6 +169,8 @@ export function CoreAuthProvider({ children }: { children: ReactNode }) {
               permissions: response.user.permissions,
               is_independent_active: response.user.is_independent_active,
               academies: response.academies || response.user.academies,
+              trial_period_days: response.user.trial_period_days ?? null,
+              effective_trial_period_days: response.user.effective_trial_period_days ?? response.user.trial_period_days ?? undefined,
             };
 
             setUser(recoveredUser);
@@ -237,6 +241,8 @@ export function CoreAuthProvider({ children }: { children: ReactNode }) {
         permissions: response.user.permissions,
         is_independent_active: response.user.is_independent_active,
         academies: response.academies || response.user.academies,
+        trial_period_days: response.user.trial_period_days ?? null,
+        effective_trial_period_days: response.user.effective_trial_period_days ?? response.user.trial_period_days ?? undefined,
       };
 
       setUser(userData);
@@ -316,6 +322,8 @@ export function CoreAuthProvider({ children }: { children: ReactNode }) {
         permissions: response.user.permissions,
         is_independent_active: response.user.is_independent_active,
         academies: response.academies || response.user.academies,
+        trial_period_days: response.user.trial_period_days ?? null,
+        effective_trial_period_days: response.user.effective_trial_period_days ?? response.user.trial_period_days ?? undefined,
       };
 
       setUser(userData);

@@ -6,6 +6,7 @@ import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { uploadAvatar, deleteAvatar, getAvatarUrl } from '@/services/avatarService';
 import { getAuthToken } from '@/services/authService';
+import { getVersionedApiUrl } from '@/config/api-config';
 import { ImageCropModal, ConfirmationModal, Skeleton } from '@/components/ui';
 import { Button, Icon, Input, Textarea, Select, LoadingSpinner, Badge } from '@/components/ui';
 import { toast } from 'react-hot-toast';
@@ -29,6 +30,7 @@ export default function AcademyProfilePage() {
     name: '',
     phone: '',
     location: '',
+    trialPeriodDays: '4',
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
@@ -59,6 +61,7 @@ export default function AcademyProfilePage() {
         name: user.name || '',
         phone: user.phone || '',
         location: user.location || '',
+        trialPeriodDays: String(user.trial_period_days ?? user.effective_trial_period_days ?? 4),
       }));
     }
   }, [user]);
@@ -187,8 +190,7 @@ export default function AcademyProfilePage() {
     
     try {
       const token = getAuthToken();
-      const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-      const API_URL = BASE_URL.endsWith('/api') ? BASE_URL : `${BASE_URL}/api`;
+      const API_URL = getVersionedApiUrl();
 
       const response = await fetch(`${API_URL}/academy/profile`, {
         method: 'PUT',
@@ -201,6 +203,7 @@ export default function AcademyProfilePage() {
           name: formData.name,
           phone: formData.phone,
           location: formData.location,
+          trial_period_days: Number(formData.trialPeriodDays || 4),
         }),
       });
 
@@ -255,8 +258,7 @@ export default function AcademyProfilePage() {
 
     try {
       const token = getAuthToken();
-      const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-      const API_URL = BASE_URL.endsWith('/api') ? BASE_URL : `${BASE_URL}/api`;
+      const API_URL = getVersionedApiUrl();
 
       const response = await fetch(`${API_URL}/academy/change-password`, {
         method: 'POST',
@@ -438,6 +440,20 @@ export default function AcademyProfilePage() {
                     type="text"
                     value={formData.location}
                     onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                    disabled={!isEditing}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-gray-light text-sm mb-2 font-semibold">
+                    مدة الفترة التجريبية (بالأيام)
+                  </label>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={365}
+                    value={formData.trialPeriodDays}
+                    onChange={(e) => setFormData({ ...formData, trialPeriodDays: e.target.value })}
                     disabled={!isEditing}
                   />
                 </div>

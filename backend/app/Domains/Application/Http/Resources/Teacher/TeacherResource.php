@@ -41,6 +41,10 @@ class TeacherResource extends JsonResource
             'is_approved' => $this->status !== 'pending',
             'is_suspended' => $this->status === 'suspended' || $this->resource->isSubscriptionBlocked(),
             'is_independent_active' => (bool) $this->is_independent_active,
+            'trial_period_days' => $this->trial_period_days !== null ? (int) $this->trial_period_days : null,
+            'effective_trial_period_days' => $this->trial_period_days !== null
+                ? (int) $this->trial_period_days
+                : (int) \App\Domains\Support\Models\Setting::getValue('trial_period_days', 4),
             'joined' => $this->created_at ? $this->created_at->format('Y-m-d') : null,
             'created_at' => $this->created_at ? $this->created_at->toIso8601String() : null,
             'subscription_fee' => (float) $this->subscription_fee,

@@ -34,6 +34,10 @@ class AcademyResource extends JsonResource
             'is_unlimited_students' => (bool) $this->is_unlimited_students,
             'subscription_fee' => $this->subscription_fee ?? 0,
             'paid_amount' => $this->paid_amount ?? 0,
+            'trial_period_days' => $this->trial_period_days !== null ? (int) $this->trial_period_days : null,
+            'effective_trial_period_days' => $this->trial_period_days !== null
+                ? (int) $this->trial_period_days
+                : (int) \App\Domains\Support\Models\Setting::getValue('trial_period_days', 4),
             
             // Relationships
             'secretaries' => $this->whenLoaded('secretaries'),

@@ -18,7 +18,6 @@ export default function TeacherDetailsPage() {
   const teacherId = params.id as string;
 
   const [teacherData, setTeacherData] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [hasFetched, setHasFetched] = useState(false);
   const [activeTab, setActiveTab] = useState<'overview' | 'groups' | 'grades' | 'attendance'>('overview');
 
@@ -36,7 +35,6 @@ export default function TeacherDetailsPage() {
 
   const fetchTeacherDetails = async () => {
     try {
-      setIsLoading(true);
       const response = await academyService.getTeacher(teacherId);
       if (response.status) {
         setTeacherData(response.data);
@@ -47,7 +45,6 @@ export default function TeacherDetailsPage() {
       console.error('Failed to fetch teacher details', error);
       toast.error('حدث خطأ أثناء تحميل البيانات');
     } finally {
-      setIsLoading(false);
       setHasFetched(true);
     }
   };

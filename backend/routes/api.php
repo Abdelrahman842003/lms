@@ -36,6 +36,8 @@ Route::prefix('academy')->name('academy.')->group(function () {
 Route::middleware('auth:sanctum')->prefix('academy')->name('academy.')->group(function () {
     // Dashboard
     Route::get('/dashboard', [\App\Domains\Application\Http\Controllers\Academy\DashboardController::class, 'getStats']);
+    Route::put('/profile', [\App\Domains\Application\Http\Controllers\Academy\AuthController::class, 'updateProfile']);
+    Route::post('/change-password', [\App\Domains\Application\Http\Controllers\Academy\AuthController::class, 'changePassword']);
     
     
     // Teachers Management

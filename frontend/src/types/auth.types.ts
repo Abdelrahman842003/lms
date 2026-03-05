@@ -24,6 +24,8 @@ export interface BaseUser {
   permissions?: string[];
   is_independent_active?: boolean;
   academies?: any[];
+  trial_period_days?: number | null;
+  effective_trial_period_days?: number;
 }
 
 /**

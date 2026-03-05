@@ -43,6 +43,7 @@ class Teacher extends Authenticatable
         'subscription_fee',
         'paid_amount',
         'is_independent_active',
+        'trial_period_days',
         'plan_type',
         'plan_expires_at',
         'subscription_period',
@@ -61,6 +62,7 @@ class Teacher extends Authenticatable
         return [
             'password' => 'hashed',
             'is_independent_active' => 'boolean',
+            'trial_period_days' => 'integer',
             'is_unlimited_students' => 'boolean',
             'plan_expires_at' => 'date',
             'custom_expires_at' => 'date',

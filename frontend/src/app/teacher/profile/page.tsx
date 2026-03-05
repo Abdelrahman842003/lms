@@ -9,6 +9,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { uploadAvatar, deleteAvatar, getAvatarUrl } from '@/services/avatarService';
 import { getAuthToken } from '@/services/authService';
+import { getVersionedApiUrl } from '@/config/api-config';
 import ImageCropModal from '@/components/ui/ImageCropModal';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import { toast } from 'react-hot-toast';
@@ -30,6 +31,7 @@ export default function TeacherProfile() {
   
   const [formData, setFormData] = React.useState({
     name: user?.name || '',
+    trialPeriodDays: String(user?.trial_period_days ?? user?.effective_trial_period_days ?? 4),
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
@@ -58,6 +60,7 @@ export default function TeacherProfile() {
       setFormData(prev => ({
         ...prev,
         name: user.name || '',
+        trialPeriodDays: String(user.trial_period_days ?? user.effective_trial_period_days ?? 4),
       }));
     }
   }, [user]);
@@ -186,8 +189,7 @@ export default function TeacherProfile() {
     
     try {
       const token = getAuthToken();
-      const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-      const API_URL = BASE_URL.endsWith('/api') ? BASE_URL : `${BASE_URL}/api`;
+      const API_URL = getVersionedApiUrl();
 
       const response = await fetch(`${API_URL}/teacher/profile`, {
         method: 'PUT',
@@ -198,6 +200,7 @@ export default function TeacherProfile() {
         },
         body: JSON.stringify({
           name: formData.name,
+          trial_period_days: Number(formData.trialPeriodDays || 4),
         }),
       });
 
@@ -210,9 +213,8 @@ export default function TeacherProfile() {
       toast.success('تم تحديث الملف الشخصي بنجاح');
       setIsEditing(false);
       
-      // Update local user state if needed
       if (data.data?.user) {
-        // You could dispatch an event or update context here
+        updateUser(data.data.user);
       }
     } catch (err: any) {
       toast.error(err.message || 'فشل تحديث الملف الشخصي');
@@ -252,8 +254,7 @@ export default function TeacherProfile() {
 
     try {
       const token = getAuthToken();
-      const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-      const API_URL = BASE_URL.endsWith('/api') ? BASE_URL : `${BASE_URL}/api`;
+      const API_URL = getVersionedApiUrl();
 
       const response = await fetch(`${API_URL}/teacher/change-password`, {
         method: 'POST',
@@ -413,6 +414,21 @@ export default function TeacherProfile() {
                   <Input
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    disabled={!isEditing}
+                    className={`w-full ${isEditing ? 'bg-white/5' : 'bg-white/2'}`}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-gray-light text-sm mb-2 font-semibold">
+                    مدة الفترة التجريبية (بالأيام)
+                  </label>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={365}
+                    value={formData.trialPeriodDays}
+                    onChange={(e) => setFormData({ ...formData, trialPeriodDays: e.target.value })}
                     disabled={!isEditing}
                     className={`w-full ${isEditing ? 'bg-white/5' : 'bg-white/2'}`}
                   />

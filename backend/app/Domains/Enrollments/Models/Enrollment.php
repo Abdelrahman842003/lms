@@ -47,7 +47,7 @@ class Enrollment extends Model
     public function getStatusAttribute()
     {
         $today = now()->startOfDay();
-        $trialPeriodDays = (int) Setting::getValue('trial_period_days', 4);
+        $trialPeriodDays = $this->resolveTrialPeriodDays();
         
         // Check trial period for new enrollments (not yet activated)
         if (!$this->is_active && !$this->subscription_end) {
@@ -113,7 +113,7 @@ class Enrollment extends Model
 
     public function getTrialEndsAtAttribute()
     {
-        $trialPeriodDays = (int) Setting::getValue('trial_period_days', 4);
+        $trialPeriodDays = $this->resolveTrialPeriodDays();
         
         // Trial from creation (new enrollment, not activated OR active but no subscription)
         if (!$this->subscription_end) {
@@ -126,6 +126,43 @@ class Enrollment extends Model
         }
         
         return null;
+    }
+
+    private function resolveTrialPeriodDays(): int
+    {
+        // Enrollment in academy context: use academy-specific setting first.
+        if ($this->academy_id) {
+            if ($this->relationLoaded('academy') && $this->academy) {
+                $academyTrial = (int) ($this->academy->trial_period_days ?? 0);
+                if ($academyTrial > 0) {
+                    return $academyTrial;
+                }
+            } else {
+                $academyTrial = (int) (Academy::query()->whereKey($this->academy_id)->value('trial_period_days') ?? 0);
+                if ($academyTrial > 0) {
+                    return $academyTrial;
+                }
+            }
+        }
+
+        // Independent context: use teacher-specific setting.
+        if ($this->teacher_id) {
+            if ($this->relationLoaded('teacher') && $this->teacher) {
+                $teacherTrial = (int) ($this->teacher->trial_period_days ?? 0);
+                if ($teacherTrial > 0) {
+                    return $teacherTrial;
+                }
+            } else {
+                $teacherTrial = (int) (Teacher::query()->whereKey($this->teacher_id)->value('trial_period_days') ?? 0);
+                if ($teacherTrial > 0) {
+                    return $teacherTrial;
+                }
+            }
+        }
+
+        // Fallback to global setting.
+        $defaultDays = (int) Setting::getValue('trial_period_days', 4);
+        return $defaultDays > 0 ? $defaultDays : 4;
     }
 
     // Relationships

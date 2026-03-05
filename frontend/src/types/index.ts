@@ -33,6 +33,8 @@ export interface User {
     permissions?: string[]
     is_independent_active?: boolean
     academies?: AcademyInfo[]
+    trial_period_days?: number | null
+    effective_trial_period_days?: number
 }
 
 // Import for backward compatibility
