@@ -243,16 +243,7 @@ export default function AcademyTeachersPage() {
     setModalOpen(true);
   };
 
-  if (authLoading || !user || user.userType !== 'academy') {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <LoadingSpinner size="sm" color="primary" />
-          <p className="text-gray-400">جاري التحميل...</p>
-        </div>
-      </div>
-    );
-  }
+  if (!authLoading && (!user || user.userType !== 'academy')) return null;
 
   const tableColumns = [
     {
@@ -338,7 +329,7 @@ export default function AcademyTeachersPage() {
   return (
     <DashboardLayout
       role="academy"
-      user={user}
+      user={user || { name: 'الأكاديمية' }}
     >
       <DashboardCard
         title={`المدرسين (${teachers.length})`}

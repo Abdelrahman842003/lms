@@ -68,16 +68,7 @@ export default function NotificationsPage() {
     }
   };
 
-  if (authLoading || !user || user.userType !== 'academy') {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <LoadingSpinner size="sm" color="primary" />
-          <p className="text-gray-400">جاري التحميل...</p>
-        </div>
-      </div>
-    );
-  }
+  if (!authLoading && (!user || user.userType !== 'academy')) return null;
 
   const getTargetLabel = (target: string) => {
     const labels: any = {
@@ -111,7 +102,7 @@ export default function NotificationsPage() {
   ];
 
   return (
-    <DashboardLayout role="academy" user={user}>
+    <DashboardLayout role="academy" user={user || { name: 'الأكاديمية' }}>
       {/* Stats */}
       <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-6 mb-8">
         <StatCard

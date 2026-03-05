@@ -148,21 +148,12 @@ export default function ReportsPage() {
 
 
 
-  if (authLoading || !user || user.userType !== 'academy') {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <LoadingSpinner size="sm" color="primary" />
-          <p className="text-gray-400">جاري التحميل...</p>
-        </div>
-      </div>
-    );
-  }
+  if (!authLoading && (!user || user.userType !== 'academy')) return null;
 
 
 
   return (
-    <DashboardLayout role="academy" user={user}>
+    <DashboardLayout role="academy" user={user || { name: 'الأكاديمية' }}>
       <div className="max-w-7xl mx-auto">
         <h1 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
           <Icon name="chart-bar" color="primary" />

@@ -136,16 +136,7 @@ export default function AttendancePage() {
     }
   }, [selectedDate]);
 
-  if (authLoading || !user || user.userType !== 'academy') {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <LoadingSpinner size="sm" color="primary" />
-          <p className="text-gray-400">جاري التحميل...</p>
-        </div>
-      </div>
-    );
-  }
+  if (!authLoading && (!user || user.userType !== 'academy')) return null;
 
   const tableColumns = [
     {
@@ -179,7 +170,7 @@ export default function AttendancePage() {
   ];
 
   return (
-    <DashboardLayout role="academy" user={user}>
+    <DashboardLayout role="academy" user={user || { name: 'الأكاديمية' }}>
       {/* Header */}
       <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>

@@ -10,7 +10,7 @@ import academyService from '@/services/academyService';
 import { useRouter, useParams } from 'next/navigation';
 import toast from 'react-hot-toast';
 
-import { Button, Icon, LoadingSpinner, Badge } from '@/components/ui';
+import { Button, Icon, Badge } from '@/components/ui';
 export default function TeacherDetailsPage() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const router = useRouter();
@@ -19,6 +19,7 @@ export default function TeacherDetailsPage() {
 
   const [teacherData, setTeacherData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasFetched, setHasFetched] = useState(false);
   const [activeTab, setActiveTab] = useState<'overview' | 'groups' | 'grades' | 'attendance'>('overview');
 
   useEffect(() => {
@@ -47,21 +48,11 @@ export default function TeacherDetailsPage() {
       toast.error('حدث خطأ أثناء تحميل البيانات');
     } finally {
       setIsLoading(false);
+      setHasFetched(true);
     }
   };
 
-  if (authLoading || isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0f111a]">
-        <div className="text-center">
-          <LoadingSpinner size="sm" color="primary" />
-          <p className="text-gray-400">جاري التحميل...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!teacherData) {
+  if (!authLoading && hasFetched && !teacherData) {
     return (
       <DashboardLayout role="academy" user={user || undefined}>
         <div className="text-center py-10">
@@ -74,7 +65,11 @@ export default function TeacherDetailsPage() {
     );
   }
 
-  const { teacher, stats, groups, grades, attendance_logs } = teacherData;
+  const teacher = teacherData?.teacher || {};
+  const stats = teacherData?.stats || {};
+  const groups = teacherData?.groups || [];
+  const grades = teacherData?.grades || [];
+  const attendance_logs = teacherData?.attendance_logs || [];
 
   // Columns for Groups Table
   const groupColumns = [
@@ -148,13 +143,13 @@ export default function TeacherDetailsPage() {
             {teacher.avatar ? (
               <img src={teacher.avatar} alt={teacher.name} className="w-full h-full object-cover" />
             ) : (
-              <span>{teacher.name.charAt(0)}</span>
+              <span>{(teacher.name || 'م').charAt(0)}</span>
             )}
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-white mb-1">{teacher.name}</h1>
+            <h1 className="text-2xl font-bold text-white mb-1">{teacher.name || 'المدرس'}</h1>
             <div className="flex items-center gap-3 text-gray-400 text-sm">
-              <span><Icon name="phone" className="ml-1" />{teacher.phone}</span>
+              <span><Icon name="phone" className="ml-1" />{teacher.phone || '-'}</span>
               {teacher.subject && (
                 <span><Icon name="book" className="ml-1" />{teacher.subject}</span>
               )}
