@@ -16,12 +16,6 @@ export default function StudentLecturesPage() {
         avatar: user?.avatar || '',
       }}
     >
-      {/* Page Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-white mb-2">محاضرات الطلاب</h1>
-        <p className="text-gray-400">إدارة محاضرات الطلاب وتسجيل الحضور</p>
-      </div>
-
       {/* Student Attendance Section */}
       <StudentAttendanceSection />
     </DashboardLayout>

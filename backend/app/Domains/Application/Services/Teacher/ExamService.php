@@ -272,8 +272,9 @@ class ExamService
 
     public function endExam(Exam $exam): Exam
     {
-        if (!$exam->is_active) {
-            throw new \Exception('الامتحان غير مفعل بالفعل');
+        // Idempotent behavior: if already ended, return as-is.
+        if ($exam->ended_at) {
+            return $exam;
         }
 
         $exam->update([
@@ -362,7 +363,6 @@ class ExamService
                     'student_id' => $student->id,
                     'score' => 0,
                     'percentage' => 0,
-                    'status' => 'absent',
                     'created_at' => now(),
                     'updated_at' => now(),
                 ];
@@ -382,4 +382,3 @@ class ExamService
         }
     }
 }
-

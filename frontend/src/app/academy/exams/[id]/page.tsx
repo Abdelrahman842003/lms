@@ -135,9 +135,9 @@ export default function AcademyExamDetailsPage({ params }: { params: Promise<{ i
       toast.success('تم إنهاء الامتحان بنجاح');
       refreshExam();
       setIsEndModalOpen(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error ending exam:', error);
-      toast.error('حدث خطأ أثناء إنهاء الامتحان');
+      toast.error(error?.response?.data?.message || 'حدث خطأ أثناء إنهاء الامتحان');
     } finally {
       setIsProcessing(false);
     }

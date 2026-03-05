@@ -85,7 +85,6 @@ class ProcessExamEnd implements ShouldQueue
                         'student_id' => $student->id,
                         'score'      => 0,
                         'percentage' => 0,
-                        'status'     => 'absent',
                     ]);
 
                     try {

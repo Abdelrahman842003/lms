@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
+import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { createAcademyExam, getExamTeachers, getGrades, getGroups } from '@/services/academyService';
 import { toast } from 'react-hot-toast';
@@ -316,21 +317,16 @@ export default function AddAcademyExamPage() {
       role="academy"
       user={{ name: user?.name || 'الأكاديمية', avatar: user?.avatar || '' }}
     >
-
-      
-      <div className="rounded-xl shadow-lg border border-white/5 p-6">
-        <div className="dashboard-card-header">
-          <div className="dashboard-card-title">
-            <Icon name="plus-circle" />
-            <h2>إنشاء امتحان جديد</h2>
+      <DashboardCard
+        title="إنشاء امتحان جديد"
+        className="rounded-xl shadow-lg border border-white/5"
+        noPadding
+        action={step === 'questions' ? (
+          <div className="text-sm font-bold text-blue-600">
+            سؤال {currentQuestionIndex + 1} من {questions.length}
           </div>
-          {step === 'questions' && (
-            <div className="text-sm font-bold text-blue-600">
-              سؤال {currentQuestionIndex + 1} من {questions.length}
-            </div>
-          )}
-        </div>
-
+        ) : undefined}
+      >
         <div className="p-4 md:p-6">
           {step === 'details' ? (
             <form onSubmit={handleStartQuestions}>
@@ -559,7 +555,7 @@ export default function AddAcademyExamPage() {
             </div>
           )}
         </div>
-      </div>
+      </DashboardCard>
 
       {/* Finish Modal */}
       <FormModal

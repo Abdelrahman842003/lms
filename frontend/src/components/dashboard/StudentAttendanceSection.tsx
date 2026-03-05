@@ -328,7 +328,7 @@ export default function StudentAttendanceSection() {
         <div className="ux-max-md-w-full">
           <Button variant="primary" onClick={handleAddClick} className="btn btn-primary ux-max-md-w-full ux-max-md-justify-center">
             <Icon name="plus" />
-            <span>محاضرة جديدة</span>
+            <span>إضافة محاضرة</span>
           </Button>
         </div>
       </div>

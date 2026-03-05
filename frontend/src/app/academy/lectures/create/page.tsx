@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
+import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import * as academyService from '@/services/academyService';
 import { Group } from '@/services/groupService';
@@ -107,21 +108,11 @@ export default function CreateLecturePage() {
   return (
     <DashboardLayout role="academy" user={{ name: user?.name || 'الأكاديمية', avatar: user?.avatar || '' }}>
       <div className="max-w-2xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <button
-            onClick={() => router.back()}
-            className="flex items-center gap-2 text-gray-400 hover:text-white mb-4 transition-colors"
-          >
-            <Icon name="arrow-right" />
-            <span>رجوع</span>
-          </button>
-          <h1 className="text-3xl font-bold text-white">محاضرة جديدة</h1>
-          <p className="text-gray-400 mt-2">أضف محاضرة جديدة للطلاب</p>
-        </div>
-
+       {/* Header */}
+ 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="bg-gray-900/50 backdrop-blur-md border border-white/5 rounded-2xl p-6">
+        <DashboardCard className="bg-gray-900/50 backdrop-blur-md border border-white/5 rounded-2xl" noPadding>
+        <form onSubmit={handleSubmit} className="p-6">
           <div className="space-y-6">
             {/* Teacher */}
             <div className="form-group">
@@ -344,6 +335,7 @@ export default function CreateLecturePage() {
             </Button>
           </div>
         </form>
+        </DashboardCard>
       </div>
     </DashboardLayout>
   );

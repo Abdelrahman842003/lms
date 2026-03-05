@@ -159,9 +159,9 @@ export default function AcademyExamsPage() {
       fetchExams(currentPage);
       setIsEndModalOpen(false);
       setExamToEnd(null);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error ending exam:', error);
-      toast.error('حدث خطأ أثناء إنهاء الامتحان');
+      toast.error(error?.response?.data?.message || 'حدث خطأ أثناء إنهاء الامتحان');
     } finally {
       setIsProcessing(false);
     }
