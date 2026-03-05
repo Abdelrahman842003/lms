@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Domains\Application\Services\Academy;
 
 use App\Domains\Auth\Models\Academy;
+use App\Domains\Enrollments\Models\Enrollment;
+use App\Domains\Media\Services\ImageService;
 use App\Domains\Support\Models\TeacherAttendanceLog;
 use App\Domains\Support\Services\CacheService;
 use Carbon\Carbon;
@@ -14,23 +16,26 @@ class DashboardService
     public function getStats(Academy $academy): array
     {
         return CacheService::getAcademyDashboardStats($academy->id, function () use ($academy) {
-        // Get active teachers count
+        // Dashboard counters should include all teachers linked to this academy.
+        $linkedTeacherIds = $academy->teachers()
+            ->pluck('teachers.id');
+
+        $linkedTeachersCount = $linkedTeacherIds->count();
         $activeTeachersCount = $academy->activeTeachers()->count();
         
         // Get active secretaries count
         $activeSecretariesCount = $academy->activeSecretaries()->count();
 
-        // Get total enrollments (links) and unique students
-        $totalEnrollments = 0;
-        $uniqueStudentIds = collect();
-        
-        foreach ($academy->activeTeachers as $teacher) {
-            $enrollments = $teacher->activeEnrollments()->with('student')->get();
-            $totalEnrollments += $enrollments->count();
-            $uniqueStudentIds = $uniqueStudentIds->merge($enrollments->pluck('student_id'));
-        }
-        
-        $uniqueStudentsCount = $uniqueStudentIds->unique()->count();
+        // Get total enrollments (links) and unique students for linked academy teachers
+        $enrollmentsQuery = Enrollment::query()
+            ->whereIn('teacher_id', $linkedTeacherIds)
+            ->where('academy_id', $academy->id)
+            ->where('is_active', true);
+
+        $totalEnrollments = (clone $enrollmentsQuery)->count();
+        $uniqueStudentsCount = (clone $enrollmentsQuery)
+            ->distinct('student_id')
+            ->count('student_id');
 
         // Get today's attendance
         $today = Carbon::today();
@@ -53,8 +58,8 @@ class DashboardService
         $monthlyAbsent = $monthlyAttendance->where('status', 'absent')->count();
 
         // --- Revenue Statistics ---
-        // Only get IDs of active teachers
-        $teacherIds = $academy->activeTeachers()->pluck('teachers.id');
+        // Use all currently linked teachers in this academy.
+        $teacherIds = $linkedTeacherIds;
         
         // Current Month Revenue
         $currentMonthRevenue = \App\Domains\Subscriptions\Models\PaymentLog::whereIn('teacher_id', $teacherIds)
@@ -83,27 +88,40 @@ class DashboardService
         }
 
         // Get pending billing
-        $pendingBilling = $academy->billings()
-            ->pending()
+        $pendingBilling = \App\Domains\Subscriptions\Models\AcademySubscription::query()
+            ->where('academy_id', $academy->id)
+            ->whereIn('status', ['pending', 'partial'])
             ->latest()
             ->first();
         
-        // Get recent teachers (last 5) - only active teachers
+        // Get recent teachers (last 5 linked teachers in academy)
         $recentTeachers = $academy->teachers()
-            ->where('academy_teacher.is_active', true)
-            ->where('teachers.status', 'active')
+            ->select('teachers.*')
             ->orderBy('academy_teacher.created_at', 'desc')
             ->limit(5)
             ->get();
 
         // Transform recent teachers
-        $transformedTeachers = $recentTeachers->map(function ($teacher) {
+        $imageService = app(ImageService::class);
+        $transformedTeachers = $recentTeachers->map(function ($teacher) use ($academy, $imageService) {
+            $rawStatus = $this->normalizeEnumValue($teacher->status);
+            $status = 'نشط';
+            if ($rawStatus === 'pending') {
+                $status = 'في انتظار الموافقة';
+            } elseif ($rawStatus === 'suspended' || !$teacher->pivot?->is_active) {
+                $status = 'معلق';
+            }
+
             return [
                 'id' => $teacher->id,
                 'name' => $teacher->name,
-                'avatar' => $teacher->avatar_url,
-                'students_count' => $teacher->activeEnrollments()->count(),
-                'status' => $teacher->pivot->is_active ? 'نشط' : 'غير نشط',
+                'avatar' => $teacher->avatar_key ? $imageService->getUrl($teacher->avatar_key) : null,
+                'students_count' => Enrollment::query()
+                    ->where('teacher_id', $teacher->id)
+                    ->where('academy_id', $academy->id)
+                    ->where('is_active', true)
+                    ->count(),
+                'status' => $status,
                 'created_at' => $teacher->pivot->created_at,
             ];
         });
@@ -114,7 +132,7 @@ class DashboardService
                 'name' => $academy->name,
                 'logo_key' => $academy->logo_key,
             ],
-            'teachers_count' => $activeTeachersCount,
+            'teachers_count' => $linkedTeachersCount,
             'students_count' => $uniqueStudentsCount,
             'total_enrollments' => $totalEnrollments,
             'actual_revenue' => $currentMonthRevenue,
@@ -122,6 +140,7 @@ class DashboardService
             'teachers' => $transformedTeachers,
             'stats' => [
                 'active_teachers' => $activeTeachersCount,
+                'linked_teachers' => $linkedTeachersCount,
                 'active_secretaries' => $activeSecretariesCount,
                 'total_students' => $uniqueStudentsCount,
                 'total_enrollments' => $totalEnrollments,
@@ -131,9 +150,9 @@ class DashboardService
                 'monthly_absent' => $monthlyAbsent,
             ],
             'pending_billing' => $pendingBilling ? [
-                'month' => $pendingBilling->month,
-                'year' => $pendingBilling->year,
-                'total_cost' => $pendingBilling->total_cost,
+                'month' => $pendingBilling->month?->format('m'),
+                'year' => $pendingBilling->month?->format('Y'),
+                'total_cost' => $pendingBilling->amount_due,
             ] : null,
         ];
         });
@@ -146,5 +165,18 @@ class DashboardService
     public function clearStatsCache(Academy $academy): void
     {
         CacheService::forgetAcademyDashboard($academy->id);
+    }
+
+    private function normalizeEnumValue(mixed $value): ?string
+    {
+        if ($value instanceof \BackedEnum) {
+            return (string) $value->value;
+        }
+
+        if ($value === null) {
+            return null;
+        }
+
+        return (string) $value;
     }
 }

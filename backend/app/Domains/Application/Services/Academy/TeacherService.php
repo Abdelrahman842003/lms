@@ -6,7 +6,10 @@ namespace App\Domains\Application\Services\Academy;
 
 use App\Domains\Auth\Models\Academy;
 use App\Domains\Auth\Models\Teacher;
+use App\Domains\Enrollments\Models\Enrollment;
+use App\Domains\Media\Services\ImageService;
 use App\Domains\Support\Models\TeacherAttendanceLog;
+use App\Domains\Support\Services\CacheService;
 use Carbon\Carbon;
 use Illuminate\Pagination\LengthAwarePaginator;
 
@@ -77,6 +80,7 @@ class TeacherService
                     'is_active' => true,
                     'joined_at' => Carbon::now(),
                 ]);
+                $this->clearAcademyDashboardCache($academy);
                 
                 // Reload teacher with updated pivot data
                 return $academy->teachers()
@@ -95,6 +99,7 @@ class TeacherService
             'is_active' => true,
             'joined_at' => Carbon::now(),
         ]);
+        $this->clearAcademyDashboardCache($academy);
 
         // Reload teacher with pivot data and all columns
         return $academy->teachers()
@@ -126,6 +131,7 @@ class TeacherService
             'is_active' => true,
             'joined_at' => Carbon::now(),
         ]);
+        $this->clearAcademyDashboardCache($academy);
 
         // Reload teacher with pivot data and all columns
         return $academy->teachers()
@@ -160,6 +166,7 @@ class TeacherService
         }
 
         $teacher->save();
+        $this->clearAcademyDashboardCache($academy);
 
         return $teacher;
     }
@@ -173,23 +180,116 @@ class TeacherService
         string $dateFrom,
         string $dateTo
     ): array {
-        $teacher = $academy->teachers()->findOrFail($teacherId);
+        $teacher = $academy->teachers()
+            ->select('teachers.*')
+            ->withPivot('is_active', 'joined_at')
+            ->findOrFail($teacherId);
+
+        $groups = $teacher->groups()
+            ->where('academy_id', $academy->id)
+            ->with('grade:id,name')
+            ->withCount([
+                'enrollments as students_count' => function ($query) use ($academy) {
+                    $query->where('academy_id', $academy->id)
+                        ->where('is_active', true);
+                },
+            ])
+            ->latest()
+            ->get()
+            ->map(function ($group) {
+                return [
+                    'id' => $group->id,
+                    'name' => $group->name,
+                    'grade_id' => $group->grade_id,
+                    'grade_name' => $group->grade?->name,
+                    'time' => $group->time,
+                    'days' => $this->normalizeDays($group->days),
+                    'type' => $group->type instanceof \BackedEnum ? $group->type->value : (string) $group->type,
+                    'price' => $group->price,
+                    'students_count' => (int) ($group->students_count ?? 0),
+                    'created_at' => $group->created_at?->toISOString(),
+                ];
+            })
+            ->values();
+
+        $grades = $teacher->grades()
+            ->where('academy_id', $academy->id)
+            ->withCount([
+                'enrollments as students_count' => function ($query) use ($academy) {
+                    $query->where('academy_id', $academy->id)
+                        ->where('is_active', true);
+                },
+            ])
+            ->orderBy('name')
+            ->get()
+            ->map(function ($grade) {
+                return [
+                    'id' => $grade->id,
+                    'name' => $grade->name,
+                    'price' => $grade->price,
+                    'students_count' => (int) ($grade->students_count ?? 0),
+                    'created_at' => $grade->created_at?->toISOString(),
+                ];
+            })
+            ->values();
 
         $attendanceLogs = TeacherAttendanceLog::forAcademy($academy->id)
             ->forTeacher($teacher->id)
             ->dateRange($dateFrom, $dateTo)
             ->orderBy('date', 'desc')
-            ->get();
+            ->get()
+            ->map(function ($log) {
+                $checkIn = $log->checked_in_at?->toISOString();
+                $checkOut = $log->checked_out_at?->toISOString();
+
+                return [
+                    'id' => $log->id,
+                    'date' => $log->date?->toDateString(),
+                    'check_in' => $checkIn,
+                    'check_out' => $checkOut,
+                    'checked_in_at' => $checkIn,
+                    'checked_out_at' => $checkOut,
+                    'status' => $this->normalizeEnumValue($log->status),
+                    'notes' => $log->notes,
+                    'duration_minutes' => (int) ($log->duration_minutes ?? 0),
+                    'duration_formatted' => $log->duration_formatted,
+                    'created_at' => $log->created_at?->toISOString(),
+                ];
+            })
+            ->values();
+
+        $studentsCount = Enrollment::query()
+            ->where('teacher_id', $teacher->id)
+            ->where('academy_id', $academy->id)
+            ->where('is_active', true)
+            ->distinct('student_id')
+            ->count('student_id');
 
         // Calculate stats
         $totalPresent = $attendanceLogs->where('status', 'checked_out')->count();
         $totalAbsent = $attendanceLogs->where('status', 'absent')->count();
         $totalDuration = $attendanceLogs->sum('duration_minutes');
+        $imageService = app(ImageService::class);
 
         return [
-            'teacher' => $teacher,
+            'teacher' => [
+                'id' => $teacher->id,
+                'name' => $teacher->name,
+                'phone' => $teacher->phone,
+                'subject' => $teacher->subject,
+                'status' => $this->normalizeEnumValue($teacher->status),
+                'is_active' => (bool) ($teacher->pivot?->is_active ?? true),
+                'joined_at' => $teacher->pivot?->joined_at?->toISOString(),
+                'avatar' => $teacher->avatar_key ? $imageService->getUrl($teacher->avatar_key) : null,
+                'avatar_key' => $teacher->avatar_key,
+            ],
+            'groups' => $groups,
+            'grades' => $grades,
             'attendance_logs' => $attendanceLogs,
             'stats' => [
+                'students_count' => $studentsCount,
+                'groups_count' => $groups->count(),
+                'grades_count' => $grades->count(),
                 'total_present' => $totalPresent,
                 'total_absent' => $totalAbsent,
                 'total_duration_minutes' => $totalDuration,
@@ -209,6 +309,7 @@ class TeacherService
         $academy->teachers()->updateExistingPivot($teacherId, [
             'is_active' => !$currentStatus,
         ]);
+        $this->clearAcademyDashboardCache($academy);
 
         return !$currentStatus;
     }
@@ -219,5 +320,47 @@ class TeacherService
     public function removeTeacher(Academy $academy, string $teacherId): void
     {
         $academy->teachers()->detach($teacherId);
+        $this->clearAcademyDashboardCache($academy);
+    }
+
+    private function normalizeDays(?string $days): array
+    {
+        if ($days === null) {
+            return [];
+        }
+
+        $trimmed = trim($days);
+        if ($trimmed === '') {
+            return [];
+        }
+
+        if (str_starts_with($trimmed, '[')) {
+            $decoded = json_decode($trimmed, true);
+            if (is_array($decoded)) {
+                return array_values(array_filter(array_map(static fn ($day) => trim((string) $day), $decoded)));
+            }
+        }
+
+        $parts = preg_split('/\s*[،,]\s*/u', $trimmed) ?: [];
+
+        return array_values(array_filter(array_map(static fn ($day) => trim((string) $day), $parts)));
+    }
+
+    private function normalizeEnumValue(mixed $value): ?string
+    {
+        if ($value instanceof \BackedEnum) {
+            return (string) $value->value;
+        }
+
+        if ($value === null) {
+            return null;
+        }
+
+        return (string) $value;
+    }
+
+    private function clearAcademyDashboardCache(Academy $academy): void
+    {
+        CacheService::forgetAcademyDashboard($academy->id);
     }
 }

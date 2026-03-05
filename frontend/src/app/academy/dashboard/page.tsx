@@ -10,6 +10,7 @@ import { useAuth } from '@/contexts/EnhancedAuthContext';
 import academyService from '@/services/academyService';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
 
 import { Icon } from '@/components/ui';
 
@@ -55,7 +56,8 @@ function AcademyDashboard() {
           setTeachers(data.teachers || []);
         }
       } catch (error) {
-        // Error handled silently
+        console.error('Failed to load academy dashboard stats:', error);
+        toast.error('تعذر تحميل بيانات لوحة الأكاديمية');
       } finally {
         setIsLoading(false);
       }

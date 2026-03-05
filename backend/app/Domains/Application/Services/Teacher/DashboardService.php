@@ -11,56 +11,32 @@ use Illuminate\Support\Facades\Log;
 
 class DashboardService
 {
+    private function applyContextFilter($query, ?string $academyId)
+    {
+        if (!$academyId) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        if ($academyId === 'independent') {
+            return $query->whereNull('academy_id');
+        }
+
+        return $query->where('academy_id', $academyId);
+    }
+
     public function getStats(Teacher $teacher, ?string $academyId): array
     {
         Log::info("getStats: Teacher {$teacher->id}, AcademyId: " . ($academyId ?? 'NULL'));
 
-        // Helper to apply academy filter
-        $applyAcademyFilter = function ($query) use ($academyId) {
-            // If no academy selected, return empty results (require explicit selection)
-            if (!$academyId) {
-                $query->whereRaw('1 = 0');
-                return;
-            }
-
-            if ($academyId === 'independent') {
-                $query->where(function ($q) {
-                    $q->whereDoesntHave('grade')
-                      ->orWhereHas('grade', function ($g) {
-                          $g->whereNull('academy_id');
-                      });
-                });
-            } else {
-                $query->whereHas('grade', function ($q) use ($academyId) {
-                    $q->where('academy_id', $academyId);
-                });
-            }
-        };
-
-        return CacheService::getTeacherDashboardStats($teacher->id, function () use ($teacher, $academyId, $applyAcademyFilter) {
+        return CacheService::getTeacherDashboardStats($teacher->id, function () use ($teacher, $academyId) {
             // Get total students
-            $studentsQuery = $teacher->students();
-            // Filter students based on their enrollment's grade
-            $studentsQuery->whereHas('enrollments', function ($q) use ($academyId) {
-                 // If no academy selected, return empty results
-                 if (!$academyId) {
-                     $q->whereRaw('1 = 0');
-                     return;
-                 }
-                 if ($academyId === 'independent') {
-                     $q->where(function ($sub) {
-                         $sub->whereDoesntHave('grade')
-                             ->orWhereHas('grade', function ($g) {
-                                 $g->whereNull('academy_id');
-                             });
-                     });
-                 } else {
-                     $q->whereHas('grade', function ($g) use ($academyId) {
-                         $g->where('academy_id', $academyId);
-                     });
-                 }
-            });
-            $totalStudents = $studentsQuery->count();
+            $enrollmentsQuery = \App\Domains\Enrollments\Models\Enrollment::query()
+                ->where('teacher_id', $teacher->id)
+                ->where('is_active', true);
+            $this->applyContextFilter($enrollmentsQuery, $academyId);
+            $totalStudents = (clone $enrollmentsQuery)
+                ->distinct('student_id')
+                ->count('student_id');
             Log::info("getStats: Total Students: {$totalStudents}");
 
             // Get active students (students who have logged in recently or have activity)
@@ -69,18 +45,18 @@ class DashboardService
 
             // Get total groups
             $groupsQuery = $teacher->groups();
-            $applyAcademyFilter($groupsQuery);
+            $this->applyContextFilter($groupsQuery, $academyId);
             $totalGroups = $groupsQuery->count();
 
             // Get total exams
             $examsQuery = \App\Domains\Exams\Models\Exam::where('teacher_id', $teacher->id);
-            $applyAcademyFilter($examsQuery);
+            $this->applyContextFilter($examsQuery, $academyId);
             $totalExams = $examsQuery->count();
 
             // Calculate Average Attendance
             // Total Present / Total Attendance Records * 100
             $lecturesQuery = $teacher->lectures();
-            $applyAcademyFilter($lecturesQuery);
+            $this->applyContextFilter($lecturesQuery, $academyId);
             $teacherLecturesIds = $lecturesQuery->pluck('id');
             
             $totalAttendanceRecords = \App\Domains\Lectures\Models\Attendance::whereIn('lecture_id', $teacherLecturesIds)->count();
@@ -97,7 +73,7 @@ class DashboardService
                 ->where('start_time', '<=', now())
                 ->orderBy('start_time', 'desc');
             
-            $applyAcademyFilter($trendLecturesQuery);
+            $this->applyContextFilter($trendLecturesQuery, $academyId);
             
             $attendanceTrend = $trendLecturesQuery
                 ->withCount([
@@ -131,20 +107,7 @@ class DashboardService
         $query = \App\Domains\Enrollments\Models\Enrollment::where('teacher_id', $teacher->id)
             ->with(['student', 'grade', 'group', 'student.examResults.exam', 'student.attendances.lecture']);
 
-        if ($academyId) {
-            if ($academyId === 'independent') {
-                $query->where(function ($q) {
-                    $q->whereDoesntHave('grade')
-                      ->orWhereHas('grade', function ($g) {
-                          $g->whereNull('academy_id');
-                      });
-                });
-            } else {
-                $query->whereHas('grade', function ($q) use ($academyId) {
-                    $q->where('academy_id', $academyId);
-                });
-            }
-        }
+        $this->applyContextFilter($query, $academyId);
 
         $enrollments = $query->latest()
             ->limit($limit)
@@ -161,20 +124,7 @@ class DashboardService
             ->where('start_time', '>', now())
             ->orderBy('start_time', 'asc');
 
-        if ($academyId) {
-            if ($academyId === 'independent') {
-                $query->where(function ($q) {
-                    $q->whereDoesntHave('grade')
-                      ->orWhereHas('grade', function ($g) {
-                          $g->whereNull('academy_id');
-                      });
-                });
-            } else {
-                $query->whereHas('grade', function ($q) use ($academyId) {
-                    $q->where('academy_id', $academyId);
-                });
-            }
-        }
+        $this->applyContextFilter($query, $academyId);
 
         return $query->limit($limit)
             ->get()
