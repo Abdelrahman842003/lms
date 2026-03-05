@@ -105,7 +105,7 @@ export function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
   
-  // Check for auth state cookie (set by client-side AuthContext)
+  // Routing hint only (client-managed cookies are not security boundaries).
   const hasSession = request.cookies.has('auth_state');
   const userRole = request.cookies.get('user_role')?.value;
   

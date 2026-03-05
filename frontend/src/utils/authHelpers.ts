@@ -5,6 +5,7 @@
 
 import type { User } from '@/types';
 import type { TeacherInfo, ChildInfo, AcademyInfo } from '@/types/auth.types';
+import { setAccessToken } from '@/lib/tokenManager';
 
 /**
  * Storage keys constants
@@ -12,8 +13,6 @@ import type { TeacherInfo, ChildInfo, AcademyInfo } from '@/types/auth.types';
 export const AUTH_STORAGE_KEYS = {
   USER: 'user',
   USER_TYPE: 'userType',
-  TOKEN: 'token',
-  REFRESH_TOKEN: 'refreshToken',
   SELECTED_TEACHER: 'selectedTeacher',
   SELECTED_CHILD: 'selectedChild',
   SELECTED_ACADEMY: 'selectedAcademy',
@@ -21,22 +20,32 @@ export const AUTH_STORAGE_KEYS = {
   PARENT_CHILDREN: 'parentChildren',
 } as const;
 
+const LEGACY_TOKEN_STORAGE_KEYS = [
+  'token',
+  'accessToken',
+  'access_token',
+  'refreshToken',
+  'refresh_token',
+  'auth_token',
+] as const;
+
 /**
  * Cookie names
  */
 export const AUTH_COOKIES = {
   AUTH_STATE: 'auth_state',
   USER_ROLE: 'user_role',
-  LARAVEL_SESSION: 'laravel_session',
-  XSRF_TOKEN: 'XSRF-TOKEN',
 } as const;
 
 /**
  * Set auth cookie
+ * Note: HttpOnly cannot be set from JavaScript. Sensitive cookies must be set by the server.
  */
 export function setAuthCookie(name: string, value: string, maxAge: number = 2592000): void {
   if (typeof document === 'undefined') return;
-  document.cookie = `${name}=${value}; path=/; max-age=${maxAge}; SameSite=Lax`;
+  const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
+  const secure = isHttps ? '; Secure' : '';
+  document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=${maxAge}; SameSite=Lax${secure}`;
 }
 
 /**
@@ -44,7 +53,9 @@ export function setAuthCookie(name: string, value: string, maxAge: number = 2592
  */
 export function clearAuthCookie(name: string): void {
   if (typeof document === 'undefined') return;
-  document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+  const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
+  const secure = isHttps ? '; Secure' : '';
+  document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT${secure}`;
 }
 
 /**
@@ -53,8 +64,15 @@ export function clearAuthCookie(name: string): void {
 export function clearAllAuthCookies(): void {
   clearAuthCookie(AUTH_COOKIES.AUTH_STATE);
   clearAuthCookie(AUTH_COOKIES.USER_ROLE);
-  clearAuthCookie(AUTH_COOKIES.LARAVEL_SESSION);
-  clearAuthCookie(AUTH_COOKIES.XSRF_TOKEN);
+}
+
+function clearLegacyTokenStorage(): void {
+  if (typeof window === 'undefined') return;
+
+  LEGACY_TOKEN_STORAGE_KEYS.forEach((key) => {
+    localStorage.removeItem(key);
+    sessionStorage.removeItem(key);
+  });
 }
 
 /**
@@ -62,7 +80,11 @@ export function clearAllAuthCookies(): void {
  */
 export function clearAuthStorage(): void {
   if (typeof localStorage === 'undefined') return;
-  localStorage.clear();
+  Object.values(AUTH_STORAGE_KEYS).forEach((key) => {
+    localStorage.removeItem(key);
+  });
+
+  clearLegacyTokenStorage();
 }
 
 /**
@@ -199,14 +221,13 @@ export function storeUserType(userType: string): void {
 }
 
 /**
- * Store auth tokens
+ * Store access token in memory only (secure)
  */
-export function storeTokens(token: string, refreshToken?: string): void {
-  if (typeof localStorage === 'undefined') return;
-  localStorage.setItem(AUTH_STORAGE_KEYS.TOKEN, token);
-  if (refreshToken) {
-    localStorage.setItem(AUTH_STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
-  }
+export function storeTokens(token: string, _refreshToken?: string): void {
+  if (!token) return;
+  void _refreshToken;
+  clearLegacyTokenStorage();
+  setAccessToken(token, 60);
 }
 
 /**

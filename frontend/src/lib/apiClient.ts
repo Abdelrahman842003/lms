@@ -11,10 +11,10 @@
  * - Request/response interceptors
  */
 
-import { API_CONFIG, getVersionedApiUrl } from '@/config/api-config';
-import { getCSRFToken } from './csrf';
+import { getApiBaseUrl, getVersionedApiUrl } from '@/config/api-config';
+import { getCSRFToken, initializeCSRF } from './csrf';
 import { getAccessToken, refreshAccessToken as tokenRefresh } from './tokenManager';
-import { ApiError, handleApiError } from './errorHandler';
+import { ApiError } from './errorHandler';
 
 /**
  * HTTP Methods
@@ -37,9 +37,15 @@ interface RequestOptions extends Omit<RequestInit, 'headers' | 'method'> {
 class ApiClient {
   private academyContext: string | null = null;
   private baseUrl: string;
+  private trustedApiOrigin: string;
+  private trustedApiPath: string;
 
   constructor() {
     this.baseUrl = getVersionedApiUrl();
+
+    const trustedApiUrl = new URL(getApiBaseUrl());
+    this.trustedApiOrigin = trustedApiUrl.origin;
+    this.trustedApiPath = trustedApiUrl.pathname.replace(/\/+$/, '') || '/';
   }
 
   /**
@@ -57,32 +63,94 @@ class ApiClient {
     return this.academyContext;
   }
 
+  private isTrustedRequestUrl(requestUrl: string): boolean {
+    try {
+      const parsedUrl = new URL(requestUrl);
+      if (parsedUrl.origin !== this.trustedApiOrigin) {
+        return false;
+      }
+
+      if (this.trustedApiPath === '/') {
+        return true;
+      }
+
+      return parsedUrl.pathname === this.trustedApiPath ||
+        parsedUrl.pathname.startsWith(`${this.trustedApiPath}/`);
+    } catch {
+      return false;
+    }
+  }
+
+  private shouldSetJsonContentType(
+    method: HttpMethod,
+    body: BodyInit | null | undefined,
+    headers: Record<string, string>
+  ): boolean {
+    const hasContentType = Object.keys(headers).some(
+      (key) => key.toLowerCase() === 'content-type'
+    );
+
+    if (hasContentType || method === 'GET' || method === 'HEAD' || body == null) {
+      return false;
+    }
+
+    if (typeof FormData !== 'undefined' && body instanceof FormData) {
+      return false;
+    }
+
+    if (typeof URLSearchParams !== 'undefined' && body instanceof URLSearchParams) {
+      return false;
+    }
+
+    if (typeof Blob !== 'undefined' && body instanceof Blob) {
+      return false;
+    }
+
+    return true;
+  }
+
   /**
    * Build request headers
    */
-  private buildHeaders(options: RequestOptions): Record<string, string> {
+  private buildHeaders(
+    method: HttpMethod,
+    requestUrl: string,
+    options: RequestOptions
+  ): Record<string, string> {
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
       'Accept': 'application/json',
       ...options.headers,
     };
 
-    // Add CSRF token
-    const xsrfToken = getCSRFToken();
-    if (xsrfToken) {
-      headers['X-XSRF-TOKEN'] = xsrfToken;
+    if (this.shouldSetJsonContentType(method, options.body, headers)) {
+      headers['Content-Type'] = 'application/json';
     }
 
-    // Add authorization token
-    if (!options.skipAuth) {
-      const token = getAccessToken();
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
+    const trustedRequest = this.isTrustedRequestUrl(requestUrl);
+
+    // Add CSRF and authorization only for trusted API URLs
+    if (trustedRequest) {
+      const xsrfToken = getCSRFToken();
+      if (xsrfToken) {
+        headers['X-XSRF-TOKEN'] = xsrfToken;
       }
+
+      if (!options.skipAuth) {
+        const token = getAccessToken();
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+      }
+    } else {
+      Object.keys(headers).forEach((headerKey) => {
+        if (headerKey.toLowerCase() === 'authorization') {
+          delete headers[headerKey];
+        }
+      });
     }
 
     // Add academy context header
-    if (!options.skipAcademy) {
+    if (!options.skipAcademy && trustedRequest) {
       const academyId = this.academyContext || this.getAcademyFromLegacy();
       if (academyId) {
         headers['X-Academy-Id'] = academyId;
@@ -116,7 +184,8 @@ class ApiClient {
    * Build URL with query parameters
    */
   private buildUrl(endpoint: string, params?: Record<string, string | number | boolean | undefined>): string {
-    let url = endpoint.startsWith('http') ? endpoint : `${this.baseUrl}${endpoint}`;
+    const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    let url = /^https?:\/\//i.test(endpoint) ? endpoint : `${this.baseUrl}${cleanEndpoint}`;
 
     if (params && Object.keys(params).length > 0) {
       const searchParams = new URLSearchParams();
@@ -161,21 +230,37 @@ class ApiClient {
    */
   private async handleCsrfMismatch(originalRequest: () => Promise<Response>): Promise<Response> {
     try {
-      // Re-initialize CSRF token
-      const response = await fetch(`${API_CONFIG.baseUrl}/sanctum/csrf-cookie`, {
-        method: 'GET',
-        credentials: 'include',
-      });
-
-      if (response.ok) {
-        // Retry the original request
-        return await originalRequest();
-      }
+      await initializeCSRF(true);
+      return await originalRequest();
     } catch {
       console.error('Failed to refresh CSRF token');
     }
 
     throw new ApiError('انتهت صلاحية الجلسة. يرجى إعادة تحميل الصفحة.', 419);
+  }
+
+  private serializeBody(data: unknown): BodyInit | undefined {
+    if (data === null || data === undefined) {
+      return undefined;
+    }
+
+    if (typeof data === 'string') {
+      return data;
+    }
+
+    if (typeof FormData !== 'undefined' && data instanceof FormData) {
+      return data;
+    }
+
+    if (typeof URLSearchParams !== 'undefined' && data instanceof URLSearchParams) {
+      return data;
+    }
+
+    if (typeof Blob !== 'undefined' && data instanceof Blob) {
+      return data;
+    }
+
+    return JSON.stringify(data);
   }
 
   /**
@@ -187,31 +272,38 @@ class ApiClient {
     options: RequestOptions = {}
   ): Promise<T> {
     const url = this.buildUrl(endpoint, options.params);
-    const headers = this.buildHeaders(options);
+    const headers = this.buildHeaders(method, url, options);
 
     const fetchOptions: RequestInit = {
+      ...options,
       method,
       headers,
       credentials: 'include',
-      ...options,
     };
 
     // Remove params from options as they're now in the URL
-    delete (fetchOptions as any).params;
+    delete (fetchOptions as RequestOptions).params;
 
-    const executeRequest = (): Promise<Response> => {
-      return fetch(url, fetchOptions);
-    };
+    const executeRequest = (): Promise<Response> => fetch(url, fetchOptions);
+    const trustedUrl = this.isTrustedRequestUrl(url);
+    let response: Response;
 
-    let response = await executeRequest();
+    try {
+      response = await executeRequest();
+    } catch (error) {
+      const message = error instanceof Error && error.message
+        ? `فشل الاتصال بالخادم: ${error.message}`
+        : 'فشل الاتصال بالخادم. يرجى التحقق من اتصال الإنترنت.';
+      throw new ApiError(message, 0);
+    }
 
     // Handle 419 CSRF Mismatch
-    if (response.status === 419) {
+    if (response.status === 419 && trustedUrl) {
       response = await this.handleCsrfMismatch(executeRequest);
     }
 
     // Handle 401 Unauthorized
-    if (response.status === 401 && !options.skipAuth) {
+    if (response.status === 401 && !options.skipAuth && trustedUrl) {
       response = await this.handleUnauthorized(executeRequest);
     }
 
@@ -249,11 +341,11 @@ class ApiClient {
     );
 
     // Dispatch auth events
-    if (response.status === 401) {
+    if (typeof window !== 'undefined' && response.status === 401) {
       window.dispatchEvent(new Event('auth:unauthorized'));
     }
 
-    if (response.status === 403) {
+    if (typeof window !== 'undefined' && response.status === 403) {
       const isTeacherSuspended = errorData.error === 'TEACHER_SUSPENDED';
       if (isTeacherSuspended) {
         window.dispatchEvent(new Event('auth:teacher_suspended'));
@@ -267,8 +359,11 @@ class ApiClient {
    * Parse successful response
    */
   private async parseResponse<T>(response: Response): Promise<T> {
-    const contentType = response.headers.get('content-type');
+    if (response.status === 204) {
+      return undefined as T;
+    }
 
+    const contentType = response.headers.get('content-type');
     if (contentType?.includes('application/json')) {
       const data = await response.json();
 
@@ -297,7 +392,7 @@ class ApiClient {
   public async post<T>(endpoint: string, data?: unknown, options: RequestOptions = {}): Promise<T> {
     return this.request<T>('POST', endpoint, {
       ...options,
-      body: JSON.stringify(data),
+      body: this.serializeBody(data),
     });
   }
 
@@ -307,7 +402,7 @@ class ApiClient {
   public async put<T>(endpoint: string, data?: unknown, options: RequestOptions = {}): Promise<T> {
     return this.request<T>('PUT', endpoint, {
       ...options,
-      body: JSON.stringify(data),
+      body: this.serializeBody(data),
     });
   }
 
@@ -317,7 +412,7 @@ class ApiClient {
   public async patch<T>(endpoint: string, data?: unknown, options: RequestOptions = {}): Promise<T> {
     return this.request<T>('PATCH', endpoint, {
       ...options,
-      body: JSON.stringify(data),
+      body: this.serializeBody(data),
     });
   }
 

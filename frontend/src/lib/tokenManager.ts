@@ -4,6 +4,8 @@
  * Tokens are stored in httpOnly cookies by the backend
  */
 
+import { getVersionedApiUrl } from '@/config/api-config';
+
 interface TokenState {
   accessToken: string | null;
   expiresAt: number | null;
@@ -18,6 +20,7 @@ let tokenState: TokenState = {
 // Event listeners for token changes
 type TokenListener = (token: string | null) => void;
 const listeners: Set<TokenListener> = new Set();
+let refreshInFlight: Promise<string | null> | null = null;
 
 /**
  * Get access token from memory
@@ -52,12 +55,6 @@ export function clearAccessToken(): void {
 
   // Notify listeners
   notifyListeners(null);
-
-  // Clear cookies (they should be cleared by backend on logout)
-  if (typeof document !== 'undefined') {
-    document.cookie = 'access_token=; path=/; max-age=0; SameSite=Lax';
-    document.cookie = 'refresh_token=; path=/; max-age=0; SameSite=Lax';
-  }
 }
 
 /**
@@ -107,15 +104,13 @@ function notifyListeners(token: string | null): void {
 /**
  * Refresh access token using backend endpoint
  */
-export async function refreshAccessToken(): Promise<string | null> {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
-
+async function performTokenRefresh(): Promise<string | null> {
+  const apiUrl = getVersionedApiUrl();
   try {
     const response = await fetch(`${apiUrl}/auth/refresh`, {
       method: 'POST',
       credentials: 'include',
       headers: {
-        'Content-Type': 'application/json',
         'Accept': 'application/json',
       },
     });
@@ -137,6 +132,21 @@ export async function refreshAccessToken(): Promise<string | null> {
     clearAccessToken();
     return null;
   }
+}
+
+/**
+ * Refresh access token using backend endpoint (single-flight)
+ */
+export async function refreshAccessToken(): Promise<string | null> {
+  if (refreshInFlight) {
+    return refreshInFlight;
+  }
+
+  refreshInFlight = performTokenRefresh().finally(() => {
+    refreshInFlight = null;
+  });
+
+  return refreshInFlight;
 }
 
 /**

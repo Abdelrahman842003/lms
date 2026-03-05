@@ -17,6 +17,8 @@ import {
   logout as apiLogout,
   getCurrentUser,
 } from "@/services/authService";
+import { clearAccessToken } from "@/lib/tokenManager";
+import { AUTH_COOKIES, clearAuthCookie, clearAuthStorage, setAuthCookie } from "@/utils/authHelpers";
 import { User } from "@/types";
 
 const VALID_USER_TYPES = ['teacher', 'student', 'secretary', 'parent', 'academy'] as const;
@@ -55,16 +57,14 @@ export function CoreAuthProvider({ children }: { children: ReactNode }) {
         const storedUserObj = JSON.parse(storedUser);
         if (isValidUserType(storedUserObj?.userType)) {
           setUser(storedUserObj);
-          // Ensure cookie is set only for supported frontend roles
-          document.cookie = "auth_state=true; path=/; max-age=2592000; SameSite=Lax";
-          document.cookie = `user_role=${storedUserObj.userType}; path=/; max-age=2592000; SameSite=Lax`;
+          // Non-sensitive routing hint cookies only.
+          setAuthCookie(AUTH_COOKIES.AUTH_STATE, "true");
+          setAuthCookie(AUTH_COOKIES.USER_ROLE, storedUserObj.userType);
         } else {
-          localStorage.removeItem("user");
-          localStorage.removeItem("userType");
-          localStorage.removeItem("token");
-          localStorage.removeItem("refreshToken");
-          document.cookie = "auth_state=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-          document.cookie = "user_role=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+          clearAuthStorage();
+          clearAuthCookie(AUTH_COOKIES.AUTH_STATE);
+          clearAuthCookie(AUTH_COOKIES.USER_ROLE);
+          clearAccessToken();
         }
       }
     } catch (error) {
@@ -126,11 +126,10 @@ export function CoreAuthProvider({ children }: { children: ReactNode }) {
 
   const clearAuth = () => {
     setUser(null);
-    localStorage.clear();
-    document.cookie = "auth_state=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-    document.cookie = "user_role=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-    document.cookie = "laravel_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-    document.cookie = "XSRF-TOKEN=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    clearAuthStorage();
+    clearAccessToken();
+    clearAuthCookie(AUTH_COOKIES.AUTH_STATE);
+    clearAuthCookie(AUTH_COOKIES.USER_ROLE);
   };
 
   const login = async (
@@ -176,24 +175,11 @@ export function CoreAuthProvider({ children }: { children: ReactNode }) {
 
       setUser(userData);
       localStorage.setItem("user", JSON.stringify(userData));
-
-      // Store tokens
-      const apiResponse = response as any;
-      const token = apiResponse.token || apiResponse.access_token;
-      if (token) {
-        localStorage.setItem("token", token);
-      }
-
-      const refreshToken = apiResponse.refresh_token;
-      if (refreshToken) {
-        localStorage.setItem("refreshToken", refreshToken);
-      }
-
       localStorage.setItem("userType", response.role);
 
       // Set auth cookies
-      document.cookie = "auth_state=true; path=/; max-age=2592000; SameSite=Lax";
-      document.cookie = `user_role=${response.role}; path=/; max-age=2592000; SameSite=Lax`;
+      setAuthCookie(AUTH_COOKIES.AUTH_STATE, "true");
+      setAuthCookie(AUTH_COOKIES.USER_ROLE, response.role);
 
     } catch (error) {
       console.error("Login failed:", error);

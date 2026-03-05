@@ -13,58 +13,187 @@ import {
 } from '@/config/api-config';
 
 import { getCSRFToken, initializeCSRF } from '@/lib/csrf';
-import { getAccessToken, setAccessToken, clearAccessToken, refreshAccessToken as tokenRefresh } from '@/lib/tokenManager';
-import { ApiError, handleApiError, showErrorToast } from '@/lib/errorHandler';
+import { getAccessToken, refreshAccessToken as tokenRefresh } from '@/lib/tokenManager';
+import { ApiError, showErrorToast } from '@/lib/errorHandler';
 
 // Re-export for backward compatibility
 export const API_BASE_URL = API_CONFIG.baseUrl;
 export const ENDPOINTS = FLAT_ENDPOINTS;
 export { getErrorMessage as getDefaultArabicError };
+export type ApiErrorExtended = ApiError;
+const IS_PROD = process.env.NODE_ENV === 'production';
+let refreshInFlight: Promise<string | null> | null = null;
 
-/**
- * Get cookie by name (client-side only)
- */
-export function getCookie(name: string): string | null {
-  if (typeof document === 'undefined') return null;
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) return decodeURIComponent(parts.pop()?.split(';').shift() || '');
-  return null;
+function debugLog(...args: unknown[]): void {
+  if (!IS_PROD) {
+    console.debug(...args);
+  }
 }
 
 /**
- * Get auth token from memory (secure) or fallback to localStorage (legacy)
- * @deprecated Use tokenManager.getToken() directly for new code
+ * Get auth token from memory (secure)
  */
 export function getAuthToken(): string | null {
-  // Try in-memory token first (new secure approach)
-  const memoryToken = getAccessToken();
-  if (memoryToken) {
-    console.debug('[getAuthToken] Using memory token');
-    return memoryToken;
-  }
-
-  // Fallback to localStorage for backward compatibility during transition
-  if (typeof window !== 'undefined') {
-    const legacyToken = localStorage.getItem('token');
-    if (legacyToken) {
-      console.debug('[getAuthToken] Using localStorage token, migrating to memory');
-      // Migrate to in-memory storage
-      setAccessToken(legacyToken, 60);
-      return legacyToken;
-    }
-    console.debug('[getAuthToken] No token found in memory or localStorage');
-  }
-  return null;
+  const token = getAccessToken();
+  debugLog('[getAuthToken] Token present in memory:', !!token);
+  return token;
 }
 
 /**
- * Get refresh token from localStorage
+ * Legacy compatibility helper.
+ * Refresh token is now managed via httpOnly cookies, so no client-side access is exposed.
  */
-export function getRefreshToken(): string | null {
-  if (typeof window !== 'undefined') {
-    return localStorage.getItem('refreshToken');
+export function getRefreshToken(): null {
+  return null;
+}
+
+function isAbsoluteUrl(value: string): boolean {
+  return /^https?:\/\//i.test(value);
+}
+
+function buildRequestUrl(endpoint: string): string {
+  if (isAbsoluteUrl(endpoint)) {
+    return endpoint;
   }
+
+  const cleanBaseUrl = getApiBaseUrl();
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  let normalizedEndpoint = cleanEndpoint;
+
+  if (cleanEndpoint.startsWith('/api/v1/')) {
+    normalizedEndpoint = cleanEndpoint;
+  } else if (cleanEndpoint.startsWith('/api/')) {
+    normalizedEndpoint = cleanEndpoint.replace('/api/', '/api/v1/');
+  } else if (cleanEndpoint === '/api') {
+    normalizedEndpoint = '/api/v1';
+  } else if (cleanEndpoint.startsWith('/v1/')) {
+    normalizedEndpoint = `/api${cleanEndpoint}`;
+  } else {
+    normalizedEndpoint = `/api/v1${cleanEndpoint}`;
+  }
+
+  return `${cleanBaseUrl}${normalizedEndpoint}`;
+}
+
+function isTrustedApiUrl(targetUrl: string): boolean {
+  try {
+    const target = new URL(targetUrl);
+    const apiBase = new URL(getApiBaseUrl());
+    const apiPath = apiBase.pathname.replace(/\/+$/, '') || '/';
+
+    if (target.origin !== apiBase.origin) {
+      return false;
+    }
+
+    if (apiPath === '/') {
+      return true;
+    }
+
+    return target.pathname === apiPath || target.pathname.startsWith(`${apiPath}/`);
+  } catch {
+    return false;
+  }
+}
+
+function normalizeHeaders(headers?: HeadersInit): Record<string, string> {
+  if (!headers) {
+    return {};
+  }
+
+  if (headers instanceof Headers) {
+    const normalized: Record<string, string> = {};
+    headers.forEach((value, key) => {
+      normalized[key] = value;
+    });
+    return normalized;
+  }
+
+  if (Array.isArray(headers)) {
+    return Object.fromEntries(headers);
+  }
+
+  return { ...headers };
+}
+
+function hasHeader(headers: Record<string, string>, headerName: string): boolean {
+  const normalizedName = headerName.toLowerCase();
+  return Object.keys(headers).some((key) => key.toLowerCase() === normalizedName);
+}
+
+function shouldSetJsonContentType(
+  method: string | undefined,
+  body: BodyInit | null | undefined,
+  headers: Record<string, string>
+): boolean {
+  if (hasHeader(headers, 'Content-Type')) {
+    return false;
+  }
+
+  const upperMethod = (method || 'GET').toUpperCase();
+  if (upperMethod === 'GET' || upperMethod === 'HEAD' || body == null) {
+    return false;
+  }
+
+  if (typeof FormData !== 'undefined' && body instanceof FormData) {
+    return false;
+  }
+
+  if (typeof URLSearchParams !== 'undefined' && body instanceof URLSearchParams) {
+    return false;
+  }
+
+  if (typeof Blob !== 'undefined' && body instanceof Blob) {
+    return false;
+  }
+
+  if (typeof ArrayBuffer !== 'undefined' && body instanceof ArrayBuffer) {
+    return false;
+  }
+
+  return true;
+}
+
+function createNetworkError(error: unknown): ApiError {
+  const message = error instanceof Error && error.message
+    ? `فشل الاتصال بالخادم: ${error.message}`
+    : 'فشل الاتصال بالخادم. يرجى التحقق من اتصال الإنترنت.';
+
+  return new ApiError(message, 0);
+}
+
+function isSafeAcademyId(value: unknown): value is string | number {
+  if (typeof value !== 'string' && typeof value !== 'number') {
+    return false;
+  }
+  return /^[a-zA-Z0-9_-]+$/.test(String(value));
+}
+
+/**
+ * Client-side academy context is only a routing hint.
+ * Server-side authorization must validate tenant access independently.
+ */
+function resolveAcademyContextHeader(): string | null {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  const selectedAcademyStr = localStorage.getItem('selectedAcademy');
+  if (selectedAcademyStr) {
+    try {
+      const selectedAcademy = JSON.parse(selectedAcademyStr) as { id?: unknown } | null;
+      if (selectedAcademy?.id && isSafeAcademyId(selectedAcademy.id)) {
+        return String(selectedAcademy.id);
+      }
+    } catch {
+      // Ignore malformed localStorage and fallback below.
+    }
+  }
+
+  const userType = localStorage.getItem('userType');
+  if (userType === 'teacher') {
+    return 'independent';
+  }
+
   return null;
 }
 
@@ -72,41 +201,45 @@ export function getRefreshToken(): string | null {
  * Get auth headers including token and academy context
  * Uses secure token management (memory-first approach)
  */
-export function getAuthHeaders(additionalHeaders: Record<string, string> = {}): Record<string, string> {
-  const xsrfToken = getCSRFToken();
+export function getAuthHeaders(
+  additionalHeaders: Record<string, string> = {},
+  requestUrl?: string,
+  requestOptions: Pick<RequestInit, 'method' | 'body'> = {}
+): Record<string, string> {
+  const allowSensitiveHeaders = requestUrl ? isTrustedApiUrl(requestUrl) : true;
   const token = getAuthToken();
-  
-  // Debug logging
-  console.debug('[getAuthHeaders] Token present:', !!token);
-  console.debug('[getAuthHeaders] Token source:', token ? (getAccessToken() ? 'memory' : 'localStorage') : 'none');
-
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
     'Accept': 'application/json',
-    ...(xsrfToken && { 'X-XSRF-TOKEN': xsrfToken }),
-    ...(token && { 'Authorization': `Bearer ${token}` }),
     ...additionalHeaders,
   };
 
-  // Inject Academy Context Header
-  if (typeof window !== 'undefined') {
-    const selectedAcademyStr = localStorage.getItem('selectedAcademy');
-    if (selectedAcademyStr) {
-      try {
-        const selectedAcademy = JSON.parse(selectedAcademyStr);
-        if (selectedAcademy && selectedAcademy.id) {
-          headers['X-Academy-Id'] = selectedAcademy.id;
-        } else {
-          headers['X-Academy-Id'] = 'independent';
-        }
-      } catch {
-        // Ignore parse error
+  if (shouldSetJsonContentType(requestOptions.method, requestOptions.body, headers)) {
+    headers['Content-Type'] = 'application/json';
+  }
+
+  if (allowSensitiveHeaders) {
+    const xsrfToken = getCSRFToken();
+    if (xsrfToken) {
+      headers['X-XSRF-TOKEN'] = xsrfToken;
+    }
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+  } else {
+    Object.keys(headers).forEach((headerKey) => {
+      if (headerKey.toLowerCase() === 'authorization') {
+        delete headers[headerKey];
       }
-    } else {
-      const userType = localStorage.getItem('userType');
-      if (userType === 'teacher') {
-        headers['X-Academy-Id'] = 'independent';
-      }
+    });
+  }
+
+  debugLog('[getAuthHeaders] Token present:', !!token);
+  debugLog('[getAuthHeaders] Allow sensitive headers:', allowSensitiveHeaders);
+
+  if (allowSensitiveHeaders) {
+    const academyContext = resolveAcademyContextHeader();
+    if (academyContext) {
+      headers['X-Academy-Id'] = academyContext;
     }
   }
 
@@ -118,18 +251,12 @@ export function getAuthHeaders(additionalHeaders: Record<string, string> = {}): 
  * Uses secure token management (cookies are httpOnly)
  */
 async function refreshAccessToken(): Promise<string | null> {
-  // Use the new secure token manager
-  const newToken = await tokenRefresh();
-
-  if (!newToken) {
-    // Clear legacy localStorage tokens
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('token');
-      localStorage.removeItem('refreshToken');
-    }
+  if (!refreshInFlight) {
+    refreshInFlight = tokenRefresh().finally(() => {
+      refreshInFlight = null;
+    });
   }
-
-  return newToken;
+  return await refreshInFlight;
 }
 
 /**
@@ -148,70 +275,53 @@ export async function fetchApi<T = unknown>(
   options: RequestInit = {},
   skipAuthEvent: boolean = false
 ): Promise<T> {
-  const headers = getAuthHeaders(options.headers as Record<string, string>);
-
   // Ensure endpoint is valid
   if (!endpoint || typeof endpoint !== 'string') {
     throw new Error('Invalid endpoint: endpoint must be a non-empty string');
   }
 
-  const cleanBaseUrl = getApiBaseUrl();
-  
-  // Build URL with version prefix
-  let normalizedEndpoint = endpoint;
-  
-  // If endpoint starts with /api, handle it
-  if (endpoint.startsWith('/api')) {
-    // Check if it already has version prefix
-    if (!endpoint.includes('/api/v1/')) {
-      // Replace /api/ with /api/v1/
-      normalizedEndpoint = endpoint.replace('/api/', '/api/v1/');
-    }
-  } else {
-    // Endpoint doesn't start with /api
-    // Check if it starts with /v1/
-    if (endpoint.startsWith('/v1/')) {
-      normalizedEndpoint = '/api' + endpoint;
-    } else {
-      // Add /api/v1 prefix
-      normalizedEndpoint = '/api/v1' + endpoint;
-    }
-  }
-  
-  const url = `${cleanBaseUrl}${normalizedEndpoint}`;
-  
-  let response = await fetch(url, {
-    ...options,
-    headers,
-    credentials: 'include',
+  const url = buildRequestUrl(endpoint);
+  const isTrustedUrl = isTrustedApiUrl(url);
+  const additionalHeaders = normalizeHeaders(options.headers);
+  const headers = getAuthHeaders(additionalHeaders, url, {
+    method: options.method,
+    body: options.body,
   });
 
+  const executeRequest = async (): Promise<Response> => {
+    try {
+      return await fetch(url, {
+        ...options,
+        headers,
+        credentials: 'include',
+      });
+    } catch (error) {
+      const networkError = createNetworkError(error);
+      showErrorToast(networkError);
+      throw networkError;
+    }
+  };
+
+  let response = await executeRequest();
+
   // Handle 419 CSRF Token Mismatch - Retry once
-  if (response.status === 419) {
-    await csrf();
+  if (response.status === 419 && isTrustedUrl) {
+    await initializeCSRF(true);
     const newXsrfToken = getCSRFToken();
 
     if (newXsrfToken) {
       headers['X-XSRF-TOKEN'] = newXsrfToken;
-      response = await fetch(url, {
-        ...options,
-        headers,
-        credentials: 'include',
-      });
+      response = await executeRequest();
     }
   }
 
   // Handle 401 Unauthorized - Attempt Refresh
-  if (response.status === 401 && !skipAuthEvent) {
+  if (response.status === 401 && !skipAuthEvent && isTrustedUrl) {
     const newToken = await refreshAccessToken();
-    
+
     if (newToken) {
       headers['Authorization'] = `Bearer ${newToken}`;
-      response = await fetch(url, {
-        ...options,
-        headers,
-        credentials: 'include',
-      });
+      response = await executeRequest();
     }
   }
 
@@ -228,13 +338,16 @@ export async function fetchApi<T = unknown>(
       error = { message: `API Error: ${response.status}` };
     }
 
+    const safeMessage = getErrorMessage(response.status);
     const serverMessage = typeof error?.message === 'string' ? error.message : null;
-    const arabicMessage = serverMessage || getErrorMessage(response.status);
+    if (!IS_PROD && serverMessage) {
+      console.error('[API Error Payload]', serverMessage);
+    }
 
 
     // Create ApiError instance
     const apiError = new ApiError(
-      arabicMessage,
+      safeMessage,
       response.status,
       error.errors as Record<string, string[]> | undefined,
       error.data as Record<string, unknown> | undefined
@@ -265,6 +378,16 @@ export async function fetchApi<T = unknown>(
     status_code: number;
     message: string;
     data: T;
+  }
+
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
+  const responseContentType = response.headers.get('content-type') || '';
+  if (!responseContentType.includes('application/json')) {
+    const textResponse = await response.text();
+    return textResponse as T;
   }
 
   const res: ApiResponse<T> = await response.json();

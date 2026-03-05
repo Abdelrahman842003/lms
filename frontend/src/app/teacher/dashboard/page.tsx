@@ -8,6 +8,7 @@ import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { TeacherStatsCharts } from '@/components/dashboard/TeacherStatsCharts';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { LoadingSpinner } from '@/components/ui';
+import { clearAllAuthCookies, clearAuthStorage } from '@/utils/authHelpers';
 
 
 export default function TeacherDashboard() {
@@ -55,11 +56,8 @@ export default function TeacherDashboard() {
         
         // If unauthorized, logout the user and clear storage
         if (error.status === 401 || error.message?.toLowerCase().includes('unauthenticated')) {
-          localStorage.clear();
-          document.cookie = "auth_state=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-          document.cookie = "user_role=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-          document.cookie = "laravel_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-          document.cookie = "XSRF-TOKEN=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+          clearAuthStorage();
+          clearAllAuthCookies();
           window.location.href = '/login';
         }
       } finally {

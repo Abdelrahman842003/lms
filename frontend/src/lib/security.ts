@@ -183,8 +183,8 @@ export const secureStorage = {
     localStorage.removeItem(key);
   },
 
-  clear(): void {
-    localStorage.clear();
+  clear(keys: string[] = []): void {
+    keys.forEach((key) => localStorage.removeItem(key));
   }
 };
 
@@ -288,16 +288,20 @@ export const tokenStorage = {
   },
 
   async setRefreshToken(token: string): Promise<void> {
-    // Refresh token in localStorage with encryption
-    await secureStorage.setItem('refresh_token', token);
+    // Keep refresh token out of localStorage (session scope only)
+    const encryptedToken = await encryptData(token);
+    sessionStorage.setItem('refresh_token', encryptedToken);
   },
 
   async getRefreshToken(): Promise<string | null> {
-    return await secureStorage.getItem('refresh_token');
+    const encryptedToken = sessionStorage.getItem('refresh_token');
+    if (!encryptedToken) return null;
+
+    return await decryptData(encryptedToken);
   },
 
   removeRefreshToken(): void {
-    secureStorage.removeItem('refresh_token');
+    sessionStorage.removeItem('refresh_token');
   }
 };
 
@@ -305,7 +309,7 @@ export const tokenStorage = {
  * Security logger for audit trails
  */
 export const securityLogger = {
-  logSecurityEvent(event: string, details: any = {}): void {
+  logSecurityEvent(event: string, details: Record<string, unknown> = {}): void {
     if (process.env.NODE_ENV === 'development') {
       console.warn('[Security Event]', event, details);
     }

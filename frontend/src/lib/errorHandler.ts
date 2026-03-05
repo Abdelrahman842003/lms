@@ -4,6 +4,8 @@
  * with user-friendly Arabic messages and toast notifications
  */
 
+const IS_PROD = process.env.NODE_ENV === 'production';
+
 /**
  * API Error class with extended properties
  */
@@ -166,8 +168,10 @@ export function showErrorToast(error: ApiError | Error): void {
   // import { toast } from 'react-hot-toast';
   // toast.error(error.message);
 
-  // For now, just log to console
-  console.error('[Error]', error.message);
+  // For now, keep logs in non-production only
+  if (!IS_PROD) {
+    console.error('[Error]', error.message);
+  }
 
   // Dispatch custom event for global error handling
   if (typeof window !== 'undefined') {
@@ -183,7 +187,9 @@ export function showSuccessToast(message: string): void {
   // import { toast } from 'react-hot-toast';
   // toast.success(message);
 
-  console.log('[Success]', message);
+  if (!IS_PROD) {
+    console.info('[Success]', message);
+  }
 
   // Dispatch custom event for global success handling
   if (typeof window !== 'undefined') {
@@ -206,7 +212,10 @@ export function processApiResponse<T>(
     );
   }
 
-  return (response as any)[dataKey] !== undefined ? (response as any)[dataKey] : response as unknown as T;
+  const responseWithDynamicData = response as Record<string, unknown>;
+  const dynamicData = responseWithDynamicData[dataKey];
+
+  return dynamicData !== undefined ? (dynamicData as T) : response as unknown as T;
 }
 
 /**
