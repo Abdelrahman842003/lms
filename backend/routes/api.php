@@ -300,8 +300,10 @@ Route::post('/login/secretary', [SecretaryAuthController::class, 'login'])
     ->middleware(['throttle.login', 'auth.cookies']);
 
 // Canonical refresh endpoint + backward-compatible alias
-Route::post('/auth/refresh', [\App\Domains\Application\Http\Controllers\Api\RefreshTokenController::class, 'refresh']);
-Route::post('/refresh-token', [\App\Domains\Application\Http\Controllers\Api\RefreshTokenController::class, 'refresh']);
+Route::post('/auth/refresh', [\App\Domains\Application\Http\Controllers\Api\RefreshTokenController::class, 'refresh'])
+    ->middleware('auth.cookies');
+Route::post('/refresh-token', [\App\Domains\Application\Http\Controllers\Api\RefreshTokenController::class, 'refresh'])
+    ->middleware('auth.cookies');
 
 Route::middleware(['auth:sanctum', \App\Domains\Auth\Http\Middleware\EnsureSecretaryTeacherNotSuspended::class])->prefix('secretary')->group(function () {
     Route::post('/logout', [SecretaryAuthController::class, 'logout']);

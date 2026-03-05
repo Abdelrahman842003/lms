@@ -26,7 +26,7 @@ class GuardianAuthService
         $this->deviceLimitService = $deviceLimitService;
     }
 
-    public function login(string $phone, string $password, string $ip, string $userAgent): array
+    public function login(string $phone, string $password, string $ip, string $userAgent, bool $remember = true): array
     {
         // Check if blocked
         if ($this->loginAttemptService->isBlocked($phone, $ip)) {
@@ -82,8 +82,9 @@ class GuardianAuthService
 
         $this->loginAttemptService->clearAttempts($phone, $ip);
 
+        $refreshLifetimeDays = $remember ? 365 : 30;
         $accessToken = $guardian->createToken('access_token', ['access-api'], now()->addMinutes(60))->plainTextToken;
-        $refreshToken = $guardian->createToken('refresh_token', ['issue-access-token'], now()->addDays(30))->plainTextToken;
+        $refreshToken = $guardian->createToken('refresh_token', ['issue-access-token'], now()->addDays($refreshLifetimeDays))->plainTextToken;
 
         return [
             'guardian' => $guardian,

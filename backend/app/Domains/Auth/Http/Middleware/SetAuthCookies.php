@@ -22,6 +22,9 @@ class SetAuthCookies
     public function handle(Request $request, Closure $next): Response
     {
         $response = $next($request);
+        $domain = config('session.domain');
+        $secure = $this->shouldUseSecureCookie($request);
+        $sameSite = config('session.same_site') ?: 'lax';
 
         // Only process successful JSON responses with token data
         $contentType = $response->headers->get('content-type');
@@ -53,11 +56,11 @@ class SetAuthCookies
                 $tokenData['token'],
                 60, // 60 minutes
                 '/',
-                config('session.domain'),
-                true, // secure (HTTPS only in production)
+                $domain,
+                $secure, // secure only when request/session config requires it
                 true, // httpOnly (not accessible via JavaScript)
                 false, // raw
-                'Lax' // sameSite
+                $sameSite
             ));
         }
 
@@ -66,13 +69,13 @@ class SetAuthCookies
             $response->withCookie(cookie(
                 'refresh_token',
                 $tokenData['refresh_token'],
-                43200, // 30 days
+                525600, // 365 days
                 '/',
-                config('session.domain'),
-                true, // secure
+                $domain,
+                $secure, // secure only when request/session config requires it
                 true, // httpOnly
                 false, // raw
-                'Lax' // sameSite
+                $sameSite
             ));
         }
 
@@ -85,6 +88,8 @@ class SetAuthCookies
     public static function clearCookies(Response $response): Response
     {
         $domain = config('session.domain');
+        $secure = (bool) (config('session.secure') ?? app()->environment('production'));
+        $sameSite = config('session.same_site') ?: 'lax';
 
         return $response
             ->withCookie(cookie(
@@ -93,10 +98,10 @@ class SetAuthCookies
                 -2628000,
                 '/',
                 $domain,
-                true,
+                $secure,
                 true,
                 false,
-                'Lax'
+                $sameSite
             ))
             ->withCookie(cookie(
                 'refresh_token',
@@ -104,10 +109,20 @@ class SetAuthCookies
                 -2628000,
                 '/',
                 $domain,
-                true,
+                $secure,
                 true,
                 false,
-                'Lax'
+                $sameSite
             ));
+    }
+
+    private function shouldUseSecureCookie(Request $request): bool
+    {
+        $sessionSecure = config('session.secure');
+        if ($sessionSecure !== null) {
+            return (bool) $sessionSecure;
+        }
+
+        return $request->isSecure() || app()->environment('production');
     }
 }

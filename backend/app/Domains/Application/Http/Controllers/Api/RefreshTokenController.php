@@ -49,10 +49,15 @@ class RefreshTokenController extends Controller
         }
 
         $newAccessToken = $user->createToken('access_token', ['access-api'], now()->addMinutes(60))->plainTextToken;
+        $newRefreshToken = $user->createToken('refresh_token', ['issue-access-token'], now()->addDays(365))->plainTextToken;
+
+        // Rotate refresh token to reduce replay risk.
+        $token->delete();
 
         return $this->successResponse([
             'access_token' => $newAccessToken,
             'token' => $newAccessToken,
+            'refresh_token' => $newRefreshToken,
             'token_type' => 'Bearer',
         ], 'Token refreshed successfully');
     }

@@ -8,7 +8,7 @@ import { LoginContainer } from '@/components/auth/LoginContainer';
 import { LoginCard } from '@/components/auth/LoginCard';
 import { UserTypeSelector } from '@/components/auth/UserTypeSelector';
 import { Input } from '@/components/ui/Input';
-import { Button, Icon } from '@/components/ui';
+import { Button, ConfirmationModal, Icon } from '@/components/ui';
 
 interface ValidationErrors {
   phone?: string;
@@ -32,6 +32,15 @@ export default function LoginPage() {
   });
   const [countdown, setCountdown] = useState<number>(0);
   const [isBanned, setIsBanned] = useState(false);
+  const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
+
+  const audienceByUserType: Record<typeof userType, string> = {
+    teacher: 'مدرسي العزيز',
+    student: 'طالبي العزيز',
+    secretary: 'سكرتيري العزيز',
+    parent: 'ولي الأمر العزيز',
+    academy: 'إدارة الأكاديمية',
+  };
 
 
   // Redirect authenticated users to their dashboard
@@ -346,11 +355,14 @@ export default function LoginPage() {
                   )}
                 </div>
 
-                <div className="flex justify-between items-center -mt-[5px]">
-                  <label className="flex items-center gap-2 cursor-pointer text-[0.9rem] text-[#E9ECEF]">
-                    <input type="checkbox" className="w-[18px] h-[18px] cursor-pointer accent-primary" />
-                    <span>تذكرني</span>
-                  </label>
+                <div className="flex justify-end items-center -mt-[5px] mb-1">
+                  <button
+                    type="button"
+                    onClick={() => setIsForgotPasswordOpen(true)}
+                    className="text-[0.9rem] text-[#C8D1E4] hover:text-white transition-colors"
+                  >
+                    نسيت كلمة السر؟
+                  </button>
                 </div>
 
                 <Button
@@ -378,6 +390,25 @@ export default function LoginPage() {
           </div>
         </LoginContainer>
       </PageTransition>
+
+      <ConfirmationModal
+        isOpen={isForgotPasswordOpen}
+        title="استرجاع كلمة المرور"
+        message={
+          <p className="leading-7">
+            عزيزي {audienceByUserType[userType]}،
+            <br />
+            يرجى التواصل مع إدارة المنصة لتغيير كلمة المرور الخاصة بك.
+            <br />
+            شكرًا لتفهمك.
+          </p>
+        }
+        confirmText="تم"
+        onConfirm={() => setIsForgotPasswordOpen(false)}
+        onCancel={() => setIsForgotPasswordOpen(false)}
+        showCancel={false}
+        variant="primary"
+      />
     </>
   );
 }

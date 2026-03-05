@@ -26,7 +26,7 @@ export async function loginTeacher(
 ): Promise<AuthResponse> {
   const response = await fetchApi<AuthResponse>(ENDPOINTS.LOGIN_TEACHER, {
     method: 'POST',
-    body: JSON.stringify({ phone, password }),
+    body: JSON.stringify({ phone, password, remember: true }),
   }, true);
 
   // Store token in memory (secure)
@@ -52,7 +52,7 @@ export async function loginStudent(
     teachers: TeacherInfo[];
   }>(ENDPOINTS.LOGIN_STUDENT, {
     method: 'POST',
-    body: JSON.stringify({ phone, password }),
+    body: JSON.stringify({ phone, password, remember: true }),
   }, true);
 
   // Store token in memory (secure)
@@ -78,7 +78,7 @@ export async function loginSecretary(
 ): Promise<AuthResponse> {
   const response = await fetchApi<AuthResponse>(ENDPOINTS.LOGIN_SECRETARY, {
     method: 'POST',
-    body: JSON.stringify({ phone, password }),
+    body: JSON.stringify({ phone, password, remember: true }),
   }, true);
 
   // Store token in memory (secure)
@@ -105,7 +105,7 @@ export async function loginParent(
     parent_phone: string;
   }>(ENDPOINTS.LOGIN_PARENT, {
     method: 'POST',
-    body: JSON.stringify({ phone, password }),
+    body: JSON.stringify({ phone, password, remember: true }),
   }, true);
 
   // Store token in memory (secure)
@@ -142,7 +142,7 @@ export async function loginAcademy(
     role: UserType;
   }>(ENDPOINTS.LOGIN_ACADEMY, {
     method: 'POST',
-    body: JSON.stringify({ phone, password }),
+    body: JSON.stringify({ phone, password, remember: true }),
   }, true);
 
   // Store token in memory (secure)

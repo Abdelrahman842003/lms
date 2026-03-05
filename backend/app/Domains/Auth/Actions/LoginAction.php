@@ -54,7 +54,7 @@ final class LoginAction
 
         // توليد الـ tokens
         $accessToken  = $user->createToken('access_token',  ['access-api'],        now()->addMinutes(60))->plainTextToken;
-        $refreshToken = $user->createToken('refresh_token', ['issue-access-token'], now()->addDays(30))->plainTextToken;
+        $refreshToken = $user->createToken('refresh_token', ['issue-access-token'], now()->addDays(365))->plainTextToken;
 
         // حفظ FCM token لو مرسل
         if ($dto->fcmToken) {

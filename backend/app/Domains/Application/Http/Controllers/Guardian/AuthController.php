@@ -43,7 +43,8 @@ class AuthController extends Controller
                 $request->phone, 
                 $request->password, 
                 $request->ip(),
-                $request->userAgent() ?? 'Unknown'
+                $request->userAgent() ?? 'Unknown',
+                $request->boolean('remember', true)
             );
 
             // Format children avatars

@@ -56,11 +56,13 @@ class AuthController extends Controller
         // Manage device limits (auto-removes oldest if at limit)
         $deviceResult = $this->deviceLimitService->checkAndManageDevices($data['user']);
 
+        $refreshLifetimeDays = $request->boolean('remember', true) ? 365 : 30;
+
         // Generate Access Token (Short-lived - 60 mins)
         $accessToken = $data['user']->createToken('access_token', ['access-api'], now()->addMinutes(60))->plainTextToken;
         
-        // Generate Refresh Token (Long-lived - 30 days)
-        $refreshToken = $data['user']->createToken('refresh_token', ['issue-access-token'], now()->addDays(30))->plainTextToken;
+        // Generate Refresh Token (Long-lived)
+        $refreshToken = $data['user']->createToken('refresh_token', ['issue-access-token'], now()->addDays($refreshLifetimeDays))->plainTextToken;
 
         return $this->successResponse([
             'token' => $accessToken,
