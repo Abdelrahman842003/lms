@@ -39,6 +39,8 @@ class SystemSettingsPage extends Page implements HasForms
     protected string $view = 'filament.pages.system-settings';
 
     protected const SETTING_KEYS = [
+        // General
+        'whatsappNumber',
         // SEO
         'seo_title',
         'seo_description',
@@ -80,6 +82,8 @@ class SystemSettingsPage extends Page implements HasForms
         );
 
         $this->form->fill(array_merge([
+            // General
+            'whatsappNumber' => Setting::getValue('whatsappNumber', ''),
             // SEO
             'seo_title' => Setting::getValue('seo_title', ''),
             'seo_description' => Setting::getValue('seo_description', ''),
@@ -125,6 +129,17 @@ class SystemSettingsPage extends Page implements HasForms
         return $schema
             ->statePath('data')
             ->components([
+                Section::make('عام')
+                    ->schema([
+                        TextInput::make('whatsappNumber')
+                            ->label('رقم التواصل مع الإدارة')
+                            ->tel()
+                            ->maxLength(30)
+                            ->placeholder('مثال: 201001234567')
+                            ->helperText('يُستخدم في زر "تواصل مع الإدارة" داخل صفحة تسجيل الدخول.'),
+                    ])
+                    ->columns(1),
+
                 Section::make('تحسين محركات البحث')
                     ->schema([
                         TextInput::make('seo_title')

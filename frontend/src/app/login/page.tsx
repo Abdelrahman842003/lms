@@ -4,11 +4,13 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { PageTransition } from '@/components/shared/PageTransition';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
+import { useSettings } from '@/contexts/SettingsContext';
 import { LoginContainer } from '@/components/auth/LoginContainer';
 import { LoginCard } from '@/components/auth/LoginCard';
 import { UserTypeSelector } from '@/components/auth/UserTypeSelector';
 import { Input } from '@/components/ui/Input';
 import { Button, ConfirmationModal, Icon } from '@/components/ui';
+import { toast } from 'react-hot-toast';
 
 interface ValidationErrors {
   phone?: string;
@@ -18,6 +20,7 @@ interface ValidationErrors {
 export default function LoginPage() {
   const router = useRouter();
   const { login, user, isLoading: authLoading } = useAuth();
+  const { settings } = useSettings();
   const [userType, setUserType] = useState<'teacher' | 'student' | 'secretary' | 'parent' | 'academy'>('teacher');
   const [formData, setFormData] = useState({
     phone: '',
@@ -40,6 +43,28 @@ export default function LoginPage() {
     secretary: 'سكرتيري العزيز',
     parent: 'ولي الأمر العزيز',
     academy: 'إدارة الأكاديمية',
+  };
+
+  const contactAdminNumber = (
+    settings.whatsappNumber ||
+    settings.support_phone ||
+    settings.supportPhone ||
+    ''
+  ).trim();
+
+  const hasContactNumber = contactAdminNumber.replace(/[^0-9]/g, '').length > 0;
+
+  const handleContactAdmin = () => {
+    const rawPhone = contactAdminNumber.replace(/[^0-9]/g, '');
+    if (!rawPhone) {
+      toast.error('رقم التواصل مع الإدارة غير متاح حالياً.');
+      return;
+    }
+
+    const message = `السلام عليكم، أنا ${audienceByUserType[userType]} وأحتاج مساعدة في استرجاع كلمة المرور.`;
+    const waUrl = `https://wa.me/${rawPhone}?text=${encodeURIComponent(message)}`;
+    window.open(waUrl, '_blank', 'noopener,noreferrer');
+    setIsForgotPasswordOpen(false);
   };
 
 
@@ -399,14 +424,21 @@ export default function LoginPage() {
             عزيزي {audienceByUserType[userType]}،
             <br />
             يرجى التواصل مع إدارة المنصة لتغيير كلمة المرور الخاصة بك.
+            {hasContactNumber && (
+              <>
+                <br />
+                رقم التواصل: {contactAdminNumber}
+              </>
+            )}
             <br />
             شكرًا لتفهمك.
           </p>
         }
-        confirmText="تم"
-        onConfirm={() => setIsForgotPasswordOpen(false)}
+        confirmText="تواصل مع الإدارة"
+        cancelText="إلغاء"
+        onConfirm={handleContactAdmin}
         onCancel={() => setIsForgotPasswordOpen(false)}
-        showCancel={false}
+        showCancel
         variant="primary"
       />
     </>
