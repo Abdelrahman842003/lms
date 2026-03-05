@@ -14,6 +14,14 @@
   margin: 0 auto;
 }
 
+/* Match roughly browser zoom 80% for desktop login card content */
+@media (min-width: 1024px) {
+  .login-scale-wrapper {
+    transform: scale(0.8);
+    transform-origin: top center;
+  }
+}
+
 /* Login Card */
 .login-card {
   padding: 50px 45px;

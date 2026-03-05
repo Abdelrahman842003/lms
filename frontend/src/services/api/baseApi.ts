@@ -302,6 +302,18 @@ export async function fetchApi<T = unknown>(
     }
   };
 
+  // On hard refresh, in-memory token can be empty while httpOnly refresh cookie is still valid.
+  // Prime Authorization once before the first protected request to avoid noisy first-load 401s.
+  if (isTrustedUrl && !skipAuthEvent && !headers['Authorization'] && typeof window !== 'undefined') {
+    const hasStoredSessionHint = !!localStorage.getItem('userType');
+    if (hasStoredSessionHint) {
+      const primedToken = await refreshAccessToken();
+      if (primedToken) {
+        headers['Authorization'] = `Bearer ${primedToken}`;
+      }
+    }
+  }
+
   let response = await executeRequest();
 
   // Handle 419 CSRF Token Mismatch - Retry once

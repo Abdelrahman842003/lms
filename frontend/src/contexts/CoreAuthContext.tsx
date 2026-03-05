@@ -7,7 +7,7 @@
 
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, ReactNode, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   loginTeacher,
@@ -48,18 +48,18 @@ export function CoreAuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const isRecoveringAuthRef = useRef(false);
 
   // Load user from localStorage on mount
   useEffect(() => {
+    let cachedUser: User | null = null;
+
     try {
       const storedUser = localStorage.getItem("user");
       if (storedUser) {
         const storedUserObj = JSON.parse(storedUser);
         if (isValidUserType(storedUserObj?.userType)) {
-          setUser(storedUserObj);
-          // Non-sensitive routing hint cookies only.
-          setAuthCookie(AUTH_COOKIES.AUTH_STATE, "true");
-          setAuthCookie(AUTH_COOKIES.USER_ROLE, storedUserObj.userType);
+          cachedUser = storedUserObj;
         } else {
           clearAuthStorage();
           clearAuthCookie(AUTH_COOKIES.AUTH_STATE);
@@ -77,6 +77,11 @@ export function CoreAuthProvider({ children }: { children: ReactNode }) {
         const userType = localStorage.getItem("userType");
 
         if (userType && isValidUserType(userType)) {
+          // Prime in-memory access token from refresh cookie before any /me call.
+          // This prevents refresh-time race conditions where early requests fire without Authorization.
+          const { refreshAccessToken } = await import("@/lib/tokenManager");
+          await refreshAccessToken();
+
           const response = await getCurrentUser(userType);
           const userData: User = {
             id: response.user.id,
@@ -99,8 +104,15 @@ export function CoreAuthProvider({ children }: { children: ReactNode }) {
 
           setUser(userData);
           localStorage.setItem("user", JSON.stringify(userData));
+          setAuthCookie(AUTH_COOKIES.AUTH_STATE, "true");
+          setAuthCookie(AUTH_COOKIES.USER_ROLE, response.role);
         } else if (userType && !isValidUserType(userType)) {
           clearAuth();
+        } else if (cachedUser) {
+          // Fallback only when userType is absent but cached user exists.
+          setUser(cachedUser);
+          setAuthCookie(AUTH_COOKIES.AUTH_STATE, "true");
+          setAuthCookie(AUTH_COOKIES.USER_ROLE, cachedUser.userType);
         }
       } catch (apiError: any) {
         if (apiError.status === 401) {
@@ -115,7 +127,53 @@ export function CoreAuthProvider({ children }: { children: ReactNode }) {
     validateSession();
 
     // Listen for auth events
-    const handleUnauthorized = () => {
+    const handleUnauthorized = async () => {
+      if (isRecoveringAuthRef.current) {
+        return;
+      }
+
+      try {
+        isRecoveringAuthRef.current = true;
+        const userType = localStorage.getItem("userType");
+
+        if (userType && isValidUserType(userType)) {
+          const { refreshAccessToken } = await import("@/lib/tokenManager");
+          const refreshedToken = await refreshAccessToken();
+
+          if (refreshedToken) {
+            const response = await getCurrentUser(userType);
+            const recoveredUser: User = {
+              id: response.user.id,
+              name: response.user.name,
+              ...(response.user.username && { username: response.user.username }),
+              userType: response.role,
+              createdAt: response.user.created_at || new Date().toISOString(),
+              updatedAt: response.user.updated_at || new Date().toISOString(),
+              avatar: response.user.avatar,
+              phone: response.user.phone,
+              parent_phone: response.parent_phone || response.user.parent_phone,
+              location: response.user.location,
+              gender: response.user.gender,
+              education_type: response.user.education_type,
+              teachers: response.teachers || response.user.teachers,
+              permissions: response.user.permissions,
+              is_independent_active: response.user.is_independent_active,
+              academies: response.academies || response.user.academies,
+            };
+
+            setUser(recoveredUser);
+            localStorage.setItem("user", JSON.stringify(recoveredUser));
+            setAuthCookie(AUTH_COOKIES.AUTH_STATE, "true");
+            setAuthCookie(AUTH_COOKIES.USER_ROLE, response.role);
+            return;
+          }
+        }
+      } catch (recoveryError) {
+        console.error("CoreAuthContext: failed to recover session after unauthorized", recoveryError);
+      } finally {
+        isRecoveringAuthRef.current = false;
+      }
+
       clearAuth();
       window.location.href = "/login";
     };

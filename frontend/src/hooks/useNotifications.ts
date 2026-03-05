@@ -110,7 +110,7 @@ export function useNotifications({
       // Show toast
       toast(notification.message, {
         duration: 5000,
-        position: 'top-right',
+        position: 'top-center',
         icon: '🔔',
         style: {
           borderRadius: '10px',

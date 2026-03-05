@@ -12,7 +12,7 @@
 }
 
 .navbar.scrolled {
-  border-bottom: 1px solid rgba(13, 162, 221, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(16, 20, 38, 0.6);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(20px);

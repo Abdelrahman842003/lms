@@ -8,6 +8,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import { useCoreAuth } from './CoreAuthContext';
 import { TeacherInfo, ChildInfo, AcademyInfo } from "@/types";
 
@@ -33,6 +34,7 @@ const SelectionContext = createContext<SelectionContextType | undefined>(undefin
 
 export function SelectionProvider({ children }: { children: ReactNode }) {
   const { user, isAuthenticated } = useCoreAuth();
+  const router = useRouter();
   
   const [selectedTeacher, setSelectedTeacher] = useState<TeacherInfo | null>(null);
   const [selectedChild, setSelectedChild] = useState<ChildInfo | null>(null);
@@ -188,8 +190,12 @@ export function SelectionProvider({ children }: { children: ReactNode }) {
   const selectAcademy = (academy: AcademyInfo) => {
     setSelectedAcademy(academy);
     localStorage.setItem("selectedAcademy", JSON.stringify(academy));
-    // Reload page to fetch new academy-specific data
-    window.location.reload();
+    // Avoid hard reload (it may drop in-memory auth token and force logout).
+    // Most pages listen to selectedAcademy changes and will refetch.
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("academy:changed"));
+    }
+    router.refresh();
   };
 
   const clearSelections = () => {

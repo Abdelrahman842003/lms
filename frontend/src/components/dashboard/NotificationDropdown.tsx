@@ -4,14 +4,16 @@ import Link from 'next/link';
 import { fetchApi } from '@/services/authService';
 import { toast } from 'react-hot-toast';
 import { ReceivedNotification as AppNotification } from '@/services/notificationService';
-import { getAccessToken } from '@/lib/tokenManager';
+import { getAccessToken, refreshAccessToken } from '@/lib/tokenManager';
 import { Icon } from '@/components/ui';
+import { useAuth } from '@/contexts/EnhancedAuthContext';
 
 interface NotificationDropdownProps {
   role: string;
 }
 
 export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role }) => {
+  const { isLoading: authLoading, isAuthenticated } = useAuth();
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
@@ -34,8 +36,14 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
   }, []);
 
   const fetchNotifications = async () => {
-    if (!role) return;
+    if (!role || authLoading || !isAuthenticated) return;
     try {
+      // Ensure access token exists in memory after page refresh.
+      const inMemoryToken = getAccessToken() || await refreshAccessToken();
+      if (!inMemoryToken) {
+        return;
+      }
+
       const data = await fetchApi<{
         received_notifications?: AppNotification[];
         notifications?: {
@@ -94,7 +102,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
               // Fallback to toast if native notifications are not granted
               toast.success(title, {
                 duration: 4000,
-                position: 'top-left',
+                position: 'top-center',
                 style: {
                   background: '#333',
                   color: '#fff',
@@ -120,7 +128,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
   };
 
   useEffect(() => {
-    if (role) {
+    if (role && !authLoading && isAuthenticated) {
       // Initial fetch
       fetchNotifications();
 
@@ -226,7 +234,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
               } else {
                 toast.success(title, {
                   duration: 4000,
-                  position: 'top-left',
+                  position: 'top-center',
                   style: {
                     background: '#333',
                     color: '#fff',
@@ -298,7 +306,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
         }
       };
     }
-  }, [role]);
+  }, [role, authLoading, isAuthenticated]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

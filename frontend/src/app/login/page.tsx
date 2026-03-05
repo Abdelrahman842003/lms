@@ -300,7 +300,7 @@ export default function LoginPage() {
     <>
       <PageTransition>
         <LoginContainer>
-          <div className="login-wrapper">
+          <div className="login-wrapper login-scale-wrapper">
             <LoginCard
               title={
                 userType === 'teacher' ? 'مرحبا بك مدرسي العزيز' :

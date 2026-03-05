@@ -12,10 +12,10 @@
 // Environment-based API URL configuration
 export const API_CONFIG = {
   // Main API base URL
-  baseUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
+  baseUrl: process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000',
 
   // Internal API URL (used for server-side requests)
-  internalUrl: process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
+  internalUrl: process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000',
 
   // API Version
   version: 'v1',
@@ -42,14 +42,34 @@ export function getApiBaseUrl(): string {
   
   // Handle empty or invalid base URL
   if (!baseUrl || baseUrl === '/api') {
-    return 'http://localhost:8000';
+    return 'http://127.0.0.1:8000';
   }
   
   // Strip trailing /api or /api/v1 if present, then trailing slash
-  return baseUrl
+  const normalizedBaseUrl = baseUrl
     .replace(/\/api\/v\d+\/?$/, '')
     .replace(/\/api\/?$/, '')
     .replace(/\/$/, '');
+
+  try {
+    const parsed = new URL(normalizedBaseUrl);
+
+    // In local development, keep frontend/backend on the same loopback host
+    // (localhost vs 127.0.0.1 mismatch breaks cookie-based refresh on page reload).
+    if (typeof window !== 'undefined') {
+      const frontendHost = window.location.hostname;
+      const apiHost = parsed.hostname;
+      const isLoopback = (host: string) => host === 'localhost' || host === '127.0.0.1';
+
+      if (isLoopback(frontendHost) && isLoopback(apiHost) && frontendHost !== apiHost) {
+        parsed.hostname = frontendHost;
+      }
+    }
+
+    return parsed.toString().replace(/\/$/, '');
+  } catch {
+    return normalizedBaseUrl;
+  }
 }
 
 // Helper to get API URL with /api suffix

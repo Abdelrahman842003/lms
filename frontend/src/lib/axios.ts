@@ -1,5 +1,5 @@
 import axios, { AxiosHeaders, InternalAxiosRequestConfig } from 'axios';
-import { getAccessToken } from './tokenManager';
+import { getAccessToken, refreshAccessToken as tokenRefresh } from './tokenManager';
 import { getApiBaseUrl } from '@/config/api-config';
 
 // Handle different API URL configurations
@@ -81,6 +81,47 @@ axiosInstance.interceptors.request.use(
     return config;
   },
   (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Retry once on 401 after refreshing token from httpOnly refresh cookie.
+axiosInstance.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error?.config as (InternalAxiosRequestConfig & { _retry?: boolean }) | undefined;
+    const status = error?.response?.status;
+
+    if (!originalRequest) {
+      return Promise.reject(error);
+    }
+
+    const requestUrl = new URL(
+      originalRequest.url || '',
+      originalRequest.baseURL || baseURL
+    ).toString();
+    const trustedRequest = isTrustedUrl(requestUrl);
+
+    if (status === 401 && trustedRequest && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      try {
+        const newToken = await tokenRefresh();
+        if (newToken) {
+          const headers = AxiosHeaders.from(originalRequest.headers || {});
+          headers.set('Authorization', `Bearer ${newToken}`);
+          originalRequest.headers = headers;
+          return axiosInstance.request(originalRequest);
+        }
+      } catch {
+        // Fall through to auth event dispatch below.
+      }
+
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('auth:unauthorized'));
+      }
+    }
+
     return Promise.reject(error);
   }
 );

@@ -14,6 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->api(prepend: [
+            \App\Domains\Auth\Http\Middleware\InjectBearerTokenFromCookie::class,
             // \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
             \App\Domains\Support\Http\Middleware\CheckMaintenanceMode::class,
         ]);

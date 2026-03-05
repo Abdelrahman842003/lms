@@ -7,12 +7,10 @@ import { StatCard } from '@/components/dashboard/StatCard';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { TeacherStatsCharts } from '@/components/dashboard/TeacherStatsCharts';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
-import { LoadingSpinner } from '@/components/ui';
-import { clearAllAuthCookies, clearAuthStorage } from '@/utils/authHelpers';
 
 
 export default function TeacherDashboard() {
-  const { user, selectedAcademy } = useAuth();
+  const { user, selectedAcademy, isLoading: authLoading, isAuthenticated } = useAuth();
 
   const [stats, setStats] = React.useState({
     totalStudents: 0,
@@ -28,6 +26,10 @@ export default function TeacherDashboard() {
   const [isLoading, setIsLoading] = React.useState(true);
 
   React.useEffect(() => {
+    if (authLoading || !isAuthenticated || user?.userType !== 'teacher') {
+      return;
+    }
+
     const fetchDashboardData = async () => {
       try {
         setIsLoading(true);
@@ -53,20 +55,13 @@ export default function TeacherDashboard() {
         setStudents(studentsData.students || []);
       } catch (error: any) {
         console.error('Failed to fetch dashboard data:', error);
-        
-        // If unauthorized, logout the user and clear storage
-        if (error.status === 401 || error.message?.toLowerCase().includes('unauthenticated')) {
-          clearAuthStorage();
-          clearAllAuthCookies();
-          window.location.href = '/login';
-        }
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchDashboardData();
-  }, [selectedAcademy]); // Re-fetch when academy changes
+  }, [selectedAcademy, authLoading, isAuthenticated, user?.userType]); // Re-fetch when auth/academy changes
   
   const tableColumns = [
     {

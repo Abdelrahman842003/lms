@@ -132,8 +132,8 @@ export default async function RootLayout({
                   <MaintenanceGuard maintenanceMode={maintenanceMode}>
                     <div className="relative z-10 max-w-[1200px] mx-auto">
                         {children}
-                        <Toaster position="top-center" />
                     </div>
+                    <Toaster position="top-center" />
                   </MaintenanceGuard>
                 </AuthProvider>
                 </SettingsProvider>

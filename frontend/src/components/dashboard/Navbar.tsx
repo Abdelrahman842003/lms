@@ -393,7 +393,7 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
 
   useEffect(() => {
     const checkAcademies = async () => {
-      if (role === 'teacher') {
+      if (role === 'teacher' && !isLoading && authUser?.userType === 'teacher') {
         try {
           const response = await getTeacherAcademies();
           const academiesList = response.academies || [];
@@ -406,7 +406,7 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
     };
 
     checkAcademies();
-  }, [role]);
+  }, [role, isLoading, authUser]);
 
   useEffect(() => {
     const handleScroll = () => {

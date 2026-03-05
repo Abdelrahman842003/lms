@@ -272,19 +272,22 @@ class ApiClient {
     options: RequestOptions = {}
   ): Promise<T> {
     const url = this.buildUrl(endpoint, options.params);
-    const headers = this.buildHeaders(method, url, options);
+    const buildFetchOptions = (): RequestInit => {
+      const headers = this.buildHeaders(method, url, options);
+      const fetchOptions: RequestInit = {
+        ...options,
+        method,
+        headers,
+        credentials: 'include',
+      };
 
-    const fetchOptions: RequestInit = {
-      ...options,
-      method,
-      headers,
-      credentials: 'include',
+      // Remove params from options as they're now in the URL
+      delete (fetchOptions as RequestOptions).params;
+      return fetchOptions;
     };
 
-    // Remove params from options as they're now in the URL
-    delete (fetchOptions as RequestOptions).params;
-
-    const executeRequest = (): Promise<Response> => fetch(url, fetchOptions);
+    // IMPORTANT: keep this dynamic so retries after CSRF/token refresh use fresh headers.
+    const executeRequest = (): Promise<Response> => fetch(url, buildFetchOptions());
     const trustedUrl = this.isTrustedRequestUrl(url);
     let response: Response;
 
