@@ -8,6 +8,7 @@ use App\Domains\Lectures\DTOs\LectureData;
 use App\Domains\Application\Http\Controllers\Controller;
 use App\Domains\Application\Http\Requests\Academy\Lecture\StoreLectureRequest;
 use App\Domains\Application\Http\Requests\Academy\Lecture\UpdateLectureRequest;
+use App\Domains\Application\Http\Requests\Teacher\Lecture\RecordAttendanceRequest;
 use App\Domains\Application\Http\Resources\Teacher\LectureResource;
 use App\Domains\Lectures\Models\Lecture;
 use App\Domains\Application\Services\Academy\LectureService;
@@ -198,6 +199,22 @@ class LectureController extends Controller
             'total_present' => $data['total_present'],
             'total_absent' => $data['total_absent'],
         ]);
+    }
+
+    public function recordAttendance(RecordAttendanceRequest $request, Lecture $lecture): JsonResponse
+    {
+        $academy = $this->getAcademy($request);
+        if (!$academy) {
+            return $this->errorResponse('Unauthorized', 403);
+        }
+
+        if (!$this->canAccessLecture($academy, $lecture)) {
+            return $this->errorResponse('Unauthorized', 403);
+        }
+
+        $result = $this->service->recordAttendance($lecture, $request->validated('student_id'));
+
+        return $this->successResponse($result);
     }
 
     public function getTeachers(Request $request): JsonResponse

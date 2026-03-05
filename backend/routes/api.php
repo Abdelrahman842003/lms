@@ -81,6 +81,7 @@ Route::middleware('auth:sanctum')->prefix('academy')->name('academy.')->group(fu
     Route::put('lectures/{lecture}/toggle-active', [\App\Domains\Application\Http\Controllers\Academy\LectureController::class, 'toggleActive']);
     Route::post('lectures/{lecture}/end', [\App\Domains\Application\Http\Controllers\Academy\LectureController::class, 'endLecture']);
     Route::post('lectures/{lecture}/qr-code', [\App\Domains\Application\Http\Controllers\Academy\LectureController::class, 'generateQrCode']);
+    Route::post('lectures/{lecture}/attendance', [\App\Domains\Application\Http\Controllers\Academy\LectureController::class, 'recordAttendance']);
     Route::get('lectures/{lecture}/attendees', [\App\Domains\Application\Http\Controllers\Academy\LectureController::class, 'getAttendees']);
     Route::get('lectures/{lecture}/sessions', [\App\Domains\Application\Http\Controllers\Api\LectureSessionController::class, 'index']);
     Route::post('lectures/{lecture}/sessions', [\App\Domains\Application\Http\Controllers\Api\LectureSessionController::class, 'store']);

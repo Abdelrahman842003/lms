@@ -106,4 +106,9 @@ class LectureService
     {
         return $this->teacherLectureService->getAttendees($lecture, $filters);
     }
+
+    public function recordAttendance(Lecture $lecture, string $studentId): array
+    {
+        return $this->teacherLectureService->recordAttendance($lecture, $studentId);
+    }
 }

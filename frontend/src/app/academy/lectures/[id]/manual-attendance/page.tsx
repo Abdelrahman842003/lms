@@ -15,6 +15,18 @@ interface Student {
   status?: 'present' | 'absent';
 }
 
+interface AttendeeApiRow {
+  student_id?: string;
+  student_name?: string;
+  student_phone?: string;
+  status?: 'present' | 'absent';
+  student?: {
+    id?: string;
+    name?: string;
+    phone?: string;
+  };
+}
+
 export default function ManualAttendancePage() {
   const { user } = useAuth();
   const router = useRouter();
@@ -38,16 +50,24 @@ export default function ManualAttendancePage() {
         academyService.getLectureAttendees(lectureId),
       ]);
 
-      setLecture(lectureResponse.data);
+      const lectureData = lectureResponse?.data?.lecture ?? lectureResponse?.data ?? null;
+      setLecture(lectureData);
       
       // Get all students with their current attendance status
-      const attendeesData = attendeesResponse.data?.attendees || [];
-      const studentsWithStatus = attendeesData.map((a: any) => ({
-        id: a.student.id,
-        name: a.student.name,
-        phone: a.student.phone,
-        status: a.status,
-      }));
+      const attendeesData: AttendeeApiRow[] = attendeesResponse?.data?.attendees || [];
+      const studentsWithStatus = attendeesData
+        .map((a) => {
+          const id = a.student_id ?? a.student?.id;
+          if (!id) return null;
+
+          return {
+            id,
+            name: a.student_name ?? a.student?.name ?? 'طالب',
+            phone: a.student_phone ?? a.student?.phone ?? '-',
+            status: a.status ?? 'absent',
+          } as Student;
+        })
+        .filter((s): s is Student => Boolean(s));
       
       setStudents(studentsWithStatus);
     } catch (error) {

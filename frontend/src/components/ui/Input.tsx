@@ -44,7 +44,8 @@ export const Input: React.FC<InputProps> = ({
   id,
   ...props
 }) => {
-  const inputId = id || props.name || Math.random().toString(36).substring(7);
+  const reactId = React.useId();
+  const inputId = id || props.name || reactId;
   const hasCustomWidth =
     typeof className === 'string' &&
     /(^|\s)!?(w|min-w|max-w)-|(^|\s)!?ux-(w|min-w|max-w)-/.test(className);
