@@ -194,11 +194,14 @@ export default function LoginPage() {
     } catch (err: any) {
       // Only stop loading on error
       setIsLoading(false);
+      const status = err?.statusCode ?? err?.status;
+      const errorData = err?.data;
+      const fieldErrors = err?.errors;
       
       // Show user-friendly error message
-      if (err.status === 401) {
+      if (status === 401) {
         // Check if there are remaining attempts info
-        const attemptsRemaining = err.data?.attempts_remaining;
+        const attemptsRemaining = errorData?.attempts_remaining;
         if (attemptsRemaining !== undefined) {
           setError(`بيانات الدخول غير صحيحة - متبقي ${attemptsRemaining} محاولات`);
         } else {
@@ -206,16 +209,16 @@ export default function LoginPage() {
         }
         
         // Notify if device was removed
-        if (err.data?.device_removed) {
+        if (errorData?.device_removed) {
           setError(prev => prev + '\n(تم تسجيل خروجك من جهاز قديم)');
         }
-      } else if (err.status === 422) {
+      } else if (status === 422) {
         // Check if there's a specific message for phone (suspension) or general errors
-        const specificError = err.errors?.phone?.[0] || err.message;
+        const specificError = fieldErrors?.phone?.[0] || err.message;
         setError(specificError || 'البيانات المدخلة غير صحيحة.');
-      } else if (err.status === 429) {
+      } else if (status === 429) {
         // Handle login ban with countdown
-        const retryAfter = Math.max(0, err.data?.retry_after || 60);
+        const retryAfter = Math.max(0, errorData?.retry_after || 60);
         if (retryAfter > 0) {
           setIsBanned(true);
           setCountdown(retryAfter);

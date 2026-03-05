@@ -11,7 +11,7 @@ import academyService from '@/services/academyService';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
-import { Button, Icon, Input, Textarea, Select, LoadingSpinner, Badge } from '@/components/ui';
+import { Button, Icon, Input, Textarea, Select, Badge } from '@/components/ui';
 
 function AcademyDashboard() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
@@ -64,16 +64,13 @@ function AcademyDashboard() {
     fetchData();
   }, [user, authLoading, isAuthenticated]);
 
-  if (authLoading || !user || user.userType !== 'academy') {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <LoadingSpinner size="sm" color="primary" />
-          <p className="text-gray-400">جاري التحميل...</p>
-        </div>
-      </div>
-    );
+  if (!authLoading && (!user || user.userType !== 'academy')) {
+    return null;
   }
+
+  const dashboardUser = user && user.userType === 'academy'
+    ? user
+    : { name: 'الأكاديمية' };
 
   const tableColumns = [
     {
@@ -111,12 +108,12 @@ function AcademyDashboard() {
   return (
     <DashboardLayout
       role="academy"
-      user={user}
+      user={dashboardUser}
     >
       {/* Welcome Message */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-white mb-2">
-          مرحباً بك في {user.name || 'الأكاديمية'}
+          مرحباً بك في {dashboardUser.name || 'الأكاديمية'}
         </h1>
         <p className="text-gray-400">
           نظرة عامة على إحصائيات الأكاديمية
@@ -128,19 +125,19 @@ function AcademyDashboard() {
         <StatCard
           title="إجمالي المدرسين"
           value={stats.teachers_count || 0}
-          icon="chalkboard-teacher"
+          icon="fas fa-chalkboard-teacher"
           color="primary"
         />
         <StatCard
           title="إجمالي الطلاب"
           value={stats.students_count || 0}
-          icon="user-graduate"
+          icon="fas fa-user-graduate"
           color="secondary"
         />
         <StatCard
           title="إجمالي الارتباطات"
           value={stats.total_enrollments || 0}
-          icon="link"
+          icon="fas fa-link"
           color="info"
         />
 
