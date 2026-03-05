@@ -10,7 +10,7 @@ import Link from 'next/link';
 import { Button, Icon } from '@/components/ui/index';
 
 export default function StudentDashboard() {
-  const { user, selectedTeacher } = useAuth();
+  const { user, selectedTeacher, isLoading: authLoading, isAuthenticated } = useAuth();
   const [stats, setStats] = useState({
     walletBalance: 0,
     mistakesCount: 0,
@@ -22,6 +22,10 @@ export default function StudentDashboard() {
   const [upcomingLectures, setUpcomingLectures] = useState<any[]>([]);
   const [latestNews, setLatestNews] = useState<any[]>([]);
   useEffect(() => {
+    if (authLoading || !isAuthenticated || user?.userType !== 'student') {
+      return;
+    }
+
     const loadDashboardData = async () => {
       // Always load dashboard stats for the selected teacher (if any)
       if (selectedTeacher) {
@@ -29,7 +33,6 @@ export default function StudentDashboard() {
             const timestamp = new Date().getTime();
             const dashboardResponse = await fetchApi(`/student/dashboard?teacher_id=${selectedTeacher.teacher_id}&t=${timestamp}`);
             if (dashboardResponse) {
-                console.log('Dashboard Response:', dashboardResponse);
                 setStats(dashboardResponse.stats || {
                     walletBalance: 0,
                     mistakesCount: 0,
@@ -100,7 +103,7 @@ export default function StudentDashboard() {
     };
 
     loadDashboardData();
-  }, [selectedTeacher, user]); // Added user dependency
+  }, [selectedTeacher, user, authLoading, isAuthenticated, user?.userType]); // Wait for auth readiness
   
   const mockUser = {
     name: user?.name || 'الطالب',

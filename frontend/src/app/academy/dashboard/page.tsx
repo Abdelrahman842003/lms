@@ -34,7 +34,7 @@ function AcademyDashboard() {
   }, [isAuthenticated, user, authLoading, router]);
 
   React.useEffect(() => {
-    if (!user || user.userType !== 'academy') return;
+    if (authLoading || !isAuthenticated || !user || user.userType !== 'academy') return;
 
     const fetchData = async () => {
       try {
@@ -62,7 +62,7 @@ function AcademyDashboard() {
     };
 
     fetchData();
-  }, [user]);
+  }, [user, authLoading, isAuthenticated]);
 
   if (authLoading || !user || user.userType !== 'academy') {
     return (

@@ -23,11 +23,15 @@ interface ChildSummary {
 
 export default function ParentDashboard() {
   const router = useRouter();
-  const { user, children } = useAuth();
+  const { user, children, isLoading: authLoading, isAuthenticated } = useAuth();
   const [childrenSummaries, setChildrenSummaries] = useState<ChildSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    if (authLoading || !isAuthenticated || user?.userType !== 'parent') {
+      return;
+    }
+
     const loadDashboardData = async () => {
       if (!children || children.length === 0) {
         setIsLoading(false);
@@ -86,7 +90,7 @@ export default function ParentDashboard() {
     };
 
     loadDashboardData();
-  }, [children]);
+  }, [children, authLoading, isAuthenticated, user?.userType]);
 
   // Calculate overall stats
   const overallStats = childrenSummaries.reduce(

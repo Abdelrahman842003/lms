@@ -59,11 +59,20 @@ function shouldSetJsonContentType(
 
 // Add a request interceptor to include the token
 axiosInstance.interceptors.request.use(
-  (config) => {
+  async (config) => {
     const headers = AxiosHeaders.from(config.headers || {});
     const requestUrl = new URL(config.url || '', config.baseURL || baseURL).toString();
     const trustedRequest = isTrustedUrl(requestUrl);
-    const token = getAccessToken();
+    let token = getAccessToken();
+
+    // On hard refresh, in-memory token may be empty while refresh cookie is still valid.
+    // Prime token once before protected requests to avoid first-load 401s.
+    if (trustedRequest && !token && typeof window !== 'undefined') {
+      const hasStoredSessionHint = !!localStorage.getItem('userType');
+      if (hasStoredSessionHint) {
+        token = await tokenRefresh();
+      }
+    }
 
     if (trustedRequest && token) {
       headers.set('Authorization', `Bearer ${token}`);
