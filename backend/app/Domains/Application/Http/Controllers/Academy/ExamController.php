@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace App\Domains\Application\Http\Controllers\Academy;
 
 use App\Domains\Application\Http\Controllers\Controller;
+use App\Domains\Application\Http\Requests\Teacher\Exam\StoreExamRequest;
+use App\Domains\Application\Http\Requests\Teacher\Exam\UpdateExamRequest;
+use App\Domains\Application\Http\Resources\Teacher\ExamResultDetailResource;
 use App\Domains\Application\Http\Resources\Teacher\ExamResource;
+use App\Domains\Exams\DTOs\TeacherExamData;
 use App\Domains\Exams\Models\Exam;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class ExamController extends Controller
 {
@@ -37,7 +40,7 @@ class ExamController extends Controller
         ]);
     }
 
-    public function store(\App\Domains\Application\Http\Requests\Teacher\Exam\StoreExamRequest $request): JsonResponse
+    public function store(StoreExamRequest $request): JsonResponse
     {
         try {
             $academy = $this->getAcademy($request);
@@ -54,7 +57,7 @@ class ExamController extends Controller
             }
 
             $request->merge(['academy_id_override' => $academy->id]);
-            $data = \App\Domains\Exams\DTOs\TeacherExamData::fromRequest($request);
+            $data = TeacherExamData::fromRequest($request);
             
             // Check for date conflicts
             $warning = null;
@@ -88,8 +91,14 @@ class ExamController extends Controller
             return $this->errorResponse('Failed to create exam: ' . $e->getMessage(), 500);
         }
     }
+
     public function index(Request $request): JsonResponse
     {
+        $academy = $this->getAcademy($request);
+        if (!$academy) {
+            return $this->errorResponse('Unauthorized', 403);
+        }
+
         $perPage = (int) $request->input('per_page', 10);
         $search = $request->input('search');
         $teacherId = $request->input('teacher_id');
@@ -97,7 +106,7 @@ class ExamController extends Controller
 
         $query = Exam::query()
             ->with(['teacher', 'grade', 'group'])
-            ->where('academy_id', auth()->user()->id);
+            ->where('academy_id', $academy->id);
 
         if ($search) {
             $query->where('title', 'like', "%{$search}%");
@@ -124,14 +133,14 @@ class ExamController extends Controller
         );
     }
 
-    public function show(Exam $exam): JsonResponse
+    public function show(Request $request, Exam $exam): JsonResponse
     {
-        // Ensure exam belongs to a teacher in this academy
-        $hasAccess = $exam->teacher->academies()
-            ->where('academies.id', auth()->user()->id)
-            ->exists();
+        $academy = $this->getAcademy($request);
+        if (!$academy) {
+            return $this->errorResponse('Unauthorized', 403);
+        }
 
-        if (!$hasAccess) {
+        if (!$this->canAccessExamInAcademy($exam, (string) $academy->id)) {
             return $this->errorResponse('Unauthorized', 403);
         }
 
@@ -140,79 +149,185 @@ class ExamController extends Controller
         ]);
     }
 
-    public function destroy(Exam $exam): JsonResponse
+    public function update(UpdateExamRequest $request, Exam $exam): JsonResponse
     {
-        $hasAccess = $exam->teacher->academies()
-            ->where('academies.id', auth()->user()->id)
-            ->exists();
-
-        if (!$hasAccess) {
+        $academy = $this->getAcademy($request);
+        if (!$academy) {
             return $this->errorResponse('Unauthorized', 403);
         }
 
-        $exam->delete();
+        if (!$this->canAccessExamInAcademy($exam, (string) $academy->id)) {
+            return $this->errorResponse('Unauthorized', 403);
+        }
+
+        try {
+            $request->merge(['academy_id_override' => $academy->id]);
+            $data = TeacherExamData::fromRequest($request);
+
+            $warning = null;
+            $dateConflict = $this->service->checkDateConflicts(
+                $data->grade_id,
+                $data->date,
+                $exam->teacher_id,
+                $exam->id
+            );
+
+            if ($dateConflict) {
+                $teacherNames = $dateConflict['conflicting_exams']
+                    ->pluck('teacher.name')
+                    ->unique()
+                    ->implode('، ');
+                $warning = "تنبيه: يوجد امتحان في نفس التاريخ للمدرس: {$teacherNames}. قد يؤثر على {$dateConflict['affected_students_count']} طالب مشترك.";
+            }
+
+            $updatedExam = $this->service->updateExam($exam, $data);
+
+            $response = [
+                'exam' => new ExamResource($updatedExam->load(['questions', 'grade', 'group', 'teacher']))
+            ];
+
+            if ($warning) {
+                $response['warning'] = $warning;
+            }
+
+            return $this->successResponse($response, 'تم تحديث الامتحان بنجاح');
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Exam update failed: ' . $e->getMessage());
+            return $this->errorResponse('Failed to update exam: ' . $e->getMessage(), 500);
+        }
+    }
+
+    public function destroy(Request $request, Exam $exam): JsonResponse
+    {
+        $academy = $this->getAcademy($request);
+        if (!$academy) {
+            return $this->errorResponse('Unauthorized', 403);
+        }
+
+        if (!$this->canAccessExamInAcademy($exam, (string) $academy->id)) {
+            return $this->errorResponse('Unauthorized', 403);
+        }
+
+        $this->service->deleteExam($exam);
         return $this->successResponse(null, 'تم حذف الامتحان بنجاح');
     }
 
-    public function toggleStatus(Exam $exam): JsonResponse
+    public function toggleStatus(Request $request, Exam $exam): JsonResponse
     {
-        $hasAccess = $exam->teacher->academies()
-            ->where('academies.id', auth()->user()->id)
-            ->exists();
-
-        if (!$hasAccess) {
+        $academy = $this->getAcademy($request);
+        if (!$academy) {
             return $this->errorResponse('Unauthorized', 403);
         }
 
-        $exam->update(['is_active' => !$exam->is_active]);
-        
-        return $this->successResponse(
-            new ExamResource($exam),
-            $exam->is_active ? 'تم تفعيل الامتحان' : 'تم إلغاء تفعيل الامتحان'
-        );
-    }
-
-    public function endExam(Exam $exam): JsonResponse
-    {
-        $hasAccess = $exam->teacher->academies()
-            ->where('academies.id', auth()->user()->id)
-            ->exists();
-
-        if (!$hasAccess) {
+        if (!$this->canAccessExamInAcademy($exam, (string) $academy->id)) {
             return $this->errorResponse('Unauthorized', 403);
         }
 
-        $exam->update([
-            'is_active' => false,
-            'ended_at' => now()
-        ]);
+        $result = $this->service->toggleStatus($exam);
+
+        if (!$result['success']) {
+            return $this->errorResponse($result['message'], $result['code'] ?? 400);
+        }
 
         return $this->successResponse(
-            new ExamResource($exam),
-            'تم إنهاء الامتحان بنجاح'
+            new ExamResource($result['exam']),
+            $result['message']
         );
     }
 
-    public function copy(Exam $exam): JsonResponse
+    public function endExam(Request $request, Exam $exam): JsonResponse
     {
-        $hasAccess = $exam->teacher->academies()
-            ->where('academies.id', auth()->user()->id)
-            ->exists();
+        $academy = $this->getAcademy($request);
+        if (!$academy) {
+            return $this->errorResponse('Unauthorized', 403);
+        }
 
-        if (!$hasAccess) {
+        if (!$this->canAccessExamInAcademy($exam, (string) $academy->id)) {
+            return $this->errorResponse('Unauthorized', 403);
+        }
+
+        try {
+            $exam = $this->service->endExam($exam);
+
+            return $this->successResponse(
+                new ExamResource($exam),
+                'تم إنهاء الامتحان بنجاح واحتساب النتائج'
+            );
+        } catch (\Exception $e) {
+            return $this->errorResponse($e->getMessage(), 400);
+        }
+    }
+
+    public function copy(Request $request, Exam $exam): JsonResponse
+    {
+        $academy = $this->getAcademy($request);
+        if (!$academy) {
+            return $this->errorResponse('Unauthorized', 403);
+        }
+
+        if (!$this->canAccessExamInAcademy($exam, (string) $academy->id)) {
             return $this->errorResponse('Unauthorized', 403);
         }
 
         try {
             $title = request()->input('title');
             $newExam = $this->service->copyExam($exam, $title);
-            
-            // Ensure the new exam belongs to the academy
-            $newExam->update(['academy_id' => auth()->user()->id]);
-            
+
+            // Ensure copied exam remains scoped to current academy
+            $newExam->update(['academy_id' => $academy->id]);
+
             return $this->successResponse(['exam' => $newExam], 'تم نسخ الامتحان بنجاح');
         } catch (\Exception $e) {
             return $this->errorResponse('Failed to copy exam: ' . $e->getMessage(), 500);
         }
+    }
+
+    public function results(Request $request, Exam $exam): JsonResponse
+    {
+        $academy = $this->getAcademy($request);
+        if (!$academy) {
+            return $this->errorResponse('Unauthorized', 403);
+        }
+
+        if (!$this->canAccessExamInAcademy($exam, (string) $academy->id)) {
+            return $this->errorResponse('Unauthorized', 403);
+        }
+
+        try {
+            $results = $exam->results()
+                ->whereNotNull('attempt_id')
+                ->with(['student'])
+                ->get();
+
+            return $this->successResponse([
+                'exam' => [
+                    'id' => $exam->id,
+                    'title' => $exam->title,
+                    'subject' => $exam->subject,
+                    'max_score' => $exam->max_score,
+                    'date' => $exam->date,
+                    'duration' => $exam->duration,
+                ],
+                'results' => ExamResultDetailResource::collection($results)
+            ]);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Error fetching academy exam results: ' . $e->getMessage());
+            return $this->errorResponse('An error occurred while fetching results', 500);
+        }
+    }
+
+    private function canAccessExamInAcademy(Exam $exam, string $academyId): bool
+    {
+        if ((string) $exam->academy_id === $academyId) {
+            return true;
+        }
+
+        // Legacy fallback: allow old academy-scoped records that were saved without academy_id.
+        if ($exam->academy_id === null) {
+            return ((string) optional($exam->grade)->academy_id === $academyId)
+                || ((string) optional($exam->group)->academy_id === $academyId);
+        }
+
+        return false;
     }
 }

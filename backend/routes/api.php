@@ -110,10 +110,11 @@ Route::middleware('auth:sanctum')->prefix('academy')->name('academy.')->group(fu
 
     // Exams Management
     Route::get('exams/teachers', [\App\Domains\Application\Http\Controllers\Academy\ExamController::class, 'getTeachers']);
+    Route::get('exams/{exam}/results', [\App\Domains\Application\Http\Controllers\Academy\ExamController::class, 'results']);
     Route::apiResource('exams', \App\Domains\Application\Http\Controllers\Academy\ExamController::class);
     Route::put('exams/{exam}/toggle-status', [\App\Domains\Application\Http\Controllers\Academy\ExamController::class, 'toggleStatus']);
     Route::post('exams/{exam}/copy', [\App\Domains\Application\Http\Controllers\Academy\ExamController::class, 'copy']);
-    Route::post('exams/{exam}/end', [\App\Domains\Application\Http\Controllers\Academy\ExamController::class, 'endExam']);
+    Route::put('exams/{exam}/end', [\App\Domains\Application\Http\Controllers\Academy\ExamController::class, 'endExam']);
 });
 
 // ============================================
