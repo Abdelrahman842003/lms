@@ -79,11 +79,43 @@ export const StatCard: React.FC<StatCardProps> = ({
   };
 
   const theme = colorMap[color] || colorMap.primary;
+  const normalizedIconClass = React.useMemo(() => {
+    const trimmedIcon = icon.trim();
+    if (!trimmedIcon) return '';
+
+    if (trimmedIcon.includes('fa-')) {
+      const hasPrefix = /(^|\s)(fa[srbld]?|fa-solid|fa-regular|fa-brands)(\s|$)/.test(trimmedIcon);
+      return hasPrefix ? trimmedIcon : `fas ${trimmedIcon}`;
+    }
+
+    return `fas fa-${trimmedIcon}`;
+  }, [icon]);
+
+  const iconName = React.useMemo(() => {
+    const tokens = icon.trim().split(/\s+/).filter(Boolean);
+    const iconToken = tokens.find((token) =>
+      token.startsWith('fa-') &&
+      ![
+        'fa-solid',
+        'fa-regular',
+        'fa-brands',
+        'fa-spin',
+        'fa-pulse',
+        'fa-fw',
+      ].includes(token)
+    );
+
+    if (iconToken) {
+      return iconToken.replace(/^fa-/, '');
+    }
+
+    return tokens[0] || icon;
+  }, [icon]);
 
   if (variant === 'centered') {
     return (
       <div className="stat-card stat-card-centered">
-        <Icon name={icon.replace('fas fa-', '')} size="2x" className={`stat-card-centered-icon ${theme.text}`} />
+        <Icon name={iconName} size="2x" className={`stat-card-centered-icon ${theme.text}`} />
         <h3 className="stat-card-centered-value">
           {typeof value === 'number' ? (
             <CountUp end={value} prefix={prefix} suffix={suffix} />
@@ -110,7 +142,7 @@ export const StatCard: React.FC<StatCardProps> = ({
           </h3>
         </div>
         <div className={`stat-card-main-icon ${theme.bg} ${theme.text}`}>
-          <i className={icon}></i>
+          <i className={normalizedIconClass}></i>
         </div>
       </div>
       {trend && (

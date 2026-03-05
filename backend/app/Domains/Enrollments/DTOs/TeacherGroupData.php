@@ -15,7 +15,7 @@ class TeacherGroupData
         public readonly ?string $academy_id = null,
         public readonly ?string $time = null,
         public readonly ?string $days = null,
-        public readonly ?string $type = 'general',
+        public readonly ?string $type = null,
         public readonly ?float $price = null,
     ) {}
 
@@ -28,9 +28,17 @@ class TeacherGroupData
             academy_id: $request->validated('academy_id'),
             time: $request->validated('time'),
             days: $request->validated('days'),
-            type: $request->validated('type') ?? 'general',
+            type: self::normalizeType($request->validated('type')),
             price: $request->validated('price') ? (float) $request->validated('price') : null,
         );
+    }
+
+    private static function normalizeType(?string $type): ?string
+    {
+        return match ($type) {
+            'general' => 'public',
+            default => $type,
+        };
     }
 
     public function toArray(): array

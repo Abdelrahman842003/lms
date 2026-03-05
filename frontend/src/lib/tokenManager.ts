@@ -24,6 +24,50 @@ type TokenListener = (token: string | null) => void;
 const listeners: Set<TokenListener> = new Set();
 let refreshInFlight: Promise<string | null> | null = null;
 
+function decodeBase64Url(value: string): string | null {
+  const base64 = value
+    .replace(/-/g, '+')
+    .replace(/_/g, '/')
+    .padEnd(Math.ceil(value.length / 4) * 4, '=');
+
+  try {
+    if (typeof atob === 'function') {
+      return atob(base64);
+    }
+
+    if (typeof Buffer !== 'undefined') {
+      return Buffer.from(base64, 'base64').toString('utf-8');
+    }
+  } catch {
+    // Ignore malformed base64url payload
+  }
+
+  return null;
+}
+
+function getJwtExpiryMs(token: string): number | null {
+  const parts = token.split('.');
+  if (parts.length < 2) {
+    return null;
+  }
+
+  const decodedPayload = decodeBase64Url(parts[1]);
+  if (!decodedPayload) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(decodedPayload) as { exp?: unknown };
+    if (typeof parsed.exp === 'number' && Number.isFinite(parsed.exp) && parsed.exp > 0) {
+      return parsed.exp * 1000;
+    }
+  } catch {
+    // Ignore malformed JWT payload
+  }
+
+  return null;
+}
+
 /**
  * Get access token from memory
  */
@@ -34,12 +78,6 @@ export function getAccessToken(): string | null {
       if (raw) {
         const parsed = JSON.parse(raw) as TokenState;
         if (parsed?.accessToken) {
-          const isExpired = typeof parsed.expiresAt === 'number' && parsed.expiresAt <= Date.now();
-          if (isExpired) {
-            sessionStorage.removeItem(TOKEN_STORAGE_KEY);
-            return null;
-          }
-
           tokenState = {
             accessToken: parsed.accessToken,
             expiresAt: parsed.expiresAt ?? null,
@@ -58,7 +96,11 @@ export function getAccessToken(): string | null {
  * Set access token in memory
  */
 export function setAccessToken(token: string, expiresInMinutes: number = 60): void {
-  const expiresAt = Date.now() + (expiresInMinutes * 60 * 1000);
+  const fallbackExpiresAt = Date.now() + (expiresInMinutes * 60 * 1000);
+  const jwtExpiresAt = getJwtExpiryMs(token);
+  const expiresAt = jwtExpiresAt && jwtExpiresAt > Date.now()
+    ? jwtExpiresAt
+    : fallbackExpiresAt;
 
   tokenState = {
     accessToken: token,
@@ -169,8 +211,7 @@ async function performTokenRefresh(): Promise<string | null> {
       if (process.env.NODE_ENV !== 'production') {
         console.warn(`[tokenManager] refresh failed with status ${response.status}`);
       }
-      clearAccessToken();
-      return null;
+      return getAccessToken();
     }
 
     const data = await response.json().catch(() => null);
@@ -180,14 +221,12 @@ async function performTokenRefresh(): Promise<string | null> {
       return data.data.access_token;
     }
 
-    clearAccessToken();
-    return null;
+    return getAccessToken();
   } catch (error) {
     if (process.env.NODE_ENV !== 'production') {
       console.warn('Token refresh network error:', error);
     }
-    clearAccessToken();
-    return null;
+    return getAccessToken();
   }
 }
 

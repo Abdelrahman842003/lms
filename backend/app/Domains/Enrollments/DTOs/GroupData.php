@@ -22,13 +22,18 @@ readonly class GroupData
     {
         return new self(
             name: $request->validated('name'),
-            type: $request->validated('type'),
+            type: self::normalizeType($request->validated('type')),
             teacherId: $request->validated('teacher_id'),
             gradeId: $request->validated('grade_id'),
             time: $request->validated('time'),
             days: $request->validated('days'),
             price: $request->validated('price') !== null ? (float) $request->validated('price') : null,
         );
+    }
+
+    private static function normalizeType(string $type): string
+    {
+        return $type === 'general' ? 'public' : $type;
     }
 
     public function toArray(): array

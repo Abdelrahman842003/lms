@@ -11,7 +11,7 @@ import academyService from '@/services/academyService';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
-import { Button, Icon, Input, Textarea, Select, Badge } from '@/components/ui';
+import { Icon } from '@/components/ui';
 
 function AcademyDashboard() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();

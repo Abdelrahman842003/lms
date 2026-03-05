@@ -20,7 +20,7 @@ class UpdateGroupRequest extends FormRequest
             'grade_id' => ['nullable', 'exists:grades,id'],
             'time' => ['nullable', 'string'],
             'days' => ['nullable', 'string'],
-            'type' => ['required', 'in:general,private'],
+            'type' => ['required', 'in:public,private,general'],
             'price' => ['nullable', 'numeric', 'min:0'],
         ];
     }
@@ -37,5 +37,17 @@ class UpdateGroupRequest extends FormRequest
             'price.numeric' => 'سعر المجموعة يجب أن يكون رقماً',
             'price.min' => 'سعر المجموعة لا يمكن أن يكون أقل من 0',
         ];
+    }
+
+    public function prepareForValidation(): void
+    {
+        $type = $this->input('type');
+        if ($type === 'general') {
+            $type = 'public';
+        }
+
+        $this->merge([
+            'type' => $type,
+        ]);
     }
 }

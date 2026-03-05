@@ -83,7 +83,7 @@ class GroupController extends Controller
             $request->merge(['academy_id' => null]);
         }
         
-        $groupData = GroupData::fromRequest($request);
+        $groupData = TeacherGroupData::fromRequest($request);
         $group = $this->service->createGroup($teacher, $groupData);
 
         return $this->successResponse([
@@ -96,7 +96,7 @@ class GroupController extends Controller
     {
         Gate::authorize('update', $group);
 
-        $groupData = GroupData::fromRequest($request);
+        $groupData = TeacherGroupData::fromRequest($request);
         $group = $this->service->updateGroup($group, $groupData);
 
         return $this->successResponse([

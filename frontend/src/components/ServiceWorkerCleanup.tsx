@@ -27,8 +27,15 @@ export default function ServiceWorkerCleanup() {
       if ('caches' in window) {
         caches.keys().then((cacheNames) => {
           cacheNames.forEach((cacheName) => {
-            // Delete any lms-* caches (from old PWA)
-            if (cacheName.startsWith('lms-')) {
+            // Delete stale app caches that may serve outdated JS/CSS bundles.
+            const shouldDeleteCache =
+              cacheName.startsWith('lms-') ||
+              cacheName.startsWith('workbox-') ||
+              cacheName.startsWith('next-') ||
+              cacheName.startsWith('pwa-') ||
+              cacheName.includes('precache');
+
+            if (shouldDeleteCache) {
               caches.delete(cacheName).then(() => {
                 console.log('[Cleanup] Deleted old cache:', cacheName);
               });

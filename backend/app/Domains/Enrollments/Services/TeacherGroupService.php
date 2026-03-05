@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Domains\Enrollments\Services;
 
 use App\Domains\Auth\Models\Teacher;
-use App\Domains\Enrollments\DTOs\GroupData;
 use App\Domains\Enrollments\DTOs\TeacherGroupData;
 use App\Domains\Enrollments\Models\Group;
 use App\Domains\Support\Traits\HasAcademyFilter;
@@ -49,12 +48,12 @@ class TeacherGroupService
         return $query->paginate($perPage);
     }
 
-    public function createGroup(Teacher $teacher, GroupData $data): Group
+    public function createGroup(Teacher $teacher, TeacherGroupData $data): Group
     {
         return $teacher->groups()->create($data->toArray());
     }
 
-    public function updateGroup(Group $group, GroupData $data): Group
+    public function updateGroup(Group $group, TeacherGroupData $data): Group
     {
         $group->update($data->toArray());
         return $group;

@@ -43,11 +43,6 @@ class GradeController extends Controller
         $teacher = $this->getTeacherFromRequest($request);
         $academyId = $request->header('X-Academy-Id');
         
-        // We can't use GradeData::fromRequest directly here because we need to manipulate academy_id logic first
-        // Or we can modify the request input before creating DTO
-        
-        $data = $request->validated();
-        
         // Only set academy_id if teacher is actually affiliated with that academy
         // Don't set it based on just the dropdown selection
         if ($academyId && $academyId !== 'independent') {
@@ -69,7 +64,7 @@ class GradeController extends Controller
             $request->merge(['academy_id' => null]);
         }
         
-        $gradeData = GradeData::fromRequest($request);
+        $gradeData = TeacherGradeData::fromRequest($request);
         $grade = $this->service->createGrade($teacher, $gradeData);
 
         return $this->successResponse([
@@ -82,7 +77,7 @@ class GradeController extends Controller
     {
         Gate::authorize('update', $grade);
 
-        $gradeData = GradeData::fromRequest($request);
+        $gradeData = TeacherGradeData::fromRequest($request);
         $grade = $this->service->updateGrade($grade, $gradeData);
 
         return $this->successResponse([

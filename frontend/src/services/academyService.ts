@@ -1,5 +1,8 @@
 import axios from '@/lib/axios';
-import { API_BASE_URL, getAuthHeaders } from './api/baseApi';
+import { getAuthHeaders } from './api/baseApi';
+import { getVersionedApiUrl } from '@/config/api-config';
+
+const API_BASE_URL = getVersionedApiUrl();
 
 /**
  * Academy Service - API client for academy management features

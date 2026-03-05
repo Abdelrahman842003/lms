@@ -20,7 +20,7 @@ class StoreGroupRequest extends FormRequest
             'grade_id' => 'required|exists:grades,id',
             'time' => 'nullable|string|max:255',
             'days' => 'nullable|string|max:255',
-            'type' => 'required|in:general,private',
+            'type' => 'required|in:public,private,general',
             'price' => 'nullable|numeric|min:0',
             'description' => 'nullable|string',
             'academy_id' => 'nullable|exists:academies,id',
@@ -44,11 +44,17 @@ class StoreGroupRequest extends FormRequest
 
     public function prepareForValidation()
     {
+        $type = $this->input('type');
+        if ($type === 'general') {
+            $type = 'public';
+        }
+
         $this->merge([
             'name' => strip_tags($this->input('name')),
             'description' => $this->input('description') ? strip_tags($this->input('description')) : null,
             'time' => $this->input('time') ? strip_tags($this->input('time')) : null,
             'days' => $this->input('days') ? strip_tags($this->input('days')) : null,
+            'type' => $type,
         ]);
     }
 }

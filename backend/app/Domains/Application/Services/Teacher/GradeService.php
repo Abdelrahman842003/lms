@@ -32,7 +32,7 @@ class GradeService
         return $teacher->grades()->create($data->toArray());
     }
 
-    public function updateGrade(Grade $grade, GradeData $data): Grade
+    public function updateGrade(Grade $grade, TeacherGradeData $data): Grade
     {
         $grade->update($data->toArray());
         return $grade;

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Domains\Enrollments\Services;
 
 use App\Domains\Auth\Models\Teacher;
-use App\Domains\Enrollments\DTOs\GradeData;
 use App\Domains\Enrollments\DTOs\TeacherGradeData;
 use App\Domains\Enrollments\Models\Grade;
 use App\Domains\Support\Traits\HasAcademyFilter;
@@ -33,7 +32,7 @@ class TeacherGradeService
         return $teacher->grades()->create($data->toArray());
     }
 
-    public function updateGrade(Grade $grade, GradeData $data): Grade
+    public function updateGrade(Grade $grade, TeacherGradeData $data): Grade
     {
         $grade->update($data->toArray());
         return $grade;
