@@ -111,7 +111,7 @@ export function Select({
                 <input
                   ref={searchInputRef}
                   type="text"
-                  className="form-input"
+                  className="form-input ux-w-full"
                   placeholder="بحث..."
                   value={searchTerm}
                   onChange={handleSearch}

@@ -78,9 +78,17 @@ export function CoreAuthProvider({ children }: { children: ReactNode }) {
 
         if (userType && isValidUserType(userType)) {
           // Prime in-memory access token from refresh cookie before any /me call.
-          // This prevents refresh-time race conditions where early requests fire without Authorization.
-          const { refreshAccessToken } = await import("@/lib/tokenManager");
-          await refreshAccessToken();
+          // If refresh fails, fallback to cached user instead of forcing logout on hard refresh.
+          const { getAccessToken, refreshAccessToken } = await import("@/lib/tokenManager");
+          const primedToken = getAccessToken() || await refreshAccessToken();
+          if (!primedToken) {
+            if (cachedUser) {
+              setUser(cachedUser);
+              setAuthCookie(AUTH_COOKIES.AUTH_STATE, "true");
+              setAuthCookie(AUTH_COOKIES.USER_ROLE, cachedUser.userType);
+            }
+            return;
+          }
 
           const response = await getCurrentUser(userType);
           const userData: User = {
@@ -137,8 +145,8 @@ export function CoreAuthProvider({ children }: { children: ReactNode }) {
         const userType = localStorage.getItem("userType");
 
         if (userType && isValidUserType(userType)) {
-          const { refreshAccessToken } = await import("@/lib/tokenManager");
-          const refreshedToken = await refreshAccessToken();
+          const { getAccessToken, refreshAccessToken } = await import("@/lib/tokenManager");
+          const refreshedToken = getAccessToken() || await refreshAccessToken();
 
           if (refreshedToken) {
             const response = await getCurrentUser(userType);

@@ -45,6 +45,9 @@ export const Input: React.FC<InputProps> = ({
   ...props
 }) => {
   const inputId = id || props.name || Math.random().toString(36).substring(7);
+  const hasCustomWidth =
+    typeof className === 'string' &&
+    /(^|\s)!?(w|min-w|max-w)-|(^|\s)!?ux-(w|min-w|max-w)-/.test(className);
 
   const sizeStyles = {
     sm: 'ui-input-sm',
@@ -87,6 +90,7 @@ export const Input: React.FC<InputProps> = ({
               disabled={disabled || isLoading}
               className={clsx(
                 'form-input',
+                !hasCustomWidth && 'ux-w-full',
                 sizeStyles[size],
                 icon && 'ui-input-with-icon',
                 error && 'error',

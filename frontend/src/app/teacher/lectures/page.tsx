@@ -757,7 +757,7 @@ export default function TeacherLecturesPage() {
           <Input
             type="text"
             id="title"
-            className="form-input"
+            className="form-input w-full"
             value={formData.title}
             onChange={(e) => setFormData({ ...formData, title: e.target.value })}
             required
@@ -793,7 +793,7 @@ export default function TeacherLecturesPage() {
           <label htmlFor="description">الوصف (اختياري)</label>
           <Textarea
             id="description"
-            className="form-input"
+            className="form-input w-full"
             value={formData.description || ''}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             placeholder="وصف مختصر للمحاضرة..."
@@ -866,7 +866,7 @@ export default function TeacherLecturesPage() {
               <Input
                 type="time"
                 id="recurrence_time"
-                className="form-input"
+                className="form-input w-full"
                 value={formData.recurrence_time}
                 onChange={(e) => setFormData({ ...formData, recurrence_time: e.target.value })}
                 required={formData.is_recurring}
@@ -877,7 +877,7 @@ export default function TeacherLecturesPage() {
               <Input
                 type="number"
                 id="duration_minutes"
-                className="form-input"
+                className="form-input w-full"
                 value={formData.duration_minutes}
                 onChange={(e) => setFormData({ ...formData, duration_minutes: parseInt(e.target.value) })}
                 min="1"
@@ -892,7 +892,7 @@ export default function TeacherLecturesPage() {
               <Input
                 type="date"
                 id="date"
-                className="form-input"
+                className="form-input w-full"
                 value={formData.date}
                 onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                 required={!formData.is_recurring}
@@ -903,7 +903,7 @@ export default function TeacherLecturesPage() {
               <Input
                 type="time"
                 id="recurrence_time"
-                className="form-input"
+                className="form-input w-full"
                 value={formData.recurrence_time}
                 onChange={(e) => setFormData({ ...formData, recurrence_time: e.target.value })}
                 required={!formData.is_recurring}
@@ -914,7 +914,7 @@ export default function TeacherLecturesPage() {
               <Input
                 type="number"
                 id="duration_minutes"
-                className="form-input"
+                className="form-input w-full"
                 value={formData.duration_minutes}
                 onChange={(e) => setFormData({ ...formData, duration_minutes: parseInt(e.target.value) })}
                 min="1"

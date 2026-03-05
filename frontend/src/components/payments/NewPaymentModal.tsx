@@ -173,7 +173,7 @@ export default function NewPaymentModal({ onClose, onSuccess }: Props) {
               onChange={(e) => setNotes(e.target.value)}
               placeholder="ملاحظات إضافية..."
               rows={3}
-              className="form-input ui-textarea"
+              className="form-input ui-textarea w-full"
             />
           </div>
 

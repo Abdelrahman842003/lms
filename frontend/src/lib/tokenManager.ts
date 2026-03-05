@@ -11,6 +11,8 @@ interface TokenState {
   expiresAt: number | null;
 }
 
+const TOKEN_STORAGE_KEY = 'auth_access_token_state';
+
 // In-memory storage (not persisted - safer against XSS)
 let tokenState: TokenState = {
   accessToken: null,
@@ -26,6 +28,29 @@ let refreshInFlight: Promise<string | null> | null = null;
  * Get access token from memory
  */
 export function getAccessToken(): string | null {
+  if (!tokenState.accessToken && typeof window !== 'undefined') {
+    try {
+      const raw = sessionStorage.getItem(TOKEN_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as TokenState;
+        if (parsed?.accessToken) {
+          const isExpired = typeof parsed.expiresAt === 'number' && parsed.expiresAt <= Date.now();
+          if (isExpired) {
+            sessionStorage.removeItem(TOKEN_STORAGE_KEY);
+            return null;
+          }
+
+          tokenState = {
+            accessToken: parsed.accessToken,
+            expiresAt: parsed.expiresAt ?? null,
+          };
+        }
+      }
+    } catch {
+      // Ignore malformed session token cache
+    }
+  }
+
   return tokenState.accessToken;
 }
 
@@ -40,6 +65,14 @@ export function setAccessToken(token: string, expiresInMinutes: number = 60): vo
     expiresAt,
   };
 
+  if (typeof window !== 'undefined') {
+    try {
+      sessionStorage.setItem(TOKEN_STORAGE_KEY, JSON.stringify(tokenState));
+    } catch {
+      // Ignore storage write failures
+    }
+  }
+
   // Notify listeners
   notifyListeners(token);
 }
@@ -53,6 +86,14 @@ export function clearAccessToken(): void {
     expiresAt: null,
   };
 
+  if (typeof window !== 'undefined') {
+    try {
+      sessionStorage.removeItem(TOKEN_STORAGE_KEY);
+    } catch {
+      // Ignore storage remove failures
+    }
+  }
+
   // Notify listeners
   notifyListeners(null);
 }
@@ -61,6 +102,9 @@ export function clearAccessToken(): void {
  * Check if token is expired or will expire soon
  */
 export function isTokenExpired(thresholdSeconds: number = 300): boolean {
+  // Ensure tokenState is hydrated from sessionStorage on hard refresh.
+  getAccessToken();
+
   if (!tokenState.expiresAt) return false;
 
   const now = Date.now();
@@ -73,7 +117,7 @@ export function isTokenExpired(thresholdSeconds: number = 300): boolean {
  * Check if user is authenticated
  */
 export function isAuthenticated(): boolean {
-  return tokenState.accessToken !== null && !isTokenExpired();
+  return getAccessToken() !== null && !isTokenExpired();
 }
 
 /**
@@ -116,19 +160,32 @@ async function performTokenRefresh(): Promise<string | null> {
     });
 
     if (!response.ok) {
-      throw new Error('Failed to refresh token');
+      // 401/403/419 are expected when session is expired or missing.
+      if (response.status === 401 || response.status === 403 || response.status === 419) {
+        clearAccessToken();
+        return null;
+      }
+
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn(`[tokenManager] refresh failed with status ${response.status}`);
+      }
+      clearAccessToken();
+      return null;
     }
 
-    const data = await response.json();
+    const data = await response.json().catch(() => null);
 
-    if (data.status && data.data?.access_token) {
+    if (data?.status && data?.data?.access_token) {
       setAccessToken(data.data.access_token, 60);
       return data.data.access_token;
     }
 
+    clearAccessToken();
     return null;
   } catch (error) {
-    console.error('Token refresh error:', error);
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn('Token refresh network error:', error);
+    }
     clearAccessToken();
     return null;
   }

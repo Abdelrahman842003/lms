@@ -51,6 +51,9 @@ export const Textarea: React.FC<TextareaProps> = ({
 }) => {
   const textareaId = id || props.name || Math.random().toString(36).substring(7);
   const currentLength = typeof value === 'string' ? value.length : 0;
+  const hasCustomWidth =
+    typeof className === 'string' &&
+    /(^|\s)!?(w|min-w|max-w)-|(^|\s)!?ux-(w|min-w|max-w)-/.test(className);
 
   return (
     <div className={clsx('form-group ui-form-group', wrapperClassName)}>
@@ -93,6 +96,7 @@ export const Textarea: React.FC<TextareaProps> = ({
             onChange={onChange}
             className={clsx(
               'form-input ui-textarea',
+              !hasCustomWidth && 'ux-w-full',
               error && 'error',
               className
             )}

@@ -137,7 +137,7 @@ export const ManualAttendanceModal: React.FC<ManualAttendanceModalProps> = ({
             <input
               ref={inputRef}
               type="text"
-              className="form-input manual-attendance-input"
+              className="form-input w-full manual-attendance-input"
               placeholder="اكتب رقم هاتف الطالب..."
               value={searchQuery}
               onChange={(e) => {
