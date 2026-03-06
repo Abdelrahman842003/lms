@@ -17,6 +17,9 @@ class NotificationResource extends JsonResource
             'message' => $this->message,
             'type' => $this->type,
             'target_type' => $this->target_type,
+            'target_ids' => $this->target_ids ?? [],
+            'recipient_count' => (int) ($this->recipient_count ?? 0),
+            'recipient_snapshot' => $this->recipient_snapshot,
             'creator' => $this->whenLoaded('creator', fn() => [
                 'id' => $this->creator->id,
                 'name' => $this->creator->name,

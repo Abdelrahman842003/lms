@@ -20,6 +20,18 @@ type RecipientOption = {
   is_active?: boolean;
 };
 
+type RecipientSnapshot = {
+  id: string;
+  name: string;
+  type?: string;
+};
+
+type RecipientsModalData = {
+  label: string;
+  count: number;
+  recipients: RecipientSnapshot[];
+};
+
 const extractRows = (payload: any): any[] => {
   if (Array.isArray(payload)) {
     return payload;
@@ -51,11 +63,14 @@ export default function NotificationsPage() {
   const [secretaries, setSecretaries] = useState<RecipientOption[]>([]);
   const [isRecipientsLoading, setIsRecipientsLoading] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [recipientMode, setRecipientMode] = useState<'all' | 'specific'>('all');
+  const [recipientSearch, setRecipientSearch] = useState('');
+  const [recipientsModalData, setRecipientsModalData] = useState<RecipientsModalData | null>(null);
   const [formData, setFormData] = useState({
     title: '',
     message: '',
     target_type: 'all' as TargetType,
-    target_id: '',
+    target_ids: [] as string[],
   });
 
   useEffect(() => {
@@ -155,21 +170,51 @@ export default function NotificationsPage() {
     setFormData((prev) => ({
       ...prev,
       target_type: value as TargetType,
-      target_id: '',
+      target_ids: [],
     }));
+    setRecipientMode('all');
+    setRecipientSearch('');
+  };
+
+  const handleRecipientToggle = (recipientId: string) => {
+    setFormData((prev) => {
+      const isSelected = prev.target_ids.includes(recipientId);
+      const targetIds = isSelected
+        ? prev.target_ids.filter((id) => id !== recipientId)
+        : [...prev.target_ids, recipientId];
+
+      return {
+        ...prev,
+        target_ids: targetIds,
+      };
+    });
+  };
+
+  const openRecipientsModal = (row: any) => {
+    const recipients = Array.isArray(row?.recipient_snapshot) ? row.recipient_snapshot : [];
+    if (recipients.length === 0) return;
+
+    const count = Number(row?.recipient_count ?? recipients.length ?? 0);
+    setRecipientsModalData({
+      label: getTargetLabel(row?.target_type),
+      count,
+      recipients: recipients as RecipientSnapshot[],
+    });
   };
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const targetId =
-        formData.target_type === 'all' || formData.target_id === ''
-          ? undefined
-          : formData.target_id;
+      if (formData.target_type !== 'all' && recipientMode === 'specific' && formData.target_ids.length === 0) {
+        toast.error('اختر مستلمًا واحدًا على الأقل أو غيّر النوع إلى كل الفئة');
+        return;
+      }
 
       const response = await academyService.createNotification({
-        ...formData,
-        target_id: targetId,
+        title: formData.title,
+        message: formData.message,
+        target_type: formData.target_type,
+        target_ids: formData.target_type !== 'all' && recipientMode === 'specific' ? formData.target_ids : undefined,
         type: 'info',
       });
 
@@ -191,8 +236,10 @@ export default function NotificationsPage() {
         title: '',
         message: '',
         target_type: 'all',
-        target_id: '',
+        target_ids: [],
       });
+      setRecipientMode('all');
+      setRecipientSearch('');
       await fetchNotifications();
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'فشل في إرسال الإشعار');
@@ -222,7 +269,33 @@ export default function NotificationsPage() {
       key: 'target_type',
       label: 'المستهدفين',
       sortable: true,
-      render: getTargetLabel,
+      render: (value: string, row: any) => {
+        const label = getTargetLabel(value);
+        const recipientCount = Number(row?.recipient_count ?? 0);
+        const snapshot = Array.isArray(row?.recipient_snapshot) ? row.recipient_snapshot : [];
+
+        if (snapshot.length > 0) {
+          return (
+            <button
+              type="button"
+              className="badge badge-outline-info badge-clickable"
+              onClick={() => openRecipientsModal(row)}
+            >
+              {label} ({recipientCount || snapshot.length})
+            </button>
+          );
+        }
+
+        if (recipientCount > 0 && value !== 'all') {
+          return (
+            <span className="badge badge-outline-info">
+              {label} ({recipientCount})
+            </span>
+          );
+        }
+
+        return label;
+      },
     },
     { 
       key: 'created_at', 
@@ -241,6 +314,10 @@ export default function NotificationsPage() {
 
   const allRecipientsLabel =
     formData.target_type === 'teachers' ? 'كل المدرسين' : 'كل السكرتيرات';
+
+  const filteredRecipientOptions = selectedRecipientOptions.filter((recipient) =>
+    recipient.name.toLowerCase().includes(recipientSearch.toLowerCase())
+  );
 
   return (
     <DashboardLayout role="academy" user={user || { name: 'الأكاديمية' }}>
@@ -330,25 +407,112 @@ export default function NotificationsPage() {
 
           {formData.target_type !== 'all' && (
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-300">مستلم محدد (اختياري)</label>
+              <label className="block text-sm font-medium text-gray-300">نوع التحديد</label>
               <Select
                 options={[
-                  { value: '', label: allRecipientsLabel },
-                  ...selectedRecipientOptions.map((recipient) => ({
-                    value: recipient.id,
-                    label: recipient.name,
-                  })),
+                  { value: 'all', label: allRecipientsLabel },
+                  { value: 'specific', label: 'تحديد مستلمين' },
                 ]}
-                value={formData.target_id}
-                onChange={(value) => setFormData({ ...formData, target_id: value })}
-                placeholder="اختر مستلمًا محددًا"
+                value={recipientMode}
+                onChange={(value) => {
+                  const mode = value as 'all' | 'specific';
+                  setRecipientMode(mode);
+                  if (mode === 'all') {
+                    setFormData((prev) => ({ ...prev, target_ids: [] }));
+                  }
+                }}
                 disabled={isRecipientsLoading}
-                searchable
               />
+
+              {recipientMode === 'specific' && (
+                <>
+                  <div className="ui-input-container">
+                    <input
+                      type="text"
+                      className="form-input ux-w-full"
+                      placeholder="بحث عن مستلم..."
+                      value={recipientSearch}
+                      onChange={(e) => setRecipientSearch(e.target.value)}
+                    />
+                  </div>
+
+                  <div
+                    className="rounded-xl border border-white/10 p-2 custom-scrollbar"
+                    style={{ maxHeight: '200px', overflowY: 'auto' }}
+                  >
+                    {filteredRecipientOptions.length === 0 ? (
+                      <div className="text-sm text-gray-400 py-3 text-center">لا توجد نتائج</div>
+                    ) : (
+                      filteredRecipientOptions.map((recipient) => {
+                        const checked = formData.target_ids.includes(recipient.id);
+                        return (
+                          <label
+                            key={recipient.id}
+                            className="flex items-center gap-2 py-2 px-2 rounded-md cursor-pointer hover:bg-white/5"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() => handleRecipientToggle(recipient.id)}
+                            />
+                            <span>{recipient.name}</span>
+                          </label>
+                        );
+                      })
+                    )}
+                  </div>
+                  <div className="text-xs text-gray-400">
+                    تم اختيار {formData.target_ids.length} مستلم
+                  </div>
+                </>
+              )}
             </div>
           )}
         </div>
       </FormModal>
+
+      {recipientsModalData && (
+        <div className="modal-overlay" onClick={() => setRecipientsModalData(null)}>
+          <div
+            className="modal-content"
+            style={{ maxWidth: '480px' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-header">
+              <h3>المستلمون المحددون</h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="modal-close"
+                onClick={() => setRecipientsModalData(null)}
+                aria-label="إغلاق"
+              >
+                <Icon name="times" size="sm" />
+              </Button>
+            </div>
+
+            <div className="modal-body">
+              <div className="mb-3 text-sm text-gray-300">
+                {recipientsModalData.label} - {recipientsModalData.count} مستلم
+              </div>
+              <div className="space-y-2 custom-scrollbar" style={{ maxHeight: '280px', overflowY: 'auto' }}>
+                {recipientsModalData.recipients.map((recipient, index) => (
+                  <div key={recipient.id} className="p-2 rounded-lg border border-white/10 flex items-center justify-between">
+                    <span>{recipient.name || 'بدون اسم'}</span>
+                    <span className="text-xs text-gray-400">#{index + 1}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              <Button type="button" variant="outline" onClick={() => setRecipientsModalData(null)}>
+                إغلاق
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 }

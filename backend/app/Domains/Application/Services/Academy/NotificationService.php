@@ -68,7 +68,7 @@ class NotificationService
             throw new RuntimeException('إرسال الإشعارات للسكرتيرين متوقف من إعدادات النظام.');
         }
 
-        $this->dispatchNotifications($academy, $data);
+        $dispatchMeta = $this->dispatchNotifications($academy, $data);
 
         return AcademyNotification::create([
             'academy_id' => $academy->id,
@@ -77,23 +77,31 @@ class NotificationService
             'message' => $data->message,
             'type' => $data->type,
             'target_type' => $data->target_type,
+            'target_ids' => $dispatchMeta['target_ids'],
+            'recipient_count' => $dispatchMeta['recipient_count'],
+            'recipient_snapshot' => $dispatchMeta['recipient_snapshot'],
         ]);
     }
 
-    private function dispatchNotifications(Academy $academy, NotificationData $data): void
+    /**
+     * @return array{target_ids: array<int, string>, recipient_count: int, recipient_snapshot: array<int, array<string, mixed>>|null}
+     */
+    private function dispatchNotifications(Academy $academy, NotificationData $data): array
     {
+        $targetIds = $this->normalizeTargetIds($data);
+
         $payload = [
             'academy_id' => $academy->id,
             'sender_role' => 'academy',
             'target_type' => $data->target_type,
         ];
 
-        if ($data->target_id !== null) {
-            $payload['target_id'] = $data->target_id;
+        if (! empty($targetIds)) {
+            $payload['target_ids'] = $targetIds;
         }
 
         if ($data->target_type === 'teachers') {
-            $teachers = $this->resolveTeacherRecipients($academy, $data->target_id);
+            $teachers = $this->resolveTeacherRecipients($academy, $targetIds);
             $this->realtimeNotificationService->sendToMany(
                 $teachers,
                 'teacher',
@@ -102,11 +110,16 @@ class NotificationService
                 $payload,
                 $data->type
             );
-            return;
+
+            return [
+                'target_ids' => $targetIds,
+                'recipient_count' => $teachers->count(),
+                'recipient_snapshot' => $this->buildRecipientSnapshot($teachers, 'teacher', ! empty($targetIds)),
+            ];
         }
 
         if ($data->target_type === 'secretaries') {
-            $secretaries = $this->resolveSecretaryRecipients($academy, $data->target_id);
+            $secretaries = $this->resolveSecretaryRecipients($academy, $targetIds);
             $this->realtimeNotificationService->sendToMany(
                 $secretaries,
                 'secretary',
@@ -115,11 +128,16 @@ class NotificationService
                 $payload,
                 $data->type
             );
-            return;
+
+            return [
+                'target_ids' => $targetIds,
+                'recipient_count' => $secretaries->count(),
+                'recipient_snapshot' => $this->buildRecipientSnapshot($secretaries, 'secretary', ! empty($targetIds)),
+            ];
         }
 
-        $teachers = $this->resolveTeacherRecipients($academy, null, false);
-        $secretaries = $this->resolveSecretaryRecipients($academy, null, false);
+        $teachers = $this->resolveTeacherRecipients($academy, [], false);
+        $secretaries = $this->resolveSecretaryRecipients($academy, [], false);
 
         if ($teachers->isEmpty() && $secretaries->isEmpty()) {
             throw new RuntimeException('لا يوجد مستلمون متاحون داخل الأكاديمية.');
@@ -146,48 +164,100 @@ class NotificationService
                 $data->type
             );
         }
+
+        return [
+            'target_ids' => [],
+            'recipient_count' => $teachers->count() + $secretaries->count(),
+            'recipient_snapshot' => null,
+        ];
     }
 
-    private function resolveTeacherRecipients(Academy $academy, ?string $targetId, bool $throwIfEmpty = true): Collection
+    /**
+     * @return array<int, string>
+     */
+    private function normalizeTargetIds(NotificationData $data): array
+    {
+        $ids = $data->target_ids;
+
+        if (is_string($data->target_id) && $data->target_id !== '' && ! in_array($data->target_id, $ids, true)) {
+            $ids[] = $data->target_id;
+        }
+
+        return array_values(array_unique(array_filter($ids, static fn ($id) => is_string($id) && $id !== '')));
+    }
+
+    /**
+     * @param array<int, string> $targetIds
+     */
+    private function resolveTeacherRecipients(Academy $academy, array $targetIds, bool $throwIfEmpty = true): Collection
     {
         $query = $academy->teachers()
             ->wherePivot('is_active', true)
             ->where('teachers.status', 'active');
 
-        if ($targetId !== null) {
-            $query->where('teachers.id', $targetId);
+        if (! empty($targetIds)) {
+            $query->whereIn('teachers.id', $targetIds);
         }
 
         $teachers = $query->get();
 
+        if (! empty($targetIds) && $teachers->count() !== count($targetIds)) {
+            throw new RuntimeException('بعض المدرسين المحددين غير نشطين أو غير تابعين للأكاديمية.');
+        }
+
         if ($throwIfEmpty && $teachers->isEmpty()) {
-            throw new RuntimeException($targetId !== null
-                ? 'المدرس المحدد غير نشط أو غير تابع للأكاديمية.'
+            throw new RuntimeException(! empty($targetIds)
+                ? 'المدرسون المحددون غير نشطين أو غير تابعين للأكاديمية.'
                 : 'لا يوجد مدرسون نشطون متاحون للإرسال.');
         }
 
         return $teachers;
     }
 
-    private function resolveSecretaryRecipients(Academy $academy, ?string $targetId, bool $throwIfEmpty = true): Collection
+    /**
+     * @param array<int, string> $targetIds
+     */
+    private function resolveSecretaryRecipients(Academy $academy, array $targetIds, bool $throwIfEmpty = true): Collection
     {
         $query = $academy->secretaries()
             ->wherePivot('is_active', true)
             ->where('secretaries.is_active', true);
 
-        if ($targetId !== null) {
-            $query->where('secretaries.id', $targetId);
+        if (! empty($targetIds)) {
+            $query->whereIn('secretaries.id', $targetIds);
         }
 
         $secretaries = $query->get();
 
+        if (! empty($targetIds) && $secretaries->count() !== count($targetIds)) {
+            throw new RuntimeException('بعض السكرتيرين المحددين غير نشطين أو غير تابعين للأكاديمية.');
+        }
+
         if ($throwIfEmpty && $secretaries->isEmpty()) {
-            throw new RuntimeException($targetId !== null
-                ? 'السكرتير المحدد غير نشط أو غير تابع للأكاديمية.'
+            throw new RuntimeException(! empty($targetIds)
+                ? 'السكرتيرون المحددون غير نشطين أو غير تابعين للأكاديمية.'
                 : 'لا يوجد سكرتيرون نشطون متاحون للإرسال.');
         }
 
         return $secretaries;
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>|null
+     */
+    private function buildRecipientSnapshot(Collection $recipients, string $recipientType, bool $includeSnapshot): ?array
+    {
+        if (! $includeSnapshot) {
+            return null;
+        }
+
+        return $recipients->map(static function ($recipient) use ($recipientType) {
+            return [
+                'id' => (string) $recipient->id,
+                'name' => (string) ($recipient->name ?? ''),
+                'type' => $recipientType,
+            ];
+        })->values()->all();
     }
 
     /**

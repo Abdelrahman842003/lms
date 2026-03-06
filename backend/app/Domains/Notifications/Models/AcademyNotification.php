@@ -21,10 +21,16 @@ class AcademyNotification extends Model
         'message',
         'type',
         'target_type',
+        'target_ids',
+        'recipient_count',
+        'recipient_snapshot',
         'read_by',
     ];
 
     protected $casts = [
+        'target_ids' => 'array',
+        'recipient_count' => 'integer',
+        'recipient_snapshot' => 'array',
         'read_by' => 'array',
         'type' => \App\Domains\Notifications\Enums\NotificationType::class,
         'target_type' => \App\Domains\Notifications\Enums\NotificationTargetType::class,
