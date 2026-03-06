@@ -321,6 +321,7 @@ export const createNotification = async (data: {
   message: string;
   type: 'info' | 'warning' | 'success' | 'danger';
   target_type: 'teachers' | 'secretaries' | 'all';
+  target_id?: string | null;
 }) => {
   const response = await axios.post(
     `${API_BASE_URL}/academy/notifications`,

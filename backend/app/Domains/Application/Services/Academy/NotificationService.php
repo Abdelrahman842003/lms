@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace App\Domains\Application\Services\Academy;
 
 use App\Domains\Auth\Models\Academy;
+use App\Domains\Notifications\DTOs\NotificationData;
 use App\Domains\Notifications\Services\NotificationSettingsService;
+use App\Domains\Notifications\Services\NotificationService as RealtimeNotificationService;
 use App\Domains\Notifications\Models\AcademyNotification;
+use Illuminate\Support\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use RuntimeException;
 
@@ -14,6 +17,7 @@ class NotificationService
 {
     public function __construct(
         private NotificationSettingsService $notificationSettings,
+        private RealtimeNotificationService $realtimeNotificationService,
     ) {}
 
     /**
@@ -50,10 +54,7 @@ class NotificationService
     /**
      * Create notification
      */
-    /**
-     * Create notification
-     */
-    public function createNotification(Academy $academy, \App\Domains\Notifications\DTOs\NotificationData $data, ?string $creatorId = null): AcademyNotification
+    public function createNotification(Academy $academy, NotificationData $data, ?string $creatorId = null): AcademyNotification
     {
         if (! $this->notificationSettings->isInternalEnabled()) {
             throw new RuntimeException('الإشعارات الداخلية متوقفة من إعدادات النظام.');
@@ -67,6 +68,8 @@ class NotificationService
             throw new RuntimeException('إرسال الإشعارات للسكرتيرين متوقف من إعدادات النظام.');
         }
 
+        $this->dispatchNotifications($academy, $data);
+
         return AcademyNotification::create([
             'academy_id' => $academy->id,
             'created_by' => $creatorId,
@@ -75,6 +78,116 @@ class NotificationService
             'type' => $data->type,
             'target_type' => $data->target_type,
         ]);
+    }
+
+    private function dispatchNotifications(Academy $academy, NotificationData $data): void
+    {
+        $payload = [
+            'academy_id' => $academy->id,
+            'sender_role' => 'academy',
+            'target_type' => $data->target_type,
+        ];
+
+        if ($data->target_id !== null) {
+            $payload['target_id'] = $data->target_id;
+        }
+
+        if ($data->target_type === 'teachers') {
+            $teachers = $this->resolveTeacherRecipients($academy, $data->target_id);
+            $this->realtimeNotificationService->sendToMany(
+                $teachers,
+                'teacher',
+                $data->title,
+                $data->message,
+                $payload,
+                $data->type
+            );
+            return;
+        }
+
+        if ($data->target_type === 'secretaries') {
+            $secretaries = $this->resolveSecretaryRecipients($academy, $data->target_id);
+            $this->realtimeNotificationService->sendToMany(
+                $secretaries,
+                'secretary',
+                $data->title,
+                $data->message,
+                $payload,
+                $data->type
+            );
+            return;
+        }
+
+        $teachers = $this->resolveTeacherRecipients($academy, null, false);
+        $secretaries = $this->resolveSecretaryRecipients($academy, null, false);
+
+        if ($teachers->isEmpty() && $secretaries->isEmpty()) {
+            throw new RuntimeException('لا يوجد مستلمون متاحون داخل الأكاديمية.');
+        }
+
+        if ($teachers->isNotEmpty()) {
+            $this->realtimeNotificationService->sendToMany(
+                $teachers,
+                'teacher',
+                $data->title,
+                $data->message,
+                $payload,
+                $data->type
+            );
+        }
+
+        if ($secretaries->isNotEmpty()) {
+            $this->realtimeNotificationService->sendToMany(
+                $secretaries,
+                'secretary',
+                $data->title,
+                $data->message,
+                $payload,
+                $data->type
+            );
+        }
+    }
+
+    private function resolveTeacherRecipients(Academy $academy, ?string $targetId, bool $throwIfEmpty = true): Collection
+    {
+        $query = $academy->teachers()
+            ->wherePivot('is_active', true)
+            ->where('teachers.status', 'active');
+
+        if ($targetId !== null) {
+            $query->where('teachers.id', $targetId);
+        }
+
+        $teachers = $query->get();
+
+        if ($throwIfEmpty && $teachers->isEmpty()) {
+            throw new RuntimeException($targetId !== null
+                ? 'المدرس المحدد غير نشط أو غير تابع للأكاديمية.'
+                : 'لا يوجد مدرسون نشطون متاحون للإرسال.');
+        }
+
+        return $teachers;
+    }
+
+    private function resolveSecretaryRecipients(Academy $academy, ?string $targetId, bool $throwIfEmpty = true): Collection
+    {
+        $query = $academy->secretaries()
+            ->wherePivot('is_active', true)
+            ->where('secretaries.is_active', true);
+
+        if ($targetId !== null) {
+            $query->where('secretaries.id', $targetId);
+        }
+
+        $secretaries = $query->get();
+
+        if ($throwIfEmpty && $secretaries->isEmpty()) {
+            throw new RuntimeException($targetId !== null
+                ? 'السكرتير المحدد غير نشط أو غير تابع للأكاديمية.'
+                : 'لا يوجد سكرتيرون نشطون متاحون للإرسال.');
+        }
+
+        return $secretaries;
     }
 
     /**
@@ -93,7 +206,7 @@ class NotificationService
      */
     public function sendToTeachers(Academy $academy, string $title, string $message, string $type = 'info', ?string $creatorId = null): AcademyNotification
     {
-        $data = new \App\Domains\Notifications\DTOs\NotificationData(
+        $data = new NotificationData(
             title: $title,
             message: $message,
             type: $type,
@@ -107,7 +220,7 @@ class NotificationService
      */
     public function sendToSecretaries(Academy $academy, string $title, string $message, string $type = 'info', ?string $creatorId = null): AcademyNotification
     {
-        $data = new \App\Domains\Notifications\DTOs\NotificationData(
+        $data = new NotificationData(
             title: $title,
             message: $message,
             type: $type,
