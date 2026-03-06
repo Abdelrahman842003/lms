@@ -11,6 +11,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { useRouter } from "next/navigation";
 import { useCoreAuth } from './CoreAuthContext';
 import { TeacherInfo, ChildInfo, AcademyInfo } from "@/types";
+import { isTeacherAccessible, pickPreferredTeacher } from "@/utils/studentTeacherAccess";
 
 interface SelectionContextType {
   // Teacher selection (for students)
@@ -79,16 +80,7 @@ export function SelectionProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (user?.userType === "student" && user.teachers && user.teachers.length > 0) {
       const currentSelected = localStorage.getItem("selectedTeacher");
-      let bestTeacher = null;
-
-      // Smart selection: Active > Grace Period (Filter out suspended)
-      const activeTeacher = user.teachers.find(
-        (t: any) => t.status === "active" && !t.is_suspended
-      );
-      const graceTeacher = user.teachers.find(
-        (t: any) => t.status === "grace_period" && !t.is_suspended
-      );
-      bestTeacher = activeTeacher || graceTeacher || null;
+      const bestTeacher = pickPreferredTeacher(user.teachers);
 
       if (currentSelected) {
         const parsedCurrent = JSON.parse(currentSelected);
@@ -97,11 +89,7 @@ export function SelectionProvider({ children }: { children: ReactNode }) {
         );
 
         // If current is still valid, keep it. Otherwise switch to best.
-        if (
-          updatedCurrent &&
-          (updatedCurrent.status === "active" || updatedCurrent.status === "grace_period") &&
-          !updatedCurrent.is_suspended
-        ) {
+        if (isTeacherAccessible(updatedCurrent)) {
           setSelectedTeacher(updatedCurrent);
           localStorage.setItem("selectedTeacher", JSON.stringify(updatedCurrent));
         } else if (bestTeacher) {
@@ -114,6 +102,9 @@ export function SelectionProvider({ children }: { children: ReactNode }) {
       } else if (bestTeacher) {
         setSelectedTeacher(bestTeacher);
         localStorage.setItem("selectedTeacher", JSON.stringify(bestTeacher));
+      } else {
+        setSelectedTeacher(null);
+        localStorage.removeItem("selectedTeacher");
       }
     }
   }, [user]);

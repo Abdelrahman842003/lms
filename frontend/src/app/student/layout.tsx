@@ -2,22 +2,56 @@
 
 import { StudentTeacherProvider } from '@/contexts/StudentTeacherContext';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
-import { ReactNode } from 'react';
+import { ReactNode, useEffect, useRef, useState } from 'react';
+import { isTeacherAccessible } from '@/utils/studentTeacherAccess';
 
 export default function StudentLayout({ children }: { children: ReactNode }) {
-  const { user, selectedTeacher, isLoading } = useAuth();
+  const { user, isLoading, refreshUser } = useAuth();
+  const [isRefreshingUser, setIsRefreshingUser] = useState(false);
+  const syncedStudentIdRef = useRef<string | number | null>(null);
 
-  // Show loading state or children while loading
-  if (isLoading) {
-    return <>{children}</>;
+  useEffect(() => {
+    if (user?.userType !== 'student') {
+      syncedStudentIdRef.current = null;
+      return;
+    }
+
+    if (!user?.id || syncedStudentIdRef.current === user.id) {
+      return;
+    }
+
+    syncedStudentIdRef.current = user.id;
+
+    let cancelled = false;
+
+    const syncStudent = async () => {
+      setIsRefreshingUser(true);
+      try {
+        await refreshUser();
+      } catch (error) {
+        console.error('Student layout: failed to refresh current user', error);
+      } finally {
+        if (!cancelled) {
+          setIsRefreshingUser(false);
+        }
+      }
+    };
+
+    void syncStudent();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, user?.userType]);
+
+  // Wait for the current student snapshot before deciding access state.
+  if (isLoading || isRefreshingUser) {
+    return null;
   }
 
-  // Check if student is disabled by all teachers
-  // Condition: User is student, has teachers enrolled, but no teacher is selected (meaning all are invalid/inactive)
-  const isDisabled = user?.userType === 'student' && 
-                     user?.teachers && 
-                     user.teachers.length > 0 && 
-                     !selectedTeacher;
+  const hasTeachers = !!user?.teachers?.length;
+  const hasAccessibleTeacher = user?.teachers?.some((teacher) => isTeacherAccessible(teacher));
+  const isDisabled = user?.userType === 'student' && hasTeachers && !hasAccessibleTeacher;
 
   if (isDisabled) {
     return (

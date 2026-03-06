@@ -84,6 +84,12 @@ const getSidebarItems = (role: string): SidebarItem[] => {
         icon: 'fas fa-book-open',
         href: '/teacher/lectures',
       },
+      {
+        id: 'videos',
+        label: 'الفيديوهات التعليمية',
+        icon: 'fas fa-film',
+        href: '/teacher/videos',
+      },
 
       {
         id: 'exams',
@@ -128,6 +134,12 @@ const getSidebarItems = (role: string): SidebarItem[] => {
       href: '/student/lectures',
     },
     {
+      id: 'videos',
+      label: 'الفيديوهات التعليمية',
+      icon: 'fas fa-film',
+      href: '/student/videos',
+    },
+    {
       id: 'exams',
       label: 'الامتحانات',
       icon: 'fas fa-file-alt',
@@ -164,6 +176,7 @@ const permissionMap: Record<string, string[]> = {
   groups: ['view groups', 'create groups', 'edit groups', 'delete groups'],
   grades: ['view grades', 'create grades', 'edit grades', 'delete grades'],
   lectures: ['view lectures', 'create lectures', 'edit lectures', 'delete lectures'],
+  videos: ['view videos', 'create videos', 'edit videos', 'delete videos', 'publish videos'],
   exams: ['view exams', 'create exams', 'edit exams', 'delete exams'],
   notifications: ['send notifications'],
   attendance: ['manage lecture attendance'],
@@ -238,7 +251,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ role, user, isOpen, onClose, p
       // They should NOT see: Secretary, Grades (Classes), Reports
       // They SHOULD see: Attendance, Subscription
       items = items
-        .filter(item => item.id !== 'reports') // Remove Reports
+        .filter(item => item.id !== 'reports' && item.id !== 'videos') // Remove Reports and Videos
         .map(item => {
           if (item.id === 'gamification') {
             return { ...item, href: '/academy/gamification' };
@@ -259,6 +272,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ role, user, isOpen, onClose, p
           return item;
         });
     }
+  }
+
+  if (role === 'teacher' && selectedAcademy?.id !== 'independent') {
+    items = items.filter(item => item.id !== 'videos');
   }
 
   const [expandedItems, setExpandedItems] = React.useState<string[]>([]);

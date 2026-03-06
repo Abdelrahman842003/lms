@@ -95,6 +95,12 @@ const getNavItems = (role: string): SidebarItem[] => {
         href: '/academy/lectures',
       },
       {
+        id: 'videos',
+        label: 'الفيديوهات التعليمية',
+        icon: 'film',
+        href: '/academy/videos',
+      },
+      {
         id: 'exams',
         label: 'الامتحانات',
         icon: 'file-alt',
@@ -172,6 +178,12 @@ const getNavItems = (role: string): SidebarItem[] => {
         href: '/teacher/lectures',
       },
       {
+        id: 'videos',
+        label: 'الفيديوهات التعليمية',
+        icon: 'film',
+        href: '/teacher/videos',
+      },
+      {
         id: 'attendance',
         label: 'الحضور والانصراف',
         icon: 'calendar-check',
@@ -227,6 +239,12 @@ const getNavItems = (role: string): SidebarItem[] => {
       href: '/student/lectures',
     },
     {
+      id: 'videos',
+      label: 'الفيديوهات التعليمية',
+      icon: 'film',
+      href: '/student/videos',
+    },
+    {
       id: 'exams',
       label: 'الامتحانات',
       icon: 'file-alt',
@@ -274,6 +292,7 @@ const secretaryPermissionMap: Record<string, string[]> = {
   
   // Lectures
   lectures: ['view lectures', 'create lectures', 'edit lectures', 'delete lectures', 'manage lecture attendance'],
+  videos: ['view videos', 'create videos', 'edit videos', 'delete videos', 'publish videos', 'manage video comments'],
   
   // Exams
   exams: ['view exams', 'create exams', 'edit exams', 'delete exams', 'grade exams'],
@@ -365,7 +384,7 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
       // They should NOT see: Secretary, Grades (Classes), Reports
       // They SHOULD see: Attendance
       items = items
-        .filter(item => item.id !== 'reports') // Remove Reports
+        .filter(item => item.id !== 'reports' && item.id !== 'videos') // Remove Reports and Videos
         .map(item => {
           if (item.children) {
             return {
@@ -379,6 +398,10 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
           return item;
         });
     }
+  }
+
+  if (role === 'teacher' && selectedAcademy?.id !== 'independent') {
+    items = items.filter(item => item.id !== 'videos');
   }
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [activeSubMenu, setActiveSubMenu] = useState<string | null>(null);

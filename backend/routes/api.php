@@ -115,6 +115,18 @@ Route::middleware('auth:sanctum')->prefix('academy')->name('academy.')->group(fu
     Route::put('exams/{exam}/toggle-status', [\App\Domains\Application\Http\Controllers\Academy\ExamController::class, 'toggleStatus']);
     Route::post('exams/{exam}/copy', [\App\Domains\Application\Http\Controllers\Academy\ExamController::class, 'copy']);
     Route::put('exams/{exam}/end', [\App\Domains\Application\Http\Controllers\Academy\ExamController::class, 'endExam']);
+
+    // Videos Management
+    Route::get('videos', [\App\Domains\Application\Http\Controllers\Academy\VideoController::class, 'index']);
+    Route::post('videos', [\App\Domains\Application\Http\Controllers\Academy\VideoController::class, 'store'])->middleware('throttle:video-upload');
+    Route::get('videos/{video}', [\App\Domains\Application\Http\Controllers\Academy\VideoController::class, 'show']);
+    Route::put('videos/{video}', [\App\Domains\Application\Http\Controllers\Academy\VideoController::class, 'update']);
+    Route::delete('videos/{video}', [\App\Domains\Application\Http\Controllers\Academy\VideoController::class, 'destroy']);
+    Route::post('videos/{video}/retry-processing', [\App\Domains\Application\Http\Controllers\Academy\VideoController::class, 'retryProcessing']);
+    Route::post('videos/{video}/publish', [\App\Domains\Application\Http\Controllers\Academy\VideoController::class, 'publish']);
+    Route::get('videos/{video}/comments', [\App\Domains\Application\Http\Controllers\Academy\VideoController::class, 'comments']);
+    Route::post('videos/{video}/comments/{commentId}/hide', [\App\Domains\Application\Http\Controllers\Academy\VideoController::class, 'hideComment']);
+    Route::delete('videos/{video}/comments/{commentId}', [\App\Domains\Application\Http\Controllers\Academy\VideoController::class, 'deleteComment']);
 });
 
 // ============================================
@@ -220,6 +232,18 @@ Route::middleware(['auth:sanctum', \App\Domains\Auth\Http\Middleware\EnsureTeach
     Route::post('/scan/checkout', [\App\Domains\Application\Http\Controllers\Teacher\ScanController::class, 'checkout']);
     Route::get('/scan/today-status', [\App\Domains\Application\Http\Controllers\Teacher\ScanController::class, 'todayStatus']);
 
+    // Videos Management (Independent Teacher)
+    Route::get('videos', [\App\Domains\Application\Http\Controllers\Teacher\VideoController::class, 'index']);
+    Route::post('videos', [\App\Domains\Application\Http\Controllers\Teacher\VideoController::class, 'store'])->middleware('throttle:video-upload');
+    Route::get('videos/{video}', [\App\Domains\Application\Http\Controllers\Teacher\VideoController::class, 'show']);
+    Route::put('videos/{video}', [\App\Domains\Application\Http\Controllers\Teacher\VideoController::class, 'update']);
+    Route::delete('videos/{video}', [\App\Domains\Application\Http\Controllers\Teacher\VideoController::class, 'destroy']);
+    Route::post('videos/{video}/retry-processing', [\App\Domains\Application\Http\Controllers\Teacher\VideoController::class, 'retryProcessing']);
+    Route::post('videos/{video}/publish', [\App\Domains\Application\Http\Controllers\Teacher\VideoController::class, 'publish']);
+    Route::get('videos/{video}/comments', [\App\Domains\Application\Http\Controllers\Teacher\VideoController::class, 'comments']);
+    Route::post('videos/{video}/comments/{commentId}/hide', [\App\Domains\Application\Http\Controllers\Teacher\VideoController::class, 'hideComment']);
+    Route::delete('videos/{video}/comments/{commentId}', [\App\Domains\Application\Http\Controllers\Teacher\VideoController::class, 'deleteComment']);
+
 });
 
 // ============================================
@@ -268,6 +292,21 @@ Route::middleware(['auth:sanctum', \App\Domains\Auth\Http\Middleware\EnsureTeach
     // Mistakes (Smart Mistakes Notebook)
     Route::get('/mistakes', [\App\Domains\Application\Http\Controllers\Student\MistakesController::class, 'index']);
     Route::post('/mistakes/{id}/mastered', [\App\Domains\Application\Http\Controllers\Student\MistakesController::class, 'markAsMastered']);
+
+    // Educational Videos
+    Route::get('/videos', [\App\Domains\Application\Http\Controllers\Student\VideoController::class, 'index']);
+    Route::get('/videos/{video}', [\App\Domains\Application\Http\Controllers\Student\VideoController::class, 'show']);
+    Route::post('/videos/{video}/playback-token', [\App\Domains\Application\Http\Controllers\Student\VideoController::class, 'issuePlaybackToken'])
+        ->middleware('throttle:video-playback');
+    Route::get('/videos/{video}/stream', [\App\Domains\Application\Http\Controllers\Student\VideoController::class, 'stream'])
+        ->middleware('throttle:video-playback');
+    Route::get('/videos/{video}/thumbnail', [\App\Domains\Application\Http\Controllers\Student\VideoController::class, 'thumbnail']);
+    Route::get('/videos/{video}/attachments/{attachmentId}', [\App\Domains\Application\Http\Controllers\Student\VideoController::class, 'downloadAttachment']);
+    Route::post('/videos/{video}/progress', [\App\Domains\Application\Http\Controllers\Student\VideoController::class, 'updateProgress']);
+    Route::post('/videos/{video}/like', [\App\Domains\Application\Http\Controllers\Student\VideoController::class, 'toggleLike']);
+    Route::get('/videos/{video}/comments', [\App\Domains\Application\Http\Controllers\Student\VideoController::class, 'comments']);
+    Route::post('/videos/{video}/comments', [\App\Domains\Application\Http\Controllers\Student\VideoController::class, 'storeComment']);
+    Route::delete('/videos/{video}/comments/{commentId}', [\App\Domains\Application\Http\Controllers\Student\VideoController::class, 'deleteOwnComment']);
 });
 
 // ============================================
