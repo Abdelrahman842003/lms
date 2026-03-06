@@ -8,7 +8,7 @@ import { StatCard } from '@/components/dashboard/StatCard';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { toast } from 'react-hot-toast';
 import { getAcademyExamResults } from '@/services/academyService';
-import { Button, Icon, Input, Badge, LoadingSpinner, FormModal } from '@/components/ui';
+import { Icon, Input, Badge, LoadingSpinner, FormModal } from '@/components/ui';
 // Types
 interface FailedQuestion {
   id: string;
@@ -140,41 +140,6 @@ export default function AcademyExamResultsPage({ params }: { params: Promise<{ i
       role="academy"
       user={{ name: user?.name || 'الأكاديمية', avatar: user?.avatar || '' }}
     >
-      {/* Header */}
-      <div className="mb-6">
-        <div className="flex items-start justify-between gap-3 mb-3">
-          <div className="flex-1 min-w-0">
-            <h1 className="text-lg md:text-2xl font-bold text-white flex items-center gap-2">
-              <Icon name="poll" className="text-primary" />
-              <span className="truncate">{exam?.title}</span>
-            </h1>
-            <div className="flex flex-wrap items-center gap-2 mt-2 text-xs text-gray-400">
-              <span className="flex items-center gap-1 bg-gray-800/50 px-2 py-1 rounded">
-                <Icon name="book" />
-                {exam?.subject}
-              </span>
-              <span className="flex items-center gap-1 bg-gray-800/50 px-2 py-1 rounded">
-                <Icon name="clock" />
-                {exam?.duration} دقيقة
-              </span>
-              {exam?.date && (
-                <span className="flex items-center gap-1 bg-gray-800/50 px-2 py-1 rounded">
-                  <Icon name="calendar" />
-                  {new Date(exam.date).toLocaleDateString('ar-EG')}
-                </span>
-              )}
-            </div>
-          </div>
-          <Button
-            variant="ghost"
-            onClick={() => router.back()}
-            className="w-10 h-10 rounded-full bg-gray-800 border border-gray-700 flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-700 transition-colors p-0"
-          >
-            <Icon name="arrow-right" />
-          </Button>
-        </div>
-      </div>
-
       {/* Stats Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6">
         <StatCard

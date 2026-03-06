@@ -13,6 +13,7 @@ readonly class NotificationData
         public string $message,
         public string $type,
         public string $target_type,
+        public ?string $target_id = null,
     ) {}
 
     public static function fromRequest(Request $request): self
@@ -22,6 +23,7 @@ readonly class NotificationData
             message: $request->validated('message'),
             type: $request->validated('type') ?? 'info',
             target_type: $request->validated('target_type') ?? 'all',
+            target_id: $request->validated('target_id'),
         );
     }
 
@@ -32,6 +34,7 @@ readonly class NotificationData
             'message' => $this->message,
             'type' => $this->type,
             'target_type' => $this->target_type,
+            'target_id' => $this->target_id,
         ];
     }
 }

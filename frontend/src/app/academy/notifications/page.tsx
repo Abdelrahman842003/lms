@@ -10,7 +10,7 @@ import { useRouter } from 'next/navigation';
 import * as academyService from '@/services/academyService';
 import toast from 'react-hot-toast';
 
-import { Button, Icon, LoadingSpinner, FormModal, Input, Textarea, Select } from '@/components/ui';
+import { Button, Icon, FormModal, Input, Textarea, Select } from '@/components/ui';
 export default function NotificationsPage() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const router = useRouter();
@@ -34,9 +34,25 @@ export default function NotificationsPage() {
     try {
       // setIsLoading(true);
       const response = await academyService.getNotifications(1, 50);
-      setNotifications(response.data?.notifications?.data || []);
+      const payload = response?.data ?? response;
+
+      // Support multiple API payload shapes safely without wiping existing data.
+      const rows =
+        (Array.isArray(payload?.data?.data) && payload.data.data) ||
+        (Array.isArray(payload?.data?.notifications?.data) && payload.data.notifications.data) ||
+        (Array.isArray(payload?.notifications?.data) && payload.notifications.data) ||
+        (Array.isArray(payload?.data) && payload.data) ||
+        (Array.isArray(payload?.notifications) && payload.notifications) ||
+        null;
+
+      if (rows) {
+        setNotifications(rows);
+      } else {
+        console.warn('Unknown notifications response shape:', response);
+      }
     } catch (error) {
       console.error('Failed to fetch notifications', error);
+      toast.error('تعذر تحميل سجل الإشعارات');
     } finally {
       // setIsLoading(false);
     }
@@ -51,10 +67,23 @@ export default function NotificationsPage() {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await academyService.createNotification({
+      const response = await academyService.createNotification({
         ...formData,
         type: 'info',
       });
+
+      const payload = response?.data ?? response;
+      const created =
+        payload?.data?.notification ||
+        payload?.notification ||
+        payload?.data?.data ||
+        payload?.data ||
+        null;
+
+      if (created?.id) {
+        setNotifications((prev) => [created, ...prev]);
+      }
+
       toast.success('تم إرسال الإشعار بنجاح');
       setShowCreateModal(false);
       setFormData({
@@ -62,7 +91,7 @@ export default function NotificationsPage() {
         message: '',
         target_type: 'all',
       });
-      fetchNotifications();
+      await fetchNotifications();
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'فشل في إرسال الإشعار');
     }

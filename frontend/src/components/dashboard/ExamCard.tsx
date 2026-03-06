@@ -1,4 +1,5 @@
 import React from 'react';
+import { Card } from '@/components/ui';
 import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/ui/Icon';
 import { Badge } from '@/components/ui/Badge';
@@ -113,11 +114,12 @@ export const ExamCard: React.FC<ExamCardProps> = ({
   };
 
   return (
-    <div
-      className={`ux-relative ux-rounded-2xl ux-p-6 ux-transition-all ux-duration-500 ux-ease-in-out ux-flex ux-flex-col ${isMenuOpen ? 'ux-z-10' : ''} ${
+    <Card
+      hover={!isActive}
+      className={`stat-card ux-relative ux-rounded-2xl ux-p-6 ux-transition-all ux-duration-500 ux-ease-in-out ux-flex ux-flex-col ${isMenuOpen ? 'ux-z-10' : ''} ${
         isActive
-          ? 'ux-bg-101426-15 ux-border-2 ux-border-primary ux-shadow-0-0-30px-rgba-66-99-235-0dot3'
-          : 'ux-bg-101426-15 ux-border ux-border-white-10 ux-hover-shadow-0-12px-40px-rgba-0-0-0-0dot3 ux-hover-translate-y-1px ux-hover-backdrop-blur-20px ux-hover-border-1bc5f8-50'
+          ? 'ux-border-2 ux-border-primary ux-shadow-0-0-30px-rgba-66-99-235-0dot3'
+          : 'ux-hover-shadow-0-12px-40px-rgba-0-0-0-0dot3 ux-hover-translate-y-1px ux-hover-backdrop-blur-20px ux-hover-border-1bc5f8-50'
       }`}
     >
       {/* Top Section: Menu and Status */}
@@ -305,6 +307,6 @@ export const ExamCard: React.FC<ExamCardProps> = ({
           )}
         </div>
       )}
-    </div>
+    </Card>
   );
 };
