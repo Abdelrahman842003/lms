@@ -158,7 +158,7 @@ class VideoController extends Controller
             throw new AuthorizationException('غير مصرح بعرض الصورة المصغرة.');
         }
 
-        if (! $video->thumbnail_path || ! $this->storage->exists($video->thumbnail_path)) {
+        if (! $video->thumbnail_path) {
             abort(404, 'Thumbnail not found');
         }
 
@@ -175,6 +175,32 @@ class VideoController extends Controller
         }
     }
 
+    public function thumbnailUrl(Request $request, Video $video): JsonResponse
+    {
+        /** @var Teacher $teacher */
+        $teacher = $request->user();
+
+        if (! $this->policy->view($teacher, $video)) {
+            throw new AuthorizationException('غير مصرح بعرض الصورة المصغرة.');
+        }
+
+        if (! $video->thumbnail_path) {
+            return $this->successResponse(['url' => null]);
+        }
+
+        try {
+            $signedUrl = $this->storage->temporaryUrl(
+                $video->thumbnail_path,
+                now()->addMinutes(30),
+                ['ResponseContentType' => 'image/jpeg']
+            );
+
+            return $this->successResponse(['url' => $signedUrl]);
+        } catch (\Throwable) {
+            return $this->successResponse(['url' => null]);
+        }
+    }
+
     public function stream(Request $request, Video $video): RedirectResponse|StreamedResponse
     {
         /** @var Teacher $teacher */
@@ -184,7 +210,7 @@ class VideoController extends Controller
             throw new AuthorizationException('غير مصرح بمشاهدة الفيديو.');
         }
 
-        if (! $video->processed_path || ! $this->storage->exists($video->processed_path)) {
+        if (! $video->processed_path) {
             abort(404, 'Video file not found');
         }
 
@@ -203,6 +229,39 @@ class VideoController extends Controller
             ]);
         } catch (\Throwable) {
             return $this->streamPrivateFile($video->processed_path, 'video/mp4', false);
+        }
+    }
+
+    public function streamUrl(Request $request, Video $video): JsonResponse
+    {
+        /** @var Teacher $teacher */
+        $teacher = $request->user();
+
+        if (! $this->policy->view($teacher, $video)) {
+            throw new AuthorizationException('غير مصرح بمشاهدة الفيديو.');
+        }
+
+        if (! $video->processed_path) {
+            return $this->errorResponse('ملف الفيديو غير موجود.', 404);
+        }
+
+        try {
+            $signedUrl = $this->storage->temporaryUrl(
+                $video->processed_path,
+                now()->addHour(),
+                [
+                    'ResponseContentType' => 'video/mp4',
+                    'ResponseContentDisposition' => 'inline',
+                ]
+            );
+
+            return $this->successResponse([
+                'url'        => $signedUrl,
+                'expires_in' => 3600,
+                'mime_type'  => 'video/mp4',
+            ]);
+        } catch (\Throwable $e) {
+            return $this->errorResponse('تعذّر إنشاء رابط المشاهدة.', 500);
         }
     }
 

@@ -64,8 +64,25 @@ interface TeacherVideoPlayerProps {
 function TeacherVideoPlayer({ videoId, thumbnailUrl }: TeacherVideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [streamUrl, setStreamUrl] = useState<string | null>(null);
+  const [resolvedThumbnail, setResolvedThumbnail] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [playing, setPlaying] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch the actual signed thumbnail URL from JSON endpoint on mount
+  useEffect(() => {
+    if (!thumbnailUrl) return; // no thumbnail_path in DB
+    fetch(`${API_BASE_URL}/teacher/videos/${videoId}/thumbnail-url`, {
+      credentials: 'include',
+      headers: { Accept: 'application/json' },
+    })
+      .then((r) => r.json())
+      .then((json: { data?: { url?: string | null } }) => {
+        const url = json?.data?.url;
+        if (url) setResolvedThumbnail(url);
+      })
+      .catch(() => {/* silently ignore thumbnail errors */});
+  }, [videoId, thumbnailUrl]);
 
   const loadStream = useCallback(async () => {
     if (streamUrl) {
@@ -73,12 +90,24 @@ function TeacherVideoPlayer({ videoId, thumbnailUrl }: TeacherVideoPlayerProps) 
       return;
     }
     setLoading(true);
+    setError(null);
     try {
-      // The teacher stream endpoint returns a redirect to a signed R2 URL.
-      // We point the <video> src at our API which will follow the redirect.
-      const url = `${API_BASE_URL}/teacher/videos/${videoId}/stream`;
+      // Fetch the signed R2 URL as JSON — avoids browser redirect issues with <video src>
+      const res = await fetch(`${API_BASE_URL}/teacher/videos/${videoId}/stream-url`, {
+        credentials: 'include',
+        headers: { Accept: 'application/json' },
+      });
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}));
+        throw new Error((json as { message?: string }).message || 'تعذّر تحميل الفيديو');
+      }
+      const json = await res.json() as { data?: { url?: string }; url?: string };
+      const url = json?.data?.url ?? json?.url;
+      if (!url) throw new Error('لم يُعثر على رابط الفيديو');
       setStreamUrl(url);
       setPlaying(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'حدث خطأ أثناء تحميل الفيديو');
     } finally {
       setLoading(false);
     }
@@ -100,12 +129,15 @@ function TeacherVideoPlayer({ videoId, thumbnailUrl }: TeacherVideoPlayerProps) 
         <button
           type="button"
           className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/60 hover:bg-black/40 transition-colors cursor-pointer w-full"
-          onClick={loadStream}
+          onClick={() => {
+            if (error) setError(null);
+            void loadStream();
+          }}
           disabled={loading}
         >
-          {thumbnailUrl && (
+          {resolvedThumbnail && (
             <img
-              src={thumbnailUrl}
+              src={resolvedThumbnail}
               alt="صورة مصغرة"
               className="absolute inset-0 w-full h-full object-cover opacity-50"
             />
@@ -115,14 +147,24 @@ function TeacherVideoPlayer({ videoId, thumbnailUrl }: TeacherVideoPlayerProps) 
               <div className="w-16 h-16 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center">
                 <Icon name="sync" className="text-primary text-2xl animate-spin" />
               </div>
+            ) : error ? (
+              <>
+                <div className="w-16 h-16 rounded-full bg-red-500/20 border border-red-500/40 flex items-center justify-center">
+                  <Icon name="exclamation-triangle" className="text-red-400 text-2xl" />
+                </div>
+                <span className="text-red-400 text-sm font-medium drop-shadow text-center px-4">{error}</span>
+                <span className="text-gray-400 text-xs">اضغط للمحاولة مجدداً</span>
+              </>
             ) : (
               <div className="w-20 h-20 rounded-full bg-primary/20 border-2 border-primary/60 flex items-center justify-center hover:bg-primary/30 transition-all">
                 <Icon name="play" className="text-primary text-3xl mr-1" />
               </div>
             )}
-            <span className="text-white text-sm font-medium drop-shadow">
-              {loading ? 'جاري التحميل...' : 'معاينة الفيديو'}
-            </span>
+            {!loading && !error && (
+              <span className="text-white text-sm font-medium drop-shadow">
+                معاينة الفيديو
+              </span>
+            )}
           </div>
         </button>
       )}

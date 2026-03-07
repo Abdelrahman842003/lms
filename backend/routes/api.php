@@ -249,7 +249,9 @@ Route::middleware(['auth:sanctum', \App\Domains\Auth\Http\Middleware\EnsureTeach
     Route::post('videos/{video}/retry-processing', [\App\Domains\Application\Http\Controllers\Teacher\VideoController::class, 'retryProcessing']);
     Route::post('videos/{video}/publish', [\App\Domains\Application\Http\Controllers\Teacher\VideoController::class, 'publish']);
     Route::get('videos/{video}/thumbnail', [\App\Domains\Application\Http\Controllers\Teacher\VideoController::class, 'thumbnail']);
+    Route::get('videos/{video}/thumbnail-url', [\App\Domains\Application\Http\Controllers\Teacher\VideoController::class, 'thumbnailUrl']);
     Route::get('videos/{video}/stream', [\App\Domains\Application\Http\Controllers\Teacher\VideoController::class, 'stream']);
+    Route::get('videos/{video}/stream-url', [\App\Domains\Application\Http\Controllers\Teacher\VideoController::class, 'streamUrl']);
     Route::get('videos/{video}/comments', [\App\Domains\Application\Http\Controllers\Teacher\VideoController::class, 'comments']);
     Route::post('videos/{video}/comments/{commentId}/hide', [\App\Domains\Application\Http\Controllers\Teacher\VideoController::class, 'hideComment']);
     Route::delete('videos/{video}/comments/{commentId}', [\App\Domains\Application\Http\Controllers\Teacher\VideoController::class, 'deleteComment']);
