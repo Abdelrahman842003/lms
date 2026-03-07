@@ -35,16 +35,29 @@ class VideoSettingsPage extends Page implements HasForms
     protected string $view = 'filament.pages.system-settings';
 
     protected const SETTING_KEYS = [
+        // Playback & security
         'video_playback_token_ttl_seconds',
         'video_max_concurrent_devices_per_student',
         'video_watermark_enabled',
         'video_watermark_rotation_interval_seconds',
+        // Tracking & reminders
         'video_reminder_interval_hours',
         'video_reminder_max_attempts',
         'video_completed_threshold_percent',
+        'video_notifications_enabled',
+        // Allowed types
         'video_allowed_video_mime_types',
         'video_allowed_attachment_mime_types',
-        'video_notifications_enabled',
+        'video_allowed_video_extensions',
+        // Upload limits
+        'video_max_upload_size_mb',
+        'video_attachment_max_size_mb',
+        // Direct upload (new)
+        'video_direct_upload_enabled',
+        'video_chunk_size_mb',
+        'video_max_concurrent_chunks',
+        'video_presigned_url_ttl_seconds',
+        'video_part_retry_attempts',
     ];
 
     public ?array $data = [];
@@ -52,17 +65,29 @@ class VideoSettingsPage extends Page implements HasForms
     public function mount(): void
     {
         $this->form->fill([
-            'video_target_resolution' => '720p',
-            'video_playback_token_ttl_seconds' => (int) Setting::getValue('video_playback_token_ttl_seconds', '120'),
+            // Playback
+            'video_playback_token_ttl_seconds'          => (int) Setting::getValue('video_playback_token_ttl_seconds', '120'),
             'video_max_concurrent_devices_per_student' => (int) Setting::getValue('video_max_concurrent_devices_per_student', '2'),
-            'video_watermark_enabled' => $this->toBool(Setting::getValue('video_watermark_enabled', '1')),
+            'video_watermark_enabled'                  => $this->toBool(Setting::getValue('video_watermark_enabled', '1')),
             'video_watermark_rotation_interval_seconds' => (int) Setting::getValue('video_watermark_rotation_interval_seconds', '8'),
-            'video_reminder_interval_hours' => (int) Setting::getValue('video_reminder_interval_hours', '12'),
-            'video_reminder_max_attempts' => (int) Setting::getValue('video_reminder_max_attempts', '5'),
+            // Tracking
+            'video_reminder_interval_hours'    => (int) Setting::getValue('video_reminder_interval_hours', '12'),
+            'video_reminder_max_attempts'      => (int) Setting::getValue('video_reminder_max_attempts', '5'),
             'video_completed_threshold_percent' => (int) Setting::getValue('video_completed_threshold_percent', '80'),
-            'video_allowed_video_mime_types' => $this->jsonPretty(Setting::getValue('video_allowed_video_mime_types', json_encode(['video/mp4', 'video/quicktime', 'video/x-matroska', 'video/webm']))),
-            'video_allowed_attachment_mime_types' => $this->jsonPretty(Setting::getValue('video_allowed_attachment_mime_types', json_encode(['application/pdf', 'image/jpeg', 'image/png', 'image/webp']))),
-            'video_notifications_enabled' => $this->toBool(Setting::getValue('video_notifications_enabled', '1')),
+            'video_notifications_enabled'      => $this->toBool(Setting::getValue('video_notifications_enabled', '1')),
+            // Types
+            'video_allowed_video_mime_types'       => $this->jsonPretty(Setting::getValue('video_allowed_video_mime_types', json_encode(['video/mp4', 'video/quicktime', 'video/x-matroska', 'video/webm']))),
+            'video_allowed_attachment_mime_types'  => $this->jsonPretty(Setting::getValue('video_allowed_attachment_mime_types', json_encode(['application/pdf', 'image/jpeg', 'image/png', 'image/webp']))),
+            'video_allowed_video_extensions'       => $this->jsonPretty(Setting::getValue('video_allowed_video_extensions', json_encode(['mp4', 'mov', 'mkv', 'webm']))),
+            // Limits
+            'video_max_upload_size_mb'       => (int) Setting::getValue('video_max_upload_size_mb', '4096'),
+            'video_attachment_max_size_mb'   => (int) Setting::getValue('video_attachment_max_size_mb', '25'),
+            // Direct upload
+            'video_direct_upload_enabled'      => $this->toBool(Setting::getValue('video_direct_upload_enabled', '1')),
+            'video_chunk_size_mb'              => (int) Setting::getValue('video_chunk_size_mb', '10'),
+            'video_max_concurrent_chunks'      => (int) Setting::getValue('video_max_concurrent_chunks', '3'),
+            'video_presigned_url_ttl_seconds'  => (int) Setting::getValue('video_presigned_url_ttl_seconds', '3600'),
+            'video_part_retry_attempts'        => (int) Setting::getValue('video_part_retry_attempts', '3'),
         ]);
     }
 
@@ -71,33 +96,81 @@ class VideoSettingsPage extends Page implements HasForms
         return $schema
             ->statePath('data')
             ->components([
-                Section::make('إعدادات التشغيل والأمان')
+
+                Section::make('رفع الفيديو المباشر إلى R2 (Direct Upload)')
+                    ->description('التحكم في آلية الرفع المباشر من المتصفح إلى Cloudflare R2 دون المرور بالسيرفر.')
                     ->schema([
-                        TextInput::make('video_target_resolution')
-                            ->label('الدقة المستهدفة')
-                            ->disabled(),
+                        Toggle::make('video_direct_upload_enabled')
+                            ->label('تفعيل الرفع المباشر إلى R2')
+                            ->helperText('عند التفعيل، الفيديو يُرفع مباشرةً من المتصفح إلى R2 دون المرور بالسيرفر.')
+                            ->default(true),
 
-                        TextInput::make('video_playback_token_ttl_seconds')
-                            ->label('مدة صلاحية playback token (ثانية)')
+                        TextInput::make('video_max_upload_size_mb')
+                            ->label('الحد الأقصى لحجم الفيديو (MB)')
                             ->numeric()
-                            ->minValue(30)
-                            ->required(),
+                            ->minValue(100)
+                            ->required()
+                            ->helperText('الحد يُفرض على الـ backend عند الـ initiate. لا حاجة لتغيير nginx بعد Direct Upload.'),
 
-                        TextInput::make('video_max_concurrent_devices_per_student')
-                            ->label('الحد الأقصى للأجهزة المتزامنة لكل طالب')
+                        TextInput::make('video_chunk_size_mb')
+                            ->label('حجم الـ Chunk (MB)')
+                            ->numeric()
+                            ->minValue(5)
+                            ->maxValue(100)
+                            ->required()
+                            ->helperText('الحجم الموصى به: 10–25 MB. الحد الأدنى لـ R2 هو 5 MB للأجزاء الوسطية.'),
+
+                        TextInput::make('video_max_concurrent_chunks')
+                            ->label('عدد الأجزاء المتوازية (Max Concurrent)')
                             ->numeric()
                             ->minValue(1)
+                            ->maxValue(10)
                             ->required(),
 
+                        TextInput::make('video_presigned_url_ttl_seconds')
+                            ->label('مدة صلاحية Presigned URL (ثانية)')
+                            ->numeric()
+                            ->minValue(300)
+                            ->required()
+                            ->helperText('يجب أن تكفي لإكمال الرفع. القيمة الافتراضية: 3600 ثانية (ساعة).'),
+
+                        TextInput::make('video_part_retry_attempts')
+                            ->label('عدد محاولات إعادة رفع الجزء الفاشل')
+                            ->numeric()
+                            ->minValue(1)
+                            ->maxValue(10)
+                            ->required(),
+                    ])
+                    ->columns(2),
+
+                Section::make('إعدادات التشغيل والأمان')
+                    ->description('تحكم في صلاحيات مشاهدة الفيديو وحماية المحتوى.')
+                    ->schema([
+                        TextInput::make('video_playback_token_ttl_seconds')
+                            ->label('مدة صلاحية رمز التشغيل (ثانية)')
+                            ->numeric()
+                            ->minValue(30)
+                            ->required()
+                            ->helperText('كم ثانية يظل رمز تشغيل الفيديو صالحًا بعد طلبه. القيمة الافتراضية: 120 ثانية.'),
+
+                        TextInput::make('video_max_concurrent_devices_per_student')
+                            ->label('أقصى عدد أجهزة متزامنة للطالب الواحد')
+                            ->numeric()
+                            ->minValue(1)
+                            ->required()
+                            ->helperText('كم جهازًا يستطيع الطالب مشاهدة الفيديو عليها في نفس الوقت.'),
+
                         Toggle::make('video_watermark_enabled')
-                            ->label('تفعيل Watermark داخل المشغل')
+                            ->label('تفعيل العلامة المائية داخل المشغل')
+                            ->helperText('عند التفعيل، يظهر اسم الطالب متحركًا على الفيديو لمنع التسجيل.')
                             ->default(true),
 
                         TextInput::make('video_watermark_rotation_interval_seconds')
-                            ->label('زمن تغيير مكان Watermark (ثانية)')
+                            ->label('سرعة تغيير موضع العلامة المائية (ثانية)')
                             ->numeric()
                             ->minValue(3)
-                            ->required(),
+                            ->required()
+                            ->helperText('كل كم ثانية تتحرك العلامة المائية إلى مكان مختلف.'),
                     ])
                     ->columns(2),
 
@@ -128,16 +201,27 @@ class VideoSettingsPage extends Page implements HasForms
                     ])
                     ->columns(2),
 
-                Section::make('أنواع الملفات المسموح بها')
+                Section::make('أنواع الملفات والحدود')
                     ->schema([
                         Textarea::make('video_allowed_video_mime_types')
                             ->label('MIME Types للفيديو (JSON Array)')
-                            ->rows(5)
+                            ->rows(4)
+                            ->required(),
+
+                        Textarea::make('video_allowed_video_extensions')
+                            ->label('امتدادات الفيديو المسموح بها (JSON Array)')
+                            ->rows(4)
                             ->required(),
 
                         Textarea::make('video_allowed_attachment_mime_types')
                             ->label('MIME Types للمرفقات (JSON Array)')
-                            ->rows(5)
+                            ->rows(4)
+                            ->required(),
+
+                        TextInput::make('video_attachment_max_size_mb')
+                            ->label('الحد الأقصى لحجم المرفق (MB)')
+                            ->numeric()
+                            ->minValue(1)
                             ->required(),
                     ])
                     ->columns(2)
@@ -155,6 +239,12 @@ class VideoSettingsPage extends Page implements HasForms
     {
         $state = $this->form->getState();
 
+        $jsonKeys = [
+            'video_allowed_video_mime_types',
+            'video_allowed_attachment_mime_types',
+            'video_allowed_video_extensions',
+        ];
+
         foreach (self::SETTING_KEYS as $key) {
             if (! array_key_exists($key, $state)) {
                 continue;
@@ -166,13 +256,13 @@ class VideoSettingsPage extends Page implements HasForms
                 $value = $value ? '1' : '0';
             }
 
-            if (in_array($key, ['video_allowed_video_mime_types', 'video_allowed_attachment_mime_types'], true)) {
+            if (in_array($key, $jsonKeys, true)) {
                 $decoded = json_decode((string) $value, true);
 
                 if (! is_array($decoded)) {
                     Notification::make()
                         ->danger()
-                        ->title('صيغة JSON غير صحيحة في أنواع الملفات المسموح بها')
+                        ->title("صيغة JSON غير صحيحة في الحقل: {$key}")
                         ->send();
                     return;
                 }
@@ -182,10 +272,7 @@ class VideoSettingsPage extends Page implements HasForms
 
             Setting::updateOrCreate(
                 ['key' => $key],
-                [
-                    'value' => (string) $value,
-                    'group' => 'video',
-                ]
+                ['value' => (string) $value, 'group' => 'video']
             );
         }
 
@@ -197,15 +284,15 @@ class VideoSettingsPage extends Page implements HasForms
             ->send();
     }
 
-    private function jsonPretty(string $value): string
+    private function jsonPretty(mixed $value): string
     {
-        $decoded = json_decode($value, true);
+        $decoded = json_decode((string) $value, true);
 
         if (! is_array($decoded)) {
-            return $value;
+            return (string) $value;
         }
 
-        return json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) ?: $value;
+        return json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) ?: (string) $value;
     }
 
     private function toBool(mixed $value): bool

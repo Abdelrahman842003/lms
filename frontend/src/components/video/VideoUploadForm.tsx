@@ -3,7 +3,7 @@
 import React, { useMemo, useState } from 'react';
 import { Filter } from '@/components/Filter';
 import { Button, FilePicker, Icon, Input, Textarea } from '@/components/ui';
-import { uploadAcademyVideo, uploadTeacherVideo } from '@/services/videoService';
+import { useVideoUpload } from '@/hooks/useVideoUpload';
 import type { VideoItem } from '@/types/video.types';
 
 interface OptionItem {
@@ -20,6 +20,17 @@ interface VideoUploadFormProps {
   onCreated: (video: VideoItem) => void;
 }
 
+// Human-readable phase labels (Arabic)
+const PHASE_LABELS: Record<string, string> = {
+  preparing:  'جاري تجهيز الرفع...',
+  uploading:  'جاري رفع الفيديو...',
+  retrying:   'إعادة المحاولة...',
+  completing: 'جاري إكمال الرفع...',
+  completed:  'تم الرفع بنجاح ✓',
+  failed:     'فشل الرفع',
+  aborted:    'تم إلغاء الرفع',
+};
+
 export function VideoUploadForm({
   mode,
   grades,
@@ -35,10 +46,27 @@ export function VideoUploadForm({
   const [scheduledAt, setScheduledAt] = useState('');
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [attachments, setAttachments] = useState<File[]>([]);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [uploading, setUploading] = useState(false);
-  const [cancelUpload, setCancelUpload] = useState<(() => void) | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
+
+  const { state, startUpload, cancelUpload, reset } = useVideoUpload({
+    mode,
+    onCompleted: (videoId) => {
+      // The video record is already created on the server; fetch its data
+      // via onCreated callback — for now we pass a minimal stub so the parent
+      // can refresh the list. The parent should re-fetch to get full data.
+      onCreated({ id: videoId } as VideoItem);
+      resetForm();
+    },
+    onAborted: () => {
+      // Let user try again
+    },
+  });
+
+  const isUploading =
+    state.phase === 'preparing' ||
+    state.phase === 'uploading' ||
+    state.phase === 'retrying' ||
+    state.phase === 'completing';
 
   const filteredGroups = useMemo(() => {
     if (!gradeId) return [];
@@ -52,36 +80,46 @@ export function VideoUploadForm({
 
   const toggleGroup = (groupId: string) => {
     setGroupIds((previous) => {
-      if (previous.includes(groupId)) {
-        return previous.filter((id) => id !== groupId);
-      }
-
+      if (previous.includes(groupId)) return previous.filter((id) => id !== groupId);
       return [...previous, groupId];
     });
+  };
+
+  const resetForm = () => {
+    setTitle('');
+    setDescription('');
+    setGradeId('');
+    setGroupIds([]);
+    setTeacherReferenceId('');
+    setScheduledAt('');
+    setVideoFile(null);
+    setAttachments([]);
+    setFormError(null);
+    reset();
   };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
     if (!videoFile) {
-      setError('يجب اختيار ملف الفيديو.');
+      setFormError('يجب اختيار ملف الفيديو.');
       return;
     }
 
     if (!title.trim() || !gradeId) {
-      setError('يجب إدخال العنوان واختيار الصف الدراسي.');
+      setFormError('يجب إدخال العنوان واختيار الصف الدراسي.');
       return;
     }
 
     if (mode === 'academy' && !teacherReferenceId.trim()) {
-      setError('يجب اختيار المدرس المرجعي.');
+      setFormError('يجب اختيار المدرس المرجعي.');
       return;
     }
 
-    setError(null);
-    setUploading(true);
+    setFormError(null);
+    reset();
 
-    const payload = {
+    await startUpload(videoFile, {
       title: title.trim(),
       description: description.trim() || undefined,
       grade_id: gradeId,
@@ -89,39 +127,15 @@ export function VideoUploadForm({
       scheduled_at: scheduledAt || undefined,
       teacher_reference_id: mode === 'academy' ? teacherReferenceId : undefined,
       teacher_reference_name: mode === 'academy' ? selectedTeacher?.name : undefined,
-      video_file: videoFile,
       attachments,
-    };
+    });
+  };
 
-    const uploader =
-      mode === 'teacher'
-        ? uploadTeacherVideo(payload, setUploadProgress)
-        : uploadAcademyVideo(payload, setUploadProgress);
-
-    setCancelUpload(() => uploader.cancel);
-
-    try {
-      const createdVideo = await uploader.promise;
-      onCreated(createdVideo);
-
-      setTitle('');
-      setDescription('');
-      setGradeId('');
-      setGroupIds([]);
-      setTeacherReferenceId('');
-      setScheduledAt('');
-      setVideoFile(null);
-      setAttachments([]);
-      setUploadProgress(0);
-    } catch (uploadError: unknown) {
-      if (uploadError instanceof Error && uploadError.message) {
-        setError(uploadError.message);
-      } else {
-        setError('فشل رفع الفيديو.');
-      }
-    } finally {
-      setUploading(false);
-      setCancelUpload(null);
+  const handleCancel = () => {
+    if (isUploading) {
+      cancelUpload('cancelled by user');
+    } else {
+      window.history.back();
     }
   };
 
@@ -188,7 +202,6 @@ export function VideoUploadForm({
               <div className="flex flex-wrap gap-2">
                 {filteredGroups.map((group) => {
                   const selected = groupIds.includes(group.id);
-
                   return (
                     <Button
                       key={group.id}
@@ -224,7 +237,7 @@ export function VideoUploadForm({
           type="datetime-local"
           value={scheduledAt}
           onChange={(event) => setScheduledAt(event.target.value)}
-          disabled={uploading}
+          disabled={isUploading}
           className="w-full"
         />
 
@@ -236,7 +249,7 @@ export function VideoUploadForm({
           buttonText="اختيار فيديو"
           emptyText="لم يتم اختيار ملف فيديو بعد"
           helperText="الصيغ المدعومة: MP4 / MOV / MKV / WEBM"
-          disabled={uploading}
+          disabled={isUploading}
         />
 
         <FilePicker
@@ -248,44 +261,77 @@ export function VideoUploadForm({
           buttonText="اختيار مرفقات"
           emptyText="لا توجد مرفقات مضافة"
           helperText="اختياري: يمكنك إضافة أكثر من ملف."
-          disabled={uploading}
+          disabled={isUploading}
         />
       </div>
 
-      {uploading && (
-        <div className="mt-6 rounded-xl border border-primary/30 bg-primary/10 p-4">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-sm text-white">جاري رفع الفيديو...</p>
-            <p className="text-sm text-primary">{uploadProgress}%</p>
+      {/* ── Upload progress ── */}
+      {isUploading && (
+        <div className="mt-6 rounded-xl border border-primary/40 bg-primary/10 p-5 space-y-3">
+          {/* Header row */}
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-medium text-white">{PHASE_LABELS[state.phase] ?? 'جاري الرفع...'}</p>
+            <span className="text-lg font-bold text-primary tabular-nums">{state.progress}%</span>
           </div>
 
-          <div className="h-2 w-full rounded-full bg-white/10 overflow-hidden">
-            <div className="h-2 rounded-full bg-primary transition-all duration-300" style={{ width: `${uploadProgress}%` }} />
+          {/* Progress bar */}
+          <div className="relative h-3 w-full rounded-full bg-white/10 overflow-hidden">
+            <div
+              className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-primary to-primary/70 transition-all duration-200"
+              style={{ width: `${state.progress}%` }}
+            />
           </div>
 
-          {cancelUpload && (
-            <div className="mt-3 text-end">
-              <Button type="button" variant="destructive" size="sm" onClick={cancelUpload}>
-                إلغاء الرفع
-              </Button>
-            </div>
+          {/* Part counter */}
+          {state.totalParts > 1 && (
+            <p className="text-xs text-gray-400 text-start">
+              الجزء <span className="text-white font-semibold">{state.currentPart}</span> من{' '}
+              <span className="text-white font-semibold">{state.totalParts}</span>
+            </p>
           )}
+
+          {/* Cancel button */}
+          <div className="text-end pt-1">
+            <Button type="button" variant="destructive" size="sm" onClick={() => cancelUpload('cancelled by user')}>
+              إلغاء الرفع
+            </Button>
+          </div>
         </div>
       )}
 
-      {error && <p className="mt-4 text-sm text-red-300">{error}</p>}
+      {/* ── Completion ── */}
+      {state.phase === 'completed' && (
+        <div className="mt-6 rounded-xl border border-green-500/30 bg-green-500/10 p-4">
+          <p className="text-sm text-green-300">تم رفع الفيديو بنجاح! جاري معالجته...</p>
+        </div>
+      )}
+
+      {/* ── Errors ── */}
+      {(formError || state.error) && (
+        <p className="mt-4 text-sm text-red-300">{formError ?? state.error}</p>
+      )}
+
+      {state.phase === 'aborted' && !state.error && (
+        <p className="mt-4 text-sm text-yellow-400">تم إلغاء الرفع. يمكنك البدء من جديد.</p>
+      )}
 
       <div className="flex gap-4 mt-8 pt-6 border-t border-white/10">
         <Button
           type="button"
           variant="outline"
           className="flex-1"
-          onClick={() => window.history.back()}
-          disabled={uploading}
+          onClick={handleCancel}
+          disabled={state.phase === 'completing'}
         >
-          إلغاء
+          {isUploading ? 'إلغاء الرفع' : 'إلغاء'}
         </Button>
-        <Button type="submit" variant="primary" className="flex-1" loading={uploading}>
+        <Button
+          type="submit"
+          variant="primary"
+          className="flex-1"
+          loading={isUploading}
+          disabled={isUploading || state.phase === 'completed'}
+        >
           <Icon name="upload" />
           <span>رفع الفيديو</span>
         </Button>

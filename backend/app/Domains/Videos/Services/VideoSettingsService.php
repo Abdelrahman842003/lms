@@ -93,6 +93,44 @@ class VideoSettingsService
         return $this->toBool(Setting::getValue('video_notifications_enabled', '1'));
     }
 
+    // ──────────────────────────────────────────────────────────────
+    // Direct-upload / Multipart settings
+    // ──────────────────────────────────────────────────────────────
+
+    public function directUploadEnabled(): bool
+    {
+        return $this->toBool(Setting::getValue('video_direct_upload_enabled', '1'));
+    }
+
+    public function chunkSizeMb(): int
+    {
+        return max(5, (int) Setting::getValue('video_chunk_size_mb', '10'));
+    }
+
+    public function maxConcurrentChunks(): int
+    {
+        return max(1, min(10, (int) Setting::getValue('video_max_concurrent_chunks', '3')));
+    }
+
+    public function presignedUrlTtlSeconds(): int
+    {
+        return max(300, (int) Setting::getValue('video_presigned_url_ttl_seconds', '3600'));
+    }
+
+    public function partRetryAttempts(): int
+    {
+        return max(1, (int) Setting::getValue('video_part_retry_attempts', '3'));
+    }
+
+    /** @return array<int, string> */
+    public function allowedVideoExtensions(): array
+    {
+        return $this->jsonArraySetting(
+            'video_allowed_video_extensions',
+            ['mp4', 'mov', 'mkv', 'webm']
+        );
+    }
+
     private function toBool(mixed $value): bool
     {
         if (is_bool($value)) {

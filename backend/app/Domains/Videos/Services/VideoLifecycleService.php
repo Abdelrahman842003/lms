@@ -320,8 +320,16 @@ class VideoLifecycleService
 
     private function assertPlanVideoConstraints(CreateVideoData $data, VideoActorContext $context): void
     {
+        $this->assertPlanVideoConstraintsForDeclaredSize($context, max(0, (int) ($data->videoFile->getSize() ?? 0)));
+    }
+
+    /**
+     * Public entry-point used by the new direct-upload orchestration service,
+     * which has the declared file size but no UploadedFile object.
+     */
+    public function assertPlanVideoConstraintsForDeclaredSize(VideoActorContext $context, int $incomingBytes): void
+    {
         $entitlements = $this->resolveOwnerEntitlements($context);
-        $incomingBytes = max(0, (int) ($data->videoFile->getSize() ?? 0));
 
         $globalUploadLimitBytes = $this->mbToBytes($this->videoSettings->videoMaxSizeMb());
         $planUploadLimitBytes = null;

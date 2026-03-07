@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace App\Domains\Videos\Resources;
 
 use App\Domains\Auth\Models\Student;
+use App\Domains\Auth\Models\Teacher;
+use App\Domains\Auth\Models\Academy;
+use App\Domains\Auth\Models\Secretary;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -46,9 +49,19 @@ class VideoResource extends JsonResource
             'codec' => $this->codec,
             'frame_rate' => $this->frame_rate,
             'thumbnail_url' => $this->thumbnail_path
-                ? ($request->user() instanceof Student
-                    ? url('/api/v1/student/videos/' . $this->id . '/thumbnail')
-                    : null)
+                ? (function () use ($request): ?string {
+                    $user = $request->user();
+                    if ($user instanceof Student) {
+                        return url('/api/v1/student/videos/' . $this->id . '/thumbnail');
+                    }
+                    if ($user instanceof Teacher) {
+                        return url('/api/v1/teacher/videos/' . $this->id . '/thumbnail');
+                    }
+                    if ($user instanceof Academy || $user instanceof Secretary) {
+                        return url('/api/v1/academy/videos/' . $this->id . '/thumbnail');
+                    }
+                    return null;
+                })()
                 : null,
             'processing_error' => $this->processing_error,
             'likes_count' => $this->whenCounted('likes', (int) $this->likes_count),

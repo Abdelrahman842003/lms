@@ -116,9 +116,13 @@ Route::middleware('auth:sanctum')->prefix('academy')->name('academy.')->group(fu
     Route::post('exams/{exam}/copy', [\App\Domains\Application\Http\Controllers\Academy\ExamController::class, 'copy']);
     Route::put('exams/{exam}/end', [\App\Domains\Application\Http\Controllers\Academy\ExamController::class, 'endExam']);
 
-    // Videos Management
+    // Videos Management (New: Direct-to-R2 multipart upload)
+    Route::post('videos/initiate-upload', [\App\Domains\Application\Http\Controllers\Academy\VideoUploadController::class, 'initiateUpload'])->middleware('throttle:video-upload');
+    Route::post('videos/complete-upload', [\App\Domains\Application\Http\Controllers\Academy\VideoUploadController::class, 'completeUpload']);
+    Route::delete('videos/abort-upload', [\App\Domains\Application\Http\Controllers\Academy\VideoUploadController::class, 'abortUpload']);
+    Route::get('videos/upload-status/{sessionId}', [\App\Domains\Application\Http\Controllers\Academy\VideoUploadController::class, 'uploadStatus']);
+    // Videos CRUD (store no longer accepts video bytes — use initiate-upload instead)
     Route::get('videos', [\App\Domains\Application\Http\Controllers\Academy\VideoController::class, 'index']);
-    Route::post('videos', [\App\Domains\Application\Http\Controllers\Academy\VideoController::class, 'store'])->middleware('throttle:video-upload');
     Route::get('videos/{video}', [\App\Domains\Application\Http\Controllers\Academy\VideoController::class, 'show']);
     Route::put('videos/{video}', [\App\Domains\Application\Http\Controllers\Academy\VideoController::class, 'update']);
     Route::delete('videos/{video}', [\App\Domains\Application\Http\Controllers\Academy\VideoController::class, 'destroy']);
@@ -232,14 +236,20 @@ Route::middleware(['auth:sanctum', \App\Domains\Auth\Http\Middleware\EnsureTeach
     Route::post('/scan/checkout', [\App\Domains\Application\Http\Controllers\Teacher\ScanController::class, 'checkout']);
     Route::get('/scan/today-status', [\App\Domains\Application\Http\Controllers\Teacher\ScanController::class, 'todayStatus']);
 
-    // Videos Management (Independent Teacher)
+    // Videos Management (New: Direct-to-R2 multipart upload)
+    Route::post('videos/initiate-upload', [\App\Domains\Application\Http\Controllers\Teacher\VideoUploadController::class, 'initiateUpload'])->middleware('throttle:video-upload');
+    Route::post('videos/complete-upload', [\App\Domains\Application\Http\Controllers\Teacher\VideoUploadController::class, 'completeUpload']);
+    Route::delete('videos/abort-upload', [\App\Domains\Application\Http\Controllers\Teacher\VideoUploadController::class, 'abortUpload']);
+    Route::get('videos/upload-status/{sessionId}', [\App\Domains\Application\Http\Controllers\Teacher\VideoUploadController::class, 'uploadStatus']);
+    // Videos CRUD (store no longer accepts video bytes — use initiate-upload instead)
     Route::get('videos', [\App\Domains\Application\Http\Controllers\Teacher\VideoController::class, 'index']);
-    Route::post('videos', [\App\Domains\Application\Http\Controllers\Teacher\VideoController::class, 'store'])->middleware('throttle:video-upload');
     Route::get('videos/{video}', [\App\Domains\Application\Http\Controllers\Teacher\VideoController::class, 'show']);
     Route::put('videos/{video}', [\App\Domains\Application\Http\Controllers\Teacher\VideoController::class, 'update']);
     Route::delete('videos/{video}', [\App\Domains\Application\Http\Controllers\Teacher\VideoController::class, 'destroy']);
     Route::post('videos/{video}/retry-processing', [\App\Domains\Application\Http\Controllers\Teacher\VideoController::class, 'retryProcessing']);
     Route::post('videos/{video}/publish', [\App\Domains\Application\Http\Controllers\Teacher\VideoController::class, 'publish']);
+    Route::get('videos/{video}/thumbnail', [\App\Domains\Application\Http\Controllers\Teacher\VideoController::class, 'thumbnail']);
+    Route::get('videos/{video}/stream', [\App\Domains\Application\Http\Controllers\Teacher\VideoController::class, 'stream']);
     Route::get('videos/{video}/comments', [\App\Domains\Application\Http\Controllers\Teacher\VideoController::class, 'comments']);
     Route::post('videos/{video}/comments/{commentId}/hide', [\App\Domains\Application\Http\Controllers\Teacher\VideoController::class, 'hideComment']);
     Route::delete('videos/{video}/comments/{commentId}', [\App\Domains\Application\Http\Controllers\Teacher\VideoController::class, 'deleteComment']);
@@ -386,8 +396,10 @@ Route::middleware('auth:sanctum')->post('/broadcasting/auth',
     [\App\Domains\Application\Http\Controllers\Api\BroadcastAuthController::class, 'authenticate']
 );
 
-// Media Proxy Routes (Stream files from R2) - Keep outside versioning for compatibility
-Route::get('/media/voice/{path}', [\App\Domains\Application\Http\Controllers\Api\MediaProxyController::class, 'voice'])
-    ->where('path', '.*');
-Route::get('/media/{path}', [\App\Domains\Application\Http\Controllers\Api\MediaProxyController::class, 'media'])
-    ->where('path', '.*');
+// Media Proxy Routes (Stream files from R2) — auth:sanctum required to prevent unauthorized access
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/media/voice/{path}', [\App\Domains\Application\Http\Controllers\Api\MediaProxyController::class, 'voice'])
+        ->where('path', '.*');
+    Route::get('/media/{path}', [\App\Domains\Application\Http\Controllers\Api\MediaProxyController::class, 'media'])
+        ->where('path', '.*');
+});

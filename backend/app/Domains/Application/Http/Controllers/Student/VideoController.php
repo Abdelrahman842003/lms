@@ -113,9 +113,20 @@ class VideoController extends Controller
         /** @var Student $student */
         $student = $request->user();
 
-        $token = (string) $request->query('token', '');
+        // Accept token from Authorization header (preferred) or query string (legacy fallback with warning)
+        $token = '';
+        $authHeader = (string) $request->header('Authorization', '');
+        if (str_starts_with($authHeader, 'Bearer ')) {
+            $token = substr($authHeader, 7);
+        }
+
+        // Legacy query-string fallback — still functional but deprecated
         if ($token === '') {
-            throw new AuthorizationException('رمز التشغيل مطلوب.');
+            $token = (string) $request->query('token', '');
+        }
+
+        if ($token === '') {
+            throw new AuthorizationException('رمز التشغيل مطلوب. أرسله عبر Authorization: Bearer header.');
         }
 
         $this->authorization->assertStudentCanView($video, $student);

@@ -110,3 +110,63 @@ export interface CreateVideoPayload {
   video_file: File;
   attachments?: File[];
 }
+
+// ─── Direct-to-R2 multipart upload types ────────────────────────────────────
+
+/** Metadata sent to /initiate-upload — no video bytes. */
+export interface InitiateUploadPayload {
+  title: string;
+  description?: string;
+  grade_id: string;
+  group_ids: string[];
+  lecture_id?: string;
+  lesson_id?: string;
+  scheduled_at?: string;
+  available_from?: string;
+  available_until?: string;
+  teacher_reference_id?: string;
+  teacher_reference_name?: string;
+  /** Original filename e.g. "lecture1.mp4" */
+  file_name: string;
+  /** Byte count of the local file */
+  file_size: number;
+  /** MIME type e.g. "video/mp4" */
+  file_mime: string;
+  /** How many parts the client intends to upload */
+  total_parts: number;
+  attachments?: File[];
+}
+
+/** Presigned URL for a single part */
+export interface PresignedPart {
+  part_number: number;
+  url: string;
+}
+
+/** Server response from /initiate-upload */
+export interface InitiateUploadResponse {
+  session_id: string;
+  video_id: string;
+  presigned_parts: PresignedPart[];
+  chunk_size_bytes: number;
+}
+
+/** Part number collected after each PUT (ETag fetched server-side via listParts) */
+export interface PartResult {
+  part_number: number;
+}
+
+/** Server response from /complete-upload */
+export interface CompleteUploadResponse {
+  video_id: string;
+  status: string;
+}
+
+/** Server response from /upload-status/:sessionId */
+export interface UploadSessionStatus {
+  session_id: string;
+  status: 'pending_upload' | 'uploading' | 'completing' | 'completed' | 'aborted' | 'failed';
+  video_id: string;
+  initiated_at: string;
+  completed_at?: string | null;
+}

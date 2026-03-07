@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 import { Card } from '@/components/ui';
 import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/ui/Icon';
@@ -7,6 +8,7 @@ import type { VideoItem } from '@/types/video.types';
 
 interface VideoCardProps {
   video: VideoItem;
+  detailHref?: string;
   isMenuOpen: boolean;
   onMenuToggle: (event: React.MouseEvent) => void;
   onPublish: () => void;
@@ -16,6 +18,7 @@ interface VideoCardProps {
 
 export const VideoCard: React.FC<VideoCardProps> = ({
   video,
+  detailHref,
   isMenuOpen,
   onMenuToggle,
   onPublish,
@@ -41,7 +44,8 @@ export const VideoCard: React.FC<VideoCardProps> = ({
     if (video.status === 'ready') return 'جاهز للنشر';
     if (video.status === 'failed') return 'فشل';
     if (video.status === 'processing') return 'قيد المعالجة';
-    if (video.status === 'uploading' || video.status === 'uploaded') return 'قيد الرفع';
+    if (video.status === 'uploading') return 'قيد الرفع';
+    if (video.status === 'uploaded') return 'قيد التحضير';
     if (video.status === 'deleted') return 'محذوف';
     return 'مسودة';
   })();
@@ -50,7 +54,8 @@ export const VideoCard: React.FC<VideoCardProps> = ({
     if (video.processing_status === 'succeeded') return 'المعالجة مكتملة';
     if (video.processing_status === 'running') return 'المعالجة جارية';
     if (video.processing_status === 'failed') return 'فشل المعالجة';
-    return 'في الانتظار';
+    if (video.processing_status === 'pending') return 'في الانتظار';
+    return null;
   })();
 
   const displayDate = video.published_at || video.scheduled_at || video.created_at;
@@ -73,9 +78,11 @@ export const VideoCard: React.FC<VideoCardProps> = ({
             {statusLabel}
           </Badge>
 
-          <Badge variant={video.processing_status === 'failed' ? 'danger' : 'info'} size="sm">
-            {processingLabel}
-          </Badge>
+          {processingLabel && (
+            <Badge variant={video.processing_status === 'failed' ? 'danger' : 'info'} size="sm">
+              {processingLabel}
+            </Badge>
+          )}
 
           {video.teacher_reference?.name && (
             <Badge variant="info" size="sm" icon="chalkboard-teacher">
@@ -137,9 +144,18 @@ export const VideoCard: React.FC<VideoCardProps> = ({
         </div>
       </div>
 
-      <h3 className="ux-text-2xl ux-font-bold ux-text-white ux-mb-3 ux-leading-tight">
-        {video.title}
-      </h3>
+      {detailHref ? (
+        <Link
+          href={detailHref}
+          className="ux-text-2xl ux-font-bold ux-text-white ux-mb-3 ux-leading-tight hover:ux-text-primary ux-transition-colors ux-block"
+        >
+          {video.title}
+        </Link>
+      ) : (
+        <h3 className="ux-text-2xl ux-font-bold ux-text-white ux-mb-3 ux-leading-tight">
+          {video.title}
+        </h3>
+      )}
 
       <p className="ux-text-sm ux-text-gray-light-80 ux-mb-6 ux-line-clamp-2 ux-min-h-40px">
         {video.description || 'بدون وصف'}
@@ -207,6 +223,16 @@ export const VideoCard: React.FC<VideoCardProps> = ({
             <Icon name="check-circle" />
             <span>الفيديو منشور ومتاح للطلاب</span>
           </div>
+        )}
+
+        {detailHref && (
+          <Link
+            href={detailHref}
+            className="ux-flex ux-items-center ux-justify-center ux-gap-1dot5 ux-py-3 ux-rounded-xl ux-bg-rgba-255-255-255-0dot05 ux-hover-bg-rgba-66-99-235-0dot15 ux-text-gray-light ux-hover-text-primary ux-border ux-border-white-10 ux-hover-border-primary-30 ux-font-medium ux-text-xs ux-transition-all"
+          >
+            <Icon name="eye" size="sm" />
+            <span>عرض التفاصيل</span>
+          </Link>
         )}
       </div>
     </Card>

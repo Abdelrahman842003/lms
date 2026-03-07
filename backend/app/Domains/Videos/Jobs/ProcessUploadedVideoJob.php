@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Domains\Videos\Jobs;
 
 use App\Domains\Videos\Models\Video;
+use App\Domains\Videos\Enums\VideoProcessingStatus;
+use App\Domains\Videos\Enums\VideoStatus;
 use App\Domains\Videos\Services\VideoLifecycleService;
 use App\Domains\Videos\Services\VideoProcessingService;
 use App\Domains\Videos\Services\VideoStorageService;
@@ -37,6 +39,12 @@ class ProcessUploadedVideoJob implements ShouldQueue
     ): void {
         $video = Video::query()->find($this->videoId);
         if (! $video) {
+            return;
+        }
+
+        // Already successfully processed — skip silently (handles duplicate/retry dispatches).
+        if ($video->status === VideoStatus::READY ||
+            $video->processing_status === VideoProcessingStatus::SUCCEEDED) {
             return;
         }
 

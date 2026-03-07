@@ -74,9 +74,14 @@ class VideoPlaybackService
         );
 
         return [
-            'token' => $rawToken,
+            'token'      => $rawToken,
             'expires_at' => $expiresAt->toIso8601String(),
-            'stream_url' => url("/api/v1/student/videos/{$video->id}/stream?token={$rawToken}"),
+            // stream_url intentionally omitted from here.
+            // The frontend must send the token in the Authorization header:
+            //   GET /api/v1/student/videos/{id}/stream
+            //   Authorization: Bearer <playback_token>
+            // NOT as a query parameter (prevents token leakage in access logs).
+            'stream_endpoint' => url("/api/v1/student/videos/{$video->id}/stream"),
             'watermark' => [
                 'enabled' => $this->settings->watermarkEnabled(),
                 'rotation_interval_seconds' => $this->settings->watermarkRotationIntervalSeconds(),

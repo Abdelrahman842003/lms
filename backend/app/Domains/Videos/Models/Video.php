@@ -121,7 +121,9 @@ class Video extends Model
 
     public function groups(): BelongsToMany
     {
-        return $this->belongsToMany(Group::class, 'video_group_targets')->withTimestamps();
+        return $this->belongsToMany(Group::class, 'video_group_targets')
+            ->using(VideoGroupTarget::class)
+            ->withTimestamps();
     }
 
     public function attachments(): HasMany

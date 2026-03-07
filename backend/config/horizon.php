@@ -183,7 +183,7 @@ return [
     |
     */
 
-    'memory_limit' => 64,
+    'memory_limit' => 512,
 
     /*
     |--------------------------------------------------------------------------
@@ -205,9 +205,9 @@ return [
             'maxProcesses' => 5,  // Increased from 1 to 5 for parallel job execution
             'maxTime' => 0,
             'maxJobs' => 0,
-            'memory' => 128,
+            'memory' => 1024,
             'tries' => 1,
-            'timeout' => 60,
+            'timeout' => 7200,
             'nice' => 0,
         ],
     ],

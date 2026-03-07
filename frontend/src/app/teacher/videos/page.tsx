@@ -278,6 +278,7 @@ export default function TeacherVideosPage() {
             <VideoCard
               key={video.id}
               video={video}
+              detailHref={`/teacher/videos/${video.id}`}
               isMenuOpen={openMenuId === video.id}
               onMenuToggle={(event) => {
                 event.stopPropagation();

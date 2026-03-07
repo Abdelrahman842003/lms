@@ -16,6 +16,8 @@ class VideoWatchProgress extends Model
     use HasFactory;
     use HasUuids;
 
+    protected $table = 'video_watch_progresses';
+
     protected $fillable = [
         'video_id',
         'student_id',

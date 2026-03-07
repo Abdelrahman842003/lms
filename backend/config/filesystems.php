@@ -1,5 +1,23 @@
 <?php
 
+// Helper: read a setting from DB (via model) with fallback to env/default.
+// Config files are loaded early, so we guard against DB not being ready yet.
+if (! function_exists('_r2_setting')) {
+    function _r2_setting(string $key, string $envFallback, mixed $default = ''): mixed
+    {
+        try {
+            $value = \App\Domains\Support\Models\Setting::getValue($key);
+            if ($value !== null && $value !== '') {
+                return $value;
+            }
+        } catch (\Throwable) {
+            // DB not ready (migration, first boot, etc.) — fall through to env
+        }
+
+        return env($envFallback, $default);
+    }
+}
+
 return [
 
     /*
@@ -60,16 +78,21 @@ return [
             'report' => false,
         ],
 
+        // Cloudflare R2 — S3-compatible object storage.
+        // CORS for direct browser uploads (presigned PUT) must be configured
+        // on the R2 bucket itself — see docs/docker/r2-cors.json.
+        // Credentials are read from the DB settings table (cloudflare_r2_* keys,
+        // encrypted at rest) with fallback to .env for local dev.
         'r2' => [
-            'driver' => 's3',
-            'key' => env('R2_ACCESS_KEY_ID'),
-            'secret' => env('R2_SECRET_ACCESS_KEY'),
-            'region' => 'auto',
-            'bucket' => env('R2_BUCKET_NAME'),
-            'endpoint' => 'https://' . env('R2_ACCOUNT_ID') . '.r2.cloudflarestorage.com',
-            'url' => env('R2_PUBLIC_DOMAIN'),
+            'driver'                  => 's3',
+            'key'                     => _r2_setting('cloudflare_r2_access_key_id',    'R2_ACCESS_KEY_ID'),
+            'secret'                  => _r2_setting('cloudflare_r2_secret_access_key', 'R2_SECRET_ACCESS_KEY'),
+            'region'                  => 'auto',
+            'bucket'                  => _r2_setting('cloudflare_r2_bucket',    'R2_BUCKET_NAME'),
+            'endpoint'                => _r2_setting('cloudflare_r2_endpoint',   'R2_ENDPOINT', 'https://' . env('R2_ACCOUNT_ID') . '.r2.cloudflarestorage.com'),
+            'url'                     => _r2_setting('cloudflare_r2_public_url', 'R2_PUBLIC_DOMAIN'),
             'use_path_style_endpoint' => false,
-            'throw' => true,
+            'throw'                   => true,
         ],
 
     ],
