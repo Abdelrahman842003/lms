@@ -103,12 +103,13 @@ class VideoResource extends BaseResource
                 Tables\Columns\TextColumn::make('owner_type')
                     ->label('نوع المالك')
                     ->badge()
-                    ->formatStateUsing(fn ($state): string => match ((string) $state) {
+                    ->getStateUsing(fn ($record) => $record->getRawOriginal('owner_type'))
+                    ->formatStateUsing(fn ($state): string => match ($state) {
                         'independent_teacher' => 'مدرس مستقل',
-                        'academy' => 'أكاديمية',
-                        default => (string) $state,
+                        'academy'             => 'أكاديمية',
+                        default               => $state ?? '-',
                     })
-                    ->color(fn ($state): string => (string) $state === 'academy' ? 'info' : 'success'),
+                    ->color(fn ($state): string => $state === 'academy' ? 'info' : 'success'),
 
                 Tables\Columns\TextColumn::make('academy.name')
                     ->label('الأكاديمية')
@@ -127,21 +128,36 @@ class VideoResource extends BaseResource
                 Tables\Columns\TextColumn::make('status')
                     ->label('الحالة')
                     ->badge()
-                    ->color(fn ($state): string => match ((string) $state) {
+                    ->getStateUsing(fn ($record) => $record->getRawOriginal('status'))
+                    ->formatStateUsing(fn ($state): string => match ($state) {
+                        'published' => 'منشور',
+                        'scheduled' => 'مجدول',
+                        'failed'    => 'فشل',
+                        default     => $state ?? '-',
+                    })
+                    ->color(fn ($state): string => match ($state) {
                         'published' => 'success',
                         'scheduled' => 'warning',
-                        'failed' => 'danger',
-                        default => 'gray',
+                        'failed'    => 'danger',
+                        default     => 'gray',
                     }),
 
                 Tables\Columns\TextColumn::make('processing_status')
                     ->label('حالة المعالجة')
                     ->badge()
-                    ->color(fn ($state): string => match ((string) $state) {
+                    ->getStateUsing(fn ($record) => $record->getRawOriginal('processing_status'))
+                    ->formatStateUsing(fn ($state): string => match ($state) {
+                        'succeeded' => 'مكتمل',
+                        'running'   => 'جاري',
+                        'failed'    => 'فشل',
+                        'pending'   => 'انتظار',
+                        default     => $state ?? '-',
+                    })
+                    ->color(fn ($state): string => match ($state) {
                         'succeeded' => 'success',
-                        'running' => 'warning',
-                        'failed' => 'danger',
-                        default => 'gray',
+                        'running'   => 'warning',
+                        'failed'    => 'danger',
+                        default     => 'gray',
                     }),
 
                 Tables\Columns\TextColumn::make('watch_progresses_count')
