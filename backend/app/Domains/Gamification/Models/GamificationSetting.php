@@ -25,6 +25,11 @@ class GamificationSetting extends Model
         'is_enabled',
         'show_leaderboard',
         'leaderboard_size',
+        // نقاط الفيديوهات
+        'video_watch_points',
+        'video_quiz_max_points',
+        'video_quiz_perfect_bonus',
+        'video_first_watch_bonus',
     ];
 
     protected $casts = [
@@ -38,6 +43,11 @@ class GamificationSetting extends Model
         'is_enabled' => 'boolean',
         'show_leaderboard' => 'boolean',
         'leaderboard_size' => 'integer',
+        // نقاط الفيديوهات
+        'video_watch_points'      => 'integer',
+        'video_quiz_max_points'   => 'integer',
+        'video_quiz_perfect_bonus'=> 'integer',
+        'video_first_watch_bonus' => 'integer',
     ];
 
     // Default values
@@ -52,6 +62,11 @@ class GamificationSetting extends Model
         'is_enabled' => true,
         'show_leaderboard' => true,
         'leaderboard_size' => 5,
+        // نقاط الفيديوهات
+        'video_watch_points'       => 5,
+        'video_quiz_max_points'    => 20,
+        'video_quiz_perfect_bonus' => 5,
+        'video_first_watch_bonus'  => 5,
     ];
 
     public function teacher(): BelongsTo
@@ -76,5 +91,13 @@ class GamificationSetting extends Model
     public function calculateExamPoints(float $percentage): int
     {
         return (int) round(($percentage / 100) * $this->exam_max_points);
+    }
+
+    /**
+     * Calculate video quiz points based on percentage
+     */
+    public function calculateVideoQuizPoints(float $percentage): int
+    {
+        return (int) round(($percentage / 100) * $this->video_quiz_max_points);
     }
 }

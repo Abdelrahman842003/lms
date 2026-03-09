@@ -23,13 +23,78 @@ export interface VideoAttachment {
 }
 
 export interface VideoWatchProgress {
-  status: 'not_started' | 'started' | 'in_progress' | 'completed';
+  status: 'not_started' | 'started' | 'in_progress' | 'watched_pending_quiz' | 'completed';
   started_at?: string | null;
   last_watched_at?: string | null;
   completed_at?: string | null;
   watched_seconds: number;
   watched_percentage: number;
   last_position_seconds: number;
+  quiz_passed_at?: string | null;
+}
+
+// ─── Video Quiz Types ────────────────────────────────────────────────────────
+
+export interface VideoQuizQuestion {
+  id: string;
+  text: string;
+  options: string[];
+  correct_answer?: string; // only present for teacher/academy views
+  sort_order: number;
+}
+
+export interface VideoQuizStudentStatus {
+  passed: boolean;
+  quiz_passed_at: string | null;
+}
+
+export interface VideoQuiz {
+  id: string;
+  video_id: string;
+  title: string;
+  passing_score: number;       // 0-100
+  is_required: boolean;
+  is_active: boolean;
+  questions_count: number;
+  questions?: VideoQuizQuestion[];
+  my_status?: VideoQuizStudentStatus; // only in student responses
+}
+
+export interface VideoQuizAttempt {
+  id: string;
+  video_quiz_id: string;
+  correct_count: number;
+  total_count: number;
+  percentage: number;
+  status: 'passed' | 'failed';
+  answers: Record<string, string>;
+  completed_at: string;
+}
+
+export interface SubmitQuizResult {
+  attempt: VideoQuizAttempt;
+  passed: boolean;
+  correct: number;
+  total: number;
+  percentage: number;
+  points_earned: number;
+}
+
+// ─── Teacher quiz form types ─────────────────────────────────────────────────
+
+export interface VideoQuizQuestionForm {
+  text: string;
+  options: string[];          // exactly 4 entries
+  correct_answer: string;     // one of the options
+  sort_order: number;
+}
+
+export interface VideoQuizForm {
+  title: string;
+  passing_score: number;
+  is_required: boolean;
+  is_active: boolean;
+  questions: VideoQuizQuestionForm[];
 }
 
 export interface VideoComment {
@@ -80,6 +145,7 @@ export interface VideoItem {
   comments_count?: number;
   attachments_count?: number;
   attachments?: VideoAttachment[];
+  quiz?: VideoQuiz | null;
   created_at?: string;
   updated_at?: string;
 }

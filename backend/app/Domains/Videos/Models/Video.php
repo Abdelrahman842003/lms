@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -159,6 +160,11 @@ class Video extends Model
     public function playbackTokens(): HasMany
     {
         return $this->hasMany(VideoPlaybackToken::class);
+    }
+
+    public function quiz(): HasOne
+    {
+        return $this->hasOne(VideoQuiz::class);
     }
 
     public function scopePublishedNow($query)

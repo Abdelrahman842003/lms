@@ -20,6 +20,7 @@ use App\Domains\Videos\Services\VideoAuthorizationService;
 use App\Domains\Videos\Services\VideoInteractionService;
 use App\Domains\Videos\Services\VideoPlaybackService;
 use App\Domains\Videos\Services\VideoStorageService;
+use App\Domains\Videos\Enums\VideoWatchStatus;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -73,6 +74,7 @@ class VideoController extends Controller
             'grade',
             'teacherReference',
             'attachments',
+            'quiz.questions',
             'likes' => fn ($q) => $q->where('student_id', $student->id),
             'watchProgresses' => fn ($q) => $q->where('student_id', $student->id),
             'comments' => fn ($q) => $q->where('is_hidden', false)->with(['author', 'replies.author'])->latest(),
@@ -82,6 +84,19 @@ class VideoController extends Controller
             ->where('video_id', $video->id)
             ->where('student_id', $student->id)
             ->first();
+
+        // ─── إعادة تقييم الـ status عند وجود quiz إلزامي أُضيف بعد إتمام الفيديو ───
+        if (
+            $progress &&
+            $progress->status === VideoWatchStatus::COMPLETED &&
+            $progress->quiz_passed_at === null
+        ) {
+            $quiz = $video->quiz;
+            if ($quiz && $quiz->is_active && $quiz->is_required) {
+                $progress->update(['status' => VideoWatchStatus::WATCHED_PENDING_QUIZ]);
+                $progress = $progress->fresh();
+            }
+        }
 
         return $this->successResponse([
             'video' => new VideoResource($video),

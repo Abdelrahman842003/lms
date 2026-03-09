@@ -52,38 +52,72 @@ class VideoInteractionService
             $startedThreshold = min(max(15, (int) floor($durationSeconds * 0.05)), max(30, (int) floor($durationSeconds * 0.2)));
             $completedThreshold = $this->settings->completedThresholdPercent();
 
-            $status = VideoWatchStatus::NOT_STARTED;
-            $startedAt = $progress->started_at;
+            $status     = VideoWatchStatus::NOT_STARTED;
+            $startedAt  = $progress->started_at;
             $completedAt = $progress->completed_at;
 
+            // ─── تحديد الـ status الجديد ───────────────────────────────
             if ($watchedPercentage >= $completedThreshold) {
-                $status = VideoWatchStatus::COMPLETED;
-                $startedAt = $startedAt ?? now();
+                // هل للفيديو تدريب إلزامي لم يُجتز بعد؟
+                $quiz = $video->quiz()->where('is_active', true)->where('is_required', true)->first();
+                $quizPending = $quiz && $progress->quiz_passed_at === null;
+
+                if ($quizPending) {
+                    // شاف الفيديو كاملاً لكن التدريب لم يُجتز → watched_pending_quiz
+                    $status = VideoWatchStatus::WATCHED_PENDING_QUIZ;
+                } else {
+                    // لا يوجد تدريب إلزامي، أو التدريب مُجتز مسبقاً → completed
+                    $status = VideoWatchStatus::COMPLETED;
+                }
+
+                $startedAt  = $startedAt ?? now();
                 $completedAt = $completedAt ?? now();
+
             } elseif ($watchedSeconds >= $startedThreshold) {
-                $status = $watchedPercentage >= 20
+                $status     = $watchedPercentage >= 20
                     ? VideoWatchStatus::IN_PROGRESS
                     : VideoWatchStatus::STARTED;
-                $startedAt = $startedAt ?? now();
+                $startedAt  = $startedAt ?? now();
                 $completedAt = null;
             }
 
+            // حافظ على COMPLETED إذا كان وصل إليه مسبقاً
+            $prevStatus = $progress->status;
+            if ($prevStatus === VideoWatchStatus::COMPLETED && $status !== VideoWatchStatus::COMPLETED) {
+                // إذا أُضيف تدريب إلزامي بعد الإتمام ولم يُجتز بعد → ارجع لـ watched_pending_quiz
+                $quiz = $quiz ?? $video->quiz()->where('is_active', true)->where('is_required', true)->first();
+                $quizPending = $quiz && $progress->quiz_passed_at === null;
+                $status = $quizPending ? VideoWatchStatus::WATCHED_PENDING_QUIZ : VideoWatchStatus::COMPLETED;
+            }
+            // حافظ على WATCHED_PENDING_QUIZ إذا لم يجتز بعد
+            if ($prevStatus === VideoWatchStatus::WATCHED_PENDING_QUIZ && $status !== VideoWatchStatus::COMPLETED) {
+                $status = VideoWatchStatus::WATCHED_PENDING_QUIZ;
+            }
+
             $progress->update([
-                'status' => $status,
-                'started_at' => $startedAt,
-                'last_watched_at' => now(),
-                'completed_at' => $completedAt,
-                'watched_seconds' => $watchedSeconds,
-                'watched_percentage' => $watchedPercentage,
-                'last_position_seconds' => $lastPosition,
-                'last_playback_token_id' => isset($payload['playback_token_id']) ? (string) $payload['playback_token_id'] : $progress->last_playback_token_id,
+                'status'                 => $status,
+                'started_at'             => $startedAt,
+                'last_watched_at'        => now(),
+                'completed_at'           => $completedAt,
+                'watched_seconds'        => $watchedSeconds,
+                'watched_percentage'     => $watchedPercentage,
+                'last_position_seconds'  => $lastPosition,
+                'last_playback_token_id' => isset($payload['playback_token_id'])
+                    ? (string) $payload['playback_token_id']
+                    : $progress->last_playback_token_id,
             ]);
 
-            if ($status !== VideoWatchStatus::NOT_STARTED) {
+            // إيقاف التذكيرات عند الوصول للنهاية
+            $reachedEnd = in_array($status, [VideoWatchStatus::COMPLETED, VideoWatchStatus::WATCHED_PENDING_QUIZ]);
+            if ($reachedEnd) {
                 $this->reminders->stopForStudent($video, $student, $status === VideoWatchStatus::COMPLETED ? 'completed' : 'started');
             }
 
-            if ($status === VideoWatchStatus::COMPLETED && $progress->getOriginal('status') !== VideoWatchStatus::COMPLETED->value) {
+            // إشعار ولي الأمر عند الإتمام الحقيقي فقط
+            if (
+                $status === VideoWatchStatus::COMPLETED &&
+                $prevStatus !== VideoWatchStatus::COMPLETED
+            ) {
                 $this->notifications->sendCompletedToGuardian($student, $video);
             }
 

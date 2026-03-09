@@ -17,8 +17,9 @@ import {
   retryTeacherVideoProcessing,
   deleteTeacherVideo,
 } from '@/services/videoService';
-import type { VideoComment, VideoItem } from '@/types/video.types';
+import type { VideoComment, VideoItem, VideoQuiz } from '@/types/video.types';
 import { API_BASE_URL } from '@/services/api/baseApi';
+import { VideoQuizManager } from '@/components/video/VideoQuizManager';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -212,7 +213,7 @@ export default function TeacherVideoDetailPage() {
   const [loading, setLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'details' | 'comments'>('details');
+  const [activeTab, setActiveTab] = useState<'details' | 'comments' | 'quiz'>('details');
 
   const loadVideo = useCallback(async () => {
     if (!params.id) return;
@@ -222,6 +223,7 @@ export default function TeacherVideoDetailPage() {
         getTeacherVideo(params.id),
         getTeacherVideoComments(params.id),
       ]);
+      console.debug('[TeacherVideo] likes_count:', vid.likes_count, 'comments_count:', vid.comments_count);
       setVideo(vid);
       setComments(coms);
     } catch {
@@ -371,7 +373,7 @@ export default function TeacherVideoDetailPage() {
 
           {/* Tab navigation */}
           <div className="flex gap-1 border-b border-white/10 pb-0">
-            {(['details', 'comments'] as const).map((tab) => (
+            {(['details', 'comments', 'quiz'] as const).map((tab) => (
               <button
                 key={tab}
                 type="button"
@@ -384,6 +386,13 @@ export default function TeacherVideoDetailPage() {
               >
                 {tab === 'details' ? (
                   <span className="flex items-center gap-2"><Icon name="info-circle" size="sm" /> التفاصيل</span>
+                ) : tab === 'quiz' ? (
+                  <span className="flex items-center gap-2">
+                    <Icon name="graduation-cap" size="sm" /> التدريب
+                    {video?.quiz && (
+                      <span className="bg-primary/20 text-primary text-xs rounded-full px-2">1</span>
+                    )}
+                  </span>
                 ) : (
                   <span className="flex items-center gap-2">
                     <Icon name="comments" size="sm" /> التعليقات
@@ -406,29 +415,27 @@ export default function TeacherVideoDetailPage() {
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <InfoRow icon="graduation-cap" label="الصف" value={video.grade?.name || '—'} />
-                <InfoRow icon="users" label="المجموعات" value={`${video.groups?.length || 0} مجموعة`} />
-                <InfoRow icon="clock" label="المدة" value={formatDuration(video.duration_seconds)} />
-                <InfoRow icon="expand" label="الدقة" value={video.width ? `${video.width}×${video.height}` : '—'} />
-                <InfoRow icon="film" label="الترميز" value={video.codec || '—'} />
-                <InfoRow icon="tachometer-alt" label="معدل الإطار" value={video.frame_rate ? `${video.frame_rate} fps` : '—'} />
-                <InfoRow icon="thumbs-up" label="الإعجابات" value={String(video.likes_count ?? 0)} />
-                <InfoRow icon="comments" label="التعليقات" value={String(video.comments_count ?? 0)} />
-                <InfoRow
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <StatCard icon="graduation-cap" label="الصف"        value={video.grade?.name || '—'} />
+                <StatCard icon="users"          label="المجموعات"   value={`${video.groups?.length || 0} مجموعة`} />
+                <StatCard icon="clock"          label="المدة"        value={formatDuration(video.duration_seconds)} />
+                <StatCard icon="film"           label="الترميز"     value={video.codec?.toUpperCase() || '—'} />
+                <StatCard icon="thumbs-up" label="الإعجابات"  value={String(video.likes_count ?? 0)} />
+                <StatCard icon="comments"  label="التعليقات"  value={String(comments.length)} />
+                <StatCard
                   icon="calendar"
                   label="تاريخ الإضافة"
                   value={video.created_at ? new Date(video.created_at).toLocaleDateString('ar-EG') : '—'}
                 />
                 {video.published_at && (
-                  <InfoRow
+                  <StatCard
                     icon="check-circle"
                     label="تاريخ النشر"
                     value={new Date(video.published_at).toLocaleDateString('ar-EG')}
                   />
                 )}
                 {video.scheduled_at && (
-                  <InfoRow
+                  <StatCard
                     icon="calendar-alt"
                     label="موعد النشر"
                     value={new Date(video.scheduled_at).toLocaleDateString('ar-EG')}
@@ -459,6 +466,15 @@ export default function TeacherVideoDetailPage() {
                 comments.map((c) => <CommentItem key={c.id} comment={c} />)
               )}
             </div>
+          )}
+
+          {activeTab === 'quiz' && (
+            <VideoQuizManager
+              videoId={video.id}
+              role="teacher"
+              initialQuiz={video.quiz}
+              onQuizChange={(q: VideoQuiz | null) => setVideo((prev) => prev ? { ...prev, quiz: q } : prev)}
+            />
           )}
         </div>
 
@@ -589,16 +605,16 @@ export default function TeacherVideoDetailPage() {
   );
 }
 
-// ─── Tiny helper component ────────────────────────────────────────────────────
+// ─── Stat card ────────────────────────────────────────────────────────────────
 
-function InfoRow({ icon, label, value }: { icon: string; label: string; value: string }) {
+function StatCard({ icon, label, value }: { icon: string; label: string; value: string }) {
   return (
-    <div className="flex items-start gap-3">
-      <Icon name={icon} className="text-primary mt-0.5 w-4 flex-shrink-0" size="sm" />
-      <div>
-        <div className="text-gray-400 text-xs">{label}</div>
-        <div className="text-white font-medium">{value}</div>
+    <div className="flex flex-col items-center gap-1.5 px-4 py-3 rounded-2xl border bg-white/5 border-white/10 text-center">
+      <div className="w-7 h-7 rounded-lg bg-primary/15 border border-primary/20 flex items-center justify-center">
+        <Icon name={icon} className="text-primary" size="xs" />
       </div>
+      <span className="text-white font-bold text-base leading-none">{value}</span>
+      <span className="text-gray-500 text-xs">{label}</span>
     </div>
   );
 }

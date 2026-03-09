@@ -131,6 +131,13 @@ Route::middleware('auth:sanctum')->prefix('academy')->name('academy.')->group(fu
     Route::get('videos/{video}/comments', [\App\Domains\Application\Http\Controllers\Academy\VideoController::class, 'comments']);
     Route::post('videos/{video}/comments/{commentId}/hide', [\App\Domains\Application\Http\Controllers\Academy\VideoController::class, 'hideComment']);
     Route::delete('videos/{video}/comments/{commentId}', [\App\Domains\Application\Http\Controllers\Academy\VideoController::class, 'deleteComment']);
+
+    // Video Quiz Management (Academy)
+    Route::get('videos/{video}/quiz', [\App\Domains\Application\Http\Controllers\Academy\VideoQuizController::class, 'show']);
+    Route::post('videos/{video}/quiz', [\App\Domains\Application\Http\Controllers\Academy\VideoQuizController::class, 'store']);
+    Route::put('videos/{video}/quiz', [\App\Domains\Application\Http\Controllers\Academy\VideoQuizController::class, 'update']);
+    Route::delete('videos/{video}/quiz', [\App\Domains\Application\Http\Controllers\Academy\VideoQuizController::class, 'destroy']);
+    Route::get('videos/{video}/quiz/results', [\App\Domains\Application\Http\Controllers\Academy\VideoQuizController::class, 'results']);
 });
 
 // ============================================
@@ -256,6 +263,13 @@ Route::middleware(['auth:sanctum', \App\Domains\Auth\Http\Middleware\EnsureTeach
     Route::post('videos/{video}/comments/{commentId}/hide', [\App\Domains\Application\Http\Controllers\Teacher\VideoController::class, 'hideComment']);
     Route::delete('videos/{video}/comments/{commentId}', [\App\Domains\Application\Http\Controllers\Teacher\VideoController::class, 'deleteComment']);
 
+    // Video Quiz Management (Teacher)
+    Route::get('videos/{video}/quiz', [\App\Domains\Application\Http\Controllers\Teacher\VideoQuizController::class, 'show']);
+    Route::post('videos/{video}/quiz', [\App\Domains\Application\Http\Controllers\Teacher\VideoQuizController::class, 'store']);
+    Route::put('videos/{video}/quiz', [\App\Domains\Application\Http\Controllers\Teacher\VideoQuizController::class, 'update']);
+    Route::delete('videos/{video}/quiz', [\App\Domains\Application\Http\Controllers\Teacher\VideoQuizController::class, 'destroy']);
+    Route::get('videos/{video}/quiz/results', [\App\Domains\Application\Http\Controllers\Teacher\VideoQuizController::class, 'results']);
+
 });
 
 // ============================================
@@ -319,6 +333,11 @@ Route::middleware(['auth:sanctum', \App\Domains\Auth\Http\Middleware\EnsureTeach
     Route::get('/videos/{video}/comments', [\App\Domains\Application\Http\Controllers\Student\VideoController::class, 'comments']);
     Route::post('/videos/{video}/comments', [\App\Domains\Application\Http\Controllers\Student\VideoController::class, 'storeComment']);
     Route::delete('/videos/{video}/comments/{commentId}', [\App\Domains\Application\Http\Controllers\Student\VideoController::class, 'deleteOwnComment']);
+
+    // Video Quiz (Student)
+    Route::get('/videos/{video}/quiz', [\App\Domains\Application\Http\Controllers\Student\StudentVideoQuizController::class, 'show']);
+    Route::post('/videos/{video}/quiz/submit', [\App\Domains\Application\Http\Controllers\Student\StudentVideoQuizController::class, 'submit']);
+    Route::get('/videos/{video}/quiz/attempts', [\App\Domains\Application\Http\Controllers\Student\StudentVideoQuizController::class, 'attempts']);
 });
 
 // Video stream — authenticated by playback token only (no session cookie needed)

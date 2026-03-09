@@ -70,6 +70,38 @@ class VideoResource extends JsonResource
             'attachments_count' => $this->whenCounted('attachments', (int) $this->attachments_count),
             'watch_progresses_count' => $this->whenCounted('watchProgresses', (int) $this->watch_progresses_count),
             'attachments' => VideoAttachmentResource::collection($this->whenLoaded('attachments')),
+            // ─── التدريب ──────────────────────────────────────────────────
+            'quiz' => $this->whenLoaded('quiz', function () use ($request): ?array {
+                $quiz = $this->quiz;
+                if (!$quiz) {
+                    return null;
+                }
+
+                $base = [
+                    'id'              => $quiz->id,
+                    'title'           => $quiz->title,
+                    'passing_score'   => $quiz->passing_score,
+                    'is_required'     => $quiz->is_required,
+                    'is_active'       => $quiz->is_active,
+                    'questions_count' => $quiz->relationLoaded('questions')
+                        ? $quiz->questions->count()
+                        : $quiz->questions()->count(),
+                ];
+
+                // للطالب: نضيف حالته الشخصية
+                $user = $request->user();
+                if ($user instanceof Student) {
+                    $progress = $this->watchProgresses
+                        ->where('student_id', $user->id)
+                        ->first();
+                    $base['my_status'] = [
+                        'passed'        => $progress && $progress->quiz_passed_at !== null,
+                        'quiz_passed_at'=> $progress?->quiz_passed_at,
+                    ];
+                }
+
+                return $base;
+            }),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

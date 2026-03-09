@@ -15,6 +15,7 @@ import {
 import type { VideoComment, VideoItem, VideoWatchProgress } from '@/types/video.types';
 import { SecureVideoPlayer } from '@/components/video/SecureVideoPlayer';
 import { VideoCommentsSection } from '@/components/video/VideoCommentsSection';
+import { VideoQuizStudent } from '@/components/video/VideoQuizStudent';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -65,7 +66,7 @@ export default function StudentVideoDetailsPage() {
   const [progress, setProgress]     = useState<VideoWatchProgress | null>(null);
   const [comments, setComments]     = useState<VideoComment[]>([]);
   const [loading, setLoading]       = useState(true);
-  const [activeTab, setActiveTab]   = useState<'details' | 'comments' | 'files'>('details');
+  const [activeTab, setActiveTab]   = useState<'details' | 'comments' | 'files' | 'quiz'>('details');
   const [liked, setLiked]           = useState(false);
   const [likesCount, setLikesCount] = useState(0);
   const [liking, setLiking]         = useState(false);
@@ -91,7 +92,25 @@ export default function StudentVideoDetailsPage() {
 
   const handleProgressUpdate = useCallback((updated: VideoWatchProgress) => {
     setProgress(updated);
+    // Auto-switch to quiz tab when the video triggers watched_pending_quiz
+    if (updated.status === 'watched_pending_quiz') {
+      setActiveTab('quiz');
+    }
   }, []);
+
+  // Reload just the progress (after quiz pass) without re-fetching everything
+  const reloadProgress = useCallback(async () => {
+    if (!params.id) return;
+    try {
+      const res = await getStudentVideo(params.id);
+      setProgress(res.progress);
+      setVideo(res.video);
+      // بعد اجتياز الاختبار، انتقل لتاب التفاصيل
+      if (res.progress?.quiz_passed_at) {
+        setActiveTab('details');
+      }
+    } catch { /* ignore */ }
+  }, [params.id]);
 
   useEffect(() => { void loadVideo(); }, [loadVideo]);
 
@@ -136,15 +155,29 @@ export default function StudentVideoDetailsPage() {
     );
   }
 
-  const watchedPct   = progress?.watched_percentage ?? 0;
-  const attachments  = video.attachments ?? [];
-  const groups       = video.groups ?? [];
-  const hasFiles     = attachments.length > 0;
+  const watchedPct          = progress?.watched_percentage ?? 0;
+  const attachments         = video.attachments ?? [];
+  const groups              = video.groups ?? [];
+  const hasFiles            = attachments.length > 0;
+  const isPendingQuiz       = progress?.status === 'watched_pending_quiz';
+  const isCompleted         = progress?.status === 'completed';
+  const hasQuiz             = !!video.quiz;
+  const quizAlreadyPassed   = !!progress?.quiz_passed_at;
+
+  // Show quiz tab only when video is fully watched, has an active quiz, and not yet passed
+  const showQuizTab = (isPendingQuiz || isCompleted) && hasQuiz && !quizAlreadyPassed;
 
   const tabs = [
     { id: 'details' as const,  icon: 'info-circle', label: 'التفاصيل' },
     { id: 'comments' as const, icon: 'comments',    label: 'التعليقات', badge: comments.length },
     ...(hasFiles ? [{ id: 'files' as const, icon: 'paperclip', label: 'المرفقات', badge: attachments.length }] : []),
+    ...(showQuizTab ? [{
+      id: 'quiz' as const,
+      icon: 'graduation-cap',
+      label: 'التدريب',
+      badge: quizAlreadyPassed ? 0 : 1,
+      highlight: isPendingQuiz && !quizAlreadyPassed,
+    }] : []),
   ];
 
   return (
@@ -202,9 +235,17 @@ export default function StudentVideoDetailsPage() {
             </span>
 
             {watchedPct > 0 && (
-              <span className={`flex items-center gap-1.5 text-sm font-medium ${watchedPct >= 80 ? 'text-emerald-400' : 'text-primary'}`}>
-                <Icon name={watchedPct >= 80 ? 'check-circle' : 'play-circle'} size="sm" />
-                {watchedPct >= 80 ? 'مكتمل' : `${watchedPct}% شاهدت`}
+              <span className={`flex items-center gap-1.5 text-sm font-medium ${
+                isCompleted ? 'text-emerald-400'
+                : isPendingQuiz ? 'text-amber-400'
+                : 'text-primary'
+              }`}>
+                <Icon name={
+                  isCompleted ? 'check-circle'
+                  : isPendingQuiz ? 'graduation-cap'
+                  : 'play-circle'
+                } size="sm" />
+                {isCompleted ? 'مكتمل' : isPendingQuiz ? 'يحتاج تدريب' : `${watchedPct}% شاهدت`}
               </span>
             )}
 
@@ -231,6 +272,8 @@ export default function StudentVideoDetailsPage() {
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
                   activeTab === tab.id
                     ? 'bg-primary text-white shadow-[0_0_20px_rgba(66,99,235,0.4)]'
+                    : 'highlight' in tab && tab.highlight
+                    ? 'text-amber-400 hover:text-white bg-amber-400/10 hover:bg-primary/20 border border-amber-400/30 animate-pulse'
                     : 'text-gray-400 hover:text-white hover:bg-white/5'
                 }`}
               >
@@ -285,10 +328,22 @@ export default function StudentVideoDetailsPage() {
                       style={{ width: `${watchedPct}%` }}
                     />
                   </div>
-                  {watchedPct >= 80 && (
+                  {watchedPct >= 80 && !isPendingQuiz && (
                     <div className="flex items-center gap-2 text-emerald-400 text-xs bg-emerald-400/8 border border-emerald-400/20 rounded-xl p-3">
                       <Icon name="check-circle" size="sm" />
                       أتممت مشاهدة الفيديو — عمل ممتاز! 🎉
+                    </div>
+                  )}
+                  {isPendingQuiz && !quizAlreadyPassed && (
+                    <div
+                      className="flex items-center gap-2 text-amber-400 text-xs bg-amber-400/8 border border-amber-400/25 rounded-xl p-3 cursor-pointer hover:bg-amber-400/12 transition-colors"
+                      onClick={() => setActiveTab('quiz')}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => e.key === 'Enter' && setActiveTab('quiz')}
+                    >
+                      <Icon name="graduation-cap" size="sm" />
+                      أتممت المشاهدة! أجب على التدريب لتسجيل الإتمام وكسب النقاط →
                     </div>
                   )}
                 </div>
@@ -340,6 +395,16 @@ export default function StudentVideoDetailsPage() {
               </div>
             </div>
           )}
+
+          {/* ── Tab: Quiz ── */}
+          {activeTab === 'quiz' && showQuizTab && (
+            <VideoQuizStudent
+              videoId={video.id}
+              watchStatus={progress?.status ?? ''}
+              alreadyPassed={quizAlreadyPassed}
+              onQuizPassed={() => void reloadProgress()}
+            />
+          )}
         </div>
 
         {/* ════ RIGHT SIDEBAR ════ */}
@@ -356,9 +421,14 @@ export default function StudentVideoDetailsPage() {
                 <p className="text-white font-bold text-sm">تقدمك</p>
                 <p className="text-gray-500 text-xs">سجل المشاهدة</p>
               </div>
-              {watchedPct >= 80 && (
+              {watchedPct >= 80 && isCompleted && (
                 <span className="mr-auto text-xs px-2 py-0.5 rounded-full bg-emerald-400/15 text-emerald-400 border border-emerald-400/25">
                   مكتمل ✓
+                </span>
+              )}
+              {isPendingQuiz && !quizAlreadyPassed && (
+                <span className="mr-auto text-xs px-2 py-0.5 rounded-full bg-amber-400/15 text-amber-400 border border-amber-400/25 animate-pulse">
+                  اختبار معلق
                 </span>
               )}
             </div>
@@ -400,11 +470,21 @@ export default function StudentVideoDetailsPage() {
               <div className={`text-xs rounded-xl px-3 py-2 border flex items-center gap-2
                 ${progress?.status === 'completed'
                   ? 'bg-emerald-400/10 border-emerald-400/20 text-emerald-400'
+                  : progress?.status === 'watched_pending_quiz'
+                  ? 'bg-amber-400/10 border-amber-400/20 text-amber-400'
                   : progress?.status === 'in_progress' || progress?.status === 'started'
                   ? 'bg-primary/10 border-primary/20 text-primary'
                   : 'bg-white/5 border-white/10 text-gray-500'}`}>
-                <Icon name={progress?.status === 'completed' ? 'check-circle' : 'play-circle'} size="sm" />
+                <Icon
+                  name={
+                    progress?.status === 'completed' ? 'check-circle'
+                    : progress?.status === 'watched_pending_quiz' ? 'graduation-cap'
+                    : 'play-circle'
+                  }
+                  size="sm"
+                />
                 {progress?.status === 'completed' ? 'اكتملت المشاهدة'
+                  : progress?.status === 'watched_pending_quiz' ? 'في انتظار اجتياز التدريب'
                   : progress?.status === 'in_progress' ? 'جاري المشاهدة'
                   : progress?.status === 'started' ? 'بدأت المشاهدة'
                   : 'لم تبدأ بعد'}

@@ -19,6 +19,7 @@ use App\Domains\Videos\Resources\VideoResource;
 use App\Domains\Videos\Services\VideoActorResolverService;
 use App\Domains\Videos\Services\VideoInteractionService;
 use App\Domains\Videos\Services\VideoLifecycleService;
+use App\Domains\Videos\Services\VideoQuizService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -30,6 +31,7 @@ class VideoController extends Controller
         private readonly VideoActorResolverService $actorResolver,
         private readonly VideoInteractionService $interaction,
         private readonly VideoPolicy $policy,
+        private readonly VideoQuizService $quizService,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -77,7 +79,7 @@ class VideoController extends Controller
             throw new AuthorizationException('غير مصرح بعرض هذا الفيديو.');
         }
 
-        $video->load(['groups', 'attachments', 'grade', 'teacherReference']);
+        $video->load(['groups', 'attachments', 'grade', 'teacherReference', 'quiz.questions']);
 
         return $this->successResponse([
             'video' => new VideoResource($video),
@@ -93,6 +95,29 @@ class VideoController extends Controller
         }
 
         $updated = $this->lifecycle->updateVideo($video, UpdateVideoData::fromArray($request->validated()), $actor);
+
+        // ─── معالجة التدريب المرفق مع التعديل ──────────────────────
+        if ($request->has('quiz')) {
+            $quizData = $request->input('quiz');
+            $teacher  = $updated->teacherReference;
+
+            if ($quizData === null) {
+                $existingQuiz = $updated->quiz()->first();
+                if ($existingQuiz) {
+                    $this->quizService->deleteQuiz($existingQuiz);
+                }
+            } elseif ($teacher) {
+                $existingQuiz = $updated->quiz()->first();
+                if ($existingQuiz) {
+                    $this->quizService->updateQuiz($existingQuiz, $quizData);
+                } else {
+                    $this->quizService->createQuiz($updated, $teacher, $quizData);
+                }
+            }
+        }
+
+        $updated->load(['groups', 'attachments', 'grade', 'quiz.questions'])
+                ->loadCount(['likes', 'comments', 'attachments']);
 
         return $this->successResponse([
             'video' => new VideoResource($updated),

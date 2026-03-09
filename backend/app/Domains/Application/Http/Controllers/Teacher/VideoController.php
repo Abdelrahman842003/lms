@@ -8,37 +8,39 @@ use App\Domains\Application\Http\Controllers\Controller;
 use App\Domains\Application\Http\Requests\Teacher\Video\StoreVideoRequest;
 use App\Domains\Application\Http\Requests\Teacher\Video\UpdateVideoRequest;
 use App\Domains\Auth\Models\Teacher;
+use App\Domains\Support\Traits\ResolvesTeacher;
 use App\Domains\Videos\DTOs\CreateVideoData;
 use App\Domains\Videos\DTOs\UpdateVideoData;
-use App\Domains\Videos\Models\VideoComment;
 use App\Domains\Videos\Models\Video;
-use App\Domains\Videos\Policies\VideoPolicy;
+use App\Domains\Videos\Models\VideoComment;
 use App\Domains\Videos\Resources\VideoCommentResource;
 use App\Domains\Videos\Resources\VideoResource;
 use App\Domains\Videos\Services\VideoActorResolverService;
 use App\Domains\Videos\Services\VideoInteractionService;
 use App\Domains\Videos\Services\VideoLifecycleService;
+use App\Domains\Videos\Services\VideoQuizService;
 use App\Domains\Videos\Services\VideoStorageService;
-use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class VideoController extends Controller
 {
+    use ResolvesTeacher;
+
     public function __construct(
         private readonly VideoLifecycleService $lifecycle,
         private readonly VideoActorResolverService $actorResolver,
         private readonly VideoInteractionService $interaction,
-        private readonly VideoPolicy $policy,
         private readonly VideoStorageService $storage,
+        private readonly VideoQuizService $quizService,
     ) {}
 
     public function index(Request $request): JsonResponse
     {
-        /** @var Teacher $teacher */
-        $teacher = $request->user();
+        $teacher = $this->getTeacherFromRequest($request);
         $context = $this->actorResolver->resolveIndependentTeacher($teacher);
 
         $videos = $this->lifecycle->listForOwner(
@@ -52,12 +54,8 @@ class VideoController extends Controller
 
     public function store(StoreVideoRequest $request): JsonResponse
     {
-        /** @var Teacher $teacher */
-        $teacher = $request->user();
-
-        if (! $this->policy->createIndependent($teacher)) {
-            throw new AuthorizationException('غير مصرح لك برفع فيديوهات مستقلة.');
-        }
+        $teacher = $this->getTeacherFromRequest($request);
+        Gate::authorize('createIndependent', Video::class);
 
         $context = $this->actorResolver->resolveIndependentTeacher($teacher);
         $data = CreateVideoData::fromArray($request->validated());
@@ -71,14 +69,11 @@ class VideoController extends Controller
 
     public function show(Request $request, Video $video): JsonResponse
     {
-        /** @var Teacher $teacher */
-        $teacher = $request->user();
+        $teacher = $this->getTeacherFromRequest($request);
+        Gate::authorize('view', $video);
 
-        if (! $this->policy->view($teacher, $video)) {
-            throw new AuthorizationException('غير مصرح بعرض هذا الفيديو.');
-        }
-
-        $video->load(['groups', 'attachments', 'grade', 'teacherReference']);
+        $video->load(['groups', 'attachments', 'grade', 'teacherReference', 'quiz.questions'])
+              ->loadCount(['likes', 'comments', 'attachments']);
 
         return $this->successResponse([
             'video' => new VideoResource($video),
@@ -87,14 +82,36 @@ class VideoController extends Controller
 
     public function update(UpdateVideoRequest $request, Video $video): JsonResponse
     {
-        /** @var Teacher $teacher */
-        $teacher = $request->user();
-
-        if (! $this->policy->update($teacher, $video)) {
-            throw new AuthorizationException('غير مصرح بتعديل هذا الفيديو.');
-        }
+        $teacher = $this->getTeacherFromRequest($request);
+        Gate::authorize('update', $video);
 
         $updated = $this->lifecycle->updateVideo($video, UpdateVideoData::fromArray($request->validated()), $teacher);
+
+        // ─── معالجة التدريب المرفق مع التعديل ──────────────────────
+        if ($request->has('quiz')) {
+            $quizData = $request->input('quiz');
+
+            if ($quizData === null) {
+                // null = حذف التدريب الموجود
+                $existingQuiz = $updated->quiz()->first();
+                if ($existingQuiz) {
+                    $this->quizService->deleteQuiz($existingQuiz);
+                }
+            } else {
+                $existingQuiz = $updated->quiz()->first();
+                if ($existingQuiz) {
+                    // تعديل التدريب الموجود
+                    $this->quizService->updateQuiz($existingQuiz, $quizData);
+                } else {
+                    // إنشاء تدريب جديد
+                    $this->quizService->createQuiz($updated, $teacher, $quizData);
+                }
+            }
+        }
+
+        // إعادة تحميل الفيديو مع التدريب
+        $updated->load(['groups', 'attachments', 'grade', 'quiz.questions'])
+                ->loadCount(['likes', 'comments', 'attachments']);
 
         return $this->successResponse([
             'video' => new VideoResource($updated),
@@ -103,12 +120,8 @@ class VideoController extends Controller
 
     public function destroy(Request $request, Video $video): JsonResponse
     {
-        /** @var Teacher $teacher */
-        $teacher = $request->user();
-
-        if (! $this->policy->delete($teacher, $video)) {
-            throw new AuthorizationException('غير مصرح بحذف هذا الفيديو.');
-        }
+        $teacher = $this->getTeacherFromRequest($request);
+        Gate::authorize('delete', $video);
 
         $this->lifecycle->delete($video, $teacher);
 
@@ -119,12 +132,8 @@ class VideoController extends Controller
 
     public function retryProcessing(Request $request, Video $video): JsonResponse
     {
-        /** @var Teacher $teacher */
-        $teacher = $request->user();
-
-        if (! $this->policy->update($teacher, $video)) {
-            throw new AuthorizationException('غير مصرح بإعادة المعالجة.');
-        }
+        $teacher = $this->getTeacherFromRequest($request);
+        Gate::authorize('update', $video);
 
         $this->lifecycle->retryProcessing($video);
 
@@ -135,12 +144,8 @@ class VideoController extends Controller
 
     public function publish(Request $request, Video $video): JsonResponse
     {
-        /** @var Teacher $teacher */
-        $teacher = $request->user();
-
-        if (! $this->policy->publish($teacher, $video)) {
-            throw new AuthorizationException('غير مصرح بنشر الفيديو.');
-        }
+        $teacher = $this->getTeacherFromRequest($request);
+        Gate::authorize('publish', $video);
 
         $published = $this->lifecycle->publish($video, $teacher);
 
@@ -151,12 +156,8 @@ class VideoController extends Controller
 
     public function thumbnail(Request $request, Video $video): RedirectResponse|StreamedResponse
     {
-        /** @var Teacher $teacher */
-        $teacher = $request->user();
-
-        if (! $this->policy->view($teacher, $video)) {
-            throw new AuthorizationException('غير مصرح بعرض الصورة المصغرة.');
-        }
+        $teacher = $this->getTeacherFromRequest($request);
+        Gate::authorize('view', $video);
 
         if (! $video->thumbnail_path) {
             abort(404, 'Thumbnail not found');
@@ -177,12 +178,8 @@ class VideoController extends Controller
 
     public function thumbnailUrl(Request $request, Video $video): JsonResponse
     {
-        /** @var Teacher $teacher */
-        $teacher = $request->user();
-
-        if (! $this->policy->view($teacher, $video)) {
-            throw new AuthorizationException('غير مصرح بعرض الصورة المصغرة.');
-        }
+        $teacher = $this->getTeacherFromRequest($request);
+        Gate::authorize('view', $video);
 
         if (! $video->thumbnail_path) {
             return $this->successResponse(['url' => null]);
@@ -203,12 +200,8 @@ class VideoController extends Controller
 
     public function stream(Request $request, Video $video): RedirectResponse|StreamedResponse
     {
-        /** @var Teacher $teacher */
-        $teacher = $request->user();
-
-        if (! $this->policy->view($teacher, $video)) {
-            throw new AuthorizationException('غير مصرح بمشاهدة الفيديو.');
-        }
+        $teacher = $this->getTeacherFromRequest($request);
+        Gate::authorize('view', $video);
 
         if (! $video->processed_path) {
             abort(404, 'Video file not found');
@@ -234,12 +227,8 @@ class VideoController extends Controller
 
     public function streamUrl(Request $request, Video $video): JsonResponse
     {
-        /** @var Teacher $teacher */
-        $teacher = $request->user();
-
-        if (! $this->policy->view($teacher, $video)) {
-            throw new AuthorizationException('غير مصرح بمشاهدة الفيديو.');
-        }
+        $teacher = $this->getTeacherFromRequest($request);
+        Gate::authorize('view', $video);
 
         if (! $video->processed_path) {
             return $this->errorResponse('ملف الفيديو غير موجود.', 404);
@@ -267,12 +256,8 @@ class VideoController extends Controller
 
     public function comments(Request $request, Video $video): JsonResponse
     {
-        /** @var Teacher $teacher */
-        $teacher = $request->user();
-
-        if (! $this->policy->manageComments($teacher, $video)) {
-            throw new AuthorizationException('غير مصرح بإدارة التعليقات.');
-        }
+        $teacher = $this->getTeacherFromRequest($request);
+        Gate::authorize('manageComments', $video);
 
         $comments = $video->comments()
             ->with(['author', 'replies.author'])
@@ -284,12 +269,8 @@ class VideoController extends Controller
 
     public function hideComment(Request $request, Video $video, string $commentId): JsonResponse
     {
-        /** @var Teacher $teacher */
-        $teacher = $request->user();
-
-        if (! $this->policy->manageComments($teacher, $video)) {
-            throw new AuthorizationException('غير مصرح بإدارة التعليقات.');
-        }
+        $teacher = $this->getTeacherFromRequest($request);
+        Gate::authorize('manageComments', $video);
 
         $comment = VideoComment::query()->where('video_id', $video->id)->withTrashed()->findOrFail($commentId);
         $comment = $this->interaction->hideComment($comment, $teacher);
@@ -301,12 +282,8 @@ class VideoController extends Controller
 
     public function deleteComment(Request $request, Video $video, string $commentId): JsonResponse
     {
-        /** @var Teacher $teacher */
-        $teacher = $request->user();
-
-        if (! $this->policy->manageComments($teacher, $video)) {
-            throw new AuthorizationException('غير مصرح بإدارة التعليقات.');
-        }
+        $teacher = $this->getTeacherFromRequest($request);
+        Gate::authorize('manageComments', $video);
 
         $comment = VideoComment::query()->where('video_id', $video->id)->withTrashed()->findOrFail($commentId);
         $this->interaction->deleteComment($comment);

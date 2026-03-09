@@ -4,9 +4,13 @@ import type {
   InitiateUploadPayload,
   InitiateUploadResponse,
   PlaybackTokenPayload,
+  SubmitQuizResult,
   UploadSessionStatus,
   VideoComment,
   VideoItem,
+  VideoQuiz,
+  VideoQuizAttempt,
+  VideoQuizForm,
   VideoWatchProgress,
 } from '@/types/video.types';
 
@@ -247,4 +251,93 @@ export async function deleteOwnComment(videoId: string, commentId: string): Prom
   await fetchApi(`/student/videos/${videoId}/comments/${commentId}`, {
     method: 'DELETE',
   });
+}
+
+// ─── Video Quiz — Teacher / Academy ─────────────────────────────────────────
+
+export async function getTeacherVideoQuiz(videoId: string): Promise<VideoQuiz | null> {
+  const res = await fetchApi<{ quiz: VideoQuiz | null }>(`/teacher/videos/${videoId}/quiz`);
+  return res.quiz;
+}
+
+export async function saveTeacherVideoQuiz(videoId: string, data: VideoQuizForm): Promise<VideoQuiz> {
+  const res = await fetchApi<{ quiz: VideoQuiz }>(`/teacher/videos/${videoId}/quiz`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+  return res.quiz;
+}
+
+export async function updateTeacherVideoQuiz(videoId: string, data: VideoQuizForm): Promise<VideoQuiz> {
+  const res = await fetchApi<{ quiz: VideoQuiz }>(`/teacher/videos/${videoId}/quiz`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+  return res.quiz;
+}
+
+export async function deleteTeacherVideoQuiz(videoId: string): Promise<void> {
+  await fetchApi(`/teacher/videos/${videoId}/quiz`, { method: 'DELETE' });
+}
+
+export async function getTeacherVideoQuizResults(
+  videoId: string
+): Promise<VideoQuizAttempt[]> {
+  const res = await fetchApi<{ quiz: unknown; summary: unknown; attempts: VideoQuizAttempt[] }>(`/teacher/videos/${videoId}/quiz/results`);
+  return res.attempts ?? [];
+}
+
+// Academy mirrors
+export async function getAcademyVideoQuiz(videoId: string): Promise<VideoQuiz | null> {
+  const res = await fetchApi<{ quiz: VideoQuiz | null }>(`/academy/videos/${videoId}/quiz`);
+  return res.quiz;
+}
+
+export async function saveAcademyVideoQuiz(videoId: string, data: VideoQuizForm): Promise<VideoQuiz> {
+  const res = await fetchApi<{ quiz: VideoQuiz }>(`/academy/videos/${videoId}/quiz`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+  return res.quiz;
+}
+
+export async function updateAcademyVideoQuiz(videoId: string, data: VideoQuizForm): Promise<VideoQuiz> {
+  const res = await fetchApi<{ quiz: VideoQuiz }>(`/academy/videos/${videoId}/quiz`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+  return res.quiz;
+}
+
+export async function deleteAcademyVideoQuiz(videoId: string): Promise<void> {
+  await fetchApi(`/academy/videos/${videoId}/quiz`, { method: 'DELETE' });
+}
+
+export async function getAcademyVideoQuizResults(
+  videoId: string
+): Promise<VideoQuizAttempt[]> {
+  const res = await fetchApi<{ quiz: unknown; summary: unknown; attempts: VideoQuizAttempt[] }>(`/academy/videos/${videoId}/quiz/results`);
+  return res.attempts ?? [];
+}
+
+// ─── Video Quiz — Student ────────────────────────────────────────────────────
+
+export async function getStudentVideoQuiz(videoId: string): Promise<VideoQuiz | null> {
+  const res = await fetchApi<{ quiz: VideoQuiz | null }>(`/student/videos/${videoId}/quiz`);
+  return res.quiz;
+}
+
+export async function submitStudentVideoQuiz(
+  videoId: string,
+  answers: Record<string, string>
+): Promise<SubmitQuizResult> {
+  return fetchApi<SubmitQuizResult>(`/student/videos/${videoId}/quiz/submit`, {
+    method: 'POST',
+    body: JSON.stringify({ answers }),
+  });
+}
+
+export async function getStudentVideoQuizAttempts(videoId: string): Promise<VideoQuizAttempt[]> {
+  const res = await fetchApi<{ attempts: VideoQuizAttempt[] }>(`/student/videos/${videoId}/quiz/attempts`);
+  return res.attempts;
 }
