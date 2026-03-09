@@ -51,11 +51,13 @@ class StudentLectureService
         $lectures->getCollection()->transform(function ($lecture) {
             $attendance = $lecture->attendances->first();
             $lecture->is_attended = $attendance && $attendance->status === 'present';
-            $lecture->date = $lecture->start_time->format('Y-m-d');
-            $lecture->time = $lecture->start_time->format('H:i');
-            $lecture->iso_start_time = $lecture->start_time->toIso8601String();
-            $lecture->iso_end_time = $lecture->end_time->toIso8601String();
-            $lecture->duration = $lecture->start_time->diffInMinutes($lecture->end_time);
+            $lecture->date = $lecture->start_time?->format('Y-m-d');
+            $lecture->time = $lecture->start_time?->format('H:i');
+            $lecture->iso_start_time = $lecture->start_time?->toIso8601String();
+            $lecture->iso_end_time = $lecture->end_time?->toIso8601String();
+            $lecture->duration = ($lecture->start_time && $lecture->end_time)
+                ? $lecture->start_time->diffInMinutes($lecture->end_time)
+                : 0;
             unset($lecture->attendances);
             return $lecture;
         });

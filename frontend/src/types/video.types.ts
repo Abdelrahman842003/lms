@@ -88,6 +88,7 @@ export interface PlaybackTokenPayload {
   token: string;
   expires_at: string;
   stream_url: string;
+  stream_endpoint?: string;
   watermark: {
     enabled: boolean;
     rotation_interval_seconds: number;

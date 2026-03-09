@@ -200,7 +200,18 @@ class Teacher extends Authenticatable
 
     public function isSubscriptionBlocked(): bool
     {
-        return ! $this->hasActiveSubscription();
+        // Active personal subscription → not blocked
+        if ($this->hasActiveSubscription()) {
+            return false;
+        }
+
+        // Belongs to at least one active academy with an active subscription → not blocked
+        $activeAcademyExists = $this->academies()
+            ->wherePivot('is_active', true)
+            ->get()
+            ->contains(fn ($academy) => $academy->hasActiveSubscription());
+
+        return ! $activeAcademyExists;
     }
 
     /**

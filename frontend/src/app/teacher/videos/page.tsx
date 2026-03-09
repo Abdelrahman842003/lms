@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { StatCard } from '@/components/dashboard/StatCard';
-import { VideoCard } from '@/components/dashboard/VideoCard';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import { Filter } from '@/components/Filter';
 import { AppNotFound } from '@/components/shared/AppNotFound';
@@ -18,7 +17,7 @@ import {
   retryTeacherVideoProcessing,
 } from '@/services/videoService';
 import type { VideoItem } from '@/types/video.types';
-
+import { VideoCard, VideoCardSkeleton } from '@/components/video/VideoCard';
 export default function TeacherVideosPage() {
   const { user, selectedAcademy, isLoading: authLoading } = useAuth();
   const router = useRouter();
@@ -244,24 +243,7 @@ export default function TeacherVideosPage() {
 
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[1, 2, 3, 4, 5, 6].map((item) => (
-            <div key={item} className="rounded-2xl bg-[#101426]/15 border border-white/10 h-[320px] flex flex-col gap-4 p-6">
-              <div className="flex justify-between items-start">
-                <div className="skeleton-item w-[60%] h-6"></div>
-                <div className="skeleton-item w-[20%] h-6 rounded-xl"></div>
-              </div>
-              <div className="skeleton-item w-full h-10"></div>
-              <div className="flex flex-col gap-3 mt-auto">
-                <div className="skeleton-item w-[40%] h-4"></div>
-                <div className="skeleton-item w-[50%] h-4"></div>
-                <div className="skeleton-item w-[30%] h-4"></div>
-              </div>
-              <div className="flex gap-2 mt-4">
-                <div className="skeleton-item flex-1 h-9 rounded-lg"></div>
-                <div className="skeleton-item flex-1 h-9 rounded-lg"></div>
-              </div>
-            </div>
-          ))}
+          {[1, 2, 3, 4, 5, 6].map((item) => <VideoCardSkeleton key={item} />)}
         </div>
       ) : filteredVideos.length === 0 ? (
         <div className="text-center p-12 bg-white/2 rounded-2xl">
@@ -278,18 +260,21 @@ export default function TeacherVideosPage() {
             <VideoCard
               key={video.id}
               video={video}
-              detailHref={`/teacher/videos/${video.id}`}
-              isMenuOpen={openMenuId === video.id}
-              onMenuToggle={(event) => {
-                event.stopPropagation();
-                setOpenMenuId(openMenuId === video.id ? null : video.id);
-              }}
-              onPublish={() => void handlePublish(video)}
-              onRetryProcessing={() => void handleRetry(video)}
-              onDelete={() => {
-                setVideoToDelete(video);
-                setIsDeleteModalOpen(true);
-                setOpenMenuId(null);
+              href={`/teacher/videos/${video.id}`}
+              role="teacher"
+              teacherActions={{
+                isMenuOpen: openMenuId === video.id,
+                onMenuToggle: (event: React.MouseEvent) => {
+                  event.stopPropagation();
+                  setOpenMenuId(openMenuId === video.id ? null : video.id);
+                },
+                onPublish: () => void handlePublish(video),
+                onRetryProcessing: () => void handleRetry(video),
+                onDelete: () => {
+                  setVideoToDelete(video);
+                  setIsDeleteModalOpen(true);
+                  setOpenMenuId(null);
+                },
               }}
             />
           ))}

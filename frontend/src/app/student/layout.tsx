@@ -7,32 +7,37 @@ import { isTeacherAccessible } from '@/utils/studentTeacherAccess';
 
 export default function StudentLayout({ children }: { children: ReactNode }) {
   const { user, isLoading, refreshUser } = useAuth();
-  const [isRefreshingUser, setIsRefreshingUser] = useState(false);
+  const [hasSynced, setHasSynced] = useState(false);
   const syncedStudentIdRef = useRef<string | number | null>(null);
 
   useEffect(() => {
-    if (user?.userType !== 'student') {
-      syncedStudentIdRef.current = null;
+    // Not a student — no sync needed
+    if (!isLoading && user?.userType !== 'student') {
+      setHasSynced(true);
       return;
     }
 
-    if (!user?.id || syncedStudentIdRef.current === user.id) {
+    // Still loading core auth — wait
+    if (isLoading || !user?.id) {
+      return;
+    }
+
+    // Already synced this student id
+    if (syncedStudentIdRef.current === user.id) {
       return;
     }
 
     syncedStudentIdRef.current = user.id;
-
     let cancelled = false;
 
     const syncStudent = async () => {
-      setIsRefreshingUser(true);
       try {
         await refreshUser();
       } catch (error) {
         console.error('Student layout: failed to refresh current user', error);
       } finally {
         if (!cancelled) {
-          setIsRefreshingUser(false);
+          setHasSynced(true);
         }
       }
     };
@@ -42,10 +47,10 @@ export default function StudentLayout({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [user?.id, user?.userType]);
+  }, [isLoading, user?.id, user?.userType]);
 
-  // Wait for the current student snapshot before deciding access state.
-  if (isLoading || isRefreshingUser) {
+  // Wait until core auth AND the fresh /me call are both done
+  if (isLoading || !hasSynced) {
     return null;
   }
 

@@ -310,7 +310,7 @@ Route::middleware(['auth:sanctum', \App\Domains\Auth\Http\Middleware\EnsureTeach
     Route::get('/videos/{video}', [\App\Domains\Application\Http\Controllers\Student\VideoController::class, 'show']);
     Route::post('/videos/{video}/playback-token', [\App\Domains\Application\Http\Controllers\Student\VideoController::class, 'issuePlaybackToken'])
         ->middleware('throttle:video-playback');
-    Route::get('/videos/{video}/stream', [\App\Domains\Application\Http\Controllers\Student\VideoController::class, 'stream'])
+    Route::get('/videos/{video}/stream-url', [\App\Domains\Application\Http\Controllers\Student\VideoController::class, 'streamUrl'])
         ->middleware('throttle:video-playback');
     Route::get('/videos/{video}/thumbnail', [\App\Domains\Application\Http\Controllers\Student\VideoController::class, 'thumbnail']);
     Route::get('/videos/{video}/attachments/{attachmentId}', [\App\Domains\Application\Http\Controllers\Student\VideoController::class, 'downloadAttachment']);
@@ -320,6 +320,11 @@ Route::middleware(['auth:sanctum', \App\Domains\Auth\Http\Middleware\EnsureTeach
     Route::post('/videos/{video}/comments', [\App\Domains\Application\Http\Controllers\Student\VideoController::class, 'storeComment']);
     Route::delete('/videos/{video}/comments/{commentId}', [\App\Domains\Application\Http\Controllers\Student\VideoController::class, 'deleteOwnComment']);
 });
+
+// Video stream — authenticated by playback token only (no session cookie needed)
+// so the browser's <video> element can load it cross-origin without credentials.
+Route::get('/student/videos/{video}/stream', [\App\Domains\Application\Http\Controllers\Student\VideoController::class, 'stream'])
+    ->middleware('throttle:video-playback');
 
 // ============================================
 // Guardian (Parent) Authentication Routes

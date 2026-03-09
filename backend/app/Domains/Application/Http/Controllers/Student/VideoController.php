@@ -110,17 +110,13 @@ class VideoController extends Controller
 
     public function stream(Request $request, Video $video): RedirectResponse|StreamedResponse
     {
-        /** @var Student $student */
-        $student = $request->user();
-
-        // Accept token from Authorization header (preferred) or query string (legacy fallback with warning)
+        // Accept token from Authorization header (preferred) or query string
         $token = '';
         $authHeader = (string) $request->header('Authorization', '');
         if (str_starts_with($authHeader, 'Bearer ')) {
             $token = substr($authHeader, 7);
         }
 
-        // Legacy query-string fallback — still functional but deprecated
         if ($token === '') {
             $token = (string) $request->query('token', '');
         }
@@ -129,8 +125,26 @@ class VideoController extends Controller
             throw new AuthorizationException('رمز التشغيل مطلوب. أرسله عبر Authorization: Bearer header.');
         }
 
+        // Resolve student from the playback token (no session cookie required)
+        $tokenHash = hash('sha256', $token);
+        $playbackToken = \App\Domains\Videos\Models\VideoPlaybackToken::query()
+            ->where('token_hash', $tokenHash)
+            ->where('video_id', $video->id)
+            ->whereNull('revoked_at')
+            ->where('expires_at', '>', now())
+            ->first();
+
+        if (! $playbackToken) {
+            throw new AuthorizationException('رمز التشغيل غير صالح أو منتهي الصلاحية.');
+        }
+
+        /** @var \App\Domains\Auth\Models\Student $student */
+        $student = \App\Domains\Auth\Models\Student::findOrFail($playbackToken->student_id);
+
         $this->authorization->assertStudentCanView($video, $student);
-        $this->playback->validatePlaybackToken($video, $student, $token, $request);
+
+        // Update last_used_at and log access
+        $playbackToken->update(['last_used_at' => now()]);
 
         if (! $video->processed_path || ! $this->storage->exists($video->processed_path)) {
             abort(404, 'Video file not found');
@@ -139,7 +153,7 @@ class VideoController extends Controller
         try {
             $signedUrl = $this->storage->temporaryUrl(
                 $video->processed_path,
-                now()->addSeconds(45),
+                \Illuminate\Support\Carbon::now()->addSeconds(45),
                 [
                     'ResponseContentType' => 'video/mp4',
                     'ResponseContentDisposition' => 'inline',
@@ -153,6 +167,58 @@ class VideoController extends Controller
         } catch (\Throwable) {
             return $this->streamPrivateFile($video->processed_path, 'video/mp4', false);
         }
+    }
+
+    /**
+     * Return the R2 signed URL as JSON (for the <video> element src).
+     * The playback token must be passed as ?token= query parameter.
+     * (The Authorization header carries the Sanctum session token, NOT the playback token.)
+     */
+    public function streamUrl(Request $request, Video $video): JsonResponse
+    {
+        // Read playback token ONLY from the query string.
+        // The Authorization header is already used by Sanctum for session auth and must NOT
+        // be treated as a playback token.
+        $token = (string) $request->query('token', '');
+
+        if ($token === '') {
+            throw new AuthorizationException('رمز التشغيل مطلوب.');
+        }
+
+        $tokenHash = hash('sha256', $token);
+        $playbackToken = \App\Domains\Videos\Models\VideoPlaybackToken::query()
+            ->where('token_hash', $tokenHash)
+            ->where('video_id', $video->id)
+            ->whereNull('revoked_at')
+            ->where('expires_at', '>', now())
+            ->first();
+
+        if (! $playbackToken) {
+            throw new AuthorizationException('رمز التشغيل غير صالح أو منتهي الصلاحية.');
+        }
+
+        /** @var \App\Domains\Auth\Models\Student $student */
+        $student = \App\Domains\Auth\Models\Student::findOrFail($playbackToken->student_id);
+
+        $this->authorization->assertStudentCanView($video, $student);
+
+        $playbackToken->update(['last_used_at' => now()]);
+
+        if (! $video->processed_path || ! $this->storage->exists($video->processed_path)) {
+            abort(404, 'Video file not found');
+        }
+
+        // Generate a signed URL valid for 1 hour (enough for a full playback session)
+        $signedUrl = $this->storage->temporaryUrl(
+            $video->processed_path,
+            \Illuminate\Support\Carbon::now()->addHour(),
+            [
+                'ResponseContentType' => 'video/mp4',
+                'ResponseContentDisposition' => 'inline',
+            ]
+        );
+
+        return $this->successResponse(['url' => $signedUrl]);
     }
 
     public function thumbnail(Request $request, Video $video): RedirectResponse|StreamedResponse
@@ -169,7 +235,7 @@ class VideoController extends Controller
         try {
             $signedUrl = $this->storage->temporaryUrl(
                 $video->thumbnail_path,
-                now()->addSeconds(45),
+                \Illuminate\Support\Carbon::now()->addSeconds(45),
                 ['ResponseContentType' => 'image/jpeg']
             );
 
@@ -197,7 +263,7 @@ class VideoController extends Controller
         try {
             $signedUrl = $this->storage->temporaryUrl(
                 $attachment->file_path,
-                now()->addSeconds(90),
+                \Illuminate\Support\Carbon::now()->addSeconds(90),
                 [
                     'ResponseContentType' => $attachment->mime_type,
                     'ResponseContentDisposition' => 'attachment; filename="' . addslashes($attachment->file_name) . '"',

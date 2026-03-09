@@ -82,7 +82,7 @@ class VideoAuthorizationService
             ];
         }
 
-        if ($enrollment->teacher && (string) $enrollment->teacher->status !== 'active') {
+        if ($enrollment->teacher && $enrollment->teacher->getRawOriginal('status') !== 'active') {
             return [
                 'allowed' => false,
                 'reason' => 'teacher_inactive',
