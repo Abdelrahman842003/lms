@@ -21,7 +21,7 @@ import { VideoCard, VideoCardSkeleton } from '@/components/video/VideoCard';
 export default function TeacherVideosPage() {
   const { user, selectedAcademy, isLoading: authLoading } = useAuth();
   const router = useRouter();
-  const isIndependentSelected = selectedAcademy?.id === 'independent';
+  const isIndependentSelected = !selectedAcademy || selectedAcademy?.id === 'independent';
 
   const [videos, setVideos] = useState<VideoItem[]>([]);
   const [loading, setLoading] = useState(true);

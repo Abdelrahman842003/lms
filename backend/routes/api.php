@@ -126,6 +126,8 @@ Route::middleware('auth:sanctum')->prefix('academy')->name('academy.')->group(fu
     Route::get('videos/{video}', [\App\Domains\Application\Http\Controllers\Academy\VideoController::class, 'show']);
     Route::put('videos/{video}', [\App\Domains\Application\Http\Controllers\Academy\VideoController::class, 'update']);
     Route::delete('videos/{video}', [\App\Domains\Application\Http\Controllers\Academy\VideoController::class, 'destroy']);
+    Route::post('videos/{video}/attachments', [\App\Domains\Application\Http\Controllers\Academy\VideoController::class, 'uploadAttachments']);
+    Route::delete('videos/{video}/attachments/{attachment}', [\App\Domains\Application\Http\Controllers\Academy\VideoController::class, 'deleteAttachment']);
     Route::post('videos/{video}/retry-processing', [\App\Domains\Application\Http\Controllers\Academy\VideoController::class, 'retryProcessing']);
     Route::post('videos/{video}/publish', [\App\Domains\Application\Http\Controllers\Academy\VideoController::class, 'publish']);
     Route::get('videos/{video}/comments', [\App\Domains\Application\Http\Controllers\Academy\VideoController::class, 'comments']);
@@ -253,6 +255,8 @@ Route::middleware(['auth:sanctum', \App\Domains\Auth\Http\Middleware\EnsureTeach
     Route::get('videos/{video}', [\App\Domains\Application\Http\Controllers\Teacher\VideoController::class, 'show']);
     Route::put('videos/{video}', [\App\Domains\Application\Http\Controllers\Teacher\VideoController::class, 'update']);
     Route::delete('videos/{video}', [\App\Domains\Application\Http\Controllers\Teacher\VideoController::class, 'destroy']);
+    Route::post('videos/{video}/attachments', [\App\Domains\Application\Http\Controllers\Teacher\VideoController::class, 'uploadAttachments']);
+    Route::delete('videos/{video}/attachments/{attachment}', [\App\Domains\Application\Http\Controllers\Teacher\VideoController::class, 'deleteAttachment']);
     Route::post('videos/{video}/retry-processing', [\App\Domains\Application\Http\Controllers\Teacher\VideoController::class, 'retryProcessing']);
     Route::post('videos/{video}/publish', [\App\Domains\Application\Http\Controllers\Teacher\VideoController::class, 'publish']);
     Route::get('videos/{video}/thumbnail', [\App\Domains\Application\Http\Controllers\Teacher\VideoController::class, 'thumbnail']);
@@ -328,6 +332,7 @@ Route::middleware(['auth:sanctum', \App\Domains\Auth\Http\Middleware\EnsureTeach
         ->middleware('throttle:video-playback');
     Route::get('/videos/{video}/thumbnail', [\App\Domains\Application\Http\Controllers\Student\VideoController::class, 'thumbnail']);
     Route::get('/videos/{video}/attachments/{attachmentId}', [\App\Domains\Application\Http\Controllers\Student\VideoController::class, 'downloadAttachment']);
+    Route::get('/videos/{video}/attachments/{attachmentId}/view-url', [\App\Domains\Application\Http\Controllers\Student\VideoController::class, 'attachmentViewUrl']);
     Route::post('/videos/{video}/progress', [\App\Domains\Application\Http\Controllers\Student\VideoController::class, 'updateProgress']);
     Route::post('/videos/{video}/like', [\App\Domains\Application\Http\Controllers\Student\VideoController::class, 'toggleLike']);
     Route::get('/videos/{video}/comments', [\App\Domains\Application\Http\Controllers\Student\VideoController::class, 'comments']);

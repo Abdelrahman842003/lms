@@ -45,7 +45,7 @@ export default function TeacherCreateVideoPage() {
   const router = useRouter();
   const [grades, setGrades] = useState<OptionItem[]>([]);
   const [groups, setGroups] = useState<OptionItem[]>([]);
-  const isIndependentSelected = selectedAcademy?.id === 'independent';
+  const isIndependentSelected = !selectedAcademy || selectedAcademy?.id === 'independent';
 
   useEffect(() => {
     if (isLoading || user?.userType !== 'teacher') return;

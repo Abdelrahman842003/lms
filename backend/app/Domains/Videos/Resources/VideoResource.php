@@ -68,6 +68,7 @@ class VideoResource extends JsonResource
             'liked_by_me' => $this->relationLoaded('likes') ? $this->likes->isNotEmpty() : null,
             'comments_count' => $this->whenCounted('comments', (int) $this->comments_count),
             'attachments_count' => $this->whenCounted('attachments', (int) $this->attachments_count),
+            'quiz_count' => $this->whenCounted('quiz', (int) $this->quiz_count),
             'watch_progresses_count' => $this->whenCounted('watchProgresses', (int) $this->watch_progresses_count),
             'attachments' => VideoAttachmentResource::collection($this->whenLoaded('attachments')),
             // ─── التدريب ──────────────────────────────────────────────────

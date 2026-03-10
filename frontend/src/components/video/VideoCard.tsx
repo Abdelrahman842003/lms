@@ -343,6 +343,12 @@ export const VideoCard: React.FC<VideoCardBaseProps> = ({
                 {video.attachments_count ?? 0}
               </span>
             )}
+            {isTeacher && (
+              <span className="flex items-center gap-1.5">
+                <Icon name="book-open" size="sm" className="text-primary" />
+                {video.quiz_count ?? (video.quiz ? 1 : 0)}
+              </span>
+            )}
           </div>
         </div>
 

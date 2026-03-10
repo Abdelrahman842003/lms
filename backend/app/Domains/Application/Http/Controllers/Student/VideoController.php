@@ -260,6 +260,42 @@ class VideoController extends Controller
         }
     }
 
+    public function attachmentViewUrl(Request $request, Video $video, string $attachmentId): JsonResponse
+    {
+        /** @var Student $student */
+        $student = $request->user();
+
+        $this->authorization->assertStudentCanView($video, $student);
+
+        $attachment = VideoAttachment::query()
+            ->where('video_id', $video->id)
+            ->findOrFail($attachmentId);
+
+        if (! $this->storage->exists($attachment->file_path)) {
+            abort(404, 'Attachment not found');
+        }
+
+        try {
+            $signedUrl = $this->storage->temporaryUrl(
+                $attachment->file_path,
+                \Illuminate\Support\Carbon::now()->addMinutes(30),
+                [
+                    'ResponseContentType'        => $attachment->mime_type,
+                    'ResponseContentDisposition' => 'inline; filename="' . addslashes($attachment->file_name) . '"',
+                ]
+            );
+        } catch (\Throwable) {
+            abort(500, 'Could not generate view URL');
+        }
+
+        return $this->successResponse([
+            'url'       => $signedUrl,
+            'mime_type' => $attachment->mime_type,
+            'file_name' => $attachment->file_name,
+            'expires_in' => 1800,
+        ]);
+    }
+
     public function downloadAttachment(Request $request, Video $video, string $attachmentId): RedirectResponse|StreamedResponse
     {
         /** @var Student $student */

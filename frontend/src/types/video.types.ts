@@ -144,6 +144,7 @@ export interface VideoItem {
   liked_by_me?: boolean | null;
   comments_count?: number;
   attachments_count?: number;
+  quiz_count?: number;
   attachments?: VideoAttachment[];
   quiz?: VideoQuiz | null;
   created_at?: string;
@@ -180,7 +181,7 @@ export interface CreateVideoPayload {
 
 // ─── Direct-to-R2 multipart upload types ────────────────────────────────────
 
-/** Metadata sent to /initiate-upload — no video bytes. */
+/** Metadata sent to /initiate-upload — no video bytes, no attachments. */
 export interface InitiateUploadPayload {
   title: string;
   description?: string;
@@ -201,7 +202,6 @@ export interface InitiateUploadPayload {
   file_mime: string;
   /** How many parts the client intends to upload */
   total_parts: number;
-  attachments?: File[];
 }
 
 /** Presigned URL for a single part */

@@ -8,6 +8,7 @@ import {
   completeTeacherUpload,
   initiateAcademyUpload,
   initiateTeacherUpload,
+  uploadAttachments,
 } from '@/services/videoService';
 import type {
   InitiateUploadPayload,
@@ -200,7 +201,11 @@ export function useVideoUpload({
   // ── Main upload function ───────────────────────────────────────────────────
 
   const startUpload = useCallback(
-    async (file: File, metadata: Omit<InitiateUploadPayload, 'file_name' | 'file_size' | 'file_mime' | 'total_parts'>): Promise<void> => {
+    async (
+      file: File,
+      metadata: Omit<InitiateUploadPayload, 'file_name' | 'file_size' | 'file_mime' | 'total_parts'>,
+      attachments?: File[],
+    ): Promise<void> => {
       abortedRef.current = false;
       completedBytesRef.current = 0;
       totalBytesRef.current = file.size;
@@ -288,6 +293,23 @@ export function useVideoUpload({
         const message = err instanceof Error ? err.message : 'فشل إكمال الرفع.';
         patch({ phase: 'failed', error: message });
         return;
+      }
+
+      // ── 4. Upload attachments (if any) ────────────────────────────────────
+      if (attachments && attachments.length > 0) {
+        const attachEndpoint =
+          mode === 'teacher'
+            ? `/teacher/videos/${videoId}/attachments`
+            : `/academy/videos/${videoId}/attachments`;
+
+        try {
+          const { promise } = uploadAttachments(attachEndpoint, attachments, videoId);
+          await promise;
+        } catch (err: unknown) {
+          // Attachments failure is non-fatal: video was already saved.
+          // Log for debugging but don't block the completion.
+          console.error('فشل رفع المرفقات:', err);
+        }
       }
 
       patch({ phase: 'completed' });

@@ -1,4 +1,5 @@
-import { API_BASE_URL, fetchApi, getAuthHeaders } from '@/services/api/baseApi';
+import { fetchApi, getAuthHeaders } from '@/services/api/baseApi';
+import { getApiBaseUrl } from '@/config/api-config';
 import type {
   CompleteUploadResponse,
   InitiateUploadPayload,
@@ -112,7 +113,9 @@ export function uploadAttachments(
   videoId: string
 ): { promise: Promise<void>; cancel: () => void } {
   const formData = buildAttachmentsFormData(attachments, videoId);
-  const url = `${API_BASE_URL}/api/v1${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  const apiPath = `/api/v1${cleanEndpoint}`;
+  const url = `${getApiBaseUrl()}${apiPath}`;
   const xhr = new XMLHttpRequest();
 
   const promise = new Promise<void>((resolve, reject) => {
@@ -190,6 +193,23 @@ export async function deleteTeacherVideo(videoId: string): Promise<void> {
 
 export async function deleteAcademyVideo(videoId: string): Promise<void> {
   await fetchApi(`/academy/videos/${videoId}`, { method: 'DELETE' });
+}
+
+export async function deleteTeacherAttachment(videoId: string, attachmentId: string): Promise<void> {
+  await fetchApi(`/teacher/videos/${videoId}/attachments/${attachmentId}`, { method: 'DELETE' });
+}
+
+export async function deleteAcademyAttachment(videoId: string, attachmentId: string): Promise<void> {
+  await fetchApi(`/academy/videos/${videoId}/attachments/${attachmentId}`, { method: 'DELETE' });
+}
+
+export async function getAttachmentViewUrl(
+  videoId: string,
+  attachmentId: string
+): Promise<{ url: string; mime_type: string; file_name: string }> {
+  return fetchApi<{ url: string; mime_type: string; file_name: string }>(
+    `/student/videos/${videoId}/attachments/${attachmentId}/view-url`
+  );
 }
 
 export async function getStudentVideos(): Promise<VideoItem[]> {

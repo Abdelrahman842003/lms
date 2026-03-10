@@ -11,11 +11,13 @@ import {
   getStudentVideo,
   getVideoComments,
   toggleVideoLike,
+  getAttachmentViewUrl,
 } from '@/services/videoService';
-import type { VideoComment, VideoItem, VideoWatchProgress } from '@/types/video.types';
+import type { VideoAttachment, VideoComment, VideoItem, VideoWatchProgress } from '@/types/video.types';
 import { SecureVideoPlayer } from '@/components/video/SecureVideoPlayer';
 import { VideoCommentsSection } from '@/components/video/VideoCommentsSection';
 import { VideoQuizStudent } from '@/components/video/VideoQuizStudent';
+import { PdfViewerModal } from '@/components/shared/PdfViewerModal';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -70,6 +72,25 @@ export default function StudentVideoDetailsPage() {
   const [liked, setLiked]           = useState(false);
   const [likesCount, setLikesCount] = useState(0);
   const [liking, setLiking]         = useState(false);
+
+  // ── PDF viewer state ──────────────────────────────────────────────────────
+  const [pdfModal, setPdfModal] = useState<{ open: boolean; url: string; fileName: string }>({
+    open: false, url: '', fileName: '',
+  });
+  const [loadingAttachmentId, setLoadingAttachmentId] = useState<string | null>(null);
+
+  const openPdf = useCallback(async (att: VideoAttachment, videoId: string) => {
+    setLoadingAttachmentId(att.id);
+    try {
+      const { url, file_name } = await getAttachmentViewUrl(videoId, att.id);
+      setPdfModal({ open: true, url, fileName: file_name });
+    } catch (err) {
+      // fetchApi already shows a toast — only log for debugging
+      console.error('[openPdf]', err);
+    } finally {
+      setLoadingAttachmentId(null);
+    }
+  }, []);
 
   const loadVideo = useCallback(async () => {
     if (!params.id) return;
@@ -159,8 +180,8 @@ export default function StudentVideoDetailsPage() {
   const attachments         = video.attachments ?? [];
   const groups              = video.groups ?? [];
   const hasFiles            = attachments.length > 0;
-  const isPendingQuiz       = progress?.status === 'watched_pending_quiz';
-  const isCompleted         = progress?.status === 'completed';
+  const isPendingQuiz       = progress?.status === 'watched_pending_quiz' && !progress?.quiz_passed_at;
+  const isCompleted         = progress?.status === 'completed' || !!progress?.quiz_passed_at;
   const hasQuiz             = !!video.quiz;
   const quizAlreadyPassed   = !!progress?.quiz_passed_at;
 
@@ -263,29 +284,32 @@ export default function StudentVideoDetailsPage() {
           </div>
 
           {/* ── Tabs ── */}
-          <div className="flex gap-0.5 p-1 rounded-2xl bg-white/5 border border-white/10 w-fit">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-                  activeTab === tab.id
-                    ? 'bg-primary text-white shadow-[0_0_20px_rgba(66,99,235,0.4)]'
-                    : 'highlight' in tab && tab.highlight
-                    ? 'text-amber-400 hover:text-white bg-amber-400/10 hover:bg-primary/20 border border-amber-400/30 animate-pulse'
-                    : 'text-gray-400 hover:text-white hover:bg-white/5'
-                }`}
-              >
-                <Icon name={tab.icon} size="sm" />
-                {tab.label}
-                {'badge' in tab && tab.badge != null && tab.badge > 0 && (
-                  <span className={`text-xs rounded-full px-1.5 ${activeTab === tab.id ? 'bg-white/20 text-white' : 'bg-primary/20 text-primary'}`}>
-                    {tab.badge}
-                  </span>
-                )}
-              </button>
-            ))}
+          <div className="w-full overflow-x-auto scrollbar-none -mx-1 px-1">
+            <div className="flex gap-0.5 p-1 rounded-2xl bg-white/5 border border-white/10 w-full">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  title={tab.label}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center justify-center gap-1 px-3 sm:px-4 py-2 rounded-xl transition-all flex-1 ${
+                    activeTab === tab.id
+                      ? 'bg-primary text-white shadow-[0_0_20px_rgba(66,99,235,0.4)]'
+                      : 'highlight' in tab && tab.highlight
+                      ? 'text-amber-400 hover:text-white bg-amber-400/10 hover:bg-primary/20 border border-amber-400/30 animate-pulse'
+                      : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  <Icon name={tab.icon} size="sm" />
+                  <span className="hidden sm:inline text-sm font-medium">{tab.label}</span>
+                  {'badge' in tab && tab.badge != null && tab.badge > 0 && (
+                    <span className={`text-xs rounded-full px-1 sm:px-1.5 ${activeTab === tab.id ? 'bg-white/20 text-white' : 'bg-primary/20 text-primary'}`}>
+                      {tab.badge}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* ── Tab: Details ── */}
@@ -372,26 +396,62 @@ export default function StudentVideoDetailsPage() {
                 المرفقات ({attachments.length})
               </h2>
               <div className="space-y-2">
-                {attachments.map((att) => (
-                  <a
-                    key={att.id}
-                    href={`/api/v1/student/videos/${video.id}/attachments/${att.id}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="group flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 hover:bg-primary/10 hover:border-primary/30 p-3 transition-all"
-                  >
-                    <div className="w-9 h-9 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
-                      <Icon name={fileIcon(att.mime_type)} className="text-primary" size="sm" />
+                {attachments.map((att) => {
+                  const isPdf = att.mime_type === 'application/pdf';
+                  const isImage = att.mime_type.startsWith('image/');
+                  const isLoading = loadingAttachmentId === att.id;
+
+                  return (
+                    <div
+                      key={att.id}
+                      className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 hover:bg-primary/10 hover:border-primary/30 p-3 transition-all"
+                    >
+                      {/* Icon */}
+                      <div className="w-9 h-9 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
+                        <Icon name={fileIcon(att.mime_type)} className="text-primary" size="sm" />
+                      </div>
+
+                      {/* Name + size */}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white text-sm font-medium truncate">{att.file_name}</p>
+                        <p className="text-gray-500 text-xs mt-0.5">{formatBytes(att.file_size)}</p>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex items-center gap-2 shrink-0">
+                        {/* Open in viewer (PDF & images) */}
+                        {(isPdf || isImage) && (
+                          <button
+                            type="button"
+                            disabled={isLoading}
+                            onClick={() => void openPdf(att, video.id)}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/20 hover:bg-primary/30 border border-primary/30 text-primary text-xs font-medium transition-all disabled:opacity-50"
+                            title={isPdf ? 'فتح وقراءة' : 'عرض الصورة'}
+                          >
+                            {isLoading ? (
+                              <Icon name="sync" className="animate-spin" size="sm" />
+                            ) : (
+                              <Icon name={isPdf ? 'book-open' : 'image'} size="sm" />
+                            )}
+                            {isPdf ? 'قراءة' : 'عرض'}
+                          </button>
+                        )}
+
+                        {/* Download */}
+                        <a
+                          href={`/api/v1/student/videos/${video.id}/attachments/${att.id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-gray-400 hover:text-white text-xs transition-all"
+                          title="تنزيل"
+                        >
+                          <Icon name="download" size="sm" />
+                          تنزيل
+                        </a>
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-white text-sm font-medium truncate group-hover:text-primary transition-colors">
-                        {att.file_name}
-                      </p>
-                      <p className="text-gray-500 text-xs mt-0.5">{formatBytes(att.file_size)}</p>
-                    </div>
-                    <Icon name="download" className="text-gray-600 group-hover:text-primary transition-colors flex-shrink-0" size="sm" />
-                  </a>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -467,28 +527,36 @@ export default function StudentVideoDetailsPage() {
                 </div>
               </div>
               {/* Status badge */}
-              <div className={`text-xs rounded-xl px-3 py-2 border flex items-center gap-2
-                ${progress?.status === 'completed'
-                  ? 'bg-emerald-400/10 border-emerald-400/20 text-emerald-400'
-                  : progress?.status === 'watched_pending_quiz'
-                  ? 'bg-amber-400/10 border-amber-400/20 text-amber-400'
-                  : progress?.status === 'in_progress' || progress?.status === 'started'
-                  ? 'bg-primary/10 border-primary/20 text-primary'
-                  : 'bg-white/5 border-white/10 text-gray-500'}`}>
-                <Icon
-                  name={
-                    progress?.status === 'completed' ? 'check-circle'
-                    : progress?.status === 'watched_pending_quiz' ? 'graduation-cap'
-                    : 'play-circle'
-                  }
-                  size="sm"
-                />
-                {progress?.status === 'completed' ? 'اكتملت المشاهدة'
-                  : progress?.status === 'watched_pending_quiz' ? 'في انتظار اجتياز التدريب'
-                  : progress?.status === 'in_progress' ? 'جاري المشاهدة'
-                  : progress?.status === 'started' ? 'بدأت المشاهدة'
-                  : 'لم تبدأ بعد'}
-              </div>
+              {(() => {
+                // quiz_passed_at يعني مكتمل بغض النظر عن قيمة status
+                const effectiveStatus = progress?.quiz_passed_at
+                  ? 'completed'
+                  : progress?.status;
+                return (
+                  <div className={`text-xs rounded-xl px-3 py-2 border flex items-center gap-2
+                    ${effectiveStatus === 'completed'
+                      ? 'bg-emerald-400/10 border-emerald-400/20 text-emerald-400'
+                      : effectiveStatus === 'watched_pending_quiz'
+                      ? 'bg-amber-400/10 border-amber-400/20 text-amber-400'
+                      : effectiveStatus === 'in_progress' || effectiveStatus === 'started'
+                      ? 'bg-primary/10 border-primary/20 text-primary'
+                      : 'bg-white/5 border-white/10 text-gray-500'}`}>
+                    <Icon
+                      name={
+                        effectiveStatus === 'completed' ? 'check-circle'
+                        : effectiveStatus === 'watched_pending_quiz' ? 'graduation-cap'
+                        : 'play-circle'
+                      }
+                      size="sm"
+                    />
+                    {effectiveStatus === 'completed' ? 'اكتملت المشاهدة'
+                      : effectiveStatus === 'watched_pending_quiz' ? 'في انتظار اجتياز التدريب'
+                      : effectiveStatus === 'in_progress' ? 'جاري المشاهدة'
+                      : effectiveStatus === 'started' ? 'بدأت المشاهدة'
+                      : 'لم تبدأ بعد'}
+                  </div>
+                );
+              })()}
             </div>
           </div>
 
@@ -544,6 +612,14 @@ export default function StudentVideoDetailsPage() {
 
         </aside>
       </div>
+
+      {/* ── PDF Viewer Modal ── */}
+      <PdfViewerModal
+        open={pdfModal.open}
+        url={pdfModal.url}
+        fileName={pdfModal.fileName}
+        onClose={() => setPdfModal({ open: false, url: '', fileName: '' })}
+      />
     </DashboardLayout>
   );
 }

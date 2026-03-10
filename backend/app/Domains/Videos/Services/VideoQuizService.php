@@ -162,6 +162,8 @@ class VideoQuizService
             ]);
 
             $pointsEarned = 0;
+            // Refresh from DB to avoid stale Octane-cached values
+            $progress->refresh();
             $shouldAwardPoints = $passed && $progress->quiz_passed_at === null;
 
             // منح النقاط فقط في أول مرة ينجح فيها

@@ -7,11 +7,13 @@ namespace App\Domains\Application\Http\Controllers\Teacher;
 use App\Domains\Application\Http\Controllers\Controller;
 use App\Domains\Application\Http\Requests\Teacher\Video\StoreVideoRequest;
 use App\Domains\Application\Http\Requests\Teacher\Video\UpdateVideoRequest;
+use App\Domains\Application\Http\Requests\Teacher\Video\UploadAttachmentsRequest;
 use App\Domains\Auth\Models\Teacher;
 use App\Domains\Support\Traits\ResolvesTeacher;
 use App\Domains\Videos\DTOs\CreateVideoData;
 use App\Domains\Videos\DTOs\UpdateVideoData;
 use App\Domains\Videos\Models\Video;
+use App\Domains\Videos\Models\VideoAttachment;
 use App\Domains\Videos\Models\VideoComment;
 use App\Domains\Videos\Resources\VideoCommentResource;
 use App\Domains\Videos\Resources\VideoResource;
@@ -116,6 +118,36 @@ class VideoController extends Controller
         return $this->successResponse([
             'video' => new VideoResource($updated),
         ], 'تم تحديث الفيديو بنجاح.');
+    }
+
+    public function uploadAttachments(UploadAttachmentsRequest $request, Video $video): JsonResponse
+    {
+        $teacher = $this->getTeacherFromRequest($request);
+        Gate::authorize('update', $video);
+
+        $updated = $this->lifecycle->addAttachments(
+            $video,
+            $request->file('attachments') ?? [],
+            $teacher,
+        );
+
+        return $this->successResponse([
+            'video' => new VideoResource($updated),
+        ], 'تم رفع المرفقات بنجاح.');
+    }
+
+    public function deleteAttachment(Request $request, Video $video, VideoAttachment $attachment): JsonResponse
+    {
+        $teacher = $this->getTeacherFromRequest($request);
+        Gate::authorize('update', $video);
+
+        if ((string) $attachment->video_id !== (string) $video->id) {
+            abort(404);
+        }
+
+        $this->lifecycle->removeAttachment($video, $attachment, $teacher);
+
+        return $this->successResponse([], 'تم حذف المرفق بنجاح.');
     }
 
     public function destroy(Request $request, Video $video): JsonResponse

@@ -7,12 +7,14 @@ namespace App\Domains\Application\Http\Controllers\Academy;
 use App\Domains\Application\Http\Controllers\Controller;
 use App\Domains\Application\Http\Requests\Academy\Video\StoreVideoRequest;
 use App\Domains\Application\Http\Requests\Academy\Video\UpdateVideoRequest;
+use App\Domains\Application\Http\Requests\Academy\Video\UploadAttachmentsRequest;
 use App\Domains\Auth\Models\Academy;
 use App\Domains\Auth\Models\Secretary;
 use App\Domains\Videos\DTOs\CreateVideoData;
 use App\Domains\Videos\DTOs\UpdateVideoData;
 use App\Domains\Videos\Models\VideoComment;
 use App\Domains\Videos\Models\Video;
+use App\Domains\Videos\Models\VideoAttachment;
 use App\Domains\Videos\Policies\VideoPolicy;
 use App\Domains\Videos\Resources\VideoCommentResource;
 use App\Domains\Videos\Resources\VideoResource;
@@ -122,6 +124,42 @@ class VideoController extends Controller
         return $this->successResponse([
             'video' => new VideoResource($updated),
         ], 'تم تحديث الفيديو بنجاح.');
+    }
+
+    public function uploadAttachments(UploadAttachmentsRequest $request, Video $video): JsonResponse
+    {
+        $actor = $this->resolveActor($request);
+
+        if (! $this->policy->update($actor, $video)) {
+            throw new AuthorizationException('غير مصرح برفع مرفقات لهذا الفيديو.');
+        }
+
+        $updated = $this->lifecycle->addAttachments(
+            $video,
+            $request->file('attachments') ?? [],
+            $actor,
+        );
+
+        return $this->successResponse([
+            'video' => new VideoResource($updated),
+        ], 'تم رفع المرفقات بنجاح.');
+    }
+
+    public function deleteAttachment(Request $request, Video $video, VideoAttachment $attachment): JsonResponse
+    {
+        $actor = $this->resolveActor($request);
+
+        if (! $this->policy->update($actor, $video)) {
+            throw new AuthorizationException('غير مصرح بحذف مرفقات هذا الفيديو.');
+        }
+
+        if ((string) $attachment->video_id !== (string) $video->id) {
+            abort(404);
+        }
+
+        $this->lifecycle->removeAttachment($video, $attachment, $actor);
+
+        return $this->successResponse([], 'تم حذف المرفق بنجاح.');
     }
 
     public function destroy(Request $request, Video $video): JsonResponse

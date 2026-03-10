@@ -36,6 +36,14 @@ const nextConfig = {
     // Turbo pack for faster builds (when stable)
     // turbo: true,
   },
+  // Exclude pdfjs & react-pdf-viewer from SSR bundling (browser-only)
+  serverExternalPackages: [
+    'pdfjs-dist',
+    '@react-pdf-viewer/core',
+    '@react-pdf-viewer/default-layout',
+    '@react-pdf-viewer/highlight',
+    '@react-pdf-viewer/search',
+  ],
   // Webpack configuration for optimization
   webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
     // Bundle analyzer in development

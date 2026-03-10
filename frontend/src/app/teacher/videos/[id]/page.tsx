@@ -16,8 +16,10 @@ import {
   publishTeacherVideo,
   retryTeacherVideoProcessing,
   deleteTeacherVideo,
+  deleteTeacherAttachment,
+  uploadAttachments,
 } from '@/services/videoService';
-import type { VideoComment, VideoItem, VideoQuiz } from '@/types/video.types';
+import type { VideoAttachment, VideoComment, VideoItem, VideoQuiz } from '@/types/video.types';
 import { API_BASE_URL } from '@/services/api/baseApi';
 import { VideoQuizManager } from '@/components/video/VideoQuizManager';
 
@@ -213,7 +215,13 @@ export default function TeacherVideoDetailPage() {
   const [loading, setLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'details' | 'comments' | 'quiz'>('details');
+  const [activeTab, setActiveTab] = useState<'details' | 'comments' | 'quiz' | 'attachments'>('details');
+
+  // ── Attachments state ────────────────────────────────────────────────────
+  const [attachmentFiles, setAttachmentFiles] = useState<File[]>([]);
+  const [isUploadingAttachments, setIsUploadingAttachments] = useState(false);
+  const [deletingAttachmentId, setDeletingAttachmentId] = useState<string | null>(null);
+  const attachmentInputRef = useRef<HTMLInputElement>(null);
 
   const loadVideo = useCallback(async () => {
     if (!params.id) return;
@@ -284,6 +292,42 @@ export default function TeacherVideoDetailPage() {
   const canRetry = video?.status === 'failed';
   const isPublished = video?.status === 'published';
   const isReady = video?.status === 'ready' || isPublished;
+
+  // ── Attachment handlers ──────────────────────────────────────────────────
+  const handleUploadAttachments = async () => {
+    if (!video || attachmentFiles.length === 0) return;
+    setIsUploadingAttachments(true);
+    try {
+      const { promise } = uploadAttachments(`/teacher/videos/${video.id}/attachments`, attachmentFiles, video.id);
+      await promise;
+      setAttachmentFiles([]);
+      if (attachmentInputRef.current) attachmentInputRef.current.value = '';
+      toast.success('تم رفع المرفقات بنجاح');
+      await loadVideo();
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'فشل رفع المرفقات');
+    } finally {
+      setIsUploadingAttachments(false);
+    }
+  };
+
+  const handleDeleteAttachment = async (attachment: VideoAttachment) => {
+    if (!video) return;
+    setDeletingAttachmentId(attachment.id);
+    try {
+      await deleteTeacherAttachment(video.id, attachment.id);
+      toast.success('تم حذف المرفق');
+      setVideo((prev) =>
+        prev
+          ? { ...prev, attachments: prev.attachments?.filter((a) => a.id !== attachment.id) }
+          : prev
+      );
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'فشل حذف المرفق');
+    } finally {
+      setDeletingAttachmentId(null);
+    }
+  };
 
   // ── Loading skeleton ──────────────────────────────────────────────────────
   if (loading) {
@@ -373,7 +417,7 @@ export default function TeacherVideoDetailPage() {
 
           {/* Tab navigation */}
           <div className="flex gap-1 border-b border-white/10 pb-0">
-            {(['details', 'comments', 'quiz'] as const).map((tab) => (
+            {(['details', 'attachments', 'comments', 'quiz'] as const).map((tab) => (
               <button
                 key={tab}
                 type="button"
@@ -386,6 +430,13 @@ export default function TeacherVideoDetailPage() {
               >
                 {tab === 'details' ? (
                   <span className="flex items-center gap-2"><Icon name="info-circle" size="sm" /> التفاصيل</span>
+                ) : tab === 'attachments' ? (
+                  <span className="flex items-center gap-2">
+                    <Icon name="paperclip" size="sm" /> المرفقات
+                    {(video?.attachments?.length ?? 0) > 0 && (
+                      <span className="bg-primary/20 text-primary text-xs rounded-full px-2">{video?.attachments?.length}</span>
+                    )}
+                  </span>
                 ) : tab === 'quiz' ? (
                   <span className="flex items-center gap-2">
                     <Icon name="graduation-cap" size="sm" /> التدريب
@@ -452,6 +503,124 @@ export default function TeacherVideoDetailPage() {
                   {video.processing_error}
                 </div>
               )}
+            </div>
+          )}
+
+          {activeTab === 'attachments' && (
+            <div className="space-y-5">
+              {/* Upload new attachments */}
+              <div className="rounded-2xl border border-white/10 bg-[#101426]/40 p-5 space-y-4">
+                <h3 className="text-white font-bold flex items-center gap-2">
+                  <Icon name="upload" className="text-primary" />
+                  رفع مرفقات جديدة
+                </h3>
+                <div
+                  className="border-2 border-dashed border-white/20 rounded-xl p-6 text-center cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-all"
+                  onClick={() => attachmentInputRef.current?.click()}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const files = Array.from(e.dataTransfer.files);
+                    setAttachmentFiles((prev) => [...prev, ...files].slice(0, 10));
+                  }}
+                >
+                  <Icon name="paperclip" className="text-3xl text-gray-500 mb-2" />
+                  <p className="text-gray-400 text-sm">اسحب الملفات هنا أو <span className="text-primary">اضغط للاختيار</span></p>
+                  <p className="text-gray-600 text-xs mt-1">PDF, صور (حتى 25MB لكل ملف، 10 مرفقات كحد أقصى)</p>
+                  <input
+                    ref={attachmentInputRef}
+                    type="file"
+                    multiple
+                    accept=".pdf,.jpg,.jpeg,.png,.webp"
+                    className="hidden"
+                    onChange={(e) => {
+                      const files = Array.from(e.target.files ?? []);
+                      setAttachmentFiles((prev) => [...prev, ...files].slice(0, 10));
+                    }}
+                  />
+                </div>
+
+                {attachmentFiles.length > 0 && (
+                  <div className="space-y-2">
+                    {attachmentFiles.map((file, i) => (
+                      <div key={i} className="flex items-center justify-between bg-white/5 rounded-xl px-4 py-2 text-sm">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Icon name="file" className="text-primary shrink-0" size="sm" />
+                          <span className="text-white truncate">{file.name}</span>
+                          <span className="text-gray-500 text-xs shrink-0">({(file.size / 1024).toFixed(0)} KB)</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setAttachmentFiles((prev) => prev.filter((_, idx) => idx !== i))}
+                          className="text-gray-500 hover:text-red-400 transition-colors shrink-0 mr-2"
+                        >
+                          <Icon name="times" size="sm" />
+                        </button>
+                      </div>
+                    ))}
+                    <Button
+                      variant="primary"
+                      className="w-full justify-center mt-2"
+                      onClick={handleUploadAttachments}
+                      disabled={isUploadingAttachments}
+                    >
+                      {isUploadingAttachments ? (
+                        <><Icon name="sync" className="animate-spin" size="sm" /><span>جاري الرفع...</span></>
+                      ) : (
+                        <><Icon name="upload" size="sm" /><span>رفع {attachmentFiles.length} مرفق</span></>
+                      )}
+                    </Button>
+                  </div>
+                )}
+              </div>
+
+              {/* Existing attachments */}
+              <div className="rounded-2xl border border-white/10 bg-[#101426]/40 p-5 space-y-3">
+                <h3 className="text-white font-bold flex items-center gap-2">
+                  <Icon name="paperclip" className="text-primary" />
+                  المرفقات الحالية
+                  <span className="text-gray-400 text-sm font-normal">({video.attachments?.length ?? 0})</span>
+                </h3>
+                {!video.attachments || video.attachments.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <Icon name="paperclip" className="text-3xl mb-2 opacity-40" />
+                    <p className="text-sm">لا توجد مرفقات بعد</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {video.attachments.map((att) => (
+                      <div key={att.id} className="flex items-center justify-between bg-white/5 hover:bg-white/8 rounded-xl px-4 py-3 transition-colors">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-9 h-9 rounded-lg bg-primary/15 border border-primary/20 flex items-center justify-center shrink-0">
+                            <Icon
+                              name={att.mime_type === 'application/pdf' ? 'file-pdf' : 'file-image'}
+                              className="text-primary"
+                              size="sm"
+                            />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-white text-sm font-medium truncate">{att.title || att.file_name}</p>
+                            <p className="text-gray-500 text-xs">{(att.file_size / 1024).toFixed(0)} KB &bull; {att.mime_type}</p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteAttachment(att)}
+                          disabled={deletingAttachmentId === att.id}
+                          className="shrink-0 mr-2 text-gray-500 hover:text-red-400 transition-colors disabled:opacity-50"
+                          title="حذف المرفق"
+                        >
+                          {deletingAttachmentId === att.id ? (
+                            <Icon name="sync" className="animate-spin" size="sm" />
+                          ) : (
+                            <Icon name="trash" size="sm" />
+                          )}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )}
 

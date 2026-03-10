@@ -40,7 +40,7 @@ class VideoLifecycleService
     {
         $query = Video::query()
             ->with(['grade', 'groups', 'teacherReference'])
-            ->withCount(['likes', 'comments', 'attachments', 'watchProgresses'])
+            ->withCount(['likes', 'comments', 'attachments', 'watchProgresses', 'quiz'])
             ->where('owner_type', $context->ownerType->value)
             ->where('owner_id', $context->ownerId)
             ->latest();
@@ -141,6 +141,73 @@ class VideoLifecycleService
             ]);
 
             return $video->fresh(['groups', 'attachments', 'grade', 'teacherReference']);
+        });
+    }
+
+    /**
+     * Upload additional attachments to an existing video (used in the direct-upload flow).
+     *
+     * @param  array<int, \Illuminate\Http\UploadedFile>  $attachments
+     */
+    public function addAttachments(Video $video, array $attachments, object $actor): Video
+    {
+        return DB::transaction(function () use ($video, $attachments, $actor): Video {
+            $totalBytes = 0;
+
+            foreach ($attachments as $attachment) {
+                $path = $this->storage->uploadAttachment($video, $attachment);
+
+                VideoAttachment::query()->create([
+                    'video_id'          => $video->id,
+                    'title'             => pathinfo($attachment->getClientOriginalName(), PATHINFO_FILENAME),
+                    'file_name'         => $attachment->getClientOriginalName(),
+                    'file_path'         => $path,
+                    'mime_type'         => (string) $attachment->getMimeType(),
+                    'file_size'         => (int) $attachment->getSize(),
+                    'uploaded_by_type'  => $this->resolveMorphType($actor),
+                    'uploaded_by_id'    => (string) $actor->id,
+                ]);
+
+                $totalBytes += (int) $attachment->getSize();
+            }
+
+            // Increment storage quota
+            $owner = $video->owner_type === VideoOwnerType::INDEPENDENT_TEACHER
+                ? Teacher::find($video->owner_id)
+                : Academy::find($video->owner_id);
+
+            if ($owner !== null && $totalBytes > 0) {
+                $this->storageQuota->incrementUsage($owner, $totalBytes);
+            }
+
+            $this->logActivity('video.attachments_added', $video, $actor, [
+                'count' => count($attachments),
+            ]);
+
+            return $video->fresh(['groups', 'attachments', 'grade', 'teacherReference']);
+        });
+    }
+
+    public function removeAttachment(Video $video, VideoAttachment $attachment, object $actor): void
+    {
+        DB::transaction(function () use ($video, $attachment, $actor): void {
+            $sizeBytes = (int) $attachment->file_size;
+
+            $this->storage->deleteIfExists($attachment->file_path);
+            $attachment->delete();
+
+            // Decrement storage quota
+            $owner = $video->owner_type === VideoOwnerType::INDEPENDENT_TEACHER
+                ? Teacher::find($video->owner_id)
+                : Academy::find($video->owner_id);
+
+            if ($owner !== null && $sizeBytes > 0) {
+                $this->storageQuota->decrementUsage($owner, $sizeBytes);
+            }
+
+            $this->logActivity('video.attachment_deleted', $video, $actor, [
+                'file_name' => $attachment->file_name,
+            ]);
         });
     }
 

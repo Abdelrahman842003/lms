@@ -127,8 +127,7 @@ export function VideoUploadForm({
       scheduled_at: scheduledAt || undefined,
       teacher_reference_id: mode === 'academy' ? teacherReferenceId : undefined,
       teacher_reference_name: mode === 'academy' ? selectedTeacher?.name : undefined,
-      attachments,
-    });
+    }, attachments);
   };
 
   const handleCancel = () => {
