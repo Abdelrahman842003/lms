@@ -5,7 +5,7 @@ import type { PlanOption } from '@/types/subscription.types';
 interface SubscriptionRenewalModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (payload: { plan_code: string }) => Promise<void> | void;
+  onSubmit: (payload: { plan_selection: string; custom_months?: number | null }) => Promise<void> | void;
   planOptions: PlanOption[];
   isLoading?: boolean;
 }
@@ -28,7 +28,7 @@ export default function SubscriptionRenewalModal({
     event.preventDefault();
     if (!selectedPlanCode) return;
 
-    const payload = { plan_code: selectedPlanCode };
+    const payload = { plan_selection: selectedPlanCode };
     await onSubmit(payload);
     setSelectedPlanCode('');
   };

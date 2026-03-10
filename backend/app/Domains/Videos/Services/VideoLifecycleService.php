@@ -6,6 +6,7 @@ namespace App\Domains\Videos\Services;
 
 use App\Domains\Auth\Models\Academy;
 use App\Domains\Auth\Models\Teacher;
+use App\Domains\Subscriptions\Services\StorageQuotaService;
 use App\Domains\Videos\DTOs\CreateVideoData;
 use App\Domains\Videos\DTOs\UpdateVideoData;
 use App\Domains\Videos\DTOs\VideoActorContext;
@@ -29,6 +30,7 @@ class VideoLifecycleService
         private readonly VideoNotificationService $notifications,
         private readonly VideoReminderService $reminders,
         private readonly VideoSettingsService $videoSettings,
+        private readonly StorageQuotaService $storageQuota,
     ) {}
 
     /**
@@ -97,6 +99,16 @@ class VideoLifecycleService
                     'uploaded_by_type' => $context->uploaderMorphType(),
                     'uploaded_by_id' => $context->uploaderId(),
                 ]);
+            }
+
+            // Update quota: video bytes + all attachment bytes
+            $totalBytes = (int) ($data->videoFile->getSize() ?? 0);
+            foreach ($data->attachments as $attachment) {
+                $totalBytes += (int) ($attachment->getSize() ?? 0);
+            }
+            $owner = $this->resolveOwnerModel($context);
+            if ($owner !== null) {
+                $this->storageQuota->incrementUsage($owner, $totalBytes);
             }
 
             ProcessUploadedVideoJob::dispatch($video->id);
@@ -235,6 +247,12 @@ class VideoLifecycleService
     public function forceDelete(Video $video, object $actor): void
     {
         $this->reminders->stopForVideo($video, 'video_force_deleted');
+
+        // Calculate total bytes being freed before deletion
+        $videoBytes      = (int) ($video->video_size_bytes ?? 0);
+        $attachmentBytes = (int) $video->attachments->sum('file_size');
+        $totalBytes      = $videoBytes + $attachmentBytes;
+
         $this->storage->deleteIfExists($video->original_path);
         $this->storage->deleteIfExists($video->processed_path);
         $this->storage->deleteIfExists($video->thumbnail_path);
@@ -244,6 +262,12 @@ class VideoLifecycleService
         }
 
         $video->forceDelete();
+
+        // Decrement storage quota after successful deletion
+        $owner = $this->resolveOwnerModelById($video->owner_type, $video->owner_id);
+        if ($owner !== null && $totalBytes > 0) {
+            $this->storageQuota->decrementUsage($owner, $totalBytes);
+        }
 
         $this->logActivity('video.force_deleted', $video, $actor);
     }
@@ -346,23 +370,10 @@ class VideoLifecycleService
             throw new AuthorizationException("حجم الفيديو يتجاوز الحد المسموح به للباقتك ({$effectiveUploadLimitMb} MB).");
         }
 
-        if (! isset($entitlements['video_storage_gb'])) {
-            return;
-        }
-
-        $storageLimitBytes = $this->gbToBytes((int) $entitlements['video_storage_gb']);
-        if ($storageLimitBytes <= 0) {
-            return;
-        }
-
-        $currentUsageBytes = (int) Video::query()
-            ->where('owner_type', $context->ownerType->value)
-            ->where('owner_id', $context->ownerId)
-            ->sum('video_size_bytes');
-
-        if (($currentUsageBytes + $incomingBytes) > $storageLimitBytes) {
-            $limitGb = (int) $entitlements['video_storage_gb'];
-            throw new AuthorizationException("تجاوزت السعة التخزينية المسموحة للفيديو في باقتك ({$limitGb} GB).");
+        // Check storage quota via StorageQuotaService
+        $owner = $this->resolveOwnerModel($context);
+        if ($owner !== null) {
+            $this->storageQuota->assertCanUpload($owner, $incomingBytes);
         }
     }
 
@@ -371,26 +382,43 @@ class VideoLifecycleService
      */
     private function resolveOwnerEntitlements(VideoActorContext $context): array
     {
-        $owner = null;
-
-        if ($context->ownerType === VideoOwnerType::ACADEMY) {
-            $owner = Academy::query()->find($context->ownerId);
-        } elseif ($context->ownerType === VideoOwnerType::INDEPENDENT_TEACHER) {
-            $owner = Teacher::query()->find($context->ownerId);
-        }
+        $owner = $this->resolveOwnerModel($context);
 
         $entitlements = is_array($owner?->plan_entitlements) ? $owner->plan_entitlements : [];
 
         return $entitlements;
     }
 
+    private function resolveOwnerModel(VideoActorContext $context): Academy|Teacher|null
+    {
+        if ($context->ownerType === VideoOwnerType::ACADEMY) {
+            return Academy::query()->find($context->ownerId);
+        }
+
+        if ($context->ownerType === VideoOwnerType::INDEPENDENT_TEACHER) {
+            return Teacher::query()->find($context->ownerId);
+        }
+
+        return null;
+    }
+
+    private function resolveOwnerModelById(string|VideoOwnerType $ownerType, string $ownerId): Academy|Teacher|null
+    {
+        $type = $ownerType instanceof VideoOwnerType ? $ownerType : VideoOwnerType::from($ownerType);
+
+        if ($type === VideoOwnerType::ACADEMY) {
+            return Academy::query()->find($ownerId);
+        }
+
+        if ($type === VideoOwnerType::INDEPENDENT_TEACHER) {
+            return Teacher::query()->find($ownerId);
+        }
+
+        return null;
+    }
+
     private function mbToBytes(int $value): int
     {
         return max(0, $value) * 1024 * 1024;
-    }
-
-    private function gbToBytes(int $value): int
-    {
-        return max(0, $value) * 1024 * 1024 * 1024;
     }
 }

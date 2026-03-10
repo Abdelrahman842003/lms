@@ -46,9 +46,23 @@ function SubscriptionPage() {
     return Math.round((used / limit) * 100);
   };
 
+  const getStoragePercentage = () => {
+    return subscriptionData?.subscription?.storage?.percentage ?? 0;
+  };
+
+  const formatBytes = (bytes: number): string => {
+    if (bytes === 0) return '0 B';
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+  };
+
   const daysRemaining = getDaysRemaining();
   const seatsPercentage = getSeatsPercentage();
+  const storagePercentage = getStoragePercentage();
   const subscription = subscriptionData?.subscription;
+  const storage = subscription?.storage;
   const pendingRequest = subscriptionData?.pending_request;
 
   const getStatusColor = () => {
@@ -149,6 +163,29 @@ function SubscriptionPage() {
             </div>
             <div className={`text-2xl font-bold ${seatsPercentage >= 90 ? 'text-red-400' : 'text-primary'}`}>
               {seatsPercentage}%
+            </div>
+          </div>
+
+          <div className={`p-4 rounded-xl border ${
+             storagePercentage >= 90 ? 'bg-red-500/10 border-red-500/20' :
+             storagePercentage >= 70 ? 'bg-orange-500/10 border-orange-500/20' :
+             'bg-teal-500/10 border-teal-500/20'
+          }`}>
+            <div className="flex items-center justify-between mb-2">
+              <span className={`text-sm font-medium ${
+                storagePercentage >= 90 ? 'text-red-400' :
+                storagePercentage >= 70 ? 'text-orange-400' : 'text-teal-400'
+              }`}>استهلاك التخزين</span>
+              <Icon name="hdd" className={
+                storagePercentage >= 90 ? 'text-red-400' :
+                storagePercentage >= 70 ? 'text-orange-400' : 'text-teal-400'
+              } />
+            </div>
+            <div className={`text-2xl font-bold ${
+              storagePercentage >= 90 ? 'text-red-400' :
+              storagePercentage >= 70 ? 'text-orange-400' : 'text-teal-400'
+            }`}>
+              {storage?.is_unlimited ? '∞' : `${storagePercentage}%`}
             </div>
           </div>
         </div>
@@ -270,10 +307,82 @@ function SubscriptionPage() {
           </DashboardCard>
         </div>
 
+        {/* Storage Card */}
+        <DashboardCard title="مساحة التخزين" icon="hdd">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+            {/* Storage Progress Circle */}
+            <div className="text-center">
+              <div className="relative inline-block">
+                <svg className="w-32 h-32 transform -rotate-90">
+                  <circle cx="64" cy="64" r="56" stroke="currentColor" strokeWidth="8" fill="none" className="text-white/10" />
+                  {!storage?.is_unlimited && (
+                    <circle
+                      cx="64" cy="64" r="56"
+                      stroke="currentColor" strokeWidth="8" fill="none"
+                      strokeDasharray={`${2 * Math.PI * 56}`}
+                      strokeDashoffset={`${2 * Math.PI * 56 * (1 - (storagePercentage / 100))}`}
+                      className={`${
+                        storagePercentage >= 90 ? 'text-red-400' :
+                        storagePercentage >= 70 ? 'text-orange-400' : 'text-teal-400'
+                      } transition-all duration-1000`}
+                      strokeLinecap="round"
+                    />
+                  )}
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className={`text-3xl font-bold ${
+                    storagePercentage >= 90 ? 'text-red-400' :
+                    storagePercentage >= 70 ? 'text-orange-400' : 'text-teal-400'
+                  }`}>
+                    {storage?.is_unlimited ? '∞' : `${storagePercentage}%`}
+                  </span>
+                  <span className="text-xs text-gray-400">مستخدم</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Storage Details */}
+            <div className="space-y-3">
+              <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
+                <span className="text-gray-400">الحد الأقصى</span>
+                <span className="text-white font-bold" dir="ltr">
+                  {storage?.is_unlimited ? 'غير محدود ∞' : `${storage?.limit_gb ?? 0} GB`}
+                </span>
+              </div>
+
+              <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
+                <span className="text-gray-400">المستخدم</span>
+                <span className="text-teal-400 font-bold" dir="ltr">
+                  {formatBytes(storage?.used_bytes ?? 0)}
+                </span>
+              </div>
+
+              {!storage?.is_unlimited && (
+                <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
+                  <span className="text-gray-400">المتبقي</span>
+                  <span className="text-green-400 font-bold" dir="ltr">
+                    {formatBytes(storage?.remaining_bytes ?? 0)}
+                  </span>
+                </div>
+              )}
+
+              {!storage?.is_unlimited && storagePercentage >= 70 && (
+                <div className={`rounded-lg p-3 text-center ${
+                  storagePercentage >= 90 ? 'bg-red-500/10 border border-red-500/20' : 'bg-orange-500/10 border border-orange-500/20'
+                }`}>
+                  <Icon name="exclamation-circle" className={`${storagePercentage >= 90 ? 'text-red-400' : 'text-orange-400'} mr-2 inline`} />
+                  <span className={`text-sm ${storagePercentage >= 90 ? 'text-red-400' : 'text-orange-400'}`}>
+                    {storagePercentage >= 90 ? 'مساحة التخزين على وشك النفاد!' : 'اقتراب نفاد مساحة التخزين'}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        </DashboardCard>
+
         {/* Payment Info */}
         {!subscription?.is_trial && (
-          <DashboardCard title="معلومات الدفع" icon="money-bill-wave">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <DashboardCard title="معلومات الدفع" icon="money-bill-wave">            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="p-4 bg-white/5 rounded-lg text-center">
                 <p className="text-gray-400 text-sm mb-2">سعر الكرسي</p>
                 <p className="text-2xl font-bold text-white">{subscription?.price_per_seat ?? 0} ج.م</p>

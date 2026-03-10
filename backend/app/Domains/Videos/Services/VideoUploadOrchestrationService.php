@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Domains\Videos\Services;
 
+use App\Domains\Auth\Models\Academy;
+use App\Domains\Auth\Models\Teacher;
 use App\Domains\Videos\DTOs\CreateVideoData;
 use App\Domains\Videos\DTOs\VideoActorContext;
 use App\Domains\Videos\Enums\VideoProcessingStatus;
@@ -11,6 +13,7 @@ use App\Domains\Videos\Enums\VideoStatus;
 use App\Domains\Videos\Enums\VideoUploadSessionStatus;
 use App\Domains\Videos\Models\Video;
 use App\Domains\Videos\Models\VideoUploadSession;
+use App\Domains\Subscriptions\Services\StorageQuotaService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -32,6 +35,7 @@ class VideoUploadOrchestrationService
         private readonly R2MultipartService $r2,
         private readonly VideoSettingsService $settings,
         private readonly VideoLifecycleService $lifecycle,
+        private readonly StorageQuotaService $storageQuota,
     ) {}
 
     // ─────────────────────────────────────────────────────────────────
@@ -213,13 +217,21 @@ class VideoUploadOrchestrationService
         ]);
 
         $video = $session->video;
+        $verifiedSize = (int) ($meta['size'] ?? $session->declared_size_bytes);
+
         $video->update([
             'status'           => VideoStatus::UPLOADED,
             'processing_status' => VideoProcessingStatus::PENDING,
             'original_path'    => $session->object_key,
-            'video_size_bytes' => $meta['size'] ?? $session->declared_size_bytes,
+            'video_size_bytes' => $verifiedSize,
             'video_mime'       => $meta['content_type'] ?: $session->declared_mime,
         ]);
+
+        // Increment storage quota with the verified file size
+        $owner = $this->resolveOwnerForVideo($video);
+        if ($owner !== null && $verifiedSize > 0) {
+            $this->storageQuota->incrementUsage($owner, $verifiedSize);
+        }
 
         // Dispatch processing job (FFmpeg transcoding on server — server DOES touch bytes
         // only for transcoding, which is necessary and server-side by design)
@@ -322,5 +334,22 @@ class VideoUploadOrchestrationService
         } catch (\Throwable) {
             // Never block the upload flow for a logging failure
         }
+    }
+
+    private function resolveOwnerForVideo(Video $video): Academy|Teacher|null
+    {
+        $ownerType = $video->owner_type instanceof \App\Domains\Videos\Enums\VideoOwnerType
+            ? $video->owner_type
+            : \App\Domains\Videos\Enums\VideoOwnerType::from((string) $video->owner_type);
+
+        if ($ownerType === \App\Domains\Videos\Enums\VideoOwnerType::ACADEMY) {
+            return Academy::query()->find($video->owner_id);
+        }
+
+        if ($ownerType === \App\Domains\Videos\Enums\VideoOwnerType::INDEPENDENT_TEACHER) {
+            return Teacher::query()->find($video->owner_id);
+        }
+
+        return null;
     }
 }

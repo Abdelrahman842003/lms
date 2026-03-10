@@ -1,3 +1,13 @@
+export interface StorageSnapshot {
+  used_bytes: number;
+  used_gb: number;
+  limit_gb: number | null;
+  remaining_bytes: number | null;
+  remaining_gb: number | null;
+  percentage: number;
+  is_unlimited: boolean;
+}
+
 export interface PlanOption {
   value: string;
   label: string;
@@ -20,6 +30,7 @@ export interface SubscriptionSnapshot {
   price_per_seat: number;
   amount_due: number;
   amount_paid: number;
+  storage?: StorageSnapshot | null;
 }
 
 export interface PendingRenewalRequest {

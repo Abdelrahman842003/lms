@@ -82,6 +82,22 @@ class HelperService
     }
 
     /**
+     * Get storage price per GB per month (Teacher)
+     */
+    public static function getTeacherStoragePricePerGb(): float
+    {
+        return (float) \App\Domains\Support\Models\Setting::where('key', 'teacher_storage_price_per_gb')->value('value') ?: 0;
+    }
+
+    /**
+     * Get storage price per GB per month (Academy)
+     */
+    public static function getAcademyStoragePricePerGb(): float
+    {
+        return (float) \App\Domains\Support\Models\Setting::where('key', 'academy_storage_price_per_gb')->value('value') ?: 0;
+    }
+
+    /**
      * Get trial period days (Default 14)
      */
     public static function getTrialPeriodDays(): int

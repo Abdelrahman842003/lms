@@ -201,12 +201,18 @@ class TeacherResource extends BaseResource
                                     // Calculate fee
                                     $students = (int) $get('plan_max_students');
                                     try {
-                                        $pricePerStudent = (float) Setting::where('key', 'teacher_price_per_student')->value('value') ?: 60;
+                                        $pricePerStudent  = (float) Setting::where('key', 'teacher_price_per_student')->value('value') ?: 60;
+                                        $storagePricePerGb = (float) Setting::where('key', 'teacher_storage_price_per_gb')->value('value') ?: 0;
                                     } catch (\Exception $e) {
-                                        $pricePerStudent = 60;
+                                        $pricePerStudent  = 60;
+                                        $storagePricePerGb = 0;
                                     }
-                                    
-                                    $set('subscription_fee', $students * $months * $pricePerStudent);
+                                    $storageLimitGb = (int) ($get('storage_limit_gb') ?? 0);
+                                    $discountPct    = (float) ($get('discount_percent') ?? 0);
+                                    $seatsAmount    = $students * $months * $pricePerStudent;
+                                    $storageAmount  = $storageLimitGb * $storagePricePerGb * $months;
+                                    $gross          = $seatsAmount + $storageAmount;
+                                    $set('subscription_fee', max(0, round($gross - ($gross * $discountPct / 100), 2)));
                                 } elseif ($state === 'custom') {
                                     $set('plan_type', 'custom');
                                     $set('subscription_period', null);
@@ -231,12 +237,18 @@ class TeacherResource extends BaseResource
                                     // Calculate fee
                                     $students = (int) $get('plan_max_students');
                                     try {
-                                        $pricePerStudent = (float) Setting::where('key', 'teacher_price_per_student')->value('value') ?: 60;
+                                        $pricePerStudent   = (float) Setting::where('key', 'teacher_price_per_student')->value('value') ?: 60;
+                                        $storagePricePerGb = (float) Setting::where('key', 'teacher_storage_price_per_gb')->value('value') ?: 0;
                                     } catch (\Exception $e) {
-                                        $pricePerStudent = 60;
+                                        $pricePerStudent  = 60;
+                                        $storagePricePerGb = 0;
                                     }
-                                    
-                                    $set('subscription_fee', $students * $months * $pricePerStudent);
+                                    $storageLimitGb = (int) ($get('storage_limit_gb') ?? 0);
+                                    $discountPct    = (float) ($get('discount_percent') ?? 0);
+                                    $seatsAmount    = $students * $months * $pricePerStudent;
+                                    $storageAmount  = $storageLimitGb * $storagePricePerGb * $months;
+                                    $gross          = $seatsAmount + $storageAmount;
+                                    $set('subscription_fee', max(0, round($gross - ($gross * $discountPct / 100), 2)));
                                 }
                             }),
 
@@ -272,12 +284,18 @@ class TeacherResource extends BaseResource
                                     
                                     if ($months > 0) {
                                         try {
-                                            $pricePerStudent = (float) Setting::where('key', 'teacher_price_per_student')->value('value') ?: 60;
+                                            $pricePerStudent   = (float) Setting::where('key', 'teacher_price_per_student')->value('value') ?: 60;
+                                            $storagePricePerGb = (float) Setting::where('key', 'teacher_storage_price_per_gb')->value('value') ?: 0;
                                         } catch (\Exception $e) {
-                                            $pricePerStudent = 60;
+                                            $pricePerStudent   = 60;
+                                            $storagePricePerGb = 0;
                                         }
-                                        
-                                        $set('subscription_fee', $state * $months * $pricePerStudent);
+                                        $storageLimitGb = (int) ($get('storage_limit_gb') ?? 0);
+                                        $discountPct    = (float) ($get('discount_percent') ?? 0);
+                                        $seatsAmount    = (int) $state * $months * $pricePerStudent;
+                                        $storageAmount  = $storageLimitGb * $storagePricePerGb * $months;
+                                        $gross          = $seatsAmount + $storageAmount;
+                                        $set('subscription_fee', max(0, round($gross - ($gross * $discountPct / 100), 2)));
                                     }
                                 }
                             }),
@@ -289,28 +307,33 @@ class TeacherResource extends BaseResource
                             ->default(0)
                             ->reactive()
                             ->afterStateUpdated(function ($state, $get, $set) {
-                                // Auto-update billing notes
-                                $limit = $get('is_unlimited_students') ? 'غير محدود' : ($get('plan_max_students') ?? '50');
-                                $trialDays = \App\Domains\Support\Services\HelperService::getTrialPeriodDays();
-                                $period = match($get('plan_selection')) {
-                                    'trial' => 'تجريبي (' . $trialDays . ' يوم)',
-                                    'monthly' => 'شهري',
-                                    'quarterly' => 'ربع سنوي',
+                                $limit         = $get('is_unlimited_students') ? 'غير محدود' : ($get('plan_max_students') ?? '50');
+                                $trialDays     = \App\Domains\Support\Services\HelperService::getTrialPeriodDays();
+                                $period        = match ($get('plan_selection')) {
+                                    'trial'       => 'تجريبي (' . $trialDays . ' يوم)',
+                                    'monthly'     => 'شهري',
+                                    'quarterly'   => 'ربع سنوي',
                                     'semi_annual' => 'نصف سنوي',
-                                    'annual' => 'سنوي',
-                                    'custom' => 'مخصص', 
-                                    default => 'تجريبي'
+                                    'annual'      => 'سنوي',
+                                    'custom'      => 'مخصص',
+                                    default       => 'تجريبي'
                                 };
-                                $fee = $state ?? 0;
-                                $paid = $get('paid_amount') ?? 0;
-                                $remaining = $fee - $paid;
+                                $fee           = (float) ($state ?? 0);
+                                $discountPct   = (float) ($get('discount_percent') ?? 0);
+                                $discountAmt   = round($fee * $discountPct / 100, 2);
+                                $feeAfter      = max(0, $fee - $discountAmt);
+                                $storage       = $get('storage_limit_gb') ? $get('storage_limit_gb') . ' GB' : 'غير محدود';
+                                $paid          = (float) ($get('paid_amount') ?? 0);
+                                $remaining     = $feeAfter - $paid;
 
                                 $note = "نوع الاشتراك: {$period}\n" .
                                         "الحد الأقصى للطلاب: {$limit}\n" .
-                                        "الرسوم: {$fee} ج.م\n" .
+                                        "حد التخزين: {$storage}\n" .
+                                        ($discountPct > 0 ? "الخصم: {$discountPct}% (خصم {$discountAmt} ج.م)\n" : '') .
+                                        "الرسوم بعد الخصم: {$feeAfter} ج.م\n" .
                                         "المدفوع: {$paid} ج.م\n" .
                                         "المتبقي: {$remaining} ج.م";
-                                
+
                                 $set('billing_notes', $note);
                             }),
 
@@ -321,28 +344,33 @@ class TeacherResource extends BaseResource
                             ->default(0)
                             ->reactive()
                             ->afterStateUpdated(function ($state, $get, $set) {
-                                // Auto-update billing notes
-                                $limit = $get('is_unlimited_students') ? 'غير محدود' : ($get('plan_max_students') ?? '50');
-                                $trialDays = \App\Domains\Support\Services\HelperService::getTrialPeriodDays();
-                                $period = match($get('plan_selection')) {
-                                    'trial' => 'تجريبي (' . $trialDays . ' يوم)',
-                                    'monthly' => 'شهري',
-                                    'quarterly' => 'ربع سنوي',
+                                $limit         = $get('is_unlimited_students') ? 'غير محدود' : ($get('plan_max_students') ?? '50');
+                                $trialDays     = \App\Domains\Support\Services\HelperService::getTrialPeriodDays();
+                                $period        = match ($get('plan_selection')) {
+                                    'trial'       => 'تجريبي (' . $trialDays . ' يوم)',
+                                    'monthly'     => 'شهري',
+                                    'quarterly'   => 'ربع سنوي',
                                     'semi_annual' => 'نصف سنوي',
-                                    'annual' => 'سنوي',
-                                    'custom' => 'مخصص', 
-                                    default => 'تجريبي'
+                                    'annual'      => 'سنوي',
+                                    'custom'      => 'مخصص',
+                                    default       => 'تجريبي'
                                 };
-                                $fee = $get('subscription_fee') ?? 0;
-                                $paid = $state ?? 0;
-                                $remaining = $fee - $paid;
+                                $fee           = (float) ($get('subscription_fee') ?? 0);
+                                $discountPct   = (float) ($get('discount_percent') ?? 0);
+                                $discountAmt   = round($fee * $discountPct / 100, 2);
+                                $feeAfter      = max(0, $fee - $discountAmt);
+                                $storage       = $get('storage_limit_gb') ? $get('storage_limit_gb') . ' GB' : 'غير محدود';
+                                $paid          = (float) ($state ?? 0);
+                                $remaining     = $feeAfter - $paid;
 
                                 $note = "نوع الاشتراك: {$period}\n" .
                                         "الحد الأقصى للطلاب: {$limit}\n" .
-                                        "الرسوم: {$fee} ج.م\n" .
+                                        "حد التخزين: {$storage}\n" .
+                                        ($discountPct > 0 ? "الخصم: {$discountPct}% (خصم {$discountAmt} ج.م)\n" : '') .
+                                        "الرسوم بعد الخصم: {$feeAfter} ج.م\n" .
                                         "المدفوع: {$paid} ج.م\n" .
                                         "المتبقي: {$remaining} ج.م";
-                                
+
                                 $set('billing_notes', $note);
                             }),
 
@@ -350,7 +378,111 @@ class TeacherResource extends BaseResource
                             ->label('ملاحظات الفواتير')
                             ->columnSpanFull()
                             ->rows(4)
-                            ->placeholder('سيتم إنشاء الملاحظات تلقائياً عند تحديث الاشتراك'),
+                            ->placeholder('سيتم إنشاء الملاحظات تلقائياً عند تحديث الاشتراك')
+                            ->afterStateHydrated(function ($component, $state, $record) {
+                                if (! $record) return;
+                                $trialDays   = \App\Domains\Support\Services\HelperService::getTrialPeriodDays();
+                                $limit       = $record->is_unlimited_students ? 'غير محدود' : ($record->plan_max_students ?? '50');
+                                $period      = match ($record->subscription_period ?? $record->plan_type) {
+                                    'monthly'     => 'شهري',
+                                    'quarterly'   => 'ربع سنوي',
+                                    'semi_annual' => 'نصف سنوي',
+                                    'annual'      => 'سنوي',
+                                    'trial'       => 'تجريبي (' . $trialDays . ' يوم)',
+                                    'custom'      => 'مخصص',
+                                    default       => 'تجريبي (' . $trialDays . ' يوم)',
+                                };
+                                $fee         = (float) ($record->subscription_fee ?? 0);
+                                $discountPct = (float) ($record->discount_percent ?? 0);
+                                $discountAmt = round($fee * $discountPct / 100, 2);
+                                $feeAfter    = max(0, $fee - $discountAmt);
+                                $storageGb   = $record->storage_limit_gb;
+                                $storage     = $storageGb ? $storageGb . ' GB' : 'غير محدود';
+                                $paid        = (float) ($record->paid_amount ?? 0);
+                                $remaining   = $feeAfter - $paid;
+
+                                $note = "نوع الاشتراك: {$period}\n" .
+                                        "الحد الأقصى للطلاب: {$limit}\n" .
+                                        "حد التخزين: {$storage}\n" .
+                                        ($discountPct > 0 ? "الخصم: {$discountPct}% (خصم {$discountAmt} ج.م)\n" : '') .
+                                        "الرسوم بعد الخصم: {$feeAfter} ج.م\n" .
+                                        "المدفوع: {$paid} ج.م\n" .
+                                        "المتبقي: {$remaining} ج.م";
+
+                                $component->state($note);
+                            }),
+
+                        TextInput::make('storage_limit_gb')
+                            ->label('حد التخزين (جيجابايت)')
+                            ->numeric()
+                            ->minValue(1)
+                            ->nullable()
+                            ->placeholder('اتركه فارغاً = غير محدود')
+                            ->helperText('الحد الأقصى لمساحة التخزين على R2. اتركه فارغاً لتخزين غير محدود.')
+                            ->suffix('GB')
+                            ->reactive()
+                            ->afterStateUpdated(function ($state, $get, $set) {
+                                $months = match ($get('plan_selection')) {
+                                    'monthly'     => 1,
+                                    'quarterly'   => 3,
+                                    'semi_annual' => 6,
+                                    'annual'      => 12,
+                                    default       => (int) $get('custom_period_months'),
+                                };
+                                if ($months > 0) {
+                                    try {
+                                        $pricePerStudent  = (float) Setting::where('key', 'teacher_price_per_student')->value('value') ?: 60;
+                                        $storagePricePerGb = (float) Setting::where('key', 'teacher_storage_price_per_gb')->value('value') ?: 0;
+                                    } catch (\Exception $e) {
+                                        $pricePerStudent  = 60;
+                                        $storagePricePerGb = 0;
+                                    }
+                                    $students       = (int) $get('plan_max_students');
+                                    $storageLimitGb = (int) ($state ?? 0);
+                                    $discountPct    = (float) ($get('discount_percent') ?? 0);
+                                    $seatsAmount    = $students * $months * $pricePerStudent;
+                                    $storageAmount  = $storageLimitGb * $storagePricePerGb * $months;
+                                    $gross          = $seatsAmount + $storageAmount;
+                                    $total          = max(0, round($gross - ($gross * $discountPct / 100), 2));
+                                    $set('subscription_fee', $total);
+                                }
+                            }),
+
+                        TextInput::make('discount_percent')
+                            ->label('الخصم (%)')
+                            ->numeric()
+                            ->minValue(0)
+                            ->maxValue(100)
+                            ->suffix('%')
+                            ->default(0)
+                            ->reactive()
+                            ->helperText('نسبة الخصم من الإجمالي (0 - 100)')
+                            ->afterStateUpdated(function ($state, $get, $set) {
+                                $months = match ($get('plan_selection')) {
+                                    'monthly'     => 1,
+                                    'quarterly'   => 3,
+                                    'semi_annual' => 6,
+                                    'annual'      => 12,
+                                    default       => (int) $get('custom_period_months'),
+                                };
+                                if ($months > 0) {
+                                    try {
+                                        $pricePerStudent   = (float) Setting::where('key', 'teacher_price_per_student')->value('value') ?: 60;
+                                        $storagePricePerGb = (float) Setting::where('key', 'teacher_storage_price_per_gb')->value('value') ?: 0;
+                                    } catch (\Exception $e) {
+                                        $pricePerStudent   = 60;
+                                        $storagePricePerGb = 0;
+                                    }
+                                    $students       = (int) $get('plan_max_students');
+                                    $storageLimitGb = (int) ($get('storage_limit_gb') ?? 0);
+                                    $discountPct    = (float) ($state ?? 0);
+                                    $seatsAmount    = $students * $months * $pricePerStudent;
+                                    $storageAmount  = $storageLimitGb * $storagePricePerGb * $months;
+                                    $gross          = $seatsAmount + $storageAmount;
+                                    $total          = max(0, round($gross - ($gross * $discountPct / 100), 2));
+                                    $set('subscription_fee', $total);
+                                }
+                            }),
                     ])
                     ->columns(2),
             ]);

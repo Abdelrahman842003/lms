@@ -206,6 +206,7 @@ class VideoQuizService
 
         unset($result['should_award']);
         return $result;
+    }
 
     // ══════════════════════════════════════════════════════════════
     // Queries
