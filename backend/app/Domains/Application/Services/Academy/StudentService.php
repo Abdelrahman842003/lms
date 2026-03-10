@@ -104,6 +104,7 @@ class StudentService
             $enrollment = Enrollment::where('student_id', $student->id)
                 ->where('teacher_id', $teacher->id)
                 ->where('academy_id', $academy->id)
+                ->with(['academy:id,trial_period_days', 'teacher:id,trial_period_days'])
                 ->first();
 
             if ($enrollment) {
@@ -190,7 +191,7 @@ class StudentService
             $q->whereHas('academies', function ($q2) use ($academy) {
                 $q2->where('academy_id', $academy->id);
             });
-        });
+        })->with(['academy:id,trial_period_days', 'teacher:id,trial_period_days']);
 
         // Get unique students count
         $totalStudents = Student::whereHas('enrollments.teacher.academies', function ($q) use ($academy) {

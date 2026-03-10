@@ -4,14 +4,15 @@ declare(strict_types=1);
 
 namespace App\Domains\Application\Services\Teacher;
 
-use App\Domains\Enrollments\Models\Enrollment;
-use App\Domains\Subscriptions\Exceptions\QuotaExceededException;
 use App\Domains\Auth\Models\Student;
-use App\Domains\Enrollments\Models\StudentActivityLog;
 use App\Domains\Auth\Models\Teacher;
+use App\Domains\Enrollments\Models\Enrollment;
+use App\Domains\Enrollments\Models\StudentActivityLog;
+use App\Domains\Subscriptions\Exceptions\QuotaExceededException;
+use App\Domains\Support\Filters\EnrollmentFilter;
 use App\Domains\Support\Traits\HasAcademyFilter;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class StudentService
 {
@@ -24,8 +25,11 @@ class StudentService
     {
         $query = Enrollment::with(['student', 'grade', 'group'])
             ->where('teacher_id', $teacher->id)
-            ->filter(['search' => $search, 'status' => $status])
             ->latest();
+
+        // Apply filters using Filter class
+        $filters = array_filter(['search' => $search, 'status' => $status], fn ($v) => $v !== null);
+        (new EnrollmentFilter($filters))->apply($query);
 
         // Apply academy filter via grade relationship
         if ($academyId === 'independent') {
@@ -52,7 +56,7 @@ class StudentService
             $isNewStudent = true;
 
             // Check if student exists by phone
-            if (!empty($data['phone'])) {
+            if (! empty($data['phone'])) {
                 $existingStudent = Student::findByPhone($data['phone']);
             }
 
@@ -60,8 +64,8 @@ class StudentService
                 // Get academy_id from request data (passed from controller based on X-Academy-Id header)
                 // If not provided, fallback to grade's academy_id
                 $academyIdFromContext = $data['academy_id'] ?? null;
-                
-                if ($academyIdFromContext === null && !empty($data['grade_id'])) {
+
+                if ($academyIdFromContext === null && ! empty($data['grade_id'])) {
                     $grade = \App\Domains\Enrollments\Models\Grade::find($data['grade_id']);
                     $academyIdFromContext = $grade?->academy_id;
                 }
@@ -69,26 +73,26 @@ class StudentService
                 // Check if already enrolled with this teacher IN THE SAME CONTEXT (academy or independent)
                 $existingEnrollment = Enrollment::where('student_id', $existingStudent->id)
                     ->where('teacher_id', $teacher->id);
-                
+
                 // Filter by academy context
                 if ($academyIdFromContext) {
                     $existingEnrollment->where('academy_id', $academyIdFromContext);
                 } else {
                     $existingEnrollment->whereNull('academy_id');
                 }
-                
+
                 $existingEnrollment = $existingEnrollment->first();
 
                 if ($existingEnrollment) {
                     // Check Limits before reactivating
-                    if ($existingEnrollment->trashed() || !$existingEnrollment->is_active) {
+                    if ($existingEnrollment->trashed() || ! $existingEnrollment->is_active) {
                         // Check Expiration
                         if ($teacher->plan_expires_at && now()->gt($teacher->plan_expires_at)) {
                             throw new \Exception('عفواً، لقد انتهت صلاحية باقتك. يرجى تجديد الاشتراك.');
                         }
 
                         // Check Limit
-                        if (!$teacher->is_unlimited_students && $teacher->plan_max_students !== null) {
+                        if (! $teacher->is_unlimited_students && $teacher->plan_max_students !== null) {
                             $currentCount = $teacher->activeEnrollments()->count();
                             $maxAllowed = $teacher->plan_max_students;
 
@@ -107,7 +111,7 @@ class StudentService
                         }
                         $existingEnrollment->update(['is_active' => true]);
                     }
-                    
+
                     return [
                         'student' => $existingStudent,
                         'enrollment' => $existingEnrollment,
@@ -129,12 +133,12 @@ class StudentService
                     'education_type' => $data['education_type'] ?? null,
                     'location' => $data['location'] ?? null,
                 ]);
-                
+
                 // Create or link guardian if parent_phone provided
-                if (!empty($data['parent_phone'])) {
+                if (! empty($data['parent_phone'])) {
                     $guardian = \App\Domains\Auth\Models\Guardian::where('phone', $data['parent_phone'])->first();
-                    
-                    if (!$guardian) {
+
+                    if (! $guardian) {
                         // Create new guardian
                         $guardian = \App\Domains\Auth\Models\Guardian::create([
                             'phone' => $data['parent_phone'],
@@ -142,7 +146,7 @@ class StudentService
                             'password' => Hash::make($data['password']), // Same password initially
                         ]);
                     }
-                    
+
                     // Link student to guardian
                     $student->guardian_id = $guardian->id;
                     $student->save();
@@ -151,7 +155,7 @@ class StudentService
 
             // Check student limit for NEW enrollment (not reactivation)
             // This applies to both new students and existing students being enrolled for the first time
-            if (!$teacher->is_unlimited_students && $teacher->plan_max_students !== null) {
+            if (! $teacher->is_unlimited_students && $teacher->plan_max_students !== null) {
                 $currentCount = $teacher->activeEnrollments()->count();
                 $maxAllowed = $teacher->plan_max_students;
 
@@ -168,12 +172,12 @@ class StudentService
             // Get academy_id from request data (passed from controller based on X-Academy-Id header)
             // If not provided, fallback to grade's academy_id for backward compatibility
             $academyId = $data['academy_id'] ?? null;
-            
-            if ($academyId === null && !empty($data['grade_id'])) {
+
+            if ($academyId === null && ! empty($data['grade_id'])) {
                 $grade = \App\Domains\Enrollments\Models\Grade::find($data['grade_id']);
                 $academyId = $grade?->academy_id;
             }
-            
+
             // Log for debugging
             \Log::info('Creating enrollment with academy_id', [
                 'academy_id_final' => $academyId,
@@ -224,7 +228,7 @@ class StudentService
     {
         // Try to get from cache first
         $cachedId = \App\Domains\Support\Services\CacheService::getStudentIdByPhone($phone);
-        
+
         if ($cachedId) {
             $cachedProfile = \App\Domains\Support\Services\CacheService::getStudentProfile($cachedId);
             if ($cachedProfile) {
@@ -232,10 +236,10 @@ class StudentService
                 return Student::find($cachedId);
             }
         }
-        
+
         // Not in cache, get from database
         $student = Student::findByPhone($phone);
-        
+
         if ($student) {
             // Cache for future lookups
             \App\Domains\Support\Services\CacheService::cacheStudent(
@@ -244,7 +248,7 @@ class StudentService
                 $student->toArray()
             );
         }
-        
+
         return $student;
     }
 
@@ -254,7 +258,7 @@ class StudentService
     public function updateEnrollment(Enrollment $enrollment, array $data): Enrollment
     {
         $oldData = $enrollment->only(['grade_id', 'group_id', 'balance', 'is_active']);
-        
+
         $enrollment->update($data);
 
         // Log changes
@@ -290,10 +294,10 @@ class StudentService
 
         // Only update student-level data
         $studentData = array_intersect_key($data, array_flip([
-            'name', 'phone', 'parent_phone', 'gender', 'education_type', 'location', 'password'
+            'name', 'phone', 'parent_phone', 'gender', 'education_type', 'location', 'password',
         ]));
 
-        if (!empty($studentData)) {
+        if (! empty($studentData)) {
             $student->update($studentData);
         }
 
@@ -320,7 +324,7 @@ class StudentService
      */
     public function toggleStatus(Enrollment $enrollment): Enrollment
     {
-        $enrollment->update(['is_active' => !$enrollment->is_active]);
+        $enrollment->update(['is_active' => ! $enrollment->is_active]);
 
         StudentActivityLog::log(
             $enrollment->student_id,
@@ -339,16 +343,16 @@ class StudentService
     {
         // Total enrolled students
         $totalStudents = $teacher->enrollments()->count();
-        
+
         // Active students
         $activeStudents = $teacher->activeEnrollments()->count();
-        
+
         // New enrollments this month
         $newStudentsThisMonth = $teacher->enrollments()
             ->whereMonth('created_at', now()->month)
             ->whereYear('created_at', now()->year)
             ->count();
-            
+
         // Top Grade by enrollment count
         $topGrade = $teacher->grades()
             ->withCount(['enrollments' => function ($q) use ($teacher) {
@@ -356,7 +360,7 @@ class StudentService
             }])
             ->orderByDesc('enrollments_count')
             ->first();
-            
+
         // Top Group by enrollment count
         $topGroup = $teacher->groups()
             ->withCount(['enrollments' => function ($q) use ($teacher) {
@@ -386,10 +390,10 @@ class StudentService
      */
     public function getActivationDetails(Enrollment $enrollment): array
     {
-        $platformFee = \App\Domains\Support\Services\HelperService::getPricePerStudent();
-        
+        $platformFee = \App\Domains\Support\Services\HelperService::getTeacherPricePerStudent();
+
         $options = [];
-        
+
         // Option 1: Grade Price (Always available if grade exists)
         if ($enrollment->grade) {
             $gradePrice = (float) $enrollment->grade->price;
@@ -398,7 +402,7 @@ class StudentService
                 'label' => 'سعر الصف الدراسي',
                 'base_price' => $gradePrice,
                 'total_price' => $gradePrice + $platformFee,
-                'is_default' => true
+                'is_default' => true,
             ];
         }
 
@@ -410,7 +414,7 @@ class StudentService
                 'label' => 'سعر المجموعة الخاصة',
                 'base_price' => $groupPrice,
                 'total_price' => $groupPrice + $platformFee,
-                'is_default' => false
+                'is_default' => false,
             ];
         }
 
@@ -421,7 +425,7 @@ class StudentService
                 'label' => 'سعر افتراضي',
                 'base_price' => 0,
                 'total_price' => $platformFee,
-                'is_default' => true
+                'is_default' => true,
             ];
         }
 
@@ -430,7 +434,7 @@ class StudentService
             'grade_name' => $enrollment->grade?->name,
             'group_name' => $enrollment->group?->name,
             'platform_fee' => $platformFee,
-            'pricing_options' => $options
+            'pricing_options' => $options,
         ];
     }
 
@@ -442,15 +446,15 @@ class StudentService
         return DB::transaction(function () use ($enrollment, $data) {
             $startDate = now();
             $endDate = now()->addDays(30);
-            
+
             // Get details to validate price
             $details = $this->getActivationDetails($enrollment);
             $options = collect($details['pricing_options']);
-            
+
             // Determine selected option
             $selectedKey = $data['pricing_source'] ?? 'grade';
             $selectedOption = $options->firstWhere('key', $selectedKey) ?? $options->first();
-            
+
             $expectedAmount = $selectedOption['total_price'];
             $paidAmount = $data['paid_amount'] ?? $expectedAmount;
 
@@ -477,8 +481,8 @@ class StudentService
                         'base_price' => $selectedOption['base_price'],
                         'platform_fee' => $details['platform_fee'],
                         'source' => $selectedOption['key'],
-                        'type' => 'subscription'
-                    ]
+                        'type' => 'subscription',
+                    ],
                 ]);
             }
 
@@ -492,7 +496,7 @@ class StudentService
             return [
                 'subscription_end' => $endDate->format('Y-m-d'),
                 'days_left' => 30,
-                'status' => 'active'
+                'status' => 'active',
             ];
         });
     }
@@ -505,7 +509,7 @@ class StudentService
         $history = [];
         $startDate = $enrollment->created_at->startOfMonth();
         $endDate = now()->endOfMonth();
-        
+
         // Fetch all payments in one query instead of per-month
         $payments = \App\Domains\Subscriptions\Models\PaymentLog::where('teacher_id', $enrollment->teacher_id)
             ->where('student_id', $enrollment->student_id)
@@ -514,12 +518,12 @@ class StudentService
             ->selectRaw("DATE_FORMAT(confirmed_at, '%Y-%m') as month, SUM(amount) as total")
             ->groupBy('month')
             ->pluck('total', 'month');
-        
+
         $currentMonth = $startDate->copy();
-        
+
         while ($currentMonth <= $endDate) {
             $monthKey = $currentMonth->format('Y-m');
-            
+
             // Calculate price for this month
             $price = 0;
             if ($enrollment->group && $enrollment->group->price) {
@@ -542,7 +546,7 @@ class StudentService
 
             $history[] = [
                 'month' => $monthKey,
-                'month_name' => \App\Domains\Support\Services\HelperService::getArabicMonthName($currentMonth->month) . ' ' . $currentMonth->year,
+                'month_name' => \App\Domains\Support\Services\HelperService::getArabicMonthName($currentMonth->month).' '.$currentMonth->year,
                 'amount_due' => (float) $price,
                 'amount_paid' => $amountPaid,
                 'amount_remaining' => (float) max(0, $amountRemaining),
@@ -563,7 +567,7 @@ class StudentService
     private function generateSlug(string $name): string
     {
         $text = trim($name);
-        
+
         // Specific replacements for common names/prefixes
         $replacements = [
             'عبدال' => 'abdel',
@@ -576,15 +580,15 @@ class StudentService
         foreach ($replacements as $key => $value) {
             $text = str_replace($key, $value, $text);
         }
-        
+
         $arabicChars = [
             'ا', 'أ', 'إ', 'آ', 'ب', 'ت', 'ث', 'ج', 'ح', 'خ', 'د', 'ذ', 'ر', 'ز', 'س', 'ش', 'ص', 'ض', 'ط', 'ظ', 'ع', 'غ', 'ف', 'ق', 'ك', 'ل', 'م', 'ن', 'ه', 'و', 'ي', 'ى', 'ة',
-            '٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'
+            '٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩',
         ];
-        
+
         $englishChars = [
             'a', 'a', 'e', 'a', 'b', 't', 'th', 'j', 'h', 'kh', 'd', 'th', 'r', 'z', 's', 'sh', 's', 'd', 't', 'z', 'a', 'gh', 'f', 'q', 'k', 'l', 'm', 'n', 'h', 'w', 'i', 'a', 'a',
-            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'
+            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
         ];
 
         for ($i = 0; $i < count($arabicChars); $i++) {
@@ -603,17 +607,17 @@ class StudentService
         if (empty($trimmedName)) {
             return 'ولي الأمر';
         }
-        
+
         $words = preg_split('/\s+/', $trimmedName);
-        
+
         if (count($words) === 1) {
             return $words[0];
         }
-        
+
         if (count($words) === 2) {
             return $words[1];
         }
-        
+
         // Take last 2 words for names with 3+ words
         return implode(' ', array_slice($words, -2));
     }

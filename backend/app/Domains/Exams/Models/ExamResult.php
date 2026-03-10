@@ -7,6 +7,7 @@ namespace App\Domains\Exams\Models;
 use App\Domains\Auth\Models\Student;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ExamResult extends Model
 {
@@ -20,21 +21,24 @@ class ExamResult extends Model
         'attempt_id',
     ];
 
-    protected $casts = [
-        'percentage' => 'decimal:2',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'percentage' => 'decimal:2',
+        ];
+    }
 
-    public function exam()
+    public function exam(): BelongsTo
     {
         return $this->belongsTo(Exam::class);
     }
 
-    public function student()
+    public function student(): BelongsTo
     {
         return $this->belongsTo(Student::class);
     }
 
-    public function attempt()
+    public function attempt(): BelongsTo
     {
         return $this->belongsTo(ExamAttempt::class, 'attempt_id');
     }

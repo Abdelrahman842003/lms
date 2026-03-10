@@ -16,9 +16,12 @@ class LoginAttempt extends Model
         'banned_until',
     ];
 
-    protected $casts = [
-        'banned_until' => 'datetime',
-        'attempts' => 'integer',
-        'ban_level' => 'integer',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'banned_until' => 'datetime',
+            'attempts' => 'integer',
+            'ban_level' => 'integer',
+        ];
+    }
 }

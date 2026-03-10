@@ -20,10 +20,13 @@ class DeviceToken extends Model
         'last_used_at',
     ];
 
-    protected $casts = [
-        'last_used_at' => 'datetime',
-        'device_type' => \App\Domains\Auth\Enums\DeviceType::class,
-    ];
+    protected function casts(): array
+    {
+        return [
+            'last_used_at' => 'datetime',
+            'device_type' => \App\Domains\Auth\Enums\DeviceType::class,
+        ];
+    }
 
     /**
      * Get the owning tokenable model.

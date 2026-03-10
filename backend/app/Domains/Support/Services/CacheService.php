@@ -21,6 +21,11 @@ class CacheService
         return Cache::tags(['settings'])->rememberForever("setting:{$key}", $callback);
     }
 
+    public static function getSettingWithTtl(string $key, int $ttl, callable $callback): mixed
+    {
+        return Cache::tags(['settings'])->remember("setting:{$key}", $ttl, $callback);
+    }
+
     public static function forgetSetting(string $key): void
     {
         Cache::tags(['settings'])->forget("setting:{$key}");
@@ -37,14 +42,14 @@ class CacheService
     {
         return Cache::tags(['teacher_' . $teacherId, 'settings'])->remember(
             "teacher:{$teacherId}:gamification_settings",
-            self::TTL_MEDIUM,
+            self::TTL_LONG,
             $callback
         );
     }
 
     public static function forgetGamificationSettings(string|int $teacherId): void
     {
-        Cache::forget("teacher:{$teacherId}:gamification_settings");
+        Cache::tags(['teacher_' . $teacherId, 'settings'])->forget("teacher:{$teacherId}:gamification_settings");
     }
 
     // =================== Leaderboard Cache ====================
@@ -69,8 +74,7 @@ class CacheService
 
     public static function forgetLeaderboards(string|int $teacherId): void
     {
-        Cache::forget("teacher:{$teacherId}:leaderboard:weekly");
-        Cache::forget("teacher:{$teacherId}:leaderboard:all_time");
+        Cache::tags(['teacher_' . $teacherId, 'leaderboard'])->flush();
     }
 
     // =================== Teacher Cache (General) ====================
@@ -109,6 +113,20 @@ class CacheService
         );
     }
 
+    public static function getAcademyGrades(string|int $academyId, callable $callback): mixed
+    {
+        return Cache::tags(['academy_' . $academyId])->remember(
+            "academy:{$academyId}:grades",
+            self::TTL_MEDIUM,
+            $callback
+        );
+    }
+
+    public static function forgetAcademyGrades(string|int $academyId): void
+    {
+        Cache::tags(['academy_' . $academyId])->forget("academy:{$academyId}:grades");
+    }
+
     public static function forgetTeacherCache(string|int $teacherId): void
     {
         Cache::tags(['teacher_' . $teacherId])->flush();
@@ -116,17 +134,18 @@ class CacheService
 
     public static function forgetTeacherDashboard(string|int $teacherId): void
     {
-        Cache::forget("teacher:{$teacherId}:dashboard:stats");
+        // Flush all teacher dashboard variants (with/without academy)
+        Cache::tags(['teacher_' . $teacherId])->flush();
     }
 
     public static function forgetTeacherGrades(string|int $teacherId): void
     {
-        Cache::forget("teacher:{$teacherId}:grades");
+        Cache::tags(['teacher_' . $teacherId])->forget("teacher:{$teacherId}:grades");
     }
 
     public static function forgetTeacherGroups(string|int $teacherId): void
     {
-        Cache::forget("teacher:{$teacherId}:groups");
+        Cache::tags(['teacher_' . $teacherId])->forget("teacher:{$teacherId}:groups");
     }
 
     // =================== Student Cache ====================
@@ -213,7 +232,7 @@ class CacheService
     public static function forgetLecture(string|int $lectureId, string|int $teacherId): void
     {
         Cache::tags(['lecture_' . $lectureId])->flush();
-        Cache::forget("teacher:{$teacherId}:lectures");
+        Cache::tags(['teacher_' . $teacherId, 'lectures'])->forget("teacher:{$teacherId}:lectures");
     }
 
     // =================== Exams Cache ====================
@@ -225,6 +244,20 @@ class CacheService
             self::TTL_SHORT,
             $callback
         );
+    }
+
+    public static function getExamAttemptCurrentQuestion(string|int $attemptId, callable $callback): mixed
+    {
+        return Cache::tags(['exam_attempt_' . $attemptId])->remember(
+            "exam_attempt:{$attemptId}:current_question",
+            self::TTL_SHORT,
+            $callback
+        );
+    }
+
+    public static function forgetExamAttemptCurrentQuestion(string|int $attemptId): void
+    {
+        Cache::tags(['exam_attempt_' . $attemptId])->forget("exam_attempt:{$attemptId}:current_question");
     }
 
     public static function getExamResults(string|int $examId, callable $callback): mixed
@@ -239,7 +272,7 @@ class CacheService
     public static function forgetExam(string|int $examId, string|int $teacherId): void
     {
         Cache::tags(['exam_' . $examId])->flush();
-        Cache::forget("teacher:{$teacherId}:exams");
+        Cache::tags(['teacher_' . $teacherId, 'exams'])->forget("teacher:{$teacherId}:exams");
     }
 
     // =================== Academy Cache ====================

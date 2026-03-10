@@ -14,8 +14,8 @@ class RecalculateSubscriptionFees extends Command
 
     public function handle(): int
     {
-        $teacherPrice = HelperService::getPricePerStudent() ?: 60;
-        $academyPrice = HelperService::getAcademyStudentPrice() ?: 40;
+        $teacherPrice = HelperService::getTeacherPricePerStudent() ?: 60;
+        $academyPrice = HelperService::getAcademyPricePerStudent() ?: 40;
 
         $this->info("Using Teacher Price: {$teacherPrice} EGP");
         $this->info("Using Academy Price: {$academyPrice} EGP");

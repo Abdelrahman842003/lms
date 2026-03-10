@@ -7,6 +7,7 @@ namespace App\Domains\Enrollments\Services;
 use App\Domains\Auth\Models\Teacher;
 use App\Domains\Enrollments\DTOs\TeacherGroupData;
 use App\Domains\Enrollments\Models\Group;
+use App\Domains\Support\Filters\GroupFilter;
 use App\Domains\Support\Traits\HasAcademyFilter;
 use Illuminate\Pagination\LengthAwarePaginator;
 
@@ -19,8 +20,10 @@ class TeacherGroupService
         $query = $teacher->groups()
             ->with(['grade'])
             ->withCount('enrollments')
-            ->latest()
-            ->filter($filters);
+            ->latest();
+
+        // Apply filters using Filter class
+        (new GroupFilter($filters))->apply($query);
 
         // Apply direct academy filter (groups now have academy_id column)
         // Strict tenant isolation:
@@ -39,6 +42,7 @@ class TeacherGroupService
     public function updateGroup(Group $group, TeacherGroupData $data): Group
     {
         $group->update($data->toArray());
+
         return $group;
     }
 

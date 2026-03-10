@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace App\Domains\Application\Services\Teacher;
 
-use App\Domains\Exams\DTOs\TeacherExamData;
+use App\Domains\Auth\Models\Teacher;
 use App\Domains\Enrollments\Models\Enrollment;
+use App\Domains\Exams\DTOs\TeacherExamData;
 use App\Domains\Exams\Models\Exam;
 use App\Domains\Exams\Models\Question;
-use App\Domains\Auth\Models\Teacher;
+use App\Domains\Support\Filters\ExamFilter;
 use App\Domains\Support\Traits\HasAcademyFilter;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -23,20 +24,22 @@ class ExamService
             ->with(['grade', 'group', 'results.student'])
             ->withCount('questions')
             ->orderBy('is_active', 'desc')
-            ->latest()
-            ->filter($filters);
+            ->latest();
+
+        // Apply filters using Filter class
+        (new ExamFilter($filters))->apply($query);
 
         // Apply academy filter via grade relationship
         // Apply academy filter
         if ($academyId === 'independent') {
             $query->whereNull('academy_id')
-                  ->whereDoesntHave('grade', fn($q) => $q->whereNotNull('academy_id'))
-                  ->whereDoesntHave('group', fn($q) => $q->whereNotNull('academy_id'));
+                ->whereDoesntHave('grade', fn ($q) => $q->whereNotNull('academy_id'))
+                ->whereDoesntHave('group', fn ($q) => $q->whereNotNull('academy_id'));
         } elseif ($academyId) {
-            $query->where(function($q) use ($academyId) {
+            $query->where(function ($q) use ($academyId) {
                 $q->where('academy_id', $academyId)
-                  ->orWhereHas('grade', fn($g) => $g->where('academy_id', $academyId))
-                  ->orWhereHas('group', fn($gr) => $gr->where('academy_id', $academyId));
+                    ->orWhereHas('grade', fn ($g) => $g->where('academy_id', $academyId))
+                    ->orWhereHas('group', fn ($gr) => $gr->where('academy_id', $academyId));
             });
         }
 
@@ -98,7 +101,7 @@ class ExamService
     {
         return DB::transaction(function () use ($exam, $title) {
             $newExam = $exam->replicate(['is_active', 'activated_at', 'ended_at', 'created_at', 'updated_at']);
-            $newExam->title = $title ?? ($exam->title . ' (نسخة)');
+            $newExam->title = $title ?? ($exam->title.' (نسخة)');
             $newExam->save();
 
             foreach ($exam->questions as $question) {
@@ -143,7 +146,7 @@ class ExamService
             ->whereHas('teacher', function ($q) use ($targetStudentIds) {
                 $q->whereHas('enrollments', function ($eq) use ($targetStudentIds) {
                     $eq->whereIn('student_id', $targetStudentIds)
-                       ->where('is_active', true);
+                        ->where('is_active', true);
                 });
             })
             ->with('teacher:id,name')
@@ -169,6 +172,7 @@ class ExamService
         $targetStudentIds = Enrollment::where('teacher_id', $teacherId)
             ->where('grade_id', $gradeId)
             ->where('is_active', true)
+            ->with(['academy:id,trial_period_days', 'teacher:id,trial_period_days'])
             ->pluck('student_id')
             ->toArray();
 
@@ -183,7 +187,7 @@ class ExamService
             ->whereHas('teacher', function ($q) use ($targetStudentIds) {
                 $q->whereHas('enrollments', function ($eq) use ($targetStudentIds) {
                     $eq->whereIn('student_id', $targetStudentIds)
-                       ->where('is_active', true);
+                        ->where('is_active', true);
                 });
             })
             ->with('teacher:id,name');
@@ -212,7 +216,8 @@ class ExamService
     {
         $query = Enrollment::where('teacher_id', $exam->teacher_id)
             ->where('grade_id', $exam->grade_id)
-            ->where('is_active', true);
+            ->where('is_active', true)
+            ->with(['academy:id,trial_period_days', 'teacher:id,trial_period_days']);
 
         if ($exam->group_id) {
             $query->where('group_id', $exam->group_id);
@@ -223,35 +228,35 @@ class ExamService
 
     public function toggleStatus(Exam $exam): array
     {
-        $isActive = !$exam->is_active;
-        
+        $isActive = ! $exam->is_active;
+
         // التحقق من التعارضات قبل التفعيل
         if ($isActive) {
             $conflict = $this->checkActiveConflicts($exam);
-            
+
             if ($conflict) {
                 $teacherNames = $conflict['conflicting_exams']
                     ->pluck('teacher.name')
                     ->unique()
                     ->implode('، ');
-                    
+
                 return [
                     'success' => false,
                     'message' => "لا يمكن تفعيل الامتحان. يوجد امتحان فعال الآن للمدرس: {$teacherNames}. سيؤثر على {$conflict['affected_students_count']} طالب مشترك.",
-                    'code' => 409
+                    'code' => 409,
                 ];
             }
         }
-        
+
         $updateData = ['is_active' => $isActive];
-        
+
         if ($isActive) {
             $updateData['activated_at'] = now();
             $updateData['ended_at'] = null;
         }
 
         $exam->update($updateData);
-        
+
         // Refresh model to get updated data
         $exam->refresh();
 
@@ -259,14 +264,14 @@ class ExamService
             // Notify students
             $this->notifyStudents($exam, new \App\Domains\Exams\Notifications\ExamActivatedNotification($exam));
         }
-        
+
         // Notify teacher for real-time UI update
         $exam->teacher->notify(new \App\Domains\Exams\Notifications\ExamStatusNotification($exam, $isActive ? 'active' : 'inactive'));
 
         return [
             'success' => true,
             'exam' => $exam,
-            'message' => $isActive ? 'تم تفعيل الامتحان بنجاح وإشعار الطلاب' : 'تم إلغاء تفعيل الامتحان بنجاح'
+            'message' => $isActive ? 'تم تفعيل الامتحان بنجاح وإشعار الطلاب' : 'تم إلغاء تفعيل الامتحان بنجاح',
         ];
     }
 
@@ -279,12 +284,12 @@ class ExamService
 
         $exam->update([
             'is_active' => false,
-            'ended_at' => now()
+            'ended_at' => now(),
         ]);
-        
+
         // Refresh model to get updated data
         $exam->refresh();
-        
+
         // Notify teacher for real-time UI update
         $exam->teacher->notify(new \App\Domains\Exams\Notifications\ExamStatusNotification($exam, 'ended'));
 
@@ -313,7 +318,7 @@ class ExamService
         }
 
         $students = $query->get();
-        
+
         if ($students->count() > 0) {
             \Illuminate\Support\Facades\Notification::send($students, $notification);
         }
@@ -339,10 +344,10 @@ class ExamService
         }
 
         $students = $query->get();
-        
+
         // Pre-load all attempts for this exam in one query (optimized)
         $attempts = $exam->attempts()->get()->keyBy('student_id');
-        
+
         $examService = app(\App\Domains\Application\Services\Student\StudentExamService::class);
         $absentResults = [];
         $absentStudents = [];
@@ -371,9 +376,9 @@ class ExamService
         }
 
         // Bulk insert absent results
-        if (!empty($absentResults)) {
+        if (! empty($absentResults)) {
             \App\Domains\Exams\Models\ExamResult::insert($absentResults);
-            
+
             // Batch notification for absent students
             \Illuminate\Support\Facades\Notification::send(
                 collect($absentStudents),

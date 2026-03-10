@@ -65,6 +65,7 @@ class PaymentLogService
         // Find enrollment
         $enrollment = Enrollment::where('student_id', $data['student_id'])
             ->where('teacher_id', $teacher->id)
+            ->with(['academy:id,trial_period_days', 'teacher:id,trial_period_days'])
             ->first();
 
         if (!$enrollment) {
@@ -116,6 +117,7 @@ class PaymentLogService
                 // Find enrollment
                 $enrollment = Enrollment::where('student_id', $paymentData['student_id'])
                     ->where('teacher_id', $teacher->id)
+                    ->with(['academy:id,trial_period_days', 'teacher:id,trial_period_days'])
                     ->first();
 
                 if (!$enrollment) {

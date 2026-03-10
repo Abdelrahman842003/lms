@@ -16,6 +16,7 @@ use App\Domains\Lectures\Models\Lecture;
 use App\Domains\Support\Models\TeacherAttendanceLog;
 use App\Domains\Auth\Models\Secretary;
 use App\Domains\Support\Traits\HasDeviceTokens;
+use App\Domains\Subscriptions\Traits\HasSubscriptionStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -24,7 +25,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 class Teacher extends Authenticatable
 {
-    use HasFactory, Notifiable, HasApiTokens, HasUuids, HasDeviceTokens;
+    use HasFactory, Notifiable, HasApiTokens, HasUuids, HasDeviceTokens, HasSubscriptionStatus;
 
     protected static function newFactory()
     {
@@ -179,29 +180,6 @@ class Teacher extends Authenticatable
             ->orderByDesc('month')
             ->orderByDesc('created_at')
             ->first();
-    }
-
-    public function hasActiveSubscription(): bool
-    {
-        $latest = $this->latestSubscription();
-        if ($latest) {
-            $status = $latest->status instanceof SubscriptionStatus ? $latest->status->value : (string) $latest->status;
-            if (in_array($status, [
-                SubscriptionStatus::CANCELLED->value,
-                SubscriptionStatus::PENDING->value,
-                SubscriptionStatus::PARTIAL->value,
-                SubscriptionStatus::EXPIRED->value,
-            ], true)) {
-                return false;
-            }
-        }
-
-        $expiresAt = $this->plan_expires_at ? $this->plan_expires_at->copy()->startOfDay() : null;
-        if ($this->plan_type === 'trial') {
-            return $expiresAt !== null && $expiresAt->gte(now()->startOfDay());
-        }
-
-        return $expiresAt !== null && $expiresAt->gte(now()->startOfDay());
     }
 
     public function isSubscriptionBlocked(): bool

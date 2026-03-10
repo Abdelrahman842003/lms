@@ -40,7 +40,7 @@ class StudentPoint extends Model
     public function transactions(): HasMany
     {
         return $this->hasMany(PointTransaction::class, 'student_id', 'student_id')
-            ->where('teacher_id', $this->teacher_id);
+            ->where('teacher_id', $this->getAttribute('teacher_id'));
     }
 
     /**

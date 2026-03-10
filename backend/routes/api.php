@@ -33,7 +33,7 @@ Route::prefix('academy')->name('academy.')->group(function () {
 // ============================================
 // Academy Routes (Secretary Access)
 // ============================================
-Route::middleware('auth:sanctum')->prefix('academy')->name('academy.')->group(function () {
+Route::middleware(['auth:sanctum', \App\Domains\Auth\Http\Middleware\EnsureActiveSubscription::class])->prefix('academy')->name('academy.')->group(function () {
     // Dashboard
     Route::get('/dashboard', [\App\Domains\Application\Http\Controllers\Academy\DashboardController::class, 'getStats']);
     Route::put('/profile', [\App\Domains\Application\Http\Controllers\Academy\AuthController::class, 'updateProfile']);
@@ -151,7 +151,7 @@ Route::post('/login/teacher', [TeacherAuthController::class, 'login'])
 Route::post('/teacher/login', [TeacherAuthController::class, 'login'])
     ->middleware(['throttle.login', 'auth.cookies']);
 
-Route::middleware(['auth:sanctum', \App\Domains\Auth\Http\Middleware\EnsureTeacherNotSuspended::class])->prefix('teacher')->name('teacher.')->group(function () {
+Route::middleware(['auth:sanctum', \App\Domains\Auth\Http\Middleware\EnsureUserNotSuspended::class . ':teacher', \App\Domains\Auth\Http\Middleware\EnsureActiveSubscription::class])->prefix('teacher')->name('teacher.')->group(function () {
     Route::post('/logout', [TeacherAuthController::class, 'logout']);
     Route::get('/me', [TeacherAuthController::class, 'me']);
     Route::post('/change-password', [TeacherAuthController::class, 'changePassword']);
@@ -389,7 +389,7 @@ Route::post('/auth/refresh', [\App\Domains\Application\Http\Controllers\Api\Refr
 Route::post('/refresh-token', [\App\Domains\Application\Http\Controllers\Api\RefreshTokenController::class, 'refresh'])
     ->middleware('auth.cookies');
 
-Route::middleware(['auth:sanctum', \App\Domains\Auth\Http\Middleware\EnsureSecretaryTeacherNotSuspended::class])->prefix('secretary')->group(function () {
+Route::middleware(['auth:sanctum', \App\Domains\Auth\Http\Middleware\EnsureUserNotSuspended::class . ':secretary'])->prefix('secretary')->group(function () {
     Route::post('/logout', [SecretaryAuthController::class, 'logout']);
     Route::get('/me', [SecretaryAuthController::class, 'me']);
 
@@ -405,7 +405,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/avatar/upload', [\App\Domains\Application\Http\Controllers\Media\AvatarController::class, 'upload']);
     Route::delete('/avatar', [\App\Domains\Application\Http\Controllers\Media\AvatarController::class, 'delete']);
     Route::get('/avatar', [\App\Domains\Application\Http\Controllers\Media\AvatarController::class, 'show']);
-    Route::post('/device-tokens', [\App\Domains\Application\Http\Controllers\Api\DeviceTokenController::class, 'store']);
 });
 
 // Public Settings

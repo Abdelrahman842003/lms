@@ -7,6 +7,7 @@ namespace App\Domains\Lectures\Models;
 use App\Domains\Auth\Models\Student;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Attendance extends Model
 {
@@ -18,16 +19,19 @@ class Attendance extends Model
         'status',
     ];
 
-    protected $casts = [
-        'status' => \App\Domains\Lectures\Enums\StudentAttendanceStatus::class,
-    ];
+    protected function casts(): array
+    {
+        return [
+            'status' => \App\Domains\Lectures\Enums\StudentAttendanceStatus::class,
+        ];
+    }
 
-    public function lecture()
+    public function lecture(): BelongsTo
     {
         return $this->belongsTo(Lecture::class);
     }
 
-    public function student()
+    public function student(): BelongsTo
     {
         return $this->belongsTo(Student::class);
     }

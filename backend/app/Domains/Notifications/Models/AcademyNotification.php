@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use App\Domains\Auth\Models\Academy;
 use App\Domains\Auth\Models\Secretary;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class AcademyNotification extends Model
 {
@@ -27,19 +28,22 @@ class AcademyNotification extends Model
         'read_by',
     ];
 
-    protected $casts = [
-        'target_ids' => 'array',
-        'recipient_count' => 'integer',
-        'recipient_snapshot' => 'array',
-        'read_by' => 'array',
-        'type' => \App\Domains\Notifications\Enums\NotificationType::class,
-        'target_type' => \App\Domains\Notifications\Enums\NotificationTargetType::class,
-    ];
+    protected function casts(): array
+    {
+        return [
+            'target_ids' => 'array',
+            'recipient_count' => 'integer',
+            'recipient_snapshot' => 'array',
+            'read_by' => 'array',
+            'type' => \App\Domains\Notifications\Enums\NotificationType::class,
+            'target_type' => \App\Domains\Notifications\Enums\NotificationTargetType::class,
+        ];
+    }
 
     /**
      * Academy relationship
      */
-    public function academy()
+    public function academy(): BelongsTo
     {
         return $this->belongsTo(Academy::class);
     }
@@ -47,7 +51,7 @@ class AcademyNotification extends Model
     /**
      * Creator (Secretary) relationship
      */
-    public function creator()
+    public function creator(): BelongsTo
     {
         return $this->belongsTo(Secretary::class, 'created_by');
     }

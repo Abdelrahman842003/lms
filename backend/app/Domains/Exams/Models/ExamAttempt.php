@@ -6,8 +6,12 @@ namespace App\Domains\Exams\Models;
 
 use App\Domains\Auth\Models\Student;
 use App\Domains\Exams\Enums\ExamAttemptStatus;
+use App\Domains\Support\Services\CacheService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class ExamAttempt extends Model
 {
@@ -24,29 +28,32 @@ class ExamAttempt extends Model
         'terminated_reason',
     ];
 
-    protected $casts = [
-        'started_at' => 'datetime',
-        'completed_at' => 'datetime',
-        'questions_order' => 'array',
-        'status' => ExamAttemptStatus::class,
-    ];
+    protected function casts(): array
+    {
+        return [
+            'started_at' => 'datetime',
+            'completed_at' => 'datetime',
+            'questions_order' => 'array',
+            'status' => ExamAttemptStatus::class,
+        ];
+    }
 
-    public function exam()
+    public function exam(): BelongsTo
     {
         return $this->belongsTo(Exam::class);
     }
 
-    public function student()
+    public function student(): BelongsTo
     {
         return $this->belongsTo(Student::class);
     }
 
-    public function answers()
+    public function answers(): HasMany
     {
         return $this->hasMany(StudentAnswer::class);
     }
 
-    public function result()
+    public function result(): HasOne
     {
         return $this->hasOne(ExamResult::class, 'attempt_id');
     }
@@ -61,7 +68,10 @@ class ExamAttempt extends Model
             return null;
         }
         $questionId = $questionIds[$this->current_question_index];
-        return Question::find($questionId);
+        
+        return CacheService::getExamAttemptCurrentQuestion($this->id, function () use ($questionId) {
+            return Question::find($questionId);
+        });
     }
 
     /**
@@ -86,5 +96,14 @@ class ExamAttempt extends Model
     public function getAnsweredQuestionsCount(): int
     {
         return $this->answers()->count();
+    }
+
+    protected static function booted()
+    {
+        static::updated(function ($attempt) {
+            if ($attempt->isDirty('current_question_index')) {
+                CacheService::forgetExamAttemptCurrentQuestion($attempt->id);
+            }
+        });
     }
 }

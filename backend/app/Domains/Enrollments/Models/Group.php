@@ -7,9 +7,9 @@ namespace App\Domains\Enrollments\Models;
 use App\Domains\Auth\Models\Academy;
 use App\Domains\Auth\Models\Teacher;
 use App\Domains\Enrollments\Enums\GroupType;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 class Group extends Model
 {
@@ -20,11 +20,15 @@ class Group extends Model
         return \Database\Factories\GroupFactory::new();
     }
 
-    protected $casts = [
-        'type' => GroupType::class,
-    ];
+    protected function casts(): array
+    {
+        return [
+            'type' => GroupType::class,
+        ];
+    }
 
     protected $keyType = 'string';
+
     public $incrementing = false;
 
     protected $fillable = [
@@ -38,35 +42,26 @@ class Group extends Model
         'price',
     ];
 
-    public function teacher()
+    public function teacher(): BelongsTo
     {
         return $this->belongsTo(Teacher::class);
     }
 
-    public function grade()
+    public function grade(): BelongsTo
     {
         return $this->belongsTo(Grade::class);
     }
 
     // Students are now linked via enrollments
-    public function enrollments()
+    public function enrollments(): HasMany
     {
         return $this->hasMany(Enrollment::class);
     }
 
-    public function academy()
+    public function academy(): BelongsTo
     {
         return $this->belongsTo(Academy::class);
     }
 
-    public function scopeFilter($query, array $filters)
-    {
-        if ($search = $filters['search'] ?? null) {
-            $query->where('name', 'like', "%{$search}%");
-        }
-
-        if ($gradeId = $filters['grade_id'] ?? null) {
-            $query->where('grade_id', $gradeId);
-        }
-    }
+    // Note: Filtering logic moved to \App\Domains\Support\Filters\GroupFilter
 }

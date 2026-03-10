@@ -54,7 +54,7 @@ class SummaryController extends Controller
         // Get enrollments (optionally filtered by teacher)
         $enrollmentsQuery = Enrollment::where('student_id', $student->id)
             ->where('is_active', true)
-            ->with(['teacher', 'grade', 'group']);
+            ->with(['teacher', 'grade', 'group', 'academy:id,trial_period_days', 'teacher:id,trial_period_days']);
 
         if ($teacherId) {
             $enrollmentsQuery->where('teacher_id', $teacherId);

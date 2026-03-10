@@ -7,6 +7,7 @@ namespace App\Domains\Lectures\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class LectureSession extends Model
 {
@@ -20,12 +21,15 @@ class LectureSession extends Model
         'is_cancelled',
     ];
 
-    protected $casts = [
-        'date' => 'date',
-        'is_cancelled' => 'boolean',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'date' => 'date',
+            'is_cancelled' => 'boolean',
+        ];
+    }
 
-    public function lecture()
+    public function lecture(): BelongsTo
     {
         return $this->belongsTo(Lecture::class);
     }

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Domains\Support\Services;
 
-use App\Domains\Support\Models\Setting;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class HelperService
@@ -48,29 +47,14 @@ class HelperService
     }
 
     /**
-     * Get price per student from settings (Cached)
-     * @deprecated Use getTeacherPricePerStudent() or getAcademyPricePerStudent()
-     */
-    public static function getPricePerStudent(): float
-    {
-        return self::getTeacherPricePerStudent();
-    }
-
-    /**
-     * Get academy student price from settings (Cached)
-     * @deprecated Use getAcademyPricePerStudent()
-     */
-    public static function getAcademyStudentPrice(): float
-    {
-        return self::getAcademyPricePerStudent();
-    }
-
-    /**
      * Get price per student (Teacher)
      */
     public static function getTeacherPricePerStudent(): float
     {
-        return (float) \App\Domains\Support\Models\Setting::where('key', 'teacher_price_per_student')->value('value') ?: 60;
+        return (float) CacheService::getSetting(
+            'teacher_price_per_student',
+            fn() => \App\Domains\Support\Models\Setting::where('key', 'teacher_price_per_student')->value('value') ?? 60
+        );
     }
 
     /**
@@ -78,7 +62,10 @@ class HelperService
      */
     public static function getAcademyPricePerStudent(): float
     {
-        return (float) \App\Domains\Support\Models\Setting::where('key', 'academy_price_per_student')->value('value') ?: 40;
+        return (float) CacheService::getSetting(
+            'academy_price_per_student',
+            fn() => \App\Domains\Support\Models\Setting::where('key', 'academy_price_per_student')->value('value') ?? 40
+        );
     }
 
     /**
@@ -86,7 +73,10 @@ class HelperService
      */
     public static function getTeacherStoragePricePerGb(): float
     {
-        return (float) \App\Domains\Support\Models\Setting::where('key', 'teacher_storage_price_per_gb')->value('value') ?: 0;
+        return (float) CacheService::getSetting(
+            'teacher_storage_price_per_gb',
+            fn() => \App\Domains\Support\Models\Setting::where('key', 'teacher_storage_price_per_gb')->value('value') ?? 0
+        );
     }
 
     /**
@@ -94,7 +84,10 @@ class HelperService
      */
     public static function getAcademyStoragePricePerGb(): float
     {
-        return (float) \App\Domains\Support\Models\Setting::where('key', 'academy_storage_price_per_gb')->value('value') ?: 0;
+        return (float) CacheService::getSetting(
+            'academy_storage_price_per_gb',
+            fn() => \App\Domains\Support\Models\Setting::where('key', 'academy_storage_price_per_gb')->value('value') ?? 0
+        );
     }
 
     /**
@@ -102,7 +95,10 @@ class HelperService
      */
     public static function getTrialPeriodDays(): int
     {
-        return (int) \App\Domains\Support\Models\Setting::where('key', 'trial_period_days')->value('value') ?: 14;
+        return (int) CacheService::getSetting(
+            'trial_period_days',
+            fn() => \App\Domains\Support\Models\Setting::where('key', 'trial_period_days')->value('value') ?? 14
+        );
     }
 
     /**

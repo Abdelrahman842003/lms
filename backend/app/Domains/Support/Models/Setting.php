@@ -11,9 +11,12 @@ class Setting extends Model
 {
     protected $fillable = ['key', 'value', 'group'];
 
-    protected $casts = [
-        //
-    ];
+    protected function casts(): array
+    {
+        return [
+            //
+        ];
+    }
 
     // List of keys that should be encrypted
     public static $encryptedKeys = [
@@ -52,7 +55,7 @@ class Setting extends Model
 
     public static function getValue($key, $default = null)
     {
-        return \App\Domains\Support\Services\CacheService::getSetting($key, function () use ($key, $default) {
+        return \App\Domains\Support\Services\CacheService::getSettingWithTtl($key, \App\Domains\Support\Services\CacheService::TTL_SHORT, function () use ($key, $default) {
             // Use first() to trigger the Accessor
             $setting = self::where('key', $key)->first();
             return $setting ? $setting->value : $default;

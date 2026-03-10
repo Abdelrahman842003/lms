@@ -134,6 +134,16 @@ backend/app/Domains/
 │
 └── Support/               # Shared support utilities
     ├── Enums/             # Common enums
+    ├── Exceptions/        # Domain exceptions
+    ├── Filters/           # Query filter classes
+    │   ├── BaseFilter.php
+    │   ├── LectureFilter.php
+    │   ├── EnrollmentFilter.php
+    │   ├── GroupFilter.php
+    │   ├── GradeFilter.php
+    │   └── VideoFilter.php
+    ├── Resources/         # Shared API resources
+    ├── Services/          # Support services (Cache, Helper)
     └── Traits/            # Reusable traits
 ```
 
@@ -292,6 +302,127 @@ class StartAttemptAction
     }
 }
 ```
+
+## Query Filter Pattern
+
+The project uses a dedicated Filter pattern for query filtering, keeping models clean and separating business logic from data access:
+
+### Base Filter
+
+All filters extend from `BaseFilter` which provides the filtering logic:
+
+```php
+<?php
+namespace App\Domains\Support\Filters;
+
+use Illuminate\Database\Eloquent\Builder;
+
+abstract class BaseFilter
+{
+    public function __construct(protected array $filters) {}
+
+    public function apply(Builder $query): Builder
+    {
+        foreach ($this->filters as $key => $value) {
+            if ($value === null || $value === '') {
+                continue;
+            }
+
+            $method = 'filter' . str_replace('_', '', ucwords($key, '_'));
+
+            if (method_exists($this, $method)) {
+                $this->$method($query, $value);
+            }
+        }
+
+        return $query;
+    }
+}
+```
+
+### Domain-Specific Filters
+
+Each domain has its own filter class:
+
+```php
+<?php
+namespace App\Domains\Support\Filters;
+
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
+
+class LectureFilter extends BaseFilter
+{
+    protected function filterSearch(Builder $query, string $value): void
+    {
+        $query->where('title', 'like', "%{$value}%");
+    }
+
+    protected function filterDateFrom(Builder $query, string $value): void
+    {
+        $query->whereDate('start_time', '>=', $value);
+    }
+
+    protected function filterStatus(Builder $query, string $value): void
+    {
+        match ($value) {
+            'today'     => $query->where(fn ($q) =>
+                                $q->whereDate('start_time', Carbon::today())
+                                  ->orWhere(fn ($q) =>
+                                    $q->where('is_recurring', true)
+                                      ->whereJsonContains('recurrence_days', Carbon::now()->format('l'))
+                                  )
+                             ),
+            'upcoming'  => $query->where('start_time', '>', now())->where('is_active', false),
+            'ongoing'   => $query->where(fn ($q) =>
+                                $q->where('is_active', true)
+                                  ->orWhere(fn ($q) =>
+                                    $q->where('start_time', '<=', now())->where('end_time', '>', now())
+                                  )
+                             ),
+            default     => null,
+        };
+    }
+}
+```
+
+### Usage in Services
+
+Filters are used in services, keeping the models clean:
+
+```php
+<?php
+namespace App\Domains\Application\Services\Teacher;
+
+use App\Domains\Support\Filters\LectureFilter;
+use App\Domains\Lectures\Models\Lecture;
+
+class LectureService
+{
+    public function getLectures($teacher, int $perPage = 10, array $filters = []): LengthAwarePaginator
+    {
+        $query = $teacher->lectures()
+            ->with(['grade', 'group'])
+            ->latest();
+
+        // Apply filters using Filter class
+        (new LectureFilter($filters))->apply($query);
+
+        return $query->paginate($perPage);
+    }
+}
+```
+
+### Available Filters
+
+| Filter | Domain | Filters By |
+|--------|--------|------------|
+| `LectureFilter` | Lectures | search, date_from, date_to, group_id, teacher_id, status |
+| `EnrollmentFilter` | Enrollments | search (student), status, grade_id, group_id |
+| `GroupFilter` | Enrollments | search, grade_id |
+| `GradeFilter` | Enrollments | search |
+| `VideoFilter` | Videos | search, status, owner_id, owner_type, grade_id, group_id |
+| `ExamFilter` | Exams | search (title/subject), date_from, date_to, grade_id, group_id |
 
 ## Repository Pattern
 

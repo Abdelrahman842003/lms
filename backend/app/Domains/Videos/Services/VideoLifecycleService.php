@@ -39,7 +39,7 @@ class VideoLifecycleService
     public function listForOwner(VideoActorContext $context, array $filters = [], int $perPage = 15): LengthAwarePaginator
     {
         $query = Video::query()
-            ->with(['grade', 'groups', 'teacherReference'])
+            ->with(['owner', 'uploader', 'publishedBy', 'grade', 'groups', 'teacherReference'])
             ->withCount(['likes', 'comments', 'attachments', 'watchProgresses', 'quiz'])
             ->where('owner_type', $context->ownerType->value)
             ->where('owner_id', $context->ownerId)

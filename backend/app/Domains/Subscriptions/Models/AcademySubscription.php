@@ -8,6 +8,7 @@ use App\Domains\Auth\Models\Academy;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class AcademySubscription extends Model
 {
@@ -27,17 +28,20 @@ class AcademySubscription extends Model
         'payment_method',
     ];
 
-    protected $casts = [
-        'month' => 'date',
-        'student_count' => 'integer',
-        'price_per_seat' => 'decimal:2',
-        'amount_due' => 'decimal:2',
-        'amount_paid' => 'decimal:2',
-        'payment_initiated_at' => 'datetime',
-        'status' => \App\Domains\Subscriptions\Enums\TeacherSubscriptionStatus::class,
-    ];
+    protected function casts(): array
+    {
+        return [
+            'month' => 'date',
+            'student_count' => 'integer',
+            'price_per_seat' => 'decimal:2',
+            'amount_due' => 'decimal:2',
+            'amount_paid' => 'decimal:2',
+            'payment_initiated_at' => 'datetime',
+            'status' => \App\Domains\Subscriptions\Enums\TeacherSubscriptionStatus::class,
+        ];
+    }
 
-    public function academy()
+    public function academy(): BelongsTo
     {
         return $this->belongsTo(Academy::class);
     }

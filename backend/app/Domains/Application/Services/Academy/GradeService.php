@@ -8,6 +8,7 @@ use App\Domains\Enrollments\DTOs\GradeData;
 use App\Domains\Enrollments\Models\Grade;
 use App\Domains\Auth\Models\Academy;
 use App\Domains\Auth\Models\Teacher;
+use App\Domains\Support\Services\CacheService;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
@@ -16,52 +17,55 @@ class GradeService
 {
     public function getGrades(Academy $academy, array $filters = [], int $perPage = 10)
     {
-        // Base query: Grades for all teachers belonging to this academy OR grades created by the academy directly
-        // Filter strictly by academy_id to ensure only academy-specific grades are shown
-        $query = Grade::where('academy_id', $academy->id)->whereNotNull('academy_id');
+        // Use caching for grade listings
+        return CacheService::getAcademyGrades($academy->id, function () use ($academy, $filters, $perPage) {
+            // Base query: Grades for all teachers belonging to this academy OR grades created by the academy directly
+            // Filter strictly by academy_id to ensure only academy-specific grades are shown
+            $query = Grade::where('academy_id', $academy->id)->whereNotNull('academy_id');
 
-        // Filter by teacher_id if provided
-        if (isset($filters['teacher_id']) && $filters['teacher_id']) {
-            return $query->where('teacher_id', $filters['teacher_id'])
-                ->select('id', 'name', 'price', 'teacher_id')
-                ->get();
-        }
+            // Filter by teacher_id if provided
+            if (isset($filters['teacher_id']) && $filters['teacher_id']) {
+                return $query->where('teacher_id', $filters['teacher_id'])
+                    ->select('id', 'name', 'price', 'teacher_id')
+                    ->get();
+            }
 
-        // 1. Detail View: If filtering by specific grade name
-        if (isset($filters['name']) && $filters['name'] !== null && $filters['name'] !== '') {
-            return $query->where('name', $filters['name'])
-                ->with('teacher')
-                ->withCount(['groups', 'enrollments'])
-                ->latest()
-                ->paginate($perPage);
-        }
+            // 1. Detail View: If filtering by specific grade name
+            if (isset($filters['name']) && $filters['name'] !== null && $filters['name'] !== '') {
+                return $query->where('name', $filters['name'])
+                    ->with('teacher')
+                    ->withCount(['groups', 'enrollments'])
+                    ->latest()
+                    ->paginate($perPage);
+            }
 
-        // 2. Grouped View: Group by name and aggregate stats
-        // We fetch all to group in PHP as it's cleaner for aggregations across relations
-        $grades = $query->withCount(['groups', 'enrollments'])->get();
+            // 2. Grouped View: Group by name and aggregate stats
+            // We fetch all to group in PHP as it's cleaner for aggregations across relations
+            $grades = $query->withCount(['groups', 'enrollments'])->get();
 
-        $grouped = $grades->groupBy('name')->map(function ($group, $name) {
-            return [
-                'id' => $group->first()->id, // Add ID from first grade in group
-                'name' => $name,
-                'teachers_count' => $group->pluck('teacher_id')->filter()->unique()->count(),
-                'groups_count' => $group->sum('groups_count'),
-                'students_count' => $group->sum('enrollments_count'),
-                'created_at' => $group->first()->created_at,
-            ];
-        })->values();
+            $grouped = $grades->groupBy('name')->map(function ($group, $name) {
+                return [
+                    'id' => $group->first()->id, // Add ID from first grade in group
+                    'name' => $name,
+                    'teachers_count' => $group->pluck('teacher_id')->filter()->unique()->count(),
+                    'groups_count' => $group->sum('groups_count'),
+                    'students_count' => $group->sum('enrollments_count'),
+                    'created_at' => $group->first()->created_at,
+                ];
+            })->values();
 
-        // Manual Pagination for grouped results
-        $page = LengthAwarePaginator::resolveCurrentPage();
-        $items = $grouped->slice(($page - 1) * $perPage, $perPage)->values();
+            // Manual Pagination for grouped results
+            $page = LengthAwarePaginator::resolveCurrentPage();
+            $items = $grouped->slice(($page - 1) * $perPage, $perPage)->values();
 
-        return new LengthAwarePaginator(
-            $items,
-            $grouped->count(),
-            $perPage,
-            $page,
-            ['path' => LengthAwarePaginator::resolveCurrentPath()]
-        );
+            return new LengthAwarePaginator(
+                $items,
+                $grouped->count(),
+                $perPage,
+                $page,
+                ['path' => LengthAwarePaginator::resolveCurrentPath()]
+            );
+        });
     }
 
     public function createGrade(Academy $academy, GradeData $data): Grade
@@ -75,22 +79,24 @@ class GradeService
                       ->where('academy_teacher.is_active', true);
                 })->firstOrFail();
 
-            return $teacher->grades()->create([
+            $grade = $teacher->grades()->create([
                 'name' => $data->name,
                 'price' => $data->price,
                 'academy_id' => $academy->id,
             ]);
+        } else {
+            // Create a global grade for this academy
+            $grade = new Grade();
+            $grade->id = Str::uuid()->toString();
+            $grade->name = $data->name;
+            $grade->price = $data->price;
+            $grade->teacher_id = null;
+            $grade->academy_id = $academy->id;
+            $grade->save();
         }
 
-        // Create a global grade for this academy
-        $grade = new Grade();
-        $grade->id = Str::uuid()->toString();
-        $grade->name = $data->name;
-        $grade->price = $data->price;
-        $grade->teacher_id = null;
-        $grade->academy_id = $academy->id;
-        $grade->save();
-
+        // Clear cache after creating a grade
+        CacheService::forgetAcademyGrades($academy->id);
         return $grade;
     }
 
@@ -104,17 +110,24 @@ class GradeService
             'price' => $data->price,
         ]);
 
+        // Clear cache after updating a grade
+        CacheService::forgetAcademyGrades($academy->id);
         return $grade;
     }
 
     public function deleteGrade(Grade $grade): void
     {
+        $academyId = $grade->academy_id;
         $grade->delete();
+        // Clear cache after deleting a grade
+        if ($academyId) {
+            CacheService::forgetAcademyGrades($academyId);
+        }
     }
 
     public function bulkUpdateName(Academy $academy, string $oldName, string $newName): int
     {
-        return Grade::where('name', $oldName)
+        $result = Grade::where('name', $oldName)
             ->whereHas('teacher', function ($q) use ($academy) {
                 $q->where('teachers.status', 'active')
                   ->whereHas('academies', function ($q2) use ($academy) {
@@ -123,11 +136,18 @@ class GradeService
                   });
             })
             ->update(['name' => $newName]);
+
+        // Clear cache after bulk updating grades
+        if ($result > 0) {
+            CacheService::forgetAcademyGrades($academy->id);
+        }
+
+        return $result;
     }
 
     public function bulkDelete(Academy $academy, string $name): int
     {
-        return Grade::where('name', $name)
+        $result = Grade::where('name', $name)
             ->whereHas('teacher', function ($q) use ($academy) {
                 $q->where('teachers.status', 'active')
                   ->whereHas('academies', function ($q2) use ($academy) {
@@ -136,5 +156,12 @@ class GradeService
                   });
             })
             ->delete();
+
+        // Clear cache after bulk deleting grades
+        if ($result > 0) {
+            CacheService::forgetAcademyGrades($academy->id);
+        }
+
+        return $result;
     }
 }

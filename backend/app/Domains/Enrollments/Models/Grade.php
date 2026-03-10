@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Domains\Enrollments\Models;
 
 use App\Domains\Auth\Models\Teacher;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 class Grade extends Model
 {
@@ -19,6 +19,7 @@ class Grade extends Model
     }
 
     protected $keyType = 'string';
+
     public $incrementing = false;
 
     protected $fillable = [
@@ -44,10 +45,5 @@ class Grade extends Model
         return $this->hasMany(Enrollment::class);
     }
 
-    public function scopeFilter($query, array $filters)
-    {
-        if ($search = $filters['search'] ?? null) {
-            $query->where('name', 'like', "%{$search}%");
-        }
-    }
+    // Note: Filtering logic moved to \App\Domains\Support\Filters\GradeFilter
 }

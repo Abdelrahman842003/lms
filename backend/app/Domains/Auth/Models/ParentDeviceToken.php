@@ -15,9 +15,12 @@ class ParentDeviceToken extends Model
         'last_used_at',
     ];
 
-    protected $casts = [
-        'last_used_at' => 'datetime',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'last_used_at' => 'datetime',
+        ];
+    }
 
     /**
      * Get all device tokens for a parent phone

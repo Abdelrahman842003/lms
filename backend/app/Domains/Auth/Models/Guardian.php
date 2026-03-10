@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class Guardian extends Authenticatable
 {
@@ -26,14 +28,17 @@ class Guardian extends Authenticatable
         'remember_token',
     ];
 
-    protected $casts = [
-        'id' => 'string',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'id' => 'string',
+        ];
+    }
 
     /**
      * Get all students for this guardian
      */
-    public function students()
+    public function students(): HasMany
     {
         return $this->hasMany(Student::class);
     }
@@ -48,7 +53,7 @@ class Guardian extends Authenticatable
     /**
      * Get the device tokens for the guardian.
      */
-    public function deviceTokens()
+    public function deviceTokens(): MorphMany
     {
         return $this->morphMany(DeviceToken::class, 'tokenable');
     }

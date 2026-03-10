@@ -7,8 +7,7 @@ namespace App\Domains\Enrollments\Models;
 use App\Domains\Auth\Models\Academy;
 use App\Domains\Auth\Models\Student;
 use App\Domains\Auth\Models\Teacher;
-use App\Domains\Support\Models\Setting;
-use App\Domains\Enrollments\Models\StudentActivityLog;
+use App\Domains\Enrollments\Services\EnrollmentStatusService;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -17,6 +16,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Enrollment extends Model
 {
     use HasFactory, HasUuids, SoftDeletes;
+
+    protected static ?EnrollmentStatusService $statusService = null;
 
     protected $fillable = [
         'student_id',
@@ -41,128 +42,34 @@ class Enrollment extends Model
         ];
     }
 
-    protected $appends = ['status', 'days_left', 'trial_ends_at'];
+    protected $appends = [];
 
     // Accessors
     public function getStatusAttribute()
     {
-        $today = now()->startOfDay();
-        $trialPeriodDays = $this->resolveTrialPeriodDays();
-        
-        // Check trial period for new enrollments (not yet activated)
-        if (!$this->is_active && !$this->subscription_end) {
-            $trialEndDate = $this->created_at->copy()->addDays($trialPeriodDays)->startOfDay();
-            
-            if ($today <= $trialEndDate) {
-                return 'trial';
-            }
-            
-            return 'inactive'; // Trial expired, not activated
-        }
-        
-        // Manually deactivated by teacher
-        if (!$this->is_active) {
-            return 'inactive';
-        }
-
-        // Active but no subscription yet - check trial period
-        if (!$this->subscription_end) {
-            $trialEndDate = $this->created_at->copy()->addDays($trialPeriodDays)->startOfDay();
-            
-            if ($today <= $trialEndDate) {
-                return 'trial';
-            }
-            
-            return 'inactive'; // Trial expired, no subscription
-        }
-
-        $end = $this->subscription_end->startOfDay();
-        
-        // Active: Subscription not expired yet
-        if ($end >= $today) {
-            return 'active';
-        }
-
-        // Subscription expired - check post-subscription trial period
-        $postSubscriptionTrialEnd = $end->copy()->addDays($trialPeriodDays);
-        if ($today <= $postSubscriptionTrialEnd) {
-            return 'trial';
-        }
-
-        // Grace Period: Trial expired but within 3 days
-        $gracePeriodEnd = $postSubscriptionTrialEnd->copy()->addDays(3);
-        if ($today <= $gracePeriodEnd) {
-            return 'grace_period';
-        }
-
-        // Expired: Past all grace periods
-        return 'expired';
+        return $this->getStatusService()->getStatus($this);
     }
 
     public function getDaysLeftAttribute()
     {
-        if (!$this->subscription_end) {
-            return 0;
-        }
-
-        $today = now()->startOfDay();
-        $end = $this->subscription_end->startOfDay();
-
-        return (int) $today->diffInDays($end, false);
+        return $this->getStatusService()->getDaysLeft($this);
     }
 
     public function getTrialEndsAtAttribute()
     {
-        $trialPeriodDays = $this->resolveTrialPeriodDays();
-        
-        // Trial from creation (new enrollment, not activated OR active but no subscription)
-        if (!$this->subscription_end) {
-            return $this->created_at->copy()->addDays($trialPeriodDays);
-        }
-        
-        // Trial after subscription ends
-        if ($this->subscription_end && now() > $this->subscription_end) {
-            return $this->subscription_end->copy()->addDays($trialPeriodDays);
-        }
-        
-        return null;
+        return $this->getStatusService()->getTrialEndsAt($this);
     }
 
-    private function resolveTrialPeriodDays(): int
+    /**
+     * Get the status service instance.
+     */
+    protected function getStatusService(): EnrollmentStatusService
     {
-        // Enrollment in academy context: use academy-specific setting first.
-        if ($this->academy_id) {
-            if ($this->relationLoaded('academy') && $this->academy) {
-                $academyTrial = (int) ($this->academy->trial_period_days ?? 0);
-                if ($academyTrial > 0) {
-                    return $academyTrial;
-                }
-            } else {
-                $academyTrial = (int) (Academy::query()->whereKey($this->academy_id)->value('trial_period_days') ?? 0);
-                if ($academyTrial > 0) {
-                    return $academyTrial;
-                }
-            }
+        if (self::$statusService === null) {
+            self::$statusService = new EnrollmentStatusService;
         }
 
-        // Independent context: use teacher-specific setting.
-        if ($this->teacher_id) {
-            if ($this->relationLoaded('teacher') && $this->teacher) {
-                $teacherTrial = (int) ($this->teacher->trial_period_days ?? 0);
-                if ($teacherTrial > 0) {
-                    return $teacherTrial;
-                }
-            } else {
-                $teacherTrial = (int) (Teacher::query()->whereKey($this->teacher_id)->value('trial_period_days') ?? 0);
-                if ($teacherTrial > 0) {
-                    return $teacherTrial;
-                }
-            }
-        }
-
-        // Fallback to global setting.
-        $defaultDays = (int) Setting::getValue('trial_period_days', 4);
-        return $defaultDays > 0 ? $defaultDays : 4;
+        return self::$statusService;
     }
 
     // Relationships
@@ -207,29 +114,5 @@ class Enrollment extends Model
         return $query->where('teacher_id', $teacherId);
     }
 
-    public function scopeFilter($query, array $filters)
-    {
-        if ($search = $filters['search'] ?? null) {
-            $query->whereHas('student', function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('phone', 'like', "%{$search}%");
-            });
-        }
-
-        if (($status = $filters['status'] ?? null) !== null && $status !== '') {
-            if ($status === 'active') {
-                $query->where('is_active', true);
-            } elseif ($status === 'inactive') {
-                $query->where('is_active', false);
-            }
-        }
-
-        if ($gradeId = $filters['grade_id'] ?? null) {
-            $query->where('grade_id', $gradeId);
-        }
-
-        if ($groupId = $filters['group_id'] ?? null) {
-            $query->where('group_id', $groupId);
-        }
-    }
+    // Note: Filtering logic moved to \App\Domains\Support\Filters\EnrollmentFilter
 }

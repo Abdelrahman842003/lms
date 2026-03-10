@@ -66,6 +66,7 @@ class StudentDashboardService
         $enrollment = Enrollment::where('student_id', $student->id)
             ->where('teacher_id', $teacherId)
             ->where('is_active', true)
+            ->with(['academy:id,trial_period_days', 'teacher:id,trial_period_days'])
             ->firstOrFail();
 
         $lectures = Lecture::where('teacher_id', $teacherId)->get();
@@ -106,6 +107,7 @@ class StudentDashboardService
         // Get Enrollment (for Balance & Status)
         $enrollment = Enrollment::where('student_id', $student->id)
             ->where('teacher_id', $teacherId)
+            ->with(['academy:id,trial_period_days', 'teacher:id,trial_period_days'])
             ->first();
 
         if (!$enrollment || !$enrollment->is_active) {

@@ -19,9 +19,12 @@ class DailyVoiceLimit extends Model
         'date',
     ];
 
-    protected $casts = [
-        'date' => 'date',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'date' => 'date',
+        ];
+    }
 
     /**
      * Get the parent limitable model (teacher, student, etc.)

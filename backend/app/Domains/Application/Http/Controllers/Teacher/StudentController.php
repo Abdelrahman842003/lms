@@ -70,7 +70,8 @@ class StudentController extends Controller
             
             // Check if already enrolled with this teacher IN THE SAME CONTEXT
             $enrollmentQuery = Enrollment::where('student_id', $student->id)
-                ->where('teacher_id', $teacher->id);
+                ->where('teacher_id', $teacher->id)
+                ->with(['academy:id,trial_period_days', 'teacher:id,trial_period_days']);
             
             // Filter by academy context
             if ($academyIdFromGrade) {
@@ -247,6 +248,7 @@ class StudentController extends Controller
         
         $enrollment = Enrollment::where('teacher_id', $teacher->id)
             ->where('student_id', $id)
+            ->with(['academy:id,trial_period_days', 'teacher:id,trial_period_days'])
             ->firstOrFail();
         
         $this->service->deleteEnrollment($enrollment);
@@ -274,7 +276,7 @@ class StudentController extends Controller
     {
         $teacher = $this->getTeacherFromRequest($request);
         
-        $enrollment = Enrollment::with('student')
+        $enrollment = Enrollment::with(['student', 'academy:id,trial_period_days', 'teacher:id,trial_period_days'])
             ->where('teacher_id', $teacher->id)
             ->where('student_id', $id)
             ->firstOrFail();
@@ -296,6 +298,7 @@ class StudentController extends Controller
         
         $enrollment = Enrollment::where('teacher_id', $teacher->id)
             ->where('student_id', $id)
+            ->with(['academy:id,trial_period_days', 'teacher:id,trial_period_days'])
             ->firstOrFail();
 
         $this->service->toggleStatus($enrollment);
@@ -332,6 +335,7 @@ class StudentController extends Controller
         
         $enrollment = Enrollment::where('teacher_id', $teacher->id)
             ->where('student_id', $id)
+            ->with(['academy:id,trial_period_days', 'teacher:id,trial_period_days'])
             ->firstOrFail();
 
         $result = $this->service->activate($enrollment, $request->all());

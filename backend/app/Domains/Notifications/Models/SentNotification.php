@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use App\Domains\Auth\Models\Teacher;
 use App\Domains\Auth\Models\Student;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class SentNotification extends Model
 {
@@ -27,17 +28,20 @@ class SentNotification extends Model
         'voice_duration',
     ];
 
-    protected $casts = [
-        'is_voice' => 'boolean',
-        'voice_duration' => 'integer',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'is_voice' => 'boolean',
+            'voice_duration' => 'integer',
+        ];
+    }
 
-    public function teacher()
+    public function teacher(): BelongsTo
     {
         return $this->belongsTo(Teacher::class);
     }
 
-    public function student()
+    public function student(): BelongsTo
     {
         return $this->belongsTo(Student::class);
     }

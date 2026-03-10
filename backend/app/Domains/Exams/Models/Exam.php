@@ -7,9 +7,11 @@ namespace App\Domains\Exams\Models;
 use App\Domains\Auth\Models\Teacher;
 use App\Domains\Enrollments\Models\Grade;
 use App\Domains\Enrollments\Models\Group;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Exam extends Model
 {
@@ -37,57 +39,45 @@ class Exam extends Model
         'ended_at',
     ];
 
-    protected $casts = [
-        'date' => 'datetime',
-        'is_active' => 'boolean',
-        'activated_at' => 'datetime',
-        'ended_at' => 'datetime',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'date' => 'datetime',
+            'is_active' => 'boolean',
+            'activated_at' => 'datetime',
+            'ended_at' => 'datetime',
+        ];
+    }
 
-    public function attempts()
+    public function attempts(): HasMany
     {
         return $this->hasMany(ExamAttempt::class);
     }
 
-    public function teacher()
+    public function teacher(): BelongsTo
     {
         return $this->belongsTo(Teacher::class);
     }
 
-    public function grade()
+    public function grade(): BelongsTo
     {
         return $this->belongsTo(Grade::class);
     }
 
-    public function group()
+    public function group(): BelongsTo
     {
         return $this->belongsTo(Group::class);
     }
 
-    public function results()
+    public function results(): HasMany
     {
         return $this->hasMany(ExamResult::class);
     }
 
-    public function questions()
+    public function questions(): HasMany
     {
         return $this->hasMany(Question::class);
     }
-    public function scopeFilter($query, array $filters)
-    {
-        if ($search = $filters['search'] ?? null) {
-            $query->where(function ($q) use ($search) {
-                $q->where('title', 'like', "%{$search}%")
-                  ->orWhere('subject', 'like', "%{$search}%");
-            });
-        }
 
-        if ($dateFrom = $filters['date_from'] ?? null) {
-            $query->whereDate('date', '>=', $dateFrom);
-        }
-
-        if ($dateTo = $filters['date_to'] ?? null) {
-            $query->whereDate('date', '<=', $dateTo);
-        }
-    }
+    // Note: Filtering logic moved to \App\Domains\Support\Filters\ExamFilter
 }

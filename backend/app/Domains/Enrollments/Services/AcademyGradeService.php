@@ -36,32 +36,22 @@ class AcademyGradeService
                 ->paginate($perPage);
         }
 
-        // 2. Grouped View: Group by name and aggregate stats
-        // We fetch all to group in PHP as it's cleaner for aggregations across relations
-        $grades = $query->withCount(['groups', 'enrollments'])->get();
+        // 2. Grouped View: Group by name and aggregate stats using MySQL GROUP BY
+        $groupedQuery = \DB::table('grades as g')
+            ->select([
+                'g.id',
+                'g.name',
+                \DB::raw('COUNT(DISTINCT g.teacher_id) as teachers_count'),
+                \DB::raw('(SELECT COUNT(*) FROM groups WHERE grade_id IN (SELECT id FROM grades WHERE name = g.name AND academy_id = ' . $academy->id . ')) as groups_count'),
+                \DB::raw('(SELECT COUNT(*) FROM enrollments WHERE grade_id IN (SELECT id FROM grades WHERE name = g.name AND academy_id = ' . $academy->id . ')) as students_count'),
+                'g.created_at',
+            ])
+            ->where('g.academy_id', $academy->id)
+            ->whereNotNull('g.academy_id')
+            ->groupBy('g.id', 'g.name', 'g.created_at')
+            ->orderBy('g.created_at', 'desc');
 
-        $grouped = $grades->groupBy('name')->map(function ($group, $name) {
-            return [
-                'id' => $group->first()->id, // Add ID from first grade in group
-                'name' => $name,
-                'teachers_count' => $group->pluck('teacher_id')->filter()->unique()->count(),
-                'groups_count' => $group->sum('groups_count'),
-                'students_count' => $group->sum('enrollments_count'),
-                'created_at' => $group->first()->created_at,
-            ];
-        })->values();
-
-        // Manual Pagination for grouped results
-        $page = LengthAwarePaginator::resolveCurrentPage();
-        $items = $grouped->slice(($page - 1) * $perPage, $perPage)->values();
-
-        return new LengthAwarePaginator(
-            $items,
-            $grouped->count(),
-            $perPage,
-            $page,
-            ['path' => LengthAwarePaginator::resolveCurrentPath()]
-        );
+        return $groupedQuery->paginate($perPage);
     }
 
     public function createGrade(Academy $academy, GradeData $data): Grade
@@ -83,13 +73,13 @@ class AcademyGradeService
         }
 
         // Create a global grade for this academy
-        $grade = new Grade();
-        $grade->id = Str::uuid()->toString();
-        $grade->name = $data->name;
-        $grade->price = $data->price;
-        $grade->teacher_id = null;
-        $grade->academy_id = $academy->id;
-        $grade->save();
+        // Note: Grade model uses HasUuids trait which auto-generates UUIDs
+        $grade = Grade::create([
+            'name' => $data->name,
+            'price' => $data->price,
+            'teacher_id' => null,
+            'academy_id' => $academy->id,
+        ]);
 
         return $grade;
     }
@@ -112,26 +102,26 @@ class AcademyGradeService
     public function bulkUpdateName(Academy $academy, string $oldName, string $newName): int
     {
         return Grade::where('name', $oldName)
-            ->whereHas('teacher', function ($q) use ($academy) {
-                $q->where('teachers.status', 'active')
-                  ->whereHas('academies', function ($q2) use ($academy) {
-                      $q2->where('academy_id', $academy->id)
-                         ->where('academy_teacher.is_active', true);
-                  });
+            ->join('teachers', 'grades.teacher_id', '=', 'teachers.id')
+            ->join('academy_teacher', function ($join) use ($academy) {
+                $join->on('teachers.id', '=', 'academy_teacher.teacher_id')
+                     ->where('academy_teacher.academy_id', $academy->id)
+                     ->where('academy_teacher.is_active', true);
             })
-            ->update(['name' => $newName]);
+            ->where('teachers.status', 'active')
+            ->update(['grades.name' => $newName]);
     }
 
     public function bulkDelete(Academy $academy, string $name): int
     {
         return Grade::where('name', $name)
-            ->whereHas('teacher', function ($q) use ($academy) {
-                $q->where('teachers.status', 'active')
-                  ->whereHas('academies', function ($q2) use ($academy) {
-                      $q2->where('academy_id', $academy->id)
-                         ->where('academy_teacher.is_active', true);
-                  });
+            ->join('teachers', 'grades.teacher_id', '=', 'teachers.id')
+            ->join('academy_teacher', function ($join) use ($academy) {
+                $join->on('teachers.id', '=', 'academy_teacher.teacher_id')
+                     ->where('academy_teacher.academy_id', $academy->id)
+                     ->where('academy_teacher.is_active', true);
             })
+            ->where('teachers.status', 'active')
             ->delete();
     }
 }

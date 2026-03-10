@@ -48,6 +48,9 @@ class VideoController extends Controller
                     ->whereNull('revoked_at');
             })
             ->with([
+                'owner',
+                'uploader',
+                'publishedBy',
                 'groups',
                 'grade',
                 'teacherReference',
@@ -70,6 +73,9 @@ class VideoController extends Controller
         $this->authorization->assertStudentCanView($video, $student);
 
         $video->load([
+            'owner',
+            'uploader',
+            'publishedBy',
             'groups',
             'grade',
             'teacherReference',

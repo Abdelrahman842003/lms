@@ -38,7 +38,6 @@ class Video extends Model
         'academy_id',
         'grade_id',
         'lecture_id',
-        'lesson_id',
         'title',
         'description',
         'status',
@@ -149,7 +148,12 @@ class Video extends Model
 
     public function comments(): HasMany
     {
-        return $this->hasMany(VideoComment::class)->whereNull('parent_id');
+        return $this->hasMany(VideoComment::class);
+    }
+
+    public function rootComments(): HasMany
+    {
+        return $this->comments()->whereNull('parent_id');
     }
 
     public function reminders(): HasMany

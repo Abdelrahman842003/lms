@@ -8,6 +8,7 @@ use App\Domains\Auth\Models\Teacher;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TeacherSubscription extends Model
 {
@@ -26,16 +27,19 @@ class TeacherSubscription extends Model
         'payment_method',
     ];
 
-    protected $casts = [
-        'month' => 'date',
-        'student_count' => 'integer',
-        'amount_due' => 'decimal:2',
-        'amount_paid' => 'decimal:2',
-        'payment_initiated_at' => 'datetime',
-        'status' => \App\Domains\Subscriptions\Enums\TeacherSubscriptionStatus::class,
-    ];
+    protected function casts(): array
+    {
+        return [
+            'month' => 'date',
+            'student_count' => 'integer',
+            'amount_due' => 'decimal:2',
+            'amount_paid' => 'decimal:2',
+            'payment_initiated_at' => 'datetime',
+            'status' => \App\Domains\Subscriptions\Enums\TeacherSubscriptionStatus::class,
+        ];
+    }
 
-    public function teacher()
+    public function teacher(): BelongsTo
     {
         return $this->belongsTo(Teacher::class);
     }

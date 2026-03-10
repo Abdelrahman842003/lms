@@ -55,6 +55,13 @@ if (! function_exists('format_arabic_number')) {
      */
     function format_arabic_number(int|float $number): string
     {
+        if (!class_exists('NumberFormatter')) {
+            // Fallback if intl extension is not available
+            $western = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+            $eastern = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+            return (string) str_replace($western, $eastern, (string) $number);
+        }
+
         return (string) (new NumberFormatter('ar-EG', NumberFormatter::DECIMAL))->format($number);
     }
 }
@@ -62,12 +69,15 @@ if (! function_exists('format_arabic_number')) {
 if (! function_exists('generate_otp')) {
     /**
      * توليد OTP رقمي عشوائي
+     *
+     * @param int $length طول الرقم (الافتراضي 4)
+     * @return string رقم OTP
      */
     function generate_otp(int $length = 4): string
     {
-        $min = (int) str_pad('1', $length, '0') . '';
+        $min = (int) ('1' . str_repeat('0', $length - 1));
         $max = (int) str_repeat('9', $length);
 
-        return (string) random_int((int) $min, $max);
+        return (string) random_int($min, $max);
     }
 }

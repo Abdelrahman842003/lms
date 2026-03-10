@@ -8,9 +8,12 @@ use App\Domains\Auth\Models\Academy;
 use App\Domains\Auth\Models\Teacher;
 use App\Domains\Enrollments\Models\Grade;
 use App\Domains\Enrollments\Models\Group;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Lecture extends Model
 {
@@ -41,116 +44,62 @@ class Lecture extends Model
         'cancelled_dates',
     ];
 
-    protected $casts = [
-        'start_time' => 'datetime',
-        'end_time' => 'datetime',
-        'qr_code_expires_at' => 'datetime',
-        'is_active' => 'boolean',
-        'is_recurring' => 'boolean',
-        'recurrence_days' => 'array',
-        'cancelled_dates' => 'array',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'start_time' => 'datetime',
+            'end_time' => 'datetime',
+            'qr_code_expires_at' => 'datetime',
+            'is_active' => 'boolean',
+            'is_recurring' => 'boolean',
+            'recurrence_days' => 'array',
+            'cancelled_dates' => 'array',
+        ];
+    }
 
-    public function teacher()
+    public function teacher(): BelongsTo
     {
         return $this->belongsTo(Teacher::class);
     }
 
-    public function academy()
+    public function academy(): BelongsTo
     {
         return $this->belongsTo(Academy::class);
     }
 
-    public function grade()
+    public function grade(): BelongsTo
     {
         return $this->belongsTo(Grade::class);
     }
 
-    public function group()
+    public function group(): BelongsTo
     {
         return $this->belongsTo(Group::class);
     }
 
-    public function attendances()
+    public function attendances(): HasMany
     {
         return $this->hasMany(Attendance::class);
     }
 
-    public function parent()
+    public function parent(): BelongsTo
     {
         return $this->belongsTo(Lecture::class, 'parent_id');
     }
 
-    public function children()
+    public function children(): HasMany
     {
         return $this->hasMany(Lecture::class, 'parent_id');
     }
 
-    public function sessions()
+    public function sessions(): HasMany
     {
         return $this->hasMany(LectureSession::class);
     }
 
-    public function current_session()
+    public function currentSession(): HasOne
     {
         return $this->hasOne(LectureSession::class)->where('date', now()->toDateString());
-    }
-
-    public function scopeFilter($query, array $filters)
-    {
-        if ($search = $filters['search'] ?? null) {
-            $query->where('title', 'like', "%{$search}%");
-        }
-
-        if ($dateFrom = $filters['date_from'] ?? null) {
-            $query->whereDate('start_time', '>=', $dateFrom);
-        }
-
-        if ($dateTo = $filters['date_to'] ?? null) {
-            $query->whereDate('start_time', '<=', $dateTo);
-        }
-
-        if ($groupId = $filters['group_id'] ?? null) {
-            $query->where('group_id', $groupId);
-        }
-
-        if ($teacherId = $filters['teacher_id'] ?? null) {
-            $query->where('teacher_id', $teacherId);
-        }
-
-        if ($status = $filters['status'] ?? null) {
-            switch ($status) {
-                case 'today':
-                    $query->where(function ($q) {
-                        $q->whereDate('start_time', \Carbon\Carbon::today())
-                          ->orWhere(function ($q) {
-                              $q->where('is_recurring', true)
-                                ->whereJsonContains('recurrence_days', \Carbon\Carbon::now()->format('l'));
-                          });
-                    });
-                    break;
-                case 'upcoming':
-                    $query->where('start_time', '>', now())
-                          ->where('is_active', false);
-                    break;
-                case 'ongoing':
-                    $query->where(function ($q) {
-                        $q->where('is_active', true)
-                          ->orWhere(function ($q) {
-                              $q->where('start_time', '<=', now())
-                                ->where('end_time', '>', now());
-                          });
-                    });
-                    break;
-                case 'finished':
-                    $query->where('end_time', '<=', now())
-                          ->where('is_active', false);
-                    break;
-                case 'recurring':
-                    $query->where('is_recurring', true);
-                    break;
-            }
-        }
     }
 
     public function scopeForAcademy($query, $academyId)
@@ -160,11 +109,13 @@ class Lecture extends Model
 
     public function scopeForAcademyTeachers($query, $academyId)
     {
-        // Get lectures from teachers belonging to this academy
-        return $query->whereHas('teacher', function ($q) use ($academyId) {
-            $q->whereHas('academies', function ($aq) use ($academyId) {
-                $aq->where('academy_id', $academyId)->where('is_active', true);
-            });
-        });
+        // Get lectures from teachers belonging to this academy using direct join
+        return $query->join('teachers', 'lectures.teacher_id', '=', 'teachers.id')
+            ->join('academy_teacher', function ($join) use ($academyId) {
+                $join->on('teachers.id', '=', 'academy_teacher.teacher_id')
+                    ->where('academy_teacher.academy_id', $academyId)
+                    ->where('academy_teacher.is_active', true);
+            })
+            ->select('lectures.*');
     }
 }

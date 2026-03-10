@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Auth\Authenticatable;
@@ -15,10 +16,11 @@ use App\Domains\Subscriptions\Models\Subscription;
 use App\Domains\Subscriptions\Models\AcademySubscription;
 use App\Domains\Subscriptions\Enums\SubscriptionStatus;
 use App\Domains\Support\Models\TeacherAttendanceLog;
+use App\Domains\Subscriptions\Traits\HasSubscriptionStatus;
 
 class Academy extends Model implements AuthenticatableContract
 {
-    use HasFactory, HasUuids, HasApiTokens, Authenticatable;
+    use HasFactory, HasUuids, HasApiTokens, Authenticatable, HasSubscriptionStatus, Notifiable;
 
     protected $fillable = [
         'name',
@@ -43,27 +45,28 @@ class Academy extends Model implements AuthenticatableContract
         'password',
     ];
 
-    protected $casts = [
-        'is_active' => 'boolean',
-        'password' => 'hashed',
-        'trial_period_days' => 'integer',
-        'plan_expires_at' => 'date',
-        'plan_max_students' => 'integer',
-        'is_unlimited_students' => 'boolean',
-        'subscription_fee' => 'decimal:2',
-        'paid_amount' => 'decimal:2',
-        'storage_limit_gb' => 'integer',
-        'storage_used_bytes' => 'integer',
-        'discount_percent' => 'decimal:2',
-    ];
-
-    protected $appends = [
-        'total_enrollments_count',
-    ];
-
-    protected static function boot()
+    protected function casts(): array
     {
-        parent::boot();
+        return [
+            'is_active' => 'boolean',
+            'password' => 'hashed',
+            'trial_period_days' => 'integer',
+            'plan_expires_at' => 'date',
+            'plan_max_students' => 'integer',
+            'is_unlimited_students' => 'boolean',
+            'subscription_fee' => 'decimal:2',
+            'paid_amount' => 'decimal:2',
+            'storage_limit_gb' => 'integer',
+            'storage_used_bytes' => 'integer',
+            'discount_percent' => 'decimal:2',
+        ];
+    }
+
+    protected $appends = [];
+
+    protected static function booted()
+    {
+        parent::booted();
 
         static::creating(function ($academy) {
             // Generate unique QR codes
@@ -124,29 +127,6 @@ class Academy extends Model implements AuthenticatableContract
             ->orderByDesc('month')
             ->orderByDesc('created_at')
             ->first();
-    }
-
-    public function hasActiveSubscription(): bool
-    {
-        $latest = $this->latestSubscription();
-        if ($latest) {
-            $status = $latest->status instanceof SubscriptionStatus ? $latest->status->value : (string) $latest->status;
-            if (in_array($status, [
-                SubscriptionStatus::CANCELLED->value,
-                SubscriptionStatus::PENDING->value,
-                SubscriptionStatus::PARTIAL->value,
-                SubscriptionStatus::EXPIRED->value,
-            ], true)) {
-                return false;
-            }
-        }
-
-        $expiresAt = $this->plan_expires_at ? $this->plan_expires_at->copy()->startOfDay() : null;
-        if ($this->plan_type === 'trial') {
-            return $expiresAt !== null && $expiresAt->gte(now()->startOfDay());
-        }
-
-        return $expiresAt !== null && $expiresAt->gte(now()->startOfDay());
     }
 
     public function isSubscriptionBlocked(): bool

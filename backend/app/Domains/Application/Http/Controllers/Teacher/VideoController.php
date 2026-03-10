@@ -74,7 +74,7 @@ class VideoController extends Controller
         $teacher = $this->getTeacherFromRequest($request);
         Gate::authorize('view', $video);
 
-        $video->load(['groups', 'attachments', 'grade', 'teacherReference', 'quiz.questions'])
+        $video->load(['owner', 'uploader', 'publishedBy', 'groups', 'attachments', 'grade', 'teacherReference', 'quiz.questions'])
               ->loadCount(['likes', 'comments', 'attachments']);
 
         return $this->successResponse([

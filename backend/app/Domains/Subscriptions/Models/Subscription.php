@@ -54,18 +54,21 @@ class Subscription extends Model
         'notes',
     ];
 
-    protected $casts = [
-        'month' => 'date',
-        'type' => SubscriptionType::class,
-        'status' => SubscriptionStatus::class,
-        'seats_count' => 'integer',
-        'quota_limit' => 'integer',
-        'cost_per_seat' => 'decimal:2',
-        'amount_due' => 'decimal:2',
-        'amount_paid' => 'decimal:2',
-        'payment_initiated_at' => 'datetime',
-        'paid_at' => 'date',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'month' => 'date',
+            'type' => SubscriptionType::class,
+            'status' => SubscriptionStatus::class,
+            'seats_count' => 'integer',
+            'quota_limit' => 'integer',
+            'cost_per_seat' => 'decimal:2',
+            'amount_due' => 'decimal:2',
+            'amount_paid' => 'decimal:2',
+            'payment_initiated_at' => 'datetime',
+            'paid_at' => 'date',
+        ];
+    }
 
     /**
      * Polymorphic relationship to subscriber (Teacher or Academy)

@@ -105,7 +105,7 @@ class DashboardService
     public function getRecentStudents(Teacher $teacher, ?string $academyId, int $limit = 5): Collection
     {
         $query = \App\Domains\Enrollments\Models\Enrollment::where('teacher_id', $teacher->id)
-            ->with(['student', 'grade', 'group', 'student.examResults.exam', 'student.attendances.lecture']);
+            ->with(['student', 'grade', 'group', 'student.examResults.exam', 'student.attendances.lecture', 'academy:id,trial_period_days', 'teacher:id,trial_period_days']);
 
         $this->applyContextFilter($query, $academyId);
 

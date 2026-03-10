@@ -6,11 +6,17 @@ namespace App\Domains\Auth\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Symfony\Component\HttpFoundation\Response;
 use App\Domains\Auth\Models\Teacher;
 
 class EnsureTeacherNotSuspendedForStudent
 {
+    /**
+     * Cache TTL for suspension status (5 minutes)
+     */
+    private const TTL = 300;
+
     /**
      * Handle an incoming request.
      *
@@ -32,11 +38,19 @@ class EnsureTeacherNotSuspendedForStudent
         }
 
         if ($teacherId) {
-            $teacher = Teacher::find($teacherId);
-            
-            if ($teacher && $teacher->status === 'suspended') {
+            // Check cache first
+            $cacheKey = "teacher:{$teacherId}:suspension_status";
+            $isSuspended = Cache::remember($cacheKey, self::TTL, function () use ($teacherId) {
+                $teacher = Teacher::find($teacherId);
+                return $teacher ? [
+                    'suspended' => $teacher->status === 'suspended',
+                    'name' => $teacher->name,
+                ] : null;
+            });
+
+            if ($isSuspended && $isSuspended['suspended']) {
                 return response()->json([
-                    'message' => "عفواً، هذا المدرس ({$teacher->name}) معلق حالياً ولا يمكن الوصول لبياناته.",
+                    'message' => "عفواً، هذا المدرس ({$isSuspended['name']}) معلق حالياً ولا يمكن الوصول لبياناته.",
                     'error' => 'TEACHER_SUSPENDED'
                 ], 403);
             }

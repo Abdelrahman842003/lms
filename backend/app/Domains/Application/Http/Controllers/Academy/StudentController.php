@@ -85,7 +85,7 @@ class StudentController extends Controller
         $student = Student::find($id);
         if (!$student) {
             // Try to find by enrollment_id
-            $enrollment = Enrollment::find($id);
+            $enrollment = Enrollment::with(['academy:id,trial_period_days', 'teacher:id,trial_period_days'])->find($id);
             if ($enrollment) {
                 $student = $enrollment->student;
             }
@@ -96,7 +96,7 @@ class StudentController extends Controller
         }
 
         // Get all enrollments for this student within this academy
-        $enrollments = Enrollment::with(['grade', 'group', 'teacher'])
+        $enrollments = Enrollment::with(['grade', 'group', 'teacher', 'academy:id,trial_period_days', 'teacher:id,trial_period_days'])
             ->where('student_id', $student->id)
             ->where('academy_id', $academy->id)
             ->get();
@@ -221,6 +221,7 @@ class StudentController extends Controller
         $teacherIds = $academy->activeTeachers()->pluck('teachers.id');
 
         $enrollment = Enrollment::whereIn('teacher_id', $teacherIds)
+            ->with(['academy:id,trial_period_days', 'teacher:id,trial_period_days'])
             ->where(function ($q) use ($id) {
                 $q->where('id', $id)->orWhere('student_id', $id);
             })
@@ -243,6 +244,7 @@ class StudentController extends Controller
         }
 
         $query = Enrollment::where('academy_id', $academy->id)
+            ->with(['academy:id,trial_period_days', 'teacher:id,trial_period_days'])
             ->where(function ($q) use ($id) {
                 $q->where('id', $id)->orWhere('student_id', $id);
             });

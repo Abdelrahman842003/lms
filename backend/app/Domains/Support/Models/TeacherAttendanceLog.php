@@ -10,6 +10,7 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TeacherAttendanceLog extends Model
 {
@@ -25,17 +26,20 @@ class TeacherAttendanceLog extends Model
         'notes',
     ];
 
-    protected $casts = [
-        'date' => 'date',
-        'checked_in_at' => 'datetime',
-        'checked_out_at' => 'datetime',
-        'status' => \App\Domains\Auth\Enums\TeacherAttendanceStatus::class,
-    ];
+    protected function casts(): array
+    {
+        return [
+            'date' => 'date',
+            'checked_in_at' => 'datetime',
+            'checked_out_at' => 'datetime',
+            'status' => \App\Domains\Auth\Enums\TeacherAttendanceStatus::class,
+        ];
+    }
 
     /**
      * Academy relationship
      */
-    public function academy()
+    public function academy(): BelongsTo
     {
         return $this->belongsTo(Academy::class);
     }
@@ -43,7 +47,7 @@ class TeacherAttendanceLog extends Model
     /**
      * Teacher relationship
      */
-    public function teacher()
+    public function teacher(): BelongsTo
     {
         return $this->belongsTo(Teacher::class);
     }

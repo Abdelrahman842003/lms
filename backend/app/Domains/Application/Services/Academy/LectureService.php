@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace App\Domains\Application\Services\Academy;
 
-use App\Domains\Lectures\DTOs\LectureData;
+use App\Domains\Application\Services\Teacher\LectureService as TeacherLectureService;
 use App\Domains\Auth\Models\Academy;
 use App\Domains\Auth\Models\Teacher;
+use App\Domains\Lectures\DTOs\LectureData;
 use App\Domains\Lectures\Models\Lecture;
-use App\Domains\Application\Services\Teacher\LectureService as TeacherLectureService;
+use App\Domains\Support\Filters\LectureFilter;
 use Carbon\Carbon;
 use Illuminate\Pagination\LengthAwarePaginator;
 
@@ -25,9 +26,11 @@ class LectureService
                 // Lectures created by academy
                 $q->where('academy_id', $academy->id);
             })
-            ->filter($filters)
             ->orderBy('created_at', 'desc');
-        
+
+        // Apply filters using Filter class
+        (new LectureFilter($filters))->apply($query);
+
         return $query->paginate($perPage);
     }
 
@@ -40,16 +43,16 @@ class LectureService
             ->where('academy_teacher.is_active', true)
             ->exists();
 
-        if (!$belongsToAcademy) {
+        if (! $belongsToAcademy) {
             throw new \Exception('المدرس لا ينتمي لهذه الأكاديمية');
         }
 
         $lectureData = $data->toArray();
-        
+
         // Process dates
         if (isset($lectureData['date']) && $lectureData['date']) {
             $date = Carbon::parse($lectureData['date']);
-            $lectureData['start_time'] = Carbon::parse($date->format('Y-m-d') . ' ' . $lectureData['recurrence_time'], 'Africa/Cairo')
+            $lectureData['start_time'] = Carbon::parse($date->format('Y-m-d').' '.$lectureData['recurrence_time'], 'Africa/Cairo')
                 ->setTimezone('UTC');
             $lectureData['end_time'] = $lectureData['start_time']->copy()->addMinutes($lectureData['duration_minutes']);
         }
@@ -69,7 +72,7 @@ class LectureService
         if (isset($lectureData['date']) && $lectureData['date']) {
             $date = Carbon::parse($lectureData['date']);
             if (isset($lectureData['recurrence_time']) && isset($lectureData['duration_minutes'])) {
-                $lectureData['start_time'] = Carbon::parse($date->format('Y-m-d') . ' ' . $lectureData['recurrence_time'], 'Africa/Cairo')
+                $lectureData['start_time'] = Carbon::parse($date->format('Y-m-d').' '.$lectureData['recurrence_time'], 'Africa/Cairo')
                     ->setTimezone('UTC');
                 $lectureData['end_time'] = $lectureData['start_time']->copy()->addMinutes($lectureData['duration_minutes']);
             }

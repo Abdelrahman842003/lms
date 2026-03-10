@@ -32,23 +32,26 @@ class GamificationSetting extends Model
         'video_first_watch_bonus',
     ];
 
-    protected $casts = [
-        'attendance_points' => 'integer',
-        'perfect_month_bonus' => 'integer',
-        'exam_max_points' => 'integer',
-        'exam_retake_bonus' => 'integer',
-        'exam_first_place_bonus' => 'integer',
-        'streak_5_bonus' => 'integer',
-        'streak_10_bonus' => 'integer',
-        'is_enabled' => 'boolean',
-        'show_leaderboard' => 'boolean',
-        'leaderboard_size' => 'integer',
-        // نقاط الفيديوهات
-        'video_watch_points'      => 'integer',
-        'video_quiz_max_points'   => 'integer',
-        'video_quiz_perfect_bonus'=> 'integer',
-        'video_first_watch_bonus' => 'integer',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'attendance_points' => 'integer',
+            'perfect_month_bonus' => 'integer',
+            'exam_max_points' => 'integer',
+            'exam_retake_bonus' => 'integer',
+            'exam_first_place_bonus' => 'integer',
+            'streak_5_bonus' => 'integer',
+            'streak_10_bonus' => 'integer',
+            'is_enabled' => 'boolean',
+            'show_leaderboard' => 'boolean',
+            'leaderboard_size' => 'integer',
+            // نقاط الفيديوهات
+            'video_watch_points'      => 'integer',
+            'video_quiz_max_points'   => 'integer',
+            'video_quiz_perfect_bonus'=> 'integer',
+            'video_first_watch_bonus' => 'integer',
+        ];
+    }
 
     // Default values
     const DEFAULTS = [

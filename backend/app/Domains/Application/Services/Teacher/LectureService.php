@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace App\Domains\Application\Services\Teacher;
 
 use App\Domains\Auth\Models\Student;
-use App\Domains\Lectures\Models\Attendance;
-use App\Domains\Lectures\Models\Lecture;
 use App\Domains\Lectures\Events\LectureUpdated;
 use App\Domains\Lectures\Jobs\ProcessLectureEnd;
+use App\Domains\Lectures\Models\Attendance;
+use App\Domains\Lectures\Models\Lecture;
 use App\Domains\Lectures\Notifications\LectureActivatedNotification;
 use App\Domains\Lectures\Notifications\LectureCancelledNotification;
 use App\Domains\Lectures\Notifications\StudentAttendanceNotification;
+use App\Domains\Support\Filters\LectureFilter;
 use App\Domains\Support\Traits\HasAcademyFilter;
 use Carbon\Carbon;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -29,27 +30,29 @@ class LectureService
         $query = $teacher->lectures()
             ->with(['grade', 'group'])
             ->withCount('attendances')
-            ->orderByRaw("
+            ->orderByRaw('
                 CASE
                     WHEN is_active = 1 THEN 1
                     WHEN end_time > NOW() THEN 2
                     ELSE 3
                 END ASC
-            ")
-            ->orderBy('start_time', 'DESC')
-            ->filter($filters);
+            ')
+            ->orderBy('start_time', 'DESC');
+
+        // Apply filters using Filter class
+        (new LectureFilter($filters))->apply($query);
 
         // Apply academy filter via grade relationship
         // Apply academy filter
         if ($academyId === 'independent') {
             $query->whereNull('academy_id')
-                  ->whereDoesntHave('grade', fn($q) => $q->whereNotNull('academy_id'))
-                  ->whereDoesntHave('group', fn($q) => $q->whereNotNull('academy_id'));
+                ->whereDoesntHave('grade', fn ($q) => $q->whereNotNull('academy_id'))
+                ->whereDoesntHave('group', fn ($q) => $q->whereNotNull('academy_id'));
         } elseif ($academyId) {
-            $query->where(function($q) use ($academyId) {
+            $query->where(function ($q) use ($academyId) {
                 $q->where('academy_id', $academyId)
-                  ->orWhereHas('grade', fn($g) => $g->where('academy_id', $academyId))
-                  ->orWhereHas('group', fn($gr) => $gr->where('academy_id', $academyId));
+                    ->orWhereHas('grade', fn ($g) => $g->where('academy_id', $academyId))
+                    ->orWhereHas('group', fn ($gr) => $gr->where('academy_id', $academyId));
             });
         }
 
@@ -59,20 +62,20 @@ class LectureService
     public function createLecture($teacher, array $data): Lecture
     {
         $lecture = $teacher->lectures()->create($data);
-        
+
         // Broadcast lecture created event
         LectureUpdated::dispatch($lecture);
-        
+
         return $lecture;
     }
 
     public function updateLecture(Lecture $lecture, array $data): Lecture
     {
         $lecture->update($data);
-        
+
         // Broadcast lecture updated event
         LectureUpdated::dispatch($lecture->fresh());
-        
+
         return $lecture;
     }
 
@@ -81,22 +84,22 @@ class LectureService
         // Store teacher_id before deletion for broadcasting
         $teacherId = $lecture->teacher_id;
         $lectureId = $lecture->id;
-        
+
         $result = $lecture->delete();
-        
+
         // Broadcast lecture deleted event
         // Note: We can't use the deleted model, so we'll just trigger a refresh
         // The frontend will handle the missing lecture appropriately
         if ($result) {
             // Create a temporary lecture object for broadcasting
-            $tempLecture = new Lecture();
+            $tempLecture = new Lecture;
             $tempLecture->id = $lectureId;
             $tempLecture->teacher_id = $teacherId;
             $tempLecture->is_active = false;
             $tempLecture->exists = false;
             LectureUpdated::dispatch($tempLecture);
         }
-        
+
         return $result;
     }
 
@@ -104,8 +107,8 @@ class LectureService
     {
         // 1. Update lecture status
         $updateData = ['is_active' => false];
-        
-        if (!$lecture->is_recurring) {
+
+        if (! $lecture->is_recurring) {
             $updateData['end_time'] = Carbon::now();
         }
 
@@ -120,7 +123,7 @@ class LectureService
     public function toggleActive(Lecture $lecture): Lecture
     {
         $lecture->update([
-            'is_active' => !$lecture->is_active
+            'is_active' => ! $lecture->is_active,
         ]);
 
         if ($lecture->is_active) {
@@ -133,16 +136,16 @@ class LectureService
 
                 if ($students->count() > 0) {
                     Notification::send(
-                        $students, 
+                        $students,
                         new LectureActivatedNotification(
-                            $lecture->title, 
-                            $lecture->teacher->name, 
+                            $lecture->title,
+                            $lecture->teacher->name,
                             $lecture->id
                         )
                     );
                 }
             } catch (\Exception $e) {
-                Log::error('Failed to send lecture activation notification: ' . $e->getMessage());
+                Log::error('Failed to send lecture activation notification: '.$e->getMessage());
             }
         }
 
@@ -157,7 +160,7 @@ class LectureService
         $query = $lecture->teacher->students()
             ->wherePivot('grade_id', $lecture->grade_id)
             ->wherePivot('is_active', true);
-            
+
         if ($lecture->group_id) {
             $query->wherePivot('group_id', $lecture->group_id);
         }
@@ -179,7 +182,7 @@ class LectureService
 
         $attendees = $allStudents->map(function ($student) use ($attendanceRecords) {
             $record = $attendanceRecords->get($student->id);
-            
+
             return [
                 'id' => $record ? $record->id : null,
                 'student_id' => $student->id,
@@ -200,11 +203,11 @@ class LectureService
     public function getAvailableDates(Lecture $lecture): array
     {
         $availableDates = [];
-        
+
         if ($lecture->is_recurring && is_array($lecture->recurrence_days)) {
             $startDate = $lecture->created_at->copy()->startOfDay();
             $endDate = now()->endOfDay();
-            
+
             // Map day names to Carbon integers (Sunday = 0, Monday = 1, etc.)
             $dayMap = [
                 'Sunday' => 0,
@@ -215,12 +218,12 @@ class LectureService
                 'Friday' => 5,
                 'Saturday' => 6,
             ];
-            
-            $recurrenceDays = array_map(function($day) use ($dayMap) {
+
+            $recurrenceDays = array_map(function ($day) use ($dayMap) {
                 return $dayMap[$day] ?? null;
             }, $lecture->recurrence_days);
-            
-            $recurrenceDays = array_filter($recurrenceDays, function($day) {
+
+            $recurrenceDays = array_filter($recurrenceDays, function ($day) {
                 return $day !== null;
             });
 
@@ -229,34 +232,34 @@ class LectureService
             while ($current <= $endDate) {
                 if (in_array($current->dayOfWeek, $recurrenceDays)) {
                     $dateStr = $current->format('Y-m-d');
-                    
+
                     // Check status
                     $status = 'not_activated';
-                    
+
                     // Check if attendance exists for this date
                     $hasAttendance = $lecture->attendances()
                         ->whereDate('created_at', $dateStr)
                         ->exists();
-                        
+
                     if ($hasAttendance) {
                         $status = 'active';
                     } elseif (in_array($dateStr, $lecture->cancelled_dates ?? [])) {
                         $status = 'cancelled';
                     }
-                    
+
                     $availableDates[] = [
                         'date' => $dateStr,
-                        'status' => $status
+                        'status' => $status,
                     ];
                 }
                 $current->addDay();
             }
-            
+
             // Sort descending
-            usort($availableDates, function($a, $b) {
+            usort($availableDates, function ($a, $b) {
                 return strcmp($b['date'], $a['date']);
             });
-            
+
         } else {
             // For non-recurring, just get dates with attendance
             $dates = $lecture->attendances()
@@ -264,11 +267,11 @@ class LectureService
                 ->distinct()
                 ->orderBy('date', 'desc')
                 ->pluck('date');
-                
+
             foreach ($dates as $date) {
                 $availableDates[] = [
                     'date' => $date,
-                    'status' => 'active'
+                    'status' => 'active',
                 ];
             }
         }
@@ -280,7 +283,7 @@ class LectureService
     {
         $cancelledDates = $lecture->cancelled_dates ?? [];
 
-        if (!in_array($date, $cancelledDates)) {
+        if (! in_array($date, $cancelledDates)) {
             $cancelledDates[] = $date;
             $lecture->update(['cancelled_dates' => $cancelledDates]);
 
@@ -293,15 +296,15 @@ class LectureService
 
                 if ($students->count() > 0) {
                     Notification::send(
-                        $students, 
+                        $students,
                         new LectureCancelledNotification(
-                            $lecture->title . ' (' . $date . ')', 
+                            $lecture->title.' ('.$date.')',
                             $lecture->teacher->name
                         )
                     );
                 }
             } catch (\Exception $e) {
-                Log::error('Failed to send session cancellation notification: ' . $e->getMessage());
+                Log::error('Failed to send session cancellation notification: '.$e->getMessage());
             }
         }
 
@@ -314,13 +317,13 @@ class LectureService
         $payload = [
             'lecture_id' => $lecture->id,
             'expires_at' => Carbon::now()->addSeconds(10)->timestamp,
-            'salt' => Str::random(8)
+            'salt' => Str::random(8),
         ];
-        
+
         $token = Crypt::encryptString(json_encode($payload));
 
         // Return the full URL that the student should visit
-        $url = config('app.url') . '/student/attend?token=' . $token;
+        $url = config('app.url').'/student/attend?token='.$token;
 
         return [
             'qr_code_url' => $url,
@@ -338,7 +341,7 @@ class LectureService
         if ($existingAttendance) {
             return [
                 'message' => 'الطالب مسجل حضور بالفعل',
-                'status' => 'already_attended'
+                'status' => 'already_attended',
             ];
         }
 
@@ -355,7 +358,7 @@ class LectureService
 
         return [
             'message' => 'تم تسجيل الحضور بنجاح',
-            'status' => 'attended'
+            'status' => 'attended',
         ];
     }
 }
