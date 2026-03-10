@@ -41,9 +41,12 @@ class PointTransaction extends Model
         'description',
     ];
 
-    protected $casts = [
-        'points' => 'integer',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'points' => 'integer',
+        ];
+    }
 
     protected $appends = ['type_name'];
 

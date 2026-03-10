@@ -92,10 +92,11 @@ class ExamAttempt extends Model
 
     /**
      * Get answered questions count
+     * Note: Use loadCount() instead of count() to avoid N+1 queries
      */
     public function getAnsweredQuestionsCount(): int
     {
-        return $this->answers()->count();
+        return $this->answers_count ?? $this->loadCount('answers');
     }
 
     protected static function booted()

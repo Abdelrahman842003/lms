@@ -22,10 +22,13 @@ class StudentPoint extends Model
         'attendance_streak',
     ];
 
-    protected $casts = [
-        'total_points' => 'integer',
-        'attendance_streak' => 'integer',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'total_points' => 'integer',
+            'attendance_streak' => 'integer',
+        ];
+    }
 
     public function student(): BelongsTo
     {

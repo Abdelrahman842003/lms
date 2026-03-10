@@ -22,6 +22,11 @@ export default defineConfig({
       { text: 'Docker', link: '/docker/overview' },
       { text: 'Backend', link: '/backend/architecture' },
       { text: 'Frontend', link: '/frontend/architecture' },
+      { text: 'Architecture', link: '/ARCHITECTURE.md' },
+      { text: 'API Conventions', link: '/API_CONVENTIONS.md' },
+      { text: 'Caching', link: '/CACHING_STRATEGY.md' },
+      { text: 'Performance', link: '/PERFORMANCE.md' },
+      { text: 'Changelog', link: '/CHANGELOG.md' },
     ],
 
     sidebar: {

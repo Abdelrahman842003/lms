@@ -46,7 +46,13 @@ docs/
 │   └── api-client.md      # API client
 ├── cookbook/
 │   └── new-feature.md     # Feature implementation
+├── ARCHITECTURE.md        # Domain-Driven Design architecture
+├── API_CONVENTIONS.md     # API response standards
+├── CACHING_STRATEGY.md    # Redis caching implementation
+├── PERFORMANCE.md         # Performance optimization
+├── CHANGELOG.md           # Version history
 ├── index.md               # Home page
+├── README.md              # This file
 └── package.json
 ```
 

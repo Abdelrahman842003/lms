@@ -146,6 +146,16 @@ neetaq/
 | [Frontend Architecture](/frontend/architecture) | Next.js app structure |
 | [Adding Features](/cookbook/new-feature) | End-to-end feature guide |
 
+### Core Documentation
+
+| Resource | Description |
+|----------|-------------|
+| [Architecture (DDD)](/ARCHITECTURE.md) | Domain-Driven Design architecture overview |
+| [API Conventions](/API_CONVENTIONS.md) | Standardized API response formats |
+| [Caching Strategy](/CACHING_STRATEGY.md) | Redis caching implementation |
+| [Performance Optimization](/PERFORMANCE.md) | Database indexes and query optimization |
+| [Changelog](/CHANGELOG.md) | Version history and changes |
+
 ### API Version
 
 Current API version: **v1**
