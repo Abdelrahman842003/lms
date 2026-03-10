@@ -36,6 +36,10 @@ class SubscriptionSettingsPage extends Page implements HasForms
         'trial_period_days',
         'teacher_price_per_student',
         'academy_price_per_student',
+        'default_teacher_storage_gb',
+        'default_academy_storage_gb',
+        'teacher_storage_price_per_gb',
+        'academy_storage_price_per_gb',
     ];
 
     public ?array $data = [];
@@ -43,9 +47,13 @@ class SubscriptionSettingsPage extends Page implements HasForms
     public function mount(): void
     {
         $this->form->fill([
-            'trial_period_days' => Setting::getValue('trial_period_days', '14'),
-            'teacher_price_per_student' => Setting::getValue('teacher_price_per_student', '60'),
-            'academy_price_per_student' => Setting::getValue('academy_price_per_student', '40'),
+            'trial_period_days'             => Setting::getValue('trial_period_days', '14'),
+            'teacher_price_per_student'     => Setting::getValue('teacher_price_per_student', '60'),
+            'academy_price_per_student'     => Setting::getValue('academy_price_per_student', '40'),
+            'default_teacher_storage_gb'    => Setting::getValue('default_teacher_storage_gb', ''),
+            'default_academy_storage_gb'    => Setting::getValue('default_academy_storage_gb', ''),
+            'teacher_storage_price_per_gb'  => Setting::getValue('teacher_storage_price_per_gb', '0'),
+            'academy_storage_price_per_gb'  => Setting::getValue('academy_storage_price_per_gb', '0'),
         ]);
     }
 
@@ -78,6 +86,55 @@ class SubscriptionSettingsPage extends Page implements HasForms
                         \Filament\Actions\Action::make('save_subscriptions')
                             ->label('حفظ الاشتراكات')
                             ->icon('heroicon-m-ticket')
+                            ->color('primary')
+                            ->action(fn () => $this->save()),
+                    ]),
+
+                Section::make('إعدادات التخزين (R2)')
+                    ->description('تحديد الحد الافتراضي وسعر التخزين على Cloudflare R2. يمكن تجاوز الحد لكل مدرس/أكاديمية بشكل منفرد من صفحة التعديل.')
+                    ->icon('heroicon-o-server')
+                    ->schema([
+                        TextInput::make('default_teacher_storage_gb')
+                            ->label('الحد الافتراضي للمدرس (GB)')
+                            ->numeric()
+                            ->minValue(1)
+                            ->nullable()
+                            ->placeholder('اتركه فارغاً = غير محدود')
+                            ->helperText('الحد الافتراضي لمساحة تخزين الفيديوهات والمرفقات للمدرسين المستقلين.')
+                            ->suffix('GB'),
+
+                        TextInput::make('default_academy_storage_gb')
+                            ->label('الحد الافتراضي للأكاديمية (GB)')
+                            ->numeric()
+                            ->minValue(1)
+                            ->nullable()
+                            ->placeholder('اتركه فارغاً = غير محدود')
+                            ->helperText('الحد الافتراضي لمساحة تخزين الفيديوهات والمرفقات للأكاديميات.')
+                            ->suffix('GB'),
+
+                        TextInput::make('teacher_storage_price_per_gb')
+                            ->label('سعر الجيجا للمدرس (شهرياً)')
+                            ->numeric()
+                            ->minValue(0)
+                            ->step(0.1)
+                            ->default('0')
+                            ->prefix('ج.م')
+                            ->helperText('يُضاف إلى فاتورة الاشتراك: storage_limit_gb × السعر × عدد الشهور.'),
+
+                        TextInput::make('academy_storage_price_per_gb')
+                            ->label('سعر الجيجا للأكاديمية (شهرياً)')
+                            ->numeric()
+                            ->minValue(0)
+                            ->step(0.1)
+                            ->default('0')
+                            ->prefix('ج.م')
+                            ->helperText('يُضاف إلى فاتورة الاشتراك: storage_limit_gb × السعر × عدد الشهور.'),
+                    ])
+                    ->columns(2)
+                    ->footerActions([
+                        \Filament\Actions\Action::make('save_storage')
+                            ->label('حفظ إعدادات التخزين')
+                            ->icon('heroicon-m-server')
                             ->color('primary')
                             ->action(fn () => $this->save()),
                     ]),

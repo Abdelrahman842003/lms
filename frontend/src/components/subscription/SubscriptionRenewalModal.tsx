@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { FormModal, Select, Input, Icon } from '@/components/ui';
+import { FormModal, Select, Icon } from '@/components/ui';
 import type { PlanOption } from '@/types/subscription.types';
 
 interface SubscriptionRenewalModalProps {
@@ -17,25 +17,20 @@ export default function SubscriptionRenewalModal({
   planOptions,
   isLoading = false,
 }: SubscriptionRenewalModalProps) {
-  const [planSelection, setPlanSelection] = useState<string>('');
-  const [customMonths, setCustomMonths] = useState<string>('');
+  const [selectedPlanCode, setSelectedPlanCode] = useState<string>('');
 
   const selectOptions = useMemo(
     () => planOptions.map(option => ({ value: option.value, label: option.label })),
     [planOptions]
   );
 
-  const requiresCustomMonths = planSelection === 'custom';
-
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    const payload = {
-      plan_selection: planSelection,
-      custom_months: requiresCustomMonths ? Number(customMonths || 1) : null,
-    };
+    if (!selectedPlanCode) return;
+
+    const payload = { plan_selection: selectedPlanCode };
     await onSubmit(payload);
-    setPlanSelection('');
-    setCustomMonths('');
+    setSelectedPlanCode('');
   };
 
   return (
@@ -52,29 +47,17 @@ export default function SubscriptionRenewalModal({
       <div className="ux-space-y-4">
         <div className="ux-flex ux-items-center ux-gap-2 ux-text-sm ux-text-gray-300">
           <Icon name="info-circle" className="ux-text-primary" />
-          اختر مدة الاشتراك المطلوبة، وسيتم إرسال الطلب للوحة الإدارة للموافقة.
+          اختر الباقة المناسبة (سعة المقاعد + الفئة)، وسيتم إرسال الطلب للإدارة للموافقة.
         </div>
 
         <Select
           options={selectOptions}
-          value={planSelection}
-          onChange={setPlanSelection}
-          placeholder="اختر مدة الاشتراك"
+          value={selectedPlanCode}
+          onChange={setSelectedPlanCode}
+          placeholder="اختر الباقة"
           className="ux-w-full"
-          icon="calendar"
+          icon="id-card"
         />
-
-        {requiresCustomMonths && (
-          <Input
-            type="number"
-            label="عدد الشهور (مخصص)"
-            placeholder="مثال: 5"
-            min={1}
-            max={120}
-            value={customMonths}
-            onChange={(e) => setCustomMonths(e.target.value)}
-          />
-        )}
       </div>
     </FormModal>
   );

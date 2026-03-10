@@ -30,6 +30,8 @@ use App\Domains\Exams\Policies\ExamPolicy;
 use App\Domains\Enrollments\Policies\GradePolicy;
 use App\Domains\Enrollments\Policies\GroupPolicy;
 use App\Domains\Lectures\Policies\LecturePolicy;
+use App\Domains\Videos\Models\Video;
+use App\Domains\Videos\Policies\VideoPolicy;
 use App\Domains\Support\Models\Setting;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -92,6 +94,11 @@ class AppServiceProvider extends ServiceProvider
             'App\Models\SyncError'          => \App\Domains\Support\Models\SyncError::class,
             'App\Models\TeacherAttendanceLog' => \App\Domains\Support\Models\TeacherAttendanceLog::class,
             'App\Models\DailyVoiceLimit'    => \App\Domains\Support\Models\DailyVoiceLimit::class,
+            'App\Models\Video'              => \App\Domains\Videos\Models\Video::class,
+            'App\Models\VideoAttachment'    => \App\Domains\Videos\Models\VideoAttachment::class,
+            'App\Models\VideoComment'       => \App\Domains\Videos\Models\VideoComment::class,
+            'App\Models\VideoLike'          => \App\Domains\Videos\Models\VideoLike::class,
+            'App\Models\VideoWatchProgress' => \App\Domains\Videos\Models\VideoWatchProgress::class,
         ]);
 
         // Register Policies
@@ -99,6 +106,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Lecture::class, LecturePolicy::class);
         Gate::policy(Exam::class, ExamPolicy::class);
         Gate::policy(Group::class, GroupPolicy::class);
+        Gate::policy(Video::class, VideoPolicy::class);
 
         // Register cache invalidation observers
         Student::observe(StudentObserver::class);
@@ -196,6 +204,16 @@ class AppServiceProvider extends ServiceProvider
         // Login rate limit: 10 attempts per minute per IP
         RateLimiter::for('login', function (Request $request) {
             return Limit::perMinute(10)->by($request->ip());
+        });
+
+        // Sensitive video playback endpoints
+        RateLimiter::for('video-playback', function (Request $request) {
+            return Limit::perMinute(30)->by(($request->user()?->id ?? 'guest') . '|' . $request->ip());
+        });
+
+        // Video upload endpoints
+        RateLimiter::for('video-upload', function (Request $request) {
+            return Limit::perMinute(6)->by(($request->user()?->id ?? 'guest') . '|' . $request->ip());
         });
     }
 }

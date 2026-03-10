@@ -17,11 +17,13 @@ class StudentLectureResource extends JsonResource
             'id' => $this->id,
             'title' => $this->title,
             'description' => $this->description,
-            'date' => $this->start_time->format('Y-m-d'),
-            'time' => $this->start_time->format('H:i'),
-            'iso_start_time' => $this->start_time->toIso8601String(),
-            'iso_end_time' => $this->end_time->toIso8601String(),
-            'duration' => $this->start_time->diffInMinutes($this->end_time),
+            'date' => $this->start_time?->format('Y-m-d'),
+            'time' => $this->start_time?->format('H:i'),
+            'iso_start_time' => $this->start_time?->toIso8601String(),
+            'iso_end_time' => $this->end_time?->toIso8601String(),
+            'duration' => ($this->start_time && $this->end_time)
+                ? $this->start_time->diffInMinutes($this->end_time)
+                : 0,
             'is_recurring' => $this->is_recurring,
             'recurrence_days' => $this->recurrence_days,
             'is_active' => $this->is_active,

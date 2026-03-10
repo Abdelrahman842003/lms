@@ -115,6 +115,31 @@ Route::middleware('auth:sanctum')->prefix('academy')->name('academy.')->group(fu
     Route::put('exams/{exam}/toggle-status', [\App\Domains\Application\Http\Controllers\Academy\ExamController::class, 'toggleStatus']);
     Route::post('exams/{exam}/copy', [\App\Domains\Application\Http\Controllers\Academy\ExamController::class, 'copy']);
     Route::put('exams/{exam}/end', [\App\Domains\Application\Http\Controllers\Academy\ExamController::class, 'endExam']);
+
+    // Videos Management (New: Direct-to-R2 multipart upload)
+    Route::post('videos/initiate-upload', [\App\Domains\Application\Http\Controllers\Academy\VideoUploadController::class, 'initiateUpload'])->middleware('throttle:video-upload');
+    Route::post('videos/complete-upload', [\App\Domains\Application\Http\Controllers\Academy\VideoUploadController::class, 'completeUpload']);
+    Route::delete('videos/abort-upload', [\App\Domains\Application\Http\Controllers\Academy\VideoUploadController::class, 'abortUpload']);
+    Route::get('videos/upload-status/{sessionId}', [\App\Domains\Application\Http\Controllers\Academy\VideoUploadController::class, 'uploadStatus']);
+    // Videos CRUD (store no longer accepts video bytes — use initiate-upload instead)
+    Route::get('videos', [\App\Domains\Application\Http\Controllers\Academy\VideoController::class, 'index']);
+    Route::get('videos/{video}', [\App\Domains\Application\Http\Controllers\Academy\VideoController::class, 'show']);
+    Route::put('videos/{video}', [\App\Domains\Application\Http\Controllers\Academy\VideoController::class, 'update']);
+    Route::delete('videos/{video}', [\App\Domains\Application\Http\Controllers\Academy\VideoController::class, 'destroy']);
+    Route::post('videos/{video}/attachments', [\App\Domains\Application\Http\Controllers\Academy\VideoController::class, 'uploadAttachments']);
+    Route::delete('videos/{video}/attachments/{attachment}', [\App\Domains\Application\Http\Controllers\Academy\VideoController::class, 'deleteAttachment']);
+    Route::post('videos/{video}/retry-processing', [\App\Domains\Application\Http\Controllers\Academy\VideoController::class, 'retryProcessing']);
+    Route::post('videos/{video}/publish', [\App\Domains\Application\Http\Controllers\Academy\VideoController::class, 'publish']);
+    Route::get('videos/{video}/comments', [\App\Domains\Application\Http\Controllers\Academy\VideoController::class, 'comments']);
+    Route::post('videos/{video}/comments/{commentId}/hide', [\App\Domains\Application\Http\Controllers\Academy\VideoController::class, 'hideComment']);
+    Route::delete('videos/{video}/comments/{commentId}', [\App\Domains\Application\Http\Controllers\Academy\VideoController::class, 'deleteComment']);
+
+    // Video Quiz Management (Academy)
+    Route::get('videos/{video}/quiz', [\App\Domains\Application\Http\Controllers\Academy\VideoQuizController::class, 'show']);
+    Route::post('videos/{video}/quiz', [\App\Domains\Application\Http\Controllers\Academy\VideoQuizController::class, 'store']);
+    Route::put('videos/{video}/quiz', [\App\Domains\Application\Http\Controllers\Academy\VideoQuizController::class, 'update']);
+    Route::delete('videos/{video}/quiz', [\App\Domains\Application\Http\Controllers\Academy\VideoQuizController::class, 'destroy']);
+    Route::get('videos/{video}/quiz/results', [\App\Domains\Application\Http\Controllers\Academy\VideoQuizController::class, 'results']);
 });
 
 // ============================================
@@ -220,6 +245,35 @@ Route::middleware(['auth:sanctum', \App\Domains\Auth\Http\Middleware\EnsureTeach
     Route::post('/scan/checkout', [\App\Domains\Application\Http\Controllers\Teacher\ScanController::class, 'checkout']);
     Route::get('/scan/today-status', [\App\Domains\Application\Http\Controllers\Teacher\ScanController::class, 'todayStatus']);
 
+    // Videos Management (New: Direct-to-R2 multipart upload)
+    Route::post('videos/initiate-upload', [\App\Domains\Application\Http\Controllers\Teacher\VideoUploadController::class, 'initiateUpload'])->middleware('throttle:video-upload');
+    Route::post('videos/complete-upload', [\App\Domains\Application\Http\Controllers\Teacher\VideoUploadController::class, 'completeUpload']);
+    Route::delete('videos/abort-upload', [\App\Domains\Application\Http\Controllers\Teacher\VideoUploadController::class, 'abortUpload']);
+    Route::get('videos/upload-status/{sessionId}', [\App\Domains\Application\Http\Controllers\Teacher\VideoUploadController::class, 'uploadStatus']);
+    // Videos CRUD (store no longer accepts video bytes — use initiate-upload instead)
+    Route::get('videos', [\App\Domains\Application\Http\Controllers\Teacher\VideoController::class, 'index']);
+    Route::get('videos/{video}', [\App\Domains\Application\Http\Controllers\Teacher\VideoController::class, 'show']);
+    Route::put('videos/{video}', [\App\Domains\Application\Http\Controllers\Teacher\VideoController::class, 'update']);
+    Route::delete('videos/{video}', [\App\Domains\Application\Http\Controllers\Teacher\VideoController::class, 'destroy']);
+    Route::post('videos/{video}/attachments', [\App\Domains\Application\Http\Controllers\Teacher\VideoController::class, 'uploadAttachments']);
+    Route::delete('videos/{video}/attachments/{attachment}', [\App\Domains\Application\Http\Controllers\Teacher\VideoController::class, 'deleteAttachment']);
+    Route::post('videos/{video}/retry-processing', [\App\Domains\Application\Http\Controllers\Teacher\VideoController::class, 'retryProcessing']);
+    Route::post('videos/{video}/publish', [\App\Domains\Application\Http\Controllers\Teacher\VideoController::class, 'publish']);
+    Route::get('videos/{video}/thumbnail', [\App\Domains\Application\Http\Controllers\Teacher\VideoController::class, 'thumbnail']);
+    Route::get('videos/{video}/thumbnail-url', [\App\Domains\Application\Http\Controllers\Teacher\VideoController::class, 'thumbnailUrl']);
+    Route::get('videos/{video}/stream', [\App\Domains\Application\Http\Controllers\Teacher\VideoController::class, 'stream']);
+    Route::get('videos/{video}/stream-url', [\App\Domains\Application\Http\Controllers\Teacher\VideoController::class, 'streamUrl']);
+    Route::get('videos/{video}/comments', [\App\Domains\Application\Http\Controllers\Teacher\VideoController::class, 'comments']);
+    Route::post('videos/{video}/comments/{commentId}/hide', [\App\Domains\Application\Http\Controllers\Teacher\VideoController::class, 'hideComment']);
+    Route::delete('videos/{video}/comments/{commentId}', [\App\Domains\Application\Http\Controllers\Teacher\VideoController::class, 'deleteComment']);
+
+    // Video Quiz Management (Teacher)
+    Route::get('videos/{video}/quiz', [\App\Domains\Application\Http\Controllers\Teacher\VideoQuizController::class, 'show']);
+    Route::post('videos/{video}/quiz', [\App\Domains\Application\Http\Controllers\Teacher\VideoQuizController::class, 'store']);
+    Route::put('videos/{video}/quiz', [\App\Domains\Application\Http\Controllers\Teacher\VideoQuizController::class, 'update']);
+    Route::delete('videos/{video}/quiz', [\App\Domains\Application\Http\Controllers\Teacher\VideoQuizController::class, 'destroy']);
+    Route::get('videos/{video}/quiz/results', [\App\Domains\Application\Http\Controllers\Teacher\VideoQuizController::class, 'results']);
+
 });
 
 // ============================================
@@ -268,7 +322,33 @@ Route::middleware(['auth:sanctum', \App\Domains\Auth\Http\Middleware\EnsureTeach
     // Mistakes (Smart Mistakes Notebook)
     Route::get('/mistakes', [\App\Domains\Application\Http\Controllers\Student\MistakesController::class, 'index']);
     Route::post('/mistakes/{id}/mastered', [\App\Domains\Application\Http\Controllers\Student\MistakesController::class, 'markAsMastered']);
+
+    // Educational Videos
+    Route::get('/videos', [\App\Domains\Application\Http\Controllers\Student\VideoController::class, 'index']);
+    Route::get('/videos/{video}', [\App\Domains\Application\Http\Controllers\Student\VideoController::class, 'show']);
+    Route::post('/videos/{video}/playback-token', [\App\Domains\Application\Http\Controllers\Student\VideoController::class, 'issuePlaybackToken'])
+        ->middleware('throttle:video-playback');
+    Route::get('/videos/{video}/stream-url', [\App\Domains\Application\Http\Controllers\Student\VideoController::class, 'streamUrl'])
+        ->middleware('throttle:video-playback');
+    Route::get('/videos/{video}/thumbnail', [\App\Domains\Application\Http\Controllers\Student\VideoController::class, 'thumbnail']);
+    Route::get('/videos/{video}/attachments/{attachmentId}', [\App\Domains\Application\Http\Controllers\Student\VideoController::class, 'downloadAttachment']);
+    Route::get('/videos/{video}/attachments/{attachmentId}/view-url', [\App\Domains\Application\Http\Controllers\Student\VideoController::class, 'attachmentViewUrl']);
+    Route::post('/videos/{video}/progress', [\App\Domains\Application\Http\Controllers\Student\VideoController::class, 'updateProgress']);
+    Route::post('/videos/{video}/like', [\App\Domains\Application\Http\Controllers\Student\VideoController::class, 'toggleLike']);
+    Route::get('/videos/{video}/comments', [\App\Domains\Application\Http\Controllers\Student\VideoController::class, 'comments']);
+    Route::post('/videos/{video}/comments', [\App\Domains\Application\Http\Controllers\Student\VideoController::class, 'storeComment']);
+    Route::delete('/videos/{video}/comments/{commentId}', [\App\Domains\Application\Http\Controllers\Student\VideoController::class, 'deleteOwnComment']);
+
+    // Video Quiz (Student)
+    Route::get('/videos/{video}/quiz', [\App\Domains\Application\Http\Controllers\Student\StudentVideoQuizController::class, 'show']);
+    Route::post('/videos/{video}/quiz/submit', [\App\Domains\Application\Http\Controllers\Student\StudentVideoQuizController::class, 'submit']);
+    Route::get('/videos/{video}/quiz/attempts', [\App\Domains\Application\Http\Controllers\Student\StudentVideoQuizController::class, 'attempts']);
 });
+
+// Video stream — authenticated by playback token only (no session cookie needed)
+// so the browser's <video> element can load it cross-origin without credentials.
+Route::get('/student/videos/{video}/stream', [\App\Domains\Application\Http\Controllers\Student\VideoController::class, 'stream'])
+    ->middleware('throttle:video-playback');
 
 // ============================================
 // Guardian (Parent) Authentication Routes
@@ -347,8 +427,10 @@ Route::middleware('auth:sanctum')->post('/broadcasting/auth',
     [\App\Domains\Application\Http\Controllers\Api\BroadcastAuthController::class, 'authenticate']
 );
 
-// Media Proxy Routes (Stream files from R2) - Keep outside versioning for compatibility
-Route::get('/media/voice/{path}', [\App\Domains\Application\Http\Controllers\Api\MediaProxyController::class, 'voice'])
-    ->where('path', '.*');
-Route::get('/media/{path}', [\App\Domains\Application\Http\Controllers\Api\MediaProxyController::class, 'media'])
-    ->where('path', '.*');
+// Media Proxy Routes (Stream files from R2) — auth:sanctum required to prevent unauthorized access
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/media/voice/{path}', [\App\Domains\Application\Http\Controllers\Api\MediaProxyController::class, 'voice'])
+        ->where('path', '.*');
+    Route::get('/media/{path}', [\App\Domains\Application\Http\Controllers\Api\MediaProxyController::class, 'media'])
+        ->where('path', '.*');
+});

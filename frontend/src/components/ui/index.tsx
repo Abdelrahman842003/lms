@@ -116,6 +116,7 @@ export { Select, type SelectProps } from './Select';
 // New standardized components
 export { Input, InputGroup, type InputProps, type InputGroupProps } from './Input';
 export { Textarea, AutoResizeTextarea, type TextareaProps, type AutoResizeTextareaProps } from './Textarea';
+export { FilePicker, type FilePickerProps } from './FilePicker';
 export {
   Badge as BadgeV2,
   StatusBadge,

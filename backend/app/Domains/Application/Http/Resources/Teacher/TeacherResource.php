@@ -77,6 +77,9 @@ class TeacherResource extends JsonResource
             'plan_expires_at' => $this->plan_expires_at ? $this->plan_expires_at->toISOString() : null,
             'plan_max_students' => $this->plan_max_students,
             'is_unlimited_students' => (bool) $this->is_unlimited_students,
+            // Storage quota fields
+            'storage_limit_gb' => $this->storage_limit_gb,
+            'storage_used_bytes' => (int) $this->storage_used_bytes,
         ];
     }
 }

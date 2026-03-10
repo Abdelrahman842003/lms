@@ -50,6 +50,9 @@ class Teacher extends Authenticatable
         'custom_expires_at',
         'plan_max_students',
         'is_unlimited_students',
+        'storage_limit_gb',
+        'storage_used_bytes',
+        'discount_percent',
     ];
 
     protected $hidden = [
@@ -67,6 +70,9 @@ class Teacher extends Authenticatable
             'plan_expires_at' => 'date',
             'custom_expires_at' => 'date',
             'status' => \App\Domains\Auth\Enums\TeacherStatus::class,
+            'storage_limit_gb' => 'integer',
+            'storage_used_bytes' => 'integer',
+            'discount_percent' => 'decimal:2',
         ];
     }
 
@@ -200,7 +206,18 @@ class Teacher extends Authenticatable
 
     public function isSubscriptionBlocked(): bool
     {
-        return ! $this->hasActiveSubscription();
+        // Active personal subscription → not blocked
+        if ($this->hasActiveSubscription()) {
+            return false;
+        }
+
+        // Belongs to at least one active academy with an active subscription → not blocked
+        $activeAcademyExists = $this->academies()
+            ->wherePivot('is_active', true)
+            ->get()
+            ->contains(fn ($academy) => $academy->hasActiveSubscription());
+
+        return ! $activeAcademyExists;
     }
 
     /**

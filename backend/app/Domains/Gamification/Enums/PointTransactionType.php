@@ -16,20 +16,30 @@ enum PointTransactionType: string
     case STREAK_10 = 'streak_10';                // سلسلة 10 حصص
     case MANUAL_BONUS = 'manual_bonus';          // بونص يدوي من المدرس
 
+    // ─── نقاط الفيديوهات ───────────────────────────────────────────
+    case VIDEO_WATCHED = 'video_watched';                // مشاهدة فيديو كاملاً
+    case VIDEO_QUIZ_PASSED = 'video_quiz_passed';        // اجتياز تدريب الفيديو
+    case VIDEO_QUIZ_PERFECT = 'video_quiz_perfect';      // اجتياز التدريب بدرجة كاملة 100%
+    case VIDEO_FIRST_WATCH = 'video_first_watch';        // أول طالب يشاهد الفيديو
+
     /**
      * Get the Arabic name for the transaction type
      */
     public function label(): string
     {
         return match ($this) {
-            self::ATTENDANCE => 'حضور الحصة',
-            self::PERFECT_MONTH => 'حضور شهر كامل',
-            self::EXAM_SCORE => 'درجة الامتحان',
+            self::ATTENDANCE       => 'حضور الحصة',
+            self::PERFECT_MONTH    => 'حضور شهر كامل',
+            self::EXAM_SCORE       => 'درجة الامتحان',
             self::EXAM_RETAKE_BONUS => 'بونص إعادة الامتحان',
             self::EXAM_FIRST_PLACE => 'أول الدفعة',
-            self::STREAK_5 => 'سلسلة 5 حصص',
-            self::STREAK_10 => 'سلسلة 10 حصص',
-            self::MANUAL_BONUS => 'بونص من المدرس',
+            self::STREAK_5         => 'سلسلة 5 حصص',
+            self::STREAK_10        => 'سلسلة 10 حصص',
+            self::MANUAL_BONUS     => 'بونص من المدرس',
+            self::VIDEO_WATCHED    => 'مشاهدة فيديو',
+            self::VIDEO_QUIZ_PASSED  => 'اجتياز تدريب الفيديو',
+            self::VIDEO_QUIZ_PERFECT => 'تدريب الفيديو بدرجة كاملة',
+            self::VIDEO_FIRST_WATCH  => 'أول مشاهد للفيديو',
         };
     }
 

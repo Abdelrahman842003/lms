@@ -125,6 +125,29 @@ class PointService
     }
 
     /**
+     * منح نقاط مباشرة بنوع محدد (مستخدمة داخلياً لنقاط الفيديو)
+     */
+    public function awardRaw(
+        Student $student,
+        string $teacherId,
+        int $points,
+        string $type,
+        ?string $referenceType = null,
+        ?string $referenceId = null,
+        ?string $description = null
+    ): PointTransaction {
+        $studentPoints = StudentPoint::getOrCreate($student->id, $teacherId);
+
+        return $studentPoints->addPoints(
+            $points,
+            $type,
+            $referenceType,
+            $referenceId,
+            $description
+        );
+    }
+
+    /**
      * Get weekly leaderboard for a teacher
      */
     public function getWeeklyLeaderboard(string $teacherId, ?int $limit = null): Collection

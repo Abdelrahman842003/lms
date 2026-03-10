@@ -25,6 +25,11 @@ class PointTransaction extends Model
     const TYPE_STREAK_5 = 'streak_5';
     const TYPE_STREAK_10 = 'streak_10';
     const TYPE_MANUAL_BONUS = 'manual_bonus';
+    // Video constants
+    const TYPE_VIDEO_WATCHED     = 'video_watched';
+    const TYPE_VIDEO_QUIZ_PASSED  = 'video_quiz_passed';
+    const TYPE_VIDEO_QUIZ_PERFECT = 'video_quiz_perfect';
+    const TYPE_VIDEO_FIRST_WATCH  = 'video_first_watch';
 
     protected $fillable = [
         'student_id',

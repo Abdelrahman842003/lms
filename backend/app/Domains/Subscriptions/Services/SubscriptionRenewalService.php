@@ -18,6 +18,9 @@ use Illuminate\Support\Carbon;
 
 class SubscriptionRenewalService
 {
+    public function __construct(
+        private readonly StorageQuotaService $storageQuota,
+    ) {}
     public const PLAN_TRIAL = 'trial';
     public const PLAN_MONTHLY = 'monthly';
     public const PLAN_QUARTERLY = 'quarterly';
@@ -54,16 +57,23 @@ class SubscriptionRenewalService
             $billableSeats = $seatsUsed;
         }
 
-        $amountDue = $meta['months'] > 0
+        $seatsAmount = $meta['months'] > 0
             ? $billableSeats * $pricePerSeat * $meta['months']
             : 0.0;
 
-        $amountDue = round($amountDue, 2);
+        // Storage cost: storage_limit_gb × price_per_gb × months
+        $storageAmount = 0.0;
+        $storageLimitGb = (int) ($subscriber->storage_limit_gb ?? 0);
+        if ($storageLimitGb > 0 && $meta['months'] > 0) {
+            $storageAmount = $storageLimitGb * $this->getStoragePricePerGb($subscriber) * $meta['months'];
+        }
+
+        $amountDue = round($seatsAmount + $storageAmount, 2);
 
         $startDate = $this->resolveNextStartDate($subscriber);
         $month = $startDate->copy()->startOfMonth();
 
-        $notes = $this->buildNotes($meta['label'], $meta['months'], $customMonths);
+        $notes = $this->buildNotes($meta['label'], $meta['months'], $customMonths, $storageLimitGb, $storageAmount);
 
         $subscription = Subscription::updateOrCreate(
             [
@@ -157,6 +167,9 @@ class SubscriptionRenewalService
             'price_per_seat' => $pricePerSeat,
             'amount_due' => (float) (data_get($subscriber, 'subscription_fee') ?? 0),
             'amount_paid' => (float) (data_get($subscriber, 'paid_amount') ?? 0),
+            'storage' => ($subscriber instanceof Teacher || $subscriber instanceof Academy)
+                ? $this->storageQuota->getStorageSnapshot($subscriber)
+                : null,
         ];
     }
 
@@ -257,6 +270,13 @@ class SubscriptionRenewalService
             : HelperService::getTeacherPricePerStudent();
     }
 
+    private function getStoragePricePerGb(Model $subscriber): float
+    {
+        return $subscriber instanceof Academy
+            ? HelperService::getAcademyStoragePricePerGb()
+            : HelperService::getTeacherStoragePricePerGb();
+    }
+
     private function resolveNextStartDate(Model $subscriber): Carbon
     {
         $expiresAt = data_get($subscriber, 'plan_expires_at');
@@ -292,7 +312,7 @@ class SubscriptionRenewalService
         return $baseDate->copy()->addMonths((int) ($meta['months'] ?? 1));
     }
 
-    private function buildNotes(string $label, int $months, ?int $customMonths): string
+    private function buildNotes(string $label, int $months, ?int $customMonths, int $storageLimitGb = 0, float $storageAmount = 0.0): string
     {
         $notes = ["نوع الاشتراك: {$label}"];
 
@@ -300,6 +320,10 @@ class SubscriptionRenewalService
             $notes[] = "عدد الشهور: {$customMonths}";
         } elseif ($months > 0) {
             $notes[] = "عدد الشهور: {$months}";
+        }
+
+        if ($storageLimitGb > 0) {
+            $notes[] = "تخزين: {$storageLimitGb} GB × {$months} شهر = " . number_format($storageAmount, 2) . ' ج.م';
         }
 
         return implode("\n", $notes);

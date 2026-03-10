@@ -1,13 +1,13 @@
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { createPortal } from 'react-dom';
 import { fetchApi } from '@/services/authService';
 import { toast } from 'react-hot-toast';
 import { ReceivedNotification as AppNotification } from '@/services/notificationService';
 import { getAccessToken, refreshAccessToken } from '@/lib/tokenManager';
 import { Icon } from '@/components/ui';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
+import { NavbarOverlayDropdown } from './NavbarOverlayDropdown';
 
 interface NotificationDropdownProps {
   role: string;
@@ -20,7 +20,6 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const closeTimerRef = useRef<number | null>(null);
@@ -34,7 +33,6 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
 
   useEffect(() => {
     audioRef.current = new Audio('/sounds/notification.mp3');
-    setIsMounted(true);
     
     // Request notification permission
     if ('Notification' in window && Notification.permission === 'default') {
@@ -417,94 +415,85 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
         )}
       </button>
 
-      {isMounted && isOpen && createPortal(
-        <>
-          <div
-            className={`dropdown-backdrop notification-dropdown-backdrop ${isClosing ? 'is-closing' : 'is-open'}`}
-            onClick={closeDropdown}
-          />
-          
-          <div
-            ref={panelRef}
-            className={`notification-dropdown ${isClosing ? 'is-closing' : 'is-open'}`}
-            role="dialog"
-            aria-label="الإخطارات"
-          >
-            <div className="notification-dropdown-header">
-              <h3 className="notification-dropdown-title">الإخطارات</h3>
-              {unreadCount > 0 && (
-                <span className="notification-dropdown-unread">
-                  {unreadCount} جديد
-                </span>
-              )}
+      <NavbarOverlayDropdown
+        isOpen={isOpen}
+        isClosing={isClosing}
+        panelRef={panelRef}
+        ariaLabel="الإخطارات"
+        onBackdropClick={closeDropdown}
+      >
+        <div className="notification-dropdown-header">
+          <h3 className="notification-dropdown-title">الإخطارات</h3>
+          {unreadCount > 0 && (
+            <span className="notification-dropdown-unread">
+              {unreadCount} جديد
+            </span>
+          )}
+        </div>
+        
+        <div className="notification-dropdown-list">
+          {notifications.length === 0 ? (
+            <div className="notification-dropdown-empty">
+              <i className="fas fa-inbox notification-dropdown-empty-icon"></i>
+              لا توجد إخطارات
             </div>
-            
-            <div className="notification-dropdown-list">
-              {notifications.length === 0 ? (
-                <div className="notification-dropdown-empty">
-                  <i className="fas fa-inbox notification-dropdown-empty-icon"></i>
-                  لا توجد إخطارات
-                </div>
-              ) : (
-                notifications.map((notification) => (
-                  <div 
-                    key={notification.id}
-                    className={`notification-dropdown-item ${!notification.read_at ? 'unread' : ''}`}
-                    onClick={() => handleNotificationClick(notification)}
-                  >
-                    <div className="notification-dropdown-content">
-                      <div className={`notification-dropdown-dot ${!notification.read_at ? 'unread' : ''}`}></div>
-                      <div className="notification-dropdown-main">
-                        <h4 className={`notification-dropdown-item-title ${!notification.read_at ? 'unread' : ''}`}>
-                          {notification.data.title}
-                        </h4>
-                        <p className="notification-dropdown-item-message">
-                          {notification.data.message}
-                        </p>
-                        <div className="notification-dropdown-meta">
-                          <span className="notification-dropdown-date">
-                            {new Date(notification.created_at).toLocaleDateString('ar-EG', {
-                              day: 'numeric',
-                              month: 'short',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
+          ) : (
+            notifications.map((notification) => (
+              <div 
+                key={notification.id}
+                className={`notification-dropdown-item ${!notification.read_at ? 'unread' : ''}`}
+                onClick={() => handleNotificationClick(notification)}
+              >
+                <div className="notification-dropdown-content">
+                  <div className={`notification-dropdown-dot ${!notification.read_at ? 'unread' : ''}`}></div>
+                  <div className="notification-dropdown-main">
+                    <h4 className={`notification-dropdown-item-title ${!notification.read_at ? 'unread' : ''}`}>
+                      {notification.data.title}
+                    </h4>
+                    <p className="notification-dropdown-item-message">
+                      {notification.data.message}
+                    </p>
+                    <div className="notification-dropdown-meta">
+                      <span className="notification-dropdown-date">
+                        {new Date(notification.created_at).toLocaleDateString('ar-EG', {
+                          day: 'numeric',
+                          month: 'short',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </span>
+                      <div className="notification-dropdown-tags">
+                        {notification.data.child_name && (
+                          <span className="notification-dropdown-tag child-tag">
+                            <i className="fas fa-user-graduate"></i>
+                            {notification.data.child_name}
                           </span>
-                          <div className="notification-dropdown-tags">
-                            {notification.data.child_name && (
-                              <span className="notification-dropdown-tag child-tag">
-                                <i className="fas fa-user-graduate"></i>
-                                {notification.data.child_name}
-                              </span>
-                            )}
-                            {notification.data.sender_name && (
-                              <span className="notification-dropdown-tag sender-tag">
-                                {notification.data.sender_name}
-                                {notification.data.sender_subject && ` - ${notification.data.sender_subject}`}
-                              </span>
-                            )}
-                          </div>
-                        </div>
+                        )}
+                        {notification.data.sender_name && (
+                          <span className="notification-dropdown-tag sender-tag">
+                            {notification.data.sender_name}
+                            {notification.data.sender_subject && ` - ${notification.data.sender_subject}`}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
-                ))
-              )}
-            </div>
-            
-            <div className="notification-dropdown-footer">
-              <Link 
-                href={role === 'parent' ? '/parent/children' : `/${role}/notifications`}
-                className="notification-dropdown-link"
-                onClick={closeDropdown}
-              >
-                عرض كل الإخطارات
-              </Link>
-            </div>
-          </div>
-        </>,
-        document.body
-      )}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+        
+        <div className="notification-dropdown-footer">
+          <Link 
+            href={role === 'parent' ? '/parent/children' : `/${role}/notifications`}
+            className="notification-dropdown-link"
+            onClick={closeDropdown}
+          >
+            عرض كل الإخطارات
+          </Link>
+        </div>
+      </NavbarOverlayDropdown>
     </div>
   );
 };

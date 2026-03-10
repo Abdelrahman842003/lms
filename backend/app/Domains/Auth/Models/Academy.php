@@ -34,6 +34,9 @@ class Academy extends Model implements AuthenticatableContract
         'plan_expires_at',
         'plan_max_students',
         'is_unlimited_students',
+        'storage_limit_gb',
+        'storage_used_bytes',
+        'discount_percent',
     ];
 
     protected $hidden = [
@@ -49,6 +52,9 @@ class Academy extends Model implements AuthenticatableContract
         'is_unlimited_students' => 'boolean',
         'subscription_fee' => 'decimal:2',
         'paid_amount' => 'decimal:2',
+        'storage_limit_gb' => 'integer',
+        'storage_used_bytes' => 'integer',
+        'discount_percent' => 'decimal:2',
     ];
 
     protected $appends = [

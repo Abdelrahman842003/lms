@@ -12,6 +12,7 @@ use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\ImageEntry;
 use Filament\Schemas\Schema;
 use Filament\Resources\Pages\ViewRecord;
+use App\Domains\Subscriptions\Services\StorageQuotaService;
 
 class ViewAcademy extends ViewRecord
 {
@@ -95,6 +96,43 @@ class ViewAcademy extends ViewRecord
                             ->money('EGP'),
                     ])
                     ->columns(3),
+
+                Section::make('التخزين')
+                    ->schema([
+                        TextEntry::make('storage_limit_gb')
+                            ->label('حد التخزين')
+                            ->state(fn ($record) => $record->storage_limit_gb !== null
+                                ? $record->storage_limit_gb . ' GB'
+                                : 'غير محدود')
+                            ->icon('heroicon-m-server'),
+
+                        TextEntry::make('storage_used_bytes')
+                            ->label('المساحة المستخدمة')
+                            ->state(fn ($record) => round($record->storage_used_bytes / 1_073_741_824, 3) . ' GB'
+                                . ' (' . number_format($record->storage_used_bytes) . ' bytes)')
+                            ->icon('heroicon-m-circle-stack'),
+
+                        TextEntry::make('storage_percentage')
+                            ->label('نسبة الاستخدام')
+                            ->state(function ($record) {
+                                $snapshot = app(StorageQuotaService::class)->getStorageSnapshot($record);
+                                return $snapshot['is_unlimited']
+                                    ? 'غير محدود'
+                                    : $snapshot['percentage'] . '%';
+                            })
+                            ->icon('heroicon-m-chart-bar'),
+
+                        TextEntry::make('storage_remaining')
+                            ->label('المتبقي')
+                            ->state(function ($record) {
+                                $snapshot = app(StorageQuotaService::class)->getStorageSnapshot($record);
+                                return $snapshot['is_unlimited']
+                                    ? 'غير محدود'
+                                    : round($snapshot['remaining_gb'], 3) . ' GB';
+                            })
+                            ->icon('heroicon-m-archive-box'),
+                    ])
+                    ->columns(4),
 
                 Section::make('الإحصائيات')
                     ->schema([

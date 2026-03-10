@@ -1,0 +1,23 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Domains\Application\Http\Requests\Teacher\Video;
+
+use Illuminate\Foundation\Http\FormRequest;
+
+class AbortUploadRequest extends FormRequest
+{
+    public function authorize(): bool
+    {
+        return true;
+    }
+
+    public function rules(): array
+    {
+        return [
+            'session_id' => ['required', 'uuid', 'exists:video_upload_sessions,id'],
+            'reason'     => ['nullable', 'string', 'max:255'],
+        ];
+    }
+}

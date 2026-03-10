@@ -1,13 +1,18 @@
 'use client';
-import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { useAuth } from '@/contexts/EnhancedAuthContext';
 
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { ConfirmationModal, Icon } from '@/components/ui';
+import { NavbarOverlayDropdown } from './NavbarOverlayDropdown';
 
 export const TeacherSelectionDropdown: React.FC = () => {
+  const CLOSE_ANIMATION_MS = 220;
   const { user, selectedTeacher, selectTeacher } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const closeTimerRef = useRef<number | null>(null);
 
   // Modal State
   const [modalOpen, setModalOpen] = useState(false);
@@ -21,9 +26,47 @@ export const TeacherSelectionDropdown: React.FC = () => {
   });
 
   useEffect(() => {
+    return () => {
+      if (closeTimerRef.current) {
+        window.clearTimeout(closeTimerRef.current);
+      }
+    };
+  }, []);
+
+  const closeDropdown = () => {
+    if (!isOpen || isClosing) return;
+
+    setIsClosing(true);
+
+    if (closeTimerRef.current) {
+      window.clearTimeout(closeTimerRef.current);
+    }
+
+    closeTimerRef.current = window.setTimeout(() => {
+      setIsOpen(false);
+      setIsClosing(false);
+      closeTimerRef.current = null;
+    }, CLOSE_ANIMATION_MS);
+  };
+
+  const openDropdown = () => {
+    if (closeTimerRef.current) {
+      window.clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+
+    setIsClosing(false);
+    setIsOpen(true);
+  };
+
+  useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
+      const target = event.target as Node;
+      const clickedTrigger = dropdownRef.current?.contains(target);
+      const clickedPanel = panelRef.current?.contains(target);
+
+      if (!clickedTrigger && !clickedPanel) {
+        closeDropdown();
       }
     };
 
@@ -34,7 +77,7 @@ export const TeacherSelectionDropdown: React.FC = () => {
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isOpen]);
+  }, [isOpen, isClosing]);
 
   const handleTeacherSelect = (teacher: any) => {
     // Check Status
@@ -73,7 +116,7 @@ export const TeacherSelectionDropdown: React.FC = () => {
         showCancel: true,
         onConfirm: () => {
           selectTeacher(teacher);
-          setIsOpen(false);
+          closeDropdown();
           setModalOpen(false);
         },
       });
@@ -82,70 +125,81 @@ export const TeacherSelectionDropdown: React.FC = () => {
     }
 
     if (teacher.status === 'inactive') {
-        setModalConfig({
-          title: 'حساب غير مفعل',
-          message: 'حسابك مع هذا المدرس غير مفعل حالياً. يرجى التواصل مع المدرس للتفعيل.',
-          confirmText: 'حسناً',
-          variant: 'danger',
-          showCancel: false,
-          onConfirm: () => setModalOpen(false),
-        });
-        setModalOpen(true);
-        return;
+      setModalConfig({
+        title: 'حساب غير مفعل',
+        message: 'حسابك مع هذا المدرس غير مفعل حالياً. يرجى التواصل مع المدرس للتفعيل.',
+        confirmText: 'حسناً',
+        variant: 'danger',
+        showCancel: false,
+        onConfirm: () => setModalOpen(false),
+      });
+      setModalOpen(true);
+      return;
     }
 
     selectTeacher(teacher);
-    setIsOpen(false);
+    closeDropdown();
   };
 
   return (
     <div className="navbar-user" ref={dropdownRef}>
-      <div 
+      <button
+        type="button"
         className="navbar-user-clickable teacher-selector-trigger"
-        onClick={() => setIsOpen(!isOpen)}
+        aria-haspopup="dialog"
+        aria-expanded={isOpen}
+        onClick={() => {
+          if (isOpen) {
+            closeDropdown();
+          } else {
+            openDropdown();
+          }
+        }}
         title="تغيير المدرس"
       >
         <div className="teacher-selector-avatar">
-            {selectedTeacher?.teacher_avatar ? (
+          {selectedTeacher?.teacher_avatar ? (
             <img src={selectedTeacher.teacher_avatar} alt="" className="teacher-selector-avatar-img" />
-            ) : (
+          ) : (
             <span className="teacher-selector-avatar-placeholder"><Icon name="chalkboard-teacher" /></span>
-            )}
+          )}
         </div>
         <span className="teacher-selector-name">
-            {selectedTeacher?.teacher_name || 'اختر مدرس'}
+          {selectedTeacher?.teacher_name || 'اختر مدرس'}
         </span>
         <span className={`teacher-selector-chevron ${isOpen ? 'open' : ''}`}>
           <Icon name="chevron-down" />
         </span>
-      </div>
+      </button>
 
-      {isOpen && (
-        <>
-          <div className="dropdown-backdrop" onClick={() => setIsOpen(false)} />
-          
-          <div className="navbar-dropdown teacher-dropdown">
-            <div className="notification-dropdown-header">
-              <h3 className="notification-dropdown-title">اختر المدرس</h3>
+      <NavbarOverlayDropdown
+        isOpen={isOpen}
+        isClosing={isClosing}
+        panelRef={panelRef}
+        className="teacher-selection-dropdown"
+        backdropClassName="teacher-selection-dropdown-backdrop"
+        ariaLabel="اختيار المدرس"
+        onBackdropClick={closeDropdown}
+      >
+        <div className="notification-dropdown-header teacher-selection-dropdown-header">
+          <h3 className="notification-dropdown-title">اختر المدرس</h3>
+        </div>
+        
+        <div className="notification-dropdown-list teacher-dropdown-list">
+          {(!user?.teachers || user.teachers.length === 0) ? (
+            <div className="notification-dropdown-empty teacher-dropdown-empty">
+              <span className="notification-dropdown-empty-icon"><Icon name="chalkboard-teacher" /></span>
+              لا يوجد مدرسين مشترك معهم حالياً
             </div>
-            
-            <div className="teacher-dropdown-list">
-              {(!user?.teachers || user.teachers.length === 0) ? (
-                <div className="teacher-dropdown-empty">
-                  <span className="notification-dropdown-empty-icon"><Icon name="chalkboard-teacher" /></span>
-                  لا يوجد مدرسين مشترك معهم حالياً
-                </div>
-              ) : (
-                <TeacherList 
-                  teachers={user.teachers} 
-                  selectedTeacher={selectedTeacher} 
-                  onSelect={handleTeacherSelect} 
-                />
-              )}
-            </div>
-          </div>
-        </>
-      )}
+          ) : (
+            <TeacherList
+              teachers={user.teachers}
+              selectedTeacher={selectedTeacher}
+              onSelect={handleTeacherSelect}
+            />
+          )}
+        </div>
+      </NavbarOverlayDropdown>
 
       <ConfirmationModal
         isOpen={modalOpen}
@@ -245,29 +299,29 @@ const TeacherItem = ({ teacher, selectedTeacher, onSelect, isNested = false }: {
     onClick={() => onSelect(teacher)}
   >
     <div className="teacher-item-avatar">
-        {teacher.teacher_avatar ? (
-            <img src={teacher.teacher_avatar} alt="" className="teacher-item-avatar-img" />
-        ) : (
-            <span className="teacher-item-avatar-placeholder"><Icon name="chalkboard-teacher" /></span>
-        )}
+      {teacher.teacher_avatar ? (
+        <img src={teacher.teacher_avatar} alt="" className="teacher-item-avatar-img" />
+      ) : (
+        <span className="teacher-item-avatar-placeholder"><Icon name="chalkboard-teacher" /></span>
+      )}
     </div>
     <div className="teacher-item-main">
-        <div className="teacher-item-header">
-            <h4 className="teacher-item-name">{teacher.teacher_name}</h4>
-            {teacher.status === 'grace_period' && (
-                <span className="teacher-item-state warning">فترة سماح</span>
-            )}
-            {teacher.status === 'expired' && (
-                <span className="teacher-item-state danger">منتهي</span>
-            )}
-        </div>
-        <p className="teacher-item-meta">
-            {teacher.grade_name} - {teacher.group_name}
-            {teacher.subject && ` • ${teacher.subject}`}
-        </p>
+      <div className="teacher-item-header">
+        <h4 className="teacher-item-name">{teacher.teacher_name}</h4>
+        {teacher.status === 'grace_period' && (
+          <span className="teacher-item-state warning">فترة سماح</span>
+        )}
+        {teacher.status === 'expired' && (
+          <span className="teacher-item-state danger">منتهي</span>
+        )}
+      </div>
+      <p className="teacher-item-meta">
+        {teacher.grade_name} - {teacher.group_name}
+        {teacher.subject && ` • ${teacher.subject}`}
+      </p>
     </div>
     {selectedTeacher?.teacher_id === teacher.teacher_id && (
-        <span className="teacher-item-check"><Icon name="check-circle" /></span>
+      <span className="teacher-item-check"><Icon name="check-circle" /></span>
     )}
   </div>
 );

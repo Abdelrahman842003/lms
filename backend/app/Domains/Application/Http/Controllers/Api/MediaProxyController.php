@@ -12,11 +12,13 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class MediaProxyController extends Controller
 {
     /**
-     * Stream a voice file from R2 storage
+     * Stream a voice file from R2 storage.
+     * Route is protected by auth:sanctum in api.php.
      */
-    public function voice(Request $request, string $path)
+    public function voice(Request $request, string $path): StreamedResponse
     {
-        // Prepend the voice_notifications directory if not present
+        $path = $this->sanitizePath($path);
+
         if (!str_starts_with($path, 'voice_notifications/')) {
             $path = 'voice_notifications/' . $path;
         }
@@ -25,15 +27,27 @@ class MediaProxyController extends Controller
     }
 
     /**
-     * Stream any media file from R2 storage
+     * Stream any media file from R2 storage.
+     * Route is protected by auth:sanctum in api.php.
      */
-    public function media(Request $request, string $path)
+    public function media(Request $request, string $path): StreamedResponse
     {
-        return $this->streamFromR2($path);
+        return $this->streamFromR2($this->sanitizePath($path));
     }
 
     /**
-     * Stream a file from R2 with proper headers
+     * Prevent directory traversal attacks by sanitizing the path.
+     */
+    private function sanitizePath(string $path): string
+    {
+        // Resolve any ../ sequences
+        $path = str_replace(['../', '..\\', "\0"], '', $path);
+        // Strip leading slashes
+        return ltrim($path, '/\\');
+    }
+
+    /**
+     * Stream a file from R2 with proper headers.
      */
     private function streamFromR2(string $path): StreamedResponse
     {
@@ -43,8 +57,10 @@ class MediaProxyController extends Controller
             abort(404, 'File not found');
         }
 
-        $mimeType = $disk->mimeType($path) ?: 'application/octet-stream';
-        $size = $disk->size($path);
+        /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
+        $disk        = Storage::disk('r2');
+        $mimeType    = method_exists($disk, 'mimeType') ? ($disk->mimeType($path) ?: 'application/octet-stream') : 'application/octet-stream';
+        $size        = $disk->size($path);
         $lastModified = $disk->lastModified($path);
 
         return new StreamedResponse(function () use ($disk, $path) {
@@ -52,15 +68,14 @@ class MediaProxyController extends Controller
             fpassthru($stream);
             fclose($stream);
         }, 200, [
-            'Content-Type' => $mimeType,
-            'Content-Length' => $size,
-            'Last-Modified' => gmdate('D, d M Y H:i:s', $lastModified) . ' GMT',
-            'Cache-Control' => 'public, max-age=31536000', // Cache for 1 year
-            'Accept-Ranges' => 'bytes',
-            'Access-Control-Allow-Origin' => '*',
-            'Access-Control-Allow-Methods' => 'GET, HEAD, OPTIONS',
-            'Access-Control-Allow-Headers' => 'Content-Type, Range',
-            'Access-Control-Expose-Headers' => 'Content-Length, Content-Range',
+            'Content-Type'                     => $mimeType,
+            'Content-Length'                   => $size,
+            'Last-Modified'                    => gmdate('D, d M Y H:i:s', $lastModified) . ' GMT',
+            'Cache-Control'                    => 'private, max-age=3600',
+            'Accept-Ranges'                    => 'bytes',
+            'Access-Control-Allow-Origin'      => (string) config('app.url'),
+            'Access-Control-Allow-Methods'     => 'GET, HEAD',
+            'Access-Control-Allow-Credentials' => 'true',
         ]);
     }
 }

@@ -1491,28 +1491,29 @@
   }
 }
 
-.teacher-dropdown {
-  width: 400px;
+.teacher-selection-dropdown {
+  width: 500px;
   max-width: 90vw;
-  padding: 0;
-  left: 50%;
+}
+
+.teacher-selection-dropdown-backdrop {
   top: 80px;
-  transform: translateX(-50%);
-  background: #0d1120;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-  z-index: 999;
-  position: fixed;
+}
+
+.teacher-selection-dropdown-header {
+  justify-content: flex-end;
 }
 
 .teacher-selector-trigger {
   position: relative;
+  border: 0;
+  background: transparent;
   padding: 0.5rem;
   display: flex;
   align-items: center;
   gap: 8px;
+  text-align: inherit;
+  font: inherit;
 }
 
 .teacher-selector-avatar {
@@ -1541,7 +1542,7 @@
   font-size: 0.9rem;
   font-weight: 500;
   color: white;
-  max-width: 100px;
+  max-width: 120px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1594,8 +1595,6 @@
 }
 
 .teacher-dropdown-empty {
-  padding: 2rem;
-  text-align: center;
   color: rgba(255, 255, 255, 0.55);
 }
 
@@ -1613,11 +1612,11 @@
 }
 
 .teacher-dropdown-academy-header:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .teacher-dropdown-academy-header.expanded {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .teacher-dropdown-item {
@@ -1631,11 +1630,11 @@
 }
 
 .teacher-dropdown-item:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .teacher-dropdown-item-selected {
-  background: rgba(66, 99, 235, 0.1);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .teacher-dropdown-item-nested {
@@ -1647,7 +1646,7 @@
 }
 
 .teacher-dropdown-nested-wrap {
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .teacher-item-avatar {
@@ -1694,7 +1693,7 @@
 .teacher-item-meta {
   margin: 4px 0 0;
   font-size: 0.8rem;
-  color: #aaa;
+  color: rgba(255, 255, 255, 0.68);
 }
 
 .teacher-item-state {
@@ -1716,6 +1715,12 @@
 
 .teacher-item-check {
   color: var(--primary);
+}
+
+@media (max-width: 768px) {
+  .teacher-selection-dropdown-backdrop {
+    top: 70px;
+  }
 }
 
 .navbar-user-chevron.open {
