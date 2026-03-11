@@ -13,7 +13,7 @@ import {
 } from '@/config/api-config';
 
 import { getCSRFToken, initializeCSRF } from '@/lib/csrf';
-import { getAccessToken, refreshAccessToken as tokenRefresh } from '@/lib/tokenManager';
+import { getAccessToken, refreshAccessToken as refreshAccessTokenFromManager } from '@/lib/tokenManager';
 import { ApiError, showErrorToast } from '@/lib/errorHandler';
 
 // Re-export for backward compatibility
@@ -22,7 +22,6 @@ export const ENDPOINTS = FLAT_ENDPOINTS;
 export { getErrorMessage as getDefaultArabicError };
 export type ApiErrorExtended = ApiError;
 const IS_PROD = process.env.NODE_ENV === 'production';
-let refreshInFlight: Promise<string | null> | null = null;
 
 function debugLog(...args: unknown[]): void {
   if (!IS_PROD) {
@@ -249,14 +248,10 @@ export function getAuthHeaders(
 /**
  * Refresh the access token using the refresh token
  * Uses secure token management (cookies are httpOnly)
+ * NOTE: Uses centralized tokenManager.refreshAccessToken() for single-flight guarantee
  */
 async function refreshAccessToken(): Promise<string | null> {
-  if (!refreshInFlight) {
-    refreshInFlight = tokenRefresh().finally(() => {
-      refreshInFlight = null;
-    });
-  }
-  return await refreshInFlight;
+  return await refreshAccessTokenFromManager();
 }
 
 /**

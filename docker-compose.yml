@@ -1,3 +1,5 @@
+version: "3.8"
+
 services:
   # MySQL Database
   mysql:
@@ -49,8 +51,7 @@ services:
     working_dir: /var/www/backend
     volumes:
       - ./backend:/var/www/backend
-      # - /var/www/backend/vendor
-      - ./secrets/neetaq-54091-firebase-adminsdk-fbsvc-b830b7b75f.json:/var/www/backend/storage/firebase-credentials.json:ro
+      - /var/www/backend/vendor
     ports:
       - "8000:8000"
     environment:
@@ -76,11 +77,11 @@ services:
       - SWOOLE_HTTP_WATCH=true
       - TELESCOPE_ENABLED=true
       - GOOGLE_APPLICATION_CREDENTIALS=/var/www/backend/storage/firebase-credentials.json
-      - FIREBASE_PROJECT_ID=neetaq-54091
+      - FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID}
       # Reverb Configuration
       - REVERB_APP_ID=${REVERB_APP_ID:-lms-app}
-      - REVERB_APP_KEY=${REVERB_APP_KEY:-y2vqna5uho5zsdz6kdyz}
-      - REVERB_APP_SECRET=${REVERB_APP_SECRET:-your-secret-key}
+      - REVERB_APP_KEY=${REVERB_APP_KEY}
+      - REVERB_APP_SECRET=${REVERB_APP_SECRET}
       - REVERB_HOST=reverb
       - REVERB_PORT=8080
       - REVERB_SCHEME=http
@@ -124,15 +125,15 @@ services:
       - REVERB_PORT=8080
       - REVERB_SCHEME=http
       - REVERB_APP_ID=${REVERB_APP_ID:-lms-app}
-      - REVERB_APP_KEY=${REVERB_APP_KEY:-y2vqna5uho5zsdz6kdyz}
-      - REVERB_APP_SECRET=${REVERB_APP_SECRET:-your-secret-key}
+      - REVERB_APP_KEY=${REVERB_APP_KEY}
+      - REVERB_APP_SECRET=${REVERB_APP_SECRET}
     depends_on:
       - mysql
       - redis
       - octane
     networks:
       - lms_network
-    command: sh -c "test -f .env || cp .env.example .env; composer install --no-scripts || true; php artisan horizon"
+    command: sh -c "test -f .env || cp .env.example .env; php artisan horizon"
 
   # Laravel Reverb (WebSocket Server)
   reverb:
@@ -158,8 +159,8 @@ services:
       - REDIS_PORT=6379
       - BROADCAST_CONNECTION=reverb
       - REVERB_APP_ID=${REVERB_APP_ID:-lms-app}
-      - REVERB_APP_KEY=${REVERB_APP_KEY:-y2vqna5uho5zsdz6kdyz}
-      - REVERB_APP_SECRET=${REVERB_APP_SECRET:-your-secret-key}
+      - REVERB_APP_KEY=${REVERB_APP_KEY}
+      - REVERB_APP_SECRET=${REVERB_APP_SECRET}
       - REVERB_HOST=0.0.0.0
       - REVERB_PORT=8080
       - REVERB_SCHEME=http
@@ -168,7 +169,7 @@ services:
       - redis
     networks:
       - lms_network
-    command: sh -c "test -f .env || cp .env.example .env; composer install --no-scripts || true; php artisan reverb:start --host=0.0.0.0 --port=8080"
+    command: sh -c "test -f .env || cp .env.example .env; php artisan reverb:start --host=0.0.0.0 --port=8080"
 
   # Laravel Scheduler (Cron Jobs)
   scheduler:
@@ -196,15 +197,15 @@ services:
       - REVERB_PORT=8080
       - REVERB_SCHEME=http
       - REVERB_APP_ID=${REVERB_APP_ID:-lms-app}
-      - REVERB_APP_KEY=${REVERB_APP_KEY:-y2vqna5uho5zsdz6kdyz}
-      - REVERB_APP_SECRET=${REVERB_APP_SECRET:-your-secret-key}
+      - REVERB_APP_KEY=${REVERB_APP_KEY}
+      - REVERB_APP_SECRET=${REVERB_APP_SECRET}
     depends_on:
       - mysql
       - redis
       - octane
     networks:
       - lms_network
-    command: sh -c "test -f .env || cp .env.example .env; composer install --no-scripts || true; php artisan schedule:work"
+    command: sh -c "test -f .env || cp .env.example .env; php artisan schedule:work"
 
   # Nginx Reverse Proxy
   nginx:
@@ -213,7 +214,7 @@ services:
     restart: unless-stopped
     ports:
       - "80:80"
-      - "443:443"
+      # - "443:443"  # SSL disabled in development (use port 80 only)
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d
       - ./nginx/ssl:/etc/nginx/ssl
@@ -234,17 +235,17 @@ services:
       dockerfile: Dockerfile.dev
       args:
         NEXT_PUBLIC_API_URL: /api
-        NEXT_PUBLIC_REVERB_APP_KEY: ${REVERB_APP_KEY:-y2vqna5uho5zsdz6kdyz}
-        NEXT_PUBLIC_REVERB_HOST: neetaq.com
-        NEXT_PUBLIC_REVERB_PORT: 443
-        NEXT_PUBLIC_REVERB_SCHEME: https
-        NEXT_PUBLIC_FIREBASE_API_KEY: AIzaSyDuWnTpPZDolIt20XyB0h9ylWzDCs0H_b4
-        NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: neetaq-54091.firebaseapp.com
-        NEXT_PUBLIC_FIREBASE_PROJECT_ID: neetaq-54091
-        NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: neetaq-54091.firebasestorage.app
-        NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: 962831721396
-        NEXT_PUBLIC_FIREBASE_APP_ID: 1:962831721396:web:99b9ffc5296043dd2b88e1
-        NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID: G-BQP5416BDV
+        NEXT_PUBLIC_REVERB_APP_KEY: ${NEXT_PUBLIC_REVERB_APP_KEY}
+        NEXT_PUBLIC_REVERB_HOST: ${NEXT_PUBLIC_REVERB_HOST:-localhost}
+        NEXT_PUBLIC_REVERB_PORT: ${NEXT_PUBLIC_REVERB_PORT:-8080}
+        NEXT_PUBLIC_REVERB_SCHEME: ${NEXT_PUBLIC_REVERB_SCHEME:-http}
+        NEXT_PUBLIC_FIREBASE_API_KEY: ${NEXT_PUBLIC_FIREBASE_API_KEY}
+        NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN}
+        NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${NEXT_PUBLIC_FIREBASE_PROJECT_ID}
+        NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET}
+        NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID}
+        NEXT_PUBLIC_FIREBASE_APP_ID: ${NEXT_PUBLIC_FIREBASE_APP_ID}
+        NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID: ${NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID}
     container_name: lms_frontend
     restart: unless-stopped
     working_dir: /app
@@ -259,17 +260,17 @@ services:
       - NODE_ENV=development
       - NEXT_PUBLIC_API_URL=/api
       - INTERNAL_API_URL=http://octane:8000/api
-      - NEXT_PUBLIC_REVERB_APP_KEY=${REVERB_APP_KEY:-y2vqna5uho5zsdz6kdyz}
-      - NEXT_PUBLIC_REVERB_HOST=localhost
-      - NEXT_PUBLIC_REVERB_PORT=8080
-      - NEXT_PUBLIC_REVERB_SCHEME=http
-      - NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyDuWnTpPZDolIt20XyB0h9ylWzDCs0H_b4
-      - NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=neetaq-54091.firebaseapp.com
-      - NEXT_PUBLIC_FIREBASE_PROJECT_ID=neetaq-54091
-      - NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=neetaq-54091.firebasestorage.app
-      - NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=962831721396
-      - NEXT_PUBLIC_FIREBASE_APP_ID=1:962831721396:web:99b9ffc5296043dd2b88e1
-      - NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=G-BQP5416BDV
+      - NEXT_PUBLIC_REVERB_APP_KEY=${NEXT_PUBLIC_REVERB_APP_KEY}
+      - NEXT_PUBLIC_REVERB_HOST=${NEXT_PUBLIC_REVERB_HOST:-localhost}
+      - NEXT_PUBLIC_REVERB_PORT=${NEXT_PUBLIC_REVERB_PORT:-8080}
+      - NEXT_PUBLIC_REVERB_SCHEME=${NEXT_PUBLIC_REVERB_SCHEME:-http}
+      - NEXT_PUBLIC_FIREBASE_API_KEY=${NEXT_PUBLIC_FIREBASE_API_KEY}
+      - NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=${NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN}
+      - NEXT_PUBLIC_FIREBASE_PROJECT_ID=${NEXT_PUBLIC_FIREBASE_PROJECT_ID}
+      - NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=${NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET}
+      - NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=${NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID}
+      - NEXT_PUBLIC_FIREBASE_APP_ID=${NEXT_PUBLIC_FIREBASE_APP_ID}
+      - NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=${NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID}
       - WATCHPACK_POLLING=true
     depends_on:
       - octane
@@ -291,11 +292,12 @@ services:
     working_dir: /app
     volumes:
       - ./docs:/app
+      - /app/node_modules  # Anonymous volume preserves installed modules
     ports:
       - "5173:5173"
     networks:
       - lms_network
-    command: sh -c "npm install && npm run docs:dev -- --host 0.0.0.0 --port 5173"
+    command: sh -c "test -d node_modules || npm install; npm run docs:dev -- --host 0.0.0.0 --port 5173"
 
 networks:
   lms_network:

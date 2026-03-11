@@ -7,17 +7,16 @@ const withBundleAnalyzer = require('@next/bundle-analyzer')({
 
 const nextConfig = {
   output: 'standalone',
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  typescript: {
-    ignoreBuildErrors: true,
-  },
+  // Security: Fail build on ESLint/TypeScript errors (removed ignore flags)
   images: {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: '**',
+        hostname: 'images.neetaq.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.r2.dev', // Cloudflare R2 public buckets
       },
     ],
   },
@@ -88,6 +87,48 @@ const nextConfig = {
       {
         source: '/api/:path*',
         destination: `${process.env.INTERNAL_API_URL || 'http://octane:8000/api/v1'}/:path*`,
+      },
+    ];
+  },
+  /**
+   * Security Headers
+   * Content Security Policy to prevent XSS, clickjacking, and other attacks
+   */
+  async headers() {
+    const { generateCSPHeader } = require('./src/lib/security');
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'X-DNS-Prefetch-Control',
+            value: 'on'
+          },
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY',
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin',
+          },
+          {
+            key: 'Permissions-Policy',
+            value: 'geolocation=(), microphone=(), camera=(), payment=()',
+          },
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=63072000; includeSubDomains; preload',
+          },
+          {
+            key: 'Content-Security-Policy',
+            value: generateCSPHeader(),
+          },
+        ],
       },
     ];
   },

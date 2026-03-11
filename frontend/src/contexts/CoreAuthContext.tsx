@@ -28,6 +28,33 @@ function isValidUserType(value: unknown): value is ValidUserType {
   return typeof value === 'string' && VALID_USER_TYPES.includes(value as ValidUserType);
 }
 
+/**
+ * Map API response to User object
+ * Centralized mapping to avoid code duplication across validateSession, login, etc.
+ */
+function mapAuthResponseToUser(response: any, role: string): User {
+  return {
+    id: response.user.id,
+    name: response.user.name,
+    ...(response.user.username && { username: response.user.username }),
+    userType: role,
+    createdAt: response.user.created_at || new Date().toISOString(),
+    updatedAt: response.user.updated_at || new Date().toISOString(),
+    avatar: response.user.avatar,
+    phone: response.user.phone,
+    parent_phone: response.parent_phone || response.user.parent_phone,
+    location: response.user.location,
+    gender: response.user.gender,
+    education_type: response.user.education_type,
+    teachers: response.teachers || response.user.teachers,
+    permissions: response.user.permissions,
+    is_independent_active: response.user.is_independent_active,
+    academies: response.academies || response.user.academies,
+    trial_period_days: response.user.trial_period_days ?? null,
+    effective_trial_period_days: response.user.effective_trial_period_days ?? response.user.trial_period_days ?? undefined,
+  };
+}
+
 interface CoreAuthContextType {
   user: User | null;
   isAuthenticated: boolean;
@@ -91,26 +118,7 @@ export function CoreAuthProvider({ children }: { children: ReactNode }) {
           }
 
           const response = await getCurrentUser(userType);
-          const userData: User = {
-            id: response.user.id,
-            name: response.user.name,
-            ...(response.user.username && { username: response.user.username }),
-            userType: response.role,
-            createdAt: response.user.created_at || new Date().toISOString(),
-            updatedAt: response.user.updated_at || new Date().toISOString(),
-            avatar: response.user.avatar,
-            phone: response.user.phone,
-            parent_phone: response.parent_phone || response.user.parent_phone,
-            location: response.user.location,
-            gender: response.user.gender,
-            education_type: response.user.education_type,
-            teachers: response.teachers || response.user.teachers,
-            permissions: response.user.permissions,
-            is_independent_active: response.user.is_independent_active,
-            academies: response.academies || response.user.academies,
-            trial_period_days: response.user.trial_period_days ?? null,
-            effective_trial_period_days: response.user.effective_trial_period_days ?? response.user.trial_period_days ?? undefined,
-          };
+          const userData = mapAuthResponseToUser(response, response.role);
 
           setUser(userData);
           localStorage.setItem("user", JSON.stringify(userData));
@@ -152,26 +160,7 @@ export function CoreAuthProvider({ children }: { children: ReactNode }) {
 
           if (refreshedToken) {
             const response = await getCurrentUser(userType);
-            const recoveredUser: User = {
-              id: response.user.id,
-              name: response.user.name,
-              ...(response.user.username && { username: response.user.username }),
-              userType: response.role,
-              createdAt: response.user.created_at || new Date().toISOString(),
-              updatedAt: response.user.updated_at || new Date().toISOString(),
-              avatar: response.user.avatar,
-              phone: response.user.phone,
-              parent_phone: response.parent_phone || response.user.parent_phone,
-              location: response.user.location,
-              gender: response.user.gender,
-              education_type: response.user.education_type,
-              teachers: response.teachers || response.user.teachers,
-              permissions: response.user.permissions,
-              is_independent_active: response.user.is_independent_active,
-              academies: response.academies || response.user.academies,
-              trial_period_days: response.user.trial_period_days ?? null,
-              effective_trial_period_days: response.user.effective_trial_period_days ?? response.user.trial_period_days ?? undefined,
-            };
+            const recoveredUser = mapAuthResponseToUser(response, response.role);
 
             setUser(recoveredUser);
             localStorage.setItem("user", JSON.stringify(recoveredUser));
@@ -224,26 +213,7 @@ export function CoreAuthProvider({ children }: { children: ReactNode }) {
         response = await loginSecretary(phone, password);
       }
 
-      const userData: User = {
-        id: response.user.id,
-        name: response.user.name,
-        ...(response.user.username && { username: response.user.username }),
-        userType: response.role,
-        createdAt: response.user.created_at || new Date().toISOString(),
-        updatedAt: response.user.updated_at || new Date().toISOString(),
-        avatar: response.user.avatar,
-        phone: response.user.phone,
-        parent_phone: response.user.parent_phone,
-        location: response.user.location,
-        gender: response.user.gender,
-        education_type: response.user.education_type,
-        teachers: response.teachers || response.user.teachers,
-        permissions: response.user.permissions,
-        is_independent_active: response.user.is_independent_active,
-        academies: response.academies || response.user.academies,
-        trial_period_days: response.user.trial_period_days ?? null,
-        effective_trial_period_days: response.user.effective_trial_period_days ?? response.user.trial_period_days ?? undefined,
-      };
+      const userData = mapAuthResponseToUser(response, response.role);
 
       setUser(userData);
       localStorage.setItem("user", JSON.stringify(userData));
@@ -305,26 +275,7 @@ export function CoreAuthProvider({ children }: { children: ReactNode }) {
 
     try {
       const response = await getCurrentUser(user.userType as any);
-      const userData: User = {
-        id: response.user.id,
-        name: response.user.name,
-        ...(response.user.username && { username: response.user.username }),
-        userType: response.role,
-        createdAt: response.user.created_at || new Date().toISOString(),
-        updatedAt: response.user.updated_at || new Date().toISOString(),
-        avatar: response.user.avatar,
-        phone: response.user.phone,
-        parent_phone: response.parent_phone || response.user.parent_phone,
-        location: response.user.location,
-        gender: response.user.gender,
-        education_type: response.user.education_type,
-        teachers: response.teachers || response.user.teachers,
-        permissions: response.user.permissions,
-        is_independent_active: response.user.is_independent_active,
-        academies: response.academies || response.user.academies,
-        trial_period_days: response.user.trial_period_days ?? null,
-        effective_trial_period_days: response.user.effective_trial_period_days ?? response.user.trial_period_days ?? undefined,
-      };
+      const userData = mapAuthResponseToUser(response, response.role);
 
       setUser(userData);
       localStorage.setItem("user", JSON.stringify(userData));

@@ -162,7 +162,12 @@ class ApiClient {
 
   /**
    * Get academy ID from legacy localStorage (for backward compatibility)
-   * TODO: Remove this once all components use AcademyContext
+   *
+   * @deprecated Remove once all components use AcademyContext.setAcademyContext()
+   * @todo Track usage and plan migration deadline
+   *
+   * This is a temporary bridge during the migration from localStorage-based
+   * academy selection to the new AcademyContext system.
    */
   private getAcademyFromLegacy(): string | null {
     if (typeof window === 'undefined') return null;

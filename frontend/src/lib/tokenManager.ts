@@ -1,7 +1,13 @@
 /**
- * Secure Token Manager
- * Uses in-memory storage instead of localStorage for security
- * Tokens are stored in httpOnly cookies by the backend
+ * Token Manager with Hybrid Storage Strategy
+ *
+ * Primary Storage: In-memory variable (cleared on page refresh)
+ * Fallback Storage: sessionStorage (survives hard refresh)
+ *
+ * Security Note:
+ * - sessionStorage is still accessible via JavaScript (XSS risk)
+ * - For true security, refresh tokens are stored in httpOnly cookies by the backend
+ * - Access tokens in memory/sessionStorage are a convenience for immediate API calls
  */
 
 import { getVersionedApiUrl } from '@/config/api-config';
@@ -13,7 +19,7 @@ interface TokenState {
 
 const TOKEN_STORAGE_KEY = 'auth_access_token_state';
 
-// In-memory storage (not persisted - safer against XSS)
+// Primary in-memory storage with sessionStorage fallback for hard refresh recovery
 let tokenState: TokenState = {
   accessToken: null,
   expiresAt: null,
