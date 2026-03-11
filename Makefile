@@ -1,4 +1,4 @@
-.PHONY: help dev prod install clean logs shell migrate fresh restart down status
+.PHONY: help dev prod install deploy clean logs shell migrate fresh restart down status
 
 # ===========================================
 # 🚀 LMS Docker Deployment - One Command Setup
@@ -184,12 +184,39 @@ _install-production: ## Install production environment (requires DOMAIN)
 	@docker compose -f docker-compose.prod.yml ps --format "table {{.Name}}\t{{.Status}}\t{{.Ports}}"
 	@echo ""
 
+# ===========================================
+# 🚀 Deploy - Production Deployment
+# ===========================================
+deploy: ## Deploy latest changes to production
+	@echo ""
+	@echo "🚀 Deploying changes to production..."
+	@echo "===================================="
+	@echo ""
+	@# 1. Pull latest changes
+	@echo "📥 Pulling latest code..."
+	@git pull origin main
+	@# 2. Clear caches
+	@echo "🧹 Clearing caches..."
+	@docker compose --profile prod exec -T octane php artisan config:clear
+	@docker compose --profile prod exec -T octane php artisan route:clear
+	@docker compose --profile prod exec -T octane php artisan cache:clear
+	@docker compose --profile prod exec -T octane php artisan view:clear
+	@# 3. Re-cache for production
+	@echo "⚡ Optimizing..."
+	@docker compose --profile prod exec -T octane php artisan config:cache
+	@docker compose --profile prod exec -T octane php artisan route:cache
+	@docker compose --profile prod exec -T octane php artisan view:cache
+	@echo ""
+	@echo "✅ Deployment complete!"
+	@echo ""
+
 help: ## Display help information
 	@echo ""
 	@echo "📦 LMS Docker Deployment"
 	@echo "========================"
 	@echo ""
 	@echo "🎯 make install    - Install project (interactive environment selection)"
+	@echo "🚀 make deploy     - Deploy latest changes to production"
 	@echo ""
 	@echo "🔹 make dev        - Run development environment (one command setup)"
 	@echo "🔹 make prod       - Run production environment (one command setup)"
@@ -198,4 +225,4 @@ help: ## Display help information
 	@echo "🔹 make logs       - Show logs for all services"
 	@echo "🔹 make down       - Stop all services"
 	@echo "🔹 make restart    - Restart services"
-	@echo "🔹 make clean      - Clean all resources and
+	@echo "🔹 make clean      - Clean all resources and volumes"
