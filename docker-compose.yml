@@ -1,6 +1,101 @@
 version: "3.8"
 
+# Common environment variables for backend services
+x-backend-common-env: &backend-common-env
+  APP_KEY: ${APP_KEY}
+  DB_CONNECTION: mysql
+  DB_HOST: mysql
+  DB_PORT: 3306
+  DB_DATABASE: ${DB_DATABASE:-lms}
+  DB_USERNAME: ${DB_USERNAME:-lms_user}
+  DB_PASSWORD: ${DB_PASSWORD:-secret}
+  REDIS_HOST: redis
+  REDIS_PORT: 6379
+  CACHE_DRIVER: redis
+  QUEUE_CONNECTION: redis
+  SESSION_DRIVER: redis
+  BROADCAST_CONNECTION: reverb
+  REVERB_APP_ID: ${REVERB_APP_ID:-lms-app}
+  REVERB_APP_KEY: ${REVERB_APP_KEY}
+  REVERB_APP_SECRET: ${REVERB_APP_SECRET}
+  REVERB_HOST: reverb
+  REVERB_PORT: 8080
+  REVERB_SCHEME: http
+
+# Common environment variables for development backend
+x-backend-dev-env: &backend-dev-env
+  <<: *backend-common-env
+  APP_ENV: local
+  APP_DEBUG: "true"
+  TELESCOPE_ENABLED: "true"
+  OCTANE_SERVER: swoole
+  SWOOLE_HTTP_HOST: 0.0.0.0
+  SWOOLE_HTTP_PORT: 8000
+  SWOOLE_HTTP_WORKERS: auto
+  SWOOLE_HTTP_WATCH: "true"
+  GOOGLE_APPLICATION_CREDENTIALS: /var/www/backend/storage/firebase-credentials.json
+  FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID}
+
+# Common environment variables for production backend
+x-backend-prod-env: &backend-prod-env
+  <<: *backend-common-env
+  APP_ENV: production
+  APP_DEBUG: "false"
+  REDIS_PASSWORD: ${REDIS_PASSWORD}
+  CACHE_STORE: redis
+  TELESCOPE_ENABLED: "false"
+  OCTANE_SERVER: swoole
+  SWOOLE_HTTP_HOST: 0.0.0.0
+  SWOOLE_HTTP_PORT: 8000
+  SWOOLE_HTTP_WORKERS: 4
+  SWOOLE_HTTP_TASK_WORKERS: 6
+  SWOOLE_HTTP_MAX_REQUEST: 500
+  SWOOLE_HTTP_WATCH: "false"
+  GOOGLE_APPLICATION_CREDENTIALS: /run/secrets/firebase_credentials
+
+# Common frontend build args
+x-frontend-args: &frontend-args
+  NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-/api}
+  NEXT_PUBLIC_REVERB_APP_KEY: ${NEXT_PUBLIC_REVERB_APP_KEY:-${REVERB_APP_KEY}}
+  NEXT_PUBLIC_REVERB_HOST: ${NEXT_PUBLIC_REVERB_HOST:-localhost}
+  NEXT_PUBLIC_REVERB_PORT: ${NEXT_PUBLIC_REVERB_PORT:-8080}
+  NEXT_PUBLIC_REVERB_SCHEME: ${NEXT_PUBLIC_REVERB_SCHEME:-http}
+  NEXT_PUBLIC_FIREBASE_API_KEY: ${NEXT_PUBLIC_FIREBASE_API_KEY}
+  NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN}
+  NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${NEXT_PUBLIC_FIREBASE_PROJECT_ID}
+  NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET}
+  NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID}
+  NEXT_PUBLIC_FIREBASE_APP_ID: ${NEXT_PUBLIC_FIREBASE_APP_ID}
+  NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID: ${NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID}
+
+# Docker secrets for production
+secrets:
+  firebase_credentials:
+    file: ./secrets/firebase_credentials.json
+  firebase_project_id:
+    file: ./secrets/firebase_project_id.txt
+  cloudflare_r2_access_key_id:
+    file: ./secrets/cloudflare_r2_access_key_id.txt
+  cloudflare_r2_secret_access_key:
+    file: ./secrets/cloudflare_r2_secret_access_key.txt
+  cloudflare_r2_bucket:
+    file: ./secrets/cloudflare_r2_bucket.txt
+  cloudflare_r2_endpoint:
+    file: ./secrets/cloudflare_r2_endpoint.txt
+  cloudflare_r2_public_url:
+    file: ./secrets/cloudflare_r2_public_url.txt
+  cloudflare_kv_account_id:
+    file: ./secrets/cloudflare_kv_account_id.txt
+  cloudflare_kv_namespace_id:
+    file: ./secrets/cloudflare_kv_namespace_id.txt
+  cloudflare_kv_api_token:
+    file: ./secrets/cloudflare_kv_api_token.txt
+
 services:
+  # ============================================
+  # SHARED SERVICES (dev + prod)
+  # ============================================
+
   # MySQL Database
   mysql:
     image: mysql:8.0
@@ -8,7 +103,7 @@ services:
     restart: unless-stopped
     environment:
       MYSQL_DATABASE: ${DB_DATABASE:-lms}
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-secret}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-${DB_PASSWORD:-secret}}
       MYSQL_USER: ${DB_USERNAME:-lms_user}
       MYSQL_PASSWORD: ${DB_PASSWORD:-secret}
     volumes:
@@ -29,10 +124,11 @@ services:
     image: redis:7-alpine
     container_name: lms_redis
     restart: unless-stopped
-    ports:
-      - "6380:6379"
+    command: ${REDIS_COMMAND:-redis-server}
     volumes:
       - redis_data:/data
+    ports:
+      - "6380:6379"
     networks:
       - lms_network
     healthcheck:
@@ -41,50 +137,25 @@ services:
       timeout: 5s
       retries: 5
 
-  # Laravel Octane (Backend)
-  octane:
+  # ============================================
+  # DEVELOPMENT SERVICES
+  # ============================================
+
+  # Laravel Octane (Development)
+  octane_dev:
     build:
       context: ./backend
       dockerfile: Dockerfile.dev
-    container_name: lms_octane
+    container_name: lms_octane_dev
     restart: unless-stopped
     working_dir: /var/www/backend
     volumes:
       - ./backend:/var/www/backend
-      - /var/www/backend/vendor
+      - vendor_dev:/var/www/backend/vendor
     ports:
       - "8000:8000"
     environment:
-      - APP_ENV=${APP_ENV:-local}
-      - APP_DEBUG=true
-      - APP_KEY=${APP_KEY}
-      - DB_CONNECTION=mysql
-      - DB_HOST=mysql
-      - DB_PORT=3306
-      - DB_DATABASE=${DB_DATABASE:-lms}
-      - DB_USERNAME=${DB_USERNAME:-lms_user}
-      - DB_PASSWORD=${DB_PASSWORD:-secret}
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - CACHE_DRIVER=redis
-      - QUEUE_CONNECTION=redis
-      - SESSION_DRIVER=redis
-      - BROADCAST_CONNECTION=reverb
-      - OCTANE_SERVER=swoole
-      - SWOOLE_HTTP_HOST=0.0.0.0
-      - SWOOLE_HTTP_PORT=8000
-      - SWOOLE_HTTP_WORKERS=auto
-      - SWOOLE_HTTP_WATCH=true
-      - TELESCOPE_ENABLED=true
-      - GOOGLE_APPLICATION_CREDENTIALS=/var/www/backend/storage/firebase-credentials.json
-      - FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID}
-      # Reverb Configuration
-      - REVERB_APP_ID=${REVERB_APP_ID:-lms-app}
-      - REVERB_APP_KEY=${REVERB_APP_KEY}
-      - REVERB_APP_SECRET=${REVERB_APP_SECRET}
-      - REVERB_HOST=reverb
-      - REVERB_PORT=8080
-      - REVERB_SCHEME=http
+      <<: *backend-dev-env
     depends_on:
       mysql:
         condition: service_healthy
@@ -92,6 +163,7 @@ services:
         condition: service_healthy
     networks:
       - lms_network
+    profiles: [dev]
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
       interval: 30s
@@ -99,184 +171,103 @@ services:
       retries: 3
       start_period: 30s
 
-  # Laravel Horizon (Queue Worker)
-  horizon:
+  # Laravel Horizon (Development)
+  horizon_dev:
     build:
       context: ./backend
       dockerfile: Dockerfile.dev
-    container_name: lms_horizon
+    container_name: lms_horizon_dev
     restart: unless-stopped
     working_dir: /var/www/backend
     volumes:
       - ./backend:/var/www/backend
-      - /var/www/backend/vendor
+      - vendor_dev:/var/www/backend/vendor
     environment:
-      - APP_ENV=${APP_ENV:-local}
-      - APP_KEY=${APP_KEY}
-      - DB_HOST=mysql
-      - DB_DATABASE=${DB_DATABASE:-lms}
-      - DB_USERNAME=${DB_USERNAME:-lms_user}
-      - DB_PASSWORD=${DB_PASSWORD:-secret}
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - QUEUE_CONNECTION=redis
-      - BROADCAST_CONNECTION=reverb
-      - REVERB_HOST=reverb
-      - REVERB_PORT=8080
-      - REVERB_SCHEME=http
-      - REVERB_APP_ID=${REVERB_APP_ID:-lms-app}
-      - REVERB_APP_KEY=${REVERB_APP_KEY}
-      - REVERB_APP_SECRET=${REVERB_APP_SECRET}
+      <<: *backend-dev-env
     depends_on:
       - mysql
       - redis
-      - octane
+      - octane_dev
     networks:
       - lms_network
+    profiles: [dev]
     command: sh -c "test -f .env || cp .env.example .env; php artisan horizon"
 
-  # Laravel Reverb (WebSocket Server)
-  reverb:
+  # Laravel Reverb (Development)
+  reverb_dev:
     build:
       context: ./backend
       dockerfile: Dockerfile.dev
-    container_name: lms_reverb
+    container_name: lms_reverb_dev
     restart: unless-stopped
     working_dir: /var/www/backend
     volumes:
       - ./backend:/var/www/backend
-      - /var/www/backend/vendor
+      - vendor_dev:/var/www/backend/vendor
     ports:
       - "8080:8080"
     environment:
-      - APP_ENV=${APP_ENV:-local}
-      - APP_KEY=${APP_KEY}
-      - DB_HOST=mysql
-      - DB_DATABASE=${DB_DATABASE:-lms}
-      - DB_USERNAME=${DB_USERNAME:-lms_user}
-      - DB_PASSWORD=${DB_PASSWORD:-secret}
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - BROADCAST_CONNECTION=reverb
-      - REVERB_APP_ID=${REVERB_APP_ID:-lms-app}
-      - REVERB_APP_KEY=${REVERB_APP_KEY}
-      - REVERB_APP_SECRET=${REVERB_APP_SECRET}
-      - REVERB_HOST=0.0.0.0
-      - REVERB_PORT=8080
-      - REVERB_SCHEME=http
+      <<: *backend-dev-env
+      REVERB_HOST: 0.0.0.0
     depends_on:
       - mysql
       - redis
     networks:
       - lms_network
+    profiles: [dev]
     command: sh -c "test -f .env || cp .env.example .env; php artisan reverb:start --host=0.0.0.0 --port=8080"
 
-  # Laravel Scheduler (Cron Jobs)
-  scheduler:
+  # Laravel Scheduler (Development)
+  scheduler_dev:
     build:
       context: ./backend
       dockerfile: Dockerfile.dev
-    container_name: lms_scheduler
+    container_name: lms_scheduler_dev
     restart: unless-stopped
     working_dir: /var/www/backend
     volumes:
       - ./backend:/var/www/backend
-      - /var/www/backend/vendor
+      - vendor_dev:/var/www/backend/vendor
     environment:
-      - APP_ENV=${APP_ENV:-local}
-      - APP_KEY=${APP_KEY}
-      - DB_HOST=mysql
-      - DB_DATABASE=${DB_DATABASE:-lms}
-      - DB_USERNAME=${DB_USERNAME:-lms_user}
-      - DB_PASSWORD=${DB_PASSWORD:-secret}
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - QUEUE_CONNECTION=redis
-      - BROADCAST_CONNECTION=reverb
-      - REVERB_HOST=reverb
-      - REVERB_PORT=8080
-      - REVERB_SCHEME=http
-      - REVERB_APP_ID=${REVERB_APP_ID:-lms-app}
-      - REVERB_APP_KEY=${REVERB_APP_KEY}
-      - REVERB_APP_SECRET=${REVERB_APP_SECRET}
+      <<: *backend-dev-env
     depends_on:
       - mysql
       - redis
-      - octane
+      - octane_dev
     networks:
       - lms_network
+    profiles: [dev]
     command: sh -c "test -f .env || cp .env.example .env; php artisan schedule:work"
 
-  # Nginx Reverse Proxy
-  nginx:
-    image: nginx:alpine
-    container_name: lms_nginx
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      # - "443:443"  # SSL disabled in development (use port 80 only)
-    volumes:
-      - ./nginx/conf.d:/etc/nginx/conf.d
-      - ./nginx/ssl:/etc/nginx/ssl
-      - ./nginx/wait-for-services.sh:/wait-for-services.sh:ro
-    depends_on:
-      frontend:
-        condition: service_started
-      octane:
-        condition: service_started
-    networks:
-      - lms_network
-    entrypoint: ["/bin/sh", "/wait-for-services.sh"]
-
-  # Next.js Frontend
-  frontend:
+  # Next.js Frontend (Development)
+  frontend_dev:
     build:
       context: ./frontend
       dockerfile: Dockerfile.dev
       args:
-        NEXT_PUBLIC_API_URL: /api
-        NEXT_PUBLIC_REVERB_APP_KEY: ${NEXT_PUBLIC_REVERB_APP_KEY}
-        NEXT_PUBLIC_REVERB_HOST: ${NEXT_PUBLIC_REVERB_HOST:-localhost}
-        NEXT_PUBLIC_REVERB_PORT: ${NEXT_PUBLIC_REVERB_PORT:-8080}
-        NEXT_PUBLIC_REVERB_SCHEME: ${NEXT_PUBLIC_REVERB_SCHEME:-http}
-        NEXT_PUBLIC_FIREBASE_API_KEY: ${NEXT_PUBLIC_FIREBASE_API_KEY}
-        NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN}
-        NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${NEXT_PUBLIC_FIREBASE_PROJECT_ID}
-        NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET}
-        NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID}
-        NEXT_PUBLIC_FIREBASE_APP_ID: ${NEXT_PUBLIC_FIREBASE_APP_ID}
-        NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID: ${NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID}
-    container_name: lms_frontend
+        <<: *frontend-args
+    container_name: lms_frontend_dev
     restart: unless-stopped
     working_dir: /app
     volumes:
       - ./frontend/public:/app/public
       - ./frontend:/app
-      - /app/node_modules
-      - /app/.next
+      - node_modules_dev:/app/node_modules
+      - nextjs_cache:/app/.next
     ports:
       - "3000:3000"
     environment:
-      - NODE_ENV=development
-      - NEXT_PUBLIC_API_URL=/api
-      - INTERNAL_API_URL=http://octane:8000/api
-      - NEXT_PUBLIC_REVERB_APP_KEY=${NEXT_PUBLIC_REVERB_APP_KEY}
-      - NEXT_PUBLIC_REVERB_HOST=${NEXT_PUBLIC_REVERB_HOST:-localhost}
-      - NEXT_PUBLIC_REVERB_PORT=${NEXT_PUBLIC_REVERB_PORT:-8080}
-      - NEXT_PUBLIC_REVERB_SCHEME=${NEXT_PUBLIC_REVERB_SCHEME:-http}
-      - NEXT_PUBLIC_FIREBASE_API_KEY=${NEXT_PUBLIC_FIREBASE_API_KEY}
-      - NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=${NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN}
-      - NEXT_PUBLIC_FIREBASE_PROJECT_ID=${NEXT_PUBLIC_FIREBASE_PROJECT_ID}
-      - NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=${NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET}
-      - NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=${NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID}
-      - NEXT_PUBLIC_FIREBASE_APP_ID=${NEXT_PUBLIC_FIREBASE_APP_ID}
-      - NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=${NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID}
-      - WATCHPACK_POLLING=true
+      NODE_ENV: development
+      NEXT_PUBLIC_API_URL: /api
+      INTERNAL_API_URL: http://octane_dev:8000/api
+      <<: *frontend-args
+      WATCHPACK_POLLING: "true"
     depends_on:
-      - octane
-      - reverb
+      - octane_dev
+      - reverb_dev
     networks:
       - lms_network
+    profiles: [dev]
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:3000/ || exit 1"]
       interval: 30s
@@ -284,20 +275,189 @@ services:
       retries: 3
       start_period: 30s
 
-  # VitePress Documentation
-  docs:
-    image: node:20-alpine
-    container_name: lms_docs
+  # Nginx (Development)
+  nginx_dev:
+    image: nginx:alpine
+    container_name: lms_nginx_dev
     restart: unless-stopped
-    working_dir: /app
-    volumes:
-      - ./docs:/app
-      - /app/node_modules  # Anonymous volume preserves installed modules
     ports:
-      - "5173:5173"
+      - "80:80"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/ssl:/etc/nginx/ssl
+      - ./nginx/wait-for-services.sh:/wait-for-services.sh:ro
+    depends_on:
+      frontend_dev:
+        condition: service_started
+      octane_dev:
+        condition: service_started
     networks:
       - lms_network
-    command: sh -c "test -d node_modules || npm install; npm run docs:dev -- --host 0.0.0.0 --port 5173"
+    profiles: [dev]
+    entrypoint: ["/bin/sh", "/wait-for-services.sh"]
+
+  # ============================================
+  # PRODUCTION SERVICES
+  # ============================================
+
+  # Laravel Octane (Production)
+  octane_prod:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: production
+    container_name: lms_octane_prod
+    restart: unless-stopped
+    secrets:
+      - firebase_credentials
+      - firebase_project_id
+      - cloudflare_r2_access_key_id
+      - cloudflare_r2_secret_access_key
+      - cloudflare_r2_bucket
+      - cloudflare_r2_endpoint
+      - cloudflare_r2_public_url
+      - cloudflare_kv_account_id
+      - cloudflare_kv_namespace_id
+      - cloudflare_kv_api_token
+    volumes:
+      - ./secrets/firebase_credentials.json:/var/www/backend/storage/firebase-credentials.json:ro
+    environment:
+      <<: *backend-prod-env
+      FIREBASE_CREDENTIALS_FILE: /run/secrets/firebase_credentials
+      FIREBASE_PROJECT_ID_FILE: /run/secrets/firebase_project_id
+      CLOUDFLARE_R2_ACCESS_KEY_ID_FILE: /run/secrets/cloudflare_r2_access_key_id
+      CLOUDFLARE_R2_SECRET_ACCESS_KEY_FILE: /run/secrets/cloudflare_r2_secret_access_key
+      CLOUDFLARE_R2_BUCKET_FILE: /run/secrets/cloudflare_r2_bucket
+      CLOUDFLARE_R2_ENDPOINT_FILE: /run/secrets/cloudflare_r2_endpoint
+      CLOUDFLARE_R2_PUBLIC_URL_FILE: /run/secrets/cloudflare_r2_public_url
+      CLOUDFLARE_KV_ACCOUNT_ID_FILE: /run/secrets/cloudflare_kv_account_id
+      CLOUDFLARE_KV_NAMESPACE_ID_FILE: /run/secrets/cloudflare_kv_namespace_id
+      CLOUDFLARE_KV_API_TOKEN_FILE: /run/secrets/cloudflare_kv_api_token
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - lms_network
+    profiles: [prod]
+    command: sh -c "php artisan config:clear && php artisan octane:start --server=swoole --host=0.0.0.0 --port=8000 --workers=4 --task-workers=6 --max-requests=500"
+    healthcheck:
+      test: ["CMD", "php", "artisan", "octane:status"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 40s
+
+  # Laravel Horizon (Production)
+  horizon_prod:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: production
+    container_name: lms_horizon_prod
+    restart: unless-stopped
+    secrets:
+      - firebase_credentials
+      - firebase_project_id
+      - cloudflare_r2_access_key_id
+      - cloudflare_r2_secret_access_key
+      - cloudflare_r2_bucket
+      - cloudflare_r2_endpoint
+      - cloudflare_r2_public_url
+      - cloudflare_kv_account_id
+      - cloudflare_kv_namespace_id
+      - cloudflare_kv_api_token
+    environment:
+      <<: *backend-prod-env
+    depends_on:
+      - mysql
+      - redis
+      - octane_prod
+    networks:
+      - lms_network
+    profiles: [prod]
+    command: sh -c "php artisan config:clear && php artisan horizon"
+    healthcheck:
+      test: ["CMD", "php", "artisan", "horizon:status"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  # Laravel Reverb (Production)
+  reverb_prod:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: production
+    container_name: lms_reverb_prod
+    restart: unless-stopped
+    environment:
+      <<: *backend-prod-env
+      REVERB_HOST: 0.0.0.0
+    depends_on:
+      - mysql
+      - redis
+    networks:
+      - lms_network
+    profiles: [prod]
+    command: sh -c "php artisan config:clear && php artisan reverb:start --host=0.0.0.0 --port=8080"
+    healthcheck:
+      test: ["CMD", "sh", "-c", "exit $(nc -z localhost 8080; echo $?)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # Next.js Frontend (Production)
+  frontend_prod:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+      target: runner
+      args:
+        <<: *frontend-args
+        NEXT_PUBLIC_REVERB_PORT: "443"
+        NEXT_PUBLIC_REVERB_SCHEME: https
+    container_name: lms_frontend_prod
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+      NEXT_PUBLIC_REVERB_APP_KEY: ${REVERB_APP_KEY}
+      NEXT_PUBLIC_REVERB_HOST: ${REVERB_PUBLIC_HOST}
+      NEXT_PUBLIC_REVERB_PORT: "443"
+      NEXT_PUBLIC_REVERB_SCHEME: https
+    depends_on:
+      - octane_prod
+      - reverb_prod
+    networks:
+      - lms_network
+    profiles: [prod]
+
+  # Nginx (Production)
+  nginx:
+    image: nginx:alpine
+    container_name: lms_nginx
+    restart: unless-stopped
+    ports:
+      - "${APP_HTTP_PORT:-80}:80"
+      - "${APP_HTTPS_PORT:-443}:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/ssl:/etc/nginx/ssl
+      - ./backend/public:/var/www/backend/public
+    depends_on:
+      - octane_prod
+      - frontend_prod
+      - reverb_prod
+    networks:
+      lms_network:
+        aliases:
+          - neetaq.com
+          - www.neetaq.com
+    profiles: [prod]
 
 networks:
   lms_network:
@@ -307,4 +467,10 @@ volumes:
   mysql_data:
     driver: local
   redis_data:
+    driver: local
+  vendor_dev:
+    driver: local
+  node_modules_dev:
+    driver: local
+  nextjs_cache:
     driver: local
