@@ -69,23 +69,28 @@ class StudentDashboardService
             ->with(['academy:id,trial_period_days', 'teacher:id,trial_period_days'])
             ->firstOrFail();
 
-        $lectures = Lecture::where('teacher_id', $teacherId)->get();
-        $exams = Exam::where('teacher_id', $teacherId)->get();
+        // Count lectures directly in DB
+        $totalLectures = Lecture::where('teacher_id', $teacherId)->count();
 
-        $attendanceCount = Attendance::whereIn('lecture_id', $lectures->pluck('id'))
-            ->where('student_id', $student->id)
+        // Count attendance directly in DB using join
+        $attendanceCount = Attendance::where('student_id', $student->id)
             ->where('status', 'present')
+            ->whereHas('lecture', fn($q) => $q->where('teacher_id', $teacherId))
             ->count();
 
-        $examResults = ExamResult::whereIn('exam_id', $exams->pluck('id'))
-            ->where('student_id', $student->id)
-            ->get();
+        // Get exam stats directly in DB
+        $examStats = ExamResult::where('student_id', $student->id)
+            ->whereHas('exam', fn($q) => $q->where('teacher_id', $teacherId))
+            ->selectRaw('COUNT(*) as count, COALESCE(AVG(percentage), 0) as avg')
+            ->first();
+
+        $totalExams = Exam::where('teacher_id', $teacherId)->count();
 
         return [
-            'attendance_rate' => $lectures->count() > 0 ? round(($attendanceCount / $lectures->count()) * 100) : 0,
-            'exam_average' => $examResults->avg('percentage') ?? 0,
-            'exams_taken' => $examResults->count(),
-            'total_exams' => $exams->count(),
+            'attendance_rate' => $totalLectures > 0 ? round(($attendanceCount / $totalLectures) * 100) : 0,
+            'exam_average' => (float) ($examStats->avg ?? 0),
+            'exams_taken' => $examStats->count ?? 0,
+            'total_exams' => $totalExams,
             'subscription_status' => [
                 'is_active' => $enrollment->is_active,
                 'ends_at' => $enrollment->subscription_end,

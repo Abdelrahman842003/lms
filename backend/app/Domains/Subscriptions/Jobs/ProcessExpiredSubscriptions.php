@@ -53,6 +53,9 @@ class ProcessExpiredSubscriptions implements ShouldQueue
                     subscriber:     $subscriber,
                     subscriberType: $subscriberType,
                 ));
+
+                // تحديث الـ status لمنع المعالجة المكررة
+                $sub->update(['status' => SubscriptionStatus::EXPIRED->value]);
             });
     }
 }

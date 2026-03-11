@@ -152,14 +152,21 @@ class Academy extends Model implements AuthenticatableContract
 
     /**
      * Get total students count across all teachers (Active only)
+     * يستخدم query واحد لتجنب N+1 problem
      */
-    public function getTotalStudentsCountAttribute()
+    public function getTotalStudentsCountAttribute(): int
     {
-        return $this->activeTeachers()
-            ->get()
-            ->sum(function ($teacher) {
-                return $teacher->activeEnrollments()->count();
-            });
+        $teacherIds = $this->activeTeachers()->pluck('teachers.id');
+
+        if ($teacherIds->isEmpty()) {
+            return 0;
+        }
+
+        return \Illuminate\Support\Facades\DB::table('enrollments')
+            ->whereIn('teacher_id', $teacherIds)
+            ->where('is_active', true)
+            ->distinct('student_id')
+            ->count('student_id');
     }
 
     /**

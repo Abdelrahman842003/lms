@@ -178,15 +178,6 @@ class StudentService
                 $academyId = $grade?->academy_id;
             }
 
-            // Log for debugging
-            \Log::info('Creating enrollment with academy_id', [
-                'academy_id_final' => $academyId,
-                'academy_id_from_data' => $data['academy_id'] ?? 'not set',
-                'grade_id' => $data['grade_id'] ?? null,
-                'student_id' => $student->id,
-                'teacher_id' => $teacher->id,
-            ]);
-
             // Create enrollment
             $enrollment = Enrollment::create([
                 'student_id' => $student->id,
@@ -559,43 +550,6 @@ class StudentService
 
         // Sort by month descending (newest first)
         return array_reverse($history);
-    }
-
-    /**
-     * Generate slug from Arabic name
-     */
-    private function generateSlug(string $name): string
-    {
-        $text = trim($name);
-
-        // Specific replacements for common names/prefixes
-        $replacements = [
-            'عبدال' => 'abdel',
-            'عبد ال' => 'abdel',
-            'عيد' => 'eid',
-            'الله' => 'allah',
-            'ال' => 'el',
-        ];
-
-        foreach ($replacements as $key => $value) {
-            $text = str_replace($key, $value, $text);
-        }
-
-        $arabicChars = [
-            'ا', 'أ', 'إ', 'آ', 'ب', 'ت', 'ث', 'ج', 'ح', 'خ', 'د', 'ذ', 'ر', 'ز', 'س', 'ش', 'ص', 'ض', 'ط', 'ظ', 'ع', 'غ', 'ف', 'ق', 'ك', 'ل', 'م', 'ن', 'ه', 'و', 'ي', 'ى', 'ة',
-            '٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩',
-        ];
-
-        $englishChars = [
-            'a', 'a', 'e', 'a', 'b', 't', 'th', 'j', 'h', 'kh', 'd', 'th', 'r', 'z', 's', 'sh', 's', 'd', 't', 'z', 'a', 'gh', 'f', 'q', 'k', 'l', 'm', 'n', 'h', 'w', 'i', 'a', 'a',
-            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-        ];
-
-        for ($i = 0; $i < count($arabicChars); $i++) {
-            $text = str_replace($arabicChars[$i], $englishChars[$i], $text);
-        }
-
-        return strtolower(preg_replace('/[^a-zA-Z0-9]+/', '_', $text));
     }
 
     /**

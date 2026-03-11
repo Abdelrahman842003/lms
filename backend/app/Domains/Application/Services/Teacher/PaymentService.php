@@ -131,10 +131,8 @@ class PaymentService
 
         // Send Notifications
         try {
-            \Illuminate\Support\Facades\Log::info("Starting payment notification for payment: " . $payment->id);
-
             $notificationService = app(\App\Domains\Notifications\Services\NotificationService::class);
-            
+
             // Calculate month names in Arabic
             \Carbon\Carbon::setLocale('ar');
             $monthNames = [];
@@ -144,8 +142,6 @@ class PaymentService
                 $currentDate->addMonth();
             }
             $monthsString = implode('، ', $monthNames);
-            
-            \Illuminate\Support\Facades\Log::info("Months string calculated: " . $monthsString);
 
             $title = "تم دفع اشتراك جديد";
             $message = "تم دفع شهر {$monthsString} بنجاح";
@@ -176,7 +172,6 @@ class PaymentService
                 ],
                 'payment'
             );
-            \Illuminate\Support\Facades\Log::info("Student notification sent");
 
             // Notify Parent
             $notificationService->sendToParent(
@@ -190,11 +185,9 @@ class PaymentService
                 'payment',
                 true // Skip DB storage to avoid duplicates in parent view
             );
-            \Illuminate\Support\Facades\Log::info("Parent notification sent");
 
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error("Payment notification failed: " . $e->getMessage());
-            \Illuminate\Support\Facades\Log::error($e->getTraceAsString());
+            // Silent fail - payment was already created successfully
         }
 
         return [

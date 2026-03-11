@@ -341,7 +341,8 @@ services:
     networks:
       - lms_network
     profiles: [prod]
-    command: sh -c "php artisan config:clear && php artisan octane:start --server=swoole --host=0.0.0.0 --port=8000 --workers=4 --task-workers=6 --max-requests=500"
+    # Configs, routes, and views are cached at build time in Dockerfile
+    command: sh -c "php artisan octane:start --server=swoole --host=0.0.0.0 --port=8000 --workers=4 --task-workers=6 --max-requests=500"
     healthcheck:
       test: ["CMD", "php", "artisan", "octane:status"]
       interval: 30s
@@ -377,7 +378,8 @@ services:
     networks:
       - lms_network
     profiles: [prod]
-    command: sh -c "php artisan config:clear && php artisan horizon"
+    # Configs are cached at build time in Dockerfile
+    command: sh -c "php artisan horizon"
     healthcheck:
       test: ["CMD", "php", "artisan", "horizon:status"]
       interval: 30s
@@ -402,7 +404,8 @@ services:
     networks:
       - lms_network
     profiles: [prod]
-    command: sh -c "php artisan config:clear && php artisan reverb:start --host=0.0.0.0 --port=8080"
+    # Configs are cached at build time in Dockerfile
+    command: sh -c "php artisan reverb:start --host=0.0.0.0 --port=8080"
     healthcheck:
       test: ["CMD", "sh", "-c", "exit $(nc -z localhost 8080; echo $?)"]
       interval: 30s

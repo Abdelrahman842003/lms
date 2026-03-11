@@ -103,47 +103,48 @@ class PaymentLogService
 
         foreach ($payments as $paymentData) {
             try {
-                // Idempotency check
-                $existing = PaymentLog::where('client_side_uuid', $paymentData['client_side_uuid'])->first();
-                if ($existing) {
-                    $results['success'][] = [
+                $results['success'][] = DB::transaction(function () use ($teacher, $paymentData) {
+                    // Idempotency check
+                    $existing = PaymentLog::where('client_side_uuid', $paymentData['client_side_uuid'])->first();
+                    if ($existing) {
+                        return [
+                            'client_side_uuid' => $paymentData['client_side_uuid'],
+                            'status' => 'duplicate',
+                            'payment_id' => $existing->id,
+                        ];
+                    }
+
+                    // Find enrollment
+                    $enrollment = Enrollment::where('student_id', $paymentData['student_id'])
+                        ->where('teacher_id', $teacher->id)
+                        ->with(['academy:id,trial_period_days', 'teacher:id,trial_period_days'])
+                        ->first();
+
+                    if (!$enrollment) {
+                        throw new \Exception('الطالب غير مسجل معك');
+                    }
+
+                    // Create payment
+                    $payment = PaymentLog::create([
                         'client_side_uuid' => $paymentData['client_side_uuid'],
-                        'status' => 'duplicate',
-                        'payment_id' => $existing->id,
+                        'enrollment_id' => $enrollment->id,
+                        'student_id' => $paymentData['student_id'],
+                        'teacher_id' => $teacher->id,
+                        'amount' => $paymentData['amount'],
+                        'confirmation_code' => $paymentData['confirmation_code'],
+                        'status' => 'pending',
+                        'received_by_id' => $teacher->id,
+                        'received_by_type' => get_class($teacher),
+                        'expires_at' => now()->addDays(7),
+                        'notes' => $paymentData['notes'] ?? null,
+                    ]);
+
+                    return [
+                        'client_side_uuid' => $paymentData['client_side_uuid'],
+                        'status' => 'created',
+                        'payment_id' => $payment->id,
                     ];
-                    continue;
-                }
-
-                // Find enrollment
-                $enrollment = Enrollment::where('student_id', $paymentData['student_id'])
-                    ->where('teacher_id', $teacher->id)
-                    ->with(['academy:id,trial_period_days', 'teacher:id,trial_period_days'])
-                    ->first();
-
-                if (!$enrollment) {
-                    throw new \Exception('الطالب غير مسجل معك');
-                }
-
-                // Create payment
-                $payment = PaymentLog::create([
-                    'client_side_uuid' => $paymentData['client_side_uuid'],
-                    'enrollment_id' => $enrollment->id,
-                    'student_id' => $paymentData['student_id'],
-                    'teacher_id' => $teacher->id,
-                    'amount' => $paymentData['amount'],
-                    'confirmation_code' => $paymentData['confirmation_code'],
-                    'status' => 'pending',
-                    'received_by_id' => $teacher->id,
-                    'received_by_type' => get_class($teacher),
-                    'expires_at' => now()->addDays(7),
-                    'notes' => $paymentData['notes'] ?? null,
-                ]);
-
-                $results['success'][] = [
-                    'client_side_uuid' => $paymentData['client_side_uuid'],
-                    'status' => 'created',
-                    'payment_id' => $payment->id,
-                ];
+                });
 
             } catch (\Exception $e) {
                 $results['errors'][] = [
@@ -151,7 +152,7 @@ class PaymentLogService
                     'error' => $e->getMessage(),
                 ];
 
-                // Log to sync_errors table
+                // Log to sync_errors table (outside the failed transaction)
                 SyncError::create([
                     'client_side_uuid' => $paymentData['client_side_uuid'],
                     'operation_type' => 'payment',
@@ -177,13 +178,24 @@ class PaymentLogService
 
     public function getStatistics(Teacher $teacher): array
     {
+        $stats = PaymentLog::forTeacher($teacher->id)
+            ->selectRaw("
+                COUNT(*) as total,
+                SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
+                SUM(CASE WHEN status = 'confirmed' THEN 1 ELSE 0 END) as confirmed,
+                SUM(CASE WHEN status = 'expired' OR (status = 'pending' AND expires_at < NOW()) THEN 1 ELSE 0 END) as expired,
+                COALESCE(SUM(CASE WHEN status = 'confirmed' THEN amount ELSE 0 END), 0) as total_amount,
+                COALESCE(SUM(CASE WHEN status = 'pending' THEN amount ELSE 0 END), 0) as pending_amount
+            ")
+            ->first();
+
         return [
-            'total' => PaymentLog::forTeacher($teacher->id)->count(),
-            'pending' => PaymentLog::forTeacher($teacher->id)->pending()->count(),
-            'confirmed' => PaymentLog::forTeacher($teacher->id)->confirmed()->count(),
-            'expired' => PaymentLog::forTeacher($teacher->id)->expired()->count(),
-            'total_amount' => PaymentLog::forTeacher($teacher->id)->confirmed()->sum('amount'),
-            'pending_amount' => PaymentLog::forTeacher($teacher->id)->pending()->sum('amount'),
+            'total' => (int) $stats->total,
+            'pending' => (int) $stats->pending,
+            'confirmed' => (int) $stats->confirmed,
+            'expired' => (int) $stats->expired,
+            'total_amount' => (int) $stats->total_amount,
+            'pending_amount' => (int) $stats->pending_amount,
         ];
     }
 }

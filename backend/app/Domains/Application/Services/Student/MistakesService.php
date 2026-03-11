@@ -10,8 +10,6 @@ use App\Domains\Exams\Models\Question;
 use App\Domains\Auth\Models\Student;
 use Illuminate\Support\Collection;
 
-use Illuminate\Support\Facades\Log;
-
 class MistakesService
 {
     /**
@@ -58,11 +56,6 @@ class MistakesService
      */
     public function getMistakes(string $studentId, string $teacherId): Collection
     {
-        Log::info('MistakesService::getMistakes query start', [
-            'student_id' => $studentId,
-            'teacher_id' => $teacherId,
-        ]);
-
         $query = FailedQuestion::where('student_id', $studentId)
             ->where('teacher_id', $teacherId)
             ->with(['question', 'exam:id,title,subject']);
@@ -73,10 +66,6 @@ class MistakesService
         $results = $query->orderByDesc('times_failed')
             ->orderByDesc('created_at')
             ->get();
-
-        Log::info('MistakesService::getMistakes query result', [
-            'count' => $results->count()
-        ]);
 
         return $results->map(function ($item) {
                 return [

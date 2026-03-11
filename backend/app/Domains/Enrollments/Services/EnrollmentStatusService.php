@@ -125,21 +125,42 @@ class EnrollmentStatusService
 
     /**
      * Get the trial end date for the enrollment.
+     * يشمل فترة التجربة بالإضافة إلى grace period (3 أيام)
      */
     public function getTrialEndsAt(Enrollment $enrollment): ?\Illuminate\Support\Carbon
     {
         $trialPeriodDays = $this->getTrialPeriodDays($enrollment);
+        $gracePeriodDays = 3; // Grace period of 3 days
 
         // Trial from creation (new enrollment, not activated OR active but no subscription)
         if (!$enrollment->subscription_end) {
-            return $enrollment->created_at->copy()->addDays($trialPeriodDays);
+            return $enrollment->created_at->copy()
+                ->addDays($trialPeriodDays)
+                ->addDays($gracePeriodDays);
         }
 
         // Trial after subscription ends
-        if ($enrollment->subscription_end && now() > $enrollment->subscription_end) {
-            return $enrollment->subscription_end->copy()->addDays($trialPeriodDays);
+        if ($enrollment->subscription_end && now()->gt($enrollment->subscription_end)) {
+            return $enrollment->subscription_end->copy()
+                ->addDays($trialPeriodDays)
+                ->addDays($gracePeriodDays);
         }
 
         return null;
+    }
+
+    /**
+     * Get the grace period end date for the enrollment.
+     * Returns the date when the grace period ends (trial + 3 days).
+     */
+    public function getGracePeriodEndsAt(Enrollment $enrollment): ?\Illuminate\Support\Carbon
+    {
+        $trialEnd = $this->getTrialEndsAt($enrollment);
+
+        if (!$trialEnd) {
+            return null;
+        }
+
+        return $trialEnd->copy()->addDays(3);
     }
 }

@@ -227,23 +227,24 @@ class LectureService
                 return $day !== null;
             });
 
+            // Fetch all attendance dates in a single query to avoid N+1
+            $attendanceDates = $lecture->attendances()
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->selectRaw('DATE(created_at) as date')
+                ->pluck('date')
+                ->flip()
+                ->all();
+
             // Iterate from start date to today
             $current = $startDate->copy();
             while ($current <= $endDate) {
                 if (in_array($current->dayOfWeek, $recurrenceDays)) {
                     $dateStr = $current->format('Y-m-d');
 
-                    // Check status
-                    $status = 'not_activated';
+                    // Check status using pre-fetched attendance dates
+                    $status = isset($attendanceDates[$dateStr]) ? 'active' : 'not_activated';
 
-                    // Check if attendance exists for this date
-                    $hasAttendance = $lecture->attendances()
-                        ->whereDate('created_at', $dateStr)
-                        ->exists();
-
-                    if ($hasAttendance) {
-                        $status = 'active';
-                    } elseif (in_array($dateStr, $lecture->cancelled_dates ?? [])) {
+                    if ($status === 'not_activated' && in_array($dateStr, $lecture->cancelled_dates ?? [])) {
                         $status = 'cancelled';
                     }
 

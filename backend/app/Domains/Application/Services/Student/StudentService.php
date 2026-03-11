@@ -44,9 +44,7 @@ class StudentService
                     'enrollment_id' => $enrollment->id,
                     'teacher_id' => $enrollment->teacher_id,
                     'teacher_name' => $enrollment->teacher->name,
-                    'teacher_avatar' => $enrollment->teacher->avatar_key 
-                        ? config('filesystems.disks.r2.url') . '/' . $enrollment->teacher->avatar_key 
-                        : null,
+                    'teacher_avatar' => $enrollment->teacher->avatar_url ?? null,
                     'is_suspended' => $enrollment->teacher->status === 'suspended' || $enrollment->teacher->isSubscriptionBlocked(),
                     'grade_name' => $enrollment->grade?->name,
                     'group_name' => $enrollment->group?->name,
@@ -83,9 +81,7 @@ class StudentService
                 'enrollment_id' => $enrollment->id,
                 'teacher_id' => $enrollment->teacher_id,
                 'teacher_name' => $enrollment->teacher->name,
-                'teacher_avatar' => $enrollment->teacher->avatar_key 
-                    ? config('filesystems.disks.r2.url') . '/' . $enrollment->teacher->avatar_key 
-                    : null,
+                'teacher_avatar' => $enrollment->teacher->avatar_url ?? null,
                 'is_suspended' => $enrollment->teacher->status === 'suspended' || $enrollment->teacher->isSubscriptionBlocked(),
                 'grade_name' => $enrollment->grade?->name,
                 'group_name' => $enrollment->group?->name,
@@ -184,9 +180,7 @@ class StudentService
             'teacher' => [
                 'id' => $enrollment->teacher->id,
                 'name' => $enrollment->teacher->name,
-                'avatar' => $enrollment->teacher->avatar_key 
-                    ? config('filesystems.disks.r2.url') . '/' . $enrollment->teacher->avatar_key 
-                    : null,
+                'avatar' => $enrollment->teacher->avatar_url ?? null,
             ],
             'grade' => $enrollment->grade?->name,
             'group' => $enrollment->group?->name,

@@ -102,21 +102,28 @@ class UnifiedSubscriptionSyncService
         return now()->startOfMonth();
     }
 
+    /**
+     * تحديد حالة الاشتراك بناءً على المبلغ المستحق والمُدفع
+     */
     private function resolveStatus(float $amountDue, float $amountPaid): string
     {
+        // اشتراك مجاني أو تجريبي (لا يوجد مبلغ مستحق)
+        if ($amountDue <= 0) {
+            return 'paid'; // الاشتراكات المجانية تُعتبر مدفوعة
+        }
+
+        // لا يوجد أي دفعة بعد
         if ($amountPaid <= 0) {
             return 'pending';
         }
 
-        if ($amountPaid >= $amountDue && $amountDue > 0) {
-            return 'paid';
+        // دفعة جزئية (لم يتم سداد المبلغ كاملاً)
+        if ($amountPaid < $amountDue) {
+            return 'partial';
         }
 
-        if ($amountDue <= 0 && $amountPaid > 0) {
-            return 'paid';
-        }
-
-        return 'partial';
+        // تم سداد المبلغ كاملاً أو أكثر
+        return 'paid';
     }
 
     private function buildNotes(string $planType): string

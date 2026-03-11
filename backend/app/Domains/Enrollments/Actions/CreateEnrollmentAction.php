@@ -60,31 +60,49 @@ final class CreateEnrollmentAction
                 throw new SubscriptionExpiredException('انتهت صلاحية الاشتراك. يرجى تجديد الباقة.');
             }
 
-            // 4. التحقق من توفر مقاعد
-            if (! $this->seatAvailable->isSatisfiedBy($subscriberId, $subscriberType)) {
+            // 4. الحصول على الاشتراك مع lockForUpdate لمنع Race Condition
+            $subscription = $this->getSubscriptionWithLock($subscriberId, $subscriberType);
+
+            if (! $subscription) {
+                throw new SubscriptionExpiredException('الاشتراك غير نشط.');
+            }
+
+            // 5. زيادة عداد المقاعد بشكل atomي (يفحص ويزيد في عملية واحدة)
+            $updated = DB::table($subscription->getTable())
+                ->where('id', $subscription->id)
+                ->where('status', 'active')
+                ->whereColumn('used_seats', '<', 'max_seats')
+                ->update(['used_seats' => DB::raw('used_seats + 1')]);
+
+            if ($updated === 0) {
                 throw new SeatLimitException('لا تتوفر مقاعد شاغرة. يرجى ترقية الباقة.');
             }
 
-            // 5. إنشاء الـ enrollment
+            // 6. إنشاء الـ enrollment
             $enrollment = $this->enrollments->create($dto);
 
-            // 6. تحديث عداد المقاعد المستخدمة
-            $this->incrementUsedSeats($subscriberId, $subscriberType);
+            // 7. refresh للحصول على القيمة الجديدة
+            $subscription->refresh();
 
             return $enrollment;
         });
     }
 
-    private function incrementUsedSeats(int $subscriberId, string $subscriberType): void
+    /**
+     * Get subscription with pessimistic lock to prevent race conditions.
+     */
+    private function getSubscriptionWithLock(int $subscriberId, string $subscriberType): ?object
     {
         if ($subscriberType === 'teacher') {
-            \App\Domains\Auth\Models\TeacherSubscription::where('teacher_id', $subscriberId)
+            return \App\Domains\Auth\Models\TeacherSubscription::where('teacher_id', $subscriberId)
                 ->where('status', 'active')
-                ->increment('used_seats');
-        } else {
-            \App\Domains\Auth\Models\AcademySubscription::where('academy_id', $subscriberId)
-                ->where('status', 'active')
-                ->increment('used_seats');
+                ->lockForUpdate()
+                ->first();
         }
+
+        return \App\Domains\Auth\Models\AcademySubscription::where('academy_id', $subscriberId)
+            ->where('status', 'active')
+            ->lockForUpdate()
+            ->first();
     }
 }

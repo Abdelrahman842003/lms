@@ -61,6 +61,8 @@ class Teacher extends Authenticatable
         'remember_token',
     ];
 
+    protected $appends = ['avatar_url'];
+
     protected function casts(): array
     {
         return [
@@ -91,6 +93,21 @@ class Teacher extends Authenticatable
     public function getIsActiveAttribute(): bool
     {
         return $this->status === 'active';
+    }
+
+    /**
+     * Get the full avatar URL from R2 storage.
+     */
+    public function getAvatarUrlAttribute(): ?string
+    {
+        if (!$this->avatar_key) {
+            return null;
+        }
+
+        $baseUrl = rtrim(config('filesystems.disks.r2.url'), '/');
+        $key = ltrim($this->avatar_key, '/');
+
+        return $baseUrl . '/' . $key;
     }
 
     // Many-to-Many Relationships via Enrollment
@@ -189,13 +206,16 @@ class Teacher extends Authenticatable
             return false;
         }
 
-        // Belongs to at least one active academy with an active subscription → not blocked
-        $activeAcademyExists = $this->academies()
+        // Check if any active academy has active subscription (DB-level check)
+        $activeAcademyWithSubscription = $this->academies()
             ->wherePivot('is_active', true)
-            ->get()
-            ->contains(fn ($academy) => $academy->hasActiveSubscription());
+            ->whereHas('subscriptions', function ($query) {
+                $query->where('status', SubscriptionStatus::PAID->value)
+                    ->where('month', '>=', now()->startOfMonth()->toDateString());
+            })
+            ->exists();
 
-        return ! $activeAcademyExists;
+        return ! $activeAcademyWithSubscription;
     }
 
     /**

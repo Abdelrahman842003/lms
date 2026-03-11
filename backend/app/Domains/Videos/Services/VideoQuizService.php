@@ -64,12 +64,24 @@ class VideoQuizService
     public function updateQuiz(VideoQuiz $quiz, array $data): VideoQuiz
     {
         return DB::transaction(function () use ($quiz, $data): VideoQuiz {
-            $quiz->update(array_filter([
-                'title'        => $data['title'] ?? null,
-                'passing_score'=> $data['passing_score'] ?? null,
-                'is_required'  => isset($data['is_required']) ? $data['is_required'] : null,
-                'is_active'    => isset($data['is_active']) ? $data['is_active'] : null,
-            ], fn($v) => $v !== null));
+            $updateData = [];
+
+            if (array_key_exists('title', $data)) {
+                $updateData['title'] = $data['title'];
+            }
+            if (array_key_exists('passing_score', $data)) {
+                $updateData['passing_score'] = $data['passing_score'];
+            }
+            if (array_key_exists('is_required', $data)) {
+                $updateData['is_required'] = (bool) $data['is_required'];
+            }
+            if (array_key_exists('is_active', $data)) {
+                $updateData['is_active'] = (bool) $data['is_active'];
+            }
+
+            if (!empty($updateData)) {
+                $quiz->update($updateData);
+            }
 
             if (isset($data['questions'])) {
                 $this->syncQuestions($quiz, $data['questions']);
@@ -121,7 +133,7 @@ class VideoQuizService
             throw new \RuntimeException('لقد اجتزت هذا الاختبار بالفعل ولا يمكن إعادته.');
         }
 
-        return DB::transaction(function () use ($quiz, $student, $answers, $progress): array {
+        $result = DB::transaction(function () use ($quiz, $student, $answers, $progress): array {
             $questions = VideoQuizQuestion::where('video_quiz_id', $quiz->id)
                 ->get()
                 ->keyBy('id');
@@ -187,12 +199,13 @@ class VideoQuizService
                 'total'            => $totalCount,
                 'percentage'       => (float) $percentage,
                 'should_award'     => $shouldAwardPoints,
+                'progress'         => $progress,
             ];
         });
 
         // منح النقاط خارج الـ transaction لتجنب rollback عند أي خطأ في الـ gamification
         if ($result['should_award'] ?? false) {
-            $progress = $progress->fresh();
+            $progress = $result['progress'];
             try {
                 $result['points_earned'] = $this->awardVideoCompletionPoints(
                     $student,
@@ -206,7 +219,7 @@ class VideoQuizService
             }
         }
 
-        unset($result['should_award']);
+        unset($result['should_award'], $result['progress']);
         return $result;
     }
 

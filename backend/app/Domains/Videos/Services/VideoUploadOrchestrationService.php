@@ -70,46 +70,52 @@ class VideoUploadOrchestrationService
         // Build a safe, unpredictable object key
         $objectKey = $this->buildObjectKey($context, $contentType);
 
-        return DB::transaction(function () use (
-            $data, $context, $objectKey, $contentType,
-            $totalParts, $declaredSize, $declaredName,
-            $fileDeclaration, $initiatorIp
-        ): array {
-            // Create the Video record in UPLOADING state
-            $video = Video::query()->create([
-                'owner_type'             => $context->ownerType,
-                'owner_id'               => $context->ownerId,
-                'uploader_type'          => $context->uploaderMorphType(),
-                'uploader_id'            => $context->uploaderId(),
-                'teacher_reference_id'   => $data->teacherReferenceId ?? $context->teacherReference?->id,
-                'teacher_reference_name' => $data->teacherReferenceName ?? $context->teacherReference?->name,
-                'academy_id'             => $context->academyId,
-                'grade_id'               => $data->gradeId,
-                'lecture_id'             => $data->lectureId,
-                'lesson_id'              => $data->lessonId,
-                'title'                  => $data->title,
-                'description'            => $data->description,
-                'status'                 => VideoStatus::UPLOADING,
-                'processing_status'      => VideoProcessingStatus::PENDING,
-                'scheduled_at'           => $data->scheduledAt,
-                'available_from'         => $data->availableFrom,
-                'available_until'        => $data->availableUntil,
-                'original_path'          => $objectKey,
-                'video_mime'             => $contentType,
-                'video_size_bytes'       => $declaredSize,
-            ]);
+        // Create the Video record outside the transaction
+        $video = Video::query()->create([
+            'owner_type'             => $context->ownerType,
+            'owner_id'               => $context->ownerId,
+            'uploader_type'          => $context->uploaderMorphType(),
+            'uploader_id'            => $context->uploaderId(),
+            'teacher_reference_id'   => $data->teacherReferenceId ?? $context->teacherReference?->id,
+            'teacher_reference_name' => $data->teacherReferenceName ?? $context->teacherReference?->name,
+            'academy_id'             => $context->academyId,
+            'grade_id'               => $data->gradeId,
+            'lecture_id'             => $data->lectureId,
+            'lesson_id'              => $data->lessonId,
+            'title'                  => $data->title,
+            'description'            => $data->description,
+            'status'                 => VideoStatus::UPLOADING,
+            'processing_status'      => VideoProcessingStatus::PENDING,
+            'scheduled_at'           => $data->scheduledAt,
+            'available_from'         => $data->availableFrom,
+            'available_until'        => $data->availableUntil,
+            'original_path'          => $objectKey,
+            'video_mime'             => $contentType,
+            'video_size_bytes'       => $declaredSize,
+        ]);
 
-            $video->groups()->sync($data->groupIds);
+        $video->groups()->sync($data->groupIds);
 
-            // Create multipart upload on R2 — server does NOT touch video bytes
-            $r2UploadId = $this->r2->createMultipartUpload($objectKey, $contentType);
+        // Create multipart upload on R2 — HTTP call outside transaction
+        $r2UploadId = $this->r2->createMultipartUpload($objectKey, $contentType);
 
-            // Generate all presigned URLs up-front
-            $ttl        = $this->settings->presignedUrlTtlSeconds();
-            $partUrls   = $this->r2->presignAllPartUrls($objectKey, $r2UploadId, $totalParts, $ttl);
+        // Generate all presigned URLs up-front
+        $ttl        = $this->settings->presignedUrlTtlSeconds();
+        $partUrls   = $this->r2->presignAllPartUrls($objectKey, $r2UploadId, $totalParts, $ttl);
 
-            // Persist the session
-            $session = VideoUploadSession::query()->create([
+        // Persist the session in a transaction
+        $session = DB::transaction(function () use (
+            $video,
+            $context,
+            $r2UploadId,
+            $objectKey,
+            $contentType,
+            $declaredSize,
+            $declaredName,
+            $totalParts,
+            $initiatorIp
+        ): VideoUploadSession {
+            return VideoUploadSession::query()->create([
                 'video_id'          => $video->id,
                 'uploader_type'     => $context->uploaderMorphType(),
                 'uploader_id'       => $context->uploaderId(),
@@ -122,35 +128,35 @@ class VideoUploadOrchestrationService
                 'status'            => VideoUploadSessionStatus::PENDING_UPLOAD,
                 'initiator_ip'      => $initiatorIp,
             ]);
-
-            $this->logAudit('upload.initiated', $video, $context, [
-                'session_id'   => $session->id,
-                'object_key'   => $objectKey,
-                'total_parts'  => $totalParts,
-                'declared_size' => $declaredSize,
-                'declared_mime' => $contentType,
-            ]);
-
-            // Convert the keyed map {1: url, 2: url} → [{part_number: 1, url: ...}, ...]
-            $presignedParts = array_map(
-                static fn (int $partNumber, string $url) => [
-                    'part_number' => $partNumber,
-                    'url'         => $url,
-                ],
-                array_keys($partUrls),
-                array_values($partUrls),
-            );
-
-            return [
-                'session_id'       => $session->id,
-                'video_id'         => $video->id,
-                'chunk_size_bytes' => $this->settings->chunkSizeMb() * 1024 * 1024,
-                'max_concurrent'   => $this->settings->maxConcurrentChunks(),
-                'retry_attempts'   => $this->settings->partRetryAttempts(),
-                'presigned_parts'  => $presignedParts,
-                'presigned_ttl'    => $ttl,
-            ];
         });
+
+        $this->logAudit('upload.initiated', $video, $context, [
+            'session_id'   => $session->id,
+            'object_key'   => $objectKey,
+            'total_parts'  => $totalParts,
+            'declared_size' => $declaredSize,
+            'declared_mime' => $contentType,
+        ]);
+
+        // Convert the keyed map {1: url, 2: url} → [{part_number: 1, url: ...}, ...]
+        $presignedParts = array_map(
+            static fn (int $partNumber, string $url) => [
+                'part_number' => $partNumber,
+                'url'         => $url,
+            ],
+            array_keys($partUrls),
+            array_values($partUrls),
+        );
+
+        return [
+            'session_id'       => $session->id,
+            'video_id'         => $video->id,
+            'chunk_size_bytes' => $this->settings->chunkSizeMb() * 1024 * 1024,
+            'max_concurrent'   => $this->settings->maxConcurrentChunks(),
+            'retry_attempts'   => $this->settings->partRetryAttempts(),
+            'presigned_parts'  => $presignedParts,
+            'presigned_ttl'    => $ttl,
+        ];
     }
 
     // ─────────────────────────────────────────────────────────────────
@@ -307,6 +313,9 @@ class VideoUploadOrchestrationService
             'video/quicktime'    => 'mov',
             'video/x-matroska'   => 'mkv',
             'video/webm'         => 'webm',
+            'video/mpeg'         => 'mpeg',
+            'video/x-mpeg'       => 'mpeg',
+            'video/x-msvideo'    => 'avi',
             default              => 'bin',
         };
 

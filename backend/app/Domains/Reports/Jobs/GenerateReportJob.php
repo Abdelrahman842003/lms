@@ -4,14 +4,18 @@ declare(strict_types=1);
 
 namespace App\Domains\Reports\Jobs;
 
+use App\Domains\Auth\Models\Teacher;
+use App\Domains\Auth\Models\Admin;
+use App\Domains\Auth\Models\Academy;
 use App\Domains\Reports\ExporterFactory;
+use App\Domains\Reports\Notifications\ReportReadyNotification;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Notification;
 
 /**
  * Job لتوليد التقارير بشكل Async.
@@ -47,17 +51,23 @@ class GenerateReportJob implements ShouldQueue
             $exporter = ExporterFactory::make($this->format);
             $path     = $exporter->export($this->data, $this->options);
 
-            Log::info('GenerateReportJob: done', [
+            Log::debug('GenerateReportJob: done', [
                 'type'   => $this->reportType,
                 'format' => $this->format,
                 'path'   => $path,
             ]);
 
-            // TODO: إرسال إشعار للمستخدم بعد توليد التقرير
-            // if ($this->notifyUserId && $this->notifyUserType) {
-            //     $user = $this->resolveUser();
-            //     $user?->notify(new ReportReadyNotification($path));
-            // }
+            // إرسال إشعار للمستخدم بعد توليد التقرير
+            if ($this->notifyUserId && $this->notifyUserType) {
+                $user = $this->resolveUser();
+                if ($user) {
+                    $user->notify(new ReportReadyNotification(
+                        $path,
+                        $this->reportType,
+                        $this->format
+                    ));
+                }
+            }
         } catch (\Throwable $e) {
             Log::error('GenerateReportJob: failed', [
                 'type'    => $this->reportType,
@@ -66,5 +76,18 @@ class GenerateReportJob implements ShouldQueue
             ]);
             throw $e;
         }
+    }
+
+    /**
+     * تحديد المستخدم الذي سيستلم الإشعار
+     */
+    private function resolveUser(): ?Model
+    {
+        return match ($this->notifyUserType) {
+            'teacher' => Teacher::find($this->notifyUserId),
+            'admin' => Admin::find($this->notifyUserId),
+            'academy' => Academy::find($this->notifyUserId),
+            default => null,
+        };
     }
 }

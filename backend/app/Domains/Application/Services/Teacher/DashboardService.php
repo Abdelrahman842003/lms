@@ -26,7 +26,6 @@ class DashboardService
 
     public function getStats(Teacher $teacher, ?string $academyId): array
     {
-        Log::info("getStats: Teacher {$teacher->id}, AcademyId: " . ($academyId ?? 'NULL'));
 
         return CacheService::getTeacherDashboardStats($teacher->id, function () use ($teacher, $academyId) {
             // Get total students
@@ -37,7 +36,6 @@ class DashboardService
             $totalStudents = (clone $enrollmentsQuery)
                 ->distinct('student_id')
                 ->count('student_id');
-            Log::info("getStats: Total Students: {$totalStudents}");
 
             // Get active students (students who have logged in recently or have activity)
             // For now, same as total
@@ -105,15 +103,19 @@ class DashboardService
     public function getRecentStudents(Teacher $teacher, ?string $academyId, int $limit = 5): Collection
     {
         $query = \App\Domains\Enrollments\Models\Enrollment::where('teacher_id', $teacher->id)
-            ->with(['student', 'grade', 'group', 'student.examResults.exam', 'student.attendances.lecture', 'academy:id,trial_period_days', 'teacher:id,trial_period_days']);
+            ->with([
+                'student:id,name,phone,photo_key',
+                'grade:id,name',
+                'group:id,name',
+                'academy:id,trial_period_days',
+                'teacher:id,trial_period_days',
+            ]);
 
         $this->applyContextFilter($query, $academyId);
 
         $enrollments = $query->latest()
             ->limit($limit)
             ->get();
-        
-        Log::info("getRecentStudents: Count: " . $enrollments->count());
 
         return $enrollments;
     }

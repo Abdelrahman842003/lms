@@ -7,7 +7,6 @@ namespace App\Domains\Application\Services\Student;
 use App\Domains\Auth\Models\Student;
 use App\Domains\Lectures\Models\Lecture;
 use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Facades\Log;
 
 class StudentLectureService
 {
@@ -24,13 +23,6 @@ class StudentLectureService
 
         $gradeIds = $enrollments->pluck('grade_id')->filter()->unique()->values();
 
-        Log::info('Student Lectures Query', [
-            'student_id' => $student->id,
-            'teacher_id' => $teacherId,
-            'enrollments_count' => $enrollments->count(),
-            'grade_ids' => $gradeIds->toArray(),
-        ]);
-
         $lectures = Lecture::where('teacher_id', $teacherId)
             ->where(function($query) use ($gradeIds) {
                 $query->whereIn('grade_id', $gradeIds)
@@ -41,11 +33,6 @@ class StudentLectureService
             }])
             ->latest()
             ->paginate($perPage);
-
-        Log::info('Student Lectures Result', [
-            'total_lectures' => $lectures->total(),
-            'lectures_count' => $lectures->count(),
-        ]);
 
         // Transform the collection
         $lectures->getCollection()->transform(function ($lecture) {

@@ -17,8 +17,6 @@ use App\Domains\Auth\Http\Middleware\EnsureTeacherNotSuspendedForStudent;
 // ============================================
 Route::post('/login/student', [StudentAuthController::class, 'login'])
     ->middleware(['throttle.login', 'auth.cookies']);
-Route::post('/student/login', [StudentAuthController::class, 'login'])
-    ->middleware(['throttle.login', 'auth.cookies']);
 
 Route::middleware(['auth:sanctum', EnsureTeacherNotSuspendedForStudent::class])->prefix('student')->group(function () {
     Route::post('/logout', [StudentAuthController::class, 'logout']);

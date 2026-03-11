@@ -20,7 +20,7 @@ class VideoPlaybackService
     ) {}
 
     /**
-     * @return array{token:string,expires_at:string,stream_url:string,watermark:array<string,mixed>}
+     * @return array{token:string,expires_at:string,stream_endpoint:string,watermark:array<string,mixed>}
      */
     public function issuePlaybackToken(Video $video, Student $student, Request $request): array
     {

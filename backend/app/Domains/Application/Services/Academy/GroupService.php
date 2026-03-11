@@ -19,13 +19,6 @@ class GroupService
             $query->where('academy_id', $academy->id);
         });
 
-        // Log the SQL query for debugging
-        \Log::info('Academy Groups Query:', [
-            'academy_id' => $academy->id,
-            'sql' => $query->toSql(),
-            'bindings' => $query->getBindings()
-        ]);
-
         return $query->when(isset($filters['search']), function ($query) use ($filters) {
             $query->where('name', 'like', "%{$filters['search']}%");
         })

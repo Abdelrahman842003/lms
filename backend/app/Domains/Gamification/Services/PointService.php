@@ -43,6 +43,7 @@ class PointService
             ->where('teacher_id', $teacherId)
             ->where('reference_type', Lecture::class)
             ->where('reference_id', $lecture->id)
+            ->where('type', PointTransaction::TYPE_ATTENDANCE)
             ->exists();
 
         if ($exists) {
@@ -83,6 +84,18 @@ class PointService
         );
 
         if (!$settings->is_enabled) {
+            return null;
+        }
+
+        // Check if already awarded for this exam result
+        $exists = PointTransaction::where('student_id', $student->id)
+            ->where('teacher_id', $teacherId)
+            ->where('reference_type', ExamResult::class)
+            ->where('reference_id', $result->id)
+            ->where('type', PointTransaction::TYPE_EXAM_SCORE)
+            ->exists();
+
+        if ($exists) {
             return null;
         }
 
@@ -136,6 +149,25 @@ class PointService
         ?string $referenceId = null,
         ?string $description = null
     ): PointTransaction {
+        // فحص التكرار الأساسي (إذا كان هناك reference)
+        if ($referenceType && $referenceId) {
+            $exists = PointTransaction::where('student_id', $student->id)
+                ->where('teacher_id', $teacherId)
+                ->where('reference_type', $referenceType)
+                ->where('reference_id', $referenceId)
+                ->where('type', $type)
+                ->exists();
+
+            if ($exists) {
+                return PointTransaction::where('student_id', $student->id)
+                    ->where('teacher_id', $teacherId)
+                    ->where('reference_type', $referenceType)
+                    ->where('reference_id', $referenceId)
+                    ->where('type', $type)
+                    ->first();
+            }
+        }
+
         $studentPoints = StudentPoint::getOrCreate($student->id, $teacherId);
 
         return $studentPoints->addPoints(
@@ -581,8 +613,8 @@ class PointService
 
         // Get all lectures this month for this teacher
         $totalLectures = Lecture::where('teacher_id', $teacherId)
-            ->whereBetween('date', [$startOfMonth, $endOfMonth])
-            ->where('date', '<=', now())
+            ->whereBetween('start_time', [$startOfMonth, $endOfMonth])
+            ->where('start_time', '<=', now())
             ->count();
 
         if ($totalLectures === 0) {
@@ -593,7 +625,7 @@ class PointService
         $attendedLectures = Attendance::where('student_id', $studentPoints->student_id)
             ->whereHas('lecture', function ($query) use ($teacherId, $startOfMonth, $endOfMonth) {
                 $query->where('teacher_id', $teacherId)
-                    ->whereBetween('date', [$startOfMonth, $endOfMonth]);
+                    ->whereBetween('start_time', [$startOfMonth, $endOfMonth]);
             })
             ->where('status', 'present')
             ->count();
@@ -667,13 +699,16 @@ class PointService
         $highestScore = ExamResult::where('exam_id', $exam->id)->max('percentage');
 
         if ($result->percentage >= $highestScore) {
-            // Check if already awarded for this exam
+            // Check if already awarded for this exam - use subquery for better safety
             $alreadyAwarded = PointTransaction::where('student_id', $studentPoints->student_id)
                 ->where('teacher_id', $studentPoints->teacher_id)
                 ->where('type', PointTransaction::TYPE_EXAM_FIRST_PLACE)
                 ->where('reference_type', ExamResult::class)
-                ->whereHas('reference', function ($query) use ($exam) {
-                    $query->where('exam_id', $exam->id);
+                ->whereExists(function ($query) use ($exam) {
+                    $query->select(\Illuminate\Support\Facades\DB::raw(1))
+                        ->from('exam_results')
+                        ->whereColumn('exam_results.id', 'point_transactions.reference_id')
+                        ->where('exam_results.exam_id', $exam->id);
                 })
                 ->exists();
 

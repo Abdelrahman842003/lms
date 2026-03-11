@@ -54,8 +54,9 @@ class ProcessUploadedVideoJob implements ShouldQueue
         }
 
         $tempDir = storage_path('app/tmp/videos/' . $video->id);
-        if (! is_dir($tempDir)) {
-            mkdir($tempDir, 0775, true);
+        if (!is_dir($tempDir) && !mkdir($tempDir, 0775, true) && !is_dir($tempDir)) {
+            $lifecycle->markFailed($video, 'فشل إنشاء المجلد المؤقت للمعالجة.');
+            return;
         }
 
         $inputPath = $tempDir . '/input';

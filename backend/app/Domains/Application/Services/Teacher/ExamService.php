@@ -18,6 +18,9 @@ class ExamService
 {
     use HasAcademyFilter;
 
+    // Cache for target students to avoid duplicate queries
+    private array $targetStudentsCache = [];
+
     public function getExams(Teacher $teacher, int $perPage = 10, array $filters = [], ?string $academyId = null)
     {
         $query = Exam::where('teacher_id', $teacher->id)
@@ -85,8 +88,8 @@ class ExamService
                 'time_per_question' => $data->time_per_question,
             ]);
 
-            $exam->questions()->delete();
-            $this->createQuestions($exam, $data->questions);
+            // Sync questions instead of delete+create for better performance
+            $this->syncQuestions($exam, $data->questions);
 
             return $exam->load('questions');
         });
@@ -104,11 +107,20 @@ class ExamService
             $newExam->title = $title ?? ($exam->title.' (نسخة)');
             $newExam->save();
 
-            foreach ($exam->questions as $question) {
-                $newQuestion = $question->replicate(['exam_id', 'created_at', 'updated_at']);
-                $newQuestion->exam_id = $newExam->id;
-                $newQuestion->save();
-            }
+            // Bulk insert questions for better performance
+            $now = now();
+            $newQuestions = $exam->questions->map(fn($q) => [
+                'id' => \Illuminate\Support\Str::uuid()->toString(),
+                'exam_id' => $newExam->id,
+                'text' => $q->text,
+                'options' => $q->options,
+                'correct_answer' => $q->correct_answer,
+                'duration' => $q->duration,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ])->toArray();
+
+            Question::insert($newQuestions);
 
             return $newExam->load('questions');
         });
@@ -116,14 +128,62 @@ class ExamService
 
     private function createQuestions(Exam $exam, array $questions): void
     {
-        foreach ($questions as $q) {
-            Question::create([
-                'exam_id' => $exam->id,
-                'text' => $q['text'],
-                'options' => $q['options'],
-                'correct_answer' => $q['correct_answer'],
-                'duration' => $q['duration'] ?? 60,
-            ]);
+        $now = now();
+        $rows = array_map(fn($q) => [
+            'id' => \Illuminate\Support\Str::uuid()->toString(),
+            'exam_id' => $exam->id,
+            'text' => $q['text'],
+            'options' => $q['options'],
+            'correct_answer' => $q['correct_answer'],
+            'duration' => $q['duration'] ?? 60,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ], $questions);
+
+        Question::insert($rows);
+    }
+
+    /**
+     * مزامنة الأسئلة: تحديث الموجود وإضافة الجديد وحذف المحذوف
+     * أكثر كفاءة من delete+create
+     */
+    private function syncQuestions(Exam $exam, array $questions): void
+    {
+        $existingIds = Question::where('exam_id', $exam->id)->pluck('id')->toArray();
+        $newIds = [];
+
+        foreach ($questions as $index => $q) {
+            $questionId = $q['id'] ?? null;
+
+            if ($questionId && in_array($questionId, $existingIds)) {
+                // Update existing question
+                Question::where('id', $questionId)->update([
+                    'text' => $q['text'],
+                    'options' => $q['options'],
+                    'correct_answer' => $q['correct_answer'],
+                    'duration' => $q['duration'] ?? 60,
+                    'sort_order' => $index,
+                ]);
+                $newIds[] = $questionId;
+            } else {
+                // Create new question
+                $newQuestion = Question::create([
+                    'id' => \Illuminate\Support\Str::uuid()->toString(),
+                    'exam_id' => $exam->id,
+                    'text' => $q['text'],
+                    'options' => $q['options'],
+                    'correct_answer' => $q['correct_answer'],
+                    'duration' => $q['duration'] ?? 60,
+                    'sort_order' => $index,
+                ]);
+                $newIds[] = $newQuestion->id;
+            }
+        }
+
+        // Delete questions that are not in the new list
+        $toDelete = array_diff($existingIds, $newIds);
+        if (!empty($toDelete)) {
+            Question::whereIn('id', $toDelete)->delete();
         }
     }
 
@@ -168,11 +228,10 @@ class ExamService
      */
     public function checkDateConflicts(string $gradeId, string $date, string $teacherId, ?string $examId = null): ?array
     {
-        // جلب الطلاب المشتركين عند هذا المدرس في هذا الصف
+        // جلب معرفات الطلاب المشتركين فقط (لا حاجة لتحميل العلاقات)
         $targetStudentIds = Enrollment::where('teacher_id', $teacherId)
             ->where('grade_id', $gradeId)
             ->where('is_active', true)
-            ->with(['academy:id,trial_period_days', 'teacher:id,trial_period_days'])
             ->pluck('student_id')
             ->toArray();
 
@@ -216,8 +275,7 @@ class ExamService
     {
         $query = Enrollment::where('teacher_id', $exam->teacher_id)
             ->where('grade_id', $exam->grade_id)
-            ->where('is_active', true)
-            ->with(['academy:id,trial_period_days', 'teacher:id,trial_period_days']);
+            ->where('is_active', true);
 
         if ($exam->group_id) {
             $query->where('group_id', $exam->group_id);
@@ -287,6 +345,9 @@ class ExamService
             'ended_at' => now(),
         ]);
 
+        // Clear cache for this exam
+        unset($this->targetStudentsCache[$exam->id]);
+
         // Refresh model to get updated data
         $exam->refresh();
 
@@ -301,23 +362,7 @@ class ExamService
 
     public function notifyStudents(Exam $exam, $notification): void
     {
-        $query = \App\Domains\Auth\Models\Student::whereHas('enrollments', function ($q) use ($exam) {
-            $q->where('teacher_id', $exam->teacher_id);
-        });
-
-        if ($exam->grade_id) {
-            $query->whereHas('enrollments', function ($q) use ($exam) {
-                $q->where('grade_id', $exam->grade_id);
-            });
-        }
-
-        if ($exam->group_id) {
-            $query->whereHas('enrollments', function ($q) use ($exam) {
-                $q->where('group_id', $exam->group_id);
-            });
-        }
-
-        $students = $query->get();
+        $students = $this->getTargetStudents($exam);
 
         if ($students->count() > 0) {
             \Illuminate\Support\Facades\Notification::send($students, $notification);
@@ -326,24 +371,7 @@ class ExamService
 
     public function processExamResults(Exam $exam): void
     {
-        // Get all eligible students
-        $query = \App\Domains\Auth\Models\Student::whereHas('enrollments', function ($q) use ($exam) {
-            $q->where('teacher_id', $exam->teacher_id);
-        });
-
-        if ($exam->grade_id) {
-            $query->whereHas('enrollments', function ($q) use ($exam) {
-                $q->where('grade_id', $exam->grade_id);
-            });
-        }
-
-        if ($exam->group_id) {
-            $query->whereHas('enrollments', function ($q) use ($exam) {
-                $q->where('group_id', $exam->group_id);
-            });
-        }
-
-        $students = $query->get();
+        $students = $this->getTargetStudents($exam);
 
         // Pre-load all attempts for this exam in one query (optimized)
         $attempts = $exam->attempts()->get()->keyBy('student_id');
@@ -385,5 +413,39 @@ class ExamService
                 new \App\Domains\Exams\Notifications\ExamAbsentNotification($exam)
             );
         }
+    }
+
+    /**
+     * جلب الطلاب المستهدفين بالامتحان (مشترك بين notifyStudents و processExamResults)
+     * يستخدم cache لتجنب الاستعلامات المكررة
+     */
+    private function getTargetStudents(Exam $exam, bool $refresh = false): \Illuminate\Database\Eloquent\Collection
+    {
+        $cacheKey = $exam->id;
+
+        // Return cached value if available and not forcing refresh
+        if (!$refresh && isset($this->targetStudentsCache[$cacheKey])) {
+            return $this->targetStudentsCache[$cacheKey];
+        }
+
+        $query = \App\Domains\Auth\Models\Student::select('students.*')
+            ->join('enrollments', 'students.id', '=', 'enrollments.student_id')
+            ->where('enrollments.teacher_id', $exam->teacher_id)
+            ->where('enrollments.is_active', true);
+
+        if ($exam->grade_id) {
+            $query->where('enrollments.grade_id', $exam->grade_id);
+        }
+
+        if ($exam->group_id) {
+            $query->where('enrollments.group_id', $exam->group_id);
+        }
+
+        $students = $query->distinct()->get();
+
+        // Cache the result
+        $this->targetStudentsCache[$cacheKey] = $students;
+
+        return $students;
     }
 }

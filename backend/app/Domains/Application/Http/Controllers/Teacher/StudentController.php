@@ -115,14 +115,7 @@ class StudentController extends Controller
             
             // Get academy context from header
             $academyId = $request->header('X-Academy-Id');
-            
-            // Log for debugging
-            \Log::info('Creating student with context', [
-                'academy_id_header' => $academyId,
-                'grade_id' => $validated['grade_id'] ?? null,
-                'teacher_id' => $teacher->id,
-            ]);
-            
+
             // Pass academy_id to the validated data
             if ($academyId && $academyId !== 'independent') {
                 $validated['academy_id'] = $academyId;

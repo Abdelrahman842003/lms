@@ -338,20 +338,20 @@ class SubscriptionRenewalService
         $body = "طلب {$typeLabel} من {$subscriberName} ({$label}) بانتظار الموافقة.";
 
         Admin::query()->get()->each(function (Admin $admin) use ($title, $body, $subscription): void {
+            // Generate UUID once for this notification
+            $notificationId = (string) \Illuminate\Support\Str::uuid();
+
             // Save to Filament DB notifications (bell icon in admin panel)
             Notification::make()
                 ->title($title)
                 ->body($body)
                 ->sendToDatabase($admin);
 
-            // Get the latest stored notification ID for broadcasting
-            $dbNotification = $admin->notifications()->latest()->first();
-
-            // Broadcast real-time via Reverb
+            // Broadcast real-time via Reverb using the same UUID
             event(new NewNotificationEvent(
                 userId: (string) $admin->id,
                 userType: 'admin',
-                notificationId: $dbNotification?->id ?? (string) \Illuminate\Support\Str::uuid(),
+                notificationId: $notificationId,
                 title: $title,
                 message: $body,
                 data: ['subscription_id' => $subscription->id],

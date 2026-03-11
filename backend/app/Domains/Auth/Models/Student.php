@@ -122,9 +122,17 @@ class Student extends Authenticatable
         return $this->enrollments()->where('is_active', true);
     }
 
-    // Get enrollment for specific teacher
+    /**
+     * Get enrollment for specific teacher
+     * يستخدم cache إذا كانت enrollments محملة مسبقاً لتجنب queries زائدة
+     */
     public function enrollmentFor(Teacher $teacher): ?Enrollment
     {
+        // تحقق إذا كانت enrollments محملة مسبقاً
+        if ($this->relationLoaded('enrollments')) {
+            return $this->enrollments->firstWhere('teacher_id', $teacher->id);
+        }
+
         return $this->enrollments()->where('teacher_id', $teacher->id)->first();
     }
 

@@ -96,6 +96,9 @@ class StorageQuotaService
     /**
      * Decrement the owner's used-storage counter after a deletion.
      * Clamps to zero to avoid negative values.
+     *
+     * Uses atomic DB operation to prevent race conditions when multiple
+     * deletions occur simultaneously.
      */
     public function decrementUsage(Model $owner, int $bytes): void
     {
@@ -103,10 +106,16 @@ class StorageQuotaService
             return;
         }
 
-        $current = (int) ($owner->storage_used_bytes ?? 0);
-        $newValue = max(0, $current - $bytes);
+        // Atomic operation: GREATEST(0, storage_used_bytes - ?)
+        // This prevents race conditions and negative values
+        DB::statement(
+            'UPDATE ' . $owner->getTable() .
+            ' SET storage_used_bytes = GREATEST(0, storage_used_bytes - ?) WHERE id = ?',
+            [$bytes, $owner->getKey()]
+        );
 
-        $owner->forceFill(['storage_used_bytes' => $newValue])->save();
+        // Refresh the model to reflect the new value
+        $owner->refresh();
     }
 
     /**
