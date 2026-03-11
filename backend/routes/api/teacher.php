@@ -28,8 +28,6 @@ use App\Domains\Auth\Http\Middleware\EnsureActiveSubscription;
 Route::post('/register/teacher', [\App\Domains\Application\Http\Controllers\Teacher\TeacherController::class, 'register']);
 Route::post('/login/teacher', [TeacherAuthController::class, 'login'])
     ->middleware(['throttle.login', 'auth.cookies']);
-Route::post('/teacher/login', [TeacherAuthController::class, 'login'])
-    ->middleware(['throttle.login', 'auth.cookies']);
 
 Route::middleware(['auth:sanctum', EnsureTeacherNotSuspended::class, EnsureActiveSubscription::class])->prefix('teacher')->name('teacher.')->group(function () {
     Route::post('/logout', [TeacherAuthController::class, 'logout']);

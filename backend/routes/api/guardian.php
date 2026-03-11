@@ -10,9 +10,13 @@ use App\Domains\Application\Http\Controllers\Guardian\NotificationController;
 // ============================================
 Route::post('/login/parent', [GuardianAuthController::class, 'login'])
     ->middleware(['throttle.login', 'auth.cookies']);
-Route::post('/parent/login', [GuardianAuthController::class, 'login'])
-    ->middleware(['throttle.login', 'auth.cookies']);
 
+// NOTE: Guardian routes do not currently have suspension middleware.
+// If Guardian suspension is needed in the future:
+// 1. Add GuardianStatus enum (similar to TeacherStatus)
+// 2. Add EnsureGuardianNotSuspended middleware
+// 3. Add status column to guardians table
+// 4. Update Guardian model with isSuspended() method
 Route::middleware('auth:sanctum')->prefix('parent')->name('parent.')->group(function () {
     Route::post('/logout', [GuardianAuthController::class, 'logout']);
     Route::get('/me', [GuardianAuthController::class, 'me']);

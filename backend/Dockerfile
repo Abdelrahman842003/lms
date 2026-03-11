@@ -37,6 +37,12 @@ RUN chown -R www-data:www-data /var/www/backend \
     && chmod -R 755 /var/www/backend/storage \
     && chmod -R 755 /var/www/backend/bootstrap/cache
 
+# Cache configs, routes, and views for production performance
+# This improves performance by caching the framework bootstrap files
+RUN php artisan config:cache && \
+    php artisan route:cache && \
+    php artisan view:cache
+
 # Run as non-root user
 USER www-data
 
@@ -46,7 +52,7 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=40s \
 
 EXPOSE 8000
 
-# Production command
+# Production command - configs already cached at build time
 CMD ["php", "artisan", "octane:start", \
      "--server=swoole", \
      "--host=0.0.0.0", \

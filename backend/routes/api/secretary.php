@@ -9,9 +9,10 @@ use App\Domains\Application\Http\Controllers\Secretary\NotificationController;
 // ============================================
 Route::post('/login/secretary', [SecretaryAuthController::class, 'login'])
     ->middleware(['throttle.login', 'auth.cookies']);
-Route::post('/secretary/login', [SecretaryAuthController::class, 'login'])
-    ->middleware(['throttle.login', 'auth.cookies']);
 
+// NOTE: Secretary routes do not currently have EnsureSecretaryIsActive middleware.
+// The Secretary model has an is_active boolean field that should be checked.
+// TODO: Add EnsureSecretaryIsActive middleware to prevent inactive secretaries from accessing the API.
 Route::middleware('auth:sanctum')->prefix('secretary')->name('secretary.')->group(function () {
     Route::post('/logout', [SecretaryAuthController::class, 'logout']);
     Route::get('/me', [SecretaryAuthController::class, 'me']);
