@@ -44,7 +44,7 @@ class AuthController extends Controller
                 $message .= ' - متبقي ' . $attemptResult['attempts_remaining'] . ' محاولات';
             }
 
-            return $this->errorResponse($message, 401, null, $attemptResult);
+            return $this->errorResponse($message, null, 401, $attemptResult);
         }
 
         // Clear failed attempts on successful login

@@ -112,11 +112,16 @@ export function generateCSPHeader(): string {
     "default-src 'self'",
     // Development needs 'unsafe-eval' for Next.js hot reload
     isDev ? "script-src 'self' 'unsafe-eval' 'unsafe-inline'" : "script-src 'self' 'unsafe-inline'",
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-    "font-src 'self' https://fonts.gstatic.com",
+    // Allow Google Fonts + cdnjs (Font Awesome) stylesheets
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com",
+    // Allow Google Fonts + cdnjs (Font Awesome) font files
+    "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com",
     "img-src 'self' data: https: blob: https://images.neetaq.com",
     "media-src 'self' data: https: blob:",
-    "connect-src 'self' https: wss: ws:",
+    // In dev, also allow http://127.0.0.1 and http://localhost for direct API calls
+    isDev
+      ? "connect-src 'self' https: http://127.0.0.1:* http://localhost:* wss: ws:"
+      : "connect-src 'self' https: wss: ws:",
     "worker-src 'self' blob:",
     "frame-ancestors 'none'",
     "base-uri 'self'",

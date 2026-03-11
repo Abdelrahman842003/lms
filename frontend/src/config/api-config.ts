@@ -88,10 +88,10 @@ export function getVersionedApiUrl(): string {
 export const API_ENDPOINTS = {
   // Authentication endpoints
   auth: {
-    loginTeacher: '/api/v1/teacher/login',
-    loginStudent: '/api/v1/student/login',
+    loginTeacher: '/api/v1/login/teacher',
+    loginStudent: '/api/v1/login/student',
     loginSecretary: '/api/v1/login/secretary',
-    loginParent: '/api/v1/parent/login',
+    loginParent: '/api/v1/login/parent',
     loginAcademy: '/api/v1/academy/login',
 
     logoutTeacher: '/api/v1/teacher/logout',

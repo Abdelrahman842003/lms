@@ -95,7 +95,8 @@ const nextConfig = {
    * Content Security Policy to prevent XSS, clickjacking, and other attacks
    */
   async headers() {
-    const { generateCSPHeader } = require('./src/lib/security');
+    // Use the plain-JS config sidecar (next.config.js cannot transpile .ts at load time)
+    const { generateCSPHeader } = require('./src/lib/security.config.js');
     return [
       {
         source: '/(.*)',

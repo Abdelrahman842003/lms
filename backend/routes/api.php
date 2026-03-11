@@ -22,27 +22,27 @@ Route::prefix('v1')->group(function () {
     // ============================================
     // Academy Routes
     // ============================================
-    require __DIR__.'/academy.php';
+    require __DIR__.'/api/v1/academy.php';
 
     // ============================================
     // Teacher Routes
     // ============================================
-    require __DIR__.'/teacher.php';
+    require __DIR__.'/api/v1/teacher.php';
 
     // ============================================
     // Student Routes
     // ============================================
-    require __DIR__.'/student.php';
+    require __DIR__.'/api/v1/student.php';
 
     // ============================================
     // Guardian (Parent) Routes
     // ============================================
-    require __DIR__.'/guardian.php';
+    require __DIR__.'/api/v1/guardian.php';
 
     // ============================================
     // Secretary Routes
     // ============================================
-    require __DIR__.'/secretary.php';
+    require __DIR__.'/api/v1/secretary.php';
 
     // ============================================
     // Avatar Routes (All User Types)
@@ -52,6 +52,11 @@ Route::prefix('v1')->group(function () {
         Route::delete('/avatar', [\App\Domains\Application\Http\Controllers\Media\AvatarController::class, 'delete']);
         Route::get('/avatar', [\App\Domains\Application\Http\Controllers\Media\AvatarController::class, 'show']);
     });
+
+    // ============================================
+    // Token Refresh
+    // ============================================
+    Route::post('/auth/refresh', [\App\Domains\Application\Http\Controllers\Api\RefreshTokenController::class, 'refresh']);
 
     // ============================================
     // Public Settings
