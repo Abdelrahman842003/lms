@@ -87,9 +87,8 @@ class GroupController extends Controller
         $group = $this->service->createGroup($teacher, $groupData);
 
         return $this->successResponse([
-            'group' => new GroupResource($group),
-            'message' => 'تم إضافة المجموعة بنجاح'
-        ], 201);
+            'group' => new GroupResource($group)
+        ], 'تم إضافة المجموعة بنجاح', 201);
     }
 
     public function update(UpdateGroupRequest $request, Group $group): JsonResponse
@@ -100,9 +99,8 @@ class GroupController extends Controller
         $group = $this->service->updateGroup($group, $groupData);
 
         return $this->successResponse([
-            'group' => new GroupResource($group),
-            'message' => 'تم تحديث المجموعة بنجاح'
-        ]);
+            'group' => new GroupResource($group)
+        ], 'تم تحديث المجموعة بنجاح');
     }
 
     public function destroy(Request $request, Group $group): JsonResponse
@@ -113,6 +111,6 @@ class GroupController extends Controller
 
         return $this->successResponse([
             'message' => 'تم حذف المجموعة بنجاح'
-        ]);
+        ], 'تم حذف المجموعة بنجاح');
     }
 }

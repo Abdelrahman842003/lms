@@ -25,7 +25,11 @@ class GradeService
                 ->latest();
 
             // Apply filters using Filter class
-            (new GradeFilter($filters))->apply($query);
+            (new GradeFilter($filters))->apply(
+                $query instanceof \Illuminate\Database\Eloquent\Builder 
+                    ? $query 
+                    : ($query instanceof \Illuminate\Database\Eloquent\Relations\Relation ? $query->getQuery() : $query)
+            );
 
             // Apply direct academy filter (grades have academy_id column)
             $query = $this->applyDirectAcademyFilter($query, $academyId);

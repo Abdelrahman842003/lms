@@ -19,7 +19,10 @@ use App\Domains\Application\Http\Controllers\Teacher\VideoController;
 use App\Domains\Application\Http\Controllers\Teacher\VideoUploadController;
 use App\Domains\Application\Http\Controllers\Teacher\VideoQuizController;
 use App\Domains\Application\Http\Controllers\Api\LectureSessionController;
-use App\Domains\Auth\Http\Middleware\EnsureTeacherNotSuspended;
+use App\Domains\Application\Http\Controllers\Teacher\GamificationController;
+use App\Domains\Application\Http\Controllers\Teacher\TeacherReportController;
+use App\Domains\Application\Http\Controllers\Teacher\SecretaryController;
+use App\Domains\Auth\Http\Middleware\EnsureUserNotSuspended;
 use App\Domains\Auth\Http\Middleware\EnsureActiveSubscription;
 
 // ============================================
@@ -29,7 +32,7 @@ Route::post('/register/teacher', [\App\Domains\Application\Http\Controllers\Teac
 Route::post('/login/teacher', [TeacherAuthController::class, 'login'])
     ->middleware(['throttle.login', 'auth.cookies']);
 
-Route::middleware(['auth:sanctum', EnsureTeacherNotSuspended::class, EnsureActiveSubscription::class])->prefix('teacher')->name('teacher.')->group(function () {
+Route::middleware(['auth:sanctum', EnsureUserNotSuspended::class . ':teacher', EnsureActiveSubscription::class])->prefix('teacher')->name('teacher.')->group(function () {
     Route::post('/logout', [TeacherAuthController::class, 'logout']);
     Route::get('/me', [TeacherAuthController::class, 'me']);
     Route::post('/change-password', [TeacherAuthController::class, 'changePassword']);

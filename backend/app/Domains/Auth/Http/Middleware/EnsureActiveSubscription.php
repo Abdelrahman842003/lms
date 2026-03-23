@@ -41,11 +41,6 @@ class EnsureActiveSubscription
 
     private function hasActiveSubscription(Teacher $teacher): bool
     {
-        return \App\Domains\Auth\Models\TeacherSubscription::where('teacher_id', $teacher->id)
-            ->where('status', 'active')
-            ->where(function ($q) {
-                $q->whereNull('ends_at')->orWhere('ends_at', '>=', now());
-            })
-            ->exists();
+        return $teacher->hasActiveSubscription();
     }
 }

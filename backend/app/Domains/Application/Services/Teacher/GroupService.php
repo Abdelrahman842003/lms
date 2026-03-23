@@ -23,7 +23,11 @@ class GroupService
             ->latest();
 
         // Apply filters using Filter class
-        (new GroupFilter($filters))->apply($query);
+        (new GroupFilter($filters))->apply(
+            $query instanceof \Illuminate\Database\Eloquent\Builder 
+                ? $query 
+                : ($query instanceof \Illuminate\Database\Eloquent\Relations\Relation ? $query->getQuery() : $query)
+        );
 
         // Apply direct academy filter (groups now have academy_id column)
         // Strict tenant isolation:

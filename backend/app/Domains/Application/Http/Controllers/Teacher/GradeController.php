@@ -68,9 +68,8 @@ class GradeController extends Controller
         $grade = $this->service->createGrade($teacher, $gradeData);
 
         return $this->successResponse([
-            'grade' => new GradeResource($grade),
-            'message' => 'تم إضافة الصف الدراسي بنجاح'
-        ], 201);
+            'grade' => new GradeResource($grade)
+        ], 'تم إضافة الصف الدراسي بنجاح', 201);
     }
 
     public function update(UpdateGradeRequest $request, Grade $grade): JsonResponse
@@ -81,9 +80,8 @@ class GradeController extends Controller
         $grade = $this->service->updateGrade($grade, $gradeData);
 
         return $this->successResponse([
-            'grade' => new GradeResource($grade),
-            'message' => 'تم تحديث الصف الدراسي بنجاح'
-        ]);
+            'grade' => new GradeResource($grade)
+        ], 'تم تحديث الصف الدراسي بنجاح');
     }
 
     public function destroy(Request $request, Grade $grade): JsonResponse
@@ -94,6 +92,6 @@ class GradeController extends Controller
 
         return $this->successResponse([
             'message' => 'تم حذف الصف الدراسي بنجاح'
-        ]);
+        ], 'تم حذف الصف الدراسي بنجاح');
     }
 }
