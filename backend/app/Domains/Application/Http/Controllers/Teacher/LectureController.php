@@ -12,6 +12,7 @@ use App\Domains\Application\Http\Requests\Teacher\Lecture\UpdateLectureRequest;
 use App\Domains\Application\Http\Resources\Teacher\LectureResource;
 use App\Domains\Lectures\Models\Lecture;
 use App\Domains\Application\Services\Teacher\LectureService;
+use App\Domains\Application\Services\Teacher\LectureExportService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -22,7 +23,8 @@ class LectureController extends Controller
     use \App\Domains\Support\Traits\ResolvesTeacher;
 
     public function __construct(
-        private LectureService $service
+        private LectureService $service,
+        private LectureExportService $exportService
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -146,78 +148,7 @@ class LectureController extends Controller
     {
         Gate::authorize('exportAttendees', $lecture);
 
-        // Same logic as getAttendees to ensure consistency
-        $query = $lecture->teacher->students()
-            ->wherePivot('grade_id', $lecture->grade_id)
-            ->wherePivot('is_active', true);
-            
-        if ($lecture->group_id) {
-            $query->wherePivot('group_id', $lecture->group_id);
-        }
-
-        $allStudents = $query->get();
-
-        $attendanceRecords = $lecture->attendances()
-            ->get()
-            ->keyBy('student_id');
-
-        $attendees = $allStudents->map(function ($student) use ($attendanceRecords) {
-            $record = $attendanceRecords->get($student->id);
-            return (object) [
-                'student' => $student,
-                'status' => $record ? $record->status : 'absent',
-                'created_at' => $record ? $record->created_at : null,
-            ];
-        });
-
-        $data = [
-            'lecture' => $lecture,
-            'attendees' => $attendees,
-            'total_present' => $attendees->where('status', 'present')->count(),
-            'total_absent' => $attendees->where('status', 'absent')->count(),
-            'date' => now()->format('Y-m-d'),
-        ];
-
-        $defaultConfig = (new \Mpdf\Config\ConfigVariables())->getDefaults();
-        $fontDirs = $defaultConfig['fontDir'];
-
-        $defaultFontConfig = (new \Mpdf\Config\FontVariables())->getDefaults();
-        $fontData = $defaultFontConfig['fontdata'];
-
-        $mpdf = new \Mpdf\Mpdf([
-            'mode' => 'utf-8',
-            'format' => 'A4',
-            'default_font_size' => 11,
-            'default_font' => 'xbriyaz',
-            'margin_left' => 15,
-            'margin_right' => 15,
-            'margin_top' => 15,
-            'margin_bottom' => 15,
-            'tempDir' => storage_path('app/mpdf'),
-            'fontDir' => array_merge($fontDirs, [
-                base_path('vendor/mpdf/mpdf/ttfonts'),
-            ]),
-            'fontdata' => $fontData + [
-                'xbriyaz' => [
-                    'R' => 'XB Riyaz.ttf',
-                    'B' => 'XB RiyazBd.ttf',
-                    'I' => 'XB RiyazIt.ttf',
-                    'BI' => 'XB RiyazBdIt.ttf',
-                    'useOTL' => 0xFF,
-                    'useKashida' => 75,
-                ]
-            ],
-        ]);
-
-        $mpdf->SetDirectionality('rtl');
-        $mpdf->autoScriptToLang = true;
-        $mpdf->autoLangToFont = true;
-
-        $html = view('exports.attendees', $data)->render();
-        
-        $mpdf->WriteHTML($html);
-        
-        return $mpdf->Output("attendance_report_{$lecture->id}.pdf", 'D');
+        return $this->exportService->exportAttendeesPdf($lecture);
     }
 
     public function cancelSession(CancelSessionRequest $request, Lecture $lecture): JsonResponse

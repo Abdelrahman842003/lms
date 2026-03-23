@@ -28,6 +28,16 @@ class VideoReminderService
             ->limit(200)
             ->get();
 
+        // Batch load watch progress to avoid N+1 queries
+        $videoIds = $dueReminders->pluck('video_id')->unique()->filter();
+        $studentIds = $dueReminders->pluck('student_id')->unique()->filter();
+
+        $watchProgress = VideoWatchProgress::query()
+            ->whereIn('video_id', $videoIds)
+            ->whereIn('student_id', $studentIds)
+            ->get()
+            ->keyBy(fn ($progress) => "{$progress->video_id}_{$progress->student_id}");
+
         foreach ($dueReminders as $reminder) {
             $video = $reminder->video;
             $student = $reminder->student;
@@ -42,10 +52,8 @@ class VideoReminderService
                 continue;
             }
 
-            $progress = VideoWatchProgress::query()
-                ->where('video_id', $video->id)
-                ->where('student_id', $student->id)
-                ->first();
+            // Use pre-loaded watch progress (avoids N+1)
+            $progress = $watchProgress->get("{$video->id}_{$student->id}");
 
             if ($progress && $progress->status && $progress->status->value !== 'not_started') {
                 $this->stopReminder($reminder, 'started');

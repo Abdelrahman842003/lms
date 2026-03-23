@@ -9,22 +9,18 @@ use App\Domains\Auth\Models\Student;
 use App\Domains\Auth\Models\LoginAttempt;
 use App\Domains\Auth\Services\DeviceLimitService;
 use App\Domains\Auth\Services\LoginAttemptService;
+use App\Domains\Auth\Services\TokenService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 
 class GuardianAuthService
 {
-    protected $loginAttemptService;
-    protected $deviceLimitService;
-
     public function __construct(
-        LoginAttemptService $loginAttemptService,
-        DeviceLimitService $deviceLimitService
-    ) {
-        $this->loginAttemptService = $loginAttemptService;
-        $this->deviceLimitService = $deviceLimitService;
-    }
+        private LoginAttemptService $loginAttemptService,
+        private DeviceLimitService $deviceLimitService,
+        private TokenService $tokenService
+    ) {}
 
     public function login(string $phone, string $password, string $ip, string $userAgent, bool $remember = true): array
     {
@@ -82,14 +78,13 @@ class GuardianAuthService
 
         $this->loginAttemptService->clearAttempts($phone, $ip);
 
-        $refreshLifetimeDays = $remember ? 365 : 30;
-        $accessToken = $guardian->createToken('access_token', ['access-api'], now()->addMinutes(60))->plainTextToken;
-        $refreshToken = $guardian->createToken('refresh_token', ['issue-access-token'], now()->addDays($refreshLifetimeDays))->plainTextToken;
+        // Generate tokens using TokenService
+        $tokens = $this->tokenService->generateTokens($guardian, $remember);
 
         return [
             'guardian' => $guardian,
-            'token' => $accessToken,
-            'refresh_token' => $refreshToken,
+            'token' => $tokens['access_token'],
+            'refresh_token' => $tokens['refresh_token'],
             'children' => $this->getChildrenData($guardian->phone)
         ];
     }

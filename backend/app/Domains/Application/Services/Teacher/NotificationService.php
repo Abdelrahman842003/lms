@@ -21,16 +21,19 @@ class NotificationService
     public function getRecipients(Teacher $teacher, string $recipientType, ?string $gradeId = null, ?string $groupId = null): Collection
     {
         return match ($recipientType) {
-            'all' => Student::whereHas('enrollments', function ($q) use ($teacher) {
-                $q->where('teacher_id', $teacher->id);
-            })->get(),
-            'grade' => Student::whereHas('enrollments', function ($q) use ($teacher, $gradeId) {
-                $q->where('teacher_id', $teacher->id)
-                  ->where('grade_id', $gradeId);
-            })->get(),
-            'group' => Student::whereHas('enrollments', function ($q) use ($groupId) {
-                $q->where('group_id', $groupId);
-            })->get(),
+            'all' => Student::with('guardian')
+                ->whereHas('enrollments', function ($q) use ($teacher) {
+                    $q->where('teacher_id', $teacher->id);
+                })->get(),
+            'grade' => Student::with('guardian')
+                ->whereHas('enrollments', function ($q) use ($teacher, $gradeId) {
+                    $q->where('teacher_id', $teacher->id)
+                      ->where('grade_id', $gradeId);
+                })->get(),
+            'group' => Student::with('guardian')
+                ->whereHas('enrollments', function ($q) use ($groupId) {
+                    $q->where('group_id', $groupId);
+                })->get(),
             'admin' => Admin::all(),
             default => collect(),
         };

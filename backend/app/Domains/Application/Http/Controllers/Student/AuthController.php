@@ -5,28 +5,24 @@ declare(strict_types=1);
 namespace App\Domains\Application\Http\Controllers\Student;
 
 use App\Domains\Application\Http\Controllers\Controller;
+use App\Domains\Application\Http\Requests\Auth\ChangePasswordRequest;
 use App\Domains\Application\Http\Requests\Auth\StudentLoginRequest;
 use App\Domains\Application\Http\Resources\Student\StudentResource;
 use App\Domains\Auth\Services\DeviceLimitService;
 use App\Domains\Auth\Services\LoginAttemptService;
+use App\Domains\Auth\Services\TokenService;
 use App\Domains\Application\Services\Student\StudentService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
-    protected $studentService;
-    protected $loginAttemptService;
-    protected $deviceLimitService;
-
     public function __construct(
-        StudentService $studentService,
-        LoginAttemptService $loginAttemptService,
-        DeviceLimitService $deviceLimitService
-    ) {
-        $this->studentService = $studentService;
-        $this->loginAttemptService = $loginAttemptService;
-        $this->deviceLimitService = $deviceLimitService;
-    }
+        private StudentService $studentService,
+        private LoginAttemptService $loginAttemptService,
+        private DeviceLimitService $deviceLimitService,
+        private TokenService $tokenService
+    ) {}
 
     /**
      * Login with phone/username (no teacher_id required)
@@ -56,17 +52,12 @@ class AuthController extends Controller
         // Manage device limits (auto-removes oldest if at limit)
         $deviceResult = $this->deviceLimitService->checkAndManageDevices($data['user']);
 
-        $refreshLifetimeDays = $request->boolean('remember', true) ? 365 : 30;
-
-        // Generate Access Token (Short-lived - 60 mins)
-        $accessToken = $data['user']->createToken('access_token', ['access-api'], now()->addMinutes(60))->plainTextToken;
-        
-        // Generate Refresh Token (Long-lived)
-        $refreshToken = $data['user']->createToken('refresh_token', ['issue-access-token'], now()->addDays($refreshLifetimeDays))->plainTextToken;
+        // Generate tokens using TokenService
+        $tokens = $this->tokenService->generateTokens($data['user'], $request->boolean('remember', true));
 
         return $this->successResponse([
-            'token' => $accessToken,
-            'refresh_token' => $refreshToken,
+            'token' => $tokens['access_token'],
+            'refresh_token' => $tokens['refresh_token'],
             'user' => new StudentResource($data['user']),
             'teachers' => $data['teachers'],
             'role' => 'student',
@@ -83,13 +74,13 @@ class AuthController extends Controller
         if ($request->has('fcm_token')) {
             \App\Domains\Auth\Models\DeviceToken::where('tokenable_id', $request->user()->id)
                 ->where('tokenable_type', get_class($request->user()))
-                ->where('token', $request->fcm_token)
+                ->where('token', $request->input('fcm_token'))
                 ->delete();
         }
 
-        // Delete current token
+        // Revoke current token using TokenService
         if ($request->user()) {
-            $request->user()->currentAccessToken()->delete();
+            $this->tokenService->revokeCurrentToken($request->user());
         }
 
         return $this->successResponse(null, 'تم تسجيل الخروج بنجاح');
@@ -110,16 +101,16 @@ class AuthController extends Controller
         ]);
     }
 
-    public function changePassword(\App\Domains\Application\Http\Requests\Auth\ChangePasswordRequest $request)
+    public function changePassword(ChangePasswordRequest $request)
     {
         $user = $request->user();
 
-        if (!\Illuminate\Support\Facades\Hash::check($request->current_password, $user->password)) {
+        if (!Hash::check($request->validated('current_password'), $user->password)) {
             return $this->errorResponse('كلمة المرور الحالية غير صحيحة', 422);
         }
 
         $user->update([
-            'password' => \Illuminate\Support\Facades\Hash::make($request->new_password)
+            'password' => Hash::make($request->validated('new_password'))
         ]);
 
         return $this->successResponse(null, 'تم تغيير كلمة المرور بنجاح');

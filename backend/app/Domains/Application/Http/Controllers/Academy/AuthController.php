@@ -13,6 +13,7 @@ use App\Domains\Application\Http\Resources\Academy\AcademyResource;
 use App\Domains\Application\Services\Academy\AcademyAuthService;
 use App\Domains\Auth\Services\DeviceLimitService;
 use App\Domains\Auth\Services\LoginAttemptService;
+use App\Domains\Auth\Services\TokenService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -22,7 +23,8 @@ class AuthController extends Controller
     public function __construct(
         private AcademyAuthService $authService,
         private LoginAttemptService $loginAttemptService,
-        private DeviceLimitService $deviceLimitService
+        private DeviceLimitService $deviceLimitService,
+        private TokenService $tokenService
     ) {}
 
     public function login(AcademyLoginRequest $request): JsonResponse
@@ -50,18 +52,13 @@ class AuthController extends Controller
 
         // Manage device limits (auto-removes oldest if at limit)
         $deviceResult = $this->deviceLimitService->checkAndManageDevices($result['user']);
-        
-        $refreshLifetimeDays = $data->remember ? 365 : 30;
 
-        // Generate Access Token (Short-lived - 60 mins)
-        $accessToken = $result['user']->createToken('access_token', ['access-api'], now()->addMinutes(60))->plainTextToken;
-        
-        // Generate Refresh Token (Long-lived)
-        $refreshToken = $result['user']->createToken('refresh_token', ['issue-access-token'], now()->addDays($refreshLifetimeDays))->plainTextToken;
+        // Generate tokens using TokenService
+        $tokens = $this->tokenService->generateTokens($result['user'], $data->remember);
 
         return $this->successResponse([
-            'token' => $accessToken,
-            'refresh_token' => $refreshToken,
+            'token' => $tokens['access_token'],
+            'refresh_token' => $tokens['refresh_token'],
             'user' => new AcademyResource($result['user']),
             'role' => 'academy',
             'device_removed' => $deviceResult['removed_device'] ?? false,
@@ -78,9 +75,9 @@ class AuthController extends Controller
                 ->delete();
         }
 
-        // Delete current token
+        // Revoke current token using TokenService
         if ($request->user()) {
-            $request->user()->currentAccessToken()->delete();
+            $this->tokenService->revokeCurrentToken($request->user());
         }
 
         return $this->successResponse(null, 'تم تسجيل الخروج بنجاح');

@@ -8,28 +8,23 @@ use App\Domains\Application\Http\Controllers\Controller;
 use App\Domains\Auth\Models\Guardian;
 use App\Domains\Auth\Models\Student;
 use App\Domains\Auth\Services\LoginAttemptService;
+use App\Domains\Auth\Services\TokenService;
 use App\Domains\Media\Services\ImageService;
 use App\Domains\Application\Http\Requests\Guardian\Auth\GuardianLoginRequest;
 use App\Domains\Application\Http\Requests\Guardian\Auth\UpdateGuardianProfileRequest;
 use App\Domains\Application\Http\Requests\Guardian\Auth\ChangeGuardianPasswordRequest;
+use App\Domains\Application\Services\Guardian\GuardianAuthService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
-    protected $loginAttemptService;
-    protected $imageService;
-    protected $authService;
-
     public function __construct(
-        LoginAttemptService $loginAttemptService,
-        ImageService $imageService,
-        \App\Domains\Application\Services\Guardian\GuardianAuthService $authService
-    ) {
-        $this->loginAttemptService = $loginAttemptService;
-        $this->imageService = $imageService;
-        $this->authService = $authService;
-    }
+        private LoginAttemptService $loginAttemptService,
+        private ImageService $imageService,
+        private GuardianAuthService $authService,
+        private TokenService $tokenService
+    ) {}
 
     /**
      * Login with guardian phone + guardian password (separate from student)
@@ -87,12 +82,12 @@ class AuthController extends Controller
     {
         // Delete FCM token if provided
         if ($request->has('fcm_token')) {
-            \App\Domains\Auth\Models\ParentDeviceToken::removeToken($request->fcm_token);
+            \App\Domains\Auth\Models\ParentDeviceToken::removeToken($request->input('fcm_token'));
         }
 
-        // Delete current token
+        // Revoke current token using TokenService
         if ($request->user()) {
-            $request->user()->currentAccessToken()->delete();
+            $this->tokenService->revokeCurrentToken($request->user());
         }
 
         return $this->successResponse(null, 'تم تسجيل الخروج بنجاح');
@@ -167,11 +162,11 @@ class AuthController extends Controller
 
         $guardian = $request->user();
 
-        if (!Hash::check($request->current_password, $guardian->password)) {
+        if (!Hash::check($request->validated('current_password'), $guardian->password)) {
             return $this->errorResponse('كلمة المرور الحالية غير صحيحة', 422);
         }
 
-        $guardian->update(['password' => Hash::make($request->new_password)]);
+        $guardian->update(['password' => Hash::make($request->validated('new_password'))]);
 
         return $this->successResponse(null, 'تم تغيير كلمة المرور بنجاح');
     }
@@ -207,9 +202,4 @@ class AuthController extends Controller
             'children' => $children,
         ]);
     }
-
-    /**
-     * Format children data for response
-     */
-
 }

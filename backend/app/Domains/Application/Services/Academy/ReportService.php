@@ -59,18 +59,27 @@ class ReportService
      */
     public function generateTeachersReport(Academy $academy): array
     {
-        $teachers = $academy->activeTeachers()->get();
-        
+        // Get date range for current month
+        $startOfMonth = Carbon::now()->startOfMonth();
+        $endOfMonth = Carbon::now()->endOfMonth();
+
+        // Eager load teachers with active enrollments count (avoids N+1)
+        $teachers = $academy->activeTeachers()
+            ->withCount(['activeEnrollments'])
+            ->get();
+        $teacherIds = $teachers->pluck('id')->toArray();
+
+        // Batch load all attendance logs for the period (avoids N+1)
+        $allLogs = TeacherAttendanceLog::forAcademy($academy->id)
+            ->whereIn('teacher_id', $teacherIds)
+            ->dateRange($startOfMonth, $endOfMonth)
+            ->get()
+            ->groupBy('teacher_id');
+
         $teacherData = [];
         foreach ($teachers as $teacher) {
-            // Get attendance stats for current month
-            $startOfMonth = Carbon::now()->startOfMonth();
-            $endOfMonth = Carbon::now()->endOfMonth();
-
-            $logs = TeacherAttendanceLog::forAcademy($academy->id)
-                ->forTeacher($teacher->id)
-                ->dateRange($startOfMonth, $endOfMonth)
-                ->get();
+            // Get pre-loaded logs for this teacher
+            $logs = $allLogs->get($teacher->id, collect());
 
             $totalPresent = $logs->where('status', 'checked_out')->count();
             $totalAbsent = $logs->where('status', 'absent')->count();
@@ -78,7 +87,7 @@ class ReportService
 
             $teacherData[] = [
                 'teacher' => $teacher,
-                'students_count' => $teacher->activeEnrollments()->count(),
+                'students_count' => $teacher->active_enrollments_count,
                 'attendance' => [
                     'present' => $totalPresent,
                     'absent' => $totalAbsent,
