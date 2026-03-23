@@ -26,7 +26,9 @@ use App\Domains\Auth\Observers\StudentObserver;
 use App\Domains\Enrollments\Observers\EnrollmentObserver;
 use App\Domains\Exams\Observers\ExamObserver;
 use App\Domains\Lectures\Observers\LectureObserver;
+use App\Domains\Auth\Policies\StudentPolicy;
 use App\Domains\Exams\Policies\ExamPolicy;
+use App\Domains\Enrollments\Policies\EnrollmentPolicy;
 use App\Domains\Enrollments\Policies\GradePolicy;
 use App\Domains\Enrollments\Policies\GroupPolicy;
 use App\Domains\Lectures\Policies\LecturePolicy;
@@ -102,11 +104,13 @@ class AppServiceProvider extends ServiceProvider
         ]);
 
         // Register Policies
+        Gate::policy(Enrollment::class, EnrollmentPolicy::class);
         Gate::policy(Grade::class, GradePolicy::class);
+        Gate::policy(Group::class, GroupPolicy::class);
         Gate::policy(Lecture::class, LecturePolicy::class);
         Gate::policy(Exam::class, ExamPolicy::class);
-        Gate::policy(Group::class, GroupPolicy::class);
         Gate::policy(Video::class, VideoPolicy::class);
+        Gate::policy(Student::class, StudentPolicy::class);
 
         // Register cache invalidation observers
         Student::observe(StudentObserver::class);

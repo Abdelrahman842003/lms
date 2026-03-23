@@ -37,15 +37,19 @@ class AcademyGradeService
         }
 
         // 2. Grouped View: Group by name and aggregate stats using MySQL GROUP BY
+        // Use parameter binding to prevent SQL injection
+        $academyId = $academy->id;
         $groupedQuery = \DB::table('grades as g')
             ->select([
                 'g.id',
                 'g.name',
                 \DB::raw('COUNT(DISTINCT g.teacher_id) as teachers_count'),
-                \DB::raw('(SELECT COUNT(*) FROM groups WHERE grade_id IN (SELECT id FROM grades WHERE name = g.name AND academy_id = ' . $academy->id . ')) as groups_count'),
-                \DB::raw('(SELECT COUNT(*) FROM enrollments WHERE grade_id IN (SELECT id FROM grades WHERE name = g.name AND academy_id = ' . $academy->id . ')) as students_count'),
+                \DB::raw('(SELECT COUNT(*) FROM groups WHERE grade_id IN (SELECT id FROM grades WHERE name = g.name AND academy_id = ?)) as groups_count'),
+                \DB::raw('(SELECT COUNT(*) FROM enrollments WHERE grade_id IN (SELECT id FROM grades WHERE name = g.name AND academy_id = ?)) as students_count'),
                 'g.created_at',
             ])
+            ->addBinding($academyId, 'select')
+            ->addBinding($academyId, 'select')
             ->where('g.academy_id', $academy->id)
             ->whereNotNull('g.academy_id')
             ->groupBy('g.id', 'g.name', 'g.created_at')

@@ -15,6 +15,7 @@ use App\Domains\Subscriptions\Models\PaymentLog;
 use App\Domains\Application\Services\Teacher\StudentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 
 class StudentController extends Controller
@@ -243,6 +244,9 @@ class StudentController extends Controller
             ->where('student_id', $id)
             ->with(['academy:id,trial_period_days', 'teacher:id,trial_period_days'])
             ->firstOrFail();
+        
+        // Authorization check
+        Gate::authorize('delete', $enrollment);
         
         $this->service->deleteEnrollment($enrollment);
 

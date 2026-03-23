@@ -17,6 +17,7 @@ use App\Domains\Application\Services\Academy\StudentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 
 class StudentController extends Controller
@@ -230,6 +231,9 @@ class StudentController extends Controller
         if (!$enrollment) {
             return $this->errorResponse('Student not found', 404);
         }
+
+        // Authorization check
+        Gate::authorize('delete', $enrollment);
 
         $this->service->deleteEnrollment($enrollment);
 

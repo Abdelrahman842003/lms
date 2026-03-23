@@ -59,7 +59,8 @@ class VideoInteractionService
             // ─── تحديد الـ status الجديد ───────────────────────────────
             if ($watchedPercentage >= $completedThreshold) {
                 // هل للفيديو تدريب إلزامي لم يُجتز بعد؟
-                $quiz = $video->quiz()->where('is_active', true)->where('is_required', true)->first();
+                // Use cached helper to avoid N+1 queries when quiz is eager loaded
+                $quiz = $this->getActiveRequiredQuiz($video);
                 $quizPending = $quiz && $progress->quiz_passed_at === null;
 
                 if ($quizPending) {
@@ -85,7 +86,7 @@ class VideoInteractionService
             $prevStatus = $progress->status;
             if ($prevStatus === VideoWatchStatus::COMPLETED && $status !== VideoWatchStatus::COMPLETED) {
                 // إذا أُضيف تدريب إلزامي بعد الإتمام ولم يُجتز بعد → ارجع لـ watched_pending_quiz
-                $quiz = $quiz ?? $video->quiz()->where('is_active', true)->where('is_required', true)->first();
+                $quiz = $quiz ?? $this->getActiveRequiredQuiz($video);
                 $quizPending = $quiz && $progress->quiz_passed_at === null;
                 $status = $quizPending ? VideoWatchStatus::WATCHED_PENDING_QUIZ : VideoWatchStatus::COMPLETED;
             }
@@ -191,6 +192,21 @@ class VideoInteractionService
     public function deleteComment(VideoComment $comment): void
     {
         $comment->delete();
+    }
+
+    /**
+     * Get active required quiz for a video, avoiding N+1 queries.
+     * Uses already loaded relation if available.
+     */
+    private function getActiveRequiredQuiz(Video $video): ?object
+    {
+        // Check if quiz relation is already loaded
+        if ($video->relationLoaded('quiz')) {
+            return $video->quiz->first(fn ($q) => $q->is_active && $q->is_required);
+        }
+        
+        // Otherwise query directly
+        return $video->quiz()->where('is_active', true)->where('is_required', true)->first();
     }
 
     private function resolveMorphType(object $actor): string

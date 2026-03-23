@@ -10,6 +10,7 @@ use App\Domains\Media\Services\ImageService;
 use App\Domains\Support\Models\TeacherAttendanceLog;
 use App\Domains\Support\Services\CacheService;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class DashboardService
 {
@@ -101,9 +102,20 @@ class DashboardService
             ->limit(5)
             ->get();
 
+        // Pre-load student counts for all teachers to avoid N+1 queries
+        $teacherIds = $recentTeachers->pluck('id');
+        $studentCounts = Enrollment::query()
+            ->select('teacher_id', DB::raw('COUNT(*) as students_count'))
+            ->where('academy_id', $academy->id)
+            ->where('is_active', true)
+            ->whereIn('teacher_id', $teacherIds)
+            ->groupBy('teacher_id')
+            ->pluck('students_count', 'teacher_id')
+            ->toArray();
+
         // Transform recent teachers
         $imageService = app(ImageService::class);
-        $transformedTeachers = $recentTeachers->map(function ($teacher) use ($academy, $imageService) {
+        $transformedTeachers = $recentTeachers->map(function ($teacher) use ($academy, $imageService, $studentCounts) {
             $rawStatus = $this->normalizeEnumValue($teacher->status);
             $status = 'نشط';
             if ($rawStatus === 'pending') {
@@ -116,11 +128,7 @@ class DashboardService
                 'id' => $teacher->id,
                 'name' => $teacher->name,
                 'avatar' => $teacher->avatar_key ? $imageService->getUrl($teacher->avatar_key) : null,
-                'students_count' => Enrollment::query()
-                    ->where('teacher_id', $teacher->id)
-                    ->where('academy_id', $academy->id)
-                    ->where('is_active', true)
-                    ->count(),
+                'students_count' => $studentCounts[$teacher->id] ?? 0,
                 'status' => $status,
                 'created_at' => $teacher->pivot->created_at,
             ];
