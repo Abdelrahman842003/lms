@@ -34,7 +34,7 @@ class ReportReadyNotification extends Notification implements ShouldQueue
             ->greeting('مرحباً،')
             ->line("تم إنشاء تقرير {$reportLabel} بصيغة {$formatLabel} بنجاح.")
             ->line('يمكنك تحميله من خلال الضغط على الزر أدناه.')
-            ->action('تحميل التقرير", $this->filePath)
+            ->action('تحميل التقرير', $this->filePath)
             ->line('شكراً لاستخدامك نظامنا!');
     }
 
