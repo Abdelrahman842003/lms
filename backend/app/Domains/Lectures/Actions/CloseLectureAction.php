@@ -6,7 +6,7 @@ namespace App\Domains\Lectures\Actions;
 
 use App\Domains\Lectures\Events\LectureClosed;
 use App\Domains\Lectures\Models\Lecture;
-use App\Domains\Support\Exceptions\DomainException;
+use App\Domains\Application\Exceptions\DomainException;
 
 /**
  * إغلاق محاضرة نشطة وبثّ الحدث.

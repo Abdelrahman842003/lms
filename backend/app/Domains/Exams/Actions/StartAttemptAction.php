@@ -8,7 +8,7 @@ use App\Domains\Exams\Builders\ExamAttemptBuilder;
 use App\Domains\Exams\Events\ExamStarted;
 use App\Domains\Exams\Models\Exam;
 use App\Domains\Exams\Models\ExamAttempt;
-use App\Domains\Support\Exceptions\DomainException;
+use App\Domains\Application\Exceptions\DomainException;
 
 final class StartAttemptAction
 {

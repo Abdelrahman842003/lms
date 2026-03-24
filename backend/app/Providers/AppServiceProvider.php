@@ -52,10 +52,10 @@ use App\Domains\Subscriptions\Models\PaymentLog;
 use App\Domains\Subscriptions\Models\PlatformPayment;
 use App\Domains\Subscriptions\Models\Subscription;
 use App\Domains\Subscriptions\Models\TeacherSubscription;
-use App\Domains\Support\Models\DailyVoiceLimit;
-use App\Domains\Support\Models\Setting;
-use App\Domains\Support\Models\SyncError;
-use App\Domains\Support\Models\TeacherAttendanceLog;
+use App\Domains\Application\Models\DailyVoiceLimit;
+use App\Domains\Application\Models\Setting;
+use App\Domains\Application\Models\SyncError;
+use App\Domains\Application\Models\TeacherAttendanceLog;
 use App\Domains\Videos\Models\Video;
 use App\Domains\Videos\Models\VideoAccessGrant;
 use App\Domains\Videos\Models\VideoAccessLog;
@@ -86,47 +86,47 @@ use App\Domains\Lectures\Policies\LecturePolicy;
 use App\Domains\Videos\Policies\VideoPolicy;
 
 // Centralized Policies (new in App\Policies)
-use App\Domains\Support\Policies\AcademyNotificationPolicy;
-use App\Domains\Support\Policies\AcademyPolicy;
-use App\Domains\Support\Policies\AcademySubscriptionPolicy;
-use App\Domains\Support\Policies\AttendancePolicy;
-use App\Domains\Support\Policies\DailyVoiceLimitPolicy;
-use App\Domains\Support\Policies\DeviceTokenPolicy;
-use App\Domains\Support\Policies\ExamAttemptPolicy;
-use App\Domains\Support\Policies\ExamResultPolicy;
-use App\Domains\Support\Policies\FailedQuestionPolicy;
-use App\Domains\Support\Policies\GamificationSettingPolicy;
-use App\Domains\Support\Policies\GuardianPolicy;
-use App\Domains\Support\Policies\LectureSessionPolicy;
-use App\Domains\Support\Policies\LoginAttemptPolicy;
-use App\Domains\Support\Policies\ParentDeviceTokenPolicy;
-use App\Domains\Support\Policies\PaymentLogPolicy;
-use App\Domains\Support\Policies\PlatformPaymentPolicy;
-use App\Domains\Support\Policies\PointTransactionPolicy;
-use App\Domains\Support\Policies\QuestionPolicy;
-use App\Domains\Support\Policies\SecretaryPolicy;
-use App\Domains\Support\Policies\SettingPolicy;
-use App\Domains\Support\Policies\StudentActivityLogPolicy;
-use App\Domains\Support\Policies\StudentAnswerPolicy;
-use App\Domains\Support\Policies\StudentPointPolicy;
-use App\Domains\Support\Policies\SubscriptionPolicy;
-use App\Domains\Support\Policies\SyncErrorPolicy;
-use App\Domains\Support\Policies\TeacherAttendanceLogPolicy;
-use App\Domains\Support\Policies\TeacherPolicy;
-use App\Domains\Support\Policies\TeacherSubscriptionPolicy;
-use App\Domains\Support\Policies\VideoAccessGrantPolicy;
-use App\Domains\Support\Policies\VideoAccessLogPolicy;
-use App\Domains\Support\Policies\VideoAttachmentPolicy;
-use App\Domains\Support\Policies\VideoCommentPolicy;
-use App\Domains\Support\Policies\VideoLikePolicy;
-use App\Domains\Support\Policies\VideoPlaybackTokenPolicy;
-use App\Domains\Support\Policies\VideoQuizAttemptPolicy;
-use App\Domains\Support\Policies\VideoQuizPolicy;
-use App\Domains\Support\Policies\VideoQuizQuestionPolicy;
-use App\Domains\Support\Policies\VideoReminderPolicy;
-use App\Domains\Support\Policies\VideoUploadSessionPolicy;
-use App\Domains\Support\Policies\VideoWatchProgressPolicy;
-use App\Domains\Support\Policies\SentNotificationPolicy;
+use App\Domains\Application\Policies\AcademyNotificationPolicy;
+use App\Domains\Application\Policies\AcademyPolicy;
+use App\Domains\Application\Policies\AcademySubscriptionPolicy;
+use App\Domains\Application\Policies\AttendancePolicy;
+use App\Domains\Application\Policies\DailyVoiceLimitPolicy;
+use App\Domains\Application\Policies\DeviceTokenPolicy;
+use App\Domains\Application\Policies\ExamAttemptPolicy;
+use App\Domains\Application\Policies\ExamResultPolicy;
+use App\Domains\Application\Policies\FailedQuestionPolicy;
+use App\Domains\Application\Policies\GamificationSettingPolicy;
+use App\Domains\Application\Policies\GuardianPolicy;
+use App\Domains\Application\Policies\LectureSessionPolicy;
+use App\Domains\Application\Policies\LoginAttemptPolicy;
+use App\Domains\Application\Policies\ParentDeviceTokenPolicy;
+use App\Domains\Application\Policies\PaymentLogPolicy;
+use App\Domains\Application\Policies\PlatformPaymentPolicy;
+use App\Domains\Application\Policies\PointTransactionPolicy;
+use App\Domains\Application\Policies\QuestionPolicy;
+use App\Domains\Application\Policies\SecretaryPolicy;
+use App\Domains\Application\Policies\SettingPolicy;
+use App\Domains\Application\Policies\StudentActivityLogPolicy;
+use App\Domains\Application\Policies\StudentAnswerPolicy;
+use App\Domains\Application\Policies\StudentPointPolicy;
+use App\Domains\Application\Policies\SubscriptionPolicy;
+use App\Domains\Application\Policies\SyncErrorPolicy;
+use App\Domains\Application\Policies\TeacherAttendanceLogPolicy;
+use App\Domains\Application\Policies\TeacherPolicy;
+use App\Domains\Application\Policies\TeacherSubscriptionPolicy;
+use App\Domains\Application\Policies\VideoAccessGrantPolicy;
+use App\Domains\Application\Policies\VideoAccessLogPolicy;
+use App\Domains\Application\Policies\VideoAttachmentPolicy;
+use App\Domains\Application\Policies\VideoCommentPolicy;
+use App\Domains\Application\Policies\VideoLikePolicy;
+use App\Domains\Application\Policies\VideoPlaybackTokenPolicy;
+use App\Domains\Application\Policies\VideoQuizAttemptPolicy;
+use App\Domains\Application\Policies\VideoQuizPolicy;
+use App\Domains\Application\Policies\VideoQuizQuestionPolicy;
+use App\Domains\Application\Policies\VideoReminderPolicy;
+use App\Domains\Application\Policies\VideoUploadSessionPolicy;
+use App\Domains\Application\Policies\VideoWatchProgressPolicy;
+use App\Domains\Application\Policies\SentNotificationPolicy;
 
 // Laravel
 use Illuminate\Cache\RateLimiting\Limit;
@@ -186,10 +186,10 @@ class AppServiceProvider extends ServiceProvider
             'App\Models\AcademySubscription' => \App\Domains\Subscriptions\Models\AcademySubscription::class,
             'App\Models\PlatformPayment'    => \App\Domains\Subscriptions\Models\PlatformPayment::class,
             'App\Models\PaymentLog'         => \App\Domains\Subscriptions\Models\PaymentLog::class,
-            'App\Models\Setting'            => \App\Domains\Support\Models\Setting::class,
-            'App\Models\SyncError'          => \App\Domains\Support\Models\SyncError::class,
-            'App\Models\TeacherAttendanceLog' => \App\Domains\Support\Models\TeacherAttendanceLog::class,
-            'App\Models\DailyVoiceLimit'    => \App\Domains\Support\Models\DailyVoiceLimit::class,
+            'App\Models\Setting'            => \App\Domains\Application\Models\Setting::class,
+            'App\Models\SyncError'          => \App\Domains\Application\Models\SyncError::class,
+            'App\Models\TeacherAttendanceLog' => \App\Domains\Application\Models\TeacherAttendanceLog::class,
+            'App\Models\DailyVoiceLimit'    => \App\Domains\Application\Models\DailyVoiceLimit::class,
             'App\Models\Video'              => \App\Domains\Videos\Models\Video::class,
             'App\Models\VideoAttachment'    => \App\Domains\Videos\Models\VideoAttachment::class,
             'App\Models\VideoComment'       => \App\Domains\Videos\Models\VideoComment::class,

@@ -8,7 +8,7 @@ use App\Domains\Enrollments\DTOs\GradeData;
 use App\Domains\Enrollments\Models\Grade;
 use App\Domains\Auth\Models\Academy;
 use App\Domains\Auth\Models\Teacher;
-use App\Domains\Support\Services\CacheService;
+use App\Domains\Application\Services\CacheService;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;

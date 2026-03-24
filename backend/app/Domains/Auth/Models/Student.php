@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace App\Domains\Auth\Models;
 
-use App\Domains\Support\Traits\GuardsSensitiveFields;
+use App\Domains\Application\Traits\GuardsSensitiveFields;
 use App\Domains\Enrollments\Models\Enrollment;
 use App\Domains\Enrollments\Models\Group;
 use App\Domains\Lectures\Models\Attendance;
 use App\Domains\Exams\Models\ExamResult;
 use App\Domains\Enrollments\Models\StudentActivityLog;
 use App\Domains\Notifications\Models\SentNotification;
-use App\Domains\Support\Traits\HasDeviceTokens;
+use App\Domains\Application\Traits\HasDeviceTokens;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;

@@ -12,7 +12,7 @@ use App\Domains\Application\Http\Requests\Teacher\Lecture\RecordAttendanceReques
 use App\Domains\Application\Http\Resources\Teacher\LectureResource;
 use App\Domains\Lectures\Models\Lecture;
 use App\Domains\Application\Services\Academy\LectureService;
-use App\Domains\Support\Traits\ResolvesAcademy;
+use App\Domains\Application\Traits\ResolvesAcademy;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;

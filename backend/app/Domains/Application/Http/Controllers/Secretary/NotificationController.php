@@ -6,7 +6,7 @@ namespace App\Domains\Application\Http\Controllers\Secretary;
 
 use App\Domains\Application\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
-use App\Domains\Support\Traits\ApiResponseTrait;
+use App\Domains\Application\Traits\ApiResponseTrait;
 
 class NotificationController extends Controller
 {

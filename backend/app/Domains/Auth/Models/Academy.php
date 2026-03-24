@@ -15,8 +15,8 @@ use Illuminate\Auth\Authenticatable;
 use App\Domains\Subscriptions\Models\Subscription;
 use App\Domains\Subscriptions\Models\AcademySubscription;
 use App\Domains\Subscriptions\Enums\SubscriptionStatus;
-use App\Domains\Support\Models\TeacherAttendanceLog;
-use App\Domains\Support\Traits\GuardsSensitiveFields;
+use App\Domains\Application\Models\TeacherAttendanceLog;
+use App\Domains\Application\Traits\GuardsSensitiveFields;
 use App\Domains\Subscriptions\Traits\HasSubscriptionStatus;
 
 class Academy extends Model implements AuthenticatableContract

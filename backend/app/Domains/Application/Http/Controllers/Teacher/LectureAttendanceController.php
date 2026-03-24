@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Gate;
 
 class LectureAttendanceController extends Controller
 {
-    use \App\Domains\Support\Traits\ResolvesTeacher;
+    use \App\Domains\Application\Traits\ResolvesTeacher;
 
     public function __construct(
         private LectureService $service

@@ -13,9 +13,9 @@ use App\Domains\Gamification\Models\PointTransaction;
 use App\Domains\Auth\Models\Student;
 use App\Domains\Gamification\Models\StudentPoint;
 use App\Domains\Auth\Models\Teacher;
-use App\Domains\Support\Services\CacheService;
-use App\Domains\Support\Services\HelperService;
-use App\Domains\Support\Traits\HasAcademyFilter;
+use App\Domains\Application\Services\CacheService;
+use App\Domains\Application\Services\HelperService;
+use App\Domains\Application\Traits\HasAcademyFilter;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 

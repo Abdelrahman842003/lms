@@ -13,7 +13,7 @@ use Illuminate\Http\Response;
 
 class TeacherReportController extends Controller
 {
-    use \App\Domains\Support\Traits\ResolvesTeacher;
+    use \App\Domains\Application\Traits\ResolvesTeacher;
 
     public function __construct(
         private ReportService $reportService

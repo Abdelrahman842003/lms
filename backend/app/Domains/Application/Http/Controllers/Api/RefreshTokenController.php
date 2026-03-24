@@ -6,7 +6,7 @@ namespace App\Domains\Application\Http\Controllers\Api;
 
 use App\Domains\Application\Http\Controllers\Controller;
 use App\Domains\Auth\Services\TokenService;
-use App\Domains\Support\Traits\ApiResponseTrait;
+use App\Domains\Application\Traits\ApiResponseTrait;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;

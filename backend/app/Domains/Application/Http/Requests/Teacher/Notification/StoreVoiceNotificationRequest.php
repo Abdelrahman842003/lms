@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Application\Http\Requests\Teacher\Notification;
 
 use App\Domains\Notifications\Services\VoiceNotificationService;
-use App\Domains\Support\Rules\SecureFileUpload;
+use App\Domains\Application\Rules\SecureFileUpload;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreVoiceNotificationRequest extends FormRequest

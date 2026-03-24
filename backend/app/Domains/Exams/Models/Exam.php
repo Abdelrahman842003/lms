@@ -7,7 +7,7 @@ namespace App\Domains\Exams\Models;
 use App\Domains\Auth\Models\Teacher;
 use App\Domains\Enrollments\Models\Grade;
 use App\Domains\Enrollments\Models\Group;
-use App\Domains\Support\Traits\GuardsSensitiveFields;
+use App\Domains\Application\Traits\GuardsSensitiveFields;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -80,5 +80,5 @@ class Exam extends Model
         return $this->hasMany(Question::class);
     }
 
-    // Note: Filtering logic moved to \App\Domains\Support\Filters\ExamFilter
+    // Note: Filtering logic moved to \App\Domains\Application\Filters\ExamFilter
 }

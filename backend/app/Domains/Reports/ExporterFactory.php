@@ -7,7 +7,7 @@ namespace App\Domains\Reports;
 use App\Domains\Reports\Contracts\ReportExporter;
 use App\Domains\Reports\Exporters\ExcelExporter;
 use App\Domains\Reports\Exporters\PdfExporter;
-use App\Domains\Support\Exceptions\DomainException;
+use App\Domains\Application\Exceptions\DomainException;
 
 /**
  * Factory Pattern لإنشاء الـ Exporter المناسب.

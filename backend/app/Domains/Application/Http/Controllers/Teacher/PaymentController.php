@@ -12,7 +12,7 @@ use Illuminate\Http\JsonResponse;
 
 class PaymentController extends Controller
 {
-    use \App\Domains\Support\Traits\ResolvesTeacher;
+    use \App\Domains\Application\Traits\ResolvesTeacher;
 
     public function __construct(
         private PaymentService $service

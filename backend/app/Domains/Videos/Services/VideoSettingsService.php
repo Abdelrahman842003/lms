@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Videos\Services;
 
-use App\Domains\Support\Models\Setting;
+use App\Domains\Application\Models\Setting;
 
 class VideoSettingsService
 {

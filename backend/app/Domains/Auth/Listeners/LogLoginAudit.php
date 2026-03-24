@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Auth\Listeners;
 
 use App\Domains\Auth\Events\UserLoggedIn;
-use App\Domains\Support\Enums\AuditAction;
+use App\Domains\Application\Enums\AuditAction;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
 /**

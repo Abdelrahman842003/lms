@@ -10,7 +10,7 @@ use App\Domains\Application\Http\Requests\Teacher\Video\UpdateVideoQuizRequest;
 use App\Domains\Videos\Models\Video;
 use App\Domains\Videos\Models\VideoQuiz;
 use App\Domains\Videos\Services\VideoQuizService;
-use App\Domains\Support\Traits\ResolvesTeacher;
+use App\Domains\Application\Traits\ResolvesTeacher;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Gate;
 

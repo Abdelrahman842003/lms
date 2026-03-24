@@ -6,7 +6,7 @@ if (! function_exists('_r2_setting')) {
     function _r2_setting(string $key, string $envFallback, mixed $default = ''): mixed
     {
         try {
-            $value = \App\Domains\Support\Models\Setting::getValue($key);
+            $value = \App\Domains\Application\Models\Setting::getValue($key);
             if ($value !== null && $value !== '') {
                 return $value;
             }

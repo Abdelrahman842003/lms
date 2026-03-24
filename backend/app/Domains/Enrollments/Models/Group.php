@@ -65,5 +65,5 @@ class Group extends Model
         return $this->belongsTo(Academy::class);
     }
 
-    // Note: Filtering logic moved to \App\Domains\Support\Filters\GroupFilter
+    // Note: Filtering logic moved to \App\Domains\Application\Filters\GroupFilter
 }

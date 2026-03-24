@@ -9,7 +9,7 @@ use App\Domains\Auth\Models\Teacher;
 use App\Domains\Gamification\Models\GamificationSetting;
 use App\Domains\Gamification\Models\PointTransaction;
 use App\Domains\Gamification\Services\PointService;
-use App\Domains\Support\Services\CacheService;
+use App\Domains\Application\Services\CacheService;
 use App\Domains\Videos\Models\Video;
 use App\Domains\Videos\Models\VideoQuiz;
 use App\Domains\Videos\Models\VideoQuizAttempt;

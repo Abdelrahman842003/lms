@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Application\Services\Academy;
 
 use App\Domains\Auth\Models\Academy;
-use App\Domains\Support\Models\TeacherAttendanceLog;
+use App\Domains\Application\Models\TeacherAttendanceLog;
 use Carbon\Carbon;
 
 class AttendanceService

@@ -6,7 +6,7 @@ namespace App\Domains\Exams\Observers;
 
 use App\Domains\Exams\Models\Exam;
 use App\Domains\Exams\Jobs\ProcessExamStart;
-use App\Domains\Support\Services\CacheService;
+use App\Domains\Application\Services\CacheService;
 use Illuminate\Support\Facades\Log;
 
 class ExamObserver

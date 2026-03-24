@@ -6,7 +6,7 @@ namespace App\Domains\Gamification\Models;
 
 use App\Domains\Auth\Models\Student;
 use App\Domains\Auth\Models\Teacher;
-use App\Domains\Support\Traits\GuardsSensitiveFields;
+use App\Domains\Application\Traits\GuardsSensitiveFields;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;

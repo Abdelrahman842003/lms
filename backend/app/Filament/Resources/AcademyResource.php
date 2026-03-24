@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\Resources;
 
 use App\Domains\Auth\Models\Academy;
-use App\Domains\Support\Models\Setting;
+use App\Domains\Application\Models\Setting;
 use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
@@ -113,7 +113,7 @@ class AcademyResource extends BaseResource
                             ->minValue(1)
                             ->maxValue(365)
                             ->nullable()
-                            ->helperText(fn (): string => 'اتركه فارغًا لاستخدام الإعداد العام (' . \App\Domains\Support\Services\HelperService::getTrialPeriodDays() . ' يوم)'),
+                            ->helperText(fn (): string => 'اتركه فارغًا لاستخدام الإعداد العام (' . \App\Domains\Application\Services\HelperService::getTrialPeriodDays() . ' يوم)'),
                     ])
                     ->columns(2),
 
@@ -123,7 +123,7 @@ class AcademyResource extends BaseResource
                         Select::make('plan_selection')
                             ->label('مدة الاشتراك')
                             ->options(fn () => [
-                                'trial' => 'تجريبي (' . \App\Domains\Support\Services\HelperService::getTrialPeriodDays() . ' يوم)',
+                                'trial' => 'تجريبي (' . \App\Domains\Application\Services\HelperService::getTrialPeriodDays() . ' يوم)',
                                 'monthly' => 'شهري (1 شهر)',
                                 'quarterly' => 'ربع سنوي (3 شهور)',
                                 'semi_annual' => 'نصف سنوي (6 شهور)',
@@ -146,7 +146,7 @@ class AcademyResource extends BaseResource
                             })
                             ->afterStateUpdated(function ($state, $set, $get) {
                                 if ($state === 'trial') {
-                                    $trialDays = \App\Domains\Support\Services\HelperService::getTrialPeriodDays();
+                                    $trialDays = \App\Domains\Application\Services\HelperService::getTrialPeriodDays();
                                     $set('plan_type', 'trial');
                                     $set('subscription_period', null);
                                     $set('custom_period_months', null);
@@ -224,7 +224,7 @@ class AcademyResource extends BaseResource
 
                         DatePicker::make('plan_expires_at')
                             ->label('تاريخ انتهاء الاشتراك')
-                            ->default(now()->addDays(\App\Domains\Support\Services\HelperService::getTrialPeriodDays())->format('Y-m-d'))
+                            ->default(now()->addDays(\App\Domains\Application\Services\HelperService::getTrialPeriodDays())->format('Y-m-d'))
                             ->required()
                             ->native(false)
                             ->displayFormat('d/m/Y')
@@ -278,7 +278,7 @@ class AcademyResource extends BaseResource
                             ->reactive()
                             ->afterStateUpdated(function ($state, $get, $set) {
                                 $limit         = $get('is_unlimited_students') ? 'غير محدود' : ($get('plan_max_students') ?? '100');
-                                $trialDays     = \App\Domains\Support\Services\HelperService::getTrialPeriodDays();
+                                $trialDays     = \App\Domains\Application\Services\HelperService::getTrialPeriodDays();
                                 $period        = match ($get('plan_selection')) {
                                     'trial'       => 'تجريبي (' . $trialDays . ' يوم)',
                                     'monthly'     => 'شهري',
@@ -313,7 +313,7 @@ class AcademyResource extends BaseResource
                             ->reactive()
                             ->afterStateUpdated(function ($state, $get, $set) {
                                 $limit         = $get('is_unlimited_students') ? 'غير محدود' : ($get('plan_max_students') ?? '100');
-                                $trialDays     = \App\Domains\Support\Services\HelperService::getTrialPeriodDays();
+                                $trialDays     = \App\Domains\Application\Services\HelperService::getTrialPeriodDays();
                                 $period        = match ($get('plan_selection')) {
                                     'trial'       => 'تجريبي (' . $trialDays . ' يوم)',
                                     'monthly'     => 'شهري',
@@ -347,7 +347,7 @@ class AcademyResource extends BaseResource
                             ->placeholder('سيتم إنشاء الملاحظات تلقائياً عند تحديث الاشتراك')
                             ->afterStateHydrated(function ($component, $state, $record) {
                                 if (! $record) return;
-                                $trialDays   = \App\Domains\Support\Services\HelperService::getTrialPeriodDays();
+                                $trialDays   = \App\Domains\Application\Services\HelperService::getTrialPeriodDays();
                                 $limit       = $record->is_unlimited_students ? 'غير محدود' : ($record->plan_max_students ?? '100');
                                 $period      = match ($record->subscription_period ?? $record->plan_type) {
                                     'monthly'     => 'شهري',

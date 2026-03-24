@@ -16,7 +16,7 @@ use Illuminate\Http\Request;
 
 class ExamController extends Controller
 {
-    use \App\Domains\Support\Traits\ResolvesAcademy;
+    use \App\Domains\Application\Traits\ResolvesAcademy;
 
     public function __construct(
         private \App\Domains\Application\Services\Teacher\ExamService $service

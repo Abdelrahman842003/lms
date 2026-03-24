@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\Gate;
 
 class GradeController extends Controller
 {
-    use \App\Domains\Support\Traits\ResolvesTeacher;
+    use \App\Domains\Application\Traits\ResolvesTeacher;
 
     public function __construct(
         private GradeService $service

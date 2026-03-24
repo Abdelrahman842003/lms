@@ -7,9 +7,9 @@ namespace App\Domains\Application\Services\Academy;
 use App\Domains\Auth\Models\Academy;
 use App\Domains\Lectures\Models\Lecture;
 use App\Domains\Exams\Models\Exam;
-use App\Domains\Support\Models\TeacherAttendanceLog;
+use App\Domains\Application\Models\TeacherAttendanceLog;
 use Carbon\Carbon;
-use App\Domains\Support\Models\Setting;
+use App\Domains\Application\Models\Setting;
 use App\Domains\Subscriptions\Models\PaymentLog;
 use Illuminate\Support\Facades\DB;
 

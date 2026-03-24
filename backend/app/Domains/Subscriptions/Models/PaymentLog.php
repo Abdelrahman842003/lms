@@ -7,7 +7,7 @@ namespace App\Domains\Subscriptions\Models;
 use App\Domains\Auth\Models\Student;
 use App\Domains\Auth\Models\Teacher;
 use App\Domains\Enrollments\Models\Enrollment;
-use App\Domains\Support\Traits\GuardsSensitiveFields;
+use App\Domains\Application\Traits\GuardsSensitiveFields;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;

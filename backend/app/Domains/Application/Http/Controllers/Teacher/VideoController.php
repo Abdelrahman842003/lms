@@ -9,7 +9,7 @@ use App\Domains\Application\Http\Requests\Teacher\Video\StoreVideoRequest;
 use App\Domains\Application\Http\Requests\Teacher\Video\UpdateVideoRequest;
 use App\Domains\Application\Http\Requests\Teacher\Video\UploadAttachmentsRequest;
 use App\Domains\Auth\Models\Teacher;
-use App\Domains\Support\Traits\ResolvesTeacher;
+use App\Domains\Application\Traits\ResolvesTeacher;
 use App\Domains\Videos\DTOs\CreateVideoData;
 use App\Domains\Videos\DTOs\UpdateVideoData;
 use App\Domains\Videos\Models\Video;

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Auth\Exceptions;
 
-use App\Domains\Support\Exceptions\ApiException;
+use App\Domains\Application\Exceptions\ApiException;
 
 class TokenUserNotFoundException extends ApiException
 {

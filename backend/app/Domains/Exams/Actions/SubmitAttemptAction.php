@@ -10,7 +10,7 @@ use App\Domains\Exams\Models\ExamAttempt;
 use App\Domains\Exams\Models\ExamResult;
 use App\Domains\Exams\Models\Question;
 use App\Domains\Exams\Models\StudentAnswer;
-use App\Domains\Support\Exceptions\DomainException;
+use App\Domains\Application\Exceptions\DomainException;
 use Illuminate\Support\Facades\DB;
 
 final class SubmitAttemptAction

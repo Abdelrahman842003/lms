@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Media\Services;
 
-use App\Domains\Support\Services\FileUploadValidator;
+use App\Domains\Application\Services\FileUploadValidator;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Intervention\Image\ImageManager;

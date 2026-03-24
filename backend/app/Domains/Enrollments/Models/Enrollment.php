@@ -8,7 +8,7 @@ use App\Domains\Auth\Models\Academy;
 use App\Domains\Auth\Models\Student;
 use App\Domains\Auth\Models\Teacher;
 use App\Domains\Enrollments\Services\EnrollmentStatusService;
-use App\Domains\Support\Traits\GuardsSensitiveFields;
+use App\Domains\Application\Traits\GuardsSensitiveFields;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -114,5 +114,5 @@ class Enrollment extends Model
         return $query->where('teacher_id', $teacherId);
     }
 
-    // Note: Filtering logic moved to \App\Domains\Support\Filters\EnrollmentFilter
+    // Note: Filtering logic moved to \App\Domains\Application\Filters\EnrollmentFilter
 }

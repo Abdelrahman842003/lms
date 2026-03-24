@@ -7,8 +7,8 @@ namespace App\Domains\Enrollments\Services;
 use App\Domains\Auth\Models\Teacher;
 use App\Domains\Enrollments\DTOs\TeacherGroupData;
 use App\Domains\Enrollments\Models\Group;
-use App\Domains\Support\Filters\GroupFilter;
-use App\Domains\Support\Traits\HasAcademyFilter;
+use App\Domains\Application\Filters\GroupFilter;
+use App\Domains\Application\Traits\HasAcademyFilter;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class TeacherGroupService

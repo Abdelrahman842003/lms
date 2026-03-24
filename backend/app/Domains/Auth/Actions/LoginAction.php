@@ -11,7 +11,7 @@ use App\Domains\Auth\Models\Guardian;
 use App\Domains\Auth\Models\Secretary;
 use App\Domains\Auth\Models\Student;
 use App\Domains\Auth\Models\Teacher;
-use App\Domains\Support\Exceptions\DomainException;
+use App\Domains\Application\Exceptions\DomainException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Sanctum\PersonalAccessToken;

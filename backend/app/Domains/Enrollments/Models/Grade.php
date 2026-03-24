@@ -45,5 +45,5 @@ class Grade extends Model
         return $this->hasMany(Enrollment::class);
     }
 
-    // Note: Filtering logic moved to \App\Domains\Support\Filters\GradeFilter
+    // Note: Filtering logic moved to \App\Domains\Application\Filters\GradeFilter
 }

@@ -12,7 +12,7 @@ use Illuminate\Http\Request;
 
 class SubscriptionController extends Controller
 {
-    use \App\Domains\Support\Traits\ResolvesTeacher;
+    use \App\Domains\Application\Traits\ResolvesTeacher;
 
     public function __construct(private SubscriptionRenewalService $renewalService) {}
 

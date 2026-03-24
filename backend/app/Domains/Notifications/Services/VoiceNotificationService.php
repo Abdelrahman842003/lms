@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Notifications\Services;
 
-use App\Domains\Support\Models\DailyVoiceLimit;
+use App\Domains\Application\Models\DailyVoiceLimit;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;

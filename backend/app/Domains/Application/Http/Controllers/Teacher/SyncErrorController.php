@@ -13,7 +13,7 @@ use Illuminate\Http\Request;
 
 class SyncErrorController extends Controller
 {
-    use \App\Domains\Support\Traits\ResolvesTeacher;
+    use \App\Domains\Application\Traits\ResolvesTeacher;
 
     public function __construct(
         private SyncErrorService $service

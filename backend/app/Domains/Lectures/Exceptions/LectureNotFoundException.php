@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Lectures\Exceptions;
 
-use App\Domains\Support\Exceptions\ApiException;
+use App\Domains\Application\Exceptions\ApiException;
 
 class LectureNotFoundException extends ApiException
 {

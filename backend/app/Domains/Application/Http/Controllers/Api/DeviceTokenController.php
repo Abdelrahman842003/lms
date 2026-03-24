@@ -6,7 +6,7 @@ namespace App\Domains\Application\Http\Controllers\Api;
 
 use App\Domains\Application\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Domains\Support\Traits\ApiResponseTrait;
+use App\Domains\Application\Traits\ApiResponseTrait;
 use Illuminate\Support\Facades\Auth;
 
 class DeviceTokenController extends Controller

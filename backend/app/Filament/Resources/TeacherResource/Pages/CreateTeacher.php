@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\Resources\TeacherResource\Pages;
 
 use App\Domains\Subscriptions\Services\UnifiedSubscriptionSyncService;
-use App\Domains\Support\Services\HelperService;
+use App\Domains\Application\Services\HelperService;
 use App\Filament\Resources\TeacherResource;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Carbon;

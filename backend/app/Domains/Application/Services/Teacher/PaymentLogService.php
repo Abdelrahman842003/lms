@@ -6,7 +6,7 @@ namespace App\Domains\Application\Services\Teacher;
 
 use App\Domains\Enrollments\Models\Enrollment;
 use App\Domains\Subscriptions\Models\PaymentLog;
-use App\Domains\Support\Models\SyncError;
+use App\Domains\Application\Models\SyncError;
 use App\Domains\Auth\Models\Teacher;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;

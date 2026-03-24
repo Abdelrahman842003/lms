@@ -23,7 +23,7 @@ class TeacherResource extends JsonResource
             'secretaries' => $this->whenLoaded('secretaries'),
             'revenue' => (function() {
                 $count = $this->resource->students_count ?? 0;
-                $setting = \App\Domains\Support\Models\Setting::where('key', 'pricePerStudent')->value('value');
+                $setting = \App\Domains\Application\Models\Setting::where('key', 'pricePerStudent')->value('value');
                 $price = is_numeric($setting) ? (float) $setting : 0;
                 return $count * $price;
             })(),
@@ -44,7 +44,7 @@ class TeacherResource extends JsonResource
             'trial_period_days' => $this->trial_period_days !== null ? (int) $this->trial_period_days : null,
             'effective_trial_period_days' => $this->trial_period_days !== null
                 ? (int) $this->trial_period_days
-                : (int) \App\Domains\Support\Models\Setting::getValue('trial_period_days', 4),
+                : (int) \App\Domains\Application\Models\Setting::getValue('trial_period_days', 4),
             'joined' => $this->created_at ? $this->created_at->format('Y-m-d') : null,
             'created_at' => $this->created_at ? $this->created_at->toIso8601String() : null,
             'subscription_fee' => (float) $this->subscription_fee,

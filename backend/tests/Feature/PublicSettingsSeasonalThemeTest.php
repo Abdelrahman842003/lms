@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
-use App\Domains\Support\Models\Setting;
-use App\Domains\Support\Services\SeasonalThemeService;
+use App\Domains\Application\Models\Setting;
+use App\Domains\Application\Services\SeasonalThemeService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 

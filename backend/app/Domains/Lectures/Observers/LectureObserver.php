@@ -6,7 +6,7 @@ namespace App\Domains\Lectures\Observers;
 
 use App\Domains\Lectures\Models\Lecture;
 use App\Domains\Lectures\Jobs\ProcessLectureStart;
-use App\Domains\Support\Services\CacheService;
+use App\Domains\Application\Services\CacheService;
 use Illuminate\Support\Facades\Log;
 
 class LectureObserver

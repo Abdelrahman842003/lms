@@ -9,8 +9,8 @@ use App\Domains\Auth\Models\Teacher;
 use App\Domains\Enrollments\Models\Enrollment;
 use App\Domains\Enrollments\Models\StudentActivityLog;
 use App\Domains\Subscriptions\Exceptions\QuotaExceededException;
-use App\Domains\Support\Filters\EnrollmentFilter;
-use App\Domains\Support\Traits\HasAcademyFilter;
+use App\Domains\Application\Filters\EnrollmentFilter;
+use App\Domains\Application\Traits\HasAcademyFilter;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
@@ -218,10 +218,10 @@ class StudentService
     public function searchByPhone(string $phone): ?Student
     {
         // Try to get from cache first
-        $cachedId = \App\Domains\Support\Services\CacheService::getStudentIdByPhone($phone);
+        $cachedId = \App\Domains\Application\Services\CacheService::getStudentIdByPhone($phone);
 
         if ($cachedId) {
-            $cachedProfile = \App\Domains\Support\Services\CacheService::getStudentProfile($cachedId);
+            $cachedProfile = \App\Domains\Application\Services\CacheService::getStudentProfile($cachedId);
             if ($cachedProfile) {
                 // Return cached student as model
                 return Student::find($cachedId);
@@ -233,7 +233,7 @@ class StudentService
 
         if ($student) {
             // Cache for future lookups
-            \App\Domains\Support\Services\CacheService::cacheStudent(
+            \App\Domains\Application\Services\CacheService::cacheStudent(
                 $student->id,
                 $student->phone,
                 $student->toArray()
@@ -381,7 +381,7 @@ class StudentService
      */
     public function getActivationDetails(Enrollment $enrollment): array
     {
-        $platformFee = \App\Domains\Support\Services\HelperService::getTeacherPricePerStudent();
+        $platformFee = \App\Domains\Application\Services\HelperService::getTeacherPricePerStudent();
 
         $options = [];
 
@@ -537,12 +537,12 @@ class StudentService
 
             $history[] = [
                 'month' => $monthKey,
-                'month_name' => \App\Domains\Support\Services\HelperService::getArabicMonthName($currentMonth->month).' '.$currentMonth->year,
+                'month_name' => \App\Domains\Application\Services\HelperService::getArabicMonthName($currentMonth->month).' '.$currentMonth->year,
                 'amount_due' => (float) $price,
                 'amount_paid' => $amountPaid,
                 'amount_remaining' => (float) max(0, $amountRemaining),
                 'status' => $status,
-                'status_label' => \App\Domains\Support\Services\HelperService::getStatusLabel($status),
+                'status_label' => \App\Domains\Application\Services\HelperService::getStatusLabel($status),
             ];
 
             $currentMonth->addMonth();

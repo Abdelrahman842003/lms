@@ -11,7 +11,7 @@ use App\Domains\Notifications\Events\NewNotificationEvent;
 use App\Domains\Subscriptions\Enums\SubscriptionStatus;
 use App\Domains\Subscriptions\Enums\SubscriptionType;
 use App\Domains\Subscriptions\Models\Subscription;
-use App\Domains\Support\Services\HelperService;
+use App\Domains\Application\Services\HelperService;
 use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;

@@ -7,9 +7,9 @@ namespace App\Domains\Application\Services\Teacher;
 use App\Domains\Auth\Models\Teacher;
 use App\Domains\Enrollments\DTOs\TeacherGradeData;
 use App\Domains\Enrollments\Models\Grade;
-use App\Domains\Support\Filters\GradeFilter;
-use App\Domains\Support\Services\CacheService;
-use App\Domains\Support\Traits\HasAcademyFilter;
+use App\Domains\Application\Filters\GradeFilter;
+use App\Domains\Application\Services\CacheService;
+use App\Domains\Application\Traits\HasAcademyFilter;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class GradeService

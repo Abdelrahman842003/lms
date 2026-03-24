@@ -10,8 +10,8 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Spatie\Permission\Traits\HasRoles;
-use App\Domains\Support\Traits\HasDeviceTokens;
-use App\Domains\Support\Traits\GuardsSensitiveFields;
+use App\Domains\Application\Traits\HasDeviceTokens;
+use App\Domains\Application\Traits\GuardsSensitiveFields;
 use App\Domains\Auth\Models\Academy;
 
 class Secretary extends Authenticatable

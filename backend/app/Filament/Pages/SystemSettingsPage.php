@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Filament\Pages;
 
-use App\Domains\Support\Models\Setting;
-use App\Domains\Support\Services\SeasonalThemeService;
+use App\Domains\Application\Models\Setting;
+use App\Domains\Application\Services\SeasonalThemeService;
 use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;

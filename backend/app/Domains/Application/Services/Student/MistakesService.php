@@ -91,7 +91,7 @@ class MistakesService
      */
     public function getStats(string $studentId, string $teacherId): array
     {
-        return \App\Domains\Support\Services\CacheService::getMistakesStats($studentId, $teacherId, function () use ($studentId, $teacherId) {
+        return \App\Domains\Application\Services\CacheService::getMistakesStats($studentId, $teacherId, function () use ($studentId, $teacherId) {
             $total = FailedQuestion::where('student_id', $studentId)
                 ->where('teacher_id', $teacherId)
                 ->count();

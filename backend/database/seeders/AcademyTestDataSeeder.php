@@ -6,7 +6,7 @@ use Illuminate\Database\Seeder;
 use App\Domains\Auth\Models\Academy;
 use App\Domains\Auth\Models\Secretary;
 use App\Domains\Auth\Models\Teacher;
-use App\Domains\Support\Models\TeacherAttendanceLog;
+use App\Domains\Application\Models\TeacherAttendanceLog;
 use App\Domains\Notifications\Models\AcademyNotification;
 use Illuminate\Support\Facades\Hash;
 use Carbon\Carbon;

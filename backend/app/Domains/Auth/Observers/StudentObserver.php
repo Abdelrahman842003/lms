@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Auth\Observers;
 
 use App\Domains\Auth\Models\Student;
-use App\Domains\Support\Services\CacheService;
+use App\Domains\Application\Services\CacheService;
 
 class StudentObserver
 {

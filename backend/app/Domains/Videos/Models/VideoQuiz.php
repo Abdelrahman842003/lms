@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Videos\Models;
 
 use App\Domains\Auth\Models\Teacher;
-use App\Domains\Support\Traits\GuardsSensitiveFields;
+use App\Domains\Application\Traits\GuardsSensitiveFields;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;

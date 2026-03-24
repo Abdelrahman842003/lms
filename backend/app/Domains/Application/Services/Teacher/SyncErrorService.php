@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Application\Services\Teacher;
 
-use App\Domains\Support\Models\SyncError;
+use App\Domains\Application\Models\SyncError;
 use App\Domains\Auth\Models\Teacher;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;

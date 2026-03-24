@@ -23,7 +23,7 @@ class TeacherResource extends JsonResource
             'secretaries' => $this->whenLoaded('secretaries'),
             'revenue' => (function() {
                 $count = $this->resource->students_count ?? 0;
-                $setting = \App\Domains\Support\Models\Setting::where('key', 'pricePerStudent')->value('value');
+                $setting = \App\Domains\Application\Models\Setting::where('key', 'pricePerStudent')->value('value');
                 $price = is_numeric($setting) ? (float) $setting : 0;
                 return $count * $price;
             })(),

@@ -9,8 +9,8 @@ use App\Domains\Enrollments\Models\Enrollment;
 use App\Domains\Exams\DTOs\TeacherExamData;
 use App\Domains\Exams\Models\Exam;
 use App\Domains\Exams\Models\Question;
-use App\Domains\Support\Filters\ExamFilter;
-use App\Domains\Support\Traits\HasAcademyFilter;
+use App\Domains\Application\Filters\ExamFilter;
+use App\Domains\Application\Traits\HasAcademyFilter;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 

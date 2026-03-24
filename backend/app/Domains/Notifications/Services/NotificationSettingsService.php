@@ -11,7 +11,7 @@ use App\Domains\Auth\Models\Secretary;
 use App\Domains\Auth\Models\Student;
 use App\Domains\Auth\Models\Teacher;
 use App\Domains\Notifications\Channels\FcmChannelStrategy;
-use App\Domains\Support\Models\Setting;
+use App\Domains\Application\Models\Setting;
 use Illuminate\Support\Collection;
 
 class NotificationSettingsService

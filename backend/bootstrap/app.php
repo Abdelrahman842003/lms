@@ -16,7 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->api(prepend: [
             \App\Domains\Auth\Http\Middleware\InjectBearerTokenFromCookie::class,
             // \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
-            \App\Domains\Support\Http\Middleware\CheckMaintenanceMode::class,
+            \App\Domains\Application\Http\Middleware\CheckMaintenanceMode::class,
         ]);
 
         $middleware->append(\Illuminate\Http\Middleware\HandleCors::class);

@@ -7,7 +7,7 @@ namespace App\Domains\Application\Services\Teacher;
 use App\Domains\Subscriptions\DTOs\TeacherPaymentData;
 use App\Domains\Enrollments\Models\Enrollment;
 use App\Domains\Subscriptions\Models\PaymentLog;
-use App\Domains\Support\Models\Setting;
+use App\Domains\Application\Models\Setting;
 use App\Domains\Auth\Models\Teacher;
 use Illuminate\Support\Facades\DB;
 

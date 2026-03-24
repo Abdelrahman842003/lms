@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Application\Http\Middleware;
 
-use App\Domains\Support\Services\InputSanitizer;
+use App\Domains\Application\Services\InputSanitizer;
 use Closure;
 use Illuminate\Http\Request;
 

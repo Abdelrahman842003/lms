@@ -5,7 +5,7 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use App\Models\Academy;
 use App\Models\Teacher;
-use App\Domains\Support\Models\TeacherAttendanceLog;
+use App\Domains\Application\Models\TeacherAttendanceLog;
 use Carbon\Carbon;
 
 class AttendanceTestDataSeeder extends Seeder

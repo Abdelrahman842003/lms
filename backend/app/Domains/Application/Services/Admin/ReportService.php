@@ -118,7 +118,7 @@ class ReportService
     public function getTeacherReport(Teacher $teacher, Carbon $startDate, Carbon $endDate): TeacherReportData
     {
         $endDate = $endDate->copy()->endOfDay();
-        $pricePerStudent = \App\Domains\Support\Services\HelperService::getTeacherPricePerStudent();
+        $pricePerStudent = \App\Domains\Application\Services\HelperService::getTeacherPricePerStudent();
 
         // Eager load relationships to prevent N+1
         $teacher->load(['secretaries', 'enrollments.grade', 'enrollments.group', 'subscriptions']);
@@ -334,7 +334,7 @@ class ReportService
     public function getAcademyReport(Academy $academy, Carbon $startDate, Carbon $endDate): array
     {
         $endDate = $endDate->copy()->endOfDay();
-        $academyStudentPrice = \App\Domains\Support\Services\HelperService::getAcademyPricePerStudent();
+        $academyStudentPrice = \App\Domains\Application\Services\HelperService::getAcademyPricePerStudent();
 
         // Eager load teachers and their enrollments to prevent N+1
         $academy->load(['teachers.enrollments.grade', 'teachers.enrollments.group']);
@@ -502,8 +502,8 @@ class ReportService
     public function getAdminReport(Carbon $startDate, Carbon $endDate): array
     {
         $endDate = $endDate->copy()->endOfDay();
-        $pricePerStudent = \App\Domains\Support\Services\HelperService::getTeacherPricePerStudent();
-        $academyStudentPrice = \App\Domains\Support\Services\HelperService::getAcademyPricePerStudent();
+        $pricePerStudent = \App\Domains\Application\Services\HelperService::getTeacherPricePerStudent();
+        $academyStudentPrice = \App\Domains\Application\Services\HelperService::getAcademyPricePerStudent();
 
         // 1. Counts with eager loading for efficiency
         $totalAcademies = Academy::count();
@@ -675,7 +675,7 @@ class ReportService
         $months = [];
         $currentMonth = $startDate->copy()->startOfMonth();
         $lastMonth = $endDate->copy()->startOfMonth();
-        $academyStudentPrice = \App\Domains\Support\Services\HelperService::getAcademyPricePerStudent();
+        $academyStudentPrice = \App\Domains\Application\Services\HelperService::getAcademyPricePerStudent();
 
         while ($currentMonth <= $lastMonth) {
             $monthStart = $currentMonth->copy()->startOfMonth();
@@ -720,7 +720,7 @@ class ReportService
 
             $months[] = [
                 'month' => $currentMonth->format('Y-m'),
-                'month_name' => \App\Domains\Support\Services\HelperService::getArabicMonthName($currentMonth->month) . ' ' . $currentMonth->year,
+                'month_name' => \App\Domains\Application\Services\HelperService::getArabicMonthName($currentMonth->month) . ' ' . $currentMonth->year,
                 'new_enrollments' => $newEnrollments,
                 'student_count' => (int) $studentCount,
                 'amount_due' => (float) $amountDue,
@@ -747,7 +747,7 @@ class ReportService
         $lastMonth = $endDate->copy()->startOfMonth();
 
         // Get teacher_student_price from settings (Unified)
-        $teacherStudentPrice = \App\Domains\Support\Services\HelperService::getTeacherPricePerStudent();
+        $teacherStudentPrice = \App\Domains\Application\Services\HelperService::getTeacherPricePerStudent();
 
         while ($currentMonth <= $lastMonth) {
             $monthStart = $currentMonth->copy()->startOfMonth();
@@ -782,7 +782,7 @@ class ReportService
 
             $months[] = [
                 'month' => $currentMonth->format('Y-m'),
-                'month_name' => \App\Domains\Support\Services\HelperService::getArabicMonthName($currentMonth->month) . ' ' . $currentMonth->year,
+                'month_name' => \App\Domains\Application\Services\HelperService::getArabicMonthName($currentMonth->month) . ' ' . $currentMonth->year,
                 'student_count' => (int) $totalMonthsPaidInMonth,
                 'amount_due' => (float) $amountDue,
                 'amount_paid' => (float) $amountPaid,
@@ -832,7 +832,7 @@ class ReportService
 
             $months[] = [
                 'month' => $currentMonth->format('Y-m'),
-                'month_name' => \App\Domains\Support\Services\HelperService::getArabicMonthName($currentMonth->month) . ' ' . $currentMonth->year,
+                'month_name' => \App\Domains\Application\Services\HelperService::getArabicMonthName($currentMonth->month) . ' ' . $currentMonth->year,
                 'new_enrollments' => $newEnrollments,
                 'confirmed_payments' => (float) $payments,
             ];

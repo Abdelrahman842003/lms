@@ -12,8 +12,8 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
-use App\Domains\Support\Traits\HasDeviceTokens;
-use App\Domains\Support\Traits\GuardsSensitiveFields;
+use App\Domains\Application\Traits\HasDeviceTokens;
+use App\Domains\Application\Traits\GuardsSensitiveFields;
 
 class Admin extends Authenticatable implements FilamentUser
 {

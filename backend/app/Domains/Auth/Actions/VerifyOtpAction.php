@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Auth\Actions;
 
 use App\Domains\Auth\DTOs\LoginDTO;
-use App\Domains\Support\Exceptions\DomainException;
+use App\Domains\Application\Exceptions\DomainException;
 use Illuminate\Support\Facades\Cache;
 
 /**

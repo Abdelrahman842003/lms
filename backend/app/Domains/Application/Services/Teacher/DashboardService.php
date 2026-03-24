@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Application\Services\Teacher;
 
 use App\Domains\Auth\Models\Teacher;
-use App\Domains\Support\Services\CacheService;
+use App\Domains\Application\Services\CacheService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 

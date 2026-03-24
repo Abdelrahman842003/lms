@@ -10,7 +10,7 @@ use App\Domains\Application\Http\Requests\Teacher\Gamification\UpdateGamificatio
 use App\Domains\Gamification\Models\GamificationSetting;
 use App\Domains\Auth\Models\Student;
 use App\Domains\Gamification\Services\PointService;
-use App\Domains\Support\Traits\ResolvesTeacher;
+use App\Domains\Application\Traits\ResolvesTeacher;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 

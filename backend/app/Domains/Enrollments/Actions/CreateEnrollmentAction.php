@@ -9,9 +9,9 @@ use App\Domains\Enrollments\Models\Enrollment;
 use App\Domains\Enrollments\Repositories\Contracts\EnrollmentRepository;
 use App\Domains\Subscriptions\Specifications\PlanActive;
 use App\Domains\Subscriptions\Specifications\SeatAvailable;
-use App\Domains\Support\Exceptions\DomainException;
-use App\Domains\Support\Exceptions\SeatLimitException;
-use App\Domains\Support\Exceptions\SubscriptionExpiredException;
+use App\Domains\Application\Exceptions\DomainException;
+use App\Domains\Application\Exceptions\SeatLimitException;
+use App\Domains\Application\Exceptions\SubscriptionExpiredException;
 use Illuminate\Support\Facades\DB;
 
 /**

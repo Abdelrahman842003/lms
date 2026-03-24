@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Exams\Exceptions;
 
-use App\Domains\Support\Exceptions\ApiException;
+use App\Domains\Application\Exceptions\ApiException;
 
 class ExamNotFoundException extends ApiException
 {

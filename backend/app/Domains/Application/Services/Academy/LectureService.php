@@ -9,7 +9,7 @@ use App\Domains\Auth\Models\Academy;
 use App\Domains\Auth\Models\Teacher;
 use App\Domains\Lectures\DTOs\LectureData;
 use App\Domains\Lectures\Models\Lecture;
-use App\Domains\Support\Filters\LectureFilter;
+use App\Domains\Application\Filters\LectureFilter;
 use Carbon\Carbon;
 use Illuminate\Pagination\LengthAwarePaginator;
 

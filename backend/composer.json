@@ -52,9 +52,9 @@
             "Database\\Seeders\\": "database/seeders/"
         },
         "files": [
-            "app/Domains/Support/Helpers/secrets.php",
-            "app/Domains/Support/Helpers/general.php",
-            "app/Domains/Support/Helpers/helpers.php"
+            "app/Domains/Application/Helpers/secrets.php",
+            "app/Domains/Application/Helpers/general.php",
+            "app/Domains/Application/Helpers/helpers.php"
         ]
     },
     "autoload-dev": {

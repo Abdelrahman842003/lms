@@ -12,7 +12,7 @@ use App\Domains\Lectures\Models\Lecture;
 use App\Domains\Videos\Enums\VideoOwnerType;
 use App\Domains\Videos\Enums\VideoProcessingStatus;
 use App\Domains\Videos\Enums\VideoStatus;
-use App\Domains\Support\Traits\GuardsSensitiveFields;
+use App\Domains\Application\Traits\GuardsSensitiveFields;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;

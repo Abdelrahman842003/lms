@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Log;
 
 class ExamController extends Controller
 {
-    use \App\Domains\Support\Traits\ResolvesTeacher;
+    use \App\Domains\Application\Traits\ResolvesTeacher;
 
     public function __construct(
         private ExamService $service

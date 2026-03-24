@@ -9,7 +9,7 @@ use App\Domains\Auth\Models\Admin;
 use App\Domains\Auth\Models\Guardian;
 use App\Domains\Auth\Models\Secretary;
 use App\Domains\Auth\Models\Student;
-use App\Domains\Support\Models\Setting;
+use App\Domains\Application\Models\Setting;
 use App\Domains\Auth\Models\Teacher;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;

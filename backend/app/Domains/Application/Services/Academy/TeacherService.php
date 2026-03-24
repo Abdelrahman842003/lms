@@ -8,8 +8,8 @@ use App\Domains\Auth\Models\Academy;
 use App\Domains\Auth\Models\Teacher;
 use App\Domains\Enrollments\Models\Enrollment;
 use App\Domains\Media\Services\ImageService;
-use App\Domains\Support\Models\TeacherAttendanceLog;
-use App\Domains\Support\Services\CacheService;
+use App\Domains\Application\Models\TeacherAttendanceLog;
+use App\Domains\Application\Services\CacheService;
 use Carbon\Carbon;
 use Illuminate\Pagination\LengthAwarePaginator;
 

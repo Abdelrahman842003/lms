@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Application\Http\Controllers\Traits;
 
-use App\Domains\Support\Services\FileUploadValidator;
+use App\Domains\Application\Services\FileUploadValidator;
 use App\Domains\Application\Http\Responses\SecureFileResponse;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;

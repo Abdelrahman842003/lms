@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Enrollments\Observers;
 
 use App\Domains\Enrollments\Models\Enrollment;
-use App\Domains\Support\Services\CacheService;
+use App\Domains\Application\Services\CacheService;
 
 class EnrollmentObserver
 {

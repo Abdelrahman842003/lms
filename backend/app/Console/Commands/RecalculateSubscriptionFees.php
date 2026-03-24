@@ -4,7 +4,7 @@ namespace App\Console\Commands;
 
 use App\Domains\Auth\Models\Academy;
 use App\Domains\Auth\Models\Teacher;
-use App\Domains\Support\Services\HelperService;
+use App\Domains\Application\Services\HelperService;
 use Illuminate\Console\Command;
 
 class RecalculateSubscriptionFees extends Command
