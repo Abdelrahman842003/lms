@@ -10,6 +10,7 @@ use App\Domains\Application\Http\Controllers\Student\GamificationController;
 use App\Domains\Application\Http\Controllers\Student\MistakesController;
 use App\Domains\Application\Http\Controllers\Student\VideoController;
 use App\Domains\Application\Http\Controllers\Student\StudentVideoQuizController;
+use App\Domains\Application\Http\Controllers\Student\StudentDashboardController;
 use App\Domains\Auth\Http\Middleware\EnsureTeacherNotSuspendedForStudent;
 
 // ============================================

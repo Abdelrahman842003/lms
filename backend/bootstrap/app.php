@@ -30,7 +30,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'throttle.login' => \App\Domains\Auth\Http\Middleware\LoginThrottleMiddleware::class,
             // Rate limiting middleware aliases
             'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
-            'api.throttle' => \App\Http\Middleware\ApiRateLimiter::class,
+            'api.throttle' => \App\Domains\Application\Http\Middleware\ApiRateLimiter::class,
         ]);
         
         $middleware->validateCsrfTokens(except: [

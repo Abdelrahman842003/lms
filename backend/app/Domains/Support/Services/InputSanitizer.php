@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domains\Support\Services;
 
 use HTMLPurifier;
@@ -120,19 +122,24 @@ class InputSanitizer
      */
     public function sanitizeFilename(string $filename): string
     {
-        // Remove path traversal
         $filename = basename($filename);
-        
-        // Remove null bytes
         $filename = str_replace(chr(0), '', $filename);
         
-        // Remove dangerous characters
-        $filename = preg_replace('/[^\w\.\-]/', '_', $filename);
+        $parts = explode('.', $filename);
+        $extension = strtolower(array_pop($parts) ?? '');
+        $basename = implode('_', $parts);
         
-        // Prevent double extensions
-        $filename = preg_replace('/\.(?=.*\.)/', '_', $filename);
+        $dangerousExtensions = ['php', 'php3', 'php4', 'php5', 'phtml', 'phar', 'exe', 'bat', 'cmd', 'sh'];
+        if (in_array($extension, $dangerousExtensions)) {
+            $extension = 'txt';
+        }
         
-        return $filename;
+        $basename = preg_replace('/[^\w\-]/', '_', $basename);
+        $basename = substr($basename, 0, 50);
+        
+        $suffix = bin2hex(random_bytes(8));
+        
+        return trim("{$basename}_{$suffix}.{$extension}", '_');
     }
 
     /**

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domains\Application\Http\Responses;
 
 use Illuminate\Support\Facades\Storage;
@@ -14,14 +16,27 @@ class SecureFileResponse
         'js', 'html', 'htm', 'svg',
     ];
 
+    protected function validatePath(string $path): string
+    {
+        $path = str_replace(['../', '..\\', '..'], '', $path);
+        $path = str_replace(chr(0), '', $path);
+        $path = ltrim($path, '/\\');
+        
+        if (str_contains($path, '..') || str_contains($path, "\0")) {
+            abort(403, 'Invalid file path');
+        }
+        
+        return $path;
+    }
+
     /**
      * Serve a file securely with proper headers
      */
     public function serve(string $path, ?string $disk = null): Response
     {
+        $path = $this->validatePath($path);
         $disk = $disk ?? config('filesystems.default');
         
-        // Check if file exists
         if (!Storage::disk($disk)->exists($path)) {
             abort(404, 'File not found');
         }
@@ -57,6 +72,7 @@ class SecureFileResponse
      */
     public function streamVideo(string $path, ?string $disk = null): StreamedResponse
     {
+        $path = $this->validatePath($path);
         $disk = $disk ?? config('filesystems.default');
         
         if (!Storage::disk($disk)->exists($path)) {

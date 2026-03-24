@@ -4,7 +4,11 @@ declare(strict_types=1);
 
 namespace App\Domains\Auth\Services;
 
+use App\Domains\Auth\Exceptions\ExpiredRefreshTokenException;
+use App\Domains\Auth\Exceptions\InvalidRefreshTokenException;
+use App\Domains\Auth\Exceptions\TokenUserNotFoundException;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 use Laravel\Sanctum\HasApiTokens;
 use Laravel\Sanctum\PersonalAccessToken;
 
@@ -79,19 +83,20 @@ class TokenService
     {
         $tokenName = 'refresh-token-' . $deviceName;
 
-        // Revoke existing refresh tokens for this device (rotation)
-        $user->tokens()->where('name', $tokenName)->delete();
+        return DB::transaction(function () use ($user, $tokenName) {
+            $user->tokens()->where('name', $tokenName)->lockForUpdate()->delete();
 
-        $refreshToken = $user->createToken(
-            $tokenName,
-            self::REFRESH_TOKEN_ABILITIES,
-            now()->addDays(self::REFRESH_TOKEN_TTL_DAYS)
-        );
+            $refreshToken = $user->createToken(
+                $tokenName,
+                self::REFRESH_TOKEN_ABILITIES,
+                now()->addDays(self::REFRESH_TOKEN_TTL_DAYS)
+            );
 
-        return [
-            'refresh_token' => $refreshToken->plainTextToken,
-            'expires_at' => $refreshToken->accessToken->expires_at->toIso8601String(),
-        ];
+            return [
+                'refresh_token' => $refreshToken->plainTextToken,
+                'expires_at' => $refreshToken->accessToken->expires_at->toIso8601String(),
+            ];
+        });
     }
 
     /**
@@ -100,37 +105,37 @@ class TokenService
      *
      * @param string $refreshToken The refresh token string
      * @return array{access: array{access_token: string, expires_at: string, token_type: string}, refresh: array{refresh_token: string, expires_at: string}}
-     * @throws \Exception If token is invalid, expired, or lacks refresh ability
+     * @throws InvalidRefreshTokenException
+     * @throws ExpiredRefreshTokenException
+     * @throws TokenUserNotFoundException
      */
     public function rotateTokens(string $refreshToken): array
     {
-        $token = PersonalAccessToken::findToken($refreshToken);
+        return DB::transaction(function () use ($refreshToken) {
+            $token = PersonalAccessToken::findToken($refreshToken);
 
-        if (!$token || !$token->can('refresh')) {
-            throw new \Exception('Invalid refresh token');
-        }
+            if (!$token || !$token->can('refresh')) {
+                throw new InvalidRefreshTokenException();
+            }
 
-        // Check if refresh token is expired
-        if ($token->expires_at && $token->expires_at->isPast()) {
+            if ($token->expires_at && $token->expires_at->isPast()) {
+                $token->delete();
+                throw new ExpiredRefreshTokenException();
+            }
+
+            $user = $token->tokenable;
+
+            if (!$user) {
+                $token->delete();
+                throw new TokenUserNotFoundException();
+            }
+
+            $deviceName = str_replace('refresh-token-', '', $token->name);
+
             $token->delete();
-            throw new \Exception('Refresh token expired');
-        }
 
-        $user = $token->tokenable;
-
-        if (!$user) {
-            $token->delete();
-            throw new \Exception('User not found for token');
-        }
-
-        // Extract device name from token name
-        $deviceName = str_replace('refresh-token-', '', $token->name);
-
-        // Delete old refresh token (rotation - prevents token reuse)
-        $token->delete();
-
-        // Create new token pair
-        return $this->generateTokenPair($user, $deviceName);
+            return $this->generateTokenPair($user, $deviceName);
+        });
     }
 
     /**

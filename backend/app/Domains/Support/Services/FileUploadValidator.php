@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domains\Support\Services;
 
 use Illuminate\Http\UploadedFile;
@@ -103,7 +105,11 @@ class FileUploadValidator
     protected function isValidExtension(UploadedFile $file, string $type): bool
     {
         $allowed = $this->allowedExtensions[$type] ?? [];
-        $extension = strtolower($file->getClientOriginalExtension());
+        $extension = strtolower($file->getClientOriginalExtension() ?? '');
+        
+        if (empty($extension)) {
+            return false;
+        }
         
         return in_array($extension, $allowed);
     }
@@ -121,7 +127,12 @@ class FileUploadValidator
      */
     protected function isExtensionSpoofed(UploadedFile $file): bool
     {
-        $extension = strtolower($file->getClientOriginalExtension());
+        $extension = strtolower($file->getClientOriginalExtension() ?? '');
+        
+        if (empty($extension)) {
+            return false;
+        }
+        
         $mimeType = $file->getMimeType();
         
         // Map extensions to expected MIME types
@@ -160,18 +171,22 @@ class FileUploadValidator
      */
     protected function containsMaliciousContent(UploadedFile $file): bool
     {
-        // Read first few KB to check for suspicious patterns
         $handle = fopen($file->getPathname(), 'r');
-        $content = fread($handle, 8192);
+        $content = fread($handle, 32768);
         fclose($handle);
         
         $maliciousPatterns = [
             '/<\?php/i',
+            '/<\?=/i',
             '/<script/i',
             '/javascript:/i',
             '/on\w+\s*=/i',
             '/<%/i',
             '/\%\>/i',
+            '/<svg/i',
+            '/<use\s/i',
+            '/&#x?\d+;/i',
+            '/data:/i',
         ];
         
         foreach ($maliciousPatterns as $pattern) {

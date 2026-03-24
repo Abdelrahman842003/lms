@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domains\Application\Http\Controllers\Traits;
 
 use App\Domains\Support\Services\FileUploadValidator;

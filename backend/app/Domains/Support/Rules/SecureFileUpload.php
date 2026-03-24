@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domains\Support\Rules;
 
 use App\Domains\Support\Services\FileUploadValidator;
