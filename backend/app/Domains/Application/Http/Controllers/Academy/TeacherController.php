@@ -16,6 +16,8 @@ use Illuminate\Http\Request;
 
 class TeacherController extends Controller
 {
+    use \App\Domains\Application\Http\Controllers\Traits\ResolvesOwnedResources;
+
     public function __construct(
         private TeacherService $service
     ) {}

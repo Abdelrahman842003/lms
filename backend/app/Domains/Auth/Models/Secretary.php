@@ -11,10 +11,12 @@ use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Spatie\Permission\Traits\HasRoles;
 use App\Domains\Support\Traits\HasDeviceTokens;
+use App\Domains\Support\Traits\GuardsSensitiveFields;
 use App\Domains\Auth\Models\Academy;
 
 class Secretary extends Authenticatable
 {
+    use GuardsSensitiveFields;
     use HasFactory, Notifiable, HasApiTokens, HasUuids, HasRoles, HasDeviceTokens;
 
     protected static function newFactory()
@@ -22,14 +24,20 @@ class Secretary extends Authenticatable
         return \Database\Factories\SecretaryFactory::new();
     }
 
-    protected $fillable = [
+    /**
+     * Sensitive fields that should never be mass-assignable.
+     * These are in addition to the default sensitive fields in GuardsSensitiveFields trait.
+     *
+     * @var array<int, string>
+     */
+    protected array $customSensitiveFields = [
         'teacher_id',
+    ];
+
+    protected $fillable = [
         'name',
         'phone',
-        'password',
-        'permissions',
         'avatar_key',
-        'is_active',
     ];
 
     protected $hidden = [

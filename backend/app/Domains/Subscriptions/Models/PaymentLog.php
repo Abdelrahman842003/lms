@@ -7,6 +7,7 @@ namespace App\Domains\Subscriptions\Models;
 use App\Domains\Auth\Models\Student;
 use App\Domains\Auth\Models\Teacher;
 use App\Domains\Enrollments\Models\Enrollment;
+use App\Domains\Support\Traits\GuardsSensitiveFields;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -15,7 +16,21 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class PaymentLog extends Model
 {
+    use GuardsSensitiveFields;
     use HasFactory, HasUuids;
+
+    /**
+     * Sensitive fields that should never be mass-assignable.
+     * These are in addition to the default sensitive fields in GuardsSensitiveFields trait.
+     *
+     * @var array<int, string>
+     */
+    protected array $customSensitiveFields = [
+        'confirmation_code',
+        'received_by_id',
+        'received_by_type',
+        'confirmed_at',
+    ];
 
     protected $fillable = [
         'client_side_uuid',
@@ -29,15 +44,8 @@ class PaymentLog extends Model
         'base_price',
         'teacher_amount',
         'price_source',
-        'confirmation_code',
-        'status',
-        'payment_method',
-        'received_by_id',
-        'received_by_type',
-        'confirmed_at',
         'expires_at',
         'ip_address',
-        'device_info',
         'device_info',
         'notes',
         'meta',

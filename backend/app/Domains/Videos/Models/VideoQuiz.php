@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Videos\Models;
 
 use App\Domains\Auth\Models\Teacher;
+use App\Domains\Support\Traits\GuardsSensitiveFields;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -13,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class VideoQuiz extends Model
 {
+    use GuardsSensitiveFields;
     use HasFactory;
     use HasUuids;
 
@@ -22,7 +24,6 @@ class VideoQuiz extends Model
         'title',
         'passing_score',
         'is_required',
-        'is_active',
     ];
 
     protected function casts(): array

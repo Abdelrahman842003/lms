@@ -261,11 +261,21 @@ class NotificationService
     }
 
     /**
-     * Mark notification as read by user
+     * Mark notification as read by user with ownership validation.
+     *
+     * @param Academy $academy The academy context for ownership validation
+     * @param string $notificationId The notification ID to mark as read
+     * @param string $userId The user ID marking the notification
+     * @return AcademyNotification
+     * @throws \Illuminate\Database\Eloquent\ModelNotFoundException
      */
-    public function markAsRead(string $notificationId, string $userId): AcademyNotification
+    public function markAsRead(Academy $academy, string $notificationId, string $userId): AcademyNotification
     {
-        $notification = AcademyNotification::findOrFail($notificationId);
+        // IDOR Protection: Ensure notification belongs to the academy
+        $notification = AcademyNotification::forAcademy($academy->id)
+            ->where('id', $notificationId)
+            ->firstOrFail();
+        
         $notification->markAsReadBy($userId);
 
         return $notification->fresh();

@@ -28,9 +28,9 @@ use App\Domains\Auth\Http\Middleware\EnsureActiveSubscription;
 // ============================================
 // Teacher Authentication Routes
 // ============================================
-Route::post('/register/teacher', [\App\Domains\Application\Http\Controllers\Teacher\TeacherController::class, 'register']);
+Route::middleware('throttle:register')->post('/register/teacher', [\App\Domains\Application\Http\Controllers\Teacher\TeacherController::class, 'register']);
 Route::post('/login/teacher', [TeacherAuthController::class, 'login'])
-    ->middleware(['throttle.login', 'auth.cookies']);
+    ->middleware(['throttle:auth', 'auth.cookies']);
 
 Route::middleware(['auth:sanctum', EnsureUserNotSuspended::class . ':teacher', EnsureActiveSubscription::class])->prefix('teacher')->name('teacher.')->group(function () {
     Route::post('/logout', [TeacherAuthController::class, 'logout']);
@@ -67,12 +67,14 @@ Route::middleware(['auth:sanctum', EnsureUserNotSuspended::class . ':teacher', E
     Route::get('/lectures/{lecture}/sessions', [LectureSessionController::class, 'index']);
     Route::post('/lectures/{lecture}/sessions', [LectureSessionController::class, 'store']);
     
-    // Notifications
+    // Notifications - Rate limited to prevent spam
     Route::get('/notifications', [NotificationController::class, 'index']);
-    Route::post('/notifications', [NotificationController::class, 'store']);
-    Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
     Route::get('/notifications/voice-limit', [NotificationController::class, 'checkVoiceLimit']);
-    Route::post('/notifications/voice', [NotificationController::class, 'storeVoice']);
+    Route::middleware('throttle:notifications')->group(function () {
+        Route::post('/notifications', [NotificationController::class, 'store']);
+        Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+    });
+    Route::middleware('throttle:voice-notifications')->post('/notifications/voice', [NotificationController::class, 'storeVoice']);
     
     // Roles and Permissions
     Route::apiResource('permissions', PermissionController::class);
@@ -84,17 +86,21 @@ Route::middleware(['auth:sanctum', EnsureUserNotSuspended::class . ':teacher', E
     Route::post('/gamification/bonus', [GamificationController::class, 'awardBonus']);
     Route::get('/students/{student}/points', [GamificationController::class, 'studentPoints']);
     
-    // Payment Logs
+    // Payment Logs - Read operations
     Route::get('payments', [PaymentLogController::class, 'index']);
-    Route::post('payments', [PaymentLogController::class, 'store']);
-    Route::post('payments/sync', [PaymentLogController::class, 'syncBatch']);
     Route::get('payments/pending', [PaymentLogController::class, 'pending']);
     Route::get('payments/statistics', [PaymentLogController::class, 'statistics']);
     Route::get('payments/{payment}', [PaymentLogController::class, 'show']);
-    Route::post('payments/{payment}/cancel', [PaymentLogController::class, 'cancel']);
     
-    // Full Payment System for Independent Teacher
-    Route::post('students/{student}/payments', [PaymentController::class, 'store']);
+    // Payment Logs - Write operations (rate limited)
+    Route::middleware('throttle:payments')->group(function () {
+        Route::post('payments', [PaymentLogController::class, 'store']);
+        Route::post('payments/sync', [PaymentLogController::class, 'syncBatch']);
+        Route::post('payments/{payment}/cancel', [PaymentLogController::class, 'cancel']);
+    });
+    
+    // Full Payment System for Independent Teacher - Rate limited
+    Route::middleware('throttle:payments')->post('students/{student}/payments', [PaymentController::class, 'store']);
     
     // Sync Errors
     Route::get('sync-errors', [SyncErrorController::class, 'index']);
@@ -109,31 +115,40 @@ Route::middleware(['auth:sanctum', EnsureUserNotSuspended::class . ':teacher', E
     
     // Subscription
     Route::get('subscription', [SubscriptionController::class, 'show']);
-    Route::post('subscription/renew', [SubscriptionController::class, 'requestRenewal']);
+    Route::middleware('throttle:payments')->post('subscription/renew', [SubscriptionController::class, 'requestRenewal']);
     
-    // QR Code Attendance Scanning
-    Route::post('/scan/checkin', [\App\Domains\Application\Http\Controllers\Teacher\ScanController::class, 'checkin']);
-    Route::post('/scan/checkout', [\App\Domains\Application\Http\Controllers\Teacher\ScanController::class, 'checkout']);
+    // QR Code Attendance Scanning - Rate limited
+    Route::middleware('throttle:attendance')->group(function () {
+        Route::post('/scan/checkin', [\App\Domains\Application\Http\Controllers\Teacher\ScanController::class, 'checkin']);
+        Route::post('/scan/checkout', [\App\Domains\Application\Http\Controllers\Teacher\ScanController::class, 'checkout']);
+    });
     Route::get('/scan/today-status', [\App\Domains\Application\Http\Controllers\Teacher\ScanController::class, 'todayStatus']);
     
-    // Videos Management (New: Direct-to-R2 multipart upload)
-    Route::post('videos/initiate-upload', [VideoUploadController::class, 'initiateUpload'])->middleware('throttle:video-upload');
-    Route::post('videos/complete-upload', [VideoUploadController::class, 'completeUpload']);
+    // Videos Management - Upload rate limited
+    Route::middleware('throttle:video-upload')->group(function () {
+        Route::post('videos/initiate-upload', [VideoUploadController::class, 'initiateUpload']);
+        Route::post('videos/complete-upload', [VideoUploadController::class, 'completeUpload']);
+    });
     Route::delete('videos/abort-upload', [VideoUploadController::class, 'abortUpload']);
     Route::get('videos/upload-status/{sessionId}', [VideoUploadController::class, 'uploadStatus']);
+    
     // Videos CRUD (store no longer accepts video bytes — use initiate-upload instead)
     Route::get('videos', [VideoController::class, 'index']);
     Route::get('videos/{video}', [VideoController::class, 'show']);
     Route::put('videos/{video}', [VideoController::class, 'update']);
     Route::delete('videos/{video}', [VideoController::class, 'destroy']);
-    Route::post('videos/{video}/attachments', [VideoController::class, 'uploadAttachments']);
+    Route::middleware('throttle:uploads')->post('videos/{video}/attachments', [VideoController::class, 'uploadAttachments']);
     Route::delete('videos/{video}/attachments/{attachment}', [VideoController::class, 'deleteAttachment']);
     Route::post('videos/{video}/retry-processing', [VideoController::class, 'retryProcessing']);
     Route::post('videos/{video}/publish', [VideoController::class, 'publish']);
     Route::get('videos/{video}/thumbnail', [VideoController::class, 'thumbnail']);
     Route::get('videos/{video}/thumbnail-url', [VideoController::class, 'thumbnailUrl']);
-    Route::get('videos/{video}/stream', [VideoController::class, 'stream']);
-    Route::get('videos/{video}/stream-url', [VideoController::class, 'streamUrl']);
+    
+    // Video streaming - Rate limited
+    Route::middleware('throttle:video-stream')->group(function () {
+        Route::get('videos/{video}/stream', [VideoController::class, 'stream']);
+        Route::get('videos/{video}/stream-url', [VideoController::class, 'streamUrl']);
+    });
     Route::get('videos/{video}/comments', [VideoController::class, 'comments']);
     Route::post('videos/{video}/comments/{commentId}/hide', [VideoController::class, 'hideComment']);
     Route::delete('videos/{video}/comments/{commentId}', [VideoController::class, 'deleteComment']);

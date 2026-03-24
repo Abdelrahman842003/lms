@@ -9,7 +9,7 @@ use App\Domains\Application\Http\Controllers\Guardian\NotificationController;
 // Guardian (Parent) Authentication Routes
 // ============================================
 Route::post('/login/parent', [GuardianAuthController::class, 'login'])
-    ->middleware(['throttle.login', 'auth.cookies']);
+    ->middleware(['throttle:auth', 'auth.cookies']);
 
 // NOTE: Guardian routes do not currently have suspension middleware.
 // If Guardian suspension is needed in the future:
@@ -27,11 +27,13 @@ Route::middleware('auth:sanctum')->prefix('parent')->name('parent.')->group(func
     // Child Summary
     Route::get('/children/{studentId}/summary', [SummaryController::class, 'index']);
     
-    // Notifications
+    // Notifications - Rate limited
     Route::get('/notifications', [NotificationController::class, 'index']);
-    Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
-    Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead']);
+    Route::middleware('throttle:notifications')->group(function () {
+        Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+        Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead']);
+    });
     
-    // Device Tokens for FCM
-    Route::post('/device-tokens', [\App\Domains\Application\Http\Controllers\Api\DeviceTokenController::class, 'store']);
+    // Device Tokens for FCM - Rate limited
+    Route::middleware('throttle:uploads')->post('/device-tokens', [\App\Domains\Application\Http\Controllers\Api\DeviceTokenController::class, 'store']);
 });

@@ -21,6 +21,7 @@ use Illuminate\Support\Facades\Log;
 class LectureController extends Controller
 {
     use \App\Domains\Support\Traits\ResolvesTeacher;
+    use \App\Domains\Application\Http\Controllers\Traits\ResolvesOwnedResources;
 
     public function __construct(
         private LectureService $service,

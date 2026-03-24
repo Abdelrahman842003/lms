@@ -4,15 +4,45 @@ declare(strict_types=1);
 
 namespace App\Domains\Application\Http\Requests\Academy\Student;
 
-use Illuminate\Foundation\Http\FormRequest;
+use App\Domains\Application\Http\Requests\BaseAuthorizedRequest;
+use App\Domains\Auth\Models\Student;
 
-class UpdateStudentRequest extends FormRequest
+/**
+ * Form request for updating an existing student.
+ *
+ * BEFORE (Insecure):
+ * public function authorize(): bool
+ * {
+ *     return true;  // ❌ No authorization check - allows IDOR attacks!
+ * }
+ *
+ * AFTER (Secure):
+ * Uses BaseAuthorizedRequest with policy-based authorization.
+ * Requires 'update' ability on the specific Student model instance.
+ */
+class UpdateStudentRequest extends BaseAuthorizedRequest
 {
-    public function authorize(): bool
-    {
-        return true;
-    }
+    /**
+     * The ability name for authorization.
+     */
+    protected string $ability = 'update';
 
+    /**
+     * The model class for policy checking.
+     */
+    protected string $modelClass = Student::class;
+
+    /**
+     * Whether to check against a specific model instance.
+     * True for 'update' operations (requires model instance for policy).
+     */
+    protected bool $checkInstance = true;
+
+    /**
+     * Get the validation rules that apply to the request.
+     *
+     * @return array<string, mixed>
+     */
     public function rules(): array
     {
         return [
@@ -28,6 +58,11 @@ class UpdateStudentRequest extends FormRequest
         ];
     }
 
+    /**
+     * Get custom messages for validator errors.
+     *
+     * @return array<string, string>
+     */
     public function messages(): array
     {
         return [

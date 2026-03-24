@@ -16,25 +16,27 @@ use App\Domains\Auth\Http\Middleware\EnsureTeacherNotSuspendedForStudent;
 // Student Authentication Routes
 // ============================================
 Route::post('/login/student', [StudentAuthController::class, 'login'])
-    ->middleware(['throttle.login', 'auth.cookies']);
+    ->middleware(['throttle:auth', 'auth.cookies']);
 
 Route::middleware(['auth:sanctum', EnsureTeacherNotSuspendedForStudent::class])->prefix('student')->group(function () {
     Route::post('/logout', [StudentAuthController::class, 'logout']);
     Route::get('/me', [StudentAuthController::class, 'me']);
     Route::post('/change-password', [StudentAuthController::class, 'changePassword']);
     
-    // Attendance
-    Route::post('/attend', [StudentAttendanceController::class, 'markAttendance']);
+    // Attendance - Rate limited to prevent spam
+    Route::middleware('throttle:attendance')->post('/attend', [StudentAttendanceController::class, 'markAttendance']);
     Route::get('/exams', [StudentExamController::class, 'index']);
     Route::get('/lectures', [StudentLectureController::class, 'index']);
     Route::get('/attendance', [StudentAttendanceController::class, 'index']);
     Route::get('/dashboard', [StudentDashboardController::class, 'getDashboard']);
     
-    // Exam Taking Routes
+    // Exam Taking Routes - Rate limited answer submission
     Route::get('/exams/{exam}', [StudentExamController::class, 'show']);
     Route::post('/exams/{exam}/start', [StudentExamController::class, 'start']);
-    Route::post('/exams/attempts/{attempt}/answer', [StudentExamController::class, 'submitAnswer']);
-    Route::post('/exams/attempts/{attempt}/skip', [StudentExamController::class, 'skipQuestion']);
+    Route::middleware('throttle:exam-submit')->group(function () {
+        Route::post('/exams/attempts/{attempt}/answer', [StudentExamController::class, 'submitAnswer']);
+        Route::post('/exams/attempts/{attempt}/skip', [StudentExamController::class, 'skipQuestion']);
+    });
     Route::post('/exams/attempts/{attempt}/terminate', [StudentExamController::class, 'terminate']);
     Route::get('/exams/attempts/{attempt}/status', [StudentExamController::class, 'attemptStatus']);
     Route::get('/exams/{exam}/result', [StudentExamController::class, 'result']);
@@ -43,10 +45,12 @@ Route::middleware(['auth:sanctum', EnsureTeacherNotSuspendedForStudent::class])-
     Route::get('/teachers', [StudentAuthController::class, 'teachers']);
     Route::get('/teachers/{teacher}/dashboard', [StudentAuthController::class, 'teacherDashboard']);
     
-    // Notifications
+    // Notifications - Rate limited
     Route::get('/notifications', [NotificationController::class, 'index']);
-    Route::post('/notifications', [NotificationController::class, 'store']);
-    Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+    Route::middleware('throttle:notifications')->group(function () {
+        Route::post('/notifications', [NotificationController::class, 'store']);
+        Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+    });
     
     // Gamification
     Route::get('/points', [GamificationController::class, 'index']);

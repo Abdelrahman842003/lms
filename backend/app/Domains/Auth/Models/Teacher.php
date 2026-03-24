@@ -16,6 +16,7 @@ use App\Domains\Lectures\Models\Lecture;
 use App\Domains\Support\Models\TeacherAttendanceLog;
 use App\Domains\Auth\Models\Secretary;
 use App\Domains\Support\Traits\HasDeviceTokens;
+use App\Domains\Support\Traits\GuardsSensitiveFields;
 use App\Domains\Subscriptions\Traits\HasSubscriptionStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -25,6 +26,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 class Teacher extends Authenticatable
 {
+    use GuardsSensitiveFields;
     use HasFactory, Notifiable, HasApiTokens, HasUuids, HasDeviceTokens, HasSubscriptionStatus;
 
     protected static function newFactory()
@@ -38,22 +40,9 @@ class Teacher extends Authenticatable
         'name',
         'phone',
         'subject',
-        'password',
         'avatar_key',
-        'status',
-        'subscription_fee',
-        'paid_amount',
-        'is_independent_active',
-        'trial_period_days',
-        'plan_type',
-        'plan_expires_at',
         'subscription_period',
         'custom_expires_at',
-        'plan_max_students',
-        'is_unlimited_students',
-        'storage_limit_gb',
-        'storage_used_bytes',
-        'discount_percent',
     ];
 
     protected $hidden = [

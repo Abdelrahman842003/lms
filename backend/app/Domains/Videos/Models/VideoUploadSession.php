@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Videos\Models;
 
 use App\Domains\Videos\Enums\VideoUploadSessionStatus;
+use App\Domains\Support\Traits\GuardsSensitiveFields;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class VideoUploadSession extends Model
 {
+    use GuardsSensitiveFields;
     use HasUuids;
 
     protected $fillable = [
@@ -24,7 +26,6 @@ class VideoUploadSession extends Model
         'declared_mime',
         'declared_size_bytes',
         'total_parts',
-        'status',
         'initiated_at',
         'completed_at',
         'aborted_at',

@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace App\Domains\Support\Models;
 
+use App\Domains\Support\Traits\GuardsSensitiveFields;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class SyncError extends Model
 {
+    use GuardsSensitiveFields;
     use HasFactory, HasUuids;
 
     protected $fillable = [
@@ -19,7 +21,6 @@ class SyncError extends Model
         'error_message',
         'error_code',
         'user_id',
-        'user_type',
         'resolved',
         'resolved_by',
         'resolved_at',

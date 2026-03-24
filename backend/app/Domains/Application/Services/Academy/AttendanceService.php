@@ -86,11 +86,21 @@ class AttendanceService
     }
 
     /**
-     * Update notes for attendance log
+     * Update notes for attendance log with ownership validation.
+     *
+     * @param Academy $academy The academy context for ownership validation
+     * @param string $logId The log ID to update
+     * @param string $notes The new notes content
+     * @return TeacherAttendanceLog
+     * @throws \Illuminate\Database\Eloquent\ModelNotFoundException
      */
-    public function updateNotes(string $logId, string $notes): TeacherAttendanceLog
+    public function updateNotes(Academy $academy, string $logId, string $notes): TeacherAttendanceLog
     {
-        $log = TeacherAttendanceLog::findOrFail($logId);
+        // IDOR Protection: Ensure log belongs to the academy
+        $log = TeacherAttendanceLog::forAcademy($academy->id)
+            ->where('id', $logId)
+            ->firstOrFail();
+        
         $log->update(['notes' => $notes]);
 
         return $log->fresh();

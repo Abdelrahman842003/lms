@@ -4,15 +4,45 @@ declare(strict_types=1);
 
 namespace App\Domains\Application\Http\Requests\Academy\Student;
 
-use Illuminate\Foundation\Http\FormRequest;
+use App\Domains\Application\Http\Requests\BaseAuthorizedRequest;
+use App\Domains\Auth\Models\Student;
 
-class StoreStudentRequest extends FormRequest
+/**
+ * Form request for storing a new student.
+ *
+ * BEFORE (Insecure):
+ * public function authorize(): bool
+ * {
+ *     return true;  // ❌ No authorization check!
+ * }
+ *
+ * AFTER (Secure):
+ * Uses BaseAuthorizedRequest with policy-based authorization.
+ * Requires 'create' ability on Student model.
+ */
+class StoreStudentRequest extends BaseAuthorizedRequest
 {
-    public function authorize(): bool
-    {
-        return true;
-    }
+    /**
+     * The ability name for authorization.
+     */
+    protected string $ability = 'create';
 
+    /**
+     * The model class for policy checking.
+     */
+    protected string $modelClass = Student::class;
+
+    /**
+     * Whether to check against a specific model instance.
+     * False for 'create' operations (no model instance exists yet).
+     */
+    protected bool $checkInstance = false;
+
+    /**
+     * Get the validation rules that apply to the request.
+     *
+     * @return array<string, mixed>
+     */
     public function rules(): array
     {
         return [
@@ -29,6 +59,11 @@ class StoreStudentRequest extends FormRequest
         ];
     }
 
+    /**
+     * Get custom messages for validator errors.
+     *
+     * @return array<string, string>
+     */
     public function messages(): array
     {
         return [

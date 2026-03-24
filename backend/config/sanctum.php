@@ -45,6 +45,20 @@ return [
     | considered expired. This will override any values set in the token's
     | "expires_at" attribute, but first-party sessions are not affected.
     |
+    | SECURITY NOTE: We set this to null because we use explicit expires_at
+    | values per token type in TokenService:
+    | - Access tokens: 15 minutes (ACCESS_TOKEN_TTL_MINUTES)
+    | - Refresh tokens: 30 days (REFRESH_TOKEN_TTL_DAYS)
+    |
+    | This approach provides better granularity and security control.
+    |
+    | Token Lifecycle:
+    | 1. Access token expires after 15 minutes
+    | 2. Client uses refresh token to get new token pair
+    | 3. Old refresh token is revoked (rotation)
+    | 4. New token pair is issued
+    | 5. Expired tokens are cleaned up daily via tokens:cleanup command
+    |
     */
 
     'expiration' => null,

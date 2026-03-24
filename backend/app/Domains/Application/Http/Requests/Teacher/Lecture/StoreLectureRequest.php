@@ -4,15 +4,46 @@ declare(strict_types=1);
 
 namespace App\Domains\Application\Http\Requests\Teacher\Lecture;
 
-use Illuminate\Foundation\Http\FormRequest;
+use App\Domains\Application\Http\Requests\BaseAuthorizedRequest;
+use App\Domains\Lectures\Models\Lecture;
 
-class StoreLectureRequest extends FormRequest
+/**
+ * Form request for storing a new lecture.
+ *
+ * BEFORE (Insecure):
+ * public function authorize(): bool
+ * {
+ *     return true; // Authorization handled by ResolvesTeacher trait
+ *     // ❌ This is insecure - authorization should be in the Form Request!
+ * }
+ *
+ * AFTER (Secure):
+ * Uses BaseAuthorizedRequest with policy-based authorization.
+ * Requires 'create' ability on Lecture model.
+ */
+class StoreLectureRequest extends BaseAuthorizedRequest
 {
-    public function authorize(): bool
-    {
-        return true; // Authorization handled by ResolvesTeacher trait
-    }
+    /**
+     * The ability name for authorization.
+     */
+    protected string $ability = 'create';
 
+    /**
+     * The model class for policy checking.
+     */
+    protected string $modelClass = Lecture::class;
+
+    /**
+     * Whether to check against a specific model instance.
+     * False for 'create' operations (no model instance exists yet).
+     */
+    protected bool $checkInstance = false;
+
+    /**
+     * Get the validation rules that apply to the request.
+     *
+     * @return array<string, mixed>
+     */
     public function rules(): array
     {
         return [
@@ -29,6 +60,11 @@ class StoreLectureRequest extends FormRequest
         ];
     }
 
+    /**
+     * Get custom messages for validator errors.
+     *
+     * @return array<string, string>
+     */
     public function messages(): array
     {
         return [

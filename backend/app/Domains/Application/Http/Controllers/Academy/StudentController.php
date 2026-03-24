@@ -22,6 +22,8 @@ use Illuminate\Support\Facades\Log;
 
 class StudentController extends Controller
 {
+    use \App\Domains\Application\Http\Controllers\Traits\ResolvesOwnedResources;
+
     public function __construct(
         private StudentService $service
     ) {}

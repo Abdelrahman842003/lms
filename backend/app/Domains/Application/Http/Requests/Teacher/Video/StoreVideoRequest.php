@@ -4,16 +4,46 @@ declare(strict_types=1);
 
 namespace App\Domains\Application\Http\Requests\Teacher\Video;
 
+use App\Domains\Application\Http\Requests\BaseAuthorizedRequest;
+use App\Domains\Videos\Models\Video;
 use App\Domains\Videos\Services\VideoSettingsService;
-use Illuminate\Foundation\Http\FormRequest;
 
-class StoreVideoRequest extends FormRequest
+/**
+ * Form request for storing a new video.
+ *
+ * BEFORE (Insecure):
+ * public function authorize(): bool
+ * {
+ *     return true;  // ❌ No authorization check!
+ * }
+ *
+ * AFTER (Secure):
+ * Uses BaseAuthorizedRequest with policy-based authorization.
+ * Requires 'create' ability on Video model.
+ */
+class StoreVideoRequest extends BaseAuthorizedRequest
 {
-    public function authorize(): bool
-    {
-        return true;
-    }
+    /**
+     * The ability name for authorization.
+     */
+    protected string $ability = 'create';
 
+    /**
+     * The model class for policy checking.
+     */
+    protected string $modelClass = Video::class;
+
+    /**
+     * Whether to check against a specific model instance.
+     * False for 'create' operations (no model instance exists yet).
+     */
+    protected bool $checkInstance = false;
+
+    /**
+     * Get the validation rules that apply to the request.
+     *
+     * @return array<string, mixed>
+     */
     public function rules(): array
     {
         $settings = app(VideoSettingsService::class);

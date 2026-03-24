@@ -20,11 +20,17 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->append(\Illuminate\Http\Middleware\HandleCors::class);
+        
+        // XSS Protection - Sanitize all incoming request data
+        $middleware->append(\App\Http\Middleware\SanitizeInput::class);
 
         // Register middleware aliases
         $middleware->alias([
             'auth.cookies' => \App\Domains\Auth\Http\Middleware\SetAuthCookies::class,
             'throttle.login' => \App\Domains\Auth\Http\Middleware\LoginThrottleMiddleware::class,
+            // Rate limiting middleware aliases
+            'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
+            'api.throttle' => \App\Http\Middleware\ApiRateLimiter::class,
         ]);
         
         $middleware->validateCsrfTokens(except: [

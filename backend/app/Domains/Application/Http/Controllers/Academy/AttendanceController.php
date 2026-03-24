@@ -70,7 +70,8 @@ class AttendanceController extends Controller
     public function updateNotes(UpdateAttendanceNotesRequest $request, string $logId): JsonResponse
     {
         try {
-            $log = $this->service->updateNotes($logId, $request->validated('notes'));
+            $academy = $request->user();
+            $log = $this->service->updateNotes($academy, $logId, $request->validated('notes'));
 
             return $this->successResponse(
                 new AttendanceLogResource($log),

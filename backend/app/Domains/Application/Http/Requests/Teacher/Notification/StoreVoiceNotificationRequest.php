@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Application\Http\Requests\Teacher\Notification;
 
 use App\Domains\Notifications\Services\VoiceNotificationService;
+use App\Domains\Support\Rules\SecureFileUpload;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreVoiceNotificationRequest extends FormRequest
@@ -18,7 +19,7 @@ class StoreVoiceNotificationRequest extends FormRequest
     {
         return [
             'title' => 'required|string|max:255',
-            'voice' => 'required|file|max:2048', // max 2MB
+            'voice' => ['required', 'file', new SecureFileUpload('audio')],
             'duration' => 'required|integer|min:1|max:' . VoiceNotificationService::MAX_DURATION,
             'recipient_type' => 'required|in:all,grade,group,admin',
             'grade_id' => 'required_if:recipient_type,grade|exists:grades,id',

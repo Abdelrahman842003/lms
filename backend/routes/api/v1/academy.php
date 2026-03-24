@@ -28,7 +28,7 @@ use App\Domains\Auth\Http\Middleware\EnsureActiveSubscription;
 // ============================================
 Route::prefix('academy')->name('academy.')->group(function () {
     Route::post('/login', [AcademyAuthController::class, 'login'])
-        ->middleware(['throttle.login', 'auth.cookies']);
+        ->middleware(['throttle:auth', 'auth.cookies']);
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/logout', [AcademyAuthController::class, 'logout']);
         Route::get('/me', [AcademyAuthController::class, 'me']);
@@ -62,12 +62,14 @@ Route::middleware(['auth:sanctum', EnsureActiveSubscription::class])->prefix('ac
     Route::put('attendance/{log}/notes', [AttendanceController::class, 'updateNotes']);
     Route::get('attendance/stats', [AttendanceController::class, 'stats']);
     
-    // Notifications
+    // Notifications - Rate limited to prevent spam
     Route::get('notifications', [NotificationController::class, 'index']);
-    Route::post('notifications', [NotificationController::class, 'store']);
-    Route::post('notifications/{id}/read', [NotificationController::class, 'markAsRead']);
-    Route::post('notifications/send-to-teachers', [NotificationController::class, 'sendToTeachers']);
     Route::get('notifications/unread-count', [NotificationController::class, 'unreadCount']);
+    Route::middleware('throttle:notifications')->group(function () {
+        Route::post('notifications', [NotificationController::class, 'store']);
+        Route::post('notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+        Route::post('notifications/send-to-teachers', [NotificationController::class, 'sendToTeachers']);
+    });
     
     // Reports
     Route::get('reports/attendance', [ReportController::class, 'attendanceReport']);
@@ -101,12 +103,14 @@ Route::middleware(['auth:sanctum', EnsureActiveSubscription::class])->prefix('ac
     Route::put('students/{id}/toggle-status', [StudentController::class, 'toggleStatus']);
     Route::apiResource('students', StudentController::class);
     
-    // Payments
-    Route::post('payments', [PaymentController::class, 'store']);
+    // Payments - Rate limited to prevent duplicate charges
+    Route::middleware('throttle:payments')->group(function () {
+        Route::post('payments', [PaymentController::class, 'store']);
+    });
     
     // Subscription
     Route::get('subscription', [SubscriptionController::class, 'show']);
-    Route::post('subscription/renew', [SubscriptionController::class, 'requestRenewal']);
+    Route::middleware('throttle:payments')->post('subscription/renew', [SubscriptionController::class, 'requestRenewal']);
     
     // Gamification
     Route::get('/leaderboard', [GamificationController::class, 'leaderboard']);

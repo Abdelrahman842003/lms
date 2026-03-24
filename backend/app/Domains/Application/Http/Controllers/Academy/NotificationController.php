@@ -63,7 +63,9 @@ class NotificationController extends Controller
         $academy = $request->user();
 
         try {
-            $notification = $this->service->markAsRead($id, $academy->id);
+            // Get user ID for marking as read (could be academy or secretary)
+            $userId = $request->user()->id;
+            $notification = $this->service->markAsRead($academy, $id, $userId);
 
             return $this->successResponse([
                 'notification' => $notification,

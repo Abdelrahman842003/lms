@@ -7,6 +7,7 @@ namespace App\Domains\Exams\Models;
 use App\Domains\Auth\Models\Teacher;
 use App\Domains\Enrollments\Models\Grade;
 use App\Domains\Enrollments\Models\Group;
+use App\Domains\Support\Traits\GuardsSensitiveFields;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -15,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Exam extends Model
 {
+    use GuardsSensitiveFields;
     use HasFactory, HasUuids;
 
     protected static function newFactory()
@@ -34,7 +36,6 @@ class Exam extends Model
         'group_id',
         'actual_question_count',
         'time_per_question',
-        'is_active',
         'activated_at',
         'ended_at',
     ];

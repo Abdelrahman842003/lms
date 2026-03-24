@@ -15,6 +15,7 @@
         "barryvdh/laravel-dompdf": "*",
         "bezhansalleh/filament-google-analytics": "^3.2",
         "charrafimed/global-search-modal": "^5.0",
+        "ezyang/htmlpurifier": "^4.18",
         "fakerphp/faker": "^1.23",
         "filament/filament": "^4.0",
         "filament/spatie-laravel-media-library-plugin": "^4.0",
@@ -52,7 +53,8 @@
         },
         "files": [
             "app/Domains/Support/Helpers/secrets.php",
-            "app/Domains/Support/Helpers/general.php"
+            "app/Domains/Support/Helpers/general.php",
+            "app/Domains/Support/Helpers/helpers.php"
         ]
     },
     "autoload-dev": {

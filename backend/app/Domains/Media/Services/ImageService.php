@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Media\Services;
 
+use App\Domains\Support\Services\FileUploadValidator;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Intervention\Image\ImageManager;
@@ -12,10 +13,12 @@ use Intervention\Image\Drivers\Gd\Driver;
 class ImageService
 {
     private ImageManager $imageManager;
+    private FileUploadValidator $validator;
 
     public function __construct()
     {
         $this->imageManager = new ImageManager(new Driver());
+        $this->validator = app(FileUploadValidator::class);
     }
 
     /**
@@ -28,7 +31,7 @@ class ImageService
      */
     public function processAndUpload(UploadedFile $file, string $directory, string $filename): string
     {
-        // Validate image
+        // Validate image using secure file upload validator
         $this->validateImage($file);
 
         // Read and process image
@@ -82,21 +85,18 @@ class ImageService
     }
 
     /**
-     * Validate uploaded image
+     * Validate uploaded image using secure file upload validator
      *
      * @param UploadedFile $file
      * @throws \Exception
      */
     private function validateImage(UploadedFile $file): void
     {
-        // Check if file is an image
-        if (!in_array($file->getMimeType(), ['image/jpeg', 'image/png', 'image/gif', 'image/webp'])) {
-            throw new \Exception('File must be an image (JPEG, PNG, GIF, or WebP)');
-        }
-
-        // Check file size (max 5MB)
-        if ($file->getSize() > 5 * 1024 * 1024) {
-            throw new \Exception('Image size must not exceed 5MB');
+        // Use the secure file upload validator for comprehensive validation
+        $errors = $this->validator->validate($file, 'image');
+        
+        if (!empty($errors)) {
+            throw new \Exception(implode(', ', $errors));
         }
     }
 

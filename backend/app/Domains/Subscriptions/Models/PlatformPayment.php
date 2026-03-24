@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Subscriptions\Models;
 
 use App\Domains\Auth\Models\Admin;
+use App\Domains\Support\Traits\GuardsSensitiveFields;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -13,16 +14,15 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class PlatformPayment extends Model
 {
+    use GuardsSensitiveFields;
     use HasFactory, HasUuids;
 
     protected $fillable = [
         'payable_type',
         'payable_id',
         'amount',
-        'payment_key',
         'month',
         'year',
-        'status',
         'confirmed_by',
         'confirmed_at',
         'rejected_at',

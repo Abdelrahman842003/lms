@@ -6,6 +6,7 @@ namespace App\Domains\Videos\Models;
 
 use App\Domains\Auth\Models\Student;
 use App\Domains\Videos\Enums\VideoWatchStatus;
+use App\Domains\Support\Traits\GuardsSensitiveFields;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -13,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class VideoWatchProgress extends Model
 {
+    use GuardsSensitiveFields;
     use HasFactory;
     use HasUuids;
 
@@ -21,7 +23,6 @@ class VideoWatchProgress extends Model
     protected $fillable = [
         'video_id',
         'student_id',
-        'status',
         'started_at',
         'last_watched_at',
         'completed_at',

@@ -4,37 +4,131 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+// Domain Events
 use App\Domains\Auth\Events\UserLoggedIn;
-use App\Domains\Auth\Listeners\LogLoginAudit;
-use App\Domains\Enrollments\Models\Enrollment;
-use App\Domains\Enrollments\Models\Grade;
-use App\Domains\Enrollments\Models\Group;
 use App\Domains\Exams\Events\ExamCompleted;
-use App\Domains\Exams\Listeners\GrantExamXp;
-use App\Domains\Exams\Listeners\RecordMistakes;
 use App\Domains\Gamification\Events\BadgeEarned;
 use App\Domains\Gamification\Events\XpGranted;
 use App\Domains\Lectures\Events\LectureActivated;
+use App\Domains\Subscriptions\Events\SubscriptionExpired;
+
+// Domain Listeners
+use App\Domains\Auth\Listeners\LogLoginAudit;
+use App\Domains\Exams\Listeners\GrantExamXp;
+use App\Domains\Exams\Listeners\RecordMistakes;
 use App\Domains\Lectures\Listeners\NotifyGroupOnActivation;
 use App\Domains\Notifications\Listeners\BroadcastNotificationSent;
-use App\Domains\Subscriptions\Events\SubscriptionExpired;
 use App\Domains\Subscriptions\Listeners\SuspendEnrollmentsOnExpiry;
-use App\Domains\Lectures\Models\Lecture;
-use App\Domains\Exams\Models\Exam;
+
+// Domain Models
+use App\Domains\Auth\Models\Academy;
+use App\Domains\Auth\Models\Guardian;
+use App\Domains\Auth\Models\LoginAttempt;
+use App\Domains\Auth\Models\ParentDeviceToken;
+use App\Domains\Auth\Models\Secretary;
 use App\Domains\Auth\Models\Student;
+use App\Domains\Auth\Models\Teacher;
+use App\Domains\Auth\Models\DeviceToken;
+use App\Domains\Enrollments\Models\Enrollment;
+use App\Domains\Enrollments\Models\Grade;
+use App\Domains\Enrollments\Models\Group;
+use App\Domains\Enrollments\Models\StudentActivityLog;
+use App\Domains\Exams\Models\Exam;
+use App\Domains\Exams\Models\ExamAttempt;
+use App\Domains\Exams\Models\ExamResult;
+use App\Domains\Exams\Models\FailedQuestion;
+use App\Domains\Exams\Models\Question;
+use App\Domains\Exams\Models\StudentAnswer;
+use App\Domains\Gamification\Models\GamificationSetting;
+use App\Domains\Gamification\Models\PointTransaction;
+use App\Domains\Gamification\Models\StudentPoint;
+use App\Domains\Lectures\Models\Attendance;
+use App\Domains\Lectures\Models\Lecture;
+use App\Domains\Lectures\Models\LectureSession;
+use App\Domains\Notifications\Models\AcademyNotification;
+use App\Domains\Notifications\Models\SentNotification;
+use App\Domains\Subscriptions\Models\AcademySubscription;
+use App\Domains\Subscriptions\Models\PaymentLog;
+use App\Domains\Subscriptions\Models\PlatformPayment;
+use App\Domains\Subscriptions\Models\Subscription;
+use App\Domains\Subscriptions\Models\TeacherSubscription;
+use App\Domains\Support\Models\DailyVoiceLimit;
+use App\Domains\Support\Models\Setting;
+use App\Domains\Support\Models\SyncError;
+use App\Domains\Support\Models\TeacherAttendanceLog;
+use App\Domains\Videos\Models\Video;
+use App\Domains\Videos\Models\VideoAccessGrant;
+use App\Domains\Videos\Models\VideoAccessLog;
+use App\Domains\Videos\Models\VideoAttachment;
+use App\Domains\Videos\Models\VideoComment;
+use App\Domains\Videos\Models\VideoLike;
+use App\Domains\Videos\Models\VideoPlaybackToken;
+use App\Domains\Videos\Models\VideoQuiz;
+use App\Domains\Videos\Models\VideoQuizAttempt;
+use App\Domains\Videos\Models\VideoQuizQuestion;
+use App\Domains\Videos\Models\VideoReminder;
+use App\Domains\Videos\Models\VideoUploadSession;
+use App\Domains\Videos\Models\VideoWatchProgress;
+
+// Domain Observers
 use App\Domains\Auth\Observers\StudentObserver;
 use App\Domains\Enrollments\Observers\EnrollmentObserver;
 use App\Domains\Exams\Observers\ExamObserver;
 use App\Domains\Lectures\Observers\LectureObserver;
+
+// Domain Policies (existing in Domains)
 use App\Domains\Auth\Policies\StudentPolicy;
-use App\Domains\Exams\Policies\ExamPolicy;
 use App\Domains\Enrollments\Policies\EnrollmentPolicy;
 use App\Domains\Enrollments\Policies\GradePolicy;
 use App\Domains\Enrollments\Policies\GroupPolicy;
+use App\Domains\Exams\Policies\ExamPolicy;
 use App\Domains\Lectures\Policies\LecturePolicy;
-use App\Domains\Videos\Models\Video;
 use App\Domains\Videos\Policies\VideoPolicy;
-use App\Domains\Support\Models\Setting;
+
+// Centralized Policies (new in App\Policies)
+use App\Policies\AcademyNotificationPolicy;
+use App\Policies\AcademyPolicy;
+use App\Policies\AcademySubscriptionPolicy;
+use App\Policies\AttendancePolicy;
+use App\Policies\DailyVoiceLimitPolicy;
+use App\Policies\DeviceTokenPolicy;
+use App\Policies\ExamAttemptPolicy;
+use App\Policies\ExamResultPolicy;
+use App\Policies\FailedQuestionPolicy;
+use App\Policies\GamificationSettingPolicy;
+use App\Policies\GuardianPolicy;
+use App\Policies\LectureSessionPolicy;
+use App\Policies\LoginAttemptPolicy;
+use App\Policies\ParentDeviceTokenPolicy;
+use App\Policies\PaymentLogPolicy;
+use App\Policies\PlatformPaymentPolicy;
+use App\Policies\PointTransactionPolicy;
+use App\Policies\QuestionPolicy;
+use App\Policies\SecretaryPolicy;
+use App\Policies\SettingPolicy;
+use App\Policies\StudentActivityLogPolicy;
+use App\Policies\StudentAnswerPolicy;
+use App\Policies\StudentPointPolicy;
+use App\Policies\SubscriptionPolicy;
+use App\Policies\SyncErrorPolicy;
+use App\Policies\TeacherAttendanceLogPolicy;
+use App\Policies\TeacherPolicy;
+use App\Policies\TeacherSubscriptionPolicy;
+use App\Policies\VideoAccessGrantPolicy;
+use App\Policies\VideoAccessLogPolicy;
+use App\Policies\VideoAttachmentPolicy;
+use App\Policies\VideoCommentPolicy;
+use App\Policies\VideoLikePolicy;
+use App\Policies\VideoPlaybackTokenPolicy;
+use App\Policies\VideoQuizAttemptPolicy;
+use App\Policies\VideoQuizPolicy;
+use App\Policies\VideoQuizQuestionPolicy;
+use App\Policies\VideoReminderPolicy;
+use App\Policies\VideoUploadSessionPolicy;
+use App\Policies\VideoWatchProgressPolicy;
+use App\Policies\SentNotificationPolicy;
+
+// Laravel
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
@@ -103,7 +197,7 @@ class AppServiceProvider extends ServiceProvider
             'App\Models\VideoWatchProgress' => \App\Domains\Videos\Models\VideoWatchProgress::class,
         ]);
 
-        // Register Policies
+        // Register Policies - Domain Policies (existing)
         Gate::policy(Enrollment::class, EnrollmentPolicy::class);
         Gate::policy(Grade::class, GradePolicy::class);
         Gate::policy(Group::class, GroupPolicy::class);
@@ -111,6 +205,66 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Exam::class, ExamPolicy::class);
         Gate::policy(Video::class, VideoPolicy::class);
         Gate::policy(Student::class, StudentPolicy::class);
+
+        // Register Policies - Centralized Policies (new)
+        // Auth Domain
+        Gate::policy(Academy::class, AcademyPolicy::class);
+        Gate::policy(Teacher::class, TeacherPolicy::class);
+        Gate::policy(Secretary::class, SecretaryPolicy::class);
+        Gate::policy(Guardian::class, GuardianPolicy::class);
+        Gate::policy(DeviceToken::class, DeviceTokenPolicy::class);
+        Gate::policy(ParentDeviceToken::class, ParentDeviceTokenPolicy::class);
+        Gate::policy(LoginAttempt::class, LoginAttemptPolicy::class);
+
+        // Enrollments Domain
+        Gate::policy(StudentActivityLog::class, StudentActivityLogPolicy::class);
+
+        // Exams Domain
+        Gate::policy(Question::class, QuestionPolicy::class);
+        Gate::policy(ExamAttempt::class, ExamAttemptPolicy::class);
+        Gate::policy(ExamResult::class, ExamResultPolicy::class);
+        Gate::policy(FailedQuestion::class, FailedQuestionPolicy::class);
+        Gate::policy(StudentAnswer::class, StudentAnswerPolicy::class);
+
+        // Gamification Domain
+        Gate::policy(StudentPoint::class, StudentPointPolicy::class);
+        Gate::policy(PointTransaction::class, PointTransactionPolicy::class);
+        Gate::policy(GamificationSetting::class, GamificationSettingPolicy::class);
+
+        // Lectures Domain
+        Gate::policy(Attendance::class, AttendancePolicy::class);
+        Gate::policy(LectureSession::class, LectureSessionPolicy::class);
+
+        // Notifications Domain
+        Gate::policy(AcademyNotification::class, AcademyNotificationPolicy::class);
+        Gate::policy(SentNotification::class, SentNotificationPolicy::class);
+
+        // Subscriptions Domain
+        Gate::policy(Subscription::class, SubscriptionPolicy::class);
+        Gate::policy(TeacherSubscription::class, TeacherSubscriptionPolicy::class);
+        Gate::policy(AcademySubscription::class, AcademySubscriptionPolicy::class);
+        Gate::policy(PaymentLog::class, PaymentLogPolicy::class);
+        Gate::policy(PlatformPayment::class, PlatformPaymentPolicy::class);
+
+        // Support Domain
+        Gate::policy(Setting::class, SettingPolicy::class);
+        Gate::policy(SyncError::class, SyncErrorPolicy::class);
+        Gate::policy(TeacherAttendanceLog::class, TeacherAttendanceLogPolicy::class);
+        Gate::policy(DailyVoiceLimit::class, DailyVoiceLimitPolicy::class);
+
+        // Videos Domain
+        Gate::policy(VideoComment::class, VideoCommentPolicy::class);
+        Gate::policy(VideoLike::class, VideoLikePolicy::class);
+        Gate::policy(VideoAccessGrant::class, VideoAccessGrantPolicy::class);
+        Gate::policy(VideoAttachment::class, VideoAttachmentPolicy::class);
+        Gate::policy(VideoWatchProgress::class, VideoWatchProgressPolicy::class);
+        Gate::policy(VideoAccessLog::class, VideoAccessLogPolicy::class);
+        Gate::policy(VideoPlaybackToken::class, VideoPlaybackTokenPolicy::class);
+        Gate::policy(VideoUploadSession::class, VideoUploadSessionPolicy::class);
+        Gate::policy(VideoReminder::class, VideoReminderPolicy::class);
+        Gate::policy(VideoQuiz::class, VideoQuizPolicy::class);
+        Gate::policy(VideoQuizQuestion::class, VideoQuizQuestionPolicy::class);
+        Gate::policy(VideoQuizAttempt::class, VideoQuizAttemptPolicy::class);
 
         // Register cache invalidation observers
         Student::observe(StudentObserver::class);
@@ -210,14 +364,80 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(10)->by($request->ip());
         });
 
-        // Sensitive video playback endpoints
+        // Authentication endpoints (login, register, password reset)
+        // Strict rate limiting to prevent brute force attacks
+        RateLimiter::for('auth', function (Request $request) {
+            return [
+                // 5 attempts per minute per email
+                Limit::perMinute(5)->by($request->email ?? $request->ip()),
+                // 10 attempts per minute per IP (covers multiple emails)
+                Limit::perMinute(10)->by($request->ip()),
+            ];
+        });
+
+        // Registration rate limiting - prevent bot registration
+        RateLimiter::for('register', function (Request $request) {
+            return Limit::perMinute(5)->by($request->ip());
+        });
+
+        // Password reset rate limiting - prevent email flooding
+        RateLimiter::for('password-reset', function (Request $request) {
+            return Limit::perMinute(3)->by($request->email ?? $request->ip());
+        });
+
+        // Token refresh rate limiting - prevent token abuse
+        RateLimiter::for('token-refresh', function (Request $request) {
+            return Limit::perMinute(10)->by($request->user()?->id ?: $request->ip());
+        });
+
+        // Payment endpoints - prevent duplicate charges and abuse
+        RateLimiter::for('payments', function (Request $request) {
+            return Limit::perMinute(10)->by($request->user()?->id ?: $request->ip());
+        });
+
+        // Notification endpoints - prevent spam
+        RateLimiter::for('notifications', function (Request $request) {
+            return Limit::perMinute(30)->by($request->user()?->id ?: $request->ip());
+        });
+
+        // Voice notification endpoints - stricter limit due to cost
+        RateLimiter::for('voice-notifications', function (Request $request) {
+            return Limit::perMinute(10)->by($request->user()?->id ?: $request->ip());
+        });
+
+        // Video streaming endpoints - allow normal viewing
+        RateLimiter::for('video-stream', function (Request $request) {
+            return Limit::perMinute(120)->by($request->user()?->id ?: $request->ip());
+        });
+
+        // Sensitive video playback endpoints (token generation)
         RateLimiter::for('video-playback', function (Request $request) {
             return Limit::perMinute(30)->by(($request->user()?->id ?? 'guest') . '|' . $request->ip());
         });
 
-        // Video upload endpoints
+        // Video upload endpoints - prevent storage abuse
         RateLimiter::for('video-upload', function (Request $request) {
             return Limit::perMinute(6)->by(($request->user()?->id ?? 'guest') . '|' . $request->ip());
+        });
+
+        // General file upload endpoints - prevent storage abuse
+        RateLimiter::for('uploads', function (Request $request) {
+            return Limit::perMinute(10)->by($request->user()?->id ?: $request->ip());
+        });
+
+        // Avatar upload - specific limit for profile pictures
+        RateLimiter::for('avatar-upload', function (Request $request) {
+            return Limit::perMinute(5)->by($request->user()?->id ?: $request->ip());
+        });
+
+        // Exam submission endpoints - prevent cheating attempts
+        RateLimiter::for('exam-submit', function (Request $request) {
+            return Limit::perMinute(30)->by($request->user()?->id ?: $request->ip());
+        });
+
+        // Attendance marking - prevent spam
+        RateLimiter::for('attendance', function (Request $request) {
+            return Limit::perMinute(20)->by($request->user()?->id ?: $request->ip());
         });
     }
 }

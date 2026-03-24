@@ -6,6 +6,7 @@ namespace App\Domains\Subscriptions\Models;
 
 use App\Domains\Subscriptions\Enums\SubscriptionStatus;
 use App\Domains\Subscriptions\Enums\SubscriptionType;
+use App\Domains\Support\Traits\GuardsSensitiveFields;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -13,11 +14,12 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 /**
  * Unified Subscription Model
- * 
+ *
  * Supports both Teacher and Academy subscriptions through polymorphic relationship
  */
 class Subscription extends Model
 {
+    use GuardsSensitiveFields;
     use HasFactory, HasUuids;
 
     protected static function booted(): void
@@ -44,12 +46,6 @@ class Subscription extends Model
         'seats_count',
         'quota_limit',
         'cost_per_seat',
-        'amount_due',
-        'amount_paid',
-        'status',
-        'payment_key',
-        'payment_initiated_at',
-        'payment_method',
         'paid_at',
         'notes',
     ];

@@ -48,3 +48,8 @@ Schedule::job(CheckExpiringSubscriptions::class)->dailyAt('09:00');
 // إعادة حساب Leaderboard كل ساعة
 Schedule::job(RecalculateLeaderboard::class)->hourly();
 
+// ─── Token Security Cleanup ─────────────────────────────────────────────────
+
+// Clean up expired tokens daily at 2 AM (off-peak hours)
+Schedule::command('tokens:cleanup')->dailyAt('02:00');
+

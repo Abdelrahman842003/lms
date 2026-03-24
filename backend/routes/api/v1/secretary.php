@@ -8,7 +8,7 @@ use App\Domains\Application\Http\Controllers\Secretary\NotificationController;
 // Secretary Authentication Routes
 // ============================================
 Route::post('/login/secretary', [SecretaryAuthController::class, 'login'])
-    ->middleware(['throttle.login', 'auth.cookies']);
+    ->middleware(['throttle:auth', 'auth.cookies']);
 
 // NOTE: Secretary routes do not currently have EnsureSecretaryIsActive middleware.
 // The Secretary model has an is_active boolean field that should be checked.
@@ -18,8 +18,10 @@ Route::middleware('auth:sanctum')->prefix('secretary')->name('secretary.')->grou
     Route::get('/me', [SecretaryAuthController::class, 'me']);
     Route::post('/change-password', [SecretaryAuthController::class, 'changePassword']);
     
-    // Notifications
+    // Notifications - Rate limited
     Route::get('/notifications', [NotificationController::class, 'index']);
-    Route::post('/notifications', [NotificationController::class, 'store']);
-    Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+    Route::middleware('throttle:notifications')->group(function () {
+        Route::post('/notifications', [NotificationController::class, 'store']);
+        Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+    });
 });

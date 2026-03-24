@@ -4,15 +4,45 @@ declare(strict_types=1);
 
 namespace App\Domains\Application\Http\Requests\Teacher\Video;
 
-use Illuminate\Foundation\Http\FormRequest;
+use App\Domains\Application\Http\Requests\BaseAuthorizedRequest;
+use App\Domains\Videos\Models\Video;
 
-class UpdateVideoRequest extends FormRequest
+/**
+ * Form request for updating an existing video.
+ *
+ * BEFORE (Insecure):
+ * public function authorize(): bool
+ * {
+ *     return true;  // ❌ No authorization check - allows IDOR attacks!
+ * }
+ *
+ * AFTER (Secure):
+ * Uses BaseAuthorizedRequest with policy-based authorization.
+ * Requires 'update' ability on the specific Video model instance.
+ */
+class UpdateVideoRequest extends BaseAuthorizedRequest
 {
-    public function authorize(): bool
-    {
-        return true;
-    }
+    /**
+     * The ability name for authorization.
+     */
+    protected string $ability = 'update';
 
+    /**
+     * The model class for policy checking.
+     */
+    protected string $modelClass = Video::class;
+
+    /**
+     * Whether to check against a specific model instance.
+     * True for 'update' operations (requires model instance for policy).
+     */
+    protected bool $checkInstance = true;
+
+    /**
+     * Get the validation rules that apply to the request.
+     *
+     * @return array<string, mixed>
+     */
     public function rules(): array
     {
         return [
@@ -27,12 +57,12 @@ class UpdateVideoRequest extends FormRequest
             'available_from' => ['sometimes', 'nullable', 'date'],
             'available_until'=> ['sometimes', 'nullable', 'date', 'after_or_equal:available_from'],
 
-            // ─── التدريب (اختياري - null يعني احذف التدريب) ───────────
+            // Quiz fields (optional - null means delete the quiz)
             'quiz'                          => ['sometimes', 'nullable', 'array'],
             'quiz.title'                    => ['required_with:quiz', 'string', 'max:255'],
             'quiz.passing_score'            => ['sometimes', 'integer', 'min:1', 'max:100'],
             'quiz.is_required'              => ['sometimes', 'boolean'],
-            'quiz.is_active'               => ['sometimes', 'boolean'],
+            'quiz.is_active'                => ['sometimes', 'boolean'],
             'quiz.questions'                => ['required_with:quiz', 'array', 'min:1', 'max:50'],
             'quiz.questions.*.text'         => ['required', 'string', 'max:1000'],
             'quiz.questions.*.options'      => ['required', 'array', 'min:2', 'max:6'],
@@ -42,6 +72,11 @@ class UpdateVideoRequest extends FormRequest
         ];
     }
 
+    /**
+     * Get custom messages for validator errors.
+     *
+     * @return array<string, string>
+     */
     public function messages(): array
     {
         return [

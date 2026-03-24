@@ -31,6 +31,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class VideoController extends Controller
 {
     use ResolvesTeacher;
+    use \App\Domains\Application\Http\Controllers\Traits\ResolvesOwnedResources;
 
     public function __construct(
         private readonly VideoLifecycleService $lifecycle,

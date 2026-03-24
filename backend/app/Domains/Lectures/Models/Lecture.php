@@ -8,6 +8,7 @@ use App\Domains\Auth\Models\Academy;
 use App\Domains\Auth\Models\Teacher;
 use App\Domains\Enrollments\Models\Grade;
 use App\Domains\Enrollments\Models\Group;
+use App\Domains\Support\Traits\GuardsSensitiveFields;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -17,6 +18,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Lecture extends Model
 {
+    use GuardsSensitiveFields;
     use HasFactory, HasUuids;
 
     protected static function newFactory()
@@ -35,7 +37,6 @@ class Lecture extends Model
         'end_time',
         'qr_code',
         'qr_code_expires_at',
-        'is_active',
         'is_recurring',
         'recurrence_days',
         'recurrence_time',
