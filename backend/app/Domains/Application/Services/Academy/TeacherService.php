@@ -123,7 +123,7 @@ class TeacherService
         $teacher = Teacher::create([
             'name' => $data->name,
             'phone' => $data->phone,
-            'password' => \Illuminate\Support\Facades\Hash::make($data->password),
+            'password' => $data->password,
             'subject' => $data->subject ?? null,
             'status' => 'pending', // Default to pending for new teachers
         ]);
@@ -159,7 +159,7 @@ class TeacherService
         $teacher->phone = $data->phone;
         
         if ($data->password) {
-            $teacher->password = \Illuminate\Support\Facades\Hash::make($data->password);
+            $teacher->password = $data->password;
         }
         
         if ($data->subject !== null) {

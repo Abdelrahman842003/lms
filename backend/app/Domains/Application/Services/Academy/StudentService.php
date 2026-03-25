@@ -95,7 +95,7 @@ class StudentService
                 ];
                 
                 if ($data->password) {
-                    $studentData['password'] = Hash::make($data->password);
+                    $studentData['password'] = $data->password;
                 }
 
                 $student = Student::create($studentData);
@@ -149,7 +149,7 @@ class StudentService
         ], fn($value) => $value !== null);
 
         if ($data->password) {
-            $studentData['password'] = Hash::make($data->password);
+            $studentData['password'] = $data->password;
         }
 
         if (!empty($studentData)) {

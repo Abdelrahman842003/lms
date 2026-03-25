@@ -211,7 +211,7 @@ class StudentResource extends BaseResource
                             ->password()
                             ->revealable()
                             ->required(fn (string $operation): bool => $operation === 'create')
-                            ->dehydrateStateUsing(fn ($state) => filled($state) ? Hash::make($state) : null)
+                            ->dehydrateStateUsing(fn ($state) => filled($state) ? $state : null)
                             ->dehydrated(fn ($state) => filled($state))
                             ->placeholder('أدخل كلمة المرور')
                             ->helperText('ستُستخدم نفس كلمة المرور لحساب ولي الأمر إذا كان جديداً.')

@@ -166,7 +166,7 @@ class AuthController extends Controller
             return $this->errorResponse('كلمة المرور الحالية غير صحيحة', 422);
         }
 
-        $guardian->update(['password' => Hash::make($request->validated('new_password'))]);
+        $guardian->update(['password' => $request->validated('new_password')]);
 
         return $this->successResponse(null, 'تم تغيير كلمة المرور بنجاح');
     }

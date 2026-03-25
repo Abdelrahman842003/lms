@@ -103,7 +103,7 @@ class AuthController extends Controller
         }
 
         $user->update([
-            'password' => Hash::make($request->validated('new_password'))
+            'password' => $request->validated('new_password')
         ]);
 
         return $this->successResponse(null, 'تم تغيير كلمة المرور بنجاح');

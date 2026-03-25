@@ -47,7 +47,7 @@ class TeacherService
         return Teacher::create([
             'name' => $data['name'],
             'phone' => $data['phone'],
-            'password' => Hash::make($data['password']),
+            'password' => $data['password'],
             'subject' => $data['subject'] ?? null,
             'status' => $data['status'] ?? 'pending',
         ]);
@@ -61,7 +61,7 @@ class TeacherService
         ];
 
         if (isset($data['password']) && $data['password']) {
-            $updateData['password'] = Hash::make($data['password']);
+            $updateData['password'] = $data['password'];
         }
 
         $teacher->update($updateData);

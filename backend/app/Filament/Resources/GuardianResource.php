@@ -75,7 +75,7 @@ class GuardianResource extends BaseResource
                             ->password()
                             ->revealable()
                             ->required(fn (string $operation): bool => $operation === 'create')
-                            ->dehydrateStateUsing(fn ($state) => filled($state) ? Hash::make($state) : null)
+                            ->dehydrateStateUsing(fn ($state) => filled($state) ? $state : null)
                             ->dehydrated(fn ($state) => filled($state))
                             ->placeholder('أدخل كلمة المرور')
                             ->helperText(fn (string $operation): string => $operation === 'edit' ? 'اترك الحقل فارغاً إذا لم ترغب في تغيير كلمة المرور' : ''),

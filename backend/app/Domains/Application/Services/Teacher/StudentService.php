@@ -14,6 +14,8 @@ use App\Domains\Application\Filters\EnrollmentFilter;
 use App\Domains\Application\Traits\HasAcademyFilter;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use App\Domains\Enrollments\Enums\StudentActivityAction;
+use App\Domains\Gamification\Models\StudentPoint;
 
 class StudentService
 {
@@ -127,7 +129,7 @@ class StudentService
                 // Create new student
                 $student = Student::create([
                     'name' => $data['name'],
-                    'password' => Hash::make($data['password']),
+                    'password' => $data['password'],
                     'phone' => $data['phone'] ?? null,
                     'parent_phone' => $data['parent_phone'] ?? null,
                     'gender' => $data['gender'] ?? 'male',
@@ -144,7 +146,7 @@ class StudentService
                         $guardian = \App\Domains\Auth\Models\Guardian::create([
                             'phone' => $data['parent_phone'],
                             'name' => $data['parent_name'] ?? $this->extractParentName($data['name']),
-                            'password' => Hash::make($data['password']), // Same password initially
+                            'password' => $data['password'], // Same password initially
                         ]);
                     }
 
@@ -193,7 +195,7 @@ class StudentService
             // Log activity
             StudentActivityLog::log(
                 $student->id,
-                StudentActivityLog::ACTION_ENROLLED,
+                StudentActivityAction::ENROLLED->value,
                 $enrollment->id,
                 ['teacher_id' => $teacher->id, 'is_new_student' => $isNewStudent],
                 'Teacher',
@@ -201,7 +203,7 @@ class StudentService
             );
 
             // Initialize gamification points
-            \App\Domains\Auth\Models\StudentPoint::getOrCreate($student->id, $teacher->id);
+            StudentPoint::getOrCreate($student->id, $teacher->id);
 
             return [
                 'student' => $student,
@@ -257,7 +259,7 @@ class StudentService
         if (isset($data['grade_id']) && $data['grade_id'] !== $oldData['grade_id']) {
             StudentActivityLog::log(
                 $enrollment->student_id,
-                StudentActivityLog::ACTION_GRADE_CHANGE,
+                StudentActivityAction::GRADE_CHANGE->value,
                 $enrollment->id,
                 ['old' => $oldData['grade_id'], 'new' => $data['grade_id']]
             );
@@ -266,7 +268,7 @@ class StudentService
         if (isset($data['group_id']) && $data['group_id'] !== $oldData['group_id']) {
             StudentActivityLog::log(
                 $enrollment->student_id,
-                StudentActivityLog::ACTION_GROUP_CHANGE,
+                StudentActivityAction::GROUP_CHANGE->value,
                 $enrollment->id,
                 ['old' => $oldData['group_id'], 'new' => $data['group_id']]
             );
@@ -280,9 +282,7 @@ class StudentService
      */
     public function updateStudent(Student $student, array $data): Student
     {
-        if (isset($data['password'])) {
-            $data['password'] = Hash::make($data['password']);
-        }
+        // No need for Hash::make() — the model's 'hashed' cast handles it
 
         // Only update student-level data
         $studentData = array_intersect_key($data, array_flip([
@@ -303,7 +303,7 @@ class StudentService
     {
         StudentActivityLog::log(
             $enrollment->student_id,
-            StudentActivityLog::ACTION_UNENROLLED,
+            StudentActivityAction::UNENROLLED->value,
             $enrollment->id,
             ['teacher_id' => $enrollment->teacher_id]
         );
@@ -320,7 +320,7 @@ class StudentService
 
         StudentActivityLog::log(
             $enrollment->student_id,
-            StudentActivityLog::ACTION_STATUS_CHANGE,
+            StudentActivityAction::STATUS_CHANGE->value,
             $enrollment->id,
             ['is_active' => $enrollment->is_active]
         );
@@ -480,7 +480,7 @@ class StudentService
 
             StudentActivityLog::log(
                 $enrollment->student_id,
-                StudentActivityLog::ACTION_STATUS_CHANGE,
+                StudentActivityAction::STATUS_CHANGE->value,
                 $enrollment->id,
                 ['is_active' => true, 'subscription_end' => $endDate]
             );

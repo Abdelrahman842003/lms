@@ -55,7 +55,7 @@ class SecretaryService
         $secretary = Secretary::create([
             'name' => $data->name,
             'phone' => $data->phone,
-            'password' => Hash::make($data->password),
+            'password' => $data->password,
             'avatar_key' => $data->avatar_key,
             'is_active' => true,
         ]);
@@ -97,7 +97,7 @@ class SecretaryService
         }
 
         if ($data->password) {
-            $updateData['password'] = Hash::make($data->password);
+            $updateData['password'] = $data->password;
         }
 
         if ($data->avatar_key) {

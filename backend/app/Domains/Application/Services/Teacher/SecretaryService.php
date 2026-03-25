@@ -60,7 +60,7 @@ class SecretaryService
                 $secretary = Secretary::create([
                     'name' => $data['name'],
                     'phone' => $data['phone'],
-                    'password' => Hash::make($data['password']),
+                    'password' => $data['password'],
                 ]);
 
                 // Attach to teacher
@@ -88,7 +88,7 @@ class SecretaryService
         ];
 
         if (!empty($data['password'])) {
-            $updateData['password'] = Hash::make($data['password']);
+            $updateData['password'] = $data['password'];
         }
 
         $secretary->update($updateData);

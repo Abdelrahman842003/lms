@@ -102,7 +102,7 @@ class GuardianAuthService
             $guardian = Guardian::create([
                 'name' => $name,
                 'phone' => $firstStudent->parent_phone,
-                'password' => Hash::make($password), // Use the same password they used to login
+                'password' => $password, // Use the same password they used to login
             ]);
 
             return $guardian;
@@ -154,7 +154,7 @@ class GuardianAuthService
         ];
 
         if (!empty($data['password'])) {
-            $updateData['password'] = Hash::make($data['password']);
+            $updateData['password'] = $data['password'];
         }
 
         $guardian->update($updateData);
