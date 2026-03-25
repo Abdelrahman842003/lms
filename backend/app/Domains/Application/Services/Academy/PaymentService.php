@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Application\Services\Academy;
 
+use App\Domains\Application\Exceptions\DomainException;
 use App\Domains\Subscriptions\DTOs\PaymentData;
 use App\Domains\Enrollments\Models\Enrollment;
 use App\Domains\Subscriptions\Models\PaymentLog;
@@ -34,7 +35,7 @@ class PaymentService
             ->first();
 
         if (!$enrollment) {
-            throw new \Exception('الطالب غير مسجل مع هذا المدرس');
+            throw new DomainException('الطالب غير مسجل مع هذا المدرس');
         }
 
         // Calculate amounts

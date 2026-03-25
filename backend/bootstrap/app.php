@@ -22,7 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->append(\Illuminate\Http\Middleware\HandleCors::class);
         
         // XSS Protection - Sanitize all incoming request data
-        $middleware->append(\App\Http\Middleware\SanitizeInput::class);
+        $middleware->append(\App\Domains\Application\Http\Middleware\SanitizeInput::class);
 
         // Register middleware aliases
         $middleware->alias([

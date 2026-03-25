@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Application\Services\Teacher;
 
+use App\Domains\Application\Exceptions\DomainException;
 use Spatie\Permission\Models\Permission;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -17,7 +18,7 @@ class PermissionService
     public function createPermission(array $data): Permission
     {
         if (Permission::where('name', $data['name'])->where('guard_name', $data['guard_name'])->exists()) {
-             throw new \Exception('اسم الصلاحية مستخدم بالفعل لهذا النوع.', 422);
+             throw new DomainException('اسم الصلاحية مستخدم بالفعل لهذا النوع.');
         }
 
         return Permission::create(['name' => $data['name'], 'guard_name' => $data['guard_name']]);
@@ -27,7 +28,7 @@ class PermissionService
     {
         if ($permission->name !== $data['name']) {
             if (Permission::where('name', $data['name'])->where('guard_name', $permission->guard_name)->exists()) {
-                 throw new \Exception('اسم الصلاحية مستخدم بالفعل لهذا النوع.', 422);
+                 throw new DomainException('اسم الصلاحية مستخدم بالفعل لهذا النوع.');
             }
         }
 

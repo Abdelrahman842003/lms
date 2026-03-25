@@ -19,6 +19,7 @@ class VideoAccessGrantService
 
     /**
      * Grants access snapshot at publication time.
+     * Optimized to use batch upsert instead of individual updateOrCreate calls.
      *
      * @return Collection<int, VideoAccessGrant>
      */
@@ -47,50 +48,88 @@ class VideoAccessGrantService
             return $enrollment->status === 'active';
         });
 
-        $grants = collect();
-
-        foreach ($eligible as $enrollment) {
-            $grant = VideoAccessGrant::query()->updateOrCreate(
-                [
-                    'video_id' => $video->id,
-                    'student_id' => $enrollment->student_id,
-                ],
-                [
-                    'teacher_id' => $enrollment->teacher_id,
-                    'enrollment_id' => $enrollment->id,
-                    'granted_group_id' => $enrollment->group_id,
-                    'granted_at' => now(),
-                    'revoked_at' => null,
-                    'revoked_reason' => null,
-                    'eligibility_snapshot' => [
-                        'grade_id' => $enrollment->grade_id,
-                        'group_id' => $enrollment->group_id,
-                        'academy_id' => $enrollment->academy_id,
-                        'teacher_id' => $enrollment->teacher_id,
-                        'status' => $enrollment->status,
-                    ],
-                ]
-            );
-
-            $grants->push($grant);
-
-            VideoReminder::query()->updateOrCreate(
-                [
-                    'video_id' => $video->id,
-                    'student_id' => $enrollment->student_id,
-                ],
-                [
-                    'guardian_id' => $enrollment->student?->guardian_id,
-                    'attempts' => 0,
-                    'next_reminder_at' => now()->addHours($this->settings->reminderIntervalHours()),
-                    'last_reminded_at' => null,
-                    'stopped_at' => null,
-                    'stop_reason' => null,
-                ]
-            );
+        if ($eligible->isEmpty()) {
+            return collect();
         }
 
-        return $grants;
+        $now = now();
+        $reminderInterval = $this->settings->reminderIntervalHours();
+
+        // Prepare batch data for VideoAccessGrant upsert
+        $grantsData = $eligible->map(function (Enrollment $enrollment) use ($video, $now) {
+            return [
+                'video_id' => $video->id,
+                'student_id' => $enrollment->student_id,
+                'teacher_id' => $enrollment->teacher_id,
+                'enrollment_id' => $enrollment->id,
+                'granted_group_id' => $enrollment->group_id,
+                'granted_at' => $now,
+                'revoked_at' => null,
+                'revoked_reason' => null,
+                'eligibility_snapshot' => json_encode([
+                    'grade_id' => $enrollment->grade_id,
+                    'group_id' => $enrollment->group_id,
+                    'academy_id' => $enrollment->academy_id,
+                    'teacher_id' => $enrollment->teacher_id,
+                    'status' => $enrollment->status,
+                ]),
+                'created_at' => $now,
+                'updated_at' => $now,
+            ];
+        })->toArray();
+
+        // Batch upsert VideoAccessGrants (single query instead of N queries)
+        VideoAccessGrant::upsert(
+            $grantsData,
+            ['video_id', 'student_id'], // Unique columns
+            [
+                'teacher_id',
+                'enrollment_id',
+                'granted_group_id',
+                'granted_at',
+                'revoked_at',
+                'revoked_reason',
+                'eligibility_snapshot',
+                'updated_at',
+            ] // Columns to update if record exists
+        );
+
+        // Prepare batch data for VideoReminder upsert
+        $remindersData = $eligible->map(function (Enrollment $enrollment) use ($video, $now, $reminderInterval) {
+            return [
+                'video_id' => $video->id,
+                'student_id' => $enrollment->student_id,
+                'guardian_id' => $enrollment->student?->guardian_id,
+                'attempts' => 0,
+                'next_reminder_at' => $now->copy()->addHours($reminderInterval),
+                'last_reminded_at' => null,
+                'stopped_at' => null,
+                'stop_reason' => null,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ];
+        })->toArray();
+
+        // Batch upsert VideoReminders (single query instead of N queries)
+        VideoReminder::upsert(
+            $remindersData,
+            ['video_id', 'student_id'], // Unique columns
+            [
+                'guardian_id',
+                'attempts',
+                'next_reminder_at',
+                'last_reminded_at',
+                'stopped_at',
+                'stop_reason',
+                'updated_at',
+            ] // Columns to update if record exists
+        );
+
+        // Fetch and return the created/updated grants
+        return VideoAccessGrant::query()
+            ->where('video_id', $video->id)
+            ->whereIn('student_id', $eligible->pluck('student_id'))
+            ->get();
     }
 
     public function stopReminder(Video $video, string $studentId, string $reason): void

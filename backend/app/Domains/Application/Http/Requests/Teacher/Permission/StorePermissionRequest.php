@@ -33,7 +33,7 @@ class StorePermissionRequest extends FormRequest
     public function prepareForValidation()
     {
         $this->merge([
-            'name' => strip_tags($this->input('name')),
+            'name' => clean_input($this->input('name')),
         ]);
     }
 }

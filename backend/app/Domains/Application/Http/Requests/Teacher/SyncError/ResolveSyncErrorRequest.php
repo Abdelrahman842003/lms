@@ -32,7 +32,7 @@ class ResolveSyncErrorRequest extends FormRequest
     {
         if ($this->has('notes')) {
             $this->merge([
-                'notes' => strip_tags($this->input('notes')),
+                'notes' => clean_input($this->input('notes')),
             ]);
         }
     }

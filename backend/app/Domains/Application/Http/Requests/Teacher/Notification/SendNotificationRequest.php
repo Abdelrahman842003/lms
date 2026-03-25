@@ -41,8 +41,8 @@ class SendNotificationRequest extends FormRequest
     public function prepareForValidation()
     {
         $this->merge([
-            'title' => strip_tags($this->input('title')),
-            'message' => strip_tags($this->input('message')),
+            'title' => clean_input($this->input('title')),
+            'message' => clean_input($this->input('message')),
         ]);
     }
 }

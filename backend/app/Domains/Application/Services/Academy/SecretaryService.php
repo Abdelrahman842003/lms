@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Application\Services\Academy;
 
+use App\Domains\Application\Exceptions\DomainException;
 use App\Domains\Auth\Models\Academy;
 use App\Domains\Auth\Models\Secretary;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -39,7 +40,7 @@ class SecretaryService
         if ($existing) {
             // If secretary exists, just attach to academy
             if ($academy->secretaries()->where('secretary_id', $existing->id)->exists()) {
-                throw new \Exception('السكرتير موجود بالفعل في الأكاديمية');
+                throw new DomainException('السكرتير موجود بالفعل في الأكاديمية');
             }
 
             $academy->secretaries()->attach($existing->id, [
@@ -89,7 +90,7 @@ class SecretaryService
                 ->exists();
             
             if ($exists) {
-                throw new \Exception('رقم الهاتف مستخدم بالفعل');
+                throw new DomainException('رقم الهاتف مستخدم بالفعل');
             }
 
             $updateData['phone'] = $data->phone;

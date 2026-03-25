@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Application\Services\Academy;
 
+use App\Domains\Application\Exceptions\DomainException;
 use App\Domains\Enrollments\DTOs\GroupData;
 use App\Domains\Enrollments\Models\Group;
 use App\Domains\Auth\Models\Academy;
@@ -53,7 +54,7 @@ class GroupService
         if ($data->gradeId) {
             $grade = $teacher->grades()->where('id', $data->gradeId)->first();
             if (!$grade) {
-                throw new \Exception('الصف الدراسي غير تابع للمدرس المختار');
+                throw new DomainException('الصف الدراسي غير تابع للمدرس المختار');
             }
         }
 
@@ -75,7 +76,7 @@ class GroupService
         if ($data->gradeId && $data->gradeId !== $group->grade_id) {
             $grade = $group->teacher->grades()->where('id', $data->gradeId)->first();
             if (!$grade) {
-                throw new \Exception('الصف الدراسي غير تابع لمدرس المجموعة');
+                throw new DomainException('الصف الدراسي غير تابع لمدرس المجموعة');
             }
         }
 

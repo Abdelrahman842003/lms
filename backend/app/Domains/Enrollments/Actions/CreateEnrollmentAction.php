@@ -7,6 +7,7 @@ namespace App\Domains\Enrollments\Actions;
 use App\Domains\Enrollments\DTOs\CreateEnrollmentDTO;
 use App\Domains\Enrollments\Models\Enrollment;
 use App\Domains\Enrollments\Repositories\Contracts\EnrollmentRepository;
+use App\Domains\Subscriptions\DTOs\SubscriptionCandidate;
 use App\Domains\Subscriptions\Specifications\PlanActive;
 use App\Domains\Subscriptions\Specifications\SeatAvailable;
 use App\Domains\Application\Exceptions\DomainException;
@@ -55,8 +56,11 @@ final class CreateEnrollmentAction
             $subscriberType = $dto->organizationId ? 'academy' : 'teacher';
             $subscriberId   = $dto->organizationId ?? $dto->teacherId;
 
+            // Build candidate DTO for specification (type-safe)
+            $candidate = new SubscriptionCandidate($subscriberId, $subscriberType);
+
             // 3. التحقق من نشاط الباقة
-            if (! $this->planActive->isSatisfiedBy($subscriberId, $subscriberType)) {
+            if (! $this->planActive->isSatisfiedBy($candidate)) {
                 throw new SubscriptionExpiredException('انتهت صلاحية الاشتراك. يرجى تجديد الباقة.');
             }
 

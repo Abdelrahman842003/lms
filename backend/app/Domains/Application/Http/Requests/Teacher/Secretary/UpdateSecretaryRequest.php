@@ -34,10 +34,10 @@ class UpdateSecretaryRequest extends FormRequest
     public function prepareForValidation()
     {
         if ($this->has('name')) {
-            $this->merge(['name' => strip_tags($this->input('name'))]);
+            $this->merge(['name' => clean_input($this->input('name'))]);
         }
         if ($this->has('phone')) {
-            $this->merge(['phone' => strip_tags($this->input('phone'))]);
+            $this->merge(['phone' => clean_input($this->input('phone'))]);
         }
     }
 }

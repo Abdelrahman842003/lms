@@ -47,7 +47,7 @@ class StoreVoiceNotificationRequest extends FormRequest
     public function prepareForValidation()
     {
         $this->merge([
-            'title' => strip_tags($this->input('title')),
+            'title' => clean_input($this->input('title')),
         ]);
     }
 }

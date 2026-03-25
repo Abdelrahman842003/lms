@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Application\Services\Academy;
 
+use App\Domains\Application\Exceptions\DomainException;
 use App\Domains\Auth\DTOs\StudentData;
 use App\Domains\Enrollments\Models\Enrollment;
 use App\Domains\Subscriptions\Exceptions\QuotaExceededException;
@@ -56,7 +57,7 @@ class StudentService
 
         // Check if plan is expired
         if ($academy->plan_expires_at && now()->gt($academy->plan_expires_at)) {
-            throw new \Exception('عفواً، لقد انتهت صلاحية باقتك. يرجى تجديد الاشتراك.');
+            throw new DomainException('عفواً، لقد انتهت صلاحية باقتك. يرجى تجديد الاشتراك.');
         }
 
         // Check student limit

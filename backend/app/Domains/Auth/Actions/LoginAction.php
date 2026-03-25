@@ -11,10 +11,10 @@ use App\Domains\Auth\Models\Guardian;
 use App\Domains\Auth\Models\Secretary;
 use App\Domains\Auth\Models\Student;
 use App\Domains\Auth\Models\Teacher;
+use App\Domains\Auth\Services\DeviceLimitService;
 use App\Domains\Application\Exceptions\DomainException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Hash;
-use Laravel\Sanctum\PersonalAccessToken;
 
 /**
  * Action مسؤول عن تسجيل الدخول لجميع أنواع المستخدمين.
@@ -22,14 +22,9 @@ use Laravel\Sanctum\PersonalAccessToken;
  */
 final class LoginAction
 {
-    /** حدود عدد الأجهزة لكل نوع مستخدم */
-    private const DEVICE_LIMITS = [
-        Teacher::class   => 2,
-        Student::class   => 4,
-        Secretary::class => 1,
-        Guardian::class  => 4,
-        Admin::class     => null, // غير محدود
-    ];
+    public function __construct(
+        private readonly DeviceLimitService $deviceLimitService
+    ) {}
 
     /**
      * @param  class-string<Model>  $userModel  مثلاً Teacher::class
@@ -49,8 +44,8 @@ final class LoginAction
         // التحقق من حالة المستخدم (suspended / pending)
         $this->ensureUserIsActive($user);
 
-        // إدارة حد الأجهزة
-        $deviceRemoved = $this->manageDeviceLimit($user);
+        // إدارة حد الأجهزة باستخدام DeviceLimitService
+        $deviceResult = $this->deviceLimitService->checkAndManageDevices($user);
 
         // توليد الـ tokens
         $accessToken  = $user->createToken('access_token',  ['access-api'],        now()->addMinutes(60))->plainTextToken;
@@ -69,7 +64,7 @@ final class LoginAction
             'access_token'   => $accessToken,
             'refresh_token'  => $refreshToken,
             'role'           => $this->resolveRole($userModel),
-            'device_removed' => $deviceRemoved,
+            'device_removed' => $deviceResult['removed_device'],
         ];
     }
 
@@ -89,40 +84,6 @@ final class LoginAction
                 throw new DomainException('عفواً، حسابك في انتظار الموافقة. يرجى التواصل مع الإدارة.', 0, null);
             }
         }
-    }
-
-    /**
-     * إدارة حد الأجهزة — يحذف الأقدم لو وصل الحد.
-     */
-    private function manageDeviceLimit(Model $user): bool
-    {
-        $limit = self::DEVICE_LIMITS[get_class($user)] ?? null;
-
-        if ($limit === null) {
-            return false;
-        }
-
-        $tokens = PersonalAccessToken::where('tokenable_type', get_class($user))
-            ->where('tokenable_id', $user->id)
-            ->where('name', 'access_token')
-            ->where(function ($q) {
-                $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
-            })
-            ->orderBy('created_at', 'asc')
-            ->get();
-
-        if ($tokens->count() >= $limit) {
-            $oldest = $tokens->first();
-            if ($oldest) {
-                PersonalAccessToken::where('tokenable_type', get_class($user))
-                    ->where('tokenable_id', $user->id)
-                    ->where('created_at', '<=', $oldest->created_at->addSecond())
-                    ->delete();
-            }
-            return true;
-        }
-
-        return false;
     }
 
     /**

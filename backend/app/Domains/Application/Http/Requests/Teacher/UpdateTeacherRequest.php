@@ -38,8 +38,8 @@ class UpdateTeacherRequest extends FormRequest
     public function prepareForValidation()
     {
         $this->merge([
-            'name' => strip_tags($this->input('name')),
-            'phone' => strip_tags($this->input('phone')),
+            'name' => clean_input($this->input('name')),
+            'phone' => clean_input($this->input('phone')),
         ]);
     }
 }

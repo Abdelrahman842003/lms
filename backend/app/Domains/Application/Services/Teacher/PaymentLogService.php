@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Application\Services\Teacher;
 
+use App\Domains\Application\Exceptions\DomainException;
 use App\Domains\Enrollments\Models\Enrollment;
 use App\Domains\Subscriptions\Models\PaymentLog;
 use App\Domains\Application\Models\SyncError;
@@ -69,7 +70,7 @@ class PaymentLogService
             ->first();
 
         if (!$enrollment) {
-            throw new \Exception('الطالب غير مسجل معك');
+            throw new DomainException('الطالب غير مسجل معك');
         }
 
         // Generate unique code for this student
@@ -121,7 +122,7 @@ class PaymentLogService
                         ->first();
 
                     if (!$enrollment) {
-                        throw new \Exception('الطالب غير مسجل معك');
+                        throw new DomainException('الطالب غير مسجل معك');
                     }
 
                     // Create payment

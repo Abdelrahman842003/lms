@@ -18,25 +18,52 @@ class NotificationService
         private NotificationSettingsService $notificationSettings,
     ) {}
 
-    public function getRecipients(Teacher $teacher, string $recipientType, ?string $gradeId = null, ?string $groupId = null): Collection
+    /**
+     * Get recipients for notification.
+     * Optimized to select only necessary columns and limit results.
+     *
+     * @param int $limit Maximum number of recipients to return (0 = no limit)
+     */
+    public function getRecipients(Teacher $teacher, string $recipientType, ?string $gradeId = null, ?string $groupId = null, int $limit = 500): Collection
     {
-        return match ($recipientType) {
-            'all' => Student::with('guardian')
+        $guardianColumns = ['id', 'phone'];
+        $studentColumns = ['id', 'name', 'phone', 'parent_phone', 'guardian_id'];
+        
+        $query = match ($recipientType) {
+            'all' => Student::with(['guardian:' . implode(',', $guardianColumns)])
+                ->select($studentColumns)
                 ->whereHas('enrollments', function ($q) use ($teacher) {
-                    $q->where('teacher_id', $teacher->id);
-                })->get(),
-            'grade' => Student::with('guardian')
+                    $q->where('teacher_id', $teacher->id)
+                      ->where('is_active', true);
+                }),
+            'grade' => Student::with(['guardian:' . implode(',', $guardianColumns)])
+                ->select($studentColumns)
                 ->whereHas('enrollments', function ($q) use ($teacher, $gradeId) {
                     $q->where('teacher_id', $teacher->id)
-                      ->where('grade_id', $gradeId);
-                })->get(),
-            'group' => Student::with('guardian')
-                ->whereHas('enrollments', function ($q) use ($groupId) {
-                    $q->where('group_id', $groupId);
-                })->get(),
-            'admin' => Admin::all(),
-            default => collect(),
+                      ->where('grade_id', $gradeId)
+                      ->where('is_active', true);
+                }),
+            'group' => Student::with(['guardian:' . implode(',', $guardianColumns)])
+                ->select($studentColumns)
+                ->whereHas('enrollments', function ($q) use ($teacher, $groupId) {
+                    $q->where('group_id', $groupId)
+                      ->where('teacher_id', $teacher->id)
+                      ->where('is_active', true);
+                }),
+            'admin' => Admin::select(['id', 'name', 'email']),
+            default => null,
         };
+
+        if ($query === null) {
+            return collect();
+        }
+
+        // Apply limit to prevent memory issues with large datasets
+        if ($limit > 0) {
+            $query->limit($limit);
+        }
+
+        return $query->get();
     }
 
     public function logNotification(Teacher $teacher, array $data, int $recipientCount): SentNotification

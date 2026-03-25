@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Domains\Auth\Repositories\StudentRepositoryInterface;
+use App\Domains\Auth\Repositories\EloquentStudentRepository;
 use App\Domains\Enrollments\Repositories\Contracts\EnrollmentRepository;
 use App\Domains\Enrollments\Repositories\Eloquent\EloquentEnrollmentRepository;
 use App\Domains\Enrollments\Repositories\Contracts\GroupRepository;
@@ -21,6 +23,9 @@ class RepositoryServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        // Auth
+        $this->app->bind(StudentRepositoryInterface::class, EloquentStudentRepository::class);
+
         // Enrollments
         $this->app->bind(EnrollmentRepository::class, EloquentEnrollmentRepository::class);
 

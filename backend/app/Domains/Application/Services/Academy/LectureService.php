@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Application\Services\Academy;
 
+use App\Domains\Application\Exceptions\DomainException;
 use App\Domains\Application\Services\Teacher\LectureService as TeacherLectureService;
 use App\Domains\Auth\Models\Academy;
 use App\Domains\Auth\Models\Teacher;
@@ -44,7 +45,7 @@ class LectureService
             ->exists();
 
         if (! $belongsToAcademy) {
-            throw new \Exception('المدرس لا ينتمي لهذه الأكاديمية');
+            throw new DomainException('المدرس لا ينتمي لهذه الأكاديمية');
         }
 
         $lectureData = $data->toArray();

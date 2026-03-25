@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Media\Services;
 
+use App\Domains\Application\Exceptions\DomainException;
 use App\Domains\Application\Services\FileUploadValidator;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -96,7 +97,7 @@ class ImageService
         $errors = $this->validator->validate($file, 'image');
         
         if (!empty($errors)) {
-            throw new \Exception(implode(', ', $errors));
+            throw new DomainException(implode(', ', $errors));
         }
     }
 

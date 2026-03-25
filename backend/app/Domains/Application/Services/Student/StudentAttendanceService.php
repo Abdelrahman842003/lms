@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Application\Services\Student;
 
+use App\Domains\Application\Exceptions\DomainException;
 use App\Domains\Auth\Models\Student;
 use App\Domains\Lectures\Models\Attendance;
 use App\Domains\Lectures\Models\Lecture;
@@ -41,12 +42,12 @@ class StudentAttendanceService
         $lecture = $this->validateQrCode($token);
 
         if (!$lecture) {
-            throw new \Exception('Invalid QR code');
+            throw new DomainException('Invalid QR code');
         }
 
         // Check if QR code is expired
         if ($this->isQrCodeExpired($lecture, $token)) {
-            throw new \Exception('QR code has expired');
+            throw new DomainException('QR code has expired');
         }
 
         // Create or update attendance record

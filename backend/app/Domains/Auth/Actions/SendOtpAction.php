@@ -48,9 +48,6 @@ final class SendOtpAction
 
     private function generateOtp(): string
     {
-        $min = (int) str_pad('1', self::OTP_LENGTH, '0');
-        $max = (int) str_pad('9', self::OTP_LENGTH, '9');
-
-        return (string) random_int($min, $max);
+        return generate_otp(self::OTP_LENGTH);
     }
 }

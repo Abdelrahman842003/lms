@@ -503,7 +503,16 @@ All controllers use the `ApiResponseTrait` for consistent responses:
 }
 ```
 
-## References
+## Related Documentation
+
+- [API Reference](./api) - Complete API endpoints documentation
+- [Enums Reference](./enums) - All enumeration types
+- [Security & Authorization](./security) - Policies and middleware
+- [Authentication](./auth) - Multi-guard authentication
+- [Error Handling](./errors) - Error response formats
+- [Database](./database) - Models and relationships
+
+## Code References
 
 - [`backend/app/Domains/`](/backend/app/Domains/)
 - [`backend/routes/api.php`](/backend/routes/api.php)

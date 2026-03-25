@@ -59,8 +59,8 @@ class UpdateExamRequest extends FormRequest
     public function prepareForValidation()
     {
         $this->merge([
-            'title' => strip_tags($this->input('title')),
-            'subject' => strip_tags($this->input('subject')),
+            'title' => clean_input($this->input('title')),
+            'subject' => clean_input($this->input('subject')),
         ]);
     }
 }

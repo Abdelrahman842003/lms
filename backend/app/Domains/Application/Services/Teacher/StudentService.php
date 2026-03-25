@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Application\Services\Teacher;
 
+use App\Domains\Application\Exceptions\DomainException;
 use App\Domains\Auth\Models\Student;
 use App\Domains\Auth\Models\Teacher;
 use App\Domains\Enrollments\Models\Enrollment;
@@ -88,7 +89,7 @@ class StudentService
                     if ($existingEnrollment->trashed() || ! $existingEnrollment->is_active) {
                         // Check Expiration
                         if ($teacher->plan_expires_at && now()->gt($teacher->plan_expires_at)) {
-                            throw new \Exception('عفواً، لقد انتهت صلاحية باقتك. يرجى تجديد الاشتراك.');
+                            throw new DomainException('عفواً، لقد انتهت صلاحية باقتك. يرجى تجديد الاشتراك.');
                         }
 
                         // Check Limit

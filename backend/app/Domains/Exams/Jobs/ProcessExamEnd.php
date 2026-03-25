@@ -64,28 +64,45 @@ class ProcessExamEnd implements ShouldQueue
             $query->whereHas('enrollments', fn ($q) => $q->where('group_id', $this->exam->group_id));
         }
 
-        $students    = $query->get();
+        $students = $query->get();
+        $studentIds = $students->pluck('id')->toArray();
         $absentCount = 0;
 
+        // Pre-load all attempts for this exam to avoid N+1 queries
+        $attempts = $this->exam->attempts()
+            ->whereIn('student_id', $studentIds)
+            ->get()
+            ->keyBy('student_id');
+
+        // Pre-load all existing results to avoid N+1 queries
+        $existingResults = ExamResult::where('exam_id', $this->exam->id)
+            ->whereIn('student_id', $studentIds)
+            ->pluck('student_id')
+            ->flip()
+            ->toArray();
+
+        // Prepare batch insert for absent students
+        $absentResultsToCreate = [];
+
         foreach ($students as $student) {
-            $attempt = $this->exam->attempts()->where('student_id', $student->id)->first();
+            $attempt = $attempts->get($student->id);
 
             if ($attempt) {
                 if ($attempt->status === 'in_progress') {
                     $examService->terminateExam($attempt, 'time_limit_exceeded');
                 }
             } else {
-                $existingResult = ExamResult::where('exam_id', $this->exam->id)
-                    ->where('student_id', $student->id)
-                    ->exists();
-
-                if (! $existingResult) {
-                    ExamResult::create([
-                        'exam_id'    => $this->exam->id,
+                // Check if result already exists using pre-loaded data
+                if (!isset($existingResults[$student->id])) {
+                    $absentResultsToCreate[] = [
+                        'id' => (string) \Illuminate\Support\Str::uuid(),
+                        'exam_id' => $this->exam->id,
                         'student_id' => $student->id,
-                        'score'      => 0,
+                        'score' => 0,
                         'percentage' => 0,
-                    ]);
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ];
 
                     try {
                         $student->notify(new ExamAbsentNotification($this->exam));
@@ -100,9 +117,14 @@ class ProcessExamEnd implements ShouldQueue
             }
         }
 
+        // Batch insert absent results (single query instead of N queries)
+        if (!empty($absentResultsToCreate)) {
+            ExamResult::insert($absentResultsToCreate);
+        }
+
         Log::info("ProcessExamEnd: Completed for exam {$this->exam->id}", [
             'total_students' => $students->count(),
-            'absent_marked'  => $absentCount,
+            'absent_marked' => $absentCount,
         ]);
     }
 }

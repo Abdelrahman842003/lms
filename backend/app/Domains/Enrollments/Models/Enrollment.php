@@ -9,6 +9,7 @@ use App\Domains\Auth\Models\Student;
 use App\Domains\Auth\Models\Teacher;
 use App\Domains\Enrollments\Services\EnrollmentStatusService;
 use App\Domains\Application\Traits\GuardsSensitiveFields;
+use Closure;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -19,7 +20,33 @@ class Enrollment extends Model
     use GuardsSensitiveFields;
     use HasFactory, HasUuids, SoftDeletes;
 
-    protected static ?EnrollmentStatusService $statusService = null;
+    /**
+     * Static resolver for the status service.
+     * Can be overridden in tests to inject mock services.
+     *
+     * @var \Closure|null
+     */
+    protected static ?Closure $statusServiceResolver = null;
+
+    /**
+     * Set a custom resolver for the status service.
+     * Useful for testing - allows injecting mock services.
+     *
+     * @param \Closure|null $resolver A function that returns an EnrollmentStatusService instance
+     */
+    public static function setStatusServiceResolver(?Closure $resolver): void
+    {
+        static::$statusServiceResolver = $resolver;
+    }
+
+    /**
+     * Clear the custom status service resolver.
+     * Call this in test tearDown to ensure clean state.
+     */
+    public static function clearStatusServiceResolver(): void
+    {
+        static::$statusServiceResolver = null;
+    }
 
     protected $fillable = [
         'student_id',
@@ -62,14 +89,21 @@ class Enrollment extends Model
 
     /**
      * Get the status service instance.
+     *
+     * Uses a resolver pattern to allow dependency injection in tests.
+     * In production, this falls back to the service container.
+     *
+     * Note: We use app() here because Laravel models don't support
+     * constructor injection well. The resolver pattern allows us to
+     * swap this for testing while keeping the production code clean.
      */
     protected function getStatusService(): EnrollmentStatusService
     {
-        if (self::$statusService === null) {
-            self::$statusService = new EnrollmentStatusService;
+        if (static::$statusServiceResolver !== null) {
+            return (static::$statusServiceResolver)();
         }
 
-        return self::$statusService;
+        return app(EnrollmentStatusService::class);
     }
 
     // Relationships

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Application\Services\Guardian;
 
+use App\Domains\Application\Exceptions\DomainException;
 use App\Domains\Auth\Models\Guardian;
 use Illuminate\Notifications\DatabaseNotification;
 
@@ -57,7 +58,7 @@ class GuardianNotificationService
             return true;
         }
         
-        throw new \Exception('Notification not found or access denied', 404);
+        throw new DomainException('Notification not found or access denied');
     }
 
     public function markAllAsRead(Guardian $guardian)

@@ -37,8 +37,8 @@ class StoreGradeRequest extends FormRequest
     public function prepareForValidation()
     {
         $this->merge([
-            'name' => strip_tags($this->input('name')),
-            'description' => $this->input('description') ? strip_tags($this->input('description')) : null,
+            'name' => clean_input($this->input('name')),
+            'description' => $this->input('description') ? clean_input($this->input('description')) : null,
         ]);
     }
 }

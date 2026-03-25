@@ -66,8 +66,29 @@ class StudentResource extends JsonResource
     {
         $currentMonth = now()->month;
         
+        $examResults = $this->examResults;
+        
+        // Check if exam relationship is eager-loaded to avoid N+1
+        // If not loaded, we need to load it efficiently
+        $firstResult = $examResults->first();
+        if ($firstResult && !$firstResult->relationLoaded('exam')) {
+            // Load exam relationship for all results at once to avoid N+1
+            $examResults->load('exam:id,title,max_score,date');
+        }
+        
         // All results
-        $results = $this->examResults->map(function ($result) {
+        $results = $examResults->map(function ($result) {
+            // Guard against missing exam relationship
+            if (!$result->exam) {
+                return [
+                    'exam_title' => 'Unknown',
+                    'score' => $result->score,
+                    'max_score' => 0,
+                    'percentage' => 0,
+                    'date' => null,
+                ];
+            }
+            
             return [
                 'exam_title' => $result->exam->title,
                 'score' => $result->score,
@@ -78,17 +99,20 @@ class StudentResource extends JsonResource
         });
 
         // Current month average
-        $monthResults = $this->examResults->filter(function ($result) use ($currentMonth) {
-             // Assuming exam date is what matters, or result creation date? 
-             // Using exam date from the relationship
-             return \Carbon\Carbon::parse($result->exam->date)->month === $currentMonth;
+        $monthResults = $examResults->filter(function ($result) use ($currentMonth) {
+            // Guard against missing exam
+            if (!$result->exam || !$result->exam->date) {
+                return false;
+            }
+            // Using exam date from the relationship
+            return \Carbon\Carbon::parse($result->exam->date)->month === $currentMonth;
         });
 
         $totalPercentage = 0;
         $count = 0;
 
         foreach ($monthResults as $result) {
-            if ($result->exam->max_score > 0) {
+            if ($result->exam && $result->exam->max_score > 0) {
                 $totalPercentage += ($result->score / $result->exam->max_score) * 100;
                 $count++;
             }

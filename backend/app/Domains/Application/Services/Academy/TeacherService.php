@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Application\Services\Academy;
 
+use App\Domains\Application\Exceptions\DomainException;
 use App\Domains\Auth\Models\Academy;
 use App\Domains\Auth\Models\Teacher;
 use App\Domains\Enrollments\Models\Enrollment;
@@ -91,7 +92,7 @@ class TeacherService
             }
             
             // Teacher is already active in this academy
-            throw new \Exception('المدرس موجود بالفعل في الأكاديمية');
+            throw new DomainException('المدرس موجود بالفعل في الأكاديمية');
         }
 
         // Teacher doesn't exist in academy, add them
@@ -116,7 +117,7 @@ class TeacherService
     {
         // Check if phone exists
         if (Teacher::where('phone', $data->phone)->exists()) {
-            throw new \Exception('رقم الهاتف مستخدم بالفعل');
+            throw new DomainException('رقم الهاتف مستخدم بالفعل');
         }
 
         $teacher = Teacher::create([
@@ -151,7 +152,7 @@ class TeacherService
 
         // Check if phone exists for another teacher
         if (Teacher::where('phone', $data->phone)->where('id', '!=', $teacherId)->exists()) {
-            throw new \Exception('رقم الهاتف مستخدم بالفعل');
+            throw new DomainException('رقم الهاتف مستخدم بالفعل');
         }
 
         $teacher->name = $data->name;

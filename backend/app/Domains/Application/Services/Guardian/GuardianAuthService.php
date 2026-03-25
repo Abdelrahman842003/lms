@@ -10,6 +10,7 @@ use App\Domains\Auth\Models\LoginAttempt;
 use App\Domains\Auth\Services\DeviceLimitService;
 use App\Domains\Auth\Services\LoginAttemptService;
 use App\Domains\Auth\Services\TokenService;
+use App\Domains\Application\Exceptions\DomainException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
@@ -28,7 +29,7 @@ class GuardianAuthService
         if ($this->loginAttemptService->isBlocked($phone, $ip)) {
             $seconds = $this->loginAttemptService->getRemainingBanTime($phone, $ip);
             $minutes = ceil($seconds / 60);
-            throw new \Exception("محاولات دخول كثيرة جداً. يرجى المحاولة بعد {$minutes} دقيقة.", 429);
+            throw new DomainException("محاولات دخول كثيرة جداً. يرجى المحاولة بعد {$minutes} دقيقة.");
         }
 
         $guardian = Guardian::where('phone', $phone)->first();
@@ -64,16 +65,16 @@ class GuardianAuthService
             $result = $this->loginAttemptService->recordFailedAttempt($phone, $ip);
             
             if ($result['banned']) {
-                throw new \Exception("تم حظرك مؤقتاً لمدة {$result['ban_duration_minutes']} دقيقة بسبب محاولات دخول فاشلة متعددة.", 429);
+                throw new DomainException("تم حظرك مؤقتاً لمدة {$result['ban_duration_minutes']} دقيقة بسبب محاولات دخول فاشلة متعددة.");
             }
             
-            throw new \Exception("بيانات الدخول غير صحيحة. المحاولات المتبقية: {$result['attempts_remaining']}", 401);
+            throw new DomainException("بيانات الدخول غير صحيحة. المحاولات المتبقية: {$result['attempts_remaining']}");
         }
 
         // Check device limit
         $deviceCheck = $this->deviceLimitService->checkAndManageDevices($guardian);
         if (!$deviceCheck['allowed']) {
-            throw new \Exception('تم الوصول للحد الأقصى من الأجهزة المسموح بها', 403);
+            throw new DomainException('تم الوصول للحد الأقصى من الأجهزة المسموح بها');
         }
 
         $this->loginAttemptService->clearAttempts($phone, $ip);

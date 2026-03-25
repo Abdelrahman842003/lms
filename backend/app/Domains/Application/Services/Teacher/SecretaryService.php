@@ -6,6 +6,7 @@ namespace App\Domains\Application\Services\Teacher;
 
 use App\Domains\Auth\Models\Secretary;
 use App\Domains\Auth\Models\Teacher;
+use App\Domains\Application\Exceptions\DomainException;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
@@ -45,7 +46,7 @@ class SecretaryService
             if ($secretary) {
                 // Check if already attached
                 if ($teacher->secretaries()->where('secretary_id', $secretary->id)->exists()) {
-                    throw new \Exception('هذا السكرتير مضاف لديك بالفعل', 422);
+                    throw new DomainException('هذا السكرتير مضاف لديك بالفعل');
                 }
                 
                 // Attach existing secretary

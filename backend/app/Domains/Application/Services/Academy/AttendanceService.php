@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Application\Services\Academy;
 
+use App\Domains\Application\Exceptions\DomainException;
 use App\Domains\Auth\Models\Academy;
 use App\Domains\Application\Models\TeacherAttendanceLog;
 use Carbon\Carbon;
@@ -73,7 +74,7 @@ class AttendanceService
             ->first();
 
         if ($existing) {
-            throw new \Exception('سجل الحضور موجود بالفعل لهذا اليوم');
+            throw new DomainException('سجل الحضور موجود بالفعل لهذا اليوم');
         }
 
         return TeacherAttendanceLog::create([

@@ -50,10 +50,10 @@ class StoreGroupRequest extends FormRequest
         }
 
         $this->merge([
-            'name' => strip_tags($this->input('name')),
-            'description' => $this->input('description') ? strip_tags($this->input('description')) : null,
-            'time' => $this->input('time') ? strip_tags($this->input('time')) : null,
-            'days' => $this->input('days') ? strip_tags($this->input('days')) : null,
+            'name' => clean_input($this->input('name')),
+            'description' => $this->input('description') ? clean_input($this->input('description')) : null,
+            'time' => $this->input('time') ? clean_input($this->input('time')) : null,
+            'days' => $this->input('days') ? clean_input($this->input('days')) : null,
             'type' => $type,
         ]);
     }

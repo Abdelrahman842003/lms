@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Media\Services;
 
+use App\Domains\Application\Exceptions\DomainException;
 use App\Domains\Auth\Models\Guardian;
 use App\Domains\Auth\Models\Secretary;
 use App\Domains\Auth\Models\Student;
@@ -114,6 +115,6 @@ class AvatarService
             return 'parent';
         }
 
-        throw new \Exception('Invalid user type');
+        throw new DomainException('Invalid user type');
     }
 }

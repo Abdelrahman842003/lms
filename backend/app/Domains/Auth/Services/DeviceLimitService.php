@@ -4,19 +4,25 @@ declare(strict_types=1);
 
 namespace App\Domains\Auth\Services;
 
+use App\Domains\Auth\Models\Admin;
+use App\Domains\Auth\Models\Guardian;
+use App\Domains\Auth\Models\Secretary;
+use App\Domains\Auth\Models\Student;
+use App\Domains\Auth\Models\Teacher;
 use Illuminate\Database\Eloquent\Model;
 use Laravel\Sanctum\PersonalAccessToken;
 
 class DeviceLimitService
 {
     /**
-     * Device limits per user type
+     * Device limits per user type (using DDD model paths)
      */
     const DEVICE_LIMITS = [
-        'App\Models\Student'   => 4,
-        'App\Models\Teacher'   => 2,
-        'App\Models\Secretary' => 1,
-        'App\Models\Admin'     => null, // unlimited
+        Student::class   => 4,
+        Teacher::class   => 2,
+        Secretary::class => 1,
+        Guardian::class  => 4,
+        Admin::class     => null, // unlimited
     ];
 
     /**

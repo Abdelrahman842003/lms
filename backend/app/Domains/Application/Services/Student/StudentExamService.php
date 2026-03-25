@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Application\Services\Student;
 
+use App\Domains\Application\Exceptions\DomainException;
 use App\Domains\Exams\Models\Exam;
 use App\Domains\Exams\Models\ExamAttempt;
 use App\Domains\Exams\Models\ExamResult;
@@ -104,7 +105,7 @@ class StudentExamService
                 return $this->getAttemptData($existingAttempt);
             }
 
-            throw new \Exception('لقد قمت بأداء هذا الامتحان مسبقاً');
+            throw new DomainException('لقد قمت بأداء هذا الامتحان مسبقاً');
         }
 
         // No existing attempt, create a new one

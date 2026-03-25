@@ -52,7 +52,7 @@ class UpdateStudentRequest extends FormRequest
     {
         if ($this->has('name')) {
             $this->merge([
-                'name' => strip_tags($this->input('name')),
+                'name' => clean_input($this->input('name')),
             ]);
         }
     }

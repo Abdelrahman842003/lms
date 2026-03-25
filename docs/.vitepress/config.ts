@@ -6,7 +6,7 @@ export default defineConfig({
   
   base: '/',
   
-  lastUpdated: false,
+  lastUpdated: true,
 
   head: [
     ['link', { rel: 'icon', href: '/favicon.ico' }],
@@ -20,13 +20,15 @@ export default defineConfig({
       { text: 'Home', link: '/' },
       { text: 'Getting Started', link: '/getting-started/quickstart' },
       { text: 'Docker', link: '/docker/overview' },
-      { text: 'Backend', link: '/backend/architecture' },
+      { 
+        text: 'Backend', 
+        items: [
+          { text: 'Architecture', link: '/backend/architecture' },
+          { text: 'API Reference', link: '/backend/api/' },
+          { text: 'Domains', link: '/backend/domains/' },
+        ]
+      },
       { text: 'Frontend', link: '/frontend/architecture' },
-      { text: 'Architecture', link: '/ARCHITECTURE.md' },
-      { text: 'API Conventions', link: '/API_CONVENTIONS.md' },
-      { text: 'Caching', link: '/CACHING_STRATEGY.md' },
-      { text: 'Performance', link: '/PERFORMANCE.md' },
-      { text: 'Changelog', link: '/CHANGELOG.md' },
     ],
 
     sidebar: {
@@ -54,13 +56,119 @@ export default defineConfig({
       
       '/backend/': [
         {
-          text: 'Backend',
+          text: 'Backend Overview',
           items: [
             { text: 'Architecture', link: '/backend/architecture' },
             { text: 'Request Lifecycle', link: '/backend/request-lifecycle' },
             { text: 'Authentication', link: '/backend/auth' },
+            { text: 'Security & Authorization', link: '/backend/security' },
             { text: 'Error Handling', link: '/backend/errors' },
             { text: 'Database', link: '/backend/database' },
+          ],
+        },
+        {
+          text: 'API Reference',
+          collapsed: false,
+          items: [
+            { text: 'Complete API Reference', link: '/backend/api' },
+            { text: 'Overview', link: '/backend/api/' },
+            { text: 'Authentication', link: '/backend/api/authentication' },
+            { text: 'Response Format', link: '/backend/api/response-format' },
+            { text: 'Rate Limiting', link: '/backend/api/rate-limiting' },
+            { text: 'Teacher API', link: '/backend/api/teacher' },
+            { text: 'Student API', link: '/backend/api/student' },
+            { text: 'Academy API', link: '/backend/api/academy' },
+            { text: 'Guardian API', link: '/backend/api/guardian' },
+            { text: 'Secretary API', link: '/backend/api/secretary' },
+          ],
+        },
+        {
+          text: 'Domains',
+          collapsed: false,
+          items: [
+            { text: 'Overview', link: '/backend/domains/' },
+            { text: 'Application Domain', link: '/backend/domains/application' },
+            { text: 'Auth Domain', link: '/backend/domains/auth' },
+            { text: 'Enrollments Domain', link: '/backend/domains/enrollments' },
+            { text: 'Exams Domain', link: '/backend/domains/exams' },
+            { text: 'Gamification Domain', link: '/backend/domains/gamification' },
+            { text: 'Lectures Domain', link: '/backend/domains/lectures' },
+            { text: 'Media Domain', link: '/backend/domains/media' },
+            { text: 'Notifications Domain', link: '/backend/domains/notifications' },
+            { text: 'Reports Domain', link: '/backend/domains/reports' },
+            { text: 'Subscriptions Domain', link: '/backend/domains/subscriptions' },
+            { text: 'Videos Domain', link: '/backend/domains/videos' },
+          ],
+        },
+        {
+          text: 'Enums Reference',
+          collapsed: true,
+          items: [
+            { text: 'Complete Reference', link: '/backend/enums' },
+            { text: 'All Enums', link: '/backend/enums/' },
+            { text: 'Auth Enums', link: '/backend/enums/auth' },
+            { text: 'Enrollment Enums', link: '/backend/enums/enrollments' },
+            { text: 'Exam Enums', link: '/backend/enums/exams' },
+            { text: 'Subscription Enums', link: '/backend/enums/subscriptions' },
+            { text: 'Video Enums', link: '/backend/enums/videos' },
+            { text: 'Notification Enums', link: '/backend/enums/notifications' },
+          ],
+        },
+        {
+          text: 'Configuration',
+          collapsed: true,
+          items: [
+            { text: 'Overview', link: '/backend/configuration/' },
+          ],
+        },
+        {
+          text: 'Database',
+          collapsed: true,
+          items: [
+            { text: 'Overview', link: '/backend/database/' },
+            { text: 'Migrations', link: '/backend/database/migrations' },
+            { text: 'Seeders', link: '/backend/database/seeders' },
+            { text: 'Factories', link: '/backend/database/factories' },
+          ],
+        },
+        {
+          text: 'Services',
+          collapsed: true,
+          items: [
+            { text: 'Overview', link: '/backend/services/' },
+            { text: 'AuthService', link: '/backend/services/auth' },
+            { text: 'DeviceLimitService', link: '/backend/services/device-limit' },
+            { text: 'NotificationService', link: '/backend/services/notification' },
+            { text: 'CacheService', link: '/backend/services/cache' },
+          ],
+        },
+        {
+          text: 'Traits',
+          collapsed: true,
+          items: [
+            { text: 'Overview', link: '/backend/traits/' },
+            { text: 'ApiResponseTrait', link: '/backend/traits/api-response' },
+            { text: 'HasDeviceTokens', link: '/backend/traits/has-device-tokens' },
+            { text: 'HasAcademyFilter', link: '/backend/traits/has-academy-filter' },
+            { text: 'ResolvesAcademy', link: '/backend/traits/resolves-academy' },
+            { text: 'ResolvesTeacher', link: '/backend/traits/resolves-teacher' },
+          ],
+        },
+        {
+          text: 'Jobs & Events',
+          collapsed: true,
+          items: [
+            { text: 'Overview', link: '/backend/jobs-events/' },
+          ],
+        },
+        {
+          text: 'Policies',
+          collapsed: true,
+          items: [
+            { text: 'Overview', link: '/backend/policies/' },
+            { text: 'StudentPolicy', link: '/backend/policies/student' },
+            { text: 'ExamPolicy', link: '/backend/policies/exam' },
+            { text: 'VideoPolicy', link: '/backend/policies/video' },
           ],
         },
       ],
@@ -98,23 +206,13 @@ export default defineConfig({
       provider: 'local',
     },
 
-    // editLink: {
-    //   pattern: 'https://github.com/neetaq/platform/edit/main/docs/:path',
-    //   text: 'Edit this page on GitHub',
-    // },
-
-    // lastUpdated disabled (requires git inside container)
-    // lastUpdated: {
-    //   text: 'Updated at',
-    //   formatOptions: {
-    //     dateStyle: 'full',
-    //     timeStyle: 'medium',
-    //   },
-    // },
+    outline: {
+      level: [2, 3],
+    },
   },
 
   markdown: {
-    // Mermaid diagrams rendered via client-side script in theme
+    lineNumbers: true,
   },
 
   // Build configuration

@@ -4,6 +4,13 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+// Domain Services
+use App\Domains\Gamification\Services\PointCalculator;
+use App\Domains\Gamification\Strategies\AttendancePointStrategy;
+use App\Domains\Gamification\Strategies\ExamPointStrategy;
+use App\Domains\Gamification\Strategies\ManualBonusStrategy;
+use App\Domains\Gamification\Strategies\VideoPointStrategy;
+
 // Domain Events
 use App\Domains\Auth\Events\UserLoggedIn;
 use App\Domains\Exams\Events\ExamCompleted;
@@ -138,6 +145,12 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
+use App\Domains\Notifications\Listeners\NotificationEventSubscriber;
+use App\Domains\Notifications\Observers\AnalyticsChannelObserver;
+use App\Domains\Notifications\Observers\BroadcastChannelObserver;
+use App\Domains\Notifications\Observers\DatabaseChannelObserver;
+use App\Domains\Notifications\Observers\FcmChannelObserver;
+
 class AppServiceProvider extends ServiceProvider
 {
     /**
@@ -145,7 +158,54 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Tag all point strategies for auto-discovery
+        // Note: ManualBonusStrategy is excluded from tagging because it needs
+        // factory binding with parameters. It's registered separately below.
+        $this->app->tag([
+            AttendancePointStrategy::class,
+            ExamPointStrategy::class,
+            VideoPointStrategy::class,
+        ], 'point_strategies');
+
+        // ManualBonusStrategy - factory binding (not singleton) since it's immutable
+        // Each resolution creates a new instance with the provided parameters
+        $this->app->bind(ManualBonusStrategy::class, function ($app, $params) {
+            return new ManualBonusStrategy(
+                $params['points'] ?? 0,
+                $params['description'] ?? ''
+            );
+        });
+
+        // Gamification - PointCalculator singleton with auto-discovered strategies
+        // Strategies are automatically discovered via container tagging.
+        // To add a new strategy, simply add it to the 'point_strategies' tag above.
+        $this->app->singleton(PointCalculator::class, function ($app) {
+            $calculator = new PointCalculator();
+
+            // Auto-discover all tagged strategies
+            foreach ($app->tagged('point_strategies') as $strategy) {
+                $calculator->registerStrategy($strategy);
+            }
+
+            // Register a default ManualBonusStrategy for discovery/iteration purposes
+            // (It's not tagged because it needs factory binding with parameters)
+            $calculator->registerStrategy($app->make(ManualBonusStrategy::class));
+
+            return $calculator;
+        });
+
+        // Notification channel observers - tagged for DI injection
+        $this->app->tag([
+            DatabaseChannelObserver::class,
+            BroadcastChannelObserver::class,
+            FcmChannelObserver::class,
+            AnalyticsChannelObserver::class,
+        ], 'notification_observers');
+
+        // Bind the subscriber with tagged observers
+        $this->app->when(NotificationEventSubscriber::class)
+            ->needs('$observers')
+            ->giveTagged('notification_observers');
     }
 
     /**

@@ -31,7 +31,7 @@ class MarkAttendanceRequest extends FormRequest
     public function prepareForValidation()
     {
         $this->merge([
-            'token' => strip_tags($this->input('token')),
+            'token' => clean_input($this->input('token')),
         ]);
     }
 }

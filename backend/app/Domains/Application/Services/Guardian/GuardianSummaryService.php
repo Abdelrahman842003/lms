@@ -135,25 +135,52 @@ class GuardianSummaryService
     public function getRankingData(string $teacherId, string $studentId): array
     {
         // Calculate total points or average score for ranking
-        // For simplicity, let's use average exam percentage for now
+        // Optimized: Single query with GROUP BY instead of N+1 queries
         
-        // Get all students for this teacher
-        $students = Student::whereHas('enrollments', function ($q) use ($teacherId) {
+        // Get all active student IDs for this teacher in one query
+        $studentIds = Student::whereHas('enrollments', function ($q) use ($teacherId) {
             $q->where('teacher_id', $teacherId)->where('is_active', true);
-        })->get();
+        })->pluck('id');
 
-        $rankings = $students->map(function ($student) use ($teacherId) {
-            $avg = ExamResult::where('student_id', $student->id)
-                ->whereHas('exam', function ($q) use ($teacherId) {
-                    $q->where('teacher_id', $teacherId);
-                })
-                ->avg('percentage');
-            
+        $totalStudents = $studentIds->count();
+
+        if ($totalStudents === 0) {
             return [
-                'student_id' => $student->id,
-                'average' => $avg ?? 0,
+                'rank' => '-',
+                'total_students' => 0,
             ];
-        })->sortByDesc('average')->values();
+        }
+
+        // Single query to get average percentage for all students at once
+        $rankings = ExamResult::whereIn('student_id', $studentIds)
+            ->whereHas('exam', function ($q) use ($teacherId) {
+                $q->where('teacher_id', $teacherId);
+            })
+            ->select('student_id', \Illuminate\Support\Facades\DB::raw('AVG(percentage) as average'))
+            ->groupBy('student_id')
+            ->get()
+            ->map(function ($result) {
+                return [
+                    'student_id' => $result->student_id,
+                    'average' => (float) ($result->average ?? 0),
+                ];
+            })
+            ->sortByDesc('average')
+            ->values();
+
+        // Add students with no exam results (average = 0) to rankings
+        $rankedStudentIds = $rankings->pluck('student_id')->toArray();
+        $missingStudentIds = $studentIds->diff($rankedStudentIds);
+        
+        foreach ($missingStudentIds as $missingId) {
+            $rankings->push([
+                'student_id' => $missingId,
+                'average' => 0,
+            ]);
+        }
+
+        // Re-sort after adding missing students
+        $rankings = $rankings->sortByDesc('average')->values();
 
         $myRank = $rankings->search(function ($item) use ($studentId) {
             return $item['student_id'] == $studentId;
@@ -161,7 +188,7 @@ class GuardianSummaryService
 
         return [
             'rank' => $myRank !== false ? $myRank + 1 : '-',
-            'total_students' => $students->count(),
+            'total_students' => $totalStudents,
         ];
     }
 }

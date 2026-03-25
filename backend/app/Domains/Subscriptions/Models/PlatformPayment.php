@@ -162,13 +162,7 @@ class PlatformPayment extends Model
      */
     public function getMonthNameAttribute(): string
     {
-        $months = [
-            1 => 'يناير', 2 => 'فبراير', 3 => 'مارس', 4 => 'أبريل',
-            5 => 'مايو', 6 => 'يونيو', 7 => 'يوليو', 8 => 'أغسطس',
-            9 => 'سبتمبر', 10 => 'أكتوبر', 11 => 'نوفمبر', 12 => 'ديسمبر'
-        ];
-        
-        return $months[$this->month] ?? '';
+        return \App\Domains\Application\Services\HelperService::getArabicMonthName($this->month);
     }
 
     /**

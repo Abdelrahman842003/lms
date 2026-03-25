@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Application\Services\Teacher;
 
 use App\Domains\Auth\Models\Academy;
+use App\Domains\Application\Exceptions\DomainException;
 use App\Domains\Application\Models\TeacherAttendanceLog;
 use App\Domains\Auth\Models\Teacher;
 use Carbon\Carbon;
@@ -22,7 +23,7 @@ class ScanService
             ->first();
 
         if (!$academy) {
-            throw new \Exception('رمز QR غير صحيح أو الأكاديمية غير مفعلة');
+            throw new DomainException('رمز QR غير صحيح أو الأكاديمية غير مفعلة');
         }
 
         // Check if teacher belongs to this academy and is active
@@ -31,7 +32,7 @@ class ScanService
             ->exists();
             
         if (!$isActiveTeacher) {
-            throw new \Exception('أنت غير مسجل في هذه الأكاديمية أو حسابك غير نشط');
+            throw new DomainException('أنت غير مسجل في هذه الأكاديمية أو حسابك غير نشط');
         }
 
         $today = Carbon::today();
@@ -43,7 +44,7 @@ class ScanService
             ->first();
 
         if ($existingLog && $existingLog->checked_in_at) {
-            throw new \Exception('لقد سجلت حضورك بالفعل اليوم');
+            throw new DomainException('لقد سجلت حضورك بالفعل اليوم');
         }
 
         // Create or update log
@@ -76,7 +77,7 @@ class ScanService
             ->first();
 
         if (!$academy) {
-            throw new \Exception('رمز QR غير صحيح أو الأكاديمية غير مفعلة');
+            throw new DomainException('رمز QR غير صحيح أو الأكاديمية غير مفعلة');
         }
 
         // Check if teacher belongs to this academy and is active
@@ -85,7 +86,7 @@ class ScanService
             ->exists();
             
         if (!$isActiveTeacher) {
-            throw new \Exception('أنت غير مسجل في هذه الأكاديمية أو حسابك غير نشط');
+            throw new DomainException('أنت غير مسجل في هذه الأكاديمية أو حسابك غير نشط');
         }
 
         $today = Carbon::today();
@@ -97,11 +98,11 @@ class ScanService
             ->first();
 
         if (!$log || !$log->checked_in_at) {
-            throw new \Exception('يجب تسجيل الحضور أولاً');
+            throw new DomainException('يجب تسجيل الحضور أولاً');
         }
 
         if ($log->checked_out_at) {
-            throw new \Exception('لقد سجلت الانصراف بالفعل');
+            throw new DomainException('لقد سجلت الانصراف بالفعل');
         }
 
         $log->checked_out_at = Carbon::now();
