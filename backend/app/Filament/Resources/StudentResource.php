@@ -27,6 +27,10 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Infolists\Infolist;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\Section as InfolistSection;
+use Filament\Infolists\Components\RepeatableEntry;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Hash;
 
@@ -251,24 +255,20 @@ class StudentResource extends BaseResource
                     ->icon('heroicon-m-phone')
                     ->toggleable(),
 
-                Tables\Columns\TextColumn::make('grades.name')
-                    ->label('الصف')
+                Tables\Columns\TextColumn::make('teachers_count')
+                    ->counts('teachers')
+                    ->label('عدد المدرسين')
                     ->badge()
-                    ->separator(',')
+                    ->color('info')
+                    ->sortable()
                     ->toggleable(),
 
-                Tables\Columns\TextColumn::make('groups.name')
-                    ->label('المجموعة')
+                Tables\Columns\TextColumn::make('academies_count')
+                    ->counts('academies')
+                    ->label('عدد الأكاديميات')
                     ->badge()
-                    ->separator(',')
-                    ->toggleable(),
-
-                Tables\Columns\TextColumn::make('academies.name')
-                    ->label('الأكاديمية')
-                    ->badge()
-                    ->separator(',')
-                    ->limitList(2)
-                    ->expandableLimitedList()
+                    ->color('warning')
+                    ->sortable()
                     ->toggleable(),
 
                 Tables\Columns\TextColumn::make('created_at')
@@ -343,5 +343,59 @@ class StudentResource extends BaseResource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery();
+    }
+
+    public static function infolist(Schema $schema): Schema
+    {
+        return $schema
+            ->components([
+                InfolistSection::make('المعلومات الأساسية')
+                    ->columns(3)
+                    ->schema([
+                        TextEntry::make('name')->label('الاسم'),
+                        TextEntry::make('phone')->label('الهاتف'),
+                        TextEntry::make('parent_phone')->label('هاتف ولي الأمر')->placeholder('لا يوجد'),
+                        TextEntry::make('gender')->label('الجنس')
+                            ->formatStateUsing(fn ($state) => $state === 'male' ? 'ذكر' : ($state === 'female' ? 'أنثى' : $state)),
+                        TextEntry::make('education_type')->label('نوع التعليم')
+                            ->formatStateUsing(fn ($state) => $state === 'general' ? 'عام' : ($state === 'azhar' ? 'أزهر' : $state)),
+                        TextEntry::make('location')->label('الموقع')->placeholder('لا يوجد'),
+                    ]),
+
+                InfolistSection::make('تفاصيل الاشتراكات (المدرسين والأكاديميات)')
+                    ->schema([
+                        RepeatableEntry::make('enrollments')
+                            ->label('')
+                            ->schema([
+                                TextEntry::make('teacher.name')
+                                    ->label('المعلم')
+                                    ->icon('heroicon-m-user')
+                                    ->weight('bold')
+                                    ->placeholder('غير محدد'),
+
+                                TextEntry::make('academy.name')
+                                    ->label('الأكاديمية')
+                                    ->icon('heroicon-m-building-office')
+                                    ->placeholder('مستقل'),
+
+                                TextEntry::make('grade.name')
+                                    ->label('الصف الدراسي')
+                                    ->icon('heroicon-m-academic-cap')
+                                    ->placeholder('غير محدد'),
+
+                                TextEntry::make('group.name')
+                                    ->label('المجموعة')
+                                    ->icon('heroicon-m-user-group')
+                                    ->placeholder('غير محدد'),
+
+                                TextEntry::make('is_active')
+                                    ->label('الحالة')
+                                    ->badge()
+                                    ->color(fn (bool $state): string => $state ? 'success' : 'danger')
+                                    ->formatStateUsing(fn (bool $state): string => $state ? 'نشط' : 'غير نشط'),
+                            ])
+                            ->columns(5)
+                    ])
+            ]);
     }
 }
