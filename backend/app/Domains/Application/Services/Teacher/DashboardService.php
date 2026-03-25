@@ -104,7 +104,7 @@ class DashboardService
     {
         $query = \App\Domains\Enrollments\Models\Enrollment::where('teacher_id', $teacher->id)
             ->with([
-                'student:id,name,phone,photo_key',
+                'student:id,name,phone,avatar_key',
                 'grade:id,name',
                 'group:id,name',
                 'academy:id,trial_period_days',

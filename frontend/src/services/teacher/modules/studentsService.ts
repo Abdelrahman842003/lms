@@ -28,8 +28,14 @@ export async function getTeacherStudents(
     ...(status && { status }),
   });
 
-  const res = await fetchApi<{ students: TeacherStudent[]; total: number }>(`/teacher/students?${queryParams}`);
-  return res;
+  const res = await fetchApi<any>(`/teacher/students?${queryParams}`);
+  const studentsData = res.students?.data || res.students || [];
+  const total = res.students?.meta?.total || res.students?.total || res.total || 0;
+  
+  return {
+    students: studentsData,
+    total: total
+  };
 }
 
 /**
