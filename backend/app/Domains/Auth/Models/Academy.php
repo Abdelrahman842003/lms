@@ -11,16 +11,18 @@ use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
+use Illuminate\Contracts\Auth\Access\Authorizable as AuthorizableContract;
 use Illuminate\Auth\Authenticatable;
+use Illuminate\Foundation\Auth\Access\Authorizable;
 use App\Domains\Subscriptions\Models\Subscription;
 use App\Domains\Subscriptions\Models\AcademySubscription;
 use App\Domains\Subscriptions\Enums\SubscriptionStatus;
 use App\Domains\Application\Models\TeacherAttendanceLog;
 use App\Domains\Subscriptions\Traits\HasSubscriptionStatus;
 
-class Academy extends Model implements AuthenticatableContract
+class Academy extends Model implements AuthenticatableContract, AuthorizableContract
 {
-    use HasFactory, HasUuids, HasApiTokens, Authenticatable, HasSubscriptionStatus, Notifiable;
+    use HasFactory, HasUuids, HasApiTokens, Authenticatable, Authorizable, HasSubscriptionStatus, Notifiable;
 
     protected $fillable = [
         'name',

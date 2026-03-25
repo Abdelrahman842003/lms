@@ -154,7 +154,7 @@ export default function AddStudentPage() {
       }
       
       try {
-        const groupsData = await getGroups(1, 100, { grade_id: formData.grade_id });
+        const groupsData = await getGroups(1, 100, { grade_id: formData.grade_id, teacher_id: formData.teacher_id });
         
         // Robust data extraction for Groups
         let groupsList: Group[] = [];

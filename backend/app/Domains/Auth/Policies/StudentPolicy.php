@@ -48,6 +48,14 @@ class StudentPolicy
     }
 
     /**
+     * Determine whether the user can create a student.
+     */
+    public function create(Admin|Teacher|Secretary|Academy $user): bool
+    {
+        return true;
+    }
+
+    /**
      * Determine whether the user can view the student.
      * Student must be enrolled with the teacher or academy.
      */

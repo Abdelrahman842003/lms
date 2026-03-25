@@ -23,9 +23,14 @@ class GradeService
 
         // Filter by teacher_id if provided
         if (isset($filters['teacher_id']) && $filters['teacher_id']) {
-            return $query->where('teacher_id', $filters['teacher_id'])
+            return $query->where(function($q) use ($filters) {
+                    $q->where('teacher_id', $filters['teacher_id'])
+                      ->orWhereNull('teacher_id');
+                })
                 ->select('id', 'name', 'price', 'teacher_id')
-                ->get();
+                ->get()
+                ->unique('name')
+                ->values();
         }
 
         // 1. Detail View: If filtering by specific grade name

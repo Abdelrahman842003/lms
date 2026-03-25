@@ -114,7 +114,6 @@ class StudentService
                     'grade_id' => $data->gradeId,
                     'group_id' => $data->groupId,
                     'is_active' => true,
-                    // We don't overwrite joined_at to keep history
                 ]);
             } else {
                 $enrollment = Enrollment::create([
@@ -124,7 +123,6 @@ class StudentService
                     'grade_id' => $data->gradeId,
                     'group_id' => $data->groupId,
                     'is_active' => true,
-                    'joined_at' => now(),
                 ]);
             }
 
