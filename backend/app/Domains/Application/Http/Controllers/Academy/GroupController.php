@@ -22,9 +22,28 @@ class GroupController extends Controller
         private GroupService $service
     ) {}
 
+    protected function getAcademy(Request $request): ?\App\Domains\Auth\Models\Academy
+    {
+        $user = Auth::user();
+        
+        if ($user instanceof \App\Domains\Auth\Models\Academy) {
+            return $user;
+        }
+        
+        // Secretary case - get academy via relationship
+        if ($user instanceof \App\Domains\Auth\Models\Secretary) {
+            return $user->academies()->first();
+        }
+        
+        return null;
+    }
+
     public function index(Request $request): JsonResponse
     {
-        $academy = Auth::user();
+        $academy = $this->getAcademy($request);
+        if (!$academy) {
+            return $this->errorResponse('Unauthorized', null, 403);
+        }
         $perPage = (int) $request->input('per_page', 10);
         $filters = $request->only(['search', 'grade_id', 'grade_name', 'teacher_id']);
         
@@ -44,51 +63,52 @@ class GroupController extends Controller
 
     public function store(StoreGroupRequest $request): JsonResponse
     {
-        $academy = Auth::user();
+        $academy = $this->getAcademy($request);
+        if (!$academy) {
+            return $this->errorResponse('Unauthorized', null, 403);
+        }
         $data = GroupData::fromRequest($request);
         
-        try {
-            $group = $this->service->createGroup($academy, $data);
-            
-            return $this->successResponse([
-                'group' => new GroupResource($group),
-                'message' => 'تم إضافة المجموعة بنجاح'
-            ], 201);
-        } catch (\Exception $e) {
-            return $this->errorResponse($e->getMessage(), 422);
-        }
+        $group = $this->service->createGroup($academy, $data);
+        
+        return $this->successResponse([
+            'group' => new GroupResource($group),
+            'message' => 'تم إضافة المجموعة بنجاح'
+        ], 'تم إضافة المجموعة بنجاح', 201);
     }
 
     public function update(UpdateGroupRequest $request, Group $group): JsonResponse
     {
-        $academy = Auth::user();
+        $academy = $this->getAcademy($request);
+        if (!$academy) {
+            return $this->errorResponse('Unauthorized', null, 403);
+        }
 
         // Verify group belongs to a teacher in this academy
         if (!$this->isOwnedByAcademy($academy, $group)) {
-            return $this->errorResponse('Unauthorized', 403);
+            return $this->errorResponse('Unauthorized', null, 403);
         }
 
         $data = GroupData::fromRequest($request);
 
-        try {
-            $group = $this->service->updateGroup($academy, $group, $data);
-
-            return $this->successResponse([
-                'group' => new GroupResource($group),
-                'message' => 'تم تحديث المجموعة بنجاح'
-            ]);
-        } catch (\Exception $e) {
-            return $this->errorResponse($e->getMessage(), 422);
-        }
+        $group = $this->service->updateGroup($academy, $group, $data);
+        
+        return $this->successResponse([
+            'group' => new GroupResource($group),
+            'message' => 'تم تحديث المجموعة بنجاح'
+        ]);
     }
 
-    public function destroy(Group $group): JsonResponse
+    public function destroy(Request $request, Group $group): JsonResponse
     {
-        $academy = Auth::user();
+        $academy = $this->getAcademy($request);
+        if (!$academy) {
+            return $this->errorResponse('Unauthorized', null, 403);
+        }
 
         // Verify group belongs to a teacher in this academy
         if (!$this->isOwnedByAcademy($academy, $group)) {
-            return $this->errorResponse('Unauthorized', 403);
+            return $this->errorResponse('Unauthorized', null, 403);
         }
 
         $this->service->deleteGroup($group);
@@ -96,9 +116,7 @@ class GroupController extends Controller
         return $this->successResponse([
             'message' => 'تم حذف المجموعة بنجاح'
         ]);
-    }
-
-    private function isOwnedByAcademy($academy, Group $group): bool
+    }    private function isOwnedByAcademy($academy, Group $group): bool
     {
         return $group->academy_id === $academy->id || 
                ($group->grade && $group->grade->academy_id === $academy->id);

@@ -92,7 +92,7 @@ class GradeController extends Controller
         return $this->successResponse([
             'grade' => new GradeResource($grade),
             'message' => 'تم إضافة الصف الدراسي بنجاح'
-        ], 201);
+        ], 'تم إضافة الصف الدراسي بنجاح', 201);
     }
 
     public function update(UpdateGradeRequest $request, Grade $grade): JsonResponse
