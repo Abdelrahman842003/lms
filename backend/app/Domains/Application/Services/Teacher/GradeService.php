@@ -18,24 +18,21 @@ class GradeService
 
     public function getGrades(Teacher $teacher, int $perPage = 10, array $filters = [], ?string $academyId = null): LengthAwarePaginator
     {
-        // Use caching for grade listings
-        return CacheService::getTeacherGrades($teacher->id, function () use ($teacher, $perPage, $filters, $academyId) {
-            $query = $teacher->grades()
-                ->withCount(['groups', 'enrollments'])
-                ->latest();
+        $query = $teacher->grades()
+            ->withCount(['groups', 'enrollments'])
+            ->latest();
 
-            // Apply filters using Filter class
-            (new GradeFilter($filters))->apply(
-                $query instanceof \Illuminate\Database\Eloquent\Builder 
-                    ? $query 
-                    : ($query instanceof \Illuminate\Database\Eloquent\Relations\Relation ? $query->getQuery() : $query)
-            );
+        // Apply filters using Filter class
+        (new GradeFilter($filters))->apply(
+            $query instanceof \Illuminate\Database\Eloquent\Builder 
+                ? $query 
+                : ($query instanceof \Illuminate\Database\Eloquent\Relations\Relation ? $query->getQuery() : $query)
+        );
 
-            // Apply direct academy filter (grades have academy_id column)
-            $query = $this->applyDirectAcademyFilter($query, $academyId);
+        // Apply direct academy filter (grades have academy_id column)
+        $query = $this->applyDirectAcademyFilter($query, $academyId);
 
-            return $query->paginate($perPage);
-        });
+        return $query->paginate($perPage);
     }
 
     public function createGrade(Teacher $teacher, TeacherGradeData $data): Grade

@@ -17,55 +17,52 @@ class GradeService
 {
     public function getGrades(Academy $academy, array $filters = [], int $perPage = 10)
     {
-        // Use caching for grade listings
-        return CacheService::getAcademyGrades($academy->id, function () use ($academy, $filters, $perPage) {
-            // Base query: Grades for all teachers belonging to this academy OR grades created by the academy directly
-            // Filter strictly by academy_id to ensure only academy-specific grades are shown
-            $query = Grade::where('academy_id', $academy->id)->whereNotNull('academy_id');
+        // Base query: Grades for all teachers belonging to this academy OR grades created by the academy directly
+        // Filter strictly by academy_id to ensure only academy-specific grades are shown
+        $query = Grade::where('academy_id', $academy->id)->whereNotNull('academy_id');
 
-            // Filter by teacher_id if provided
-            if (isset($filters['teacher_id']) && $filters['teacher_id']) {
-                return $query->where('teacher_id', $filters['teacher_id'])
-                    ->select('id', 'name', 'price', 'teacher_id')
-                    ->get();
-            }
+        // Filter by teacher_id if provided
+        if (isset($filters['teacher_id']) && $filters['teacher_id']) {
+            return $query->where('teacher_id', $filters['teacher_id'])
+                ->select('id', 'name', 'price', 'teacher_id')
+                ->get();
+        }
 
-            // 1. Detail View: If filtering by specific grade name
-            if (isset($filters['name']) && $filters['name'] !== null && $filters['name'] !== '') {
-                return $query->where('name', $filters['name'])
-                    ->with('teacher')
-                    ->withCount(['groups', 'enrollments'])
-                    ->latest()
-                    ->paginate($perPage);
-            }
+        // 1. Detail View: If filtering by specific grade name
+        if (isset($filters['name']) && $filters['name'] !== null && $filters['name'] !== '') {
+            return $query->where('name', $filters['name'])
+                ->with('teacher')
+                ->withCount(['groups', 'enrollments'])
+                ->latest()
+                ->paginate($perPage);
+        }
 
-            // 2. Grouped View: Group by name and aggregate stats
-            // We fetch all to group in PHP as it's cleaner for aggregations across relations
-            $grades = $query->withCount(['groups', 'enrollments'])->get();
+        // 2. Grouped View: Group by name and aggregate stats
+        // We fetch all to group in PHP as it's cleaner for aggregations across relations
+        $grades = $query->withCount(['groups', 'enrollments'])->get();
 
-            $grouped = $grades->groupBy('name')->map(function ($group, $name) {
-                return [
-                    'id' => $group->first()->id, // Add ID from first grade in group
-                    'name' => $name,
-                    'teachers_count' => $group->pluck('teacher_id')->filter()->unique()->count(),
-                    'groups_count' => $group->sum('groups_count'),
-                    'students_count' => $group->sum('enrollments_count'),
-                    'created_at' => $group->first()->created_at,
-                ];
-            })->values();
+        $grouped = $grades->groupBy('name')->map(function ($group, $name) {
+            return [
+                'id' => $group->first()->id, // Add ID from first grade in group
+                'name' => $name,
+                'teachers_count' => $group->pluck('teacher_id')->filter()->unique()->count(),
+                'groups_count' => $group->sum('groups_count'),
+                'students_count' => $group->sum('enrollments_count'),
+                'created_at' => $group->first()->created_at,
+            ];
+        })->values();
 
-            // Manual Pagination for grouped results
-            $page = LengthAwarePaginator::resolveCurrentPage();
-            $items = $grouped->slice(($page - 1) * $perPage, $perPage)->values();
+        // Manual Pagination for grouped results
+        $page = LengthAwarePaginator::resolveCurrentPage();
+        $items = $grouped->slice(($page - 1) * $perPage, $perPage)->values();
 
-            return new LengthAwarePaginator(
-                $items,
-                $grouped->count(),
-                $perPage,
-                $page,
-                ['path' => LengthAwarePaginator::resolveCurrentPath()]
-            );
-        });
+        return new LengthAwarePaginator(
+            $items,
+            $grouped->count(),
+            $perPage,
+            $page,
+            ['path' => LengthAwarePaginator::resolveCurrentPath()]
+        );
     }
 
     public function createGrade(Academy $academy, GradeData $data): Grade
