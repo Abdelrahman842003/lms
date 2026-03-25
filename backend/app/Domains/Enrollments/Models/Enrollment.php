@@ -56,6 +56,9 @@ class Enrollment extends Model
         'subscription_end',
         'teacher_notes',
         'status',
+        'is_active',
+        'balance',
+        'joined_at',
     ];
 
     protected function casts(): array

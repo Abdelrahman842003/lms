@@ -27,7 +27,7 @@ class PermissionController extends Controller
     {
         try {
             $permission = $this->service->createPermission($request->validated());
-            return $this->successResponse(['data' => $permission, 'message' => 'تم إنشاء الصلاحية بنجاح'], 201);
+            return $this->successResponse(['data' => $permission, 'message' => 'تم إنشاء الصلاحية بنجاح'], 'تم إنشاء الصلاحية بنجاح', 201);
         } catch (\Exception $e) {
             return $this->errorResponse($e->getMessage(), 422);
         }

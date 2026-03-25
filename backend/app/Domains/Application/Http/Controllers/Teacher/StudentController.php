@@ -140,7 +140,7 @@ class StudentController extends Controller
                 'is_new_student' => $result['is_new_student'],
                 'was_already_enrolled' => $result['was_already_enrolled'],
                 'message' => $message
-            ], 201);
+            ], $message, 201);
         } catch (\Exception $e) {
             Log::error('Student creation failed: ' . $e->getMessage(), [
                 'line' => $e->getLine(),

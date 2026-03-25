@@ -65,7 +65,7 @@ class SecretaryController extends Controller
             return $this->successResponse([
                 'secretary' => $result['secretary'],
                 'message' => $result['message']
-            ], 201);
+            ], (string) $result['message'], 201);
         } catch (\Exception $e) {
             return $this->errorResponse($e->getMessage(), $e->getCode() ?: 400);
         }

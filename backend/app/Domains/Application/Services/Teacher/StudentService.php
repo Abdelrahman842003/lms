@@ -156,8 +156,7 @@ class StudentService
                 }
             }
 
-            // Check student limit for NEW enrollment (not reactivation)
-            // This applies to both new students and existing students being enrolled for the first time
+            // Check student limit for NEW enrollment
             if (! $teacher->is_unlimited_students && $teacher->plan_max_students !== null) {
                 $currentCount = $teacher->activeEnrollments()->count();
                 $maxAllowed = $teacher->plan_max_students;
@@ -172,10 +171,8 @@ class StudentService
                 }
             }
 
-            // Get academy_id from request data (passed from controller based on X-Academy-Id header)
-            // If not provided, fallback to grade's academy_id for backward compatibility
+            // Get academy_id
             $academyId = $data['academy_id'] ?? null;
-
             if ($academyId === null && ! empty($data['grade_id'])) {
                 $grade = \App\Domains\Enrollments\Models\Grade::find($data['grade_id']);
                 $academyId = $grade?->academy_id;

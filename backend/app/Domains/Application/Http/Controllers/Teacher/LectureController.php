@@ -54,7 +54,7 @@ class LectureController extends Controller
             return $this->successResponse([
                 'lecture' => new LectureResource($lecture),
                 'message' => 'تم إضافة المحاضرة بنجاح'
-            ], 201);
+            ], 'تم إضافة المحاضرة بنجاح', 201);
         } catch (\Exception $e) {
             Log::error('Lecture creation failed: ' . $e->getMessage());
             return $this->errorResponse($e->getMessage(), 500);
