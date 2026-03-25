@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Domains\Auth\Models;
 
-use App\Domains\Application\Traits\GuardsSensitiveFields;
 use App\Domains\Enrollments\Models\Enrollment;
 use App\Domains\Enrollments\Models\Group;
 use App\Domains\Lectures\Models\Attendance;
@@ -21,7 +20,6 @@ use Spatie\Permission\Traits\HasRoles;
 
 class Student extends Authenticatable
 {
-    use GuardsSensitiveFields;
     use HasFactory, Notifiable, HasApiTokens, HasUuids, HasRoles, HasDeviceTokens;
 
     protected static function newFactory()
@@ -32,16 +30,6 @@ class Student extends Authenticatable
     protected $keyType = 'string';
     public $incrementing = false;
 
-    /**
-     * Sensitive fields that should never be mass-assignable.
-     * These are in addition to the default sensitive fields in GuardsSensitiveFields trait.
-     *
-     * @var array<int, string>
-     */
-    protected array $customSensitiveFields = [
-        'guardian_id',
-    ];
-
     protected $fillable = [
         'name',
         'avatar_key',
@@ -50,6 +38,10 @@ class Student extends Authenticatable
         'gender',
         'education_type',
         'location',
+        'password',
+        'teacher_id',
+        'guardian_id',
+        'is_active',
     ];
 
     protected $hidden = [

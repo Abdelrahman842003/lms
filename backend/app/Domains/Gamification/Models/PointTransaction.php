@@ -7,7 +7,6 @@ namespace App\Domains\Gamification\Models;
 use App\Domains\Gamification\Enums\PointTransactionType;
 use App\Domains\Auth\Models\Student;
 use App\Domains\Auth\Models\Teacher;
-use App\Domains\Application\Traits\GuardsSensitiveFields;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,7 +14,6 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class PointTransaction extends Model
 {
-    use GuardsSensitiveFields;
     use HasUuids;
 
     // Keep constants for backward compatibility
@@ -37,6 +35,7 @@ class PointTransaction extends Model
         'student_id',
         'teacher_id',
         'type',
+        'points',
         'reference_type',
         'reference_id',
         'description',

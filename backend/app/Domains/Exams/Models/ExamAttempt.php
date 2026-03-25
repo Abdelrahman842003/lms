@@ -7,7 +7,6 @@ namespace App\Domains\Exams\Models;
 use App\Domains\Auth\Models\Student;
 use App\Domains\Exams\Enums\ExamAttemptStatus;
 use App\Domains\Application\Services\CacheService;
-use App\Domains\Application\Traits\GuardsSensitiveFields;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -16,7 +15,6 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class ExamAttempt extends Model
 {
-    use GuardsSensitiveFields;
     use HasUuids;
 
     protected $fillable = [
@@ -27,6 +25,7 @@ class ExamAttempt extends Model
         'questions_order',
         'current_question_index',
         'terminated_reason',
+        'status',
     ];
 
     protected function casts(): array

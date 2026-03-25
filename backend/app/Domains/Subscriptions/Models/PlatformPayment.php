@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Domains\Subscriptions\Models;
 
 use App\Domains\Auth\Models\Admin;
-use App\Domains\Application\Traits\GuardsSensitiveFields;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -14,7 +13,6 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class PlatformPayment extends Model
 {
-    use GuardsSensitiveFields;
     use HasFactory, HasUuids;
 
     protected $fillable = [
@@ -28,6 +26,8 @@ class PlatformPayment extends Model
         'rejected_at',
         'notes',
         'rejection_reason',
+        'status',
+        'payment_key',
     ];
 
     protected function casts(): array

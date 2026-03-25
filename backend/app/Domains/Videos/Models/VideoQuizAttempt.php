@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Domains\Videos\Models;
 
 use App\Domains\Auth\Models\Student;
-use App\Domains\Application\Traits\GuardsSensitiveFields;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -13,7 +12,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class VideoQuizAttempt extends Model
 {
-    use GuardsSensitiveFields;
     use HasFactory;
     use HasUuids;
 
@@ -25,6 +23,7 @@ class VideoQuizAttempt extends Model
         'percentage',
         'answers',
         'completed_at',
+        'status',
     ];
 
     protected function casts(): array

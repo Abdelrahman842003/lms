@@ -6,7 +6,6 @@ namespace App\Domains\Videos\Models;
 
 use App\Domains\Auth\Models\Student;
 use App\Domains\Videos\Enums\VideoWatchStatus;
-use App\Domains\Application\Traits\GuardsSensitiveFields;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -14,7 +13,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class VideoWatchProgress extends Model
 {
-    use GuardsSensitiveFields;
     use HasFactory;
     use HasUuids;
 
@@ -30,6 +28,7 @@ class VideoWatchProgress extends Model
         'watched_percentage',
         'last_position_seconds',
         'last_playback_token_id',
+        'status',
     ];
 
     protected function casts(): array

@@ -13,11 +13,9 @@ use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use App\Domains\Application\Traits\HasDeviceTokens;
-use App\Domains\Application\Traits\GuardsSensitiveFields;
 
 class Admin extends Authenticatable implements FilamentUser
 {
-    use GuardsSensitiveFields;
     use HasFactory, Notifiable, HasApiTokens, HasRoles, HasUuids, HasDeviceTokens;
 
     protected $table = 'admins';
@@ -30,6 +28,8 @@ class Admin extends Authenticatable implements FilamentUser
     protected $fillable = [
         'name',
         'username',
+        'password',
+        'is_admin',
     ];
 
     /**

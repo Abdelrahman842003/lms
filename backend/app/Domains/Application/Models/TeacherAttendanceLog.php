@@ -6,7 +6,6 @@ namespace App\Domains\Application\Models;
 
 use App\Domains\Auth\Models\Academy;
 use App\Domains\Auth\Models\Teacher;
-use App\Domains\Application\Traits\GuardsSensitiveFields;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -15,7 +14,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TeacherAttendanceLog extends Model
 {
-    use GuardsSensitiveFields;
     use HasFactory, HasUuids;
 
     protected $fillable = [

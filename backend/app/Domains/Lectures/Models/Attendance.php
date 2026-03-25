@@ -5,19 +5,18 @@ declare(strict_types=1);
 namespace App\Domains\Lectures\Models;
 
 use App\Domains\Auth\Models\Student;
-use App\Domains\Application\Traits\GuardsSensitiveFields;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Attendance extends Model
 {
-    use GuardsSensitiveFields;
     use HasUuids;
 
     protected $fillable = [
         'lecture_id',
         'student_id',
+        'status',
     ];
 
     protected function casts(): array

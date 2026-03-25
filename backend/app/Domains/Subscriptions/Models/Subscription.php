@@ -6,7 +6,6 @@ namespace App\Domains\Subscriptions\Models;
 
 use App\Domains\Subscriptions\Enums\SubscriptionStatus;
 use App\Domains\Subscriptions\Enums\SubscriptionType;
-use App\Domains\Application\Traits\GuardsSensitiveFields;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -19,7 +18,6 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
  */
 class Subscription extends Model
 {
-    use GuardsSensitiveFields;
     use HasFactory, HasUuids;
 
     protected static function booted(): void
@@ -48,6 +46,11 @@ class Subscription extends Model
         'cost_per_seat',
         'paid_at',
         'notes',
+        'status',
+        'amount_due',
+        'amount_paid',
+        'payment_key',
+        'payment_initiated_at',
     ];
 
     protected function casts(): array

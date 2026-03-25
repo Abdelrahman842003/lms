@@ -16,12 +16,10 @@ use App\Domains\Subscriptions\Models\Subscription;
 use App\Domains\Subscriptions\Models\AcademySubscription;
 use App\Domains\Subscriptions\Enums\SubscriptionStatus;
 use App\Domains\Application\Models\TeacherAttendanceLog;
-use App\Domains\Application\Traits\GuardsSensitiveFields;
 use App\Domains\Subscriptions\Traits\HasSubscriptionStatus;
 
 class Academy extends Model implements AuthenticatableContract
 {
-    use GuardsSensitiveFields;
     use HasFactory, HasUuids, HasApiTokens, Authenticatable, HasSubscriptionStatus, Notifiable;
 
     protected $fillable = [
@@ -29,6 +27,20 @@ class Academy extends Model implements AuthenticatableContract
         'phone',
         'logo_key',
         'billing_notes',
+        'password',
+        'is_active',
+        'status',
+        'plan_type',
+        'plan_expires_at',
+        'plan_max_students',
+        'is_unlimited_students',
+        'subscription_fee',
+        'paid_amount',
+        'storage_limit_gb',
+        'storage_used_bytes',
+        'discount_percent',
+        'trial_period_days',
+        'max_enrollments_limit',
     ];
 
     protected $hidden = [

@@ -6,7 +6,6 @@ namespace App\Domains\Gamification\Models;
 
 use App\Domains\Auth\Models\Student;
 use App\Domains\Auth\Models\Teacher;
-use App\Domains\Application\Traits\GuardsSensitiveFields;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,13 +13,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class StudentPoint extends Model
 {
-    use GuardsSensitiveFields;
     use HasUuids;
 
     protected $fillable = [
         'student_id',
         'teacher_id',
         'attendance_streak',
+        'total_points',
     ];
 
     protected function casts(): array

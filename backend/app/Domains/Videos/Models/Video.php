@@ -12,7 +12,6 @@ use App\Domains\Lectures\Models\Lecture;
 use App\Domains\Videos\Enums\VideoOwnerType;
 use App\Domains\Videos\Enums\VideoProcessingStatus;
 use App\Domains\Videos\Enums\VideoStatus;
-use App\Domains\Application\Traits\GuardsSensitiveFields;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -25,7 +24,6 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Video extends Model
 {
-    use GuardsSensitiveFields;
     use HasFactory;
     use HasUuids;
     use SoftDeletes;
@@ -60,6 +58,7 @@ class Video extends Model
         'published_by_type',
         'published_by_id',
         'processing_error',
+        'status',
     ];
 
     protected function casts(): array

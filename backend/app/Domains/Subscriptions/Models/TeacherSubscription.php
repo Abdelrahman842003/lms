@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Domains\Subscriptions\Models;
 
 use App\Domains\Auth\Models\Teacher;
-use App\Domains\Application\Traits\GuardsSensitiveFields;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -13,7 +12,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TeacherSubscription extends Model
 {
-    use GuardsSensitiveFields;
     use HasFactory, HasUuids;
 
     protected $fillable = [
@@ -21,6 +19,12 @@ class TeacherSubscription extends Model
         'month',
         'student_count',
         'notes',
+        'status',
+        'amount_due',
+        'amount_paid',
+        'payment_key',
+        'payment_initiated_at',
+        'price_per_seat',
     ];
 
     protected function casts(): array

@@ -11,17 +11,16 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
-use App\Domains\Application\Traits\GuardsSensitiveFields;
 
 class Guardian extends Authenticatable
 {
-    use GuardsSensitiveFields;
     use HasApiTokens, HasFactory, HasUuids, Notifiable;
 
     protected $fillable = [
         'phone',
         'name',
         'avatar_key',
+        'password',
     ];
 
     protected $hidden = [
@@ -33,6 +32,7 @@ class Guardian extends Authenticatable
     {
         return [
             'id' => 'string',
+            'password' => 'hashed',
         ];
     }
 

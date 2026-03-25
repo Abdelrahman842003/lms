@@ -8,7 +8,6 @@ use App\Domains\Auth\Models\Academy;
 use App\Domains\Auth\Models\Student;
 use App\Domains\Auth\Models\Teacher;
 use App\Domains\Enrollments\Services\EnrollmentStatusService;
-use App\Domains\Application\Traits\GuardsSensitiveFields;
 use Closure;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -17,7 +16,6 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Enrollment extends Model
 {
-    use GuardsSensitiveFields;
     use HasFactory, HasUuids, SoftDeletes;
 
     /**
@@ -57,6 +55,7 @@ class Enrollment extends Model
         'subscription_start',
         'subscription_end',
         'teacher_notes',
+        'status',
     ];
 
     protected function casts(): array
