@@ -466,21 +466,17 @@ export const getLecture = async (id: string) => {
 };
 
 export const createLecture = async (data: CreateLectureData) => {
-  const response = await axios.post(
-    `${API_BASE_URL}/academy/lectures`,
-    data,
-    { headers: getAuthHeaders() }
-  );
-  return response.data;
+  return await fetchApi<{ data: any; message: string }>('/academy/lectures', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  });
 };
 
 export const updateLecture = async (id: string, data: Partial<CreateLectureData>) => {
-  const response = await axios.put(
-    `${API_BASE_URL}/academy/lectures/${id}`,
-    data,
-    { headers: getAuthHeaders() }
-  );
-  return response.data;
+  return await fetchApi<{ data: any; message: string }>(`/academy/lectures/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data)
+  });
 };
 
 export const deleteLecture = async (id: string) => {
