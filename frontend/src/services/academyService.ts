@@ -97,12 +97,10 @@ export const createSecretary = async (data: {
   permissions?: string[];
   avatar_key?: string;
 }) => {
-  const response = await axios.post(
-    `${API_BASE_URL}/academy/secretaries`,
-    data,
-    { headers: getAuthHeaders() }
-  );
-  return response.data;
+  return await fetchApi<{ data: any; message: string }>('/academy/secretaries', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  });
 };
 
 export const updateSecretary = async (id: string, data: {

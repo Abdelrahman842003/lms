@@ -122,8 +122,18 @@ export default function AddSecretaryPage() {
       toast.success(existingSecretary ? 'تم إضافة السكرتير بنجاح' : 'تم إنشاء حساب السكرتير بنجاح');
       router.push('/academy/secretaries');
     } catch (error: any) {
-      setFormErrors({ submit: error.message || 'فشل إضافة السكرتير' });
-      toast.error(error.message || 'فشل إضافة السكرتير');
+      let errorMessage = error.message || 'فشل إضافة السكرتير';
+      
+      // Handle validation errors if available (from ApiError object)
+      if (error.errors && typeof error.errors === 'object') {
+        const firstErrorKey = Object.keys(error.errors)[0];
+        if (firstErrorKey && Array.isArray(error.errors[firstErrorKey])) {
+          errorMessage = error.errors[firstErrorKey][0];
+        }
+      }
+      
+      setFormErrors({ submit: errorMessage });
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
