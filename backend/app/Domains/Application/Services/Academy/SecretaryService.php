@@ -44,7 +44,7 @@ class SecretaryService
             }
 
             $academy->secretaries()->attach($existing->id, [
-                'permissions' => $data->permissions ?? [],
+                'permissions' => json_encode($data->permissions ?? []),
                 'is_active' => true,
             ]);
 
@@ -62,7 +62,7 @@ class SecretaryService
 
         // Attach to academy
         $academy->secretaries()->attach($secretary->id, [
-            'permissions' => $data->permissions ?? [],
+            'permissions' => json_encode($data->permissions ?? []),
             'is_active' => true,
         ]);
 
@@ -115,7 +115,7 @@ class SecretaryService
     public function updatePermissions(Academy $academy, string $secretaryId, array $permissions): void
     {
         $academy->secretaries()->updateExistingPivot($secretaryId, [
-            'permissions' => $permissions,
+            'permissions' => json_encode($permissions),
         ]);
     }
 

@@ -1,5 +1,5 @@
 import axios from '@/lib/axios';
-import { getAuthHeaders } from './api/baseApi';
+import { getAuthHeaders, fetchApi } from './api/baseApi';
 import { getVersionedApiUrl } from '@/config/api-config';
 
 const API_BASE_URL = getVersionedApiUrl();
@@ -60,12 +60,9 @@ export const removeTeacher = async (id: string) => {
 };
 
 export const toggleTeacherStatus = async (id: string) => {
-  const response = await axios.put(
-    `${API_BASE_URL}/academy/teachers/${id}/toggle-status`,
-    {},
-    { headers: getAuthHeaders() }
-  );
-  return response.data;
+  return await fetchApi<{ message: string; is_active: boolean }>(`/academy/teachers/${id}/toggle-status`, {
+    method: 'PUT'
+  });
 };
 
 export const checkTeacherPhone = async (phone: string) => {
@@ -100,12 +97,10 @@ export const createSecretary = async (data: {
   permissions?: string[];
   avatar_key?: string;
 }) => {
-  const response = await axios.post(
-    `${API_BASE_URL}/academy/secretaries`,
-    data,
-    { headers: getAuthHeaders() }
-  );
-  return response.data;
+  return await fetchApi<{ data: any; message: string }>('/academy/secretaries', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  });
 };
 
 export const updateSecretary = async (id: string, data: {
@@ -132,12 +127,9 @@ export const updateSecretaryPermissions = async (id: string, permissions: string
 };
 
 export const toggleSecretaryStatus = async (id: string) => {
-  const response = await axios.put(
-    `${API_BASE_URL}/academy/secretaries/${id}/toggle-status`,
-    {},
-    { headers: getAuthHeaders() }
-  );
-  return response.data;
+  return await fetchApi<{ message: string; is_active: boolean }>(`/academy/secretaries/${id}/toggle-status`, {
+    method: 'PUT'
+  });
 };
 
 export const removeSecretary = async (id: string) => {
@@ -499,12 +491,9 @@ export const deleteLecture = async (id: string) => {
 };
 
 export const toggleLectureActive = async (id: string) => {
-  const response = await axios.put(
-    `${API_BASE_URL}/academy/lectures/${id}/toggle-active`,
-    {},
-    { headers: getAuthHeaders() }
-  );
-  return response.data;
+  return await fetchApi<{ message: string; is_active: boolean }>(`/academy/lectures/${id}/toggle-active`, {
+    method: 'PUT'
+  });
 };
 
 export const endLecture = async (id: string) => {
@@ -618,14 +607,11 @@ export const deleteAcademyStudent = async (id: string) => {
 };
 
 export const toggleAcademyStudentStatus = async (id: string, teacherId?: string) => {
-  const response = await axios.put(`${API_BASE_URL}/academy/students/${id}/toggle-status`, 
-    { teacher_id: teacherId }, 
-    { headers: getAuthHeaders() }
-  );
-  return response.data;
-};
-
-export const createAcademyStudent = async (data: { name: string; phone: string; grade_id: string; group_id?: string; teacher_id?: string }) => {
+  return await fetchApi<{ message: string; is_active: boolean }>(`/academy/students/${id}/toggle-status`, {
+    method: 'PUT',
+    body: JSON.stringify({ teacher_id: teacherId })
+  });
+};export const createAcademyStudent = async (data: { name: string; phone: string; grade_id: string; group_id?: string; teacher_id?: string }) => {
   const response = await axios.post(
     `${API_BASE_URL}/academy/students`,
     data,
@@ -741,12 +727,9 @@ export const copyAcademyExam = async (id: string, title?: string) => {
 };
 
 export const toggleAcademyExamStatus = async (id: string) => {
-  const response = await axios.put(
-    `${API_BASE_URL}/academy/exams/${id}/toggle-status`,
-    {},
-    { headers: getAuthHeaders() }
-  );
-  return response.data;
+  return await fetchApi<{ message: string; is_active: boolean }>(`/academy/exams/${id}/toggle-status`, {
+    method: 'PUT'
+  });
 };
 
 export const endAcademyExam = async (id: string) => {
