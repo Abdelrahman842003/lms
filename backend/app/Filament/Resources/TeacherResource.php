@@ -117,7 +117,7 @@ class TeacherResource extends BaseResource
                             ->options([
                                 'active' => 'نشط',
                                 'suspended' => 'موقوف',
-                                'pending' => 'معلق',
+                                'pending' => 'قيد الانتظار',
                             ])
                             ->default('pending')
                             ->required(),
@@ -544,7 +544,7 @@ class TeacherResource extends BaseResource
                     ->formatStateUsing(fn ($state): string => match (is_string($state) ? $state : $state->value) {
                         'active' => 'نشط',
                         'suspended' => 'موقوف',
-                        'pending' => 'معلق',
+                        'pending' => 'قيد الانتظار',
                         default => is_string($state) ? $state : $state->value,
                     })
                     ->sortable(),
@@ -599,7 +599,7 @@ class TeacherResource extends BaseResource
                     ->options([
                         'active' => 'نشط',
                         'suspended' => 'موقوف',
-                        'pending' => 'معلق',
+                        'pending' => 'قيد الانتظار',
                     ])
                     ->multiple()
                     ->preload(),

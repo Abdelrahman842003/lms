@@ -145,7 +145,8 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
   const defaultStatusMap: Record<string, { variant: BadgeVariant; label: string; icon?: string }> = {
     active: { variant: 'success', label: 'نشط', icon: 'fas fa-check-circle' },
     inactive: { variant: 'danger', label: 'غير نشط', icon: 'fas fa-times-circle' },
-    pending: { variant: 'warning', label: 'معلق', icon: 'fas fa-clock' },
+    pending: { variant: 'warning', label: 'قيد الانتظار', icon: 'fas fa-clock' },
+    suspended: { variant: 'danger', label: 'معلق', icon: 'fas fa-ban' },
     completed: { variant: 'success', label: 'مكتمل', icon: 'fas fa-check' },
     failed: { variant: 'danger', label: 'فاشل', icon: 'fas fa-exclamation-circle' },
     processing: { variant: 'primary', label: 'جاري المعالجة', icon: 'fas fa-spinner fa-spin' },

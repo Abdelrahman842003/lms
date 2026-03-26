@@ -12,10 +12,11 @@ class TeacherResource extends JsonResource
     public function toArray(Request $request): array
     {
         // Safely get values with null coalescing
-        $isApproved = $this->status !== 'pending';
-        $isSuspended = $this->status === 'suspended' || $this->resource->isSubscriptionBlocked();
+        $teacherStatus = $this->status instanceof \BackedEnum ? $this->status->value : $this->status;
+        $isApproved = $teacherStatus !== 'pending';
+        $isSuspended = $teacherStatus === 'suspended' || $this->resource->isSubscriptionBlocked();
         $isActive = $this->pivot?->is_active ?? true;
-        
+
         // Safely get students count
         try {
             $studentsCount = $this->activeEnrollments()->count();
@@ -25,15 +26,13 @@ class TeacherResource extends JsonResource
         
         // Determine status based on approval and active state
         $status = 'نشط';
-        if ($this->status === 'pending') {
-            $status = 'في انتظار الموافقة';
-        } elseif ($this->status === 'suspended' || $this->resource->isSubscriptionBlocked()) {
+        if ($teacherStatus === 'pending') {
+            $status = 'قيد الانتظار';
+        } elseif ($teacherStatus === 'suspended' || $this->resource->isSubscriptionBlocked()) {
             $status = 'معلق';
         } elseif (!$isActive) {
             $status = 'معلق';
-        }
-        
-        return [
+        }        return [
             'id' => $this->id,
             'name' => $this->name,
             'phone' => $this->phone,

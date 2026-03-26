@@ -181,7 +181,7 @@ export default function AcademyTeachersPage() {
         data = data.filter((t: any) => {
           if (statusFilter === 'active') return t.status === 'نشط';
           if (statusFilter === 'suspended') return t.status === 'معلق';
-          if (statusFilter === 'pending') return t.status === 'في انتظار الموافقة';
+          if (statusFilter === 'pending') return t.status === 'قيد الانتظار' || t.status === 'في انتظار الموافقة';
           return true;
         });
       }
@@ -219,7 +219,7 @@ export default function AcademyTeachersPage() {
   };
 
   const handleToggleStatus = (teacher: any) => {
-    const isActive = teacher.status === 'نشط';
+    const isActive = teacher.is_active;
     setModalConfig({
       title: isActive ? 'تعطيل حساب المدرس' : 'تفعيل حساب المدرس',
       message: `هل أنت متأكد من ${isActive ? 'تعطيل' : 'تفعيل'} حساب المدرس "${teacher.name}"؟`,
@@ -288,7 +288,7 @@ export default function AcademyTeachersPage() {
       sortable: true,
       render: (value: string) => {
         let badgeClass = 'badge-success';
-        if (value === 'في انتظار الموافقة') {
+        if (value === 'قيد الانتظار' || value === 'في انتظار الموافقة') {
           badgeClass = 'badge-warning';
         } else if (value === 'غير نشط') {
           badgeClass = 'badge-danger';
@@ -313,9 +313,10 @@ export default function AcademyTeachersPage() {
       onClick: (row: any) => router.push(`/academy/teachers/${row.id}`),
     },
     {
-      label: (row: any) => row.status === 'نشط' ? 'تعطيل' : 'تفعيل',
-      icon: (row: any) => row.status === 'نشط' ? 'ban' : 'check',
-      variant: (row: any) => row.status === 'نشط' ? 'danger' : 'success',
+      label: (row: any) => row.is_active ? 'تعطيل' : 'تفعيل',
+      icon: (row: any) => row.is_active ? 'ban' : 'check',
+      variant: (row: any) => row.is_active ? 'danger' : 'success',
+      hidden: (row: any) => !row.is_approved || row.is_suspended,
       onClick: (row: any) => handleToggleStatus(row),
     },
     {
@@ -353,7 +354,7 @@ export default function AcademyTeachersPage() {
                   { value: '', label: 'الكل' },
                   { value: 'active', label: 'نشط' },
                   { value: 'suspended', label: 'معلق' },
-                  { value: 'pending', label: 'ننتظر الموافقة' }
+                  { value: 'pending', label: 'قيد الانتظار' }
                 ]}
                 value={statusFilter}
                 onChange={(value) => setStatusFilter(value)}

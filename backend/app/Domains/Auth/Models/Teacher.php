@@ -207,9 +207,12 @@ class Teacher extends Authenticatable
         // Check if any active academy has active subscription (DB-level check)
         $activeAcademyWithSubscription = $this->academies()
             ->wherePivot('is_active', true)
-            ->whereHas('subscriptions', function ($query) {
-                $query->where('status', SubscriptionStatus::PAID->value)
-                    ->where('month', '>=', now()->startOfMonth()->toDateString());
+            ->where(function ($query) {
+                $query->whereHas('subscriptions', function ($subQuery) {
+                    $subQuery->where('status', \App\Domains\Subscriptions\Enums\SubscriptionStatus::PAID->value)
+                        ->where('month', '>=', now()->startOfMonth()->toDateString());
+                })
+                ->orWhere('plan_expires_at', '>=', now()->startOfDay());
             })
             ->exists();
 

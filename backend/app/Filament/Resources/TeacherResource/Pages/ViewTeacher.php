@@ -61,7 +61,7 @@ class ViewTeacher extends ViewRecord
                             ->formatStateUsing(fn ($state): string => match (is_string($state) ? $state : $state->value) {
                                 'active' => 'نشط',
                                 'suspended' => 'موقوف',
-                                'pending' => 'معلق',
+                                'pending' => 'قيد الانتظار',
                                 default => is_string($state) ? $state : $state->value,
                             }),
 
