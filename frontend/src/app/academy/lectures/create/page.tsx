@@ -79,9 +79,22 @@ export default function CreateLecturePage() {
     setIsSubmitting(true);
 
     try {
-      const payload = { ...formData };
+      const payload: any = { ...formData };
       if (payload.is_recurring) {
         delete payload.date;
+      }
+      
+      // Clean up empty strings that should be null/omitted
+      if (!payload.group_id) {
+        delete payload.group_id;
+      }
+      if (!payload.description) {
+        delete payload.description;
+      }
+      
+      // Ensure recurrence_time is H:i format without seconds
+      if (payload.recurrence_time && payload.recurrence_time.length > 5) {
+        payload.recurrence_time = payload.recurrence_time.substring(0, 5);
       }
       
       await academyService.createLecture(payload);
@@ -89,7 +102,18 @@ export default function CreateLecturePage() {
       router.push('/academy/attendance');
     } catch (error: any) {
       console.error('Failed to create lecture:', error);
-      toast.error(error.response?.data?.message || 'فشل إضافة المحاضرة');
+      
+      let errorMessage = error.message || 'فشل إضافة المحاضرة';
+      
+      // Handle validation errors if available (from ApiError object)
+      if (error.errors && typeof error.errors === 'object') {
+        const firstErrorKey = Object.keys(error.errors)[0];
+        if (firstErrorKey && Array.isArray(error.errors[firstErrorKey])) {
+          errorMessage = error.errors[firstErrorKey][0];
+        }
+      }
+      
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
