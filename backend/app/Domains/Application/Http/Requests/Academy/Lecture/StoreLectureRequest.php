@@ -25,7 +25,7 @@ class StoreLectureRequest extends FormRequest
             'is_recurring' => ['boolean'],
             'recurrence_days' => ['required_if:is_recurring,true', 'array'],
             'recurrence_time' => ['required', 'date_format:H:i'],
-            'duration_minutes' => ['required', 'integer', 'min:15', 'max:480'],
+            'duration_minutes' => ['required', 'integer', 'min:1', 'max:480'],
         ];
     }
 
@@ -51,6 +51,8 @@ class StoreLectureRequest extends FormRequest
             'recurrence_days.required_if' => 'أيام التكرار مطلوبة في حالة التكرار',
             'recurrence_time.required' => 'وقت المحاضرة مطلوب',
             'duration_minutes.required' => 'مدة المحاضرة مطلوبة',
+            'duration_minutes.min' => 'مدة المحاضرة يجب أن تكون دقيقة واحدة على الأقل',
+            'duration_minutes.max' => 'مدة المحاضرة يجب ألا تتجاوز 480 دقيقة',
         ];
     }
 }

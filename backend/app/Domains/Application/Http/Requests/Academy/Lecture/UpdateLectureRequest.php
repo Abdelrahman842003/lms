@@ -25,7 +25,7 @@ class UpdateLectureRequest extends FormRequest
             'is_recurring' => ['boolean'],
             'recurrence_days' => ['array'],
             'recurrence_time' => ['sometimes', 'date_format:H:i'],
-            'duration_minutes' => ['sometimes', 'integer', 'min:15', 'max:480'],
+            'duration_minutes' => ['sometimes', 'integer', 'min:1', 'max:480'],
         ];
     }
 
