@@ -22,18 +22,27 @@ class NotificationController extends Controller
     public function index(Request $request): JsonResponse
     {
         $academy = $request->user();
-
         $perPage = (int) $request->input('per_page', 15);
         $targetType = $request->input('target_type');
 
+        // Custom Academy Notifications (e.g. from academy to staff)
         $notifications = $this->service->getNotifications(
             $academy,
             $perPage,
-            null, // We don't filter by userId for academy view
+            null,
             $targetType
         );
 
-        return $this->successResponse(NotificationResource::collection($notifications));
+        // Standard Laravel Notifications (e.g. from system to academy)
+        $receivedNotifications = $this->service->getReceivedNotifications(
+            $academy,
+            $perPage
+        );
+
+        return $this->successResponse([
+            'notifications' => NotificationResource::collection($notifications),
+            'received_notifications' => NotificationResource::collection($receivedNotifications),
+        ]);
     }
 
     public function store(StoreNotificationRequest $request): JsonResponse
@@ -62,8 +71,15 @@ class NotificationController extends Controller
     {
         $academy = $request->user();
 
+        // 1. Try standard notification first
+        $standardNotification = $academy->notifications()->where('id', $id)->first();
+        if ($standardNotification) {
+            $standardNotification->markAsRead();
+            return $this->successResponse(null, 'تم تحديد الإشعار كمقروء');
+        }
+
+        // 2. Try AcademyNotification (custom table)
         try {
-            // Get user ID for marking as read (could be academy or secretary)
             $userId = $request->user()->id;
             $notification = $this->service->markAsRead($academy, $id, $userId);
 
@@ -72,7 +88,7 @@ class NotificationController extends Controller
                 'message' => 'تم تحديد الإشعار كمقروء',
             ]);
         } catch (\Exception $e) {
-            return $this->errorResponse($e->getMessage(), 404);
+            return $this->errorResponse('الإشعار غير موجود', 404);
         }
     }
 

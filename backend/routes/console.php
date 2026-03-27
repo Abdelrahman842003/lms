@@ -36,7 +36,7 @@ Artisan::command('debug:academy', function () {
 
 // ─── Domain Scheduler Jobs ─────────────────────────────────────────────────
 
-// إغلاق المحاضرات المنتهية كل 15 دقيقة
+// إغلاق المحاضرات المنتهية كل 15 دقيقة (safety net)
 Schedule::job(CloseExpiredLecture::class)->everyFifteenMinutes();
 
 // فحص الاشتراكات المنتهية (تحديث الحالة) — يومياً في منتصف الليل

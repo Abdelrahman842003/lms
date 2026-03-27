@@ -7,14 +7,14 @@ namespace App\Domains\Lectures\Events;
 use App\Domains\Lectures\Models\Lecture;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
 /**
  * يُطلق عند تفعيل محاضرة → يُبث Realtime لكل طلاب المجموعة.
  */
-class LectureActivated implements ShouldBroadcast
+class LectureActivated implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 

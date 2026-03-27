@@ -89,6 +89,26 @@ Broadcast::channel('notifications.parent.{id}', function ($user, $id) {
 });
 
 // Lectures channel for real-time updates
-Broadcast::channel('lectures.{id}', function ($user, $id) {
+Broadcast::channel('teacher.{id}', function ($user, $id) {
     return (string) $user->id === (string) $id;
+});
+
+Broadcast::channel('academy.{id}', function ($user, $id) {
+    return (string) $user->id === (string) $id;
+});
+
+// Academy notifications channel
+Broadcast::channel('notifications.academy.{id}', function ($user, $id) {
+    Log::info('Channel auth attempt', [
+        'channel' => 'notifications.academy.' . $id,
+        'user_class' => get_class($user),
+        'user_id' => $user->id,
+        'requested_id' => $id,
+    ]);
+    
+    // Check if user class name ends with "Academy" and IDs match
+    $isAcademy = str_ends_with(get_class($user), 'Academy');
+    $idsMatch = (string) $user->id === (string) $id;
+    
+    return $isAcademy && $idsMatch;
 });

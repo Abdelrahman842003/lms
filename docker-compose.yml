@@ -213,7 +213,9 @@ services:
       - mysql
       - redis
     networks:
-      - lms_network
+      lms_network:
+        aliases:
+          - reverb
     profiles: [dev]
     command: sh -c "test -f .env || cp .env.example .env; php artisan reverb:start --host=0.0.0.0 --port=8080"
 
@@ -402,7 +404,9 @@ services:
       - mysql
       - redis
     networks:
-      - lms_network
+      lms_network:
+        aliases:
+          - reverb
     profiles: [prod]
     # Configs are cached at build time in Dockerfile
     command: sh -c "php artisan reverb:start --host=0.0.0.0 --port=8080"

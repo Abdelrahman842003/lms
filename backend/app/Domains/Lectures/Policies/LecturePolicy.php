@@ -34,6 +34,14 @@ class LecturePolicy
     }
 
     /**
+     * Determine whether the user can create lectures.
+     */
+    public function create(Teacher|Secretary $user): bool
+    {
+        return $this->resolveTeacher($user) !== null;
+    }
+
+    /**
      * Determine whether the user can view the lecture.
      */
     public function view(Teacher|Secretary $user, Lecture $lecture): bool

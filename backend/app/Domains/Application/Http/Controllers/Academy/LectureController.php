@@ -128,7 +128,8 @@ class LectureController extends Controller
             return $this->errorResponse('Unauthorized', 403);
         }
 
-        $lecture = $this->service->toggleActive($lecture);
+        $newState = $request->has('is_active') ? filter_var($request->input('is_active'), FILTER_VALIDATE_BOOLEAN) : null;
+        $lecture = $this->service->toggleActive($lecture, $newState);
 
         return $this->successResponse([
             'message' => $lecture->is_active ? 'تم تفعيل المحاضرة' : 'تم إلغاء تفعيل المحاضرة',

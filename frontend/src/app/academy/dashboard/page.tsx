@@ -13,6 +13,8 @@ import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 
 import { Icon } from '@/components/ui';
+import { initializeEcho } from '@/lib/echo';
+import { getAccessToken } from '@/lib/tokenManager';
 
 function AcademyDashboard() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
@@ -34,37 +36,64 @@ function AcademyDashboard() {
     }
   }, [isAuthenticated, user, authLoading, router]);
 
-  React.useEffect(() => {
+  const fetchData = React.useCallback(async () => {
     if (authLoading || !isAuthenticated || !user || user.userType !== 'academy') return;
 
-    const fetchData = async () => {
-      try {
-        setIsLoading(true);
-        // Fetch academy dashboard stats
-        const response = await academyService.getDashboardStats();
+    try {
+      setIsLoading(true);
+      // Fetch academy dashboard stats
+      const response = await academyService.getDashboardStats();
 
-        if (response) {
-          // The service returns response.data, so we use it directly or check structure
-          // Based on service implementation: return response.data
-          // And controller returns: { data: stats } or similar
-          // Let's look at the service again. 
-          // Service: return response.data
-          // Controller: return $this->successResponse($stats); -> { status: true, data: $stats }
-          
-          const data = response.data || response;
-          setStats(data || {});
-          setTeachers(data.teachers || []);
-        }
-      } catch (error) {
-        console.error('Failed to load academy dashboard stats:', error);
-        toast.error('تعذر تحميل بيانات لوحة الأكاديمية');
-      } finally {
-        setIsLoading(false);
+      if (response) {
+        const data = response.data || response;
+        setStats(data || {});
+        setTeachers(data.teachers || []);
       }
-    };
-
-    fetchData();
+    } catch (error) {
+      console.error('Failed to load academy dashboard stats:', error);
+    } finally {
+      setIsLoading(false);
+    }
   }, [user, authLoading, isAuthenticated]);
+
+  React.useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // Real-time updates via Echo
+  React.useEffect(() => {
+    if (!isAuthenticated || !user || user.userType !== 'academy') return;
+
+    const token = getAccessToken();
+    if (!token) return;
+
+    const echo = initializeEcho(token);
+    const channelName = `academy.${user.id}`;
+    
+    const channel = echo.private(channelName);
+    
+    channel.listen('.lecture.updated', (data: any) => {
+      console.log('Real-time lecture.updated received:', data);
+      fetchData(); // Refresh all dashboard data
+      toast.success('تم تحديث بيانات المحاضرة');
+    });
+
+    channel.listen('.lecture.activated', (data: any) => {
+      console.log('Real-time lecture.activated received:', data);
+      fetchData(); // Refresh dashboard data when a lecture starts
+      toast.success('بدأت محاضرة جديدة الآن');
+    });
+
+    channel.listen('.lecture.closed', (data: any) => {
+      console.log('Real-time lecture.closed received:', data);
+      fetchData(); // Refresh dashboard data when a lecture ends
+      toast('تم إغلاق المحاضرة');
+    });
+
+    return () => {
+      echo.leave(channelName);
+    };
+  }, [user, isAuthenticated, fetchData]);
 
   if (!authLoading && (!user || user.userType !== 'academy')) {
     return null;

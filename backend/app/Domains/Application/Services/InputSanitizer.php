@@ -173,7 +173,9 @@ class InputSanitizer
             if (empty($attrs)) {
                 $tags[] = $tag;
             } else {
-                $tags[] = $tag . '[' . implode(',', $attrs) . ']';
+                // HTMLPurifier expects attribute separator as pipe (|), not comma.
+                // Using comma can be parsed as a new element token (e.g. `title]`).
+                $tags[] = $tag . '[' . implode('|', $attrs) . ']';
             }
         }
         

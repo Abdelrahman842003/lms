@@ -9,6 +9,7 @@ declare global {
 }
 
 let echoInstance: Echo<"reverb"> | null = null;
+let echoToken: string | null = null;
 
 /**
  * Initialize Laravel Echo with Reverb
@@ -19,9 +20,15 @@ export const initializeEcho = (token: string): Echo<"reverb"> => {
     throw new Error("Echo can only be initialized on the client side");
   }
 
-  // If already initialized and connected, return existing instance
-  if (echoInstance) {
+  // Reuse existing instance only when token is unchanged
+  if (echoInstance && echoToken === token) {
     return echoInstance;
+  }
+
+  // If token changed, reconnect with fresh auth headers
+  if (echoInstance && echoToken !== token) {
+    echoInstance.disconnect();
+    echoInstance = null;
   }
 
   window.Pusher = Pusher;
@@ -42,12 +49,12 @@ export const initializeEcho = (token: string): Echo<"reverb"> => {
   echoInstance = new Echo({
     broadcaster: "reverb",
     key: process.env.NEXT_PUBLIC_REVERB_APP_KEY || 'y2vqna5uho5zsdz6kdyz',
-    wsHost: 'localhost',
-    wsPort: 8080,
-    wssPort: 8080,
-    forceTLS: false,
+    wsHost: process.env.NEXT_PUBLIC_REVERB_HOST || window.location.hostname,
+    wsPort: Number(process.env.NEXT_PUBLIC_REVERB_PORT) || 8080,
+    wssPort: Number(process.env.NEXT_PUBLIC_REVERB_PORT) || 8080,
+    forceTLS: process.env.NEXT_PUBLIC_REVERB_SCHEME === 'https',
     enabledTransports: ["ws", "wss"],
-    authEndpoint: `${baseUrl}/api/broadcasting/auth`,
+  authEndpoint: `${baseUrl}/api/v1/broadcasting/auth`,
     auth: {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -57,6 +64,7 @@ export const initializeEcho = (token: string): Echo<"reverb"> => {
   });
 
   window.Echo = echoInstance;
+  echoToken = token;
 
   return echoInstance;
 };
@@ -69,5 +77,6 @@ export const disconnectEcho = (): void => {
   if (echoInstance) {
     echoInstance.disconnect();
     echoInstance = null;
+    echoToken = null;
   }
 };

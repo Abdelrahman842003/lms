@@ -7,6 +7,9 @@ import { StatCard } from '@/components/dashboard/StatCard';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { TeacherStatsCharts } from '@/components/dashboard/TeacherStatsCharts';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
+import { initializeEcho } from '@/lib/echo';
+import { getAccessToken } from '@/lib/tokenManager';
+
 
 
 export default function TeacherDashboard() {
@@ -25,43 +28,75 @@ export default function TeacherDashboard() {
   const [students, setStudents] = React.useState<any[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
 
-  React.useEffect(() => {
+  const fetchDashboardData = React.useCallback(async () => {
     if (authLoading || !isAuthenticated || user?.userType !== 'teacher') {
       return;
     }
 
-    const fetchDashboardData = async () => {
-      try {
-        setIsLoading(true);
-        const { getTeacherDashboardStats, getTeacherRecentStudents } = await import('@/services/authService');
-        
-        const academyId = selectedAcademy?.id || (selectedAcademy?.name === 'مدرس مستقل' ? 'independent' : null);
-        
-        const [statsData, studentsData] = await Promise.all([
-          getTeacherDashboardStats(academyId),
-          getTeacherRecentStudents(5, academyId),
-        ]);
+    try {
+      setIsLoading(true);
+      const { getTeacherDashboardStats, getTeacherRecentStudents } = await import('@/services/authService');
+      
+      const academyId = selectedAcademy?.id || (selectedAcademy?.name === 'مدرس مستقل' ? 'independent' : null);
+      
+      const [statsData, studentsData] = await Promise.all([
+        getTeacherDashboardStats(academyId),
+        getTeacherRecentStudents(5, academyId),
+      ]) as [any, any];
 
-        setStats({
-          totalStudents: statsData.total_students || 0,
-          activeStudents: statsData.active_students || 0,
-          totalGroups: statsData.total_groups || 0,
-          totalExams: statsData.total_exams || 0,
-          averageAttendance: statsData.average_attendance || 0,
-          averageExamScore: statsData.average_exam_score || 0,
-          attendanceTrend: statsData.attendance_trend || [],
-          examPerformanceTrend: statsData.exam_performance_trend || [],
-        });
-        setStudents(studentsData.students || []);
-      } catch (error: any) {
-        console.error('Failed to fetch dashboard data:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+      setStats({
+        totalStudents: statsData.total_students || 0,
+        activeStudents: statsData.active_students || 0,
+        totalGroups: statsData.total_groups || 0,
+        totalExams: statsData.total_exams || 0,
+        averageAttendance: statsData.average_attendance || 0,
+        averageExamScore: statsData.average_exam_score || 0,
+        attendanceTrend: statsData.attendance_trend || [],
+        examPerformanceTrend: statsData.exam_performance_trend || [],
+      });
+      setStudents(studentsData.students || []);
+    } catch (error: any) {
+      console.error('Failed to fetch dashboard data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user, isAuthenticated, authLoading, selectedAcademy]);
 
+  React.useEffect(() => {
     fetchDashboardData();
-  }, [selectedAcademy, authLoading, isAuthenticated, user?.userType]); // Re-fetch when auth/academy changes
+  }, [fetchDashboardData]);
+
+  // Real-time updates via Echo
+  React.useEffect(() => {
+    if (!isAuthenticated || !user || user.userType !== 'teacher') return;
+
+    const token = getAccessToken();
+    if (!token) return;
+
+    const echo = initializeEcho(token);
+    const channelName = `teacher.${user.id}`;
+    
+    const channel = echo.private(channelName);
+    
+    channel.listen('.lecture.updated', (data: any) => {
+      console.log('Real-time lecture.updated received for Teacher:', data);
+      fetchDashboardData(); // Refresh all dashboard data
+    });
+
+    channel.listen('.lecture.activated', (data: any) => {
+      console.log('Real-time lecture.activated received for Teacher:', data);
+      fetchDashboardData();
+    });
+
+    channel.listen('.lecture.closed', (data: any) => {
+      console.log('Real-time lecture.closed received for Teacher:', data);
+      fetchDashboardData();
+    });
+
+    return () => {
+      echo.leave(channelName);
+    };
+  }, [user, isAuthenticated, fetchDashboardData]);
   
   const tableColumns = [
     {

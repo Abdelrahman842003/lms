@@ -45,11 +45,11 @@ class LectureResource extends JsonResource
             'recurrence_days' => $this->recurrence_days,
             'cancelled_dates' => $this->cancelled_dates,
             'current_session_end_time' => $this->getCurrentSessionEndTime(),
-            'current_session' => $this->whenLoaded('current_session', fn() => [
-                'id' => $this->current_session->id,
-                'title' => $this->current_session->title,
-                'description' => $this->current_session->description,
-                'is_cancelled' => $this->current_session->is_cancelled,
+            'current_session' => $this->whenLoaded('currentSession', fn() => [
+                'id' => $this->currentSession->id,
+                'title' => $this->currentSession->title,
+                'description' => $this->currentSession->description,
+                'is_cancelled' => $this->currentSession->is_cancelled,
             ]),
         ];
     }

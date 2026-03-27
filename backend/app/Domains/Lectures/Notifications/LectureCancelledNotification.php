@@ -4,35 +4,26 @@ declare(strict_types=1);
 
 namespace App\Domains\Lectures\Notifications;
 
-use App\Domains\Notifications\Services\NotificationSettingsService;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Notification;
+use App\Domains\Notifications\BaseNotification;
 
-class LectureCancelledNotification extends Notification implements ShouldQueue
+class LectureCancelledNotification extends BaseNotification
 {
-    use Queueable;
-
     public function __construct(
         protected string $lectureTitle,
         protected string $teacherName,
     ) {}
 
-    public function via(object $notifiable): array
-    {
-        return app(NotificationSettingsService::class)->channelsFor(
-            $notifiable,
-            ['database'],
-            false
-        );
-    }
-
-    public function toArray($notifiable): array
+    protected function getData(): array
     {
         return [
-            'title' => 'تم إلغاء المحاضرة',
-            'body'  => "تم إلغاء محاضرة {$this->lectureTitle} بواسطة الأستاذ {$this->teacherName}",
-            'type'  => 'lecture_cancelled',
+            'title'   => 'تم إلغاء المحاضرة',
+            'message' => "تم إلغاء محاضرة {$this->lectureTitle} بواسطة الأستاذ {$this->teacherName}",
+            'type'    => 'lecture_cancelled',
         ];
+    }
+
+    public function broadcastType(): string
+    {
+        return 'lecture_cancelled';
     }
 }

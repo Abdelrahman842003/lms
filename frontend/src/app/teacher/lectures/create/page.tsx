@@ -37,8 +37,13 @@ export default function CreateLecturePage() {
           getGrades(1, 100),
           getGroups(1, 100)
         ]);
+        console.log('[DEBUG] Grades response:', gradesResponse);
+        console.log('[DEBUG] Groups response:', groupsResponse);
+        console.log('[DEBUG] Groups data:', groupsResponse.data);
+        console.log('[DEBUG] Groups array:', groupsResponse.data?.groups);
         setGrades(gradesResponse.data || []);
-        setGroups(groupsResponse.data || []);
+        setGroups(groupsResponse.data?.groups || []);
+        console.log('[DEBUG] Groups state set to:', groupsResponse.data?.groups || []);
       } catch (error) {
         console.error('Failed to fetch data:', error);
       }
@@ -225,7 +230,7 @@ export default function CreateLecturePage() {
                       id="duration_minutes"
                       type="number"
                       value={formData.duration_minutes}
-                      onChange={(e) => setFormData({ ...formData, duration_minutes: parseInt(e.target.value) })}
+                      onChange={(e) => setFormData({ ...formData, duration_minutes: Number.isNaN(parseInt(e.target.value, 10)) ? 1 : parseInt(e.target.value, 10) })}
                       min="1"
                       required
                       className="w-full"
@@ -264,7 +269,7 @@ export default function CreateLecturePage() {
                       id="duration_minutes"
                       type="number"
                       value={formData.duration_minutes}
-                      onChange={(e) => setFormData({ ...formData, duration_minutes: parseInt(e.target.value) })}
+                      onChange={(e) => setFormData({ ...formData, duration_minutes: Number.isNaN(parseInt(e.target.value, 10)) ? 1 : parseInt(e.target.value, 10) })}
                       min="1"
                       required
                       className="w-full"

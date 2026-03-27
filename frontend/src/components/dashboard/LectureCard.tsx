@@ -40,6 +40,38 @@ export const LectureCard: React.FC<LectureCardProps> = ({
   const isActive = lecture.is_active;
   const [timeLeft, setTimeLeft] = React.useState<string>('');
 
+  const getTimezoneOffsetMs = React.useCallback((timeZone: string) => {
+    const now = new Date();
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    });
+
+    const parts = formatter.formatToParts(now).reduce<Record<string, string>>((acc, part) => {
+      if (part.type !== 'literal') {
+        acc[part.type] = part.value;
+      }
+      return acc;
+    }, {});
+
+    const zonedTimeMs = Date.UTC(
+      Number(parts.year),
+      Number(parts.month) - 1,
+      Number(parts.day),
+      Number(parts.hour),
+      Number(parts.minute),
+      Number(parts.second)
+    );
+
+    return zonedTimeMs - now.getTime();
+  }, []);
+
   React.useEffect(() => {
     if (!isActive || !lecture.current_session_end_time) {
       setTimeLeft('');
@@ -54,7 +86,21 @@ export const LectureCard: React.FC<LectureCardProps> = ({
 
       const end = new Date(lecture.current_session_end_time!).getTime();
       const now = new Date().getTime();
-      const difference = end - now;
+      let difference = end - now;
+
+      // Guard against payloads that are shifted by timezone offset (e.g. +2h)
+      if (
+        lecture.is_recurring
+        && typeof lecture.duration_minutes === 'number'
+        && difference > (lecture.duration_minutes + 10) * 60 * 1000
+      ) {
+        const cairoOffsetMs = getTimezoneOffsetMs('Africa/Cairo');
+        const correctedDifference = difference - cairoOffsetMs;
+
+        if (correctedDifference >= -60_000 && correctedDifference <= (lecture.duration_minutes + 10) * 60 * 1000) {
+          difference = correctedDifference;
+        }
+      }
 
       if (difference <= 0) {
         setTimeLeft('00:00:00');
@@ -76,7 +122,7 @@ export const LectureCard: React.FC<LectureCardProps> = ({
     const timer = setInterval(calculateTimeLeft, 1000);
 
     return () => clearInterval(timer);
-  }, [isActive, lecture.current_session_end_time]);
+  }, [isActive, lecture.current_session_end_time, lecture.is_recurring, lecture.duration_minutes, getTimezoneOffsetMs]);
 
   const getStatusVariant = () => {
     if (lecture.status === 'جاري الآن') return 'success';

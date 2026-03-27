@@ -12,6 +12,9 @@ import { Group } from '@/services/groupService';
 import toast from 'react-hot-toast';
 import QRCode from 'react-qr-code';
 import { Button, Icon } from '@/components/ui';
+import { initializeEcho, disconnectEcho } from '@/lib/echo';
+import { getAccessToken } from '@/lib/tokenManager';
+import { useAuth } from '@/contexts/EnhancedAuthContext';
 
 export default function StudentAttendanceSection() {
   const router = useRouter();
@@ -63,6 +66,43 @@ export default function StudentAttendanceSection() {
     recurrence_time: '',
     duration_minutes: 120,
   });
+
+  const { user } = useAuth(); // get user
+
+  // Hook for Echo real-time updates
+  useEffect(() => {
+    const token = getAccessToken();
+    if (!token || !user) return;
+
+    const echo = initializeEcho(token);
+    
+    // Listen on academy channel
+    const privateChannel = echo.private(`academy.${user.id}`);
+    
+    const handleEvent = (event: any) => {
+      console.log('Lecture updated event received in Academy:', event);
+      if (event.lecture_id) {
+        setLectures((prevLectures) => {
+          return prevLectures.map((lecture) => {
+            if (String(lecture.id) === String(event.lecture_id)) {
+              return {
+                ...lecture,
+                is_active: event.is_active,
+                status: event.is_active ? 'جاري الآن' : 'منتهية'
+              };
+            }
+            return lecture;
+          });
+        });
+      }
+    };
+
+    privateChannel.listen('.lecture.updated', handleEvent);
+
+    return () => {
+      echo.leave(`academy.${user.id}`);
+    };
+  }, [user]);
 
   // Fetch teachers, grades, and groups for the dropdowns
   useEffect(() => {
@@ -220,14 +260,15 @@ export default function StudentAttendanceSection() {
     if (!selectedLectureForActivation) return;
 
     try {
-      const response = await academyService.toggleLectureActive(selectedLectureForActivation.id);
+      const explicitState = !selectedLectureForActivation.is_active;
+      const response = await academyService.toggleLectureActive(selectedLectureForActivation.id, explicitState);
       setLectures(prev => prev.map(l =>
         l.id === selectedLectureForActivation.id
-          ? { ...l, is_active: response.data?.is_active }
+          ? { ...l, is_active: response.is_active, status: response.is_active ? 'جاري الآن' : 'منتهية' }
           : l
       ));
       setShowActivationModal(false);
-      toast.success(response.data?.message || 'تم تغيير حالة المحاضرة');
+      toast.success(response.message || 'تم تغيير حالة المحاضرة');
     } catch (error: any) {
       console.error('Failed to toggle activation:', error);
       toast.error(error.response?.data?.message || 'فشل تغيير حالة المحاضرة');

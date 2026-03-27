@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Lectures\Jobs;
 
+use App\Domains\Lectures\Events\LectureClosed;
 use App\Domains\Lectures\Events\LectureUpdated;
 use App\Domains\Lectures\Models\Attendance;
 use App\Domains\Lectures\Models\Lecture;
@@ -21,21 +22,30 @@ class ProcessLectureEnd implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-
     public function __construct(
         protected Lecture $lecture,
     ) {}
 
     public function handle(): void
     {
+        $this->lecture->refresh();
+
         if ($this->lecture->is_active) {
             $this->lecture->update(['is_active' => false]);
             $this->lecture->refresh();
 
-            LectureUpdated::dispatch($this->lecture);
+            // 1. بث تحديث للمدرس عبر Reverb (Private Channel)
+            event(new LectureUpdated($this->lecture));
+
+            // 2. بث إغلاق المحاضرة للطلاب عبر Reverb (Public Channel)
+            event(new LectureClosed($this->lecture));
 
             Log::info("ProcessLectureEnd: Auto-deactivated lecture {$this->lecture->id}");
 
+            // 3. إشعار المدرس والأكاديمية بانتهاء المحاضرة
+            if ($this->lecture->academy) {
+                $this->lecture->academy->notify(new LectureStatusNotification($this->lecture, 'finished'));
+            }
             $this->lecture->teacher->notify(new LectureStatusNotification($this->lecture, 'finished'));
         }
 
@@ -46,11 +56,14 @@ class ProcessLectureEnd implements ShouldQueue
             return;
         }
 
-        $activeStudents = $teacher->activeStudents()
+        // تسجيل الغياب للطلاب اللي ماحضروش
+        $activeStudents = $teacher->students()
             ->wherePivot('grade_id', $this->lecture->grade_id)
+            ->wherePivot('is_active', true)
             ->get();
 
         $absentCount = 0;
+        $academyName = $this->lecture->academy ? $this->lecture->academy->name : '';
 
         foreach ($activeStudents as $student) {
             $hasAttended = $this->lecture->attendances()
@@ -68,7 +81,7 @@ class ProcessLectureEnd implements ShouldQueue
                     $student->notify(new StudentAbsentNotification(
                         $this->lecture->title,
                         $teacher->name,
-                        $this->lecture->academy->name,
+                        $academyName,
                     ));
                 } catch (\Exception $e) {
                     Log::error("ProcessLectureEnd: Notification failed for student {$student->id}", [

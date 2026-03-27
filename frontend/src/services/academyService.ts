@@ -486,9 +486,11 @@ export const deleteLecture = async (id: string) => {
   return response.data;
 };
 
-export const toggleLectureActive = async (id: string) => {
+export const toggleLectureActive = async (id: string, is_active?: boolean) => {
   return await fetchApi<{ message: string; is_active: boolean }>(`/academy/lectures/${id}/toggle-active`, {
-    method: 'PUT'
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: typeof is_active === 'boolean' ? JSON.stringify({ is_active }) : undefined
   });
 };
 

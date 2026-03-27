@@ -258,4 +258,9 @@ class Academy extends Model implements AuthenticatableContract, AuthorizableCont
         $usage = $this->getQuotaUsage();
         return $usage['remaining'] > 0;
     }
+
+    public function receivesBroadcastNotificationsOn(): string
+    {
+        return 'notifications.academy.' . $this->id;
+    }
 }

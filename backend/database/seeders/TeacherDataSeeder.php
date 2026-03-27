@@ -26,14 +26,24 @@ class TeacherDataSeeder extends Seeder
             [
                 'name' => 'Demo Teacher',
                 'password' => Hash::make('password'),
+                'status' => 'active',
+                'plan_expires_at' => Carbon::now()->addMonths(6),
             ]
         );
+
+        // Ensure subscription middleware passes for existing demo teacher records too
+        $demoTeacher->update([
+            'status' => 'active',
+            'plan_expires_at' => Carbon::now()->addMonths(6),
+        ]);
 
         $this->seedTeacherData($demoTeacher);
 
         // 2. Create a few random teachers with data
         Teacher::factory(3)->create([
-            'phone' => fn() => fake()->unique()->phoneNumber()
+            'phone' => fn() => fake()->unique()->phoneNumber(),
+            'status' => 'active',
+            'plan_expires_at' => Carbon::now()->addMonths(6),
         ])->each(function ($teacher) {
             $this->seedTeacherData($teacher);
         });

@@ -36,7 +36,7 @@ class LectureController extends Controller
         $academyId = $request->header('X-Academy-Id') ?? $request->input('academy_id');
         
         $lectures = $this->service->getLectures($teacher, $perPage, $filters, $academyId);
-        $lectures->load('current_session');
+        $lectures->load('currentSession');
         
         return $this->successResponse(
             LectureResource::collection($lectures)->response()->getData(true)
@@ -48,7 +48,7 @@ class LectureController extends Controller
         try {
             $teacher = $this->getTeacherFromRequest($request);
             
-            $lectureData = LectureData::fromRequest($request);
+            $lectureData = TeacherLectureData::fromRequest($request);
             $lecture = $this->service->createLecture($teacher, $lectureData->toArray());
 
             return $this->successResponse([
@@ -74,7 +74,7 @@ class LectureController extends Controller
     {
         Gate::authorize('update', $lecture);
 
-        $lectureData = LectureData::fromRequest($request);
+    $lectureData = TeacherLectureData::fromRequest($request);
         $lecture = $this->service->updateLecture($lecture, $lectureData->toArray());
         
         return $this->successResponse([
@@ -98,7 +98,8 @@ class LectureController extends Controller
     {
         Gate::authorize('toggleActive', $lecture);
 
-        $lecture = $this->service->toggleActive($lecture);
+        $newState = $request->has('is_active') ? filter_var($request->input('is_active'), FILTER_VALIDATE_BOOLEAN) : null;
+        $lecture = $this->service->toggleActive($lecture, $newState);
 
         return $this->successResponse([
             'message' => $lecture->is_active ? 'تم تفعيل المحاضرة' : 'تم إلغاء تفعيل المحاضرة',

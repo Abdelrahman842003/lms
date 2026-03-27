@@ -22,7 +22,7 @@ class LectureService
 
     public function getLectures(Academy $academy, array $filters = [], int $perPage = 10): LengthAwarePaginator
     {
-        $query = Lecture::with(['teacher', 'grade', 'group', 'current_session'])
+        $query = Lecture::with(['teacher', 'grade', 'group', 'currentSession'])
             ->where(function ($q) use ($academy) {
                 // Lectures created by academy
                 $q->where('academy_id', $academy->id);
@@ -91,9 +91,9 @@ class LectureService
     }
 
     // Delegate specific actions to TeacherLectureService to avoid duplication
-    public function toggleActive(Lecture $lecture): Lecture
+    public function toggleActive(Lecture $lecture, ?bool $newState = null): Lecture
     {
-        return $this->teacherLectureService->toggleActive($lecture);
+        return $this->teacherLectureService->toggleActive($lecture, $newState);
     }
 
     public function endLecture(Lecture $lecture): void

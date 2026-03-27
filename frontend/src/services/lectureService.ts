@@ -155,9 +155,11 @@ export const markStudentAttendance = async (token: string): Promise<{ message: s
   });
 };
 
-export const toggleLectureActive = async (id: string): Promise<{ message: string; is_active: boolean }> => {
+export const toggleLectureActive = async (id: string, is_active?: boolean): Promise<{ message: string; is_active: boolean }> => {
   return await fetchApi(`/api/teacher/lectures/${id}/toggle-active`, {
     method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: typeof is_active === 'boolean' ? JSON.stringify({ is_active }) : undefined
   });
 };
 

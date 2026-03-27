@@ -42,6 +42,7 @@ class Lecture extends Model
         'parent_id',
         'cancelled_dates',
         'status',
+        'is_active',
     ];
 
     protected function casts(): array

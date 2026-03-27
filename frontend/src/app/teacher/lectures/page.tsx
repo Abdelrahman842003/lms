@@ -18,7 +18,7 @@ import {
   endLecture,
   cancelSession,
 } from '@/services/lectureService';
-import { initializeEcho, disconnectEcho } from '@/lib/echo';
+import { initializeEcho } from '@/lib/echo';
 import { getGrades } from '@/services/gradeService';
 import { getGroups, Group } from '@/services/groupService';
 import QRCodeModal from '@/components/dashboard/QRCodeModal';
@@ -70,7 +70,7 @@ export default function TeacherLecturesPage() {
           getGroups(1, 100)
         ]);
         setGrades(gradesResponse.data);
-        setGroups(groupsResponse.data || []);
+        setGroups(groupsResponse.data?.groups || []);
       } catch (error) {
         console.error('Failed to fetch data:', error);
       }
@@ -131,10 +131,10 @@ export default function TeacherLecturesPage() {
         group_id: selectedGroupId || undefined,
         status: selectedStatus || undefined
       });
-      setLectures(response.data);
-      setTotalPages(response.meta.last_page);
-      setTotalItems(response.meta.total);
-      setCurrentPage(response.meta.current_page);
+      setLectures(response.data?.lectures || []);
+      setTotalPages(response.meta?.last_page || 1);
+      setTotalItems(response.meta?.total || 0);
+      setCurrentPage(response.meta?.current_page || page);
     } catch (error) {
       console.error('Failed to fetch lectures:', error);
     } finally {
@@ -153,7 +153,7 @@ export default function TeacherLecturesPage() {
     const echo = initializeEcho(token);
     
     // Subscribe to teacher's private channel
-    const privateChannel = echo.private(`lectures.${user.id}`);
+    const privateChannel = echo.private(`teacher.${user.id}`);
     
     const handleEvent = (event: any) => {
       console.log('Lecture updated event received:', event);
@@ -193,17 +193,13 @@ export default function TeacherLecturesPage() {
         group_id: selectedGroupId || undefined,
         status: selectedStatus || undefined
       }).then(response => {
-        setLectures(response.data);
-        setTotalPages(response.meta.last_page);
-        setTotalItems(response.meta.total);
+        setLectures(response.data?.lectures || []);
+        setTotalPages(response.meta?.last_page || 1);
+        setTotalItems(response.meta?.total || 0);
       }).catch(console.error);
     };
 
-    privateChannel.listen('.LectureUpdated', handleEvent);
-
-    // Subscribe to public channel (fallback)
-    const publicChannel = echo.channel('lectures');
-    publicChannel.listen('.LectureUpdated', handleEvent);
+    privateChannel.listen('.lecture.updated', handleEvent);
 
     // Subscribe to teacher notifications channel
     const notificationChannel = echo.private(`notifications.teacher.${user.id}`);
@@ -245,26 +241,13 @@ export default function TeacherLecturesPage() {
           group_id: selectedGroupId || undefined,
           status: selectedStatus || undefined
         }).then(response => {
-          setLectures(response.data);
+          setLectures(response.data?.lectures || []);
         }).catch(console.error);
       }
     });
 
-    // Polling fallback (every 30 seconds)
-    const pollInterval = setInterval(() => {
-      getLectures(currentPage, itemsPerPage, { 
-        search: searchQuery,
-        group_id: selectedGroupId || undefined,
-        status: selectedStatus || undefined
-      }).then(response => {
-        setLectures(response.data);
-      }).catch(console.error);
-    }, 30000);
-
     return () => {
-      echo.leave(`lectures.${user.id}`);
-      echo.leave('lectures');
-      clearInterval(pollInterval);
+      echo.leave(`teacher.${user.id}`);
     };
   }, [user?.id, currentPage, searchQuery, selectedGroupId, selectedStatus]);
 
@@ -450,12 +433,13 @@ export default function TeacherLecturesPage() {
     if (!selectedLectureForActivation) return;
 
     try {
-      const response = await toggleLectureActive(selectedLectureForActivation.id);
+      const explicitState = !selectedLectureForActivation.is_active;
+      const response = await toggleLectureActive(selectedLectureForActivation.id, explicitState);
       
       // Update local state to reflect change
-      setLectures(prev => prev.map(l => 
-        l.id === selectedLectureForActivation.id 
-          ? { ...l, is_active: response.is_active } 
+      setLectures(prev => prev.map(l =>
+        l.id === selectedLectureForActivation.id
+          ? { ...l, is_active: response.is_active, status: response.is_active ? 'جاري الآن' : 'منتهية' }
           : l
       ));
 
@@ -476,7 +460,7 @@ export default function TeacherLecturesPage() {
     if (!selectedLectureForEnd) return;
 
     try {
-      const response = await endLecture(selectedLectureForEnd.id);
+  await endLecture(selectedLectureForEnd.id);
       
       // Update local state
       setLectures(prev => prev.map(l => 
@@ -486,7 +470,7 @@ export default function TeacherLecturesPage() {
       ));
 
       setShowEndLectureModal(false);
-      toast.success(response.message);
+  toast.success('تم إنهاء المحاضرة بنجاح');
     } catch (error: any) {
       console.error('Failed to end lecture:', error);
       toast.error(error.message || 'فشل إنهاء المحاضرة');

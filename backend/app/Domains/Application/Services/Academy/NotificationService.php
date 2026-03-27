@@ -21,6 +21,16 @@ class NotificationService
     ) {}
 
     /**
+     * Get standard Laravel notifications (received by academy)
+     */
+    public function getReceivedNotifications(Academy $academy, int $perPage = 15): LengthAwarePaginator
+    {
+        return $academy->notifications()
+            ->orderBy('created_at', 'desc')
+            ->paginate($perPage);
+    }
+
+    /**
      * Get academy notifications
      */
     public function getNotifications(
@@ -314,6 +324,7 @@ class NotificationService
      */
     public function getUnreadCount(Academy $academy, string $userId, ?string $targetType = null): int
     {
+        // Count from custom AcademyNotifications (if any for staff)
         $query = AcademyNotification::forAcademy($academy->id)
             ->unreadBy($userId);
 
@@ -324,6 +335,11 @@ class NotificationService
             });
         }
 
-        return $query->count();
+        $academyNotificationsCount = $query->count();
+
+        // Count from standard Laravel notifications
+        $standardNotificationsCount = $academy->unreadNotifications()->count();
+
+        return $academyNotificationsCount + $standardNotificationsCount;
     }
 }

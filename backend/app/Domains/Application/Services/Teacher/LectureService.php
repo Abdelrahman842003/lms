@@ -27,7 +27,8 @@ class LectureService
 
     public function getLectures($teacher, int $perPage = 10, array $filters = [], ?string $academyId = null): LengthAwarePaginator
     {
-        $query = $teacher->lectures()
+        $query = Lecture::query()
+            ->where('teacher_id', $teacher->id)
             ->with(['grade', 'group'])
             ->withCount('attendances')
             ->orderByRaw('
@@ -120,15 +121,29 @@ class LectureService
         return $lecture;
     }
 
-    public function toggleActive(Lecture $lecture): Lecture
+    public function toggleActive(Lecture $lecture, ?bool $newState = null): Lecture
     {
+        $newState = $newState ?? ! $lecture->is_active;
+
+        if ($lecture->is_active === $newState) {
+            return $lecture;
+        }
+
         $lecture->update([
-            'is_active' => ! $lecture->is_active,
+            'is_active' => $newState,
         ]);
 
+        $lecture->refresh();
+
+        // بث تحديث للمدرس عبر Reverb (Private Channel)
+        LectureUpdated::dispatch($lecture);
+
         if ($lecture->is_active) {
+            // بث تفعيل المحاضرة للطلاب عبر Reverb (Public Channel)
+            event(new \App\Domains\Lectures\Events\LectureActivated($lecture));
+
             try {
-                // Get active students enrolled in this grade
+                // إشعار الطلاب المسجلين
                 $students = $lecture->teacher->students()
                     ->wherePivot('grade_id', $lecture->grade_id)
                     ->wherePivot('is_active', true)
@@ -147,9 +162,10 @@ class LectureService
             } catch (\Exception $e) {
                 Log::error('Failed to send lecture activation notification: '.$e->getMessage());
             }
+        } else {
+            // بث إغلاق المحاضرة للطلاب عبر Reverb (Public Channel)
+            event(new \App\Domains\Lectures\Events\LectureClosed($lecture));
         }
-
-        LectureUpdated::dispatch($lecture);
 
         return $lecture;
     }
