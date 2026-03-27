@@ -110,7 +110,28 @@ export const getLectures = async (
     ...(filters?.status && { status: filters.status }),
   });
 
-  return await fetchApi(`/api/teacher/lectures?${queryParams}`);
+  const response = await fetchApi<any>(`/api/teacher/lectures?${queryParams}`);
+
+  // fetchApi returns `res.data` directly.
+  // Normalize all known payload variants safely:
+  // 1) { lectures: [...], meta: {...} }
+  // 2) { data: [...], meta: {...} } (Laravel paginated resource)
+  // 3) { data: { lectures: [...] } } (legacy wrapper)
+  const root = response ?? {};
+  const lectures = Array.isArray(root?.lectures)
+    ? root.lectures
+    : Array.isArray(root?.data)
+      ? root.data
+      : Array.isArray(root?.data?.lectures)
+        ? root.data.lectures
+        : [];
+
+  const meta = root?.meta ?? root?.data?.meta;
+
+  return {
+    data: { lectures },
+    meta,
+  };
 };
 
 export const createLecture = async (data: CreateLectureData): Promise<Lecture> => {
