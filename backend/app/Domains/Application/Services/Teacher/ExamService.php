@@ -133,7 +133,7 @@ class ExamService
             'id' => \Illuminate\Support\Str::uuid()->toString(),
             'exam_id' => $exam->id,
             'text' => $q['text'],
-            'options' => $q['options'],
+            'options' => json_encode($q['options']), // Must encode to JSON since insert() bypasses model casts
             'correct_answer' => $q['correct_answer'],
             'duration' => $q['duration'] ?? 60,
             'created_at' => $now,
@@ -159,14 +159,14 @@ class ExamService
                 // Update existing question
                 Question::where('id', $questionId)->update([
                     'text' => $q['text'],
-                    'options' => $q['options'],
+                    'options' => json_encode($q['options']), // Must encode to JSON since update() bypasses model casts
                     'correct_answer' => $q['correct_answer'],
                     'duration' => $q['duration'] ?? 60,
                     'sort_order' => $index,
                 ]);
                 $newIds[] = $questionId;
             } else {
-                // Create new question
+                // Create new question - Question::create() triggers model casts, so no json_encode needed
                 $newQuestion = Question::create([
                     'id' => \Illuminate\Support\Str::uuid()->toString(),
                     'exam_id' => $exam->id,
