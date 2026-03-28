@@ -618,12 +618,11 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
                     <span>الملف الشخصي</span>
                   </Link>
                   
-                  {/* Subscription Link */}
-                  {(role === 'teacher' || role === 'academy') && (
-                    <Link 
+                  {/* Subscription Link - Only for academy role or independent teachers */}
+                  {(role === 'academy' || (role === 'teacher' && (!selectedAcademy?.id || selectedAcademy.id === 'independent'))) && (
+                    <Link
                       href={
                         role === 'academy' ? '/academy/subscription' :
-                        (selectedAcademy?.id && selectedAcademy.id !== 'independent') ? '/academy/subscription' :
                         '/teacher/subscription'
                       }
                       className="navbar-dropdown-item"
@@ -631,9 +630,7 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
                     >
                       <Icon name="id-card" size="sm" />
                       <span>
-                        {role === 'academy' ? 'الاشتراك' :
-                         (selectedAcademy?.id && selectedAcademy.id !== 'independent') ? 'الاشتراك' :
-                         'اشتراكي'}
+                        {role === 'academy' ? 'الاشتراك' : 'اشتراكي'}
                       </span>
                     </Link>
                   )}

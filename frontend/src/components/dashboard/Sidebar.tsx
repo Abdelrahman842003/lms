@@ -248,22 +248,22 @@ export const Sidebar: React.FC<SidebarProps> = ({ role, user, isOpen, onClose, p
       items = items.filter(item => item.id !== 'attendance');
     } else {
       // Academy Teacher Mode (or loading)
-      // They should NOT see: Secretary, Grades (Classes), Reports
-      // They SHOULD see: Attendance, Subscription
+      // They should NOT see: Secretary, Grades (Classes), Reports, Subscription, Videos
+      // They SHOULD see: Attendance
       items = items
-        .filter(item => item.id !== 'reports' && item.id !== 'videos') // Remove Reports and Videos
+        .filter(item =>
+          item.id !== 'reports' &&
+          item.id !== 'videos' &&
+          item.id !== 'subscription' // Hide subscription for non-independent teachers
+        )
         .map(item => {
           if (item.id === 'gamification') {
             return { ...item, href: '/academy/gamification' };
           }
-          if (item.id === 'subscription') {
-            // Update subscription link for academy mode
-            return { ...item, href: '/academy/subscription', label: 'الاشتراك' };
-          }
           if (item.children) {
             return {
               ...item,
-              children: item.children.filter(child => 
+              children: item.children.filter(child =>
                 child.id !== 'secretaries' && // Remove Secretary
                 child.id !== 'grades'         // Remove Grades (Classes)
               )

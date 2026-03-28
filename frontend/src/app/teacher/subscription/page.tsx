@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { Button, Icon } from '@/components/ui';
@@ -11,27 +12,43 @@ import { getTeacherSubscription, requestTeacherRenewal } from '@/services/subscr
 import type { SubscriptionResponse } from '@/types/subscription.types';
 
 function SubscriptionPage() {
-  const { user } = useAuth();
+  const router = useRouter();
+  const { user, selectedAcademy, isLoading: authLoading } = useAuth();
   const [subscriptionData, setSubscriptionData] = useState<SubscriptionResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [renewalOpen, setRenewalOpen] = useState(false);
-  const [renewalSubmitting, setRenewalSubmitting] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [renewalOpen, setRenewalOpen] = useState(false);
+    const [renewalSubmitting, setRenewalSubmitting] = useState(false);
 
-  const loadSubscription = async () => {
-    setLoading(true);
-    try {
-      const data = await getTeacherSubscription();
-      setSubscriptionData(data);
-    } catch (error) {
-      console.error('Failed to load subscription:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    // Redirect non-independent teachers away from this page
+    useEffect(() => {
+        if (!authLoading && selectedAcademy?.id && selectedAcademy.id !== 'independent') {
+            // Teacher is associated with an academy, redirect to academy subscription or dashboard
+            router.replace('/academy/subscription');
+        }
+    }, [authLoading, selectedAcademy, router]);
+
+    const loadSubscription = async () => {
+        // Don't load if not independent
+        if (selectedAcademy?.id && selectedAcademy.id !== 'independent') {
+            return;
+        }
+        setLoading(true);
+        try {
+            const data = await getTeacherSubscription();
+            setSubscriptionData(data);
+        } catch (error) {
+            console.error('Failed to load subscription:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
   useEffect(() => {
-    loadSubscription();
-  }, []);
+    // Only load subscription data for independent teachers
+    if (!authLoading && (!selectedAcademy?.id || selectedAcademy.id === 'independent')) {
+      loadSubscription();
+    }
+  }, [authLoading, selectedAcademy]);
 
   const getDaysRemaining = () => {
     const days = subscriptionData?.subscription?.days_remaining ?? null;
