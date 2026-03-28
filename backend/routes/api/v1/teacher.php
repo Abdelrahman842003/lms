@@ -165,4 +165,11 @@ Route::middleware(['auth:sanctum', EnsureUserNotSuspended::class . ':teacher', E
     Route::put('secretaries/{secretary}/permissions', [\App\Domains\Application\Http\Controllers\Teacher\SecretaryController::class, 'updatePermissions']);
     Route::put('secretaries/{secretary}/toggle-status', [\App\Domains\Application\Http\Controllers\Teacher\SecretaryController::class, 'toggleStatus']);
     Route::apiResource('secretaries', SecretaryController::class);
+    
+    // Exams Management
+    Route::get('exams/{exam}/results', [ExamController::class, 'results']);
+    Route::put('exams/{exam}/toggle-status', [ExamController::class, 'toggleStatus']);
+    Route::post('exams/{exam}/copy', [ExamController::class, 'copy']);
+    Route::put('exams/{exam}/end', [ExamController::class, 'endExam']);
+    Route::apiResource('exams', ExamController::class);
 });

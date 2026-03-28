@@ -73,7 +73,7 @@ class ExamController extends Controller
     {
         try {
             $teacher = $this->getTeacherFromRequest($request);
-            $data = ExamData::fromRequest($request);
+            $data = TeacherExamData::fromRequest($request);
             
             // التحقق من تعارض التواريخ كتحذير مبكر
             $warning = null;
