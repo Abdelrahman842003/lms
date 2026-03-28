@@ -12,19 +12,16 @@ import { Icon } from '@/components/ui/Icon';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import {
-  getTeacherVideo,
-  getTeacherVideoComments,
-  publishTeacherVideo,
-  retryTeacherVideoProcessing,
-  deleteTeacherVideo,
-  deleteTeacherAttachment,
+  deleteAcademyAttachment,
+  deleteAcademyVideo,
+  getAcademyVideo,
+  getAcademyVideoComments,
+  publishAcademyVideo,
+  retryAcademyVideoProcessing,
   uploadAttachments,
 } from '@/services/videoService';
 import type { VideoAttachment, VideoComment, VideoItem, VideoQuiz } from '@/types/video.types';
-import { fetchApi } from '@/services/api/baseApi';
 import { VideoQuizManager } from '@/components/video/VideoQuizManager';
-
-// ─── Helpers ────────────────────────────────────────────────────────────────
 
 function formatDuration(seconds?: number | null): string {
   if (!seconds) return '—';
@@ -58,117 +55,6 @@ function statusVariant(status: VideoItem['status']): 'success' | 'warning' | 'da
   return 'secondary';
 }
 
-// ─── Video Player for Teacher (no token needed) ──────────────────────────────
-
-interface TeacherVideoPlayerProps {
-  videoId: string;
-  thumbnailUrl?: string | null;
-}
-
-function TeacherVideoPlayer({ videoId, thumbnailUrl }: TeacherVideoPlayerProps) {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [streamUrl, setStreamUrl] = useState<string | null>(null);
-  const [resolvedThumbnail, setResolvedThumbnail] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [playing, setPlaying] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  // Fetch the actual signed thumbnail URL from JSON endpoint on mount
-  useEffect(() => {
-    if (!thumbnailUrl) return; // no thumbnail_path in DB
-    fetchApi<{ url?: string | null }>(`/teacher/videos/${videoId}/thumbnail-url`)
-      .then((payload) => {
-        const url = payload?.url;
-        if (url) setResolvedThumbnail(url);
-      })
-      .catch(() => {/* silently ignore thumbnail errors */});
-  }, [videoId, thumbnailUrl]);
-
-  const loadStream = useCallback(async () => {
-    if (streamUrl) {
-      setPlaying(true);
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    try {
-      // Fetch the signed R2 URL as JSON — avoids browser redirect issues with <video src>
-      const payload = await fetchApi<{ url?: string }>(`/teacher/videos/${videoId}/stream-url`);
-      const url = payload?.url;
-      if (!url) throw new Error('لم يُعثر على رابط الفيديو');
-      setStreamUrl(url);
-      setPlaying(true);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'حدث خطأ أثناء تحميل الفيديو');
-    } finally {
-      setLoading(false);
-    }
-  }, [videoId, streamUrl]);
-
-  return (
-    <div className="relative rounded-2xl overflow-hidden bg-black aspect-video border border-white/10">
-      {playing && streamUrl ? (
-        <video
-          ref={videoRef}
-          src={streamUrl}
-          controls
-          autoPlay
-          className="w-full h-full object-contain"
-          controlsList="nodownload"
-          onContextMenu={(e) => e.preventDefault()}
-        />
-      ) : (
-        <button
-          type="button"
-          className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/60 hover:bg-black/40 transition-colors cursor-pointer w-full"
-          onClick={() => {
-            if (error) setError(null);
-            void loadStream();
-          }}
-          disabled={loading}
-        >
-          {resolvedThumbnail && (
-            <Image
-              src={resolvedThumbnail}
-              alt="صورة مصغرة"
-              fill
-              sizes="(max-width: 1024px) 100vw, 66vw"
-              className="absolute inset-0 w-full h-full object-cover opacity-50"
-              unoptimized
-            />
-          )}
-          <div className="relative z-10 flex flex-col items-center gap-3">
-            {loading ? (
-              <div className="w-16 h-16 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center">
-                <Icon name="sync" className="text-primary text-2xl animate-spin" />
-              </div>
-            ) : error ? (
-              <>
-                <div className="w-16 h-16 rounded-full bg-red-500/20 border border-red-500/40 flex items-center justify-center">
-                  <Icon name="exclamation-triangle" className="text-red-400 text-2xl" />
-                </div>
-                <span className="text-red-400 text-sm font-medium drop-shadow text-center px-4">{error}</span>
-                <span className="text-gray-400 text-xs">اضغط للمحاولة مجدداً</span>
-              </>
-            ) : (
-              <div className="w-20 h-20 rounded-full bg-primary/20 border-2 border-primary/60 flex items-center justify-center hover:bg-primary/30 transition-all">
-                <Icon name="play" className="text-primary text-3xl mr-1" />
-              </div>
-            )}
-            {!loading && !error && (
-              <span className="text-white text-sm font-medium drop-shadow">
-                معاينة الفيديو
-              </span>
-            )}
-          </div>
-        </button>
-      )}
-    </div>
-  );
-}
-
-// ─── Comment Component ───────────────────────────────────────────────────────
-
 function CommentItem({ comment }: { comment: VideoComment }) {
   return (
     <div className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-2">
@@ -195,9 +81,19 @@ function CommentItem({ comment }: { comment: VideoComment }) {
   );
 }
 
-// ─── Main Page ───────────────────────────────────────────────────────────────
+function StatCard({ icon, label, value }: { icon: string; label: string; value: string }) {
+  return (
+    <div className="flex flex-col items-center gap-1.5 px-4 py-3 rounded-2xl border bg-white/5 border-white/10 text-center">
+      <div className="w-7 h-7 rounded-lg bg-primary/15 border border-primary/20 flex items-center justify-center">
+        <Icon name={icon} className="text-primary" size="xs" />
+      </div>
+      <span className="text-white font-bold text-base leading-none">{value}</span>
+      <span className="text-gray-500 text-xs">{label}</span>
+    </div>
+  );
+}
 
-export default function TeacherVideoDetailPage() {
+export default function AcademyVideoDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const { user } = useAuth();
@@ -209,7 +105,6 @@ export default function TeacherVideoDetailPage() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'details' | 'comments' | 'quiz' | 'attachments'>('details');
 
-  // ── Attachments state ────────────────────────────────────────────────────
   const [attachmentFiles, setAttachmentFiles] = useState<File[]>([]);
   const [isUploadingAttachments, setIsUploadingAttachments] = useState(false);
   const [deletingAttachmentId, setDeletingAttachmentId] = useState<string | null>(null);
@@ -220,10 +115,9 @@ export default function TeacherVideoDetailPage() {
     setLoading(true);
     try {
       const [vid, coms] = await Promise.all([
-        getTeacherVideo(params.id),
-        getTeacherVideoComments(params.id),
+        getAcademyVideo(params.id),
+        getAcademyVideoComments(params.id),
       ]);
-      console.debug('[TeacherVideo] likes_count:', vid.likes_count, 'comments_count:', vid.comments_count);
       setVideo(vid);
       setComments(coms);
     } catch {
@@ -241,7 +135,7 @@ export default function TeacherVideoDetailPage() {
     if (!video) return;
     setIsProcessing(true);
     try {
-      const updated = await publishTeacherVideo(video.id);
+      const updated = await publishAcademyVideo(video.id);
       setVideo(updated);
       toast.success('تم نشر الفيديو بنجاح');
     } catch (e: unknown) {
@@ -255,7 +149,7 @@ export default function TeacherVideoDetailPage() {
     if (!video) return;
     setIsProcessing(true);
     try {
-      await retryTeacherVideoProcessing(video.id);
+      await retryAcademyVideoProcessing(video.id);
       toast.success('تمت جدولة إعادة المعالجة');
       await loadVideo();
     } catch (e: unknown) {
@@ -269,9 +163,9 @@ export default function TeacherVideoDetailPage() {
     if (!video) return;
     setIsProcessing(true);
     try {
-      await deleteTeacherVideo(video.id);
+      await deleteAcademyVideo(video.id);
       toast.success('تم حذف الفيديو');
-      router.push('/teacher/videos');
+      router.push('/academy/videos');
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : 'فشل حذف الفيديو');
     } finally {
@@ -280,17 +174,11 @@ export default function TeacherVideoDetailPage() {
     }
   };
 
-  const canPublish = video?.status === 'ready' || video?.status === 'scheduled';
-  const canRetry = video?.status === 'failed';
-  const isPublished = video?.status === 'published';
-  const isReady = video?.status === 'ready' || isPublished;
-
-  // ── Attachment handlers ──────────────────────────────────────────────────
   const handleUploadAttachments = async () => {
     if (!video || attachmentFiles.length === 0) return;
     setIsUploadingAttachments(true);
     try {
-      const { promise } = uploadAttachments(`/teacher/videos/${video.id}/attachments`, attachmentFiles, video.id);
+      const { promise } = uploadAttachments(`/academy/videos/${video.id}/attachments`, attachmentFiles, video.id);
       await promise;
       setAttachmentFiles([]);
       if (attachmentInputRef.current) attachmentInputRef.current.value = '';
@@ -307,12 +195,10 @@ export default function TeacherVideoDetailPage() {
     if (!video) return;
     setDeletingAttachmentId(attachment.id);
     try {
-      await deleteTeacherAttachment(video.id, attachment.id);
+      await deleteAcademyAttachment(video.id, attachment.id);
       toast.success('تم حذف المرفق');
       setVideo((prev) =>
-        prev
-          ? { ...prev, attachments: prev.attachments?.filter((a) => a.id !== attachment.id) }
-          : prev
+        prev ? { ...prev, attachments: prev.attachments?.filter((a) => a.id !== attachment.id) } : prev
       );
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : 'فشل حذف المرفق');
@@ -321,12 +207,16 @@ export default function TeacherVideoDetailPage() {
     }
   };
 
-  // ── Loading skeleton ──────────────────────────────────────────────────────
+  const canPublish = video?.status === 'ready' || video?.status === 'scheduled';
+  const canRetry = video?.status === 'failed';
+  const isPublished = video?.status === 'published';
+  const isReady = video?.status === 'ready' || isPublished;
+
   if (loading) {
     return (
       <DashboardLayout
-        role="teacher"
-        user={{ name: user?.name || 'المدرس', avatar: user?.avatar || '' }}
+        role="academy"
+        user={{ name: user?.name || 'الأكاديمية', avatar: user?.avatar || '' }}
         headerActions={null}
       >
         <div className="space-y-6">
@@ -347,14 +237,14 @@ export default function TeacherVideoDetailPage() {
   if (!video) {
     return (
       <DashboardLayout
-        role="teacher"
-        user={{ name: user?.name || 'المدرس', avatar: user?.avatar || '' }}
+        role="academy"
+        user={{ name: user?.name || 'الأكاديمية', avatar: user?.avatar || '' }}
         headerActions={null}
       >
         <div className="text-center py-20">
           <Icon name="film" className="text-6xl text-gray-500 mb-4" />
           <p className="text-gray-300 text-lg">الفيديو غير موجود أو تم حذفه.</p>
-          <Link href="/teacher/videos" className="mt-6 inline-block text-primary hover:underline">
+          <Link href="/academy/videos" className="mt-6 inline-block text-primary hover:underline">
             ← العودة إلى قائمة الفيديوهات
           </Link>
         </div>
@@ -364,13 +254,12 @@ export default function TeacherVideoDetailPage() {
 
   return (
     <DashboardLayout
-      role="teacher"
-      user={{ name: user?.name || 'المدرس', avatar: user?.avatar || '' }}
+      role="academy"
+      user={{ name: user?.name || 'الأكاديمية', avatar: user?.avatar || '' }}
       headerActions={null}
     >
-      {/* ── Breadcrumb ── */}
       <div className="flex items-center gap-2 text-sm text-gray-400 mb-6">
-        <Link href="/teacher/videos" className="hover:text-primary transition-colors flex items-center gap-1">
+        <Link href="/academy/videos" className="hover:text-primary transition-colors flex items-center gap-1">
           <Icon name="film" size="sm" />
           <span>إدارة الفيديوهات</span>
         </Link>
@@ -378,15 +267,28 @@ export default function TeacherVideoDetailPage() {
         <span className="text-white truncate max-w-xs">{video.title}</span>
       </div>
 
-      {/* ── Main grid ── */}
       <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-
-        {/* LEFT: Player + Tabs */}
         <div className="space-y-6">
-
-          {/* Video player / preview */}
           {isReady ? (
-            <TeacherVideoPlayer videoId={video.id} thumbnailUrl={video.thumbnail_url} />
+            <div className="relative rounded-2xl overflow-hidden bg-black aspect-video border border-white/10 flex items-center justify-center">
+              {video.thumbnail_url ? (
+                <Image
+                  src={video.thumbnail_url}
+                  alt="thumbnail"
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 66vw"
+                  className="absolute inset-0 w-full h-full object-cover opacity-35"
+                  unoptimized
+                />
+              ) : null}
+              <div className="relative z-10 text-center px-5">
+                <div className="w-16 h-16 mx-auto rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center mb-3">
+                  <Icon name="film" className="text-primary text-2xl" />
+                </div>
+                <p className="text-white font-medium">صفحة العرض متاحة الآن</p>
+                <p className="text-gray-400 text-sm mt-1">تم فتح تفاصيل الفيديو بنجاح.</p>
+              </div>
+            </div>
           ) : (
             <div className="aspect-video rounded-2xl border border-white/10 bg-[#101426]/60 flex flex-col items-center justify-center gap-4 text-gray-400">
               <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center">
@@ -394,20 +296,17 @@ export default function TeacherVideoDetailPage() {
               </div>
               <div className="text-center">
                 <p className="text-white font-medium">
-                  {video.status === 'failed'
-                    ? 'فشل في معالجة الفيديو'
-                    : 'الفيديو قيد المعالجة'}
+                  {video.status === 'failed' ? 'فشل في معالجة الفيديو' : 'الفيديو قيد المعالجة'}
                 </p>
                 <p className="text-sm mt-1">
                   {video.status === 'failed'
                     ? video.processing_error || 'حدث خطأ أثناء المعالجة'
-                    : 'سيكون الفيديو متاحاً للمعاينة بعد اكتمال المعالجة'}
+                    : 'سيظهر هنا بعد اكتمال المعالجة'}
                 </p>
               </div>
             </div>
           )}
 
-          {/* Tab navigation */}
           <div className="flex gap-1 border-b border-white/10 pb-0">
             {(['details', 'attachments', 'comments', 'quiz'] as const).map((tab) => (
               <button
@@ -448,7 +347,6 @@ export default function TeacherVideoDetailPage() {
             ))}
           </div>
 
-          {/* Tab content */}
           {activeTab === 'details' && (
             <div className="rounded-2xl border border-white/10 bg-[#101426]/40 p-6 space-y-5">
               <div>
@@ -459,12 +357,12 @@ export default function TeacherVideoDetailPage() {
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                <StatCard icon="graduation-cap" label="الصف"        value={video.grade?.name || '—'} />
-                <StatCard icon="users"          label="المجموعات"   value={`${video.groups?.length || 0} مجموعة`} />
-                <StatCard icon="clock"          label="المدة"        value={formatDuration(video.duration_seconds)} />
-                <StatCard icon="film"           label="الترميز"     value={video.codec?.toUpperCase() || '—'} />
-                <StatCard icon="thumbs-up" label="الإعجابات"  value={String(video.likes_count ?? 0)} />
-                <StatCard icon="comments"  label="التعليقات"  value={String(comments.length)} />
+                <StatCard icon="graduation-cap" label="الصف" value={video.grade?.name || '—'} />
+                <StatCard icon="users" label="المجموعات" value={`${video.groups?.length || 0} مجموعة`} />
+                <StatCard icon="clock" label="المدة" value={formatDuration(video.duration_seconds)} />
+                <StatCard icon="film" label="الترميز" value={video.codec?.toUpperCase() || '—'} />
+                <StatCard icon="thumbs-up" label="الإعجابات" value={String(video.likes_count ?? 0)} />
+                <StatCard icon="comments" label="التعليقات" value={String(comments.length)} />
                 <StatCard
                   icon="calendar"
                   label="تاريخ الإضافة"
@@ -500,7 +398,6 @@ export default function TeacherVideoDetailPage() {
 
           {activeTab === 'attachments' && (
             <div className="space-y-5">
-              {/* Upload new attachments */}
               <div className="rounded-2xl border border-white/10 bg-[#101426]/40 p-5 space-y-4">
                 <h3 className="text-white font-bold flex items-center gap-2">
                   <Icon name="upload" className="text-primary" />
@@ -566,7 +463,6 @@ export default function TeacherVideoDetailPage() {
                 )}
               </div>
 
-              {/* Existing attachments */}
               <div className="rounded-2xl border border-white/10 bg-[#101426]/40 p-5 space-y-3">
                 <h3 className="text-white font-bold flex items-center gap-2">
                   <Icon name="paperclip" className="text-primary" />
@@ -632,17 +528,14 @@ export default function TeacherVideoDetailPage() {
           {activeTab === 'quiz' && (
             <VideoQuizManager
               videoId={video.id}
-              role="teacher"
+              role="academy"
               initialQuiz={video.quiz}
-              onQuizChange={(q: VideoQuiz | null) => setVideo((prev) => prev ? { ...prev, quiz: q } : prev)}
+              onQuizChange={(q: VideoQuiz | null) => setVideo((prev) => (prev ? { ...prev, quiz: q } : prev))}
             />
           )}
         </div>
 
-        {/* RIGHT: Status card + Actions */}
         <aside className="space-y-4">
-
-          {/* Status card */}
           <div className="rounded-2xl border border-white/10 bg-[#101426]/60 p-5 space-y-4">
             <h3 className="text-white font-bold flex items-center gap-2">
               <Icon name="info-circle" className="text-primary" />
@@ -653,18 +546,14 @@ export default function TeacherVideoDetailPage() {
               <Badge variant={statusVariant(video.status)} size="sm">
                 {statusLabel(video.status)}
               </Badge>
-              {video.processing_status === 'succeeded' && (
-                <Badge variant="success" size="sm">المعالجة مكتملة</Badge>
-              )}
+              {video.processing_status === 'succeeded' && <Badge variant="success" size="sm">المعالجة مكتملة</Badge>}
               {video.processing_status === 'running' && (
                 <Badge variant="info" size="sm">
                   <Icon name="sync" className="animate-spin ml-1" size="sm" />
                   المعالجة جارية
                 </Badge>
               )}
-              {video.processing_status === 'failed' && (
-                <Badge variant="danger" size="sm">فشل المعالجة</Badge>
-              )}
+              {video.processing_status === 'failed' && <Badge variant="danger" size="sm">فشل المعالجة</Badge>}
             </div>
 
             {isPublished && (
@@ -675,7 +564,6 @@ export default function TeacherVideoDetailPage() {
             )}
           </div>
 
-          {/* Action buttons */}
           <div className="rounded-2xl border border-white/10 bg-[#101426]/60 p-5 space-y-3">
             <h3 className="text-white font-bold flex items-center gap-2 mb-4">
               <Icon name="cog" className="text-primary" />
@@ -683,24 +571,14 @@ export default function TeacherVideoDetailPage() {
             </h3>
 
             {canPublish && (
-              <Button
-                variant="primary"
-                className="w-full justify-center"
-                onClick={handlePublish}
-                disabled={isProcessing}
-              >
+              <Button variant="primary" className="w-full justify-center" onClick={handlePublish} disabled={isProcessing}>
                 <Icon name="upload" size="sm" />
                 <span>نشر الفيديو</span>
               </Button>
             )}
 
             {canRetry && (
-              <Button
-                variant="outline"
-                className="w-full justify-center"
-                onClick={handleRetry}
-                disabled={isProcessing}
-              >
+              <Button variant="outline" className="w-full justify-center" onClick={handleRetry} disabled={isProcessing}>
                 <Icon name="sync" size="sm" />
                 <span>إعادة المعالجة</span>
               </Button>
@@ -709,7 +587,7 @@ export default function TeacherVideoDetailPage() {
             <Button
               variant="ghost"
               className="w-full justify-center text-gray-300 hover:text-white"
-              onClick={() => router.push(`/teacher/videos`)}
+              onClick={() => router.push('/academy/videos')}
             >
               <Icon name="arrow-right" size="sm" />
               <span>العودة للقائمة</span>
@@ -728,7 +606,6 @@ export default function TeacherVideoDetailPage() {
             </Button>
           </div>
 
-          {/* Groups */}
           {video.groups && video.groups.length > 0 && (
             <div className="rounded-2xl border border-white/10 bg-[#101426]/60 p-5 space-y-3">
               <h3 className="text-white font-bold flex items-center gap-2">
@@ -750,7 +627,6 @@ export default function TeacherVideoDetailPage() {
         </aside>
       </div>
 
-      {/* Delete confirmation modal */}
       <ConfirmationModal
         isOpen={isDeleteModalOpen}
         title="حذف الفيديو"
@@ -763,19 +639,5 @@ export default function TeacherVideoDetailPage() {
         variant="danger"
       />
     </DashboardLayout>
-  );
-}
-
-// ─── Stat card ────────────────────────────────────────────────────────────────
-
-function StatCard({ icon, label, value }: { icon: string; label: string; value: string }) {
-  return (
-    <div className="flex flex-col items-center gap-1.5 px-4 py-3 rounded-2xl border bg-white/5 border-white/10 text-center">
-      <div className="w-7 h-7 rounded-lg bg-primary/15 border border-primary/20 flex items-center justify-center">
-        <Icon name={icon} className="text-primary" size="xs" />
-      </div>
-      <span className="text-white font-bold text-base leading-none">{value}</span>
-      <span className="text-gray-500 text-xs">{label}</span>
-    </div>
   );
 }

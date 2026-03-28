@@ -39,7 +39,9 @@ class VideoLifecycleService
     public function listForOwner(VideoActorContext $context, array $filters = [], int $perPage = 15): LengthAwarePaginator
     {
         $query = Video::query()
-            ->with(['owner', 'uploader', 'publishedBy', 'grade', 'groups', 'teacherReference'])
+            // Keep listing resilient: the API resource doesn't use owner/uploader/publishedBy payloads.
+            // Avoid eager-loading morph relations here to prevent morph alias runtime mismatch failures.
+            ->with(['grade', 'groups', 'teacherReference'])
             ->withCount(['likes', 'comments', 'attachments', 'watchProgresses', 'quiz'])
             ->where('owner_type', $context->ownerType->value)
             ->where('owner_id', $context->ownerId)

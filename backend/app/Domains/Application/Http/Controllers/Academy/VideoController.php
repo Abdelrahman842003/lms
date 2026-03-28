@@ -81,7 +81,7 @@ class VideoController extends Controller
             throw new AuthorizationException('غير مصرح بعرض هذا الفيديو.');
         }
 
-        $video->load(['owner', 'uploader', 'publishedBy', 'groups', 'attachments', 'grade', 'teacherReference', 'quiz.questions']);
+    $video->load(['groups', 'attachments', 'grade', 'teacherReference', 'quiz.questions']);
 
         return $this->successResponse([
             'video' => new VideoResource($video),

@@ -5,10 +5,10 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { StatCard } from '@/components/dashboard/StatCard';
-import { VideoCard } from '@/components/dashboard/VideoCard';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import { Filter } from '@/components/Filter';
 import { Button, Icon, Input } from '@/components/ui';
+import { VideoCard, VideoCardSkeleton } from '@/components/video/VideoCard';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import {
   deleteAcademyVideo,
@@ -31,6 +31,11 @@ export default function AcademyVideosPage() {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [videoToDelete, setVideoToDelete] = useState<VideoItem | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
+  const getErrorMessage = (error: unknown, fallback: string) => {
+    if (error instanceof Error && error.message) return error.message;
+    return fallback;
+  };
 
   const fetchVideos = async () => {
     try {
@@ -108,8 +113,8 @@ export default function AcademyVideosPage() {
       await publishAcademyVideo(video.id);
       toast.success('تم نشر الفيديو بنجاح');
       await fetchVideos();
-    } catch (error: any) {
-      toast.error(error?.message || 'فشل نشر الفيديو');
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, 'فشل نشر الفيديو'));
     } finally {
       setIsProcessing(false);
       setOpenMenuId(null);
@@ -122,8 +127,8 @@ export default function AcademyVideosPage() {
       await retryAcademyVideoProcessing(video.id);
       toast.success('تمت جدولة إعادة المعالجة');
       await fetchVideos();
-    } catch (error: any) {
-      toast.error(error?.message || 'فشل إعادة المعالجة');
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, 'فشل إعادة المعالجة'));
     } finally {
       setIsProcessing(false);
       setOpenMenuId(null);
@@ -140,8 +145,8 @@ export default function AcademyVideosPage() {
       await fetchVideos();
       setIsDeleteModalOpen(false);
       setVideoToDelete(null);
-    } catch (error: any) {
-      toast.error(error?.message || 'فشل حذف الفيديو');
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, 'فشل حذف الفيديو'));
     } finally {
       setIsProcessing(false);
     }
@@ -219,24 +224,7 @@ export default function AcademyVideosPage() {
 
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[1, 2, 3, 4, 5, 6].map((item) => (
-            <div key={item} className="rounded-2xl bg-[#101426]/15 border border-white/10 h-[320px] flex flex-col gap-4 p-6">
-              <div className="flex justify-between items-start">
-                <div className="skeleton-item w-[60%] h-6"></div>
-                <div className="skeleton-item w-[20%] h-6 rounded-xl"></div>
-              </div>
-              <div className="skeleton-item w-full h-10"></div>
-              <div className="flex flex-col gap-3 mt-auto">
-                <div className="skeleton-item w-[40%] h-4"></div>
-                <div className="skeleton-item w-[50%] h-4"></div>
-                <div className="skeleton-item w-[30%] h-4"></div>
-              </div>
-              <div className="flex gap-2 mt-4">
-                <div className="skeleton-item flex-1 h-9 rounded-lg"></div>
-                <div className="skeleton-item flex-1 h-9 rounded-lg"></div>
-              </div>
-            </div>
-          ))}
+          {[1, 2, 3, 4, 5, 6].map((item) => <VideoCardSkeleton key={item} />)}
         </div>
       ) : filteredVideos.length === 0 ? (
         <div className="text-center p-12 bg-white/2 rounded-2xl">
@@ -253,17 +241,21 @@ export default function AcademyVideosPage() {
             <VideoCard
               key={video.id}
               video={video}
-              isMenuOpen={openMenuId === video.id}
-              onMenuToggle={(event) => {
-                event.stopPropagation();
-                setOpenMenuId(openMenuId === video.id ? null : video.id);
-              }}
-              onPublish={() => void handlePublish(video)}
-              onRetryProcessing={() => void handleRetry(video)}
-              onDelete={() => {
-                setVideoToDelete(video);
-                setIsDeleteModalOpen(true);
-                setOpenMenuId(null);
+              href={`/academy/videos/${video.id}`}
+              role="teacher"
+              teacherActions={{
+                isMenuOpen: openMenuId === video.id,
+                onMenuToggle: (event: React.MouseEvent) => {
+                  event.stopPropagation();
+                  setOpenMenuId(openMenuId === video.id ? null : video.id);
+                },
+                onPublish: () => void handlePublish(video),
+                onRetryProcessing: () => void handleRetry(video),
+                onDelete: () => {
+                  setVideoToDelete(video);
+                  setIsDeleteModalOpen(true);
+                  setOpenMenuId(null);
+                },
               }}
             />
           ))}

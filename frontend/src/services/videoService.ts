@@ -165,6 +165,16 @@ export async function getAcademyVideos(): Promise<VideoItem[]> {
   return response.data;
 }
 
+export async function getAcademyVideo(videoId: string): Promise<VideoItem> {
+  const response = await fetchApi<{ video: VideoItem }>(`/academy/videos/${videoId}`);
+  return response.video;
+}
+
+export async function getAcademyVideoComments(videoId: string): Promise<VideoComment[]> {
+  const response = await fetchApi<PaginatedResponse<VideoComment>>(`/academy/videos/${videoId}/comments`);
+  return response.data;
+}
+
 export async function publishTeacherVideo(videoId: string): Promise<VideoItem> {
   const response = await fetchApi<{ video: VideoItem }>(`/teacher/videos/${videoId}/publish`, {
     method: 'POST',

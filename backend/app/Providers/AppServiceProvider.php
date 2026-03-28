@@ -221,6 +221,9 @@ class AppServiceProvider extends ServiceProvider
             'App\Models\Guardian'           => \App\Domains\Auth\Models\Guardian::class,
             'App\Models\Secretary'          => \App\Domains\Auth\Models\Secretary::class,
             'App\Models\Academy'            => \App\Domains\Auth\Models\Academy::class,
+            // New enum-backed morph aliases used by the Videos domain
+            'academy'                        => \App\Domains\Auth\Models\Academy::class,
+            'independent_teacher'            => \App\Domains\Auth\Models\Teacher::class,
             'App\Models\DeviceToken'        => \App\Domains\Auth\Models\DeviceToken::class,
             'App\Models\LoginAttempt'       => \App\Domains\Auth\Models\LoginAttempt::class,
             'App\Models\ParentDeviceToken'  => \App\Domains\Auth\Models\ParentDeviceToken::class,

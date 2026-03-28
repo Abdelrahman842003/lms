@@ -46,6 +46,9 @@ class IntegrationSettingsPage extends Page implements HasForms
         'cloudflare_r2_bucket',
         'cloudflare_r2_endpoint',
         'cloudflare_r2_public_url',
+        'cloudflare_kv_account_id',
+        'cloudflare_kv_api_token',
+        'cloudflare_kv_namespace_id',
     ];
 
     protected const SECRET_FILES = [
@@ -55,6 +58,9 @@ class IntegrationSettingsPage extends Page implements HasForms
         'cloudflare_r2_bucket' => ['cloudflare_r2_bucket.txt', 'cloudflare_r2_bucket'],
         'cloudflare_r2_endpoint' => ['cloudflare_r2_endpoint.txt', 'cloudflare_r2_endpoint'],
         'cloudflare_r2_public_url' => ['cloudflare_r2_public_url.txt', 'cloudflare_r2_public_url'],
+        'cloudflare_kv_account_id' => ['cloudflare_kv_account_id.txt', 'cloudflare_kv_account_id'],
+        'cloudflare_kv_api_token' => ['cloudflare_kv_api_token.txt', 'cloudflare_kv_api_token'],
+        'cloudflare_kv_namespace_id' => ['cloudflare_kv_namespace_id.txt', 'cloudflare_kv_namespace_id'],
     ];
 
     public ?array $data = [];
@@ -143,6 +149,24 @@ class IntegrationSettingsPage extends Page implements HasForms
                         TextInput::make('cloudflare_r2_public_url')
                             ->label('Public URL')
                             ->maxLength(500),
+                    ])
+                    ->columns(2),
+
+                Section::make('Cloudflare KV')
+                    ->schema([
+                        TextInput::make('cloudflare_kv_account_id')
+                            ->label('Account ID')
+                            ->maxLength(255),
+
+                        TextInput::make('cloudflare_kv_api_token')
+                            ->label('API Token')
+                            ->password()
+                            ->revealable()
+                            ->maxLength(500),
+
+                        TextInput::make('cloudflare_kv_namespace_id')
+                            ->label('Namespace ID')
+                            ->maxLength(255),
                     ])
                     ->columns(2)
                     ->footerActions([
