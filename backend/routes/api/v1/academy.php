@@ -8,6 +8,7 @@ use App\Domains\Application\Http\Controllers\Academy\SecretaryController;
 use App\Domains\Application\Http\Controllers\Academy\AttendanceController;
 use App\Domains\Application\Http\Controllers\Academy\NotificationController;
 use App\Domains\Application\Http\Controllers\Academy\ReportController;
+use App\Domains\Application\Http\Controllers\Academy\AcademyReportController;
 use App\Domains\Application\Http\Controllers\Academy\PermissionController;
 use App\Domains\Application\Http\Controllers\Academy\LectureController;
 use App\Domains\Application\Http\Controllers\Academy\GradeController;
@@ -76,6 +77,17 @@ Route::middleware(['auth:sanctum', EnsureActiveSubscription::class])->prefix('ac
     Route::get('reports/teachers', [ReportController::class, 'teachersReport']);
     Route::get('reports/monthly', [ReportController::class, 'monthlyReport']);
     Route::get('reports/export-pdf', [ReportController::class, 'exportPDF']);
+
+    // New Academy Reports (Reporting Foundation)
+    Route::get('reports/snapshot', [AcademyReportController::class, 'snapshot']);
+    Route::get('reports/student-distribution', [AcademyReportController::class, 'studentDistribution']);
+    Route::get('reports/teacher-performance', [AcademyReportController::class, 'teacherPerformance']);
+    Route::get('reports/attendance-quality', [AcademyReportController::class, 'attendanceQuality']);
+    Route::get('reports/session-execution', [AcademyReportController::class, 'sessionExecution']);
+    Route::get('reports/subscription-usage', [AcademyReportController::class, 'subscriptionUsage']);
+    Route::get('reports/time-comparison', [AcademyReportController::class, 'timeComparison']);
+    Route::get('reports/alerts', [AcademyReportController::class, 'alerts']);
+    Route::get('reports/overview', [AcademyReportController::class, 'overview']);
     
     // Permissions
     Route::get('permissions', [PermissionController::class, 'index']);

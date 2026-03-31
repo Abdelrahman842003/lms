@@ -21,6 +21,7 @@ use App\Domains\Application\Http\Controllers\Teacher\VideoQuizController;
 use App\Domains\Application\Http\Controllers\Api\LectureSessionController;
 use App\Domains\Application\Http\Controllers\Teacher\GamificationController;
 use App\Domains\Application\Http\Controllers\Teacher\TeacherReportController;
+use App\Domains\Reporting\Presentation\Controllers\TeacherReportingController;
 use App\Domains\Application\Http\Controllers\Teacher\SecretaryController;
 use App\Domains\Auth\Http\Middleware\EnsureUserNotSuspended;
 use App\Domains\Auth\Http\Middleware\EnsureActiveSubscription;
@@ -109,9 +110,13 @@ Route::middleware(['auth:sanctum', EnsureUserNotSuspended::class . ':teacher', E
     Route::post('sync-errors/{error}/resolve', [SyncErrorController::class, 'resolve']);
     Route::post('sync-errors/bulk-resolve', [SyncErrorController::class, 'bulkResolve']);
     
-    // Reports
+    // Reports (Legacy)
     Route::get('reports/my-report', [TeacherReportController::class, 'myReport']);
     Route::get('reports/my-report/pdf', [TeacherReportController::class, 'myReportPdf']);
+    
+    // Reports (Reporting Domain - v2)
+    Route::get('reports/overview', [TeacherReportingController::class, 'overview']);
+    Route::get('reports/drilldown/{key}', [TeacherReportingController::class, 'drilldown']);
     
     // Subscription
     Route::get('subscription', [SubscriptionController::class, 'show']);

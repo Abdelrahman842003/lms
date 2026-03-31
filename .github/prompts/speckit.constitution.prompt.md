@@ -1,3 +1,3 @@
 ---
-agent: speckit.constitution
+description: Speckit constitution prompt
 ---
