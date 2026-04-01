@@ -19,6 +19,7 @@ use App\Domains\Subscriptions\Models\AcademySubscription;
 use App\Domains\Subscriptions\Enums\SubscriptionStatus;
 use App\Domains\Application\Models\TeacherAttendanceLog;
 use App\Domains\Subscriptions\Traits\HasSubscriptionStatus;
+use App\Domains\Enrollments\Models\Group;
 
 class Academy extends Model implements AuthenticatableContract, AuthorizableContract
 {
@@ -118,6 +119,14 @@ class Academy extends Model implements AuthenticatableContract, AuthorizableCont
     }
 
     /**
+     * Groups belonging to this academy
+     */
+    public function groups()
+    {
+        return $this->hasMany(Group::class);
+    }
+
+    /**
      * Subscriptions for this academy (through polymorphic relationship)
      */
     public function subscriptions()
@@ -125,12 +134,11 @@ class Academy extends Model implements AuthenticatableContract, AuthorizableCont
         return $this->morphMany(Subscription::class, 'subscriber');
     }
 
-    public function latestSubscription(): ?Subscription
+    public function latestSubscription()
     {
-        return $this->subscriptions()
+        return $this->morphOne(Subscription::class, 'subscriber')
             ->orderByDesc('month')
-            ->orderByDesc('created_at')
-            ->first();
+            ->orderByDesc('created_at');
     }
 
     public function isSubscriptionBlocked(): bool

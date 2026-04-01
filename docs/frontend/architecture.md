@@ -13,18 +13,18 @@ The Neetaq frontend is built with Next.js 15, React 18, and TypeScript, followin
 flowchart TB
     subgraph "Next.js App Router"
         AppDir["app/ Directory"]
-        
-        subgraph "Route Groups"
-            Teacher["(teacher)/
+
+        subgraph "Role Routes"
+            Teacher["teacher/
             Teacher Routes"]
-            Student["(student)/
+            Student["student/
             Student Routes"]
-            Admin["(admin)/
-            Admin Routes"]
-            Academy["(academy)/
+            Parent["parent/
+            Parent Routes"]
+            Academy["academy/
             Academy Routes"]
         end
-        
+
         subgraph "Shared"
             Layout["layout.tsx
             Root Layout"]
@@ -34,41 +34,37 @@ flowchart TB
             Suspense"]
         end
     end
-    
+
     subgraph "State Management"
         Context["React Context
-        AcademyContext
-        AuthContext"]
-        Query["TanStack Query
-      Server State"]
+        8 Context Providers"]
+        Hooks["Custom Hooks
+        13+ Hooks"]
         Local["Local State
-      useState"]
+        useState"]
     end
-    
+
     subgraph "Data Layer"
         API["API Client
-      apiClient.ts"]
-        Config["API Config
-      api-config.ts"]
-        Hooks["Custom Hooks
-      useQuery hooks"]
+        apiClient.ts"]
+        Services["19+ Services"]
+        Schemas["Zod Schemas"]
     end
-    
+
     subgraph "UI Layer"
-        Components["React Components"]
+        Components["50+ Components"]
         Tailwind["Tailwind CSS"]
         Shadcn["shadcn/ui"]
     end
-    
-    AppDir --> RouteGroups
+
+    AppDir --> RoleRoutes
     AppDir --> Shared
-    
-    RouteGroups --> Context
-    Context --> Query
-    Query --> API
-    API --> Config
-    
-    Query --> Hooks
+
+    RoleRoutes --> Context
+    Context --> Hooks
+    Hooks --> Services
+    Services --> API
+
     Hooks --> Components
     Components --> Tailwind
     Components --> Shadcn
@@ -79,484 +75,238 @@ flowchart TB
 ```
 frontend/src/
 ├── app/                          # Next.js App Router
-│   ├── (teacher)/               # Teacher route group
+│   ├── teacher/                  # Teacher role routes
 │   │   ├── dashboard/
-│   │   ├── students/
-│   │   ├── lectures/
-│   │   ├── exams/
+│   │   ├── students/             # Student management (add, edit, payment)
+│   │   ├── lectures/             # Lecture management (create, attendance)
+│   │   ├── exams/                # Exam management (add, edit, results)
+│   │   ├── attendance/           # Attendance tracking
+│   │   ├── grades/               # Grade management
+│   │   ├── groups/               # Group management
+│   │   ├── secretaries/          # Secretary management
+│   │   ├── gamification/         # Gamification features
+│   │   ├── notifications/        # Notifications (students, developer)
+│   │   ├── reports/              # Teacher reports & analytics
+│   │   ├── videos/               # Video management (create, view)
+│   │   ├── subscription/         # Subscription management
+│   │   ├── profile/              # Profile settings
 │   │   └── layout.tsx
 │   │
-│   ├── (student)/               # Student route group
+│   ├── student/                  # Student role routes
 │   │   ├── dashboard/
-│   │   ├── my-exams/
-│   │   ├── lectures/
+│   │   ├── exams/                # Take exams
+│   │   ├── lectures/             # View lectures
+│   │   ├── attend/               # QR attendance check-in
+│   │   ├── leaderboard/          # Gamification leaderboard
+│   │   ├── mistakes/             # Mistake tracking & quiz
+│   │   ├── notifications/        # Student notifications
+│   │   ├── teachers/             # Teacher information
+│   │   ├── videos/               # Video viewing
+│   │   ├── profile/              # Profile settings
 │   │   └── layout.tsx
 │   │
-│   ├── (admin)/                 # Admin route group
+│   ├── parent/                   # Parent role routes
 │   │   ├── dashboard/
-│   │   ├── teachers/
-│   │   ├── academies/
+│   │   ├── children/             # Children management
+│   │   ├── profile/              # Profile settings
+│   │   ├── [childId]/summary/    # Child progress summary
 │   │   └── layout.tsx
 │   │
-│   ├── (academy)/               # Academy route group
+│   ├── academy/                  # Academy role routes
 │   │   ├── dashboard/
-│   │   ├── students/
+│   │   ├── students/             # Student management
+│   │   ├── teachers/             # Teacher management
+│   │   ├── lectures/             # Lecture management
+│   │   ├── exams/                # Exam management
+│   │   ├── attendance/           # Attendance tracking
+│   │   ├── grades/               # Grade management
+│   │   ├── groups/               # Group management
+│   │   ├── secretaries/          # Secretary management
+│   │   ├── gamification/         # Gamification features
+│   │   ├── notifications/        # Notifications
+│   │   ├── reports/              # Academy reports & analytics
+│   │   ├── videos/               # Video management
+│   │   ├── billing/              # Billing & payments
+│   │   ├── subscription/         # Subscription management
+│   │   ├── profile/              # Profile settings
 │   │   └── layout.tsx
 │   │
-│   ├── api/                     # API routes (if any)
-│   ├── layout.tsx              # Root layout
-│   ├── page.tsx                # Landing page
-│   ├── globals.css             # Global styles
-│   └── loading.tsx             # Global loading
+│   ├── login/                    # Login page
+│   ├── maintenance/              # Maintenance page
+│   ├── layout.tsx                # Root layout
+│   ├── page.tsx                  # Landing page
+│   └── not-found.tsx             # 404 page
 │
-├── components/                  # React Components
-│   ├── ui/                     # shadcn/ui components
-│   ├── common/                 # Shared components
-│   │   ├── Header.tsx
-│   │   ├── Sidebar.tsx
-│   │   ├── DataTable.tsx
-│   │   └── LoadingSpinner.tsx
-│   ├── forms/                  # Form components
-│   └── modals/                 # Modal components
+├── components/                   # React Components
+│   ├── ui/                       # Base UI components (Button, Input, Select, etc.)
+│   ├── auth/                     # Auth components (LoginCard, RequireAuth, etc.)
+│   ├── dashboard/                # Dashboard components (Navbar, Sidebar, DataTable, etc.)
+│   ├── video/                    # Video components (SecureVideoPlayer, WatermarkOverlay, etc.)
+│   ├── reports/                  # Report components (DrilldownTable, KpiCard, etc.)
+│   ├── notifications/            # Notification components
+│   ├── payments/                 # Payment components
+│   ├── performance/              # Performance monitoring components
+│   ├── shared/                   # Shared utility components
+│   ├── student/                  # Student-specific components
+│   ├── subscription/             # Subscription components
+│   ├── landing/                  # Landing page components
+│   └── providers/                # Provider components
 │
-├── contexts/                    # React Contexts
-│   ├── AcademyContext.tsx
-│   ├── AuthContext.tsx
-│   └── NotificationContext.tsx
+├── contexts/                     # React Contexts (8 providers)
+│   ├── CoreAuthContext.tsx        # Base auth state (login, logout, session)
+│   ├── EnhancedAuthContext.tsx    # Composed auth + selection + notifications
+│   ├── SelectionContext.tsx       # Role-specific selections (teacher, child, academy)
+│   ├── StudentTeacherContext.tsx  # Student-teacher dashboard data
+│   ├── AcademyContext.tsx         # Multi-tenant academy selection
+│   ├── NotificationContext.tsx    # Real-time notifications (Echo + FCM)
+│   ├── PerformanceContext.tsx     # Web Vitals monitoring
+│   └── SettingsContext.tsx        # Global settings + Firebase init + seasonal themes
 │
-├── hooks/                       # Custom Hooks
-│   ├── useAcademy.ts
-│   ├── useAuth.ts
-│   ├── useApi.ts
-│   └── useLocalStorage.ts
+├── hooks/                        # Custom Hooks (13+ hooks)
+│   ├── useAuth.ts                # Auth hook (re-exports EnhancedAuthContext)
+│   ├── useApiState.ts            # API state management (SWR, caching, optimistic)
+│   ├── useUI.ts                  # UI utilities (modals, media queries, clipboard)
+│   ├── usePerformance.ts         # Web Vitals & network optimization
+│   ├── useNotifications.ts       # Echo + FCM unified notification hook
+│   ├── useTranslation.ts         # i18n translation hook
+│   ├── useForm.ts                # Form validation & auto-save
+│   ├── useCSRFInit.ts            # CSRF token initialization
+│   ├── useVideoPlayback.ts       # Secure video playback with tokens
+│   ├── useVideoUpload.ts         # Chunked upload with retry & progress
+│   └── home/useHeaderEffects.ts  # Landing page header effects
 │
-├── lib/                         # Utilities & API
-│   ├── apiClient.ts            # Centralized API client
-│   ├── tokenManager.ts         # Token storage
-│   ├── errorHandler.ts         # Error handling
-│   └── csrf.ts                 # CSRF handling
+├── lib/                          # Utilities & Infrastructure
+│   ├── apiClient.ts              # Centralized API client
+│   ├── axios.ts                  # Axios instance configuration
+│   ├── csrf.ts                   # CSRF token management
+│   ├── echo.ts                   # Laravel Echo (Reverb WebSocket)
+│   ├── firebase.ts               # Firebase FCM initialization
+│   ├── tokenManager.ts           # Token storage & refresh
+│   ├── errorHandler.ts           # Error handling utilities
+│   ├── security.ts               # XSS prevention & input sanitization
+│   ├── security.config.js        # CSP header generation
+│   ├── seasonalTheme.ts          # Dynamic seasonal themes
+│   └── testing-utils.tsx         # Test helpers
 │
-├── config/                      # Configuration
-│   ├── api-config.ts           # API endpoints & config
-│   └── constants.ts            # App constants
+├── services/                     # API Services (19+ services)
+│   ├── api/baseApi.ts            # Base fetch wrapper with auth & CSRF
+│   ├── authService.ts            # Authentication per role
+│   ├── teacherService.ts         # Core teacher operations
+│   ├── academyService.ts         # Academy management
+│   ├── videoService.ts           # Video upload, playback, quizzes
+│   ├── lectureService.ts         # Lecture management
+│   ├── notificationService.ts    # Notifications & voice messages
+│   ├── subscriptionService.ts    # Subscription management
+│   ├── paymentService.ts         # Payment processing
+│   ├── secretaryService.ts       # Secretary CRUD
+│   ├── gradeService.ts           # Grade CRUD
+│   ├── groupService.ts           # Group CRUD
+│   ├── avatarService.ts          # Avatar upload
+│   ├── settingsService.ts        # Public settings
+│   ├── teacherReportService.ts   # Teacher report analytics
+│   ├── academyReportService.ts   # Academy report analytics
+│   ├── roles.ts                  # Role-based permissions
+│   └── teacher/                  # Teacher modular services
+│       ├── teacherService.ts     # Comprehensive teacher service
+│       └── modules/              # Sub-modules (dashboard, students, etc.)
 │
-├── types/                       # TypeScript Types
-│   ├── api.ts
-│   ├── models.ts
-│   └── index.ts
+├── types/                        # TypeScript Types (11 type files)
+│   ├── api.types.ts              # API response types
+│   ├── auth.types.ts             # Auth & user types (5 roles)
+│   ├── components.types.ts       # UI component prop types
+│   ├── dashboard.ts              # Dashboard type re-exports
+│   ├── student.types.ts          # Student module types
+│   ├── teacher.types.ts          # Teacher module types
+│   ├── subscription.types.ts     # Subscription & billing types
+│   ├── video.types.ts            # Video system types
+│   ├── teacher-report.types.ts   # Teacher report types
+│   ├── academyReport.types.ts    # Academy report types
+│   └── index.ts                  # Barrel exports
 │
-├── services/                    # API Services
-│   ├── authService.ts
-│   ├── studentService.ts
-│   ├── examService.ts
-│   └── notificationService.ts
+├── schemas/                      # Zod Validation Schemas
+│   ├── report.schema.ts          # Report validation schemas
+│   └── teacher-report.schema.ts  # Teacher report schemas
 │
-└── utils/                       # Utility functions
-    ├── formatters.ts
-    ├── validators.ts
-    └── helpers.ts
+├── i18n/                         # Internationalization
+│   ├── config.ts                 # next-intl config (ar, en locales)
+│   ├── index.ts                  # i18n exports
+│   └── messages/
+│       ├── ar.json               # Arabic translations
+│       └── en.json               # English translations
+│
+├── styles/                       # CSS Styles
+│   ├── globals.css               # Global styles
+│   ├── components.css            # Component styles
+│   ├── landing.css               # Landing page styles
+│   ├── layout.css                # Layout styles
+│   └── pages/login.css           # Login page styles
+│
+├── config/                       # Configuration
+│   ├── api-config.ts             # API endpoints & config
+│   └── performance.ts            # Bundle optimization & thresholds
+│
+├── utils/                        # Utility Functions
+│   ├── authHelpers.ts            # Auth storage & cookie helpers
+│   ├── generateInvoicePDF.ts     # PDF invoice generation
+│   ├── studentTeacherAccess.ts   # Student-teacher access control
+│   └── logger.ts                 # Logging utilities
+│
+└── middleware.ts                 # Route protection & role-based redirects
 ```
 
 ## Routing Architecture
 
-### Route Groups
-
-Route groups (parentheses) organize routes without affecting the URL structure:
-
-```tsx
-// app/(teacher)/layout.tsx - Teacher layout with sidebar
-export default function TeacherLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="flex h-screen">
-      <TeacherSidebar />
-      <main className="flex-1 overflow-auto">
-        {children}
-      </main>
-    </div>
-  );
-}
-
-// app/(teacher)/dashboard/page.tsx
-export default function TeacherDashboard() {
-  return <DashboardContent />;
-}
-// URL: /dashboard (no /teacher prefix)
-```
+Routes are organized by role using directory-based paths. Each role has its own route prefix and layout.
 
 ### Route Structure by Role
 
-| Route Group | Path Pattern | Description |
-|-------------|--------------|-------------|
-| `(teacher)` | `/dashboard`, `/students`, `/exams` | Teacher portal |
-| `(student)` | `/dashboard`, `/my-exams`, `/lectures` | Student portal |
-| `(admin)` | `/dashboard`, `/teachers`, `/academies` | Admin portal |
-| `(academy)` | `/dashboard`, `/students`, `/attendance` | Academy portal |
+| Role | Path Prefix | Key Routes |
+|------|------------|------------|
+| Teacher | `/teacher/` | dashboard, students, lectures, exams, attendance, grades, groups, secretaries, gamification, notifications, reports, videos, subscription, profile |
+| Student | `/student/` | dashboard, exams, lectures, attend, leaderboard, mistakes, notifications, teachers, videos, profile |
+| Parent | `/parent/` | dashboard, children, profile, `[childId]/summary` |
+| Academy | `/academy/` | dashboard, students, teachers, lectures, exams, attendance, grades, groups, secretaries, gamification, notifications, reports, videos, billing, subscription, profile |
 
-### Dynamic Routes
+### Middleware
 
-```tsx
-// app/(teacher)/students/[id]/page.tsx
-interface StudentPageProps {
-  params: { id: string };
-}
-
-export default function StudentPage({ params }: StudentPageProps) {
-  const { id } = params;
-  
-  return (
-    <div>
-      <h1>Student Details: {id}</h1>
-      <StudentDetails studentId={id} />
-    </div>
-  );
-}
-```
+The middleware (`middleware.ts`) handles:
+- Cookie-based authentication checking
+- Role-based redirects to the correct dashboard
+- Protected route enforcement
+- Role-to-dashboard mapping: `student → /student/dashboard`, `teacher → /teacher/dashboard`, `parent → /parent/children`, `academy → /academy/dashboard`
 
 ## State Management
 
-### TanStack React Query
+The app uses React Context for global state with 8 providers:
 
-Server state is managed with React Query for caching, synchronization, and background updates:
+| Context | Purpose |
+|---------|---------|
+| `CoreAuthContext` | Base auth state (login, logout, session validation) |
+| `EnhancedAuthContext` | Composes CoreAuth + Selection + FCM notifications |
+| `SelectionContext` | Role-specific selections (teacher for students, child for parents, academy for teachers) |
+| `StudentTeacherContext` | Student-to-teacher dashboard data |
+| `AcademyContext` | Multi-tenant academy selection with API context injection |
+| `NotificationContext` | Real-time notifications via Echo + Firebase |
+| `PerformanceContext` | Web Vitals monitoring and analytics |
+| `SettingsContext` | Global settings, Firebase init, seasonal themes |
 
-```tsx
-// hooks/useStudents.ts
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { studentService } from '@/services/studentService';
-
-export function useStudents() {
-  return useQuery({
-    queryKey: ['students'],
-    queryFn: () => studentService.getAll(),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
-}
-
-export function useCreateStudent() {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: studentService.create,
-    onSuccess: () => {
-      // Invalidate and refetch
-      queryClient.invalidateQueries({ queryKey: ['students'] });
-    },
-  });
-}
-
-// Usage in component
-export default function StudentsPage() {
-  const { data: students, isLoading, error } = useStudents();
-  const createStudent = useCreateStudent();
-  
-  if (isLoading) return <LoadingSpinner />;
-  if (error) return <ErrorMessage error={error} />;
-  
-  return (
-    <div>
-      {students?.map(student => (
-        <StudentCard key={student.id} student={student} />
-      ))}
-    </div>
-  );
-}
-```
-
-### Academy Context
-
-Multi-tenant context for academy-scoped data:
-
-```tsx
-// contexts/AcademyContext.tsx
-'use client';
-
-import { createContext, useContext, useState, useEffect } from 'react';
-import { apiClient } from '@/lib/apiClient';
-
-interface AcademyContextType {
-  currentAcademy: Academy | null;
-  academies: Academy[];
-  setCurrentAcademy: (academy: Academy | null) => void;
-  isLoading: boolean;
-}
-
-const AcademyContext = createContext<AcademyContextType | undefined>(undefined);
-
-export function AcademyProvider({ children }: { children: React.ReactNode }) {
-  const [currentAcademy, setCurrentAcademy] = useState<Academy | null>(null);
-  const [academies, setAcademies] = useState<Academy[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    // Fetch user's academies
-    apiClient.get('/teacher/dashboard/academies')
-      .then(response => {
-        setAcademies(response.data);
-        // Restore from localStorage or use first
-        const saved = localStorage.getItem('currentAcademy');
-        if (saved) {
-          setCurrentAcademy(JSON.parse(saved));
-        } else if (response.data.length > 0) {
-          setCurrentAcademy(response.data[0]);
-        }
-      })
-      .finally(() => setIsLoading(false));
-  }, []);
-
-  const handleSetAcademy = (academy: Academy | null) => {
-    setCurrentAcademy(academy);
-    if (academy) {
-      localStorage.setItem('currentAcademy', JSON.stringify(academy));
-      apiClient.setAcademyContext(academy.id);
-    }
-  };
-
-  return (
-    <AcademyContext.Provider value={{
-      currentAcademy,
-      academies,
-      setCurrentAcademy: handleSetAcademy,
-      isLoading,
-    }}>
-      {children}
-    </AcademyContext.Provider>
-  );
-}
-
-export const useAcademy = () => {
-  const context = useContext(AcademyContext);
-  if (!context) throw new Error('useAcademy must be used within AcademyProvider');
-  return context;
-};
-```
-
-## Server vs Client Components
-
-### Server Components (Default)
-
-```tsx
-// app/(teacher)/students/page.tsx - Server Component
-import { studentService } from '@/services/studentService';
-
-// Data fetching on server
-async function getStudents() {
-  const response = await studentService.getAll();
-  return response.data;
-}
-
-export default async function StudentsPage() {
-  const students = await getStudents();
-  
-  return (
-    <div>
-      <h1>Students</h1>
-      <StudentTable students={students} />
-    </div>
-  );
-}
-```
-
-### Client Components
-
-```tsx
-// components/StudentForm.tsx - Client Component
-'use client';
-
-import { useState } from 'react';
-import { useCreateStudent } from '@/hooks/useStudents';
-
-export default function StudentForm() {
-  const [name, setName] = useState('');
-  const createStudent = useCreateStudent();
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await createStudent.mutateAsync({ name });
-    setName('');
-  };
-
-  return (
-    <form onSubmit={handleSubmit}>
-      <input
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        placeholder="Student name"
-      />
-      <button type="submit" disabled={createStudent.isPending}>
-        Add Student
-      </button>
-    </form>
-  );
-}
-```
+See [Authentication](/frontend/authentication) and [State Management](/frontend/state-management) for details.
 
 ## Data Fetching Patterns
 
-### Server-Side Fetching
+Data fetching uses a combination of custom hooks (`useApiState`) and direct service calls:
 
-```tsx
-// Fetch on server with caching
-async function getExam(examId: string) {
-  const res = await fetch(
-    `${process.env.INTERNAL_API_URL}/exams/${examId}`,
-    { 
-      next: { revalidate: 60 }, // ISR: regenerate every 60s
-      headers: { Authorization: `Bearer ${token}` }
-    }
-  );
-  
-  if (!res.ok) throw new Error('Failed to fetch exam');
-  return res.json();
-}
-```
+- **`useApiState`** — Generic data fetcher with stale-while-revalidate caching
+- **`useCachedApiState`** — Cross-component cache via Map
+- **`useOptimisticMutation`** — Optimistic UI updates with rollback
+- **`useInfiniteScroll`** — Paginated data loading
 
-### Client-Side Fetching
-
-```tsx
-// hooks/useExam.ts
-import { useQuery } from '@tanstack/react-query';
-import { apiClient } from '@/lib/apiClient';
-
-export function useExam(examId: string) {
-  return useQuery({
-    queryKey: ['exam', examId],
-    queryFn: () => apiClient.get(`/exams/${examId}`),
-    enabled: !!examId,
-  });
-}
-```
-
-### Parallel Queries
-
-```tsx
-// Fetch multiple resources in parallel
-export default function Dashboard() {
-  const userQuery = useCurrentUser();
-  const statsQuery = useDashboardStats();
-  const notificationsQuery = useNotifications();
-  
-  const isLoading = 
-    userQuery.isLoading || 
-    statsQuery.isLoading || 
-    notificationsQuery.isLoading;
-  
-  if (isLoading) return <DashboardSkeleton />;
-  
-  return (
-    <DashboardLayout
-      user={userQuery.data}
-      stats={statsQuery.data}
-      notifications={notificationsQuery.data}
-    />
-  );
-}
-```
-
-## Loading & Error States
-
-### Loading UI
-
-```tsx
-// app/(teacher)/students/loading.tsx
-export default function Loading() {
-  return (
-    <div className="flex items-center justify-center h-screen">
-      <LoadingSpinner size="lg" />
-    </div>
-  );
-}
-```
-
-### Error Boundaries
-
-```tsx
-// app/(teacher)/students/error.tsx
-'use client';
-
-export default function Error({
-  error,
-  reset,
-}: {
-  error: Error & { digest?: string };
-  reset: () => void;
-}) {
-  return (
-    <div className="p-4">
-      <h2>Something went wrong!</h2>
-      <p>{error.message}</p>
-      <button onClick={reset}>Try again</button>
-    </div>
-  );
-}
-```
-
-## WebSocket Integration
-
-```tsx
-// hooks/useLaravelEcho.ts
-import { useEffect, useRef } from 'react';
-import Echo from 'laravel-echo';
-import Pusher from 'pusher-js';
-
-export function useLaravelEcho() {
-  const echoRef = useRef<Echo | null>(null);
-
-  useEffect(() => {
-    window.Pusher = Pusher;
-    
-    echoRef.current = new Echo({
-      broadcaster: 'reverb',
-      key: process.env.NEXT_PUBLIC_REVERB_APP_KEY,
-      wsHost: process.env.NEXT_PUBLIC_REVERB_HOST,
-      wsPort: process.env.NEXT_PUBLIC_REVERB_PORT,
-      wssPort: process.env.NEXT_PUBLIC_REVERB_PORT,
-      forceTLS: process.env.NEXT_PUBLIC_REVERB_SCHEME === 'https',
-      enabledTransports: ['ws', 'wss'],
-    });
-
-    return () => {
-      echoRef.current?.disconnect();
-    };
-  }, []);
-
-  return echoRef.current;
-}
-
-// Usage
-export function useExamNotifications(examId: string) {
-  const echo = useLaravelEcho();
-  const queryClient = useQueryClient();
-
-  useEffect(() => {
-    if (!echo) return;
-
-    const channel = echo
-      .private(`exam.${examId}`)
-      .listen('.exam.started', (e: any) => {
-        queryClient.invalidateQueries({ queryKey: ['exam', examId] });
-      });
-
-    return () => {
-      channel.stopListening('.exam.started');
-    };
-  }, [echo, examId, queryClient]);
-}
-```
+See [API Client](/frontend/api-client) for details.
 
 ## References
 
-- [`frontend/src/app/`](/frontend/src/app/)
-- [`frontend/src/contexts/`](/frontend/src/contexts/)
-- [`frontend/src/hooks/`](/frontend/src/hooks/)
-- [`frontend/src/lib/apiClient.ts`](/frontend/src/lib/apiClient.ts)
-- [`frontend/next.config.js`](/frontend/next.config.js)
-
-## TODO
-
-- [ ] Add Server Actions documentation
-- [ ] Document streaming and Suspense boundaries
-- [ ] Add PWA configuration details
-- [ ] Document image optimization with next/image
+- [Routing](/frontend/routing) — Complete route map
+- [Authentication](/frontend/authentication) — Auth system details
+- [State Management](/frontend/state-management) — Contexts and hooks
+- [Services Reference](/frontend/services-reference) — All service modules
+- [Components Reference](/frontend/components-reference) — Component catalog

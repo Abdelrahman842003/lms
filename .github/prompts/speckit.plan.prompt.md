@@ -1,3 +1,3 @@
 ---
-agent: speckit.plan
+description: Speckit plan prompt
 ---

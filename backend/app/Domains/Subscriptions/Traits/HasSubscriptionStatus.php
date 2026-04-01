@@ -16,7 +16,7 @@ trait HasSubscriptionStatus
      */
     public function hasActiveSubscription(): bool
     {
-        $latest = $this->latestSubscription();
+        $latest = $this->latestSubscription;
         if ($latest) {
             $status = $latest->status instanceof SubscriptionStatus 
                 ? $latest->status->value 
@@ -49,9 +49,7 @@ trait HasSubscriptionStatus
     }
 
     /**
-     * Get the latest subscription
-     *
-     * @return Subscription|null
+     * Get the latest subscription relationship
      */
-    abstract public function latestSubscription(): ?Subscription;
+    abstract public function latestSubscription();
 }

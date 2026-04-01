@@ -189,12 +189,11 @@ class Teacher extends Authenticatable
         return $this->morphMany(Subscription::class, 'subscriber');
     }
 
-    public function latestSubscription(): ?Subscription
+    public function latestSubscription()
     {
-        return $this->subscriptions()
+        return $this->morphOne(Subscription::class, 'subscriber')
             ->orderByDesc('month')
-            ->orderByDesc('created_at')
-            ->first();
+            ->orderByDesc('created_at');
     }
 
     public function isSubscriptionBlocked(): bool

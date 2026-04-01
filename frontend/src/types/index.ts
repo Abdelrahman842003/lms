@@ -4,6 +4,7 @@ export * from './auth.types';
 export * from './teacher.types';
 export * from './student.types';
 export * from './components.types';
+export * from './academyReport.types';
 
 // Legacy types for backward compatibility - prefer using specific type imports
 // Example: import { AuthResponse } from '@/types/auth.types';
