@@ -334,6 +334,53 @@ class UpdateStreakAction
 
 ## Strategies
 
+The Gamification domain uses two strategy interfaces:
+
+- **`PointCalculationStrategyInterface`** - Transactional point calculations with context, source tracking
+- **`XpCalculationStrategy`** - Non-transactional XP for leveling (simpler interface)
+
+### Point Strategies
+
+| Strategy | Context | Default Points | Description |
+|----------|---------|---------------|-------------|
+| `AttendancePointStrategy` | Attendance | Per lecture | Fixed points for attending lectures |
+| `ExamPointStrategy` | Exam | Score-based | Points based on exam score percentage |
+| `VideoPointStrategy` | Video | 10 | Fixed points per completed video |
+| `ManualBonusStrategy` | Bonus | Immutable | Teacher-awarded bonus points |
+
+### XP Calculators
+
+| Calculator | Context | Base XP | Bonus Logic |
+|-----------|---------|---------|-------------|
+| `AttendanceXpCalculator` | Attendance | Per attendance | Streak bonus: 5+ days, 10+ days |
+| `ExamXpCalculator` | Exam | Percentage-based | First place bonus, retake bonus |
+| `MistakeReviewXpCalculator` | Mistake review | 5 XP | Per mastered question |
+
+```mermaid
+flowchart LR
+    subgraph Triggers
+        A[Attendance] --> APS[AttendancePointStrategy]
+        E[Exam] --> EPS[ExamPointStrategy]
+        V[Video] --> VPS[VideoPointStrategy]
+        M[Manual] --> MBS[ManualBonusStrategy]
+    end
+
+    subgraph Processing
+        APS --> GXA[GrantXpAction]
+        EPS --> GXA
+        VPS --> GXA
+        MBS --> GXA
+    end
+
+    subgraph Results
+        GXA --> PT[PointTransaction]
+        GXA --> SP[StudentPoint]
+        GXA --> USA[UpdateStreakAction]
+    end
+```
+
+---
+
 ### AttendanceXpCalculator
 
 **File:** `Gamification/Strategies/AttendanceXpCalculator.php`
@@ -499,6 +546,87 @@ class LevelUp
         public Student $student,
         public int $newLevel,
     ) {}
+}
+```
+
+---
+
+### BadgeEarned
+
+**File:** `Gamification/Events/BadgeEarned.php`
+
+Dispatched when a student earns an achievement badge.
+
+```php
+class BadgeEarned
+{
+    public function __construct(
+        public Student $student,
+        public string $badgeType,
+        public array $context = [],
+    ) {}
+}
+```
+
+---
+
+### XpGranted
+
+**File:** `Gamification/Events/XpGranted.php`
+
+Dispatched when XP points are granted to a student.
+
+```php
+class XpGranted
+{
+    public function __construct(
+        public Student $student,
+        public int $points,
+        public string $source,
+    ) {}
+}
+```
+
+---
+
+## Actions
+
+### CheckBadgeEligibility
+
+**File:** `Gamification/Actions/CheckBadgeEligibility.php`
+
+Checks if a student qualifies for any achievement badges.
+
+```php
+class CheckBadgeEligibility
+{
+    public function execute(Student $student): array
+    {
+        // Check all badge criteria against student's achievements
+        // Returns array of newly earned badges
+    }
+}
+```
+
+---
+
+## Rules
+
+### ValidPointTransactionType
+
+**File:** `Gamification/Rules/ValidPointTransactionType.php`
+
+Validation rule ensuring point transaction types are valid.
+
+```php
+class ValidPointTransactionType implements ValidationRule
+{
+    public function validate(string $attribute, mixed $value, Closure $fail): void
+    {
+        if (!PointTransactionType::tryFrom($value)) {
+            $fail('The :attribute must be a valid point transaction type.');
+        }
+    }
 }
 ```
 

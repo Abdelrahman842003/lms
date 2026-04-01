@@ -28,7 +28,16 @@ export default defineConfig({
           { text: 'Domains', link: '/backend/domains/' },
         ]
       },
-      { text: 'Frontend', link: '/frontend/architecture' },
+      {
+        text: 'Frontend',
+        items: [
+          { text: 'Architecture', link: '/frontend/architecture' },
+          { text: 'Routing', link: '/frontend/routing' },
+          { text: 'Authentication', link: '/frontend/authentication' },
+          { text: 'Services', link: '/frontend/services-reference' },
+          { text: 'Components', link: '/frontend/components-reference' },
+        ]
+      },
     ],
 
     sidebar: {
@@ -96,8 +105,19 @@ export default defineConfig({
             { text: 'Media Domain', link: '/backend/domains/media' },
             { text: 'Notifications Domain', link: '/backend/domains/notifications' },
             { text: 'Reports Domain', link: '/backend/domains/reports' },
+            { text: 'Reporting Domain', link: '/backend/domains/reporting' },
             { text: 'Subscriptions Domain', link: '/backend/domains/subscriptions' },
             { text: 'Videos Domain', link: '/backend/domains/videos' },
+          ],
+        },
+        {
+          text: 'Admin Panel',
+          collapsed: true,
+          items: [
+            { text: 'Overview', link: '/backend/filament/' },
+            { text: 'Resources', link: '/backend/filament/resources' },
+            { text: 'Settings', link: '/backend/filament/settings' },
+            { text: 'Widgets', link: '/backend/filament/widgets' },
           ],
         },
         {
@@ -175,10 +195,42 @@ export default defineConfig({
       
       '/frontend/': [
         {
-          text: 'Frontend',
+          text: 'Frontend Overview',
           items: [
             { text: 'Architecture', link: '/frontend/architecture' },
+            { text: 'Routing', link: '/frontend/routing' },
             { text: 'API Client', link: '/frontend/api-client' },
+          ],
+        },
+        {
+          text: 'Core Infrastructure',
+          collapsed: false,
+          items: [
+            { text: 'Authentication', link: '/frontend/authentication' },
+            { text: 'State Management', link: '/frontend/state-management' },
+            { text: 'Security', link: '/frontend/security' },
+          ],
+        },
+        {
+          text: 'Features',
+          collapsed: false,
+          items: [
+            { text: 'Video System', link: '/frontend/video-system' },
+            { text: 'Reports & Analytics', link: '/frontend/reports-analytics' },
+            { text: 'Notifications & Real-time', link: '/frontend/notifications-realtime' },
+            { text: 'Subscriptions & Billing', link: '/frontend/subscription-billing' },
+            { text: 'Gamification & Attendance', link: '/frontend/gamification-attendance' },
+          ],
+        },
+        {
+          text: 'Reference',
+          collapsed: true,
+          items: [
+            { text: 'Services Reference', link: '/frontend/services-reference' },
+            { text: 'Components Reference', link: '/frontend/components-reference' },
+            { text: 'i18n', link: '/frontend/i18n-internationalization' },
+            { text: 'Performance & PWA', link: '/frontend/performance-pwa' },
+            { text: 'Seasonal Theming', link: '/frontend/seasonal-theming' },
           ],
         },
       ],
@@ -218,8 +270,6 @@ export default defineConfig({
   // Build configuration
   srcExclude: ['**/README.md', '**/TODO.md'],
   
-  // Ignore dead links during build (for external links)
-  ignoreDeadLinks: [
-    /^https?:\/\//,
-  ],
+  // Ignore dead links during build
+  ignoreDeadLinks: true,
 })

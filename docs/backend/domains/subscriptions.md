@@ -298,6 +298,43 @@ class ProcessExpiredSubscriptions implements ShouldQueue
 
 ## Specifications
 
+### Specification Pattern
+
+The Subscriptions domain implements the **Specification Pattern** with composable business rules.
+
+#### SpecificationInterface
+
+```php
+interface SpecificationInterface
+{
+    public function isSatisfiedBy(mixed $candidate, int $depth = 0): bool;
+    public function and(SpecificationInterface $other): SpecificationInterface;
+    public function or(SpecificationInterface $other): SpecificationInterface;
+    public function not(): SpecificationInterface;
+}
+```
+
+#### Composite Specifications
+
+| Specification | Logic | Use Case |
+|--------------|-------|----------|
+| `AndSpecification` | Both must be satisfied | Active AND seats available |
+| `OrSpecification` | Either must be satisfied | Trial OR paid subscription |
+| `NotSpecification` | Negation | NOT expired |
+
+```php
+// Compose complex business rules
+$canEnroll = (new PlanActive())
+    ->and(new SeatAvailable())
+    ->and((new SubscriptionCanRenew())->not());
+
+if ($canEnroll->isSatisfiedBy($subscription)) {
+    // Allow enrollment
+}
+```
+
+---
+
 ### PlanActive
 
 **File:** `Subscriptions/Specifications/PlanActive.php`
@@ -335,6 +372,144 @@ class SeatAvailable
             ->count();
         
         return $usedSeats < $subscription->max_seats;
+    }
+}
+```
+
+---
+
+### SubscriptionCanRenew
+
+**File:** `Subscriptions/Specifications/SubscriptionCanRenew.php`
+
+Validates renewal eligibility with grace period check, pending renewal check, and quota validation.
+
+```php
+class SubscriptionCanRenew extends AbstractSpecification
+{
+    public function isSatisfiedBy(mixed $candidate, int $depth = 0): bool
+    {
+        // 1. Grace period check (3 days after expiry)
+        // 2. No pending renewal check
+        // 3. Quota validation
+    }
+}
+```
+
+---
+
+## Plan Classes
+
+### PlanInterface
+
+**File:** `Subscriptions/Plans/PlanInterface.php`
+
+```php
+interface PlanInterface
+{
+    public function getName(): string;
+    public function getLabel(): string;
+    public function getMonths(): int;
+    public function getTrialDays(): int;
+    public function isTrial(): bool;
+    public function isCustom(): bool;
+    public function calculateAmount(float $pricePerStudent, int $studentCount): float;
+    public function getEndDate(Carbon $startDate): Carbon;
+    public function buildNotes(float $price, int $studentCount): string;
+}
+```
+
+### Available Plans
+
+| Plan | Duration | Trial Days | Use Case |
+|------|----------|-----------|----------|
+| **MonthlyPlan** | 1 month | 0 | Monthly subscription |
+| **QuarterlyPlan** | 3 months | 0 | Quarterly subscription |
+| **SemiAnnualPlan** | 6 months | 0 | Semi-annual subscription |
+| **AnnualPlan** | 12 months | 0 | Annual subscription |
+| **TrialPlan** | Configurable (default 14 days) | Configurable | Free trial period |
+| **CustomPlan** | User-defined | 0 | Custom duration |
+
+```mermaid
+classDiagram
+    class PlanInterface {
+        <<interface>>
+        +getName() string
+        +getLabel() string
+        +getMonths() int
+        +calculateAmount() float
+        +getEndDate() Carbon
+    }
+    class AbstractPlan {
+        +calculateAmount() float
+        +getEndDate() Carbon
+        +buildNotes() string
+    }
+    class MonthlyPlan { +getMonths() 1 }
+    class QuarterlyPlan { +getMonths() 3 }
+    class SemiAnnualPlan { +getMonths() 6 }
+    class AnnualPlan { +getMonths() 12 }
+    class TrialPlan { +isTrial() true }
+    class CustomPlan { +isCustom() true }
+
+    PlanInterface <|.. AbstractPlan
+    AbstractPlan <|-- MonthlyPlan
+    AbstractPlan <|-- QuarterlyPlan
+    AbstractPlan <|-- SemiAnnualPlan
+    AbstractPlan <|-- AnnualPlan
+    AbstractPlan <|-- TrialPlan
+    AbstractPlan <|-- CustomPlan
+```
+
+### PlanFactory
+
+**File:** `Subscriptions/Plans/PlanFactory.php`
+
+```php
+class PlanFactory
+{
+    public function create(string $planName): PlanInterface
+    public function createTrial(int $days = 14): TrialPlan
+    public function createMonthly(): MonthlyPlan
+    public function createQuarterly(): QuarterlyPlan
+    public function createSemiAnnual(): SemiAnnualPlan
+    public function createAnnual(): AnnualPlan
+    public function getPlanOptions(): array  // For form select dropdowns
+}
+```
+
+---
+
+## Traits
+
+### HasSubscriptionStatus
+
+**File:** `Subscriptions/Traits/HasSubscriptionStatus.php`
+
+Used by `Teacher` and `Academy` models to check subscription status.
+
+```php
+trait HasSubscriptionStatus
+{
+    public function hasActiveSubscription(): bool
+    {
+        $latestSubscription = $this->subscriptions()
+            ->latest()
+            ->first();
+
+        if (!$latestSubscription) {
+            return false;
+        }
+
+        return in_array($latestSubscription->status, [
+            SubscriptionStatus::ACTIVE,
+            SubscriptionStatus::PAID,
+        ]) && (!$latestSubscription->expires_at || $latestSubscription->expires_at->isFuture());
+    }
+
+    public function isSubscriptionBlocked(): bool
+    {
+        return !$this->hasActiveSubscription();
     }
 }
 ```

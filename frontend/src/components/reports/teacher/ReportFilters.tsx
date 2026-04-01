@@ -3,7 +3,7 @@
 import React from 'react';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { Select, Button, Input, Icon } from '@/components/ui';
-import type { TeacherReportFilters } from '@/services/teacherReportService';
+import type { TeacherReportFilters } from '@/types/teacher-report.types';
 
 interface ReportFiltersProps {
   filters: TeacherReportFilters;

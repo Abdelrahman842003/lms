@@ -6,7 +6,17 @@ import { LoadingSpinner } from '@/components/ui';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
-import type { AcademyReportFilters } from '@/types/academyReport.types';
+import type {
+  AcademyReportFilters,
+  AcademySnapshot as AcademySnapshotType,
+  StudentDistribution,
+  TeacherPerformanceResponse,
+  AttendanceQuality,
+  SessionExecution,
+  SubscriptionUsage,
+  TimeComparison as TimeComparisonType,
+  AcademyAlert,
+} from '@/types/academyReport.types';
 import {
   getAcademySnapshot,
   getStudentDistribution,
@@ -49,14 +59,14 @@ export default function ReportsPage() {
   const [filters, setFilters] = useState<AcademyReportFilters>({ preset: 'this_month' });
   const [loadingSections, setLoadingSections] = useState<Set<string>>(new Set());
 
-  const [snapshot, setSnapshot] = useState<any>(null);
-  const [studentDistribution, setStudentDistribution] = useState<any>(null);
-  const [teacherPerformance, setTeacherPerformance] = useState<any>(null);
-  const [attendanceQuality, setAttendanceQuality] = useState<any>(null);
-  const [sessionExecution, setSessionExecution] = useState<any>(null);
-  const [subscriptionUsage, setSubscriptionUsage] = useState<any>(null);
-  const [timeComparison, setTimeComparison] = useState<any>(null);
-  const [alerts, setAlerts] = useState<any>(null);
+  const [snapshot, setSnapshot] = useState<AcademySnapshotType | null>(null);
+  const [studentDistribution, setStudentDistribution] = useState<StudentDistribution | null>(null);
+  const [teacherPerformance, setTeacherPerformance] = useState<TeacherPerformanceResponse | null>(null);
+  const [attendanceQuality, setAttendanceQuality] = useState<AttendanceQuality | null>(null);
+  const [sessionExecution, setSessionExecution] = useState<SessionExecution | null>(null);
+  const [subscriptionUsage, setSubscriptionUsage] = useState<SubscriptionUsage | null>(null);
+  const [timeComparison, setTimeComparison] = useState<TimeComparisonType | null>(null);
+  const [alerts, setAlerts] = useState<AcademyAlert[] | null>(null);
 
   useEffect(() => {
     if (!authLoading && (!isAuthenticated || user?.userType !== 'academy')) {

@@ -112,6 +112,28 @@ Handles report generation and export:
 - **Jobs:** `GenerateReportJob`
 - **Factory:** `ExporterFactory`
 
+#### 8b. Reporting Domain
+**Path:** `backend/app/Domains/Reporting/`
+
+Advanced analytics, KPI tracking, alert engine, and report builders with a clean 4-layer architecture:
+
+- **Application Layer:**
+  - **Actions:** `GenerateAdminReportAction`, `GenerateAdminDrilldownAction`, `GenerateTeacherReportAction`, `BuildReportContextAction`, `BuildAcademyReportContextAction`, `ResolveComparisonContextAction`, `ExportAdminReportAction`
+  - **Builders:** `AcademySnapshotBuilder`, `AttendanceQualityBuilder`, `SessionExecutionBuilder`, `StudentDistributionBuilder`, `SubscriptionUsageBuilder`, `TeacherPerformanceBuilder`, `TimeComparisonBuilder`, `AdminExecutiveSnapshotBuilder`, `AdminEntityPerformanceBuilder`, `AdminPlanBreakdownBuilder`, `AdminRevenueTrendBuilder`, `TeacherAttendanceBuilder`, `TeacherGroupBreakdownBuilder`, `TeacherIncomeTrendBuilder`, `TeacherStudentActivityBuilder`, `TeacherSubscriptionBuilder`, `TeacherSummaryBuilder`, `BreakdownBuilder`, `SummaryBuilder`
+- **Domain Layer:**
+  - **Contracts:** `AlertRule`, `ReportAccessPolicy`
+  - **DTOs:** `AlertResult`, `DrilldownDescriptor`, `ExportPayload`, `KpiCardResult`, `TrendMetricResult`
+  - **Enums:** `AlertSeverity`, `ComparisonMode`, `Direction`, `GranularityHint`, `ReportingPeriodPreset`
+  - **Services (Alert Rules):** `AlertEngine`, `DrilldownRegistry`, `KpiCardFactory`, `TrendCalculationService`, `AttendanceDropRule`, `HighInactivityRule`, `RevenueDropRule`, `StrongGrowthRule`, `UsageNearLimitRule`, `TeacherAlertEngine`, `TeacherAttendanceDrop`, `TeacherIncomeDrop`, `TeacherIncomeConcentration`, `TeacherNearPlanLimit`, `TeacherRenewalApproaching`, `TeacherStudentInactivity`
+  - **ValueObjects:** `AcademyReportFilters`, `ComparisonPeriod`, `ReportFilters`, `ReportingPeriod`, `TeacherScope`
+- **Infrastructure Layer:**
+  - **Queries:** `AcademyAttendanceQueries`, `AcademySessionQueries`, `AcademyStudentQueries`, `AcademySubscriptionQueries`, `AcademyTeacherQueries`, `AcademyAlertDataProvider`, `AdminAcademySummaryQueryService`, `AdminEntityPerformanceQueryService`, `AdminEntityQueryService`, `AdminRevenueQueryService`, `AdminStudentActivityQueryService`, `AdminSubscriptionQueryService`, `AdminTeacherSummaryQueryService`, `TeacherAttendanceQueryService`, `TeacherGroupQueryService`, `TeacherIncomeQueryService`, `TeacherStudentQueryService`, `TeacherSubscriptionQueryService`
+  - **Policies:** `AdminReportAccessPolicy`, `DefaultReportAccessPolicy`, `TeacherReportAccessPolicy`
+- **Presentation Layer:**
+  - **Controllers:** `TeacherReportingController`
+  - **Requests:** `TeacherReportRequest`
+  - **Resources:** `AdminReportResource`, `AdminDrilldownResource`, `AdminExportResource`, `AlertResource`, `AppliedFiltersResource`, `EmptyReportResource`, `KpiCardResource`, `ReportErrorResource`, `TeacherReportResource`, `TrendMetricResource`
+
 #### 9. Subscriptions Domain
 **Path:** `backend/app/Domains/Subscriptions/`
 
@@ -152,6 +174,16 @@ Contains application-level HTTP controllers and requests that coordinate between
 - **Http/Resources:** Shared API resources
 - **Services:** Domain-specific service implementations
 
+### Admin Panel (Filament)
+
+The platform uses [Filament](https://filamentphp.com/) for the admin panel at `/admin`:
+
+- **Resources:** `AcademyResource`, `AdminResource`, `TeacherResource`, `StudentResource`, `SecretaryResource`, `GuardianResource`, `SubscriptionResource`, `VideoResource`, `VideoUploadSessionResource`, `RoleResource`, `PermissionResource`
+- **Pages:** Dashboard, Login, System Settings, Notification Settings, Subscription Settings, Video Settings, Google Analytics, Integration Settings, Reports
+- **Widgets:** `StatsOverviewWidget`, `RecentAcademiesWidget`, `AcademyDistributionChart`, `AcademyStatsWidget`
+- **Custom Components:** `ArabicKeyValue` (RTL support)
+- **Plugins:** Spatie Backup, Spatie Health, Activity Log
+
 ## Architectural Patterns
 
 ### 1. Domain Isolation
@@ -181,11 +213,25 @@ Domain-specific actions encapsulate business logic:
 Used in gamification for different XP calculation strategies:
 - `AttendanceXpCalculator`
 - `MistakeReviewXpCalculator`
+- `VideoWatchXpCalculator`
+- `AttendancePointStrategy`, `ExamPointStrategy`, `VideoPointStrategy`, `ManualBonusStrategy`
 
 ### 5. Specification Pattern
 Used in subscriptions for business rule validation:
 - `PlanActive`
 - `SeatAvailable`
+- `SubscriptionCanRenew`
+- Composite specifications: `AndSpecification`, `OrSpecification`, `NotSpecification`
+
+### 5b. State Pattern
+Used in enrollments for managing enrollment lifecycle states:
+- `ActiveState`, `InactiveState`, `TrialState`, `GracePeriodState`, `ExpiredState`
+- `EnrollmentStateFactory` for creating state instances
+
+### 5c. Builder Pattern
+Used in Reporting domain for constructing complex report data:
+- `AcademySnapshotBuilder`, `AdminExecutiveSnapshotBuilder`, `TeacherSummaryBuilder`
+- `BreakdownBuilder`, `SummaryBuilder` (shared)
 
 ### 6. Factory Pattern
 Used for creating notification objects:
@@ -241,7 +287,8 @@ backend/app/Domains/
 ├── Lectures/             # Lecture sessions
 ├── Media/                # Media storage
 ├── Notifications/        # Notification system
-├── Reports/              # Report generation
+├── Reporting/            # Analytics, KPIs, alerts, report builders
+├── Reports/              # Report generation (PDF/Excel export)
 ├── Subscriptions/        # Subscription logic
 ├── Support/              # Shared utilities
 └── Videos/               # Video management

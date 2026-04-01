@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Icon } from '@/components/ui';
+import { directionIcon, directionColor } from '@/components/reports/utils';
 
 interface KpiCardProps {
   title: string;
@@ -15,19 +16,6 @@ interface KpiCardProps {
   onDrilldown?: (key: string) => void;
   icon?: string;
 }
-
-const directionIcon = (direction: string) => {
-  if (direction === 'up') return '↑';
-  if (direction === 'down') return '↓';
-  return '→';
-};
-
-const directionColor = (direction: string, invert = false) => {
-  if (direction === 'stable') return 'text-gray-400';
-  const isUp = direction === 'up';
-  const good = invert ? !isUp : isUp;
-  return good ? 'text-green-400' : 'text-red-400';
-};
 
 const statusBorderColor = (color?: string | null) => {
   if (color === 'red') return 'border-red-500/40';
@@ -81,7 +69,17 @@ export default function KpiCard({
 
   if (drilldownKey && onDrilldown) {
     return (
-      <div onClick={() => onDrilldown(drilldownKey)} role="button" tabIndex={0}>
+      <div
+        onClick={() => onDrilldown(drilldownKey)}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e: React.KeyboardEvent) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onDrilldown(drilldownKey);
+          }
+        }}
+      >
         {content}
       </div>
     );

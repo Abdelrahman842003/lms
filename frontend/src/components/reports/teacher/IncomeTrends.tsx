@@ -12,22 +12,12 @@ import {
 } from 'recharts';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import type { IncomeTrendSummary, IncomeTrendSeries } from '@/types/teacher-report.types';
+import { directionIcon, directionColor } from '@/components/reports/utils';
 
 interface IncomeTrendsProps {
   data: IncomeTrendSummary;
   series: IncomeTrendSeries[];
 }
-
-const directionIcon = (direction: string) => {
-  if (direction === 'up') return '↑';
-  if (direction === 'down') return '↓';
-  return '→';
-};
-
-const directionColor = (direction: string) => {
-  if (direction === 'stable') return 'text-gray-400';
-  return direction === 'up' ? 'text-green-400' : 'text-red-400';
-};
 
 export default function IncomeTrends({ data, series }: IncomeTrendsProps) {
   return (

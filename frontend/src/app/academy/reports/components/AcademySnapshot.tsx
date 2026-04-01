@@ -4,25 +4,12 @@ import React from 'react';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { Icon, LoadingSpinner } from '@/components/ui';
 import type { AcademySnapshot as AcademySnapshotType } from '@/types/academyReport.types';
+import { directionIcon, directionColor } from '@/components/reports/utils';
 
 interface AcademySnapshotProps {
   data: AcademySnapshotType | null;
   loading?: boolean;
 }
-
-const directionIcon = (direction: string) => {
-  if (direction === 'up') return '↑';
-  if (direction === 'down') return '↓';
-  return '→';
-};
-
-const directionColor = (direction: string, key: string) => {
-  if (direction === 'stable') return 'text-gray-400';
-  if (key === 'inactive_students') {
-    return direction === 'up' ? 'text-red-400' : 'text-green-400';
-  }
-  return direction === 'up' ? 'text-green-400' : 'text-red-400';
-};
 
 const kpiIcons: Record<string, string> = {
   total_students: 'users',
@@ -67,7 +54,7 @@ export default function AcademySnapshot({ data, loading }: AcademySnapshotProps)
                   : kpi.current_value}
               </span>
               {kpi.change_pct !== null && (
-                <span className={`text-sm font-medium ${directionColor(kpi.direction, kpi.key)}`}>
+                <span className={`text-sm font-medium ${directionColor(kpi.direction, kpi.key === 'inactive_students')}`}>
                   {directionIcon(kpi.direction)} {Math.abs(kpi.change_pct).toFixed(1)}%
                 </span>
               )}

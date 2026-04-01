@@ -3,21 +3,11 @@
 import React from 'react';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import type { GroupBreakdownRow } from '@/types/teacher-report.types';
+import { directionIcon, directionColor } from '@/components/reports/utils';
 
 interface GroupBreakdownProps {
   groups: GroupBreakdownRow[];
 }
-
-const directionIcon = (direction: string) => {
-  if (direction === 'up') return '↑';
-  if (direction === 'down') return '↓';
-  return '→';
-};
-
-const directionColor = (direction: string) => {
-  if (direction === 'stable') return 'text-gray-400';
-  return direction === 'up' ? 'text-green-400' : 'text-red-400';
-};
 
 export default function GroupBreakdown({ groups }: GroupBreakdownProps) {
   if (!groups || groups.length === 0) return null;

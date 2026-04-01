@@ -2,19 +2,8 @@ import { fetchApi } from './api/baseApi';
 import type {
   TeacherReportOverview,
   TeacherDrilldownResponse,
-  PeriodPreset,
-  ComparisonMode,
+  TeacherReportFilters,
 } from '@/types/teacher-report.types';
-
-export interface TeacherReportFilters {
-  preset?: PeriodPreset;
-  start_at?: string;
-  end_at?: string;
-  comparison_mode?: ComparisonMode;
-  group_id?: string;
-  student_activity_state?: 'active' | 'inactive';
-  attendance_state?: 'good' | 'poor';
-}
 
 function buildQueryString(filters?: TeacherReportFilters): string {
   if (!filters) return '';

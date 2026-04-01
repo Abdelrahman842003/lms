@@ -2,8 +2,9 @@
 
 import React from 'react';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
-import { Icon, LoadingSpinner } from '@/components/ui';
+import { LoadingSpinner, Badge } from '@/components/ui';
 import type { TimeComparison as TimeComparisonType } from '@/types/academyReport.types';
+import { directionIcon, directionColor } from '@/components/reports/utils';
 
 interface TimeComparisonPanelProps {
   data: TimeComparisonType | null;
@@ -22,18 +23,6 @@ export default function TimeComparisonPanel({ data, loading }: TimeComparisonPan
   }
 
   if (!data || data.changes.length === 0) return null;
-
-  const directionIcon = (direction: string) => {
-    if (direction === 'up') return '↑';
-    if (direction === 'down') return '↓';
-    return '→';
-  };
-
-  const directionColor = (direction: string) => {
-    if (direction === 'up') return 'text-green-400';
-    if (direction === 'down') return 'text-red-400';
-    return 'text-gray-400';
-  };
 
   const modeLabel = (mode: string) => {
     switch (mode) {
@@ -89,13 +78,5 @@ export default function TimeComparisonPanel({ data, loading }: TimeComparisonPan
         </div>
       </div>
     </DashboardCard>
-  );
-}
-
-function Badge({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/20 text-primary ${className}`}>
-      {children}
-    </span>
   );
 }

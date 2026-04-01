@@ -3,21 +3,11 @@
 import React from 'react';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import type { AttendanceGroupMetrics } from '@/types/teacher-report.types';
+import { directionIcon, directionColor } from '@/components/reports/utils';
 
 interface AttendanceDetailTableProps {
   groups: AttendanceGroupMetrics[];
 }
-
-const directionIcon = (direction: string) => {
-  if (direction === 'up') return '↑';
-  if (direction === 'down') return '↓';
-  return '→';
-};
-
-const directionColor = (direction: string) => {
-  if (direction === 'stable') return 'text-gray-400';
-  return direction === 'up' ? 'text-green-400' : 'text-red-400';
-};
 
 const rateColor = (rate: number) => {
   if (rate >= 80) return 'text-green-400';

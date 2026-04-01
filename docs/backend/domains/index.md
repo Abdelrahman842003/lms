@@ -31,6 +31,7 @@ graph TB
     subgraph Business["Business Domains"]
         Subscriptions["Subscriptions<br/>Payment Plans"]
         Reports["Reports<br/>PDF & Excel"]
+        Reporting["Reporting<br/>Analytics & KPIs"]
     end
     
     subgraph Shared["Shared Layer"]
@@ -64,6 +65,7 @@ graph TB
 | **Media** | `app/Domains/Media/` | File storage, R2 adapters, image processing |
 | **Notifications** | `app/Domains/Notifications/` | FCM, voice, database notifications |
 | **Reports** | `app/Domains/Reports/` | PDF/Excel report generation |
+| **Reporting** | `app/Domains/Reporting/` | Analytics, KPIs, alerts, report builders |
 | **Subscriptions** | `app/Domains/Subscriptions/` | Subscription plans, payments |
 | **Videos** | `app/Domains/Videos/` | Video management, streaming, quizzes |
 
@@ -125,6 +127,9 @@ Domains communicate through:
 | **Channel Strategy** | Notifications | `DatabaseChannelStrategy`, `FcmChannelStrategy` |
 | **Adapter** | Media | `CloudflareR2Adapter`, `LocalAdapter` |
 | **Builder** | Exams | `ExamAttemptBuilder` |
+| **Builder** | Reporting | `AcademySnapshotBuilder`, `AdminExecutiveSnapshotBuilder`, `TeacherSummaryBuilder` |
+| **State** | Enrollments | `ActiveState`, `TrialState`, `GracePeriodState`, `ExpiredState` |
+| **Specification Combinators** | Subscriptions | `AndSpecification`, `OrSpecification`, `NotSpecification` |
 
 ## Quick Navigation
 
@@ -132,9 +137,9 @@ Domains communicate through:
 
 | Role | Primary Domains |
 |------|-----------------|
-| **Admin** | Auth, Application, Reports |
-| **Academy** | Auth, Enrollments, Lectures, Reports, Subscriptions |
-| **Teacher** | Auth, Enrollments, Exams, Lectures, Videos, Gamification, Notifications |
+| **Admin** | Auth, Application, Reports, Reporting |
+| **Academy** | Auth, Enrollments, Lectures, Reports, Reporting, Subscriptions |
+| **Teacher** | Auth, Enrollments, Exams, Lectures, Videos, Gamification, Notifications, Reporting |
 | **Student** | Auth, Exams, Videos, Gamification, Lectures |
 | **Guardian** | Auth, Notifications |
 | **Secretary** | Auth, Enrollments, Lectures |
@@ -151,6 +156,7 @@ Domains communicate through:
 | Points & XP | Gamification | `GrantXpAction`, `UpdateStreakAction` |
 | Attendance | Lectures | `Lecture`, `Attendance` |
 | Report Generation | Reports | `PdfExporter`, `ExcelExporter` |
+| Analytics & KPIs | Reporting | `GenerateAdminReportAction`, `AlertEngine` |
 
 ## References
 

@@ -594,6 +594,71 @@ class GroupPolicy
 
 ## Resources
 
+### State Pattern
+
+The Enrollments domain implements the **State Pattern** to manage enrollment lifecycle states. Each state encapsulates the behavior and allowed transitions for an enrollment.
+
+```mermaid
+stateDiagram-v2
+    [*] --> Inactive : Created
+    Inactive --> Active : Activate
+    Inactive --> Trial : Start Trial
+    Active --> GracePeriod : Subscription Expires
+    Active --> Inactive : Deactivate
+    Trial --> Active : Convert
+    Trial --> Expired : Trial Ends
+    GracePeriod --> Active : Renew
+    GracePeriod --> Expired : Grace Period Ends
+    Expired --> Active : Renew
+```
+
+#### AbstractEnrollmentState
+
+**File:** `Enrollments/States/AbstractEnrollmentState.php`
+
+Base class for all enrollment states:
+
+```php
+abstract class AbstractEnrollmentState
+{
+    public function canActivate(): bool { return false; }
+    public function canDeactivate(): bool { return false; }
+    public function canRenew(): bool { return true; }
+    public function canAccessContent(): bool { return false; }
+    public function isTrial(): bool { return false; }
+    public function isActive(): bool { return false; }
+    public function isExpired(): bool { return false; }
+    public function getColor(): string { return 'gray'; }
+    public function getAllowedTransitions(): array { return []; }
+}
+```
+
+#### State Implementations
+
+| State | Color | Content Access | Allowed Transitions |
+|-------|-------|---------------|-------------------|
+| **ActiveState** | Green (success) | Yes | Deactivate, Expire, GracePeriod |
+| **InactiveState** | Yellow (warning) | No | Active, Trial |
+| **TrialState** | Blue (info) | Yes | Active, Expire |
+| **GracePeriodState** | Yellow (warning) | Yes | Active (renew), Expire |
+| **ExpiredState** | Red (danger) | No | Active (renew) |
+
+#### EnrollmentStateFactory
+
+**File:** `Enrollments/States/EnrollmentStateFactory.php`
+
+```php
+class EnrollmentStateFactory
+{
+    public function createFromName(string $stateName): AbstractEnrollmentState
+    public function createFromEnrollment(Enrollment $enrollment): AbstractEnrollmentState
+    public function getAvailableStates(): array
+    public function getAllStates(): array
+}
+```
+
+---
+
 ### EnrollmentResource
 
 **File:** `Enrollments/Resources/EnrollmentResource.php`

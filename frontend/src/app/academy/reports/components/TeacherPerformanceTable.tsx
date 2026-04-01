@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { DataTable } from '@/components/dashboard/DataTable';
-import { Icon, LoadingSpinner, Badge } from '@/components/ui';
+import { LoadingSpinner, Badge } from '@/components/ui';
 import type { TeacherPerformanceResponse } from '@/types/academyReport.types';
 
 interface TeacherPerformanceTableProps {

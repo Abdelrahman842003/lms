@@ -29,7 +29,7 @@ export default function ReportFiltersBar({ filters, onFiltersChange, onApply, lo
             <label className="block text-gray-300 mb-2 font-semibold text-sm">الفترة</label>
             <Select
               value={filters.preset || 'this_month'}
-              onChange={(e) => onFiltersChange({ ...filters, preset: e.target.value })}
+              onChange={(value) => onFiltersChange({ ...filters, preset: value })}
               options={PERIOD_PRESETS}
             />
           </div>
@@ -38,7 +38,7 @@ export default function ReportFiltersBar({ filters, onFiltersChange, onApply, lo
             <label className="block text-gray-300 mb-2 font-semibold text-sm">حالة الطلاب</label>
             <Select
               value={filters.student_status || ''}
-              onChange={(e) => onFiltersChange({ ...filters, student_status: e.target.value || undefined })}
+              onChange={(value) => onFiltersChange({ ...filters, student_status: value || undefined })}
               options={[
                 { value: '', label: 'الكل' },
                 { value: 'active', label: 'نشط' },
@@ -51,7 +51,7 @@ export default function ReportFiltersBar({ filters, onFiltersChange, onApply, lo
             <label className="block text-gray-300 mb-2 font-semibold text-sm">حالة الحصص</label>
             <Select
               value={filters.session_status || ''}
-              onChange={(e) => onFiltersChange({ ...filters, session_status: e.target.value || undefined })}
+              onChange={(value) => onFiltersChange({ ...filters, session_status: value || undefined })}
               options={[
                 { value: '', label: 'الكل' },
                 { value: 'completed', label: 'مكتملة' },

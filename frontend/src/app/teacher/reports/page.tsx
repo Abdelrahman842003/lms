@@ -9,11 +9,11 @@ import toast from 'react-hot-toast';
 import {
   fetchTeacherReportOverview,
   fetchTeacherDrilldown,
-  type TeacherReportFilters
 } from '@/services/teacherReportService';
 import type {
   TeacherReportOverview,
-  TeacherDrilldownResponse
+  TeacherDrilldownResponse,
+  TeacherReportFilters,
 } from '@/types/teacher-report.types';
 
 import ReportFilters from '@/components/reports/teacher/ReportFilters';
