@@ -29,7 +29,8 @@ final class AcademySessionQueries
                 $period->startAt->toDateTimeString(),
                 $period->endAt->toDateTimeString(),
             ])
-            ->where('status', 'completed')
+            ->where('is_active', true)
+            ->where('start_time', '<=', now())
             ->count();
     }
 
@@ -40,19 +41,15 @@ final class AcademySessionQueries
                 $period->startAt->toDateTimeString(),
                 $period->endAt->toDateTimeString(),
             ])
-            ->where('status', 'cancelled')
+            ->where('is_active', false)
+            ->whereNotNull('cancelled_dates')
             ->count();
     }
 
     public function getPostponedCount(Academy $academy, ReportingPeriod $period): int
     {
-        return Lecture::where('academy_id', $academy->id)
-            ->whereBetween('start_time', [
-                $period->startAt->toDateTimeString(),
-                $period->endAt->toDateTimeString(),
-            ])
-            ->where('status', 'postponed')
-            ->count();
+        // No direct "postponed" status on lectures; return 0 until a migration adds support
+        return 0;
     }
 
     public function getAverageAttendance(Academy $academy, ReportingPeriod $period): float
@@ -62,7 +59,8 @@ final class AcademySessionQueries
                 $period->startAt->toDateTimeString(),
                 $period->endAt->toDateTimeString(),
             ])
-            ->where('status', 'completed')
+            ->where('is_active', true)
+            ->where('start_time', '<=', now())
             ->withCount([
                 'attendances as present_count' => fn ($q) => $q->where('status', 'present'),
                 'attendances as total_count',
@@ -93,7 +91,7 @@ final class AcademySessionQueries
                 'lectures.title',
                 'teachers.name as teacher_name',
                 'lectures.start_time as date',
-                'lectures.status',
+                'lectures.is_active',
                 DB::raw('(SELECT COUNT(*) FROM attendances WHERE attendances.lecture_id = lectures.id) as total_students'),
                 DB::raw('(SELECT COUNT(*) FROM attendances WHERE attendances.lecture_id = lectures.id AND attendances.status = \'present\') as attendance_count'),
             )
@@ -104,7 +102,7 @@ final class AcademySessionQueries
                 'title' => $row->title,
                 'teacher' => $row->teacher_name,
                 'date' => $row->date,
-                'status' => $row->status,
+                'status' => $row->is_active ? 'delivered' : 'inactive',
                 'attendance_count' => (int) $row->attendance_count,
                 'total_students' => (int) $row->total_students,
             ])

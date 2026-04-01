@@ -93,7 +93,6 @@ final class AcademyTeacherQueries
                     $period->startAt->toDateTimeString(),
                     $period->endAt->toDateTimeString(),
                 ])
-                ->where('status', '!=', 'cancelled')
                 ->count();
 
             $rows[] = [
