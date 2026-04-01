@@ -16,9 +16,9 @@ use App\Domains\Reporting\Application\Builders\Academy\SessionExecutionBuilder;
 use App\Domains\Reporting\Application\Builders\Academy\SubscriptionUsageBuilder;
 use App\Domains\Reporting\Application\Builders\Academy\TimeComparisonBuilder;
 use App\Domains\Reporting\Infrastructure\Queries\Academy\AcademyAlertDataProvider;
+use App\Domains\Reporting\Presentation\Requests\AcademyReportRequest;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;use Illuminate\Support\Facades\Auth;
 
 class AcademyReportController extends Controller
 {
@@ -49,42 +49,41 @@ class AcademyReportController extends Controller
         return null;
     }
 
-    public function snapshot(Request $request): JsonResponse
+    public function snapshot(AcademyReportRequest $request): JsonResponse
     {
         $academy = $this->getAcademy($request);
         if (! $academy) {
             return $this->errorResponse('Unauthorized', 403);
         }
 
-        $filters = $this->buildContext->execute($request->all());
+        $filters = $this->buildContext->execute($request->filters());
 
         $result = $this->snapshotBuilder->build($academy, $filters);
 
         return $this->successResponse($result);
     }
 
-    public function studentDistribution(Request $request): JsonResponse
+    public function studentDistribution(AcademyReportRequest $request): JsonResponse
     {
-        $academy = $this->getAcademy($request);
-        if (! $academy) {
+        $academy = $this->getAcademy($request);        if (! $academy) {
             return $this->errorResponse('Unauthorized', 403);
         }
 
-        $filters = $this->buildContext->execute($request->all());
+        $filters = $this->buildContext->execute($request->filters());
 
         $result = $this->studentDistributionBuilder->build($academy, $filters);
 
         return $this->successResponse($result);
     }
 
-    public function teacherPerformance(Request $request): JsonResponse
+    public function teacherPerformance(AcademyReportRequest $request): JsonResponse
     {
         $academy = $this->getAcademy($request);
         if (! $academy) {
             return $this->errorResponse('Unauthorized', 403);
         }
 
-        $filters = $this->buildContext->execute($request->all());
+        $filters = $this->buildContext->execute($request->filters());
 
         $page = (int) $request->input('page', 1);
         $perPage = (int) $request->input('per_page', 15);
@@ -103,28 +102,28 @@ class AcademyReportController extends Controller
         return $this->successResponse($result);
     }
 
-    public function attendanceQuality(Request $request): JsonResponse
+    public function attendanceQuality(AcademyReportRequest $request): JsonResponse
     {
         $academy = $this->getAcademy($request);
         if (! $academy) {
             return $this->errorResponse('Unauthorized', 403);
         }
 
-        $filters = $this->buildContext->execute($request->all());
+        $filters = $this->buildContext->execute($request->filters());
 
         $result = $this->attendanceQualityBuilder->build($academy, $filters);
 
         return $this->successResponse($result);
     }
 
-    public function sessionExecution(Request $request): JsonResponse
+    public function sessionExecution(AcademyReportRequest $request): JsonResponse
     {
         $academy = $this->getAcademy($request);
         if (! $academy) {
             return $this->errorResponse('Unauthorized', 403);
         }
 
-        $filters = $this->buildContext->execute($request->all());
+        $filters = $this->buildContext->execute($request->filters());
 
         $page = (int) $request->input('page', 1);
         $perPage = (int) $request->input('per_page', 15);
@@ -134,7 +133,7 @@ class AcademyReportController extends Controller
         return $this->successResponse($result);
     }
 
-    public function subscriptionUsage(Request $request): JsonResponse
+    public function subscriptionUsage(AcademyReportRequest $request): JsonResponse
     {
         $academy = $this->getAcademy($request);
         if (! $academy) {
@@ -146,42 +145,42 @@ class AcademyReportController extends Controller
         return $this->successResponse($result);
     }
 
-    public function timeComparison(Request $request): JsonResponse
+    public function timeComparison(AcademyReportRequest $request): JsonResponse
     {
         $academy = $this->getAcademy($request);
         if (! $academy) {
             return $this->errorResponse('Unauthorized', 403);
         }
 
-        $filters = $this->buildContext->execute($request->all());
+        $filters = $this->buildContext->execute($request->filters());
 
         $result = $this->timeComparisonBuilder->build($academy, $filters);
 
         return $this->successResponse($result);
     }
 
-    public function alerts(Request $request): JsonResponse
+    public function alerts(AcademyReportRequest $request): JsonResponse
     {
         $academy = $this->getAcademy($request);
         if (! $academy) {
             return $this->errorResponse('Unauthorized', 403);
         }
 
-        $filters = $this->buildContext->execute($request->all());
+        $filters = $this->buildContext->execute($request->filters());
 
         $result = $this->alertDataProvider->getAlerts($academy, $filters);
 
         return $this->successResponse($result);
     }
 
-    public function overview(Request $request): JsonResponse
+    public function overview(AcademyReportRequest $request): JsonResponse
     {
         $academy = $this->getAcademy($request);
         if (! $academy) {
             return $this->errorResponse('Unauthorized', 403);
         }
 
-        $filters = $this->buildContext->execute($request->all());
+        $filters = $this->buildContext->execute($request->filters());
 
         $snapshot = $this->snapshotBuilder->build($academy, $filters);
         $alerts = $this->alertDataProvider->getAlerts($academy, $filters);

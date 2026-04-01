@@ -8,6 +8,7 @@ use App\Domains\Auth\Models\Teacher;
 use App\Domains\Reporting\Domain\ValueObjects\ReportFilters;
 use App\Domains\Subscriptions\Models\PaymentLog;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\DB;
 
 final class TeacherIncomeQueryService
 {
@@ -52,23 +53,31 @@ final class TeacherIncomeQueryService
 
     public function monthlyIncomeBuckets(Teacher $teacher, ReportFilters $filters, int $months = 12): array
     {
-        $buckets = [];
         $endMonth = $filters->period->endAt->startOfMonth();
         $startMonth = $endMonth->subMonthsNoOverflow($months - 1)->startOfMonth();
 
+        // Single grouped query instead of one query-per-month
+        $rows = PaymentLog::where('teacher_id', $teacher->id)
+            ->where('status', 'confirmed')
+            ->whereBetween('confirmed_at', [$startMonth, $endMonth->endOfMonth()])
+            ->select(
+                DB::raw("DATE_FORMAT(confirmed_at, '%Y-%m') as month"),
+                DB::raw('SUM(amount) as amount'),
+            )
+            ->groupBy(DB::raw("DATE_FORMAT(confirmed_at, '%Y-%m')"))
+            ->get()
+            ->keyBy('month');
+
+        $buckets = [];
         for ($i = 0; $i < $months; $i++) {
             $monthStart = $startMonth->addMonthsNoOverflow($i);
-            $monthEnd = $monthStart->endOfMonth();
-
-            $amount = (float) PaymentLog::where('teacher_id', $teacher->id)
-                ->where('status', 'confirmed')
-                ->whereBetween('confirmed_at', [$monthStart, $monthEnd])
-                ->sum('amount');
+            $monthKey = $monthStart->format('Y-m');
+            $row = $rows->get($monthKey);
 
             $buckets[] = [
-                'month' => $monthStart->format('Y-m'),
+                'month' => $monthKey,
                 'month_name' => $monthStart->format('M Y'),
-                'amount' => $amount,
+                'amount' => (float) ($row?->amount ?? 0),
             ];
         }
 

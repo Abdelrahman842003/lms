@@ -11,6 +11,7 @@ use App\Domains\Lectures\Models\Attendance;
 use App\Domains\Lectures\Models\Lecture;
 use App\Domains\Lectures\Models\LectureSession;
 use App\Domains\Reporting\Domain\ValueObjects\ReportFilters;
+use Illuminate\Support\Facades\DB;
 
 final class TeacherAttendanceQueryService
 {
@@ -38,38 +39,57 @@ final class TeacherAttendanceQueryService
 
     public function attendanceByGroup(Teacher $teacher, ReportFilters $filters): array
     {
+        $groupIds = Group::where('teacher_id', $teacher->id)->pluck('id');
+
+        // Single query: attendance counts per group
+        $attendanceCounts = Attendance::join('lecture_sessions', 'attendances.lecture_session_id', '=', 'lecture_sessions.id')
+            ->join('lectures', 'lecture_sessions.lecture_id', '=', 'lectures.id')
+            ->where('lectures.teacher_id', $teacher->id)
+            ->whereIn('lectures.group_id', $groupIds)
+            ->where('lecture_sessions.is_cancelled', false)
+            ->whereBetween('lecture_sessions.date', [$filters->period->startAt, $filters->period->endAt])
+            ->select('lectures.group_id',
+                DB::raw('COUNT(*) as total'),
+                DB::raw('SUM(CASE WHEN attendances.status = \'present\' THEN 1 ELSE 0 END) as present'),
+            )
+            ->groupBy('lectures.group_id')
+            ->get()
+            ->keyBy('group_id');
+
+        // Single query: sessions count per group
+        $sessionsCounts = LectureSession::join('lectures', 'lecture_sessions.lecture_id', '=', 'lectures.id')
+            ->where('lectures.teacher_id', $teacher->id)
+            ->whereIn('lectures.group_id', $groupIds)
+            ->where('lecture_sessions.is_cancelled', false)
+            ->whereBetween('lecture_sessions.date', [$filters->period->startAt, $filters->period->endAt])
+            ->select('lectures.group_id', DB::raw('COUNT(*) as sessions_count'))
+            ->groupBy('lectures.group_id')
+            ->get()
+            ->keyBy('group_id');
+
+        // Single query: active students per group
+        $studentsCounts = Enrollment::where('teacher_id', $teacher->id)
+            ->whereIn('group_id', $groupIds)
+            ->where('is_active', true)
+            ->select('group_id', DB::raw('COUNT(*) as students_count'))
+            ->groupBy('group_id')
+            ->get()
+            ->keyBy('group_id');
+
         $groups = Group::where('teacher_id', $teacher->id)->get();
         $result = [];
 
         foreach ($groups as $group) {
-            $lectureIds = Lecture::where('teacher_id', $teacher->id)
-                ->where('group_id', $group->id)
-                ->pluck('id');
-
-            $sessionIds = LectureSession::whereIn('lecture_id', $lectureIds)
-                ->where('is_cancelled', false)
-                ->whereBetween('date', [$filters->period->startAt, $filters->period->endAt])
-                ->pluck('id');
-
-            $total = Attendance::whereIn('lecture_session_id', $sessionIds)->count();
-            $present = $total > 0
-                ? Attendance::whereIn('lecture_session_id', $sessionIds)->where('status', 'present')->count()
-                : 0;
-
+            $att = $attendanceCounts->get($group->id);
+            $total = (int) ($att?->total ?? 0);
+            $present = (int) ($att?->present ?? 0);
             $rate = $total > 0 ? round(($present / $total) * 100, 2) : 0.0;
-
-            $studentsCount = Enrollment::where('teacher_id', $teacher->id)
-                ->where('group_id', $group->id)
-                ->where('is_active', true)
-                ->count();
-
-            $sessionsCount = $sessionIds->count();
 
             $result[] = [
                 'group_name' => $group->name,
-                'students_count' => $studentsCount,
+                'students_count' => (int) ($studentsCounts->get($group->id)?->students_count ?? 0),
                 'attendance_rate' => $rate,
-                'sessions_count' => $sessionsCount,
+                'sessions_count' => (int) ($sessionsCounts->get($group->id)?->sessions_count ?? 0),
                 'trend' => 'stable',
             ];
         }

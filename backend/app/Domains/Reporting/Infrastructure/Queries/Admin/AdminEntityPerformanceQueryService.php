@@ -66,19 +66,30 @@ final class AdminEntityPerformanceQueryService
             return [];
         }
 
+        // Single query: current attendance counts per academy
+        $currentCounts = Attendance::join('lectures', 'attendances.lecture_id', '=', 'lectures.id')
+            ->whereIn('lectures.academy_id', Academy::query()->active()->pluck('academies.id'))
+            ->whereBetween('lectures.start_time', [$filters->period->startAt, $filters->period->endAt])
+            ->select('lectures.academy_id', DB::raw('COUNT(*) as total'))
+            ->groupBy('lectures.academy_id')
+            ->get()
+            ->keyBy('academy_id');
+
+        // Single query: baseline attendance counts per academy
+        $baselineCounts = Attendance::join('lectures', 'attendances.lecture_id', '=', 'lectures.id')
+            ->whereIn('lectures.academy_id', Academy::query()->active()->pluck('academies.id'))
+            ->whereBetween('lectures.start_time', [$filters->comparisonPeriod->startAt, $filters->comparisonPeriod->endAt])
+            ->select('lectures.academy_id', DB::raw('COUNT(*) as total'))
+            ->groupBy('lectures.academy_id')
+            ->get()
+            ->keyBy('academy_id');
+
         $academies = Academy::query()->active()->get();
         $result = [];
 
         foreach ($academies as $academy) {
-            $currentAttendances = Attendance::query()
-                ->whereHas('lecture', fn ($q) => $q->where('academy_id', $academy->id)
-                    ->whereBetween('start_time', [$filters->period->startAt, $filters->period->endAt]))
-                ->count();
-
-            $baselineAttendances = Attendance::query()
-                ->whereHas('lecture', fn ($q) => $q->where('academy_id', $academy->id)
-                    ->whereBetween('start_time', [$filters->comparisonPeriod->startAt, $filters->comparisonPeriod->endAt]))
-                ->count();
+            $currentAttendances = (int) ($currentCounts->get($academy->id)?->total ?? 0);
+            $baselineAttendances = (int) ($baselineCounts->get($academy->id)?->total ?? 0);
 
             $changePct = $baselineAttendances > 0
                 ? round((($currentAttendances - $baselineAttendances) / $baselineAttendances) * 100, 2)
@@ -106,23 +117,34 @@ final class AdminEntityPerformanceQueryService
             return [];
         }
 
+        $teacherIds = Teacher::query()->where('status', 'active')->pluck('id');
+
+        // Single query: current revenue per teacher
+        $currentRevenues = PlatformPayment::where('payable_type', Teacher::class)
+            ->whereIn('payable_id', $teacherIds)
+            ->whereNotNull('confirmed_at')
+            ->whereBetween('confirmed_at', [$filters->period->startAt, $filters->period->endAt])
+            ->select('payable_id', DB::raw('SUM(amount) as total'))
+            ->groupBy('payable_id')
+            ->get()
+            ->keyBy('payable_id');
+
+        // Single query: baseline revenue per teacher
+        $baselineRevenues = PlatformPayment::where('payable_type', Teacher::class)
+            ->whereIn('payable_id', $teacherIds)
+            ->whereNotNull('confirmed_at')
+            ->whereBetween('confirmed_at', [$filters->comparisonPeriod->startAt, $filters->comparisonPeriod->endAt])
+            ->select('payable_id', DB::raw('SUM(amount) as total'))
+            ->groupBy('payable_id')
+            ->get()
+            ->keyBy('payable_id');
+
         $teachers = Teacher::query()->where('status', 'active')->get();
         $result = [];
 
         foreach ($teachers as $teacher) {
-            $currentRevenue = (float) PlatformPayment::query()
-                ->where('payable_type', Teacher::class)
-                ->where('payable_id', $teacher->id)
-                ->whereNotNull('confirmed_at')
-                ->whereBetween('confirmed_at', [$filters->period->startAt, $filters->period->endAt])
-                ->sum('amount');
-
-            $baselineRevenue = (float) PlatformPayment::query()
-                ->where('payable_type', Teacher::class)
-                ->where('payable_id', $teacher->id)
-                ->whereNotNull('confirmed_at')
-                ->whereBetween('confirmed_at', [$filters->comparisonPeriod->startAt, $filters->comparisonPeriod->endAt])
-                ->sum('amount');
+            $currentRevenue = (float) ($currentRevenues->get($teacher->id)?->total ?? 0);
+            $baselineRevenue = (float) ($baselineRevenues->get($teacher->id)?->total ?? 0);
 
             $changePct = $baselineRevenue > 0
                 ? round((($currentRevenue - $baselineRevenue) / $baselineRevenue) * 100, 2)

@@ -6,7 +6,7 @@ namespace App\Domains\Reporting\Application\Actions;
 
 use App\Domains\Auth\Models\Teacher;
 use App\Domains\Reporting\Domain\Services\DrilldownRegistry;
-use App\Domains\Reporting\Presentation\Requests\TeacherReportRequest;
+use Illuminate\Http\Request;
 
 use Illuminate\Http\JsonResponse;
 

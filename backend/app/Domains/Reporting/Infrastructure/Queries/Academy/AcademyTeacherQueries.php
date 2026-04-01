@@ -47,61 +47,74 @@ final class AcademyTeacherQueries
 
     public function getTeacherPerformanceMetrics(Academy $academy, ReportingPeriod $period): array
     {
+        $teacherIds = $academy->activeTeachers()->pluck('teachers.id');
+
+        // Single query: enrollment counts per teacher
+        $enrollmentCounts = Enrollment::where('academy_id', $academy->id)
+            ->whereIn('teacher_id', $teacherIds)
+            ->select('teacher_id',
+                DB::raw('COUNT(DISTINCT student_id) as linked_students'),
+                DB::raw('COUNT(DISTINCT CASE WHEN is_active = 1 THEN student_id END) as active_students'),
+            )
+            ->groupBy('teacher_id')
+            ->get()
+            ->keyBy('teacher_id');
+
+        // Single query: attendance counts per teacher
+        $attendanceCounts = Attendance::join('lectures', 'attendances.lecture_id', '=', 'lectures.id')
+            ->where('lectures.academy_id', $academy->id)
+            ->whereIn('lectures.teacher_id', $teacherIds)
+            ->whereBetween('lectures.start_time', [$period->startAt->toDateTimeString(), $period->endAt->toDateTimeString()])
+            ->select('lectures.teacher_id',
+                DB::raw('COUNT(*) as total_attendances'),
+                DB::raw('SUM(CASE WHEN attendances.status = \'present\' THEN 1 ELSE 0 END) as present_attendances'),
+            )
+            ->groupBy('lectures.teacher_id')
+            ->get()
+            ->keyBy('teacher_id');
+
+        // Single query: groups count per teacher
+        $groupsCounts = DB::table('groups')
+            ->whereIn('teacher_id', $teacherIds)
+            ->where('academy_id', $academy->id)
+            ->select('teacher_id', DB::raw('COUNT(*) as groups_count'))
+            ->groupBy('teacher_id')
+            ->get()
+            ->keyBy('teacher_id');
+
+        // Single query: delivered sessions per teacher
+        $sessionsCounts = Lecture::where('academy_id', $academy->id)
+            ->whereIn('teacher_id', $teacherIds)
+            ->where('is_active', true)
+            ->whereBetween('start_time', [$period->startAt->toDateTimeString(), $period->endAt->toDateTimeString()])
+            ->select('teacher_id', DB::raw('COUNT(*) as delivered_sessions'))
+            ->groupBy('teacher_id')
+            ->get()
+            ->keyBy('teacher_id');
+
         $teachers = $academy->activeTeachers()->get();
-
         $rows = [];
+
         foreach ($teachers as $teacher) {
-            $linkedStudents = Enrollment::where('academy_id', $academy->id)
-                ->where('teacher_id', $teacher->id)
-                ->distinct('student_id')
-                ->count('student_id');
+            $enrollments = $enrollmentCounts->get($teacher->id);
+            $linkedStudents = (int) ($enrollments?->linked_students ?? 0);
+            $activeStudents = (int) ($enrollments?->active_students ?? 0);
 
-            $activeStudents = Enrollment::where('academy_id', $academy->id)
-                ->where('teacher_id', $teacher->id)
-                ->where('is_active', true)
-                ->distinct('student_id')
-                ->count('student_id');
-
-            $totalAttendances = Attendance::whereHas('lecture', function ($q) use ($academy, $teacher, $period) {
-                $q->where('academy_id', $academy->id)
-                    ->where('teacher_id', $teacher->id)
-                    ->whereBetween('start_time', [
-                        $period->startAt->toDateTimeString(),
-                        $period->endAt->toDateTimeString(),
-                    ]);
-            })->count();
-
-            $presentAttendances = Attendance::whereHas('lecture', function ($q) use ($academy, $teacher, $period) {
-                $q->where('academy_id', $academy->id)
-                    ->where('teacher_id', $teacher->id)
-                    ->whereBetween('start_time', [
-                        $period->startAt->toDateTimeString(),
-                        $period->endAt->toDateTimeString(),
-                    ]);
-            })->where('status', 'present')->count();
+            $attendance = $attendanceCounts->get($teacher->id);
+            $totalAttendances = (int) ($attendance?->total_attendances ?? 0);
+            $presentAttendances = (int) ($attendance?->present_attendances ?? 0);
 
             $attendancePct = $totalAttendances > 0
                 ? round(($presentAttendances / $totalAttendances) * 100, 2)
                 : 0;
-
-            $groupsCount = $teacher->groups()->where('academy_id', $academy->id)->count();
-
-            $deliveredSessions = Lecture::where('academy_id', $academy->id)
-                ->where('teacher_id', $teacher->id)
-                ->where('is_active', true)
-                ->whereBetween('start_time', [
-                    $period->startAt->toDateTimeString(),
-                    $period->endAt->toDateTimeString(),
-                ])
-                ->count();
 
             $rows[] = [
                 'teacher_name' => $teacher->name,
                 'linked_students' => $linkedStudents,
                 'active_students' => $activeStudents,
                 'attendance_pct' => $attendancePct,
-                'groups_count' => $groupsCount,
-                'delivered_sessions' => $deliveredSessions,
+                'groups_count' => (int) ($groupsCounts->get($teacher->id)?->groups_count ?? 0),
+                'delivered_sessions' => (int) ($sessionsCounts->get($teacher->id)?->delivered_sessions ?? 0),
             ];
         }
 

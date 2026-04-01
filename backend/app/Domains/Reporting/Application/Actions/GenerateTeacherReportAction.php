@@ -93,7 +93,14 @@ final readonly class GenerateTeacherReportAction
                 : null,
             'total_students' => $this->studentQueryService->totalLinkedStudents($teacher, $filters),
             'active_students' => $this->studentQueryService->activeStudentsCount($teacher, $filters),
-            'inactive_students_ratio' => 0,
+            'inactive_students_ratio' => $totalStudents > 0
+                ? round(($inactiveStudents / max($totalStudents, 1) : 0) : 0
+0,
+        $inactiveStudentsRatio = ($totalStudents > 0 && $totalStudents > 0)
+                ? round(($inactiveStudents / max($totalStudents, 1) * 100, 2)
+                : 0,
+                $inactive_studentsRatio = 0,
+        }
             'groups' => $attendance['by_group'] ?? [],
             'income_by_group' => $sections['group_breakdown']['groups'] ?? [],
         ];
