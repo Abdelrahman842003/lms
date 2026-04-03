@@ -34,6 +34,7 @@ class Academy extends Model implements AuthenticatableContract, AuthorizableCont
         'is_active',
         'status',
         'plan_type',
+        'subscription_period',
         'plan_expires_at',
         'plan_max_students',
         'is_unlimited_students',

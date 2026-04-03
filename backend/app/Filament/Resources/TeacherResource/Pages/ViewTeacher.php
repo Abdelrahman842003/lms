@@ -113,21 +113,17 @@ class ViewTeacher extends ViewRecord
                     ->schema([
                         TextEntry::make('plan_type')
                             ->label('نوع الخطة')
-                            ->state(fn ($record): string => TeacherResource::resolvePlanTypeForDisplay($record))
+                            ->state(fn ($record): string => TeacherResource::resolvePlanLabelForDisplay($record))
                             ->badge()
                             ->color(fn (string $state): string => match ($state) {
-                                'trial' => 'gray',
-                                'term' => 'info',
-                                'custom' => 'warning',
-                                'free' => 'gray',
+                                'تجريبي' => 'gray',
+                                'شهري (1 شهر)' => 'primary',
+                                'ربع سنوي (3 شهور)' => 'info',
+                                'نصف سنوي (6 شهور)' => 'warning',
+                                'سنوي (1 سنة)' => 'success',
+                                'مخصص (Custom)' => 'warning',
+                                'مجاني' => 'gray',
                                 default => 'gray',
-                            })
-                            ->formatStateUsing(fn (string $state): string => match ($state) {
-                                'trial' => 'تجريبي',
-                                'term' => 'مدة محددة',
-                                'custom' => 'مخصص',
-                                'free' => 'مجاني',
-                                default => 'غير محدد',
                             }),
 
                         TextEntry::make('plan_expires_at')

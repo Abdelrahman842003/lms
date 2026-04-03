@@ -63,8 +63,10 @@ class EditAcademy extends EditRecord
         $newFeeForRemaining = $this->calculateAcademyFeeForMonths($data, $remainingMonths);
         $difference = round($newFeeForRemaining - $oldFeeForRemaining, 2);
 
-        $data['plan_type'] = $this->record->plan_type;
-        $data['subscription_period'] = $this->record->subscription_period;
+        [$normalizedPlanType, $normalizedSubscriptionPeriod] = $this->resolveNormalizedDurationState();
+
+        $data['plan_type'] = $normalizedPlanType;
+        $data['subscription_period'] = $normalizedSubscriptionPeriod;
         $data['plan_expires_at'] = $this->normalizeDateString($this->record->plan_expires_at);
         $effectivePaid = max(0, round((float) ($data['paid_amount'] ?? $this->record->paid_amount ?? 0), 2));
         $data['subscription_fee'] = max(
@@ -81,6 +83,56 @@ class EditAcademy extends EditRecord
         }
 
         return $data;
+    }
+
+    private function resolveNormalizedDurationState(): array
+    {
+        $planType = (string) ($this->record->plan_type ?? '');
+        $subscriptionPeriod = (string) ($this->record->subscription_period ?? '');
+
+        if ($subscriptionPeriod !== '' || $planType !== 'trial') {
+            return [$planType, $subscriptionPeriod !== '' ? $subscriptionPeriod : null];
+        }
+
+        $inferredPeriod = $this->inferSubscriptionPeriodFromSnapshot(
+            $this->record->plan_expires_at,
+            (float) ($this->record->subscription_fee ?? 0),
+            (float) ($this->record->paid_amount ?? 0)
+        );
+
+        if ($inferredPeriod !== null) {
+            return ['term', $inferredPeriod];
+        }
+
+        return [$planType, null];
+    }
+
+    private function inferSubscriptionPeriodFromSnapshot(mixed $planExpiresAt, float $amountDue, float $amountPaid): ?string
+    {
+        if (empty($planExpiresAt)) {
+            return null;
+        }
+
+        $expiry = Carbon::parse($planExpiresAt)->startOfDay();
+        $today = now()->startOfDay();
+        $daysRemaining = (int) $today->diffInDays($expiry, false);
+
+        if ($daysRemaining <= 0) {
+            return null;
+        }
+
+        $trialDays = (int) \App\Domains\Application\Services\HelperService::getTrialPeriodDays();
+        if ($amountDue <= 0.0 && $amountPaid <= 0.0 && $daysRemaining <= ($trialDays + 1)) {
+            return null;
+        }
+
+        return match (true) {
+            $daysRemaining <= 45 => 'monthly',
+            $daysRemaining <= 135 => 'quarterly',
+            $daysRemaining <= 225 => 'semi_annual',
+            $daysRemaining <= 450 => 'annual',
+            default => null,
+        };
     }
 
     private function hasDurationChange(array $data): bool

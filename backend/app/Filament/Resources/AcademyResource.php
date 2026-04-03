@@ -152,6 +152,17 @@ class AcademyResource extends BaseResource
                             ->dehydrated(false)
                             ->afterStateHydrated(function ($component, $state, $record) {
                                 if (!$record) return;
+
+                                if (in_array((string) ($record->subscription_period ?? ''), ['monthly', 'quarterly', 'semi_annual', 'annual'], true)) {
+                                    $component->state((string) $record->subscription_period);
+                                    return;
+                                }
+
+                                $inferredPlanSelection = self::inferPlanSelectionFromAcademy($record);
+                                if ($inferredPlanSelection !== null) {
+                                    $component->state($inferredPlanSelection);
+                                    return;
+                                }
                                 
                                 if ($record->plan_type === 'trial') {
                                     $component->state('trial');
@@ -672,30 +683,16 @@ class AcademyResource extends BaseResource
                 Tables\Columns\TextColumn::make('plan_type')
                     ->label('الخطة')
                     ->badge()
-                    ->getStateUsing(function (Academy $record): ?string {
-                        if (! empty($record->plan_type)) {
-                            return $record->plan_type;
-                        }
-
-                        if (! empty($record->subscription_period)) {
-                            return 'term';
-                        }
-
-                        return null;
-                    })
+                    ->state(fn (Academy $record): string => static::resolvePlanLabelForDisplay($record))
                     ->color(fn ($state): string => match (is_string($state) ? $state : $state->value) {
-                        'trial' => 'gray',
-                        'term' => 'info',
-                        'custom' => 'warning',
-                        'free' => 'gray', // Backward compatibility if any
+                        'تجريبي' => 'gray',
+                        'شهري (1 شهر)' => 'primary',
+                        'ربع سنوي (3 شهور)' => 'info',
+                        'نصف سنوي (6 شهور)' => 'warning',
+                        'سنوي (1 سنة)' => 'success',
+                        'مخصص (Custom)' => 'warning',
+                        'مجاني' => 'gray',
                         default => 'gray',
-                    })
-                    ->formatStateUsing(fn ($state): string => match (is_string($state) ? $state : $state->value) {
-                        'trial' => 'تجريبي',
-                        'term' => 'مدة محددة',
-                        'custom' => 'مخصص',
-                        'free' => 'مجاني',
-                        default => 'غير محدد',
                     })
                     ->sortable(),
 
@@ -788,6 +785,93 @@ class AcademyResource extends BaseResource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery();
+    }
+
+    public static function resolvePlanTypeForDisplay(Academy $academy): string
+    {
+        $subscriptionPeriod = trim((string) ($academy->subscription_period ?? ''));
+        if (in_array($subscriptionPeriod, ['monthly', 'quarterly', 'semi_annual', 'annual'], true)) {
+            return 'term';
+        }
+
+        $inferredPlanSelection = self::inferPlanSelectionFromAcademy($academy);
+        if (in_array($inferredPlanSelection, ['monthly', 'quarterly', 'semi_annual', 'annual'], true)) {
+            return 'term';
+        }
+
+        $planType = trim((string) ($academy->plan_type ?? ''));
+        if (in_array($planType, ['trial', 'term', 'custom', 'free'], true)) {
+            return $planType;
+        }
+
+        $hasExpiryDate = ! is_null($academy->plan_expires_at);
+        $amountDue = (float) ($academy->subscription_fee ?? 0);
+        $amountPaid = (float) ($academy->paid_amount ?? 0);
+
+        if ($hasExpiryDate && $amountDue <= 0.0 && $amountPaid <= 0.0) {
+            return 'trial';
+        }
+
+        return '';
+    }
+
+    public static function resolvePlanLabelForDisplay(Academy $academy): string
+    {
+        $subscriptionPeriod = trim((string) ($academy->subscription_period ?? ''));
+        if (in_array($subscriptionPeriod, ['monthly', 'quarterly', 'semi_annual', 'annual'], true)) {
+            return match ($subscriptionPeriod) {
+                'monthly' => 'شهري (1 شهر)',
+                'quarterly' => 'ربع سنوي (3 شهور)',
+                'semi_annual' => 'نصف سنوي (6 شهور)',
+                'annual' => 'سنوي (1 سنة)',
+            };
+        }
+
+        $inferredPlanSelection = self::inferPlanSelectionFromAcademy($academy);
+        if (in_array($inferredPlanSelection, ['monthly', 'quarterly', 'semi_annual', 'annual'], true)) {
+            return match ($inferredPlanSelection) {
+                'monthly' => 'شهري (1 شهر)',
+                'quarterly' => 'ربع سنوي (3 شهور)',
+                'semi_annual' => 'نصف سنوي (6 شهور)',
+                'annual' => 'سنوي (1 سنة)',
+            };
+        }
+
+        return match (self::resolvePlanTypeForDisplay($academy)) {
+            'trial' => 'تجريبي',
+            'custom' => 'مخصص (Custom)',
+            'free' => 'مجاني',
+            default => 'غير محدد',
+        };
+    }
+
+    private static function inferPlanSelectionFromAcademy(Academy $academy): ?string
+    {
+        $expiryRaw = $academy->plan_expires_at;
+        if (empty($expiryRaw)) {
+            return null;
+        }
+
+        $daysRemaining = (int) now()->startOfDay()->diffInDays(\Carbon\Carbon::parse($expiryRaw)->startOfDay(), false);
+        if ($daysRemaining <= 0) {
+            return null;
+        }
+
+        $trialDays = \App\Domains\Application\Services\HelperService::getTrialPeriodDays();
+        $amountDue = (float) ($academy->subscription_fee ?? 0);
+        $amountPaid = (float) ($academy->paid_amount ?? 0);
+
+        if ($amountDue <= 0.0 && $amountPaid <= 0.0 && $daysRemaining <= ($trialDays + 1)) {
+            return 'trial';
+        }
+
+        return match (true) {
+            $daysRemaining <= 45 => 'monthly',
+            $daysRemaining <= 135 => 'quarterly',
+            $daysRemaining <= 225 => 'semi_annual',
+            $daysRemaining <= 450 => 'annual',
+            default => null,
+        };
     }
 
     private static function syncBillingNotes(callable $get, callable $set, array $overrides = []): void

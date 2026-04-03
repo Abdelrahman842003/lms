@@ -755,21 +755,17 @@ class TeacherResource extends BaseResource
 
                 Tables\Columns\TextColumn::make('plan_type')
                     ->label('الخطة')
-                    ->state(fn (Teacher $record): string => static::resolvePlanTypeForDisplay($record))
+                    ->state(fn (Teacher $record): string => static::resolvePlanLabelForDisplay($record))
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
-                        'trial' => 'gray',
-                        'term' => 'info',
-                        'custom' => 'warning',
-                        'free' => 'gray',
+                        'تجريبي' => 'gray',
+                        'شهري (1 شهر)' => 'primary',
+                        'ربع سنوي (3 شهور)' => 'info',
+                        'نصف سنوي (6 شهور)' => 'warning',
+                        'سنوي (1 سنة)' => 'success',
+                        'مخصص (Custom)' => 'warning',
+                        'مجاني' => 'gray',
                         default => 'gray',
-                    })
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'trial' => 'تجريبي',
-                        'term' => 'مدة محددة',
-                        'custom' => 'مخصص',
-                        'free' => 'مجاني',
-                        default => 'غير محدد',
                     })
                     ->sortable()
                     ->toggleable(),
@@ -906,6 +902,36 @@ class TeacherResource extends BaseResource
         }
 
         return '';
+    }
+
+    public static function resolvePlanLabelForDisplay(Teacher $teacher): string
+    {
+        $subscriptionPeriod = trim((string) ($teacher->subscription_period ?? ''));
+        if (in_array($subscriptionPeriod, ['monthly', 'quarterly', 'semi_annual', 'annual'], true)) {
+            return match ($subscriptionPeriod) {
+                'monthly' => 'شهري (1 شهر)',
+                'quarterly' => 'ربع سنوي (3 شهور)',
+                'semi_annual' => 'نصف سنوي (6 شهور)',
+                'annual' => 'سنوي (1 سنة)',
+            };
+        }
+
+        $inferredPlanSelection = self::inferPlanSelectionFromTeacher($teacher);
+        if (in_array($inferredPlanSelection, ['monthly', 'quarterly', 'semi_annual', 'annual'], true)) {
+            return match ($inferredPlanSelection) {
+                'monthly' => 'شهري (1 شهر)',
+                'quarterly' => 'ربع سنوي (3 شهور)',
+                'semi_annual' => 'نصف سنوي (6 شهور)',
+                'annual' => 'سنوي (1 سنة)',
+            };
+        }
+
+        return match (self::resolvePlanTypeForDisplay($teacher)) {
+            'trial' => 'تجريبي',
+            'custom' => 'مخصص (Custom)',
+            'free' => 'مجاني',
+            default => 'غير محدد',
+        };
     }
 
     private static function inferPlanSelectionFromTeacher(Teacher $teacher): ?string
