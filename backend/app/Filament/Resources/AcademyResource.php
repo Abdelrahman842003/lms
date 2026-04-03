@@ -178,11 +178,21 @@ class AcademyResource extends BaseResource
                                         $storagePricePerGb = 0;
                                     }
                                     $storageLimitGb = (int) ($get('storage_limit_gb') ?? 0);
-                                    $discountPct    = (float) ($get('discount_percent') ?? 0);
                                     $seatsAmount    = $students * $months * $pricePerStudent;
                                     $storageAmount  = $storageLimitGb * $storagePricePerGb * $months;
                                     $gross          = $seatsAmount + $storageAmount;
-                                    $set('subscription_fee', max(0, round($gross - ($gross * $discountPct / 100), 2)));
+                                    $discountValue = (float) ($get('discount_percent') ?? 0);
+                                    $discountType = (string) ($get('discount_type') ?? 'percent');
+                                    $discountScope = (string) ($get('discount_scope') ?? 'general');
+                                    $discountableAmount = match ($discountScope) {
+                                        'students' => $seatsAmount,
+                                        'storage' => $storageAmount,
+                                        default => $gross,
+                                    };
+                                    $discountAmount = $discountType === 'fixed'
+                                        ? min($discountableAmount, max(0, $discountValue))
+                                        : ($discountableAmount * max(0, min(100, $discountValue)) / 100);
+                                    $set('subscription_fee', max(0, round($gross - $discountAmount, 2)));
                                 } elseif ($state === 'custom') {
                                     $set('plan_type', 'custom');
                                     $set('subscription_period', null);
@@ -214,11 +224,21 @@ class AcademyResource extends BaseResource
                                         $storagePricePerGb = 0;
                                     }
                                     $storageLimitGb = (int) ($get('storage_limit_gb') ?? 0);
-                                    $discountPct    = (float) ($get('discount_percent') ?? 0);
                                     $seatsAmount    = $students * $months * $pricePerStudent;
                                     $storageAmount  = $storageLimitGb * $storagePricePerGb * $months;
                                     $gross          = $seatsAmount + $storageAmount;
-                                    $set('subscription_fee', max(0, round($gross - ($gross * $discountPct / 100), 2)));
+                                    $discountValue = (float) ($get('discount_percent') ?? 0);
+                                    $discountType = (string) ($get('discount_type') ?? 'percent');
+                                    $discountScope = (string) ($get('discount_scope') ?? 'general');
+                                    $discountableAmount = match ($discountScope) {
+                                        'students' => $seatsAmount,
+                                        'storage' => $storageAmount,
+                                        default => $gross,
+                                    };
+                                    $discountAmount = $discountType === 'fixed'
+                                        ? min($discountableAmount, max(0, $discountValue))
+                                        : ($discountableAmount * max(0, min(100, $discountValue)) / 100);
+                                    $set('subscription_fee', max(0, round($gross - $discountAmount, 2)));
                                 }
                             }),
 
@@ -261,11 +281,21 @@ class AcademyResource extends BaseResource
                                             $storagePricePerGb = 0;
                                         }
                                         $storageLimitGb = (int) ($get('storage_limit_gb') ?? 0);
-                                        $discountPct    = (float) ($get('discount_percent') ?? 0);
                                         $seatsAmount    = (int) $state * $months * $pricePerStudent;
                                         $storageAmount  = $storageLimitGb * $storagePricePerGb * $months;
                                         $gross          = $seatsAmount + $storageAmount;
-                                        $set('subscription_fee', max(0, round($gross - ($gross * $discountPct / 100), 2)));
+                                        $discountValue = (float) ($get('discount_percent') ?? 0);
+                                        $discountType = (string) ($get('discount_type') ?? 'percent');
+                                        $discountScope = (string) ($get('discount_scope') ?? 'general');
+                                        $discountableAmount = match ($discountScope) {
+                                            'students' => $seatsAmount,
+                                            'storage' => $storageAmount,
+                                            default => $gross,
+                                        };
+                                        $discountAmount = $discountType === 'fixed'
+                                            ? min($discountableAmount, max(0, $discountValue))
+                                            : ($discountableAmount * max(0, min(100, $discountValue)) / 100);
+                                        $set('subscription_fee', max(0, round($gross - $discountAmount, 2)));
                                     }
                                 }
                             }),
@@ -277,32 +307,11 @@ class AcademyResource extends BaseResource
                             ->default(0)
                             ->reactive()
                             ->afterStateUpdated(function ($state, $get, $set) {
-                                $limit         = $get('is_unlimited_students') ? 'غير محدود' : ($get('plan_max_students') ?? '100');
-                                $trialDays     = \App\Domains\Application\Services\HelperService::getTrialPeriodDays();
-                                $period        = match ($get('plan_selection')) {
-                                    'trial'       => 'تجريبي (' . $trialDays . ' يوم)',
-                                    'monthly'     => 'شهري',
-                                    'quarterly'   => 'ربع سنوي',
-                                    'semi_annual' => 'نصف سنوي',
-                                    'annual'      => 'سنوي',
-                                    'custom'      => 'مخصص',
-                                    default       => 'تجريبي'
-                                };
-                                $fee           = (float) ($state ?? 0);
-                                $discountPct   = (float) ($get('discount_percent') ?? 0);
-                                $discountAmt   = round($fee * $discountPct / 100, 2);
-                                $feeAfter      = max(0, $fee - $discountAmt);
-                                $storage       = $get('storage_limit_gb') ? $get('storage_limit_gb') . ' GB' : 'غير محدود';
-                                $paid          = (float) ($get('paid_amount') ?? 0);
-                                $remaining     = $feeAfter - $paid;
-                                $note = "نوع الاشتراك: {$period}\n" .
-                                        "الحد الأقصى للطلاب: {$limit}\n" .
-                                        "حد التخزين: {$storage}\n" .
-                                        ($discountPct > 0 ? "الخصم: {$discountPct}% (خصم {$discountAmt} ج.م)\n" : '') .
-                                        "الرسوم بعد الخصم: {$feeAfter} ج.م\n" .
-                                        "المدفوع: {$paid} ج.م\n" .
-                                        "المتبقي: {$remaining} ج.م";
-                                $set('billing_notes', $note);
+                                self::syncBillingNotes(
+                                    fn (string $key) => $get($key),
+                                    fn (string $key, mixed $value): mixed => $set($key, $value),
+                                    ['subscription_fee' => $state]
+                                );
                             }),
 
                         TextInput::make('paid_amount')
@@ -312,32 +321,11 @@ class AcademyResource extends BaseResource
                             ->default(0)
                             ->reactive()
                             ->afterStateUpdated(function ($state, $get, $set) {
-                                $limit         = $get('is_unlimited_students') ? 'غير محدود' : ($get('plan_max_students') ?? '100');
-                                $trialDays     = \App\Domains\Application\Services\HelperService::getTrialPeriodDays();
-                                $period        = match ($get('plan_selection')) {
-                                    'trial'       => 'تجريبي (' . $trialDays . ' يوم)',
-                                    'monthly'     => 'شهري',
-                                    'quarterly'   => 'ربع سنوي',
-                                    'semi_annual' => 'نصف سنوي',
-                                    'annual'      => 'سنوي',
-                                    'custom'      => 'مخصص',
-                                    default       => 'تجريبي'
-                                };
-                                $fee           = (float) ($get('subscription_fee') ?? 0);
-                                $discountPct   = (float) ($get('discount_percent') ?? 0);
-                                $discountAmt   = round($fee * $discountPct / 100, 2);
-                                $feeAfter      = max(0, $fee - $discountAmt);
-                                $storage       = $get('storage_limit_gb') ? $get('storage_limit_gb') . ' GB' : 'غير محدود';
-                                $paid          = (float) ($state ?? 0);
-                                $remaining     = $feeAfter - $paid;
-                                $note = "نوع الاشتراك: {$period}\n" .
-                                        "الحد الأقصى للطلاب: {$limit}\n" .
-                                        "حد التخزين: {$storage}\n" .
-                                        ($discountPct > 0 ? "الخصم: {$discountPct}% (خصم {$discountAmt} ج.م)\n" : '') .
-                                        "الرسوم بعد الخصم: {$feeAfter} ج.م\n" .
-                                        "المدفوع: {$paid} ج.م\n" .
-                                        "المتبقي: {$remaining} ج.م";
-                                $set('billing_notes', $note);
+                                self::syncBillingNotes(
+                                    fn (string $key) => $get($key),
+                                    fn (string $key, mixed $value): mixed => $set($key, $value),
+                                    ['paid_amount' => $state]
+                                );
                             }),
 
                         Textarea::make('billing_notes')
@@ -358,18 +346,28 @@ class AcademyResource extends BaseResource
                                     'custom'      => 'مخصص',
                                     default       => 'تجريبي (' . $trialDays . ' يوم)',
                                 };
-                                $fee         = (float) ($record->subscription_fee ?? 0);
-                                $discountPct = (float) ($record->discount_percent ?? 0);
-                                $discountAmt = round($fee * $discountPct / 100, 2);
-                                $feeAfter    = max(0, $fee - $discountAmt);
+                                $feeAfter    = max(0, (float) ($record->subscription_fee ?? 0));
+                                $discountVal = (float) ($record->discount_percent ?? 0);
+                                $discountType = (string) ($record->discount_type ?? 'percent');
+                                $discountScope = (string) ($record->discount_scope ?? 'general');
                                 $storageGb   = $record->storage_limit_gb;
-                                $storage     = $storageGb ? $storageGb . ' GB' : 'غير محدود';
+                                $storage     = self::formatStorageLabel($storageGb);
                                 $paid        = (float) ($record->paid_amount ?? 0);
-                                $remaining   = $feeAfter - $paid;
+                                $remaining   = round($feeAfter - $paid, 2);
+
+                                $scopeLabel = match ($discountScope) {
+                                    'students' => 'الطلاب',
+                                    'storage' => 'التخزين',
+                                    default => 'الإجمالي',
+                                };
+                                $discountLabel = $discountType === 'fixed'
+                                    ? "{$discountVal} ج.م"
+                                    : "{$discountVal}%";
+
                                 $note = "نوع الاشتراك: {$period}\n" .
                                         "الحد الأقصى للطلاب: {$limit}\n" .
                                         "حد التخزين: {$storage}\n" .
-                                        ($discountPct > 0 ? "الخصم: {$discountPct}% (خصم {$discountAmt} ج.م)\n" : '') .
+                                        ($discountVal > 0 ? "الخصم ({$scopeLabel}): {$discountLabel}\n" : '') .
                                         "الرسوم بعد الخصم: {$feeAfter} ج.م\n" .
                                         "المدفوع: {$paid} ج.م\n" .
                                         "المتبقي: {$remaining} ج.م";
@@ -403,24 +401,161 @@ class AcademyResource extends BaseResource
                                     }
                                     $students       = (int) $get('plan_max_students');
                                     $storageLimitGb = (int) ($state ?? 0);
-                                    $discountPct    = (float) ($get('discount_percent') ?? 0);
                                     $seatsAmount    = $students * $months * $pricePerStudent;
                                     $storageAmount  = $storageLimitGb * $storagePricePerGb * $months;
                                     $gross          = $seatsAmount + $storageAmount;
-                                    $total          = max(0, round($gross - ($gross * $discountPct / 100), 2));
+                                    $discountValue = (float) ($get('discount_percent') ?? 0);
+                                    $discountType = (string) ($get('discount_type') ?? 'percent');
+                                    $discountScope = (string) ($get('discount_scope') ?? 'general');
+                                    $discountableAmount = match ($discountScope) {
+                                        'students' => $seatsAmount,
+                                        'storage' => $storageAmount,
+                                        default => $gross,
+                                    };
+                                    $discountAmount = $discountType === 'fixed'
+                                        ? min($discountableAmount, max(0, $discountValue))
+                                        : ($discountableAmount * max(0, min(100, $discountValue)) / 100);
+                                    $total          = max(0, round($gross - $discountAmount, 2));
                                     $set('subscription_fee', $total);
+                                    self::syncBillingNotes(
+                                        fn (string $key) => $get($key),
+                                        fn (string $key, mixed $value): mixed => $set($key, $value),
+                                        [
+                                            'storage_limit_gb' => $state,
+                                            'subscription_fee' => $total,
+                                        ]
+                                    );
                                 }
                             }),
 
+                        Select::make('discount_type')
+                            ->label('نوع الخصم')
+                            ->options([
+                                'percent' => 'نسبة مئوية (%)',
+                                'fixed' => 'مبلغ ثابت (ج.م)',
+                            ])
+                            ->default('percent')
+                            ->reactive()
+                            ->afterStateUpdated(function ($state, $get, $set) {
+                                $months = match ($get('plan_selection')) {
+                                    'monthly'     => 1,
+                                    'quarterly'   => 3,
+                                    'semi_annual' => 6,
+                                    'annual'      => 12,
+                                    default       => (int) $get('custom_period_months'),
+                                };
+
+                                if ($months <= 0) {
+                                    return;
+                                }
+
+                                try {
+                                    $pricePerStudent   = (float) Setting::where('key', 'academy_price_per_student')->value('value') ?: 40;
+                                    $storagePricePerGb = (float) Setting::where('key', 'academy_storage_price_per_gb')->value('value') ?: 0;
+                                } catch (\Exception $e) {
+                                    $pricePerStudent   = 40;
+                                    $storagePricePerGb = 0;
+                                }
+
+                                $students       = (int) $get('plan_max_students');
+                                $storageLimitGb = (int) ($get('storage_limit_gb') ?? 0);
+                                $seatsAmount    = $students * $months * $pricePerStudent;
+                                $storageAmount  = $storageLimitGb * $storagePricePerGb * $months;
+                                $gross          = $seatsAmount + $storageAmount;
+
+                                $discountValue = (float) ($get('discount_percent') ?? 0);
+                                $discountScope = (string) ($get('discount_scope') ?? 'general');
+                                $discountableAmount = match ($discountScope) {
+                                    'students' => $seatsAmount,
+                                    'storage' => $storageAmount,
+                                    default => $gross,
+                                };
+                                $discountAmount = $state === 'fixed'
+                                    ? min($discountableAmount, max(0, $discountValue))
+                                    : ($discountableAmount * max(0, min(100, $discountValue)) / 100);
+
+                                $total = max(0, round($gross - $discountAmount, 2));
+                                $set('subscription_fee', $total);
+                                self::syncBillingNotes(
+                                    fn (string $key) => $get($key),
+                                    fn (string $key, mixed $value): mixed => $set($key, $value),
+                                    [
+                                        'discount_type' => $state,
+                                        'subscription_fee' => $total,
+                                    ]
+                                );
+                            }),
+
+                        Select::make('discount_scope')
+                            ->label('الخصم يُطبَّق على')
+                            ->options([
+                                'general' => 'خصم عام (الإجمالي)',
+                                'students' => 'عدد الطلاب فقط',
+                                'storage' => 'حد التخزين فقط',
+                            ])
+                            ->default('general')
+                            ->reactive()
+                            ->afterStateUpdated(function ($state, $get, $set) {
+                                $months = match ($get('plan_selection')) {
+                                    'monthly'     => 1,
+                                    'quarterly'   => 3,
+                                    'semi_annual' => 6,
+                                    'annual'      => 12,
+                                    default       => (int) $get('custom_period_months'),
+                                };
+
+                                if ($months <= 0) {
+                                    return;
+                                }
+
+                                try {
+                                    $pricePerStudent   = (float) Setting::where('key', 'academy_price_per_student')->value('value') ?: 40;
+                                    $storagePricePerGb = (float) Setting::where('key', 'academy_storage_price_per_gb')->value('value') ?: 0;
+                                } catch (\Exception $e) {
+                                    $pricePerStudent   = 40;
+                                    $storagePricePerGb = 0;
+                                }
+
+                                $students       = (int) $get('plan_max_students');
+                                $storageLimitGb = (int) ($get('storage_limit_gb') ?? 0);
+                                $seatsAmount    = $students * $months * $pricePerStudent;
+                                $storageAmount  = $storageLimitGb * $storagePricePerGb * $months;
+                                $gross          = $seatsAmount + $storageAmount;
+
+                                $discountValue = (float) ($get('discount_percent') ?? 0);
+                                $discountType = (string) ($get('discount_type') ?? 'percent');
+                                $discountableAmount = match ($state) {
+                                    'students' => $seatsAmount,
+                                    'storage' => $storageAmount,
+                                    default => $gross,
+                                };
+                                $discountAmount = $discountType === 'fixed'
+                                    ? min($discountableAmount, max(0, $discountValue))
+                                    : ($discountableAmount * max(0, min(100, $discountValue)) / 100);
+
+                                $total = max(0, round($gross - $discountAmount, 2));
+                                $set('subscription_fee', $total);
+                                self::syncBillingNotes(
+                                    fn (string $key) => $get($key),
+                                    fn (string $key, mixed $value): mixed => $set($key, $value),
+                                    [
+                                        'discount_scope' => $state,
+                                        'subscription_fee' => $total,
+                                    ]
+                                );
+                            }),
+
                         TextInput::make('discount_percent')
-                            ->label('الخصم (%)')
+                            ->label('قيمة الخصم')
                             ->numeric()
                             ->minValue(0)
-                            ->maxValue(100)
-                            ->suffix('%')
+                            ->maxValue(fn ($get) => ($get('discount_type') ?? 'percent') === 'percent' ? 100 : null)
+                            ->suffix(fn ($get) => ($get('discount_type') ?? 'percent') === 'fixed' ? 'ج.م' : '%')
                             ->default(0)
                             ->reactive()
-                            ->helperText('نسبة الخصم من الإجمالي (0 - 100)')
+                            ->helperText(fn ($get) => ($get('discount_type') ?? 'percent') === 'fixed'
+                                ? 'أدخل قيمة الخصم كمبلغ ثابت بالجنيه'
+                                : 'نسبة الخصم (0 - 100)')
                             ->afterStateUpdated(function ($state, $get, $set) {
                                 $months = match ($get('plan_selection')) {
                                     'monthly'     => 1,
@@ -439,12 +574,30 @@ class AcademyResource extends BaseResource
                                     }
                                     $students       = (int) $get('plan_max_students');
                                     $storageLimitGb = (int) ($get('storage_limit_gb') ?? 0);
-                                    $discountPct    = (float) ($state ?? 0);
                                     $seatsAmount    = $students * $months * $pricePerStudent;
                                     $storageAmount  = $storageLimitGb * $storagePricePerGb * $months;
                                     $gross          = $seatsAmount + $storageAmount;
-                                    $total          = max(0, round($gross - ($gross * $discountPct / 100), 2));
+                                    $discountValue = (float) ($state ?? 0);
+                                    $discountType = (string) ($get('discount_type') ?? 'percent');
+                                    $discountScope = (string) ($get('discount_scope') ?? 'general');
+                                    $discountableAmount = match ($discountScope) {
+                                        'students' => $seatsAmount,
+                                        'storage' => $storageAmount,
+                                        default => $gross,
+                                    };
+                                    $discountAmount = $discountType === 'fixed'
+                                        ? min($discountableAmount, max(0, $discountValue))
+                                        : ($discountableAmount * max(0, min(100, $discountValue)) / 100);
+                                    $total          = max(0, round($gross - $discountAmount, 2));
                                     $set('subscription_fee', $total);
+                                    self::syncBillingNotes(
+                                        fn (string $key) => $get($key),
+                                        fn (string $key, mixed $value): mixed => $set($key, $value),
+                                        [
+                                            'discount_percent' => $state,
+                                            'subscription_fee' => $total,
+                                        ]
+                                    );
                                 }
                             }),
                     ])
@@ -599,5 +752,70 @@ class AcademyResource extends BaseResource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery();
+    }
+
+    private static function syncBillingNotes(callable $get, callable $set, array $overrides = []): void
+    {
+        $current = static fn (string $key) => array_key_exists($key, $overrides) ? $overrides[$key] : $get($key);
+
+        $limit = $current('is_unlimited_students')
+            ? 'غير محدود'
+            : ($current('plan_max_students') ?? '100');
+
+        $trialDays = \App\Domains\Application\Services\HelperService::getTrialPeriodDays();
+        $period = match ($current('plan_selection')) {
+            'trial'       => 'تجريبي (' . $trialDays . ' يوم)',
+            'monthly'     => 'شهري',
+            'quarterly'   => 'ربع سنوي',
+            'semi_annual' => 'نصف سنوي',
+            'annual'      => 'سنوي',
+            'custom'      => 'مخصص',
+            default       => 'تجريبي',
+        };
+
+        $feeAfter = max(0, (float) ($current('subscription_fee') ?? 0));
+        $discountValue = (float) ($current('discount_percent') ?? 0);
+        $discountType = (string) ($current('discount_type') ?? 'percent');
+        $discountScope = (string) ($current('discount_scope') ?? 'general');
+        $storage = self::formatStorageLabel($current('storage_limit_gb'));
+        $paid = max(0, (float) ($current('paid_amount') ?? 0));
+        $remaining = round($feeAfter - $paid, 2);
+
+        $scopeLabel = match ($discountScope) {
+            'students' => 'الطلاب',
+            'storage' => 'التخزين',
+            default => 'الإجمالي',
+        };
+        $discountValueLabel = $discountType === 'fixed'
+            ? "{$discountValue} ج.م"
+            : "{$discountValue}%";
+
+        $note = "نوع الاشتراك: {$period}\n" .
+            "الحد الأقصى للطلاب: {$limit}\n" .
+            "حد التخزين: {$storage}\n" .
+            ($discountValue > 0 ? "الخصم ({$scopeLabel}): {$discountValueLabel}\n" : '') .
+            "الرسوم بعد الخصم: {$feeAfter} ج.م\n" .
+            "المدفوع: {$paid} ج.م\n" .
+            "المتبقي: {$remaining} ج.م";
+
+        $set('billing_notes', $note);
+    }
+
+    private static function formatStorageLabel(mixed $storageLimitGb): string
+    {
+        if (! is_numeric($storageLimitGb)) {
+            return 'غير محدود';
+        }
+
+        $storage = (float) $storageLimitGb;
+        if ($storage <= 0) {
+            return 'غير محدود';
+        }
+
+        $formatted = fmod($storage, 1.0) === 0.0
+            ? (string) (int) $storage
+            : rtrim(rtrim((string) $storage, '0'), '.');
+
+        return $formatted . ' GB';
     }
 }

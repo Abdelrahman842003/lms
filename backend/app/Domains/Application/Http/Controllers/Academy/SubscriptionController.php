@@ -9,6 +9,7 @@ use App\Domains\Application\Http\Requests\Academy\Subscription\RequestRenewalReq
 use App\Domains\Subscriptions\Services\SubscriptionRenewalService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use InvalidArgumentException;
 
 class SubscriptionController extends Controller
 {
@@ -33,7 +34,13 @@ class SubscriptionController extends Controller
                 'month' => $pending->month?->format('Y-m-d'),
                 'amount_due' => (float) $pending->amount_due,
                 'status' => $pending->status?->value ?? (string) $pending->status,
+                'request_type' => (string) ($pending->request_type ?? SubscriptionRenewalService::REQUEST_TYPE_RENEWAL),
                 'notes' => $pending->notes,
+                'upgrade_seats_from' => $pending->upgrade_seats_from,
+                'upgrade_seats_to' => $pending->upgrade_seats_to,
+                'upgrade_storage_from_gb' => $pending->upgrade_storage_from_gb,
+                'upgrade_storage_to_gb' => $pending->upgrade_storage_to_gb,
+                'upgrade_price_difference' => (float) ($pending->upgrade_price_difference ?? 0),
                 'created_at' => $pending->created_at?->format('Y-m-d H:i'),
             ] : null,
         ]);
@@ -49,8 +56,18 @@ class SubscriptionController extends Controller
         $validated = $request->validated();
         $planSelection = (string) ($validated['plan_selection'] ?? '');
         $customMonths = isset($validated['custom_months']) ? (int) $validated['custom_months'] : null;
+        $upgradePayload = [
+            'upgrade_seats' => (bool) ($validated['upgrade_seats'] ?? false),
+            'upgrade_storage' => (bool) ($validated['upgrade_storage'] ?? false),
+            'new_seats_limit' => isset($validated['new_seats_limit']) ? (int) $validated['new_seats_limit'] : null,
+            'new_storage_limit_gb' => isset($validated['new_storage_limit_gb']) ? (int) $validated['new_storage_limit_gb'] : null,
+        ];
 
-        $subscription = $this->renewalService->createRenewalRequest($academy, $planSelection, $customMonths);
+        try {
+            $subscription = $this->renewalService->createRenewalRequest($academy, $planSelection, $customMonths, $upgradePayload);
+        } catch (InvalidArgumentException $exception) {
+            return $this->errorResponse($exception->getMessage(), 422);
+        }
 
         return $this->successResponse([
             'subscription_id' => $subscription->id,

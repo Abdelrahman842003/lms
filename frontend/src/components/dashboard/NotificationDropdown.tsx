@@ -23,6 +23,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
   const dropdownRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const closeTimerRef = useRef<number | null>(null);
+  const pollIntervalRef = useRef<number | null>(null);
 
   // Deduplication: Track received notification IDs to prevent duplicates
   const receivedIdsRef = useRef<Set<string>>(new Set());
@@ -42,6 +43,11 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
     return () => {
       if (closeTimerRef.current) {
         window.clearTimeout(closeTimerRef.current);
+      }
+
+      if (pollIntervalRef.current) {
+        window.clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = null;
       }
     };
   }, []);
@@ -168,6 +174,14 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
     if (role && !authLoading && isAuthenticated) {
       // Initial fetch
       fetchNotifications();
+
+      // Fallback polling in case real-time channel is unavailable.
+      if (pollIntervalRef.current) {
+        window.clearInterval(pollIntervalRef.current);
+      }
+      pollIntervalRef.current = window.setInterval(() => {
+        fetchNotifications();
+      }, 15000);
 
       // Get user ID and token for WebSocket
       const getUserData = () => {
@@ -338,6 +352,10 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
 
       return () => {
         window.removeEventListener('notification:received', handleNewNotification);
+        if (pollIntervalRef.current) {
+          window.clearInterval(pollIntervalRef.current);
+          pollIntervalRef.current = null;
+        }
         if (echoCleanup) {
           echoCleanup();
         }

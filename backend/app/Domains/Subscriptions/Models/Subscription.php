@@ -51,6 +51,15 @@ class Subscription extends Model
         'amount_paid',
         'payment_key',
         'payment_initiated_at',
+        'request_type',
+        'upgrade_seats_from',
+        'upgrade_seats_to',
+        'upgrade_storage_from_gb',
+        'upgrade_storage_to_gb',
+        'upgrade_price_difference',
+        'upgrade_reviewed_at',
+        'upgrade_reviewed_by',
+        'upgrade_rejection_reason',
     ];
 
     protected function casts(): array
@@ -66,6 +75,12 @@ class Subscription extends Model
             'amount_paid' => 'decimal:2',
             'payment_initiated_at' => 'datetime',
             'paid_at' => 'date',
+            'upgrade_seats_from' => 'integer',
+            'upgrade_seats_to' => 'integer',
+            'upgrade_storage_from_gb' => 'integer',
+            'upgrade_storage_to_gb' => 'integer',
+            'upgrade_price_difference' => 'decimal:2',
+            'upgrade_reviewed_at' => 'datetime',
         ];
     }
 

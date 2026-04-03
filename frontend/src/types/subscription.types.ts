@@ -28,6 +28,7 @@ export interface SubscriptionSnapshot {
   seats_limit: number | null;
   is_unlimited: boolean;
   price_per_seat: number;
+  price_per_storage_gb?: number;
   amount_due: number;
   amount_paid: number;
   storage?: StorageSnapshot | null;
@@ -38,7 +39,13 @@ export interface PendingRenewalRequest {
   month: string | null;
   amount_due: number;
   status: string;
+  request_type?: 'renewal' | 'upgrade' | string;
   notes?: string | null;
+  upgrade_seats_from?: number | null;
+  upgrade_seats_to?: number | null;
+  upgrade_storage_from_gb?: number | null;
+  upgrade_storage_to_gb?: number | null;
+  upgrade_price_difference?: number;
   created_at?: string | null;
 }
 
@@ -51,4 +58,8 @@ export interface SubscriptionResponse {
 export interface SubscriptionRenewalRequest {
   plan_selection: string;
   custom_months?: number | null;
+  upgrade_seats?: boolean;
+  upgrade_storage?: boolean;
+  new_seats_limit?: number | null;
+  new_storage_limit_gb?: number | null;
 }

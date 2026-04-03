@@ -42,6 +42,8 @@ class Academy extends Model implements AuthenticatableContract, AuthorizableCont
         'storage_limit_gb',
         'storage_used_bytes',
         'discount_percent',
+        'discount_type',
+        'discount_scope',
         'trial_period_days',
         'max_enrollments_limit',
     ];
@@ -64,6 +66,8 @@ class Academy extends Model implements AuthenticatableContract, AuthorizableCont
             'storage_limit_gb' => 'integer',
             'storage_used_bytes' => 'integer',
             'discount_percent' => 'decimal:2',
+            'discount_type' => 'string',
+            'discount_scope' => 'string',
         ];
     }
 

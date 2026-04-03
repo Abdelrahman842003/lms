@@ -9,7 +9,7 @@ import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { withTeacherAuth } from '@/components/auth/withTeacherAuth';
 import SubscriptionRenewalModal from '@/components/subscription/SubscriptionRenewalModal';
 import { getTeacherSubscription, requestTeacherRenewal } from '@/services/subscriptionService';
-import type { SubscriptionResponse } from '@/types/subscription.types';
+import type { SubscriptionRenewalRequest, SubscriptionResponse } from '@/types/subscription.types';
 
 function SubscriptionPage() {
   const router = useRouter();
@@ -98,7 +98,7 @@ function SubscriptionPage() {
   const statusColor = getStatusColor();
   const seatsColor = getSeatsColor();
 
-  const handleRenewalSubmit = async (payload: { plan_selection: string; custom_months?: number | null }) => {
+  const handleRenewalSubmit = async (payload: SubscriptionRenewalRequest) => {
     if (!payload.plan_selection) return;
     setRenewalSubmitting(true);
     try {
@@ -131,9 +131,13 @@ function SubscriptionPage() {
           <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 flex items-start gap-3">
             <Icon name="hourglass-half" className="text-yellow-400 text-xl mt-1" />
             <div className="flex-1">
-              <h3 className="text-yellow-400 font-bold mb-1">طلب التجديد قيد المراجعة</h3>
+              <h3 className="text-yellow-400 font-bold mb-1">
+                {pendingRequest.request_type === 'upgrade' ? 'طلب الترقية قيد المراجعة' : 'طلب التجديد قيد المراجعة'}
+              </h3>
               <p className="text-gray-300 text-sm">
-                تم إرسال طلب التجديد وسيظهر في لوحة الإدارة للموافقة.
+                {pendingRequest.request_type === 'upgrade'
+                  ? 'تم إرسال طلب الترقية وسيظهر في لوحة الإدارة للموافقة أو الرفض.'
+                  : 'تم إرسال طلب التجديد وسيظهر في لوحة الإدارة للموافقة.'}
               </p>
             </div>
           </div>
@@ -427,7 +431,9 @@ function SubscriptionPage() {
             disabled={!!pendingRequest || loading}
           >
             <Icon name="sync" className="ml-2" />
-            {pendingRequest ? 'طلب التجديد قيد المراجعة' : 'تجديد الاشتراك'}
+            {pendingRequest
+              ? (pendingRequest.request_type === 'upgrade' ? 'طلب الترقية قيد المراجعة' : 'طلب التجديد قيد المراجعة')
+              : 'تجديد الاشتراك'}
           </Button>
         </div>
 
@@ -436,6 +442,10 @@ function SubscriptionPage() {
           onClose={() => setRenewalOpen(false)}
           onSubmit={handleRenewalSubmit}
           planOptions={subscriptionData?.plan_options ?? []}
+          currentSeatsLimit={subscription?.seats_limit ?? null}
+          currentStorageLimitGb={storage?.limit_gb ?? null}
+          pricePerSeat={subscription?.price_per_seat ?? 0}
+          pricePerStorageGb={subscription?.price_per_storage_gb ?? 0}
           isLoading={renewalSubmitting}
         />
       </div>

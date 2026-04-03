@@ -48,6 +48,7 @@ const getNotificationEndpoint = () => {
   if (userType === 'student') return '/api/v1/student/notifications';
   if (userType === 'parent') return '/api/v1/parent/notifications';
   if (userType === 'secretary') return '/api/v1/secretary/notifications';
+  if (userType === 'academy') return '/api/v1/academy/notifications';
   return '/api/v1/teacher/notifications';
 };
 
