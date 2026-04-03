@@ -21,7 +21,7 @@ use Carbon\Carbon;
  */
 class SubscriptionCanRenewSpecification extends AbstractSpecification
 {
-    public function isSatisfiedBy(mixed $candidate): bool
+    public function isSatisfiedBy(mixed $candidate, int $depth = 0): bool
     {
         if (!$candidate instanceof Academy && !$candidate instanceof Teacher) {
             return false;

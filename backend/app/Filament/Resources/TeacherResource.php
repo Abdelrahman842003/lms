@@ -13,6 +13,7 @@ use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Placeholder;
 use Filament\Schemas\Schema;
 use Filament\Actions\Action;
 use Filament\Actions\ViewAction;
@@ -150,6 +151,21 @@ class TeacherResource extends BaseResource
 
                 Section::make('معلومات الاشتراك')
                     ->schema([
+                        Toggle::make('update_subscription_duration')
+                            ->label('تعديل مدة الاشتراك؟')
+                            ->default(false)
+                            ->dehydrated(false)
+                            ->visible(fn ($record): bool => $record !== null)
+                            ->helperText('إذا كان الاختيار "لا" سيتم تعديل الباقة/الحدود فقط على المدة المتبقية دون بدء دورة جديدة.')
+                            ->reactive(),
+
+                        Placeholder::make('subscription_pricing_mode_notice')
+                            ->label('تنبيه طريقة الحساب')
+                            ->content(fn ($get): string => ($get('update_subscription_duration') === false && ! empty($get('plan_expires_at')))
+                                ? 'يتم الآن احتساب الرسوم على المدة المتبقية فقط.'
+                                : 'يتم الآن احتساب الرسوم على مدة الاشتراك المختارة.')
+                            ->visible(fn ($record): bool => $record !== null),
+
                         Select::make('plan_selection')
                             ->label('مدة الاشتراك')
                             ->options(fn () => [
@@ -162,9 +178,15 @@ class TeacherResource extends BaseResource
                             ])
                             ->default('trial')
                             ->reactive()
+                            ->disabled(fn ($get, string $operation): bool => $operation === 'edit' && ! (bool) ($get('update_subscription_duration') ?? false))
                             ->dehydrated(false)
                             ->afterStateHydrated(function ($component, $state, $record) {
                                 if (!$record) return;
+
+                                if (in_array((string) ($record->subscription_period ?? ''), ['monthly', 'quarterly', 'semi_annual', 'annual'], true)) {
+                                    $component->state((string) $record->subscription_period);
+                                    return;
+                                }
                                 
                                 if ($record->plan_type === 'trial') {
                                     $component->state('trial');
@@ -239,6 +261,7 @@ class TeacherResource extends BaseResource
                             ->label('عدد الشهور (مخصص)')
                             ->numeric()
                             ->dehydrated(false)
+                            ->disabled(fn ($get, string $operation): bool => $operation === 'edit' && ! (bool) ($get('update_subscription_duration') ?? false))
                             ->visible(fn ($get) => $get('plan_type') === 'custom')
                             ->reactive()
                             ->afterStateUpdated(function ($state, $set, $get) {
@@ -280,6 +303,7 @@ class TeacherResource extends BaseResource
                             ->label('تاريخ انتهاء الاشتراك')
                             ->default(now()->addDays(\App\Domains\Application\Services\HelperService::getTrialPeriodDays())->format('Y-m-d'))
                             ->required()
+                            ->disabled(fn ($get, string $operation): bool => $operation === 'edit' && ! (bool) ($get('update_subscription_duration') ?? false))
                             ->native(false)
                             ->displayFormat('d/m/Y')
                             ->readOnly(fn ($get) => $get('plan_selection') !== 'custom' && $get('plan_selection') !== null)
@@ -298,13 +322,7 @@ class TeacherResource extends BaseResource
                             ->reactive()
                             ->afterStateUpdated(function ($state, $set, $get) {
                                 if ($state) {
-                                    $months = match ($get('plan_selection')) {
-                                        'monthly' => 1,
-                                        'quarterly' => 3,
-                                        'semi_annual' => 6,
-                                        'annual' => 12,
-                                        default => (int) $get('custom_period_months'),
-                                    };
+                                    $months = self::resolveBillingMonths(fn (string $key) => $get($key));
                                     
                                     if ($months > 0) {
                                         try {
@@ -342,6 +360,9 @@ class TeacherResource extends BaseResource
                             ->prefix('ج.م')
                             ->default(0)
                             ->reactive()
+                            ->helperText(fn ($get): string => ($get('update_subscription_duration') === false && ! empty($get('plan_expires_at')))
+                                ? 'الحساب مبني على المدة المتبقية: ' . self::resolveRemainingMonthsFromExpiry($get('plan_expires_at')) . ' شهر.'
+                                : 'الحساب مبني على مدة الاشتراك المحددة حالياً.')
                             ->afterStateUpdated(function ($state, $get, $set) {
                                 self::syncBillingNotes(
                                     fn (string $key) => $get($key),
@@ -421,13 +442,7 @@ class TeacherResource extends BaseResource
                             ->suffix('GB')
                             ->reactive()
                             ->afterStateUpdated(function ($state, $get, $set) {
-                                $months = match ($get('plan_selection')) {
-                                    'monthly'     => 1,
-                                    'quarterly'   => 3,
-                                    'semi_annual' => 6,
-                                    'annual'      => 12,
-                                    default       => (int) $get('custom_period_months'),
-                                };
+                                $months = self::resolveBillingMonths(fn (string $key) => $get($key));
                                 if ($months > 0) {
                                     try {
                                         $pricePerStudent  = (float) Setting::where('key', 'teacher_price_per_student')->value('value') ?: 60;
@@ -476,13 +491,7 @@ class TeacherResource extends BaseResource
                             ->default('percent')
                             ->reactive()
                             ->afterStateUpdated(function ($state, $get, $set) {
-                                $months = match ($get('plan_selection')) {
-                                    'monthly'     => 1,
-                                    'quarterly'   => 3,
-                                    'semi_annual' => 6,
-                                    'annual'      => 12,
-                                    default       => (int) $get('custom_period_months'),
-                                };
+                                $months = self::resolveBillingMonths(fn (string $key) => $get($key));
 
                                 if ($months <= 0) {
                                     return;
@@ -535,13 +544,7 @@ class TeacherResource extends BaseResource
                             ->default('general')
                             ->reactive()
                             ->afterStateUpdated(function ($state, $get, $set) {
-                                $months = match ($get('plan_selection')) {
-                                    'monthly'     => 1,
-                                    'quarterly'   => 3,
-                                    'semi_annual' => 6,
-                                    'annual'      => 12,
-                                    default       => (int) $get('custom_period_months'),
-                                };
+                                $months = self::resolveBillingMonths(fn (string $key) => $get($key));
 
                                 if ($months <= 0) {
                                     return;
@@ -595,13 +598,7 @@ class TeacherResource extends BaseResource
                                 ? 'أدخل مبلغ خصم ثابت.'
                                 : 'أدخل نسبة خصم من 0 إلى 100.')
                             ->afterStateUpdated(function ($state, $get, $set) {
-                                $months = match ($get('plan_selection')) {
-                                    'monthly'     => 1,
-                                    'quarterly'   => 3,
-                                    'semi_annual' => 6,
-                                    'annual'      => 12,
-                                    default       => (int) $get('custom_period_months'),
-                                };
+                                $months = self::resolveBillingMonths(fn (string $key) => $get($key));
                                 if ($months > 0) {
                                     try {
                                         $pricePerStudent   = (float) Setting::where('key', 'teacher_price_per_student')->value('value') ?: 60;
@@ -835,14 +832,14 @@ class TeacherResource extends BaseResource
 
     public static function resolvePlanTypeForDisplay(Teacher $teacher): string
     {
-        $planType = trim((string) ($teacher->plan_type ?? ''));
-        if (in_array($planType, ['trial', 'term', 'custom', 'free'], true)) {
-            return $planType;
-        }
-
         $subscriptionPeriod = trim((string) ($teacher->subscription_period ?? ''));
         if (in_array($subscriptionPeriod, ['monthly', 'quarterly', 'semi_annual', 'annual'], true)) {
             return 'term';
+        }
+
+        $planType = trim((string) ($teacher->plan_type ?? ''));
+        if (in_array($planType, ['trial', 'term', 'custom', 'free'], true)) {
+            return $planType;
         }
 
         $hasExpiryDate = ! is_null($teacher->plan_expires_at);
@@ -865,15 +862,19 @@ class TeacherResource extends BaseResource
             : ($current('plan_max_students') ?? '50');
 
         $trialDays = \App\Domains\Application\Services\HelperService::getTrialPeriodDays();
-        $period = match ($current('plan_selection')) {
-            'trial'       => 'تجريبي (' . $trialDays . ' يوم)',
-            'monthly'     => 'شهري',
-            'quarterly'   => 'ربع سنوي',
-            'semi_annual' => 'نصف سنوي',
-            'annual'      => 'سنوي',
-            'custom'      => 'مخصص',
-            default       => 'تجريبي',
-        };
+        if ($current('update_subscription_duration') === false && ! empty($current('plan_expires_at'))) {
+            $period = 'المتبقي ' . self::resolveRemainingMonthsFromExpiry($current('plan_expires_at')) . ' شهر';
+        } else {
+            $period = match ($current('plan_selection')) {
+                'trial'       => 'تجريبي (' . $trialDays . ' يوم)',
+                'monthly'     => 'شهري',
+                'quarterly'   => 'ربع سنوي',
+                'semi_annual' => 'نصف سنوي',
+                'annual'      => 'سنوي',
+                'custom'      => 'مخصص',
+                default       => 'تجريبي',
+            };
+        }
 
         $feeAfter = max(0, (float) ($current('subscription_fee') ?? 0));
         $discountValue = (float) ($current('discount_percent') ?? 0);
@@ -901,6 +902,40 @@ class TeacherResource extends BaseResource
             "المتبقي: {$remaining} ج.م";
 
         $set('billing_notes', $note);
+    }
+
+    private static function resolveBillingMonths(callable $get): int
+    {
+        if ($get('update_subscription_duration') === false) {
+            return self::resolveRemainingMonthsFromExpiry($get('plan_expires_at'));
+        }
+
+        $planSelection = (string) ($get('plan_selection') ?? '');
+        $subscriptionPeriod = (string) ($get('subscription_period') ?? '');
+        $periodKey = $planSelection !== '' ? $planSelection : $subscriptionPeriod;
+
+        return match ($periodKey) {
+            'monthly' => 1,
+            'quarterly' => 3,
+            'semi_annual' => 6,
+            'annual' => 12,
+            default => max(0, (int) ($get('custom_period_months') ?? 0)),
+        };
+    }
+
+    private static function resolveRemainingMonthsFromExpiry(mixed $planExpiresAt): int
+    {
+        if (empty($planExpiresAt)) {
+            return 1;
+        }
+
+        $daysRemaining = (int) now()->startOfDay()->diffInDays(\Carbon\Carbon::parse($planExpiresAt)->startOfDay(), false);
+
+        if ($daysRemaining <= 0) {
+            return 1;
+        }
+
+        return max(1, (int) ceil($daysRemaining / 30));
     }
 
     private static function formatStorageLabel(mixed $storageLimitGb): string

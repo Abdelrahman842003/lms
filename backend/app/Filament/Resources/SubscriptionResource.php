@@ -530,6 +530,16 @@ class SubscriptionResource extends BaseResource
         $planType = (string) data_get($subscriber, 'plan_type', '');
         $subscriptionPeriod = (string) data_get($subscriber, 'subscription_period', '');
 
+        if (in_array($subscriptionPeriod, ['monthly', 'quarterly', 'semi_annual', 'annual'], true)) {
+            return match ($subscriptionPeriod) {
+                'monthly' => 'شهري (1 شهر)',
+                'quarterly' => 'ربع سنوي (3 شهور)',
+                'semi_annual' => 'نصف سنوي (6 شهور)',
+                'annual' => 'سنوي (1 سنة)',
+                default => 'دوري',
+            };
+        }
+
         if ($planType === 'trial') {
             return 'تجريبي';
         }
@@ -539,13 +549,7 @@ class SubscriptionResource extends BaseResource
         }
 
         if ($planType === 'term') {
-            return match ($subscriptionPeriod) {
-                'monthly' => 'شهري (1 شهر)',
-                'quarterly' => 'ربع سنوي (3 شهور)',
-                'semi_annual' => 'نصف سنوي (6 شهور)',
-                'annual' => 'سنوي (1 سنة)',
-                default => 'دوري',
-            };
+            return 'دوري';
         }
 
         $inferredDuration = static::inferDurationLabel($record);

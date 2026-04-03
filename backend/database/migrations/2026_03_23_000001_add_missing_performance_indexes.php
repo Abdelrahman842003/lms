@@ -17,7 +17,8 @@ return new class extends Migration
         // ============================================
         // Enrollments Table Indexes
         // ============================================
-        Schema::table('enrollments', function (Blueprint $table) {
+        if (Schema::hasTable('enrollments')) {
+            Schema::table('enrollments', function (Blueprint $table) {
             // Index for student active enrollments queries (StudentService, DashboardService)
             if (!$this->hasIndex('enrollments', 'enrollments_student_active_index')) {
                 $table->index(['student_id', 'is_active'], 'enrollments_student_active_index');
@@ -32,12 +33,14 @@ return new class extends Migration
             if (!$this->hasIndex('enrollments', 'enrollments_academy_teacher_active_index')) {
                 $table->index(['academy_id', 'teacher_id', 'is_active'], 'enrollments_academy_teacher_active_index');
             }
-        });
+            });
+        }
 
         // ============================================
         // Video Access Grants Table Indexes
         // ============================================
-        Schema::table('video_access_grants', function (Blueprint $table) {
+        if (Schema::hasTable('video_access_grants')) {
+            Schema::table('video_access_grants', function (Blueprint $table) {
             // Index for checking student access to videos
             if (!$this->hasIndex('video_access_grants', 'vag_student_video_index')) {
                 $table->index(['student_id', 'video_id'], 'vag_student_video_index');
@@ -47,12 +50,14 @@ return new class extends Migration
             if (!$this->hasIndex('video_access_grants', 'vag_revoked_index')) {
                 $table->index(['revoked_at'], 'vag_revoked_index');
             }
-        });
+            });
+        }
 
         // ============================================
         // Video Reminders Table Indexes
         // ============================================
-        Schema::table('video_reminders', function (Blueprint $table) {
+        if (Schema::hasTable('video_reminders')) {
+            Schema::table('video_reminders', function (Blueprint $table) {
             // Index for pending reminders processing (VideoReminderService)
             if (!$this->hasIndex('video_reminders', 'vr_pending_index')) {
                 $table->index(['next_reminder_at', 'stopped_at'], 'vr_pending_index');
@@ -62,12 +67,14 @@ return new class extends Migration
             if (!$this->hasIndex('video_reminders', 'vr_student_video_index')) {
                 $table->index(['student_id', 'video_id'], 'vr_student_video_index');
             }
-        });
+            });
+        }
 
         // ============================================
         // Payment Logs Table Indexes
         // ============================================
-        Schema::table('payment_logs', function (Blueprint $table) {
+        if (Schema::hasTable('payment_logs')) {
+            Schema::table('payment_logs', function (Blueprint $table) {
             // Index for teacher payment reports
             if (!$this->hasIndex('payment_logs', 'payment_logs_teacher_status_date_index')) {
                 $table->index(['teacher_id', 'status', 'confirmed_at'], 'payment_logs_teacher_status_date_index');
@@ -77,22 +84,26 @@ return new class extends Migration
             if (!$this->hasIndex('payment_logs', 'payment_logs_student_index')) {
                 $table->index(['student_id', 'created_at'], 'payment_logs_student_index');
             }
-        });
+            });
+        }
 
         // ============================================
         // Video Watch Progress Table Indexes
         // ============================================
-        Schema::table('video_watch_progress', function (Blueprint $table) {
+        if (Schema::hasTable('video_watch_progress')) {
+            Schema::table('video_watch_progress', function (Blueprint $table) {
             // Index for checking student progress on videos (VideoReminderService)
             if (!$this->hasIndex('video_watch_progress', 'vwp_student_video_index')) {
                 $table->index(['student_id', 'video_id'], 'vwp_student_video_index');
             }
-        });
+            });
+        }
 
         // ============================================
         // Attendances Table Indexes
         // ============================================
-        Schema::table('attendances', function (Blueprint $table) {
+        if (Schema::hasTable('attendances')) {
+            Schema::table('attendances', function (Blueprint $table) {
             // Index for lecture attendance stats (DashboardService)
             if (!$this->hasIndex('attendances', 'attendances_lecture_status_index')) {
                 $table->index(['lecture_id', 'status'], 'attendances_lecture_status_index');
@@ -102,12 +113,14 @@ return new class extends Migration
             if (!$this->hasIndex('attendances', 'attendances_student_index')) {
                 $table->index(['student_id', 'created_at'], 'attendances_student_index');
             }
-        });
+            });
+        }
 
         // ============================================
         // Exam Results Table Indexes
         // ============================================
-        Schema::table('exam_results', function (Blueprint $table) {
+        if (Schema::hasTable('exam_results')) {
+            Schema::table('exam_results', function (Blueprint $table) {
             // Index for student exam history
             if (!$this->hasIndex('exam_results', 'exam_results_student_index')) {
                 $table->index(['student_id', 'created_at'], 'exam_results_student_index');
@@ -117,7 +130,8 @@ return new class extends Migration
             if (!$this->hasIndex('exam_results', 'exam_results_exam_index')) {
                 $table->index(['exam_id', 'score'], 'exam_results_exam_index');
             }
-        });
+            });
+        }
     }
 
     /**
@@ -126,7 +140,8 @@ return new class extends Migration
     public function down(): void
     {
         // Enrollments
-        Schema::table('enrollments', function (Blueprint $table) {
+        if (Schema::hasTable('enrollments')) {
+            Schema::table('enrollments', function (Blueprint $table) {
             if ($this->hasIndex('enrollments', 'enrollments_student_active_index')) {
                 $table->dropIndex('enrollments_student_active_index');
             }
@@ -136,64 +151,77 @@ return new class extends Migration
             if ($this->hasIndex('enrollments', 'enrollments_academy_teacher_active_index')) {
                 $table->dropIndex('enrollments_academy_teacher_active_index');
             }
-        });
+            });
+        }
 
         // Video Access Grants
-        Schema::table('video_access_grants', function (Blueprint $table) {
+        if (Schema::hasTable('video_access_grants')) {
+            Schema::table('video_access_grants', function (Blueprint $table) {
             if ($this->hasIndex('video_access_grants', 'vag_student_video_index')) {
                 $table->dropIndex('vag_student_video_index');
             }
             if ($this->hasIndex('video_access_grants', 'vag_revoked_index')) {
                 $table->dropIndex('vag_revoked_index');
             }
-        });
+            });
+        }
 
         // Video Reminders
-        Schema::table('video_reminders', function (Blueprint $table) {
+        if (Schema::hasTable('video_reminders')) {
+            Schema::table('video_reminders', function (Blueprint $table) {
             if ($this->hasIndex('video_reminders', 'vr_pending_index')) {
                 $table->dropIndex('vr_pending_index');
             }
             if ($this->hasIndex('video_reminders', 'vr_student_video_index')) {
                 $table->dropIndex('vr_student_video_index');
             }
-        });
+            });
+        }
 
         // Payment Logs
-        Schema::table('payment_logs', function (Blueprint $table) {
+        if (Schema::hasTable('payment_logs')) {
+            Schema::table('payment_logs', function (Blueprint $table) {
             if ($this->hasIndex('payment_logs', 'payment_logs_teacher_status_date_index')) {
                 $table->dropIndex('payment_logs_teacher_status_date_index');
             }
             if ($this->hasIndex('payment_logs', 'payment_logs_student_index')) {
                 $table->dropIndex('payment_logs_student_index');
             }
-        });
+            });
+        }
 
         // Video Watch Progress
-        Schema::table('video_watch_progress', function (Blueprint $table) {
+        if (Schema::hasTable('video_watch_progress')) {
+            Schema::table('video_watch_progress', function (Blueprint $table) {
             if ($this->hasIndex('video_watch_progress', 'vwp_student_video_index')) {
                 $table->dropIndex('vwp_student_video_index');
             }
-        });
+            });
+        }
 
         // Attendances
-        Schema::table('attendances', function (Blueprint $table) {
+        if (Schema::hasTable('attendances')) {
+            Schema::table('attendances', function (Blueprint $table) {
             if ($this->hasIndex('attendances', 'attendances_lecture_status_index')) {
                 $table->dropIndex('attendances_lecture_status_index');
             }
             if ($this->hasIndex('attendances', 'attendances_student_index')) {
                 $table->dropIndex('attendances_student_index');
             }
-        });
+            });
+        }
 
         // Exam Results
-        Schema::table('exam_results', function (Blueprint $table) {
+        if (Schema::hasTable('exam_results')) {
+            Schema::table('exam_results', function (Blueprint $table) {
             if ($this->hasIndex('exam_results', 'exam_results_student_index')) {
                 $table->dropIndex('exam_results_student_index');
             }
             if ($this->hasIndex('exam_results', 'exam_results_exam_index')) {
                 $table->dropIndex('exam_results_exam_index');
             }
-        });
+            });
+        }
     }
 
     /**
@@ -201,6 +229,10 @@ return new class extends Migration
      */
     private function hasIndex(string $table, string $indexName): bool
     {
+        if (! Schema::hasTable($table)) {
+            return false;
+        }
+
         $indexes = Schema::getIndexes($table);
         foreach ($indexes as $index) {
             if ($index['name'] === $indexName) {
