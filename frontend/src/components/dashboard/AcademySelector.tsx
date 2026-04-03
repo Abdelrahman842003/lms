@@ -70,8 +70,14 @@ export function AcademySelector({ isOpen, onClose }: AcademySelectorProps) {
          }
       }
 
-      // Prepend "Independent" option if active
+      // Prepend "Independent" option if active (avoid duplicates)
       if (isIndependentActive) {
+        const hasIndependentOption = academiesList.some((academy) => {
+          const id = String(academy.id ?? '').toLowerCase();
+          return academy.id === null || id === 'independent';
+        });
+
+        if (!hasIndependentOption) {
         const independentAcademy: Academy = {
           id: 'independent',
           name: 'شخصي (مستقل)',
@@ -79,6 +85,7 @@ export function AcademySelector({ isOpen, onClose }: AcademySelectorProps) {
           is_active: true
         };
         academiesList.unshift(independentAcademy);
+        }
       }
       
       setAcademies(academiesList);
@@ -135,7 +142,7 @@ export function AcademySelector({ isOpen, onClose }: AcademySelectorProps) {
             </div>
           ) : (
             <div className="ux-space-y-3">
-              {academies.map((academy) => {
+              {academies.map((academy, index) => {
                 // Helper to check if active (handles boolean, string 'true'/'false', 1/0)
                 const isActive = (val: any) => {
                   if (val === true || val === 1 || val === '1' || val === 'true') return true;
@@ -157,7 +164,7 @@ export function AcademySelector({ isOpen, onClose }: AcademySelectorProps) {
                 }
                 return (
                   <button
-                    key={academy.id || 'independent'}
+                    key={`${String(academy.id ?? 'independent').toLowerCase()}-${academy.name}-${index}`}
                     onClick={() => !isSuspended && handleSelectAcademy(academy)}
                     disabled={isSuspended}
                     className={`ux-w-full ux-flex ux-items-center ux-gap-4 ux-p-4 ux-rounded-xl ux-border ux-transition-all ${
