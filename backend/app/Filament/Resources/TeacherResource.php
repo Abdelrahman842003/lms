@@ -187,6 +187,12 @@ class TeacherResource extends BaseResource
                                     $component->state((string) $record->subscription_period);
                                     return;
                                 }
+
+                                $inferredPlanSelection = self::inferPlanSelectionFromTeacher($record);
+                                if ($inferredPlanSelection !== null) {
+                                    $component->state($inferredPlanSelection);
+                                    return;
+                                }
                                 
                                 if ($record->plan_type === 'trial') {
                                     $component->state('trial');
@@ -881,6 +887,11 @@ class TeacherResource extends BaseResource
             return 'term';
         }
 
+        $inferredPlanSelection = self::inferPlanSelectionFromTeacher($teacher);
+        if (in_array($inferredPlanSelection, ['monthly', 'quarterly', 'semi_annual', 'annual'], true)) {
+            return 'term';
+        }
+
         $planType = trim((string) ($teacher->plan_type ?? ''));
         if (in_array($planType, ['trial', 'term', 'custom', 'free'], true)) {
             return $planType;
@@ -895,6 +906,35 @@ class TeacherResource extends BaseResource
         }
 
         return '';
+    }
+
+    private static function inferPlanSelectionFromTeacher(Teacher $teacher): ?string
+    {
+        $expiryRaw = $teacher->plan_expires_at;
+        if (empty($expiryRaw)) {
+            return null;
+        }
+
+        $daysRemaining = (int) now()->startOfDay()->diffInDays(\Carbon\Carbon::parse($expiryRaw)->startOfDay(), false);
+        if ($daysRemaining <= 0) {
+            return null;
+        }
+
+        $trialDays = \App\Domains\Application\Services\HelperService::getTrialPeriodDays();
+        $amountDue = (float) ($teacher->subscription_fee ?? 0);
+        $amountPaid = (float) ($teacher->paid_amount ?? 0);
+
+        if ($amountDue <= 0.0 && $amountPaid <= 0.0 && $daysRemaining <= ($trialDays + 1)) {
+            return 'trial';
+        }
+
+        return match (true) {
+            $daysRemaining <= 45 => 'monthly',
+            $daysRemaining <= 135 => 'quarterly',
+            $daysRemaining <= 225 => 'semi_annual',
+            $daysRemaining <= 450 => 'annual',
+            default => null,
+        };
     }
 
     private static function syncBillingNotes(callable $get, callable $set, array $overrides = []): void

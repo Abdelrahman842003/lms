@@ -581,6 +581,16 @@ class SubscriptionResource extends BaseResource
             };
         }
 
+        $inferredDuration = static::inferDurationLabel($record);
+        if ($inferredDuration !== null) {
+            return $inferredDuration;
+        }
+
+        $inferredFromSubscriber = static::inferDurationLabelFromSubscriber($subscriber);
+        if ($inferredFromSubscriber !== null) {
+            return $inferredFromSubscriber;
+        }
+
         if ($planType === 'trial') {
             return 'تجريبي';
         }
@@ -591,11 +601,6 @@ class SubscriptionResource extends BaseResource
 
         if ($planType === 'term') {
             return 'دوري';
-        }
-
-        $inferredDuration = static::inferDurationLabel($record);
-        if ($inferredDuration !== null) {
-            return $inferredDuration;
         }
 
         return 'غير محدد';
@@ -681,6 +686,39 @@ class SubscriptionResource extends BaseResource
             3 => 'ربع سنوي (3 شهور)',
             6 => 'نصف سنوي (6 شهور)',
             12 => 'سنوي (1 سنة)',
+            default => null,
+        };
+    }
+
+    private static function inferDurationLabelFromSubscriber(mixed $subscriber): ?string
+    {
+        if ($subscriber === null) {
+            return null;
+        }
+
+        $expiresAt = data_get($subscriber, 'plan_expires_at');
+        if ($expiresAt === null) {
+            return null;
+        }
+
+        $daysRemaining = (int) now()->startOfDay()->diffInDays(\Carbon\Carbon::parse($expiresAt)->startOfDay(), false);
+        if ($daysRemaining <= 0) {
+            return null;
+        }
+
+        $amountDue = (float) data_get($subscriber, 'subscription_fee', 0);
+        $amountPaid = (float) data_get($subscriber, 'paid_amount', 0);
+        $trialDays = (int) HelperService::getTrialPeriodDays();
+
+        if ($amountDue <= 0.0 && $amountPaid <= 0.0 && $daysRemaining <= ($trialDays + 1)) {
+            return 'تجريبي';
+        }
+
+        return match (true) {
+            $daysRemaining <= 45 => 'شهري (1 شهر)',
+            $daysRemaining <= 135 => 'ربع سنوي (3 شهور)',
+            $daysRemaining <= 225 => 'نصف سنوي (6 شهور)',
+            $daysRemaining <= 450 => 'سنوي (1 سنة)',
             default => null,
         };
     }

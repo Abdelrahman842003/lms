@@ -117,8 +117,10 @@ class EditSubscription extends EditRecord
 
         $difference = round($newFeeForRemaining - $oldFeeForRemaining, 2);
 
-        $payload['plan_type'] = (string) ($subscriber->plan_type ?? '');
-        $payload['subscription_period'] = $subscriber->subscription_period;
+        [$normalizedPlanType, $normalizedSubscriptionPeriod] = $this->resolveNormalizedDurationState($subscriber);
+
+        $payload['plan_type'] = $normalizedPlanType;
+        $payload['subscription_period'] = $normalizedSubscriptionPeriod;
         $payload['plan_expires_at'] = $this->normalizeDateString($subscriber->plan_expires_at);
     $payload['subscription_fee'] = max($effectivePaid, round((float) ($subscriber->subscription_fee ?? 0) + $difference, 2));
 
@@ -131,6 +133,56 @@ class EditSubscription extends EditRecord
         }
 
         return $payload;
+    }
+
+    private function resolveNormalizedDurationState(Teacher|Academy $subscriber): array
+    {
+        $planType = (string) ($subscriber->plan_type ?? '');
+        $subscriptionPeriod = (string) ($subscriber->subscription_period ?? '');
+
+        if ($subscriptionPeriod !== '' || $planType !== 'trial') {
+            return [$planType, $subscriptionPeriod !== '' ? $subscriptionPeriod : null];
+        }
+
+        $inferredPeriod = $this->inferSubscriptionPeriodFromSnapshot(
+            $subscriber->plan_expires_at,
+            (float) ($subscriber->subscription_fee ?? 0),
+            (float) ($subscriber->paid_amount ?? 0)
+        );
+
+        if ($inferredPeriod !== null) {
+            return ['term', $inferredPeriod];
+        }
+
+        return [$planType, null];
+    }
+
+    private function inferSubscriptionPeriodFromSnapshot(mixed $planExpiresAt, float $amountDue, float $amountPaid): ?string
+    {
+        if (empty($planExpiresAt)) {
+            return null;
+        }
+
+        $expiry = Carbon::parse($planExpiresAt)->startOfDay();
+        $today = now()->startOfDay();
+        $daysRemaining = (int) $today->diffInDays($expiry, false);
+
+        if ($daysRemaining <= 0) {
+            return null;
+        }
+
+        $trialDays = (int) \App\Domains\Application\Services\HelperService::getTrialPeriodDays();
+        if ($amountDue <= 0.0 && $amountPaid <= 0.0 && $daysRemaining <= ($trialDays + 1)) {
+            return null;
+        }
+
+        return match (true) {
+            $daysRemaining <= 45 => 'monthly',
+            $daysRemaining <= 135 => 'quarterly',
+            $daysRemaining <= 225 => 'semi_annual',
+            $daysRemaining <= 450 => 'annual',
+            default => null,
+        };
     }
 
     private function resolveEffectivePaidAmount(array $data, Teacher|Academy $subscriber): float
