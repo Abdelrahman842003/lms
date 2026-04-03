@@ -74,6 +74,18 @@ class ViewSubscription extends ViewRecord
                             ->label('المقاعد المتبقية')
                             ->state(fn (): string => $this->getRemainingQuotaLabel()),
 
+                        TextEntry::make('purchased_storage_limit')
+                            ->label('المساحة المشتراة')
+                            ->state(fn (): string => $this->getPurchasedStorageLabel()),
+
+                        TextEntry::make('used_storage')
+                            ->label('المساحة المستخدمة')
+                            ->state(fn (): string => $this->getUsedStorageLabel()),
+
+                        TextEntry::make('remaining_storage')
+                            ->label('المساحة المتبقية')
+                            ->state(fn (): string => $this->getRemainingStorageLabel()),
+
                         TextEntry::make('plan_expires_at')
                             ->label('تاريخ انتهاء الاشتراك')
                             ->state(fn (): string => $this->getPlanExpiryLabel()),
@@ -287,6 +299,43 @@ class ViewSubscription extends ViewRecord
             0,
             (float) ($record->amount_due ?? 0) - (float) ($record->amount_paid ?? 0)
         );
+    }
+
+    private function getPurchasedStorageLabel(): string
+    {
+        $subscriber = $this->getRecord()?->subscriber;
+        $limitGb = data_get($subscriber, 'storage_limit_gb');
+
+        if (! is_numeric($limitGb) || (float) $limitGb <= 0) {
+            return 'غير محدود';
+        }
+
+        return rtrim(rtrim(number_format((float) $limitGb, 2, '.', ''), '0'), '.') . ' GB';
+    }
+
+    private function getUsedStorageLabel(): string
+    {
+        $subscriber = $this->getRecord()?->subscriber;
+        $usedBytes = (int) data_get($subscriber, 'storage_used_bytes', 0);
+        $usedGb = $usedBytes / 1_073_741_824;
+
+        return rtrim(rtrim(number_format($usedGb, 2, '.', ''), '0'), '.') . ' GB';
+    }
+
+    private function getRemainingStorageLabel(): string
+    {
+        $subscriber = $this->getRecord()?->subscriber;
+        $limitGb = data_get($subscriber, 'storage_limit_gb');
+
+        if (! is_numeric($limitGb) || (float) $limitGb <= 0) {
+            return 'غير محدود';
+        }
+
+        $usedBytes = (int) data_get($subscriber, 'storage_used_bytes', 0);
+        $usedGb = $usedBytes / 1_073_741_824;
+        $remainingGb = max(0, (float) $limitGb - $usedGb);
+
+        return rtrim(rtrim(number_format($remainingGb, 2, '.', ''), '0'), '.') . ' GB';
     }
 
     private function getSubscriptionPlanLabel(): string

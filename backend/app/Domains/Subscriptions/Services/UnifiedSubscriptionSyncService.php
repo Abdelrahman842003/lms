@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Subscriptions\Services;
 
+use App\Domains\Application\Models\Setting;
 use App\Domains\Auth\Models\Academy;
 use App\Domains\Auth\Models\Teacher;
 use App\Domains\Subscriptions\Enums\SubscriptionType;
@@ -27,7 +28,9 @@ class UnifiedSubscriptionSyncService
         $quotaLimit = $academy->is_unlimited_students ? null : (int) ($academy->plan_max_students ?? 0);
         $amountDue = (float) ($academy->subscription_fee ?? 0);
         $amountPaid = (float) ($academy->paid_amount ?? 0);
-        $costPerSeat = $quotaLimit && $quotaLimit > 0 ? round($amountDue / $quotaLimit, 2) : 0.0;
+        $costPerSeat = $quotaLimit && $quotaLimit > 0
+            ? $this->resolvePricePerStudent(SubscriptionType::ACADEMY->value)
+            : 0.0;
         $seatsCount = (int) ($academy->total_enrollments_count ?? 0);
 
         return Subscription::updateOrCreate(
@@ -65,7 +68,9 @@ class UnifiedSubscriptionSyncService
         $quotaLimit = $teacher->is_unlimited_students ? null : (int) ($teacher->plan_max_students ?? 0);
         $amountDue = (float) ($teacher->subscription_fee ?? 0);
         $amountPaid = (float) ($teacher->paid_amount ?? 0);
-        $costPerSeat = $quotaLimit && $quotaLimit > 0 ? round($amountDue / $quotaLimit, 2) : 0.0;
+        $costPerSeat = $quotaLimit && $quotaLimit > 0
+            ? $this->resolvePricePerStudent(SubscriptionType::TEACHER->value)
+            : 0.0;
         $seatsCount = $teacher->activeEnrollments()->count();
 
         return Subscription::updateOrCreate(
@@ -143,6 +148,19 @@ class UnifiedSubscriptionSyncService
         }
 
         return 'مزامنة تلقائية للاشتراك';
+    }
+
+    private function resolvePricePerStudent(string $subscriptionType): float
+    {
+        $settingKey = $subscriptionType === SubscriptionType::ACADEMY->value
+            ? 'academy_price_per_student'
+            : 'teacher_price_per_student';
+
+        $defaultValue = $subscriptionType === SubscriptionType::ACADEMY->value ? 40.0 : 60.0;
+
+        $configured = (float) (Setting::where('key', $settingKey)->value('value') ?? 0);
+
+        return $configured > 0 ? round($configured, 2) : $defaultValue;
     }
 
 }

@@ -122,14 +122,28 @@ class SubscriptionResource extends BaseResource
 
                 Section::make('معلومات الاشتراك')
                     ->schema([
+                        Toggle::make('update_subscription_duration')
+                            ->label('تعديل مدة الاشتراك؟')
+                            ->default(false)
+                            ->visible(fn ($record): bool => $record !== null)
+                            ->helperText('إذا كان الاختيار "لا" سيتم تعديل الباقة/الحدود فقط على المدة المتبقية دون بدء دورة جديدة.')
+                            ->reactive(),
+
+                        Placeholder::make('subscription_pricing_mode_notice')
+                            ->label('تنبيه طريقة الحساب')
+                            ->content(fn ($get): string => ($get('update_subscription_duration') === false)
+                                ? 'يتم الآن احتساب الرسوم على المدة المتبقية فقط.'
+                                : 'يتم الآن احتساب الرسوم على مدة الاشتراك المختارة.')
+                            ->visible(fn ($record): bool => $record !== null),
+
                         Select::make('plan_selection')
                             ->label('نوع الاشتراك')
                             ->options(fn (): array => static::planOptions())
                             ->placeholder('اختر نوع الاشتراك')
                             ->selectablePlaceholder(false)
                             ->native(false)
-                            ->dehydrated(false)
                             ->reactive()
+                            ->disabled(fn ($get, string $operation): bool => $operation === 'edit' && ! (bool) ($get('update_subscription_duration') ?? false))
                             ->afterStateHydrated(function ($component, $state, ?Subscription $record): void {
                                 if (! $record) {
                                     return;
@@ -150,6 +164,13 @@ class SubscriptionResource extends BaseResource
                                 $notes = (string) ($get('notes') ?? '');
                                 $set('notes', static::upsertPlanLabelInNotes($notes, $planLabel));
                             }),
+
+                        TextInput::make('custom_period_months')
+                            ->label('عدد الشهور (مخصص)')
+                            ->numeric()
+                            ->minValue(1)
+                            ->default(1)
+                            ->visible(fn ($get): bool => (string) ($get('plan_selection') ?? '') === 'custom'),
 
                         Hidden::make('type')
                             ->required(),
@@ -216,6 +237,23 @@ class SubscriptionResource extends BaseResource
                             })
                             ->nullable(),
 
+                        TextInput::make('storage_limit_gb')
+                            ->label('الحد الأقصى للتخزين (GB)')
+                            ->helperText('سعة التخزين المتاحة ضمن الباقة')
+                            ->numeric()
+                            ->minValue(0)
+                            ->default(0)
+                            ->afterStateHydrated(function ($component, $state, ?Subscription $record): void {
+                                if (! $record) {
+                                    return;
+                                }
+
+                                $storage = data_get($record->subscriber, 'storage_limit_gb');
+                                if (is_numeric($storage)) {
+                                    $component->state((int) $storage);
+                                }
+                            }),
+
                         TextInput::make('cost_per_seat')
                             ->label('التكلفة لكل مقعد')
                             ->numeric()
@@ -224,6 +262,9 @@ class SubscriptionResource extends BaseResource
 
                         TextInput::make('amount_due')
                             ->label('المبلغ المستحق')
+                            ->helperText(fn ($get, string $operation): ?string => $operation === 'edit' && ! (bool) ($get('update_subscription_duration') ?? false)
+                                ? 'سيتم ضبط المبلغ تلقائياً حسب الفرق على المدة المتبقية.'
+                                : null)
                             ->numeric()
                             ->prefix('ج.م')
                             ->default(0)
