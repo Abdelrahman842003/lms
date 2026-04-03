@@ -18,6 +18,7 @@ class EditAcademy extends EditRecord
     protected function mutateFormDataBeforeSave(array $data): array
     {
         $data = $this->normalizeDiscountFields($data);
+        $data = $this->hydrateEffectivePaidAmount($data);
         $data = $this->applyPartialBillingWhenDurationUnchanged($data);
 
         return $data;
@@ -65,7 +66,11 @@ class EditAcademy extends EditRecord
         $data['plan_type'] = $this->record->plan_type;
         $data['subscription_period'] = $this->record->subscription_period;
         $data['plan_expires_at'] = $this->normalizeDateString($this->record->plan_expires_at);
-        $data['subscription_fee'] = max(0, round((float) ($this->record->subscription_fee ?? 0) + $difference, 2));
+        $effectivePaid = max(0, round((float) ($data['paid_amount'] ?? $this->record->paid_amount ?? 0), 2));
+        $data['subscription_fee'] = max(
+            $effectivePaid,
+            round((float) ($this->record->subscription_fee ?? 0) + $difference, 2)
+        );
 
         if ($difference !== 0.0) {
             $line = sprintf('تسوية تعديل الباقة على المدة المتبقية (%d شهر): %+0.2f ج.م', $remainingMonths, $difference);
@@ -157,6 +162,17 @@ class EditAcademy extends EditRecord
         }
 
         return Carbon::parse($value)->toDateString();
+    }
+
+    private function hydrateEffectivePaidAmount(array $data): array
+    {
+        $latestSubscriptionPaid = (float) ($this->record->latestSubscription?->amount_paid ?? 0);
+        $recordPaid = (float) ($this->record->paid_amount ?? 0);
+        $formPaid = isset($data['paid_amount']) ? (float) $data['paid_amount'] : 0.0;
+
+        $data['paid_amount'] = max(0, round(max($latestSubscriptionPaid, $recordPaid, $formPaid), 2));
+
+        return $data;
     }
 
     protected function afterSave(): void

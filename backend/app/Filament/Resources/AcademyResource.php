@@ -170,6 +170,14 @@ class AcademyResource extends BaseResource
                                     $set('plan_expires_at', now()->addDays($trialDays)->format('Y-m-d'));
                                     $set('subscription_fee', 0);
                                     $set('paid_amount', 0);
+                                    self::syncBillingNotes(
+                                        fn (string $key) => $get($key),
+                                        fn (string $key, mixed $value): mixed => $set($key, $value),
+                                        [
+                                            'subscription_fee' => 0,
+                                            'paid_amount' => 0,
+                                        ]
+                                    );
                                 } elseif (in_array($state, ['monthly', 'quarterly', 'semi_annual', 'annual'])) {
                                     $set('plan_type', 'term');
                                     $set('subscription_period', $state);
@@ -209,7 +217,13 @@ class AcademyResource extends BaseResource
                                     $discountAmount = $discountType === 'fixed'
                                         ? min($discountableAmount, max(0, $discountValue))
                                         : ($discountableAmount * max(0, min(100, $discountValue)) / 100);
-                                    $set('subscription_fee', max(0, round($gross - $discountAmount, 2)));
+                                    $calculatedFee = max(0, round($gross - $discountAmount, 2));
+                                    $set('subscription_fee', $calculatedFee);
+                                    self::syncBillingNotes(
+                                        fn (string $key) => $get($key),
+                                        fn (string $key, mixed $value): mixed => $set($key, $value),
+                                        ['subscription_fee' => $calculatedFee]
+                                    );
                                 } elseif ($state === 'custom') {
                                     $set('plan_type', 'custom');
                                     $set('subscription_period', null);
@@ -256,7 +270,13 @@ class AcademyResource extends BaseResource
                                     $discountAmount = $discountType === 'fixed'
                                         ? min($discountableAmount, max(0, $discountValue))
                                         : ($discountableAmount * max(0, min(100, $discountValue)) / 100);
-                                    $set('subscription_fee', max(0, round($gross - $discountAmount, 2)));
+                                    $calculatedFee = max(0, round($gross - $discountAmount, 2));
+                                    $set('subscription_fee', $calculatedFee);
+                                    self::syncBillingNotes(
+                                        fn (string $key) => $get($key),
+                                        fn (string $key, mixed $value): mixed => $set($key, $value),
+                                        ['subscription_fee' => $calculatedFee]
+                                    );
                                 }
                             }),
 
@@ -308,7 +328,13 @@ class AcademyResource extends BaseResource
                                         $discountAmount = $discountType === 'fixed'
                                             ? min($discountableAmount, max(0, $discountValue))
                                             : ($discountableAmount * max(0, min(100, $discountValue)) / 100);
-                                        $set('subscription_fee', max(0, round($gross - $discountAmount, 2)));
+                                        $calculatedFee = max(0, round($gross - $discountAmount, 2));
+                                        $set('subscription_fee', $calculatedFee);
+                                        self::syncBillingNotes(
+                                            fn (string $key) => $get($key),
+                                            fn (string $key, mixed $value): mixed => $set($key, $value),
+                                            ['subscription_fee' => $calculatedFee]
+                                        );
                                     }
                                 }
                             }),
@@ -342,6 +368,23 @@ class AcademyResource extends BaseResource
                                     fn (string $key, mixed $value): mixed => $set($key, $value),
                                     ['paid_amount' => $state]
                                 );
+                            }),
+
+                        TextInput::make('unpaid_amount')
+                            ->label('لم يدفع')
+                            ->numeric()
+                            ->prefix('ج.م')
+                            ->default(0)
+                            ->disabled()
+                            ->dehydrated(false)
+                            ->afterStateHydrated(function ($component, $state, $record) {
+                                if (! $record) {
+                                    return;
+                                }
+
+                                $feeAfter = max(0, (float) ($record->subscription_fee ?? 0));
+                                $paid = max(0, (float) ($record->paid_amount ?? 0));
+                                $component->state(round($feeAfter - $paid, 2));
                             }),
 
                         Textarea::make('billing_notes')
@@ -386,6 +429,7 @@ class AcademyResource extends BaseResource
                                         ($discountVal > 0 ? "الخصم ({$scopeLabel}): {$discountLabel}\n" : '') .
                                         "الرسوم بعد الخصم: {$feeAfter} ج.م\n" .
                                         "المدفوع: {$paid} ج.م\n" .
+                    "لم يدفع: {$remaining} ج.م\n" .
                                         "المتبقي: {$remaining} ج.م";
                                 $component->state($note);
                             }),
@@ -777,6 +821,8 @@ class AcademyResource extends BaseResource
         $paid = max(0, (float) ($current('paid_amount') ?? 0));
         $remaining = round($feeAfter - $paid, 2);
 
+        $set('unpaid_amount', $remaining);
+
         $scopeLabel = match ($discountScope) {
             'students' => 'الطلاب',
             'storage' => 'التخزين',
@@ -792,6 +838,7 @@ class AcademyResource extends BaseResource
             ($discountValue > 0 ? "الخصم ({$scopeLabel}): {$discountValueLabel}\n" : '') .
             "الرسوم بعد الخصم: {$feeAfter} ج.م\n" .
             "المدفوع: {$paid} ج.م\n" .
+            "لم يدفع: {$remaining} ج.م\n" .
             "المتبقي: {$remaining} ج.م";
 
         $set('billing_notes', $note);

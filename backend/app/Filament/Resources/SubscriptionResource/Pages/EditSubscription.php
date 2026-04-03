@@ -60,6 +60,8 @@ class EditSubscription extends EditRecord
 
     private function buildSubscriberPayload(array $data, Teacher|Academy $subscriber): array
     {
+        $effectivePaid = $this->resolveEffectivePaidAmount($data, $subscriber);
+
         $planMaxStudents = is_numeric($data['quota_limit'] ?? null)
             ? max(0, (int) $data['quota_limit'])
             : (int) ($subscriber->plan_max_students ?? 0);
@@ -71,9 +73,7 @@ class EditSubscription extends EditRecord
         $payload = [
             'plan_max_students' => $planMaxStudents,
             'storage_limit_gb' => $storageLimitGb,
-            'paid_amount' => is_numeric($data['amount_paid'] ?? null)
-                ? max(0, round((float) $data['amount_paid'], 2))
-                : (float) ($subscriber->paid_amount ?? 0),
+            'paid_amount' => $effectivePaid,
         ];
 
         if ($this->shouldUpdateDuration($data)) {
@@ -82,7 +82,7 @@ class EditSubscription extends EditRecord
             $payload['plan_type'] = $planType;
             $payload['subscription_period'] = $subscriptionPeriod;
             $payload['plan_expires_at'] = $expiresAt;
-            $payload['subscription_fee'] = $planType === 'trial'
+            $computedFee = $planType === 'trial'
                 ? 0.0
                 : $this->calculateFeeForMonths($subscriber, [
                     'plan_max_students' => $planMaxStudents,
@@ -91,6 +91,8 @@ class EditSubscription extends EditRecord
                     'discount_type' => $subscriber->discount_type,
                     'discount_scope' => $subscriber->discount_scope,
                 ], $months);
+
+            $payload['subscription_fee'] = max($effectivePaid, $computedFee);
 
             return $payload;
         }
@@ -118,7 +120,7 @@ class EditSubscription extends EditRecord
         $payload['plan_type'] = (string) ($subscriber->plan_type ?? '');
         $payload['subscription_period'] = $subscriber->subscription_period;
         $payload['plan_expires_at'] = $this->normalizeDateString($subscriber->plan_expires_at);
-        $payload['subscription_fee'] = max(0, round((float) ($subscriber->subscription_fee ?? 0) + $difference, 2));
+    $payload['subscription_fee'] = max($effectivePaid, round((float) ($subscriber->subscription_fee ?? 0) + $difference, 2));
 
         if ($difference !== 0.0) {
             $line = sprintf('تسوية تعديل الباقة على المدة المتبقية (%d شهر): %+0.2f ج.م', $remainingMonths, $difference);
@@ -129,6 +131,15 @@ class EditSubscription extends EditRecord
         }
 
         return $payload;
+    }
+
+    private function resolveEffectivePaidAmount(array $data, Teacher|Academy $subscriber): float
+    {
+        $subscriberPaid = (float) ($subscriber->paid_amount ?? 0);
+        $subscriptionPaid = (float) ($this->record->amount_paid ?? 0);
+        $formPaid = is_numeric($data['amount_paid'] ?? null) ? (float) $data['amount_paid'] : 0.0;
+
+        return max(0, round(max($subscriberPaid, $subscriptionPaid, $formPaid), 2));
     }
 
     private function shouldUpdateDuration(array $data): bool
