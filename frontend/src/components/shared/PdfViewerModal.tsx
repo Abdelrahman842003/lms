@@ -1,48 +1,8 @@
 'use client';
 
-/**
- * PdfViewerModal
- * ─────────────────────────────────────────────────────────────────────────────
- * A full-screen modal PDF viewer with:
- *   • Zoom in/out + fit-page / fit-width
- *   • Page navigation
- *   • Text search (highlight matches)
- *   • Text highlight (select + click toolbar button)
- *   • Dark overlay backdrop
- *   • Lazy-loads the heavy pdfjs-dist only on the client
- *
- * Usage:
- *   <PdfViewerModal
- *     open={open}
- *     url={signedUrl}           // pre-fetched signed URL
- *     fileName="lecture.pdf"
- *     onClose={() => setOpen(false)}
- *   />
- *
- * The component is completely self-contained – no store, no context.
- */
-
-import React, { useEffect } from 'react';
-import dynamic from 'next/dynamic';
+import React, { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { Icon } from '@/components/ui/Icon';
-
-// ─── Lazy-load react-pdf-viewer (heavy) only on client ───────────────────────
-
-// We use dynamic() so Next.js never bundles pdfjs into the SSR chunk.
-const PdfCore = dynamic(
-  () => import('./PdfViewerCore').then((m) => m.PdfViewerCore),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="flex flex-1 items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
-          <p className="text-gray-400 text-sm">جاري تحميل الملف…</p>
-        </div>
-      </div>
-    ),
-  }
-);
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -53,6 +13,8 @@ export interface PdfViewerModalProps {
   url: string;
   /** Shown in the modal title bar */
   fileName?: string;
+  /** Optional mime type to choose the simplest renderer */
+  mimeType?: string;
   /** Called when the user closes the modal */
   onClose: () => void;
 }
@@ -63,8 +25,11 @@ export function PdfViewerModal({
   open,
   url,
   fileName = 'document.pdf',
+  mimeType,
   onClose,
 }: PdfViewerModalProps) {
+  const [isViewerLoading, setIsViewerLoading] = useState(true);
+
   // Close on Escape
   useEffect(() => {
     if (!open) return;
@@ -85,7 +50,16 @@ export function PdfViewerModal({
     return () => { document.body.style.overflow = ''; };
   }, [open]);
 
+  useEffect(() => {
+    if (!open) return;
+    setIsViewerLoading(true);
+  }, [open, url, mimeType]);
+
   if (!open) return null;
+
+  const normalizedMime = (mimeType || '').toLowerCase();
+  const isImage = normalizedMime.startsWith('image/');
+  const isPdf = normalizedMime === 'application/pdf' || fileName.toLowerCase().endsWith('.pdf');
 
   return (
     /* Backdrop */
@@ -98,8 +72,8 @@ export function PdfViewerModal({
       {/* ── Top bar ── */}
       <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-white/10 bg-[#0d1120]/90 shrink-0">
         <div className="flex items-center gap-2 min-w-0">
-          <div className="w-8 h-8 rounded-lg bg-red-500/20 border border-red-500/30 flex items-center justify-center shrink-0">
-            <Icon name="file-pdf" className="text-red-400" size="sm" />
+          <div className="w-8 h-8 rounded-lg bg-primary/20 border border-primary/30 flex items-center justify-center shrink-0">
+            <Icon name={isImage ? 'image' : isPdf ? 'file-pdf' : 'file-alt'} className="text-primary" size="sm" />
           </div>
           <span className="text-white text-sm font-medium truncate max-w-[60vw]">{fileName}</span>
         </div>
@@ -115,8 +89,54 @@ export function PdfViewerModal({
       </div>
 
       {/* ── Viewer area ── */}
-      <div className="flex-1 overflow-hidden flex flex-col">
-        <PdfCore url={url} fileName={fileName} />
+      <div className="flex-1 overflow-hidden p-0">
+        <div className="relative h-full w-full border border-white/10 bg-[#0d1120]/80 overflow-hidden">
+          {isImage ? (
+            <div className="h-full w-full flex items-center justify-center p-3">
+              <Image
+                src={url}
+                alt={fileName}
+                width={1400}
+                height={900}
+                unoptimized
+                className="max-h-full max-w-full object-contain rounded-lg"
+                onLoad={() => setIsViewerLoading(false)}
+                onError={() => setIsViewerLoading(false)}
+              />
+            </div>
+          ) : isPdf ? (
+            <iframe
+              src={url}
+              title={fileName}
+              className="w-full h-full border-0"
+              onLoad={() => setIsViewerLoading(false)}
+              onError={() => setIsViewerLoading(false)}
+            />
+          ) : (
+            <div className="h-full w-full flex flex-col items-center justify-center text-center gap-3 p-6">
+              <Icon name="file-alt" className="text-primary" />
+              <p className="text-gray-300 text-sm">هذا النوع لا يدعم المعاينة المباشرة.</p>
+              <a
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/20 hover:bg-primary/30 border border-primary/30 text-primary text-sm"
+              >
+                <Icon name="external-link-alt" size="sm" />
+                فتح الملف في تبويب جديد
+              </a>
+            </div>
+          )}
+
+          {(isPdf || isImage) && isViewerLoading && (
+            <div className="absolute inset-0 bg-[#0d1120]/85 backdrop-blur-[1px] flex items-center justify-center z-10">
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-10 h-10 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+                <p className="text-gray-300 text-sm">جاري تحميل الملف…</p>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

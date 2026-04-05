@@ -181,7 +181,9 @@ class VideoController extends Controller
         /** @var Student $student */
         $student = $request->user();
 
-        return $this->streaming->downloadAttachment($video, $attachmentId, $student);
+        $inline = (string) $request->query('disposition', '') === 'inline';
+
+        return $this->streaming->downloadAttachment($video, $attachmentId, $student, $inline);
     }
 
     public function updateProgress(UpdateWatchProgressRequest $request, Video $video): JsonResponse

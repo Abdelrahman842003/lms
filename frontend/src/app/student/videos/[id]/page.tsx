@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { toast } from 'react-hot-toast';
@@ -11,7 +11,6 @@ import {
   getStudentVideo,
   getVideoComments,
   toggleVideoLike,
-  getAttachmentViewUrl,
 } from '@/services/videoService';
 import type { VideoAttachment, VideoComment, VideoItem, VideoWatchProgress } from '@/types/video.types';
 import { SecureVideoPlayer } from '@/components/video/SecureVideoPlayer';
@@ -74,22 +73,13 @@ export default function StudentVideoDetailsPage() {
   const [liking, setLiking]         = useState(false);
 
   // ── PDF viewer state ──────────────────────────────────────────────────────
-  const [pdfModal, setPdfModal] = useState<{ open: boolean; url: string; fileName: string }>({
-    open: false, url: '', fileName: '',
+  const [pdfModal, setPdfModal] = useState<{ open: boolean; url: string; fileName: string; mimeType: string }>({
+    open: false, url: '', fileName: '', mimeType: '',
   });
-  const [loadingAttachmentId, setLoadingAttachmentId] = useState<string | null>(null);
 
-  const openPdf = useCallback(async (att: VideoAttachment, videoId: string) => {
-    setLoadingAttachmentId(att.id);
-    try {
-      const { url, file_name } = await getAttachmentViewUrl(videoId, att.id);
-      setPdfModal({ open: true, url, fileName: file_name });
-    } catch (err) {
-      // fetchApi already shows a toast — only log for debugging
-      console.error('[openPdf]', err);
-    } finally {
-      setLoadingAttachmentId(null);
-    }
+  const openAttachment = useCallback((att: VideoAttachment, videoId: string) => {
+    const inlineUrl = `/api/v1/student/videos/${videoId}/attachments/${att.id}?disposition=inline`;
+    setPdfModal({ open: true, url: inlineUrl, fileName: att.file_name, mimeType: att.mime_type });
   }, []);
 
   const loadVideo = useCallback(async () => {
@@ -146,6 +136,22 @@ export default function StudentVideoDetailsPage() {
     finally { setLiking(false); }
   };
 
+  const watchedPct = progress?.watched_percentage ?? 0;
+  const attachments = video?.attachments ?? [];
+  const sortedAttachments = useMemo(() => {
+    const priority = (mime: string) => {
+      if (mime.startsWith('image/')) return 0;
+      if (mime === 'application/pdf') return 1;
+      return 2;
+    };
+
+    return [...attachments].sort((a, b) => {
+      const byType = priority(a.mime_type) - priority(b.mime_type);
+      if (byType !== 0) return byType;
+      return a.file_name.localeCompare(b.file_name, 'ar');
+    });
+  }, [attachments]);
+
   // ── Loading ────────────────────────────────────────────────────────────────
   if (loading) {
     return (
@@ -176,8 +182,6 @@ export default function StudentVideoDetailsPage() {
     );
   }
 
-  const watchedPct          = progress?.watched_percentage ?? 0;
-  const attachments         = video.attachments ?? [];
   const groups              = video.groups ?? [];
   const hasFiles            = attachments.length > 0;
   const isPendingQuiz       = progress?.status === 'watched_pending_quiz' && !progress?.quiz_passed_at;
@@ -393,13 +397,12 @@ export default function StudentVideoDetailsPage() {
             <div className="rounded-2xl border border-white/10 bg-gradient-to-b from-[#101426]/80 to-[#0a0f1e]/60 backdrop-blur-sm p-5 space-y-3">
               <h2 className="text-white font-bold flex items-center gap-2 text-sm">
                 <Icon name="paperclip" className="text-primary" size="sm" />
-                المرفقات ({attachments.length})
+                المرفقات ({sortedAttachments.length})
               </h2>
               <div className="space-y-2">
-                {attachments.map((att) => {
+                {sortedAttachments.map((att) => {
                   const isPdf = att.mime_type === 'application/pdf';
                   const isImage = att.mime_type.startsWith('image/');
-                  const isLoading = loadingAttachmentId === att.id;
 
                   return (
                     <div
@@ -423,16 +426,11 @@ export default function StudentVideoDetailsPage() {
                         {(isPdf || isImage) && (
                           <button
                             type="button"
-                            disabled={isLoading}
-                            onClick={() => void openPdf(att, video.id)}
+                            onClick={() => openAttachment(att, video.id)}
                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/20 hover:bg-primary/30 border border-primary/30 text-primary text-xs font-medium transition-all disabled:opacity-50"
                             title={isPdf ? 'فتح وقراءة' : 'عرض الصورة'}
                           >
-                            {isLoading ? (
-                              <Icon name="sync" className="animate-spin" size="sm" />
-                            ) : (
-                              <Icon name={isPdf ? 'book-open' : 'image'} size="sm" />
-                            )}
+                            <Icon name={isPdf ? 'book-open' : 'image'} size="sm" />
                             {isPdf ? 'قراءة' : 'عرض'}
                           </button>
                         )}
@@ -581,10 +579,10 @@ export default function StudentVideoDetailsPage() {
             <div className="rounded-2xl border border-white/10 bg-gradient-to-b from-[#101426]/90 to-[#0a0f1e]/70 backdrop-blur-sm p-5 space-y-3">
               <p className="text-white font-bold text-sm flex items-center gap-2">
                 <Icon name="paperclip" className="text-primary" size="sm" /> المرفقات
-                <span className="mr-auto text-xs text-gray-500">{attachments.length} ملف</span>
+                <span className="mr-auto text-xs text-gray-500">{sortedAttachments.length} ملف</span>
               </p>
               <div className="space-y-2">
-                {attachments.slice(0, 4).map((att) => (
+                {sortedAttachments.slice(0, 4).map((att) => (
                   <a
                     key={att.id}
                     href={`/api/v1/student/videos/${video.id}/attachments/${att.id}`}
@@ -597,13 +595,13 @@ export default function StudentVideoDetailsPage() {
                     <Icon name="download" size="sm" className="flex-shrink-0 mr-auto text-gray-600 group-hover:text-primary" />
                   </a>
                 ))}
-                {attachments.length > 4 && (
+                {sortedAttachments.length > 4 && (
                   <button
                     type="button"
                     onClick={() => setActiveTab('files')}
                     className="text-xs text-primary hover:underline w-full text-start mt-1"
                   >
-                    + {attachments.length - 4} مرفق آخر
+                    + {sortedAttachments.length - 4} مرفق آخر
                   </button>
                 )}
               </div>
@@ -618,7 +616,8 @@ export default function StudentVideoDetailsPage() {
         open={pdfModal.open}
         url={pdfModal.url}
         fileName={pdfModal.fileName}
-        onClose={() => setPdfModal({ open: false, url: '', fileName: '' })}
+        mimeType={pdfModal.mimeType}
+        onClose={() => setPdfModal({ open: false, url: '', fileName: '', mimeType: '' })}
       />
     </DashboardLayout>
   );

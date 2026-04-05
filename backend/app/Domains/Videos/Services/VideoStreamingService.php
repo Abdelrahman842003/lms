@@ -170,7 +170,7 @@ class VideoStreamingService
     /**
      * Download attachment (redirect to signed URL or stream directly).
      */
-    public function downloadAttachment(Video $video, string $attachmentId, Student $student): RedirectResponse|StreamedResponse
+    public function downloadAttachment(Video $video, string $attachmentId, Student $student, bool $inline = false): RedirectResponse|StreamedResponse
     {
         $this->authorization->assertStudentCanView($video, $student);
 
@@ -180,6 +180,11 @@ class VideoStreamingService
 
         if (! $this->storage->exists($attachment->file_path)) {
             abort(404, 'Attachment not found');
+        }
+
+        // For in-app viewers (iframe/image), stream directly from backend to keep same-origin behavior.
+        if ($inline) {
+            return $this->streamPrivateFile($attachment->file_path, $attachment->mime_type, false, $attachment->file_name);
         }
 
         try {
