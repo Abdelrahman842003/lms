@@ -42,9 +42,13 @@ class VideoController extends Controller
 
         $videos = Video::query()
             ->publishedNow()
-            ->whereHas('accessGrants', function ($query) use ($student): void {
-                $query->where('student_id', $student->id)
-                    ->whereNull('revoked_at');
+            ->where(function ($visibility) use ($student): void {
+                $visibility->whereHas('accessGrants', function ($query) use ($student): void {
+                    $query->where('student_id', $student->id)
+                        ->whereNull('revoked_at');
+                });
+
+                $this->authorization->applyEligibleEnrollmentVisibilityConstraint($visibility, $student, true);
             })
             ->with([
                 'owner',

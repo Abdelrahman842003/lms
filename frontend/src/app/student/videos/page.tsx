@@ -43,7 +43,7 @@ export default function StudentVideosPage() {
   }, [videos]);
 
   return (
-    <DashboardLayout role="student" user={user || undefined} title="الفيديوهات التعليمية">
+    <DashboardLayout role="student" user={user || undefined}>
       <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4 mb-8">
         <StatCard title="إجمالي الفيديوهات" value={stats.totalVideos} icon="fas fa-play-circle" color="info" variant="centered" />
         <StatCard title="إجمالي الإعجابات" value={stats.totalLikes} icon="fas fa-thumbs-up" color="primary" variant="centered" />

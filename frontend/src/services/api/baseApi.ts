@@ -21,10 +21,10 @@ export const API_BASE_URL = API_CONFIG.baseUrl;
 export const ENDPOINTS = FLAT_ENDPOINTS;
 export { getErrorMessage as getDefaultArabicError };
 export type ApiErrorExtended = ApiError;
-const IS_PROD = process.env.NODE_ENV === 'production';
+const IS_API_DEBUG_ENABLED = process.env.NEXT_PUBLIC_DEBUG_API_LOGS === 'true';
 
 function debugLog(...args: unknown[]): void {
-  if (!IS_PROD) {
+  if (IS_API_DEBUG_ENABLED) {
     console.debug(...args);
   }
 }
@@ -347,7 +347,7 @@ export async function fetchApi<T = unknown>(
 
     const safeMessage = getErrorMessage(response.status);
     const serverMessage = typeof error?.message === 'string' ? error.message : null;
-    if (!IS_PROD && serverMessage) {
+    if (IS_API_DEBUG_ENABLED && serverMessage) {
       console.error('[API Error Payload]', serverMessage);
     }
 

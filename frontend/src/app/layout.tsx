@@ -98,7 +98,7 @@ export default async function RootLayout({
     const maintenanceMode = settings?.maintenanceMode === 'true';
 
     return (
-        <html lang="ar" dir="rtl" className="h-full">
+    <html lang="ar" dir="rtl" className="h-full" data-scroll-behavior="smooth">
             <head>
                 <link rel="preconnect" href="https://fonts.googleapis.com" />
                 <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />

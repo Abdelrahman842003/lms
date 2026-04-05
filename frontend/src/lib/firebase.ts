@@ -4,10 +4,13 @@ import { getMessaging, getToken, onMessage, deleteToken, Messaging } from "fireb
 let app: FirebaseApp | null = null;
 let messaging: Messaging | null = null;
 let storedVapidKey: string | undefined = undefined;
+const IS_FIREBASE_DEBUG = process.env.NEXT_PUBLIC_DEBUG_FIREBASE === 'true';
 
 export const initializeFirebase = (config: any) => {
   if (!config || !config.apiKey) {
-    console.warn('[Firebase] No config provided');
+    if (IS_FIREBASE_DEBUG) {
+      console.warn('[Firebase] No config provided');
+    }
     return;
   }
   
@@ -22,7 +25,9 @@ export const initializeFirebase = (config: any) => {
     // We assume the backend sends 'vapidKey' or we look for it in the passed config
     storedVapidKey = config.vapidKey || process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY; 
     
-    console.log('[Firebase] Initialized successfully');
+    if (IS_FIREBASE_DEBUG) {
+      console.log('[Firebase] Initialized successfully');
+    }
   } catch (error) {
     console.error('[Firebase] Initialization failed:', error);
   }
@@ -30,7 +35,9 @@ export const initializeFirebase = (config: any) => {
 
 export const requestForToken = async () => {
   if (!messaging) {
-    console.warn('[Firebase] Messaging not initialized yet');
+    if (IS_FIREBASE_DEBUG) {
+      console.warn('[Firebase] Messaging not initialized yet');
+    }
     return null;
   }
   

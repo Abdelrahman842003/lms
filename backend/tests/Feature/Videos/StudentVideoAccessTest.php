@@ -114,6 +114,64 @@ it('denies playback token for student without access grant', function () {
         ->assertStatus(403);
 });
 
+it('lists and allows playback for eligible student without snapshot grant', function () {
+    $student = Student::factory()->create();
+
+    $teacher = Teacher::factory()->create([
+        'status' => 'active',
+        'is_independent_active' => true,
+    ]);
+
+    $grade = Grade::factory()->create(['teacher_id' => $teacher->id]);
+    $group = Group::factory()->create([
+        'teacher_id' => $teacher->id,
+        'grade_id' => $grade->id,
+    ]);
+
+    Enrollment::query()->create([
+        'student_id' => $student->id,
+        'teacher_id' => $teacher->id,
+        'grade_id' => $grade->id,
+        'group_id' => $group->id,
+        'academy_id' => null,
+        'is_active' => true,
+        'subscription_start' => now()->subDay()->toDateString(),
+        'subscription_end' => now()->addDays(10)->toDateString(),
+    ]);
+
+    $video = Video::query()->create([
+        'owner_type' => VideoOwnerType::INDEPENDENT_TEACHER,
+        'owner_id' => $teacher->id,
+        'uploader_type' => Teacher::class,
+        'uploader_id' => $teacher->id,
+        'teacher_reference_id' => $teacher->id,
+        'teacher_reference_name' => $teacher->name,
+        'grade_id' => $grade->id,
+        'title' => 'Visible Without Grant',
+        'status' => VideoStatus::PUBLISHED,
+        'processing_status' => VideoProcessingStatus::SUCCEEDED,
+        'processed_path' => 'videos/processed/' . Str::uuid() . '/master-720p.mp4',
+        'published_at' => now()->subMinute(),
+    ]);
+
+    $video->groups()->sync([$group->id]);
+
+    $listResponse = $this->actingAs($student, 'sanctum')
+        ->getJson('/api/v1/student/videos')
+        ->assertOk();
+
+    $decoded = json_decode((string) $listResponse->getContent(), true);
+    $listItems = collect(data_get($decoded, 'data.data', []));
+    expect($listItems->pluck('id')->contains($video->id))->toBeTrue();
+
+    $this->actingAs($student, 'sanctum')
+        ->postJson("/api/v1/student/videos/{$video->id}/playback-token", [
+            'device_fingerprint' => 'device_without_grant',
+            'session_id' => 'session_without_grant',
+        ])
+        ->assertOk();
+});
+
 it('issues playback token for eligible student', function () {
     $student = Student::factory()->create();
     $context = createPublishedVideoForStudent($student);
