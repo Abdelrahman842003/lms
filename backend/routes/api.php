@@ -63,7 +63,7 @@ Route::prefix('v1')->group(function () {
     // ============================================
     // Token Management Routes - Rate Limited
     // ============================================
-    Route::middleware('throttle:token-refresh')->post('/auth/refresh', [\App\Domains\Application\Http\Controllers\Api\RefreshTokenController::class, 'refresh']);
+    Route::middleware(['throttle:token-refresh', 'auth.cookies'])->post('/auth/refresh', [\App\Domains\Application\Http\Controllers\Api\RefreshTokenController::class, 'refresh']);
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/auth/logout', [\App\Domains\Application\Http\Controllers\Api\RefreshTokenController::class, 'logout']);
         Route::post('/auth/logout-current', [\App\Domains\Auth\Http\Controllers\TokenController::class, 'logoutCurrent']);

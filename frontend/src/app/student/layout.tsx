@@ -9,6 +9,11 @@ export default function StudentLayout({ children }: { children: ReactNode }) {
   const { user, isLoading, refreshUser } = useAuth();
   const [hasSynced, setHasSynced] = useState(false);
   const syncedStudentIdRef = useRef<string | number | null>(null);
+  const refreshUserRef = useRef(refreshUser);
+
+  useEffect(() => {
+    refreshUserRef.current = refreshUser;
+  }, [refreshUser]);
 
   useEffect(() => {
     // Not a student — no sync needed
@@ -24,30 +29,30 @@ export default function StudentLayout({ children }: { children: ReactNode }) {
 
     // Already synced this student id
     if (syncedStudentIdRef.current === user.id) {
+      setHasSynced(true);
       return;
     }
 
+    setHasSynced(false);
     syncedStudentIdRef.current = user.id;
-    let cancelled = false;
 
     const syncStudent = async () => {
+      const fallbackTimer = window.setTimeout(() => {
+        setHasSynced(true);
+      }, 4000);
+
       try {
-        await refreshUser();
+        await refreshUserRef.current();
       } catch (error) {
         console.error('Student layout: failed to refresh current user', error);
       } finally {
-        if (!cancelled) {
-          setHasSynced(true);
-        }
+        window.clearTimeout(fallbackTimer);
+        setHasSynced(true);
       }
     };
 
     void syncStudent();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [isLoading, user?.id, user?.userType, refreshUser]);
+  }, [isLoading, user?.id, user?.userType]);
 
   // Wait until core auth AND the fresh /me call are both done
   if (isLoading || !hasSynced) {

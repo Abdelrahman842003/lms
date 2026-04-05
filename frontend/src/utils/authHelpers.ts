@@ -227,7 +227,7 @@ export function storeTokens(token: string, _refreshToken?: string): void {
   if (!token) return;
   void _refreshToken;
   clearLegacyTokenStorage();
-  setAccessToken(token, 60);
+  setAccessToken(token, 43200);
 }
 
 /**

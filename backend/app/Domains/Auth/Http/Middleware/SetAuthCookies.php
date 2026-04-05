@@ -5,9 +5,10 @@ declare(strict_types=1);
 namespace App\Domains\Auth\Http\Middleware;
 
 use Closure;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
-use Symfony\Component\HttpFoundation\Response;
+use Illuminate\Http\Response;
+use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
 /**
  * Middleware to set authentication tokens as httpOnly cookies
@@ -19,12 +20,14 @@ class SetAuthCookies
      * Handle an incoming request.
      * Sets auth tokens as httpOnly, secure, sameSite cookies
      */
-    public function handle(Request $request, Closure $next): Response
+    public function handle(Request $request, Closure $next): SymfonyResponse
     {
         $response = $next($request);
         $domain = config('session.domain');
         $secure = $this->shouldUseSecureCookie($request);
         $sameSite = config('session.same_site') ?: 'lax';
+    $accessCookieTtlMinutes = $this->resolveAccessCookieTtlMinutes();
+    $refreshCookieTtlMinutes = $this->resolveRefreshCookieTtlMinutes();
 
         // Only process successful JSON responses with token data
         $contentType = $response->headers->get('content-type');
@@ -54,7 +57,7 @@ class SetAuthCookies
             $response->withCookie(cookie(
                 'access_token',
                 $tokenData['token'],
-                60, // 60 minutes
+                $accessCookieTtlMinutes,
                 '/',
                 $domain,
                 $secure, // secure only when request/session config requires it
@@ -69,7 +72,7 @@ class SetAuthCookies
             $response->withCookie(cookie(
                 'refresh_token',
                 $tokenData['refresh_token'],
-                525600, // 365 days
+                $refreshCookieTtlMinutes,
                 '/',
                 $domain,
                 $secure, // secure only when request/session config requires it
@@ -85,7 +88,7 @@ class SetAuthCookies
     /**
      * Clear auth cookies
      */
-    public static function clearCookies(Response $response): Response
+    public static function clearCookies(Response|JsonResponse $response): Response|JsonResponse
     {
         $domain = config('session.domain');
         $secure = (bool) (config('session.secure') ?? app()->environment('production'));
@@ -124,5 +127,19 @@ class SetAuthCookies
         }
 
         return $request->isSecure() || app()->environment('production');
+    }
+
+    private function resolveAccessCookieTtlMinutes(): int
+    {
+        $ttl = (int) env('ACCESS_TOKEN_TTL_MINUTES', 43200);
+
+        return max(1, $ttl);
+    }
+
+    private function resolveRefreshCookieTtlMinutes(): int
+    {
+        $refreshDays = (int) env('REFRESH_TOKEN_TTL_DAYS', 3650);
+
+        return max(1, $refreshDays * 1440);
     }
 }

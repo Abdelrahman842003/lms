@@ -18,6 +18,7 @@ interface TokenState {
 }
 
 const TOKEN_STORAGE_KEY = 'auth_access_token_state';
+const ACCESS_TOKEN_FALLBACK_MINUTES = 43200; // 30 days
 
 // Primary in-memory storage with sessionStorage fallback for hard refresh recovery
 let tokenState: TokenState = {
@@ -101,7 +102,7 @@ export function getAccessToken(): string | null {
 /**
  * Set access token in memory
  */
-export function setAccessToken(token: string, expiresInMinutes: number = 60): void {
+export function setAccessToken(token: string, expiresInMinutes: number = ACCESS_TOKEN_FALLBACK_MINUTES): void {
   const fallbackExpiresAt = Date.now() + (expiresInMinutes * 60 * 1000);
   const jwtExpiresAt = getJwtExpiryMs(token);
   const expiresAt = jwtExpiresAt && jwtExpiresAt > Date.now()
@@ -223,7 +224,7 @@ async function performTokenRefresh(): Promise<string | null> {
     const data = await response.json().catch(() => null);
 
     if (data?.status && data?.data?.access_token) {
-      setAccessToken(data.data.access_token, 60);
+      setAccessToken(data.data.access_token, ACCESS_TOKEN_FALLBACK_MINUTES);
       return data.data.access_token;
     }
 

@@ -9,6 +9,7 @@ use App\Domains\Application\Http\Requests\Auth\SecretaryLoginRequest;
 use App\Domains\Application\Http\Resources\Secretary\SecretaryResource;
 use App\Domains\Auth\Services\DeviceLimitService;
 use App\Domains\Auth\Services\LoginAttemptService;
+use App\Domains\Auth\Services\TokenService;
 use App\Domains\Application\Services\Secretary\SecretaryService;
 use Illuminate\Http\Request;
 
@@ -17,15 +18,18 @@ class AuthController extends Controller
     protected $secretaryService;
     protected $loginAttemptService;
     protected $deviceLimitService;
+    protected $tokenService;
 
     public function __construct(
         SecretaryService $secretaryService,
         LoginAttemptService $loginAttemptService,
-        DeviceLimitService $deviceLimitService
+        DeviceLimitService $deviceLimitService,
+        TokenService $tokenService
     ) {
         $this->secretaryService = $secretaryService;
         $this->loginAttemptService = $loginAttemptService;
         $this->deviceLimitService = $deviceLimitService;
+        $this->tokenService = $tokenService;
     }
 
     public function login(SecretaryLoginRequest $request)
@@ -53,17 +57,12 @@ class AuthController extends Controller
         // Manage device limits (auto-removes oldest if at limit)
         $deviceResult = $this->deviceLimitService->checkAndManageDevices($data['user']);
 
-        $refreshLifetimeDays = $request->boolean('remember', true) ? 365 : 30;
-
-        // Generate Access Token (Short-lived - 60 mins)
-        $accessToken = $data['user']->createToken('access_token', ['access-api'], now()->addMinutes(60))->plainTextToken;
-        
-        // Generate Refresh Token (Long-lived)
-        $refreshToken = $data['user']->createToken('refresh_token', ['issue-access-token'], now()->addDays($refreshLifetimeDays))->plainTextToken;
+        // Generate tokens using shared TokenService for consistent abilities/rotation
+        $tokens = $this->tokenService->generateTokens($data['user'], $request->boolean('remember', true));
 
         return $this->successResponse([
-            'token' => $accessToken,
-            'refresh_token' => $refreshToken,
+            'token' => $tokens['access_token'],
+            'refresh_token' => $tokens['refresh_token'],
             'user' => new SecretaryResource($data['user']),
             'role' => 'secretary',
             'device_removed' => $deviceResult['removed_device'] ?? false,

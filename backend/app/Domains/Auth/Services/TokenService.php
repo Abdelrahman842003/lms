@@ -15,15 +15,16 @@ use Laravel\Sanctum\PersonalAccessToken;
 class TokenService
 {
     /**
-     * Access token lifetime in minutes (15 minutes for security).
+     * Default access token lifetime in minutes.
+     * Tuned for persistent sessions unless explicitly revoked.
      */
-    public const ACCESS_TOKEN_TTL_MINUTES = 15;
+    public const DEFAULT_ACCESS_TOKEN_TTL_MINUTES = 43200; // 30 days
 
     /**
-     * Refresh token lifetime in days (30 days maximum).
-     * REDUCED FROM 365 DAYS for security compliance.
+     * Default refresh token lifetime in days.
+     * Long-lived by default to avoid unnecessary logout prompts.
      */
-    public const REFRESH_TOKEN_TTL_DAYS = 30;
+    public const DEFAULT_REFRESH_TOKEN_TTL_DAYS = 3650; // 10 years
 
     /**
      * Access token abilities.
@@ -58,10 +59,12 @@ class TokenService
      */
     public function createAccessToken(Model $user): array
     {
+        $accessTtlMinutes = $this->resolveAccessTokenTtlMinutes();
+
         $accessToken = $user->createToken(
             'access-token',
             self::ACCESS_TOKEN_ABILITIES,
-            now()->addMinutes(self::ACCESS_TOKEN_TTL_MINUTES)
+            now()->addMinutes($accessTtlMinutes)
         );
 
         return [
@@ -82,14 +85,15 @@ class TokenService
     public function createRefreshToken(Model $user, string $deviceName = 'web'): array
     {
         $tokenName = 'refresh-token-' . $deviceName;
+        $refreshTtlDays = $this->resolveRefreshTokenTtlDays();
 
-        return DB::transaction(function () use ($user, $tokenName) {
+        return DB::transaction(function () use ($user, $tokenName, $refreshTtlDays) {
             $user->tokens()->where('name', $tokenName)->lockForUpdate()->delete();
 
             $refreshToken = $user->createToken(
                 $tokenName,
                 self::REFRESH_TOKEN_ABILITIES,
-                now()->addDays(self::REFRESH_TOKEN_TTL_DAYS)
+                now()->addDays($refreshTtlDays)
             );
 
             return [
@@ -258,11 +262,27 @@ class TokenService
      */
     public function generateAccessToken(Model $user): string
     {
+        $accessTtlMinutes = $this->resolveAccessTokenTtlMinutes();
+
         return $user->createToken(
             'access_token',
             self::ACCESS_TOKEN_ABILITIES,
-            now()->addMinutes(self::ACCESS_TOKEN_TTL_MINUTES)
+            now()->addMinutes($accessTtlMinutes)
         )->plainTextToken;
+    }
+
+    private function resolveAccessTokenTtlMinutes(): int
+    {
+        $ttl = (int) env('ACCESS_TOKEN_TTL_MINUTES', self::DEFAULT_ACCESS_TOKEN_TTL_MINUTES);
+
+        return max(1, $ttl);
+    }
+
+    private function resolveRefreshTokenTtlDays(): int
+    {
+        $ttl = (int) env('REFRESH_TOKEN_TTL_DAYS', self::DEFAULT_REFRESH_TOKEN_TTL_DAYS);
+
+        return max(1, $ttl);
     }
 
     /**

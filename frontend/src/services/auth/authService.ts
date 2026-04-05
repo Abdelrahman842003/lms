@@ -14,6 +14,8 @@ import type {
   UserType
 } from '@/types/auth.types';
 
+const ACCESS_TOKEN_FALLBACK_MINUTES = 43200; // 30 days
+
 // Re-export types for backward compatibility
 export type { AuthResponse, TeacherInfo, ChildInfo, AcademyInfo };
 
@@ -31,7 +33,7 @@ export async function loginTeacher(
 
   // Store token in memory (secure)
   if (response.token) {
-    setAccessToken(response.token, 60);
+    setAccessToken(response.token, ACCESS_TOKEN_FALLBACK_MINUTES);
   }
 
   return response;
@@ -57,7 +59,7 @@ export async function loginStudent(
 
   // Store token in memory (secure)
   if (data.token) {
-    setAccessToken(data.token, 60);
+    setAccessToken(data.token, ACCESS_TOKEN_FALLBACK_MINUTES);
   }
 
   return {
@@ -83,7 +85,7 @@ export async function loginSecretary(
 
   // Store token in memory (secure)
   if (response.token) {
-    setAccessToken(response.token, 60);
+    setAccessToken(response.token, ACCESS_TOKEN_FALLBACK_MINUTES);
   }
 
   return response;
@@ -110,7 +112,7 @@ export async function loginParent(
 
   // Store token in memory (secure)
   if (data.token) {
-    setAccessToken(data.token, 60);
+    setAccessToken(data.token, ACCESS_TOKEN_FALLBACK_MINUTES);
   }
 
   return {
@@ -147,7 +149,7 @@ export async function loginAcademy(
 
   // Store token in memory (secure)
   if (data.token) {
-    setAccessToken(data.token, 60);
+    setAccessToken(data.token, ACCESS_TOKEN_FALLBACK_MINUTES);
   }
 
   return {
