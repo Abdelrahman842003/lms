@@ -7,6 +7,8 @@ interface SubscriptionRenewalModalProps {
   onClose: () => void;
   onSubmit: (payload: SubscriptionRenewalRequest) => Promise<void> | void;
   planOptions: PlanOption[];
+  currentPlanSelection: string;
+  currentPlanLabel?: string;
   currentSeatsLimit: number | null;
   currentStorageLimitGb: number | null;
   pricePerSeat: number;
@@ -19,6 +21,8 @@ export default function SubscriptionRenewalModal({
   onClose,
   onSubmit,
   planOptions,
+  currentPlanSelection,
+  currentPlanLabel,
   currentSeatsLimit,
   currentStorageLimitGb,
   pricePerSeat,
@@ -26,6 +30,7 @@ export default function SubscriptionRenewalModal({
   isLoading = false,
 }: SubscriptionRenewalModalProps) {
   const [selectedPlanCode, setSelectedPlanCode] = useState<string>('');
+  const [changePlan, setChangePlan] = useState<boolean>(false);
   const [customMonths, setCustomMonths] = useState<number>(1);
   const [upgradeSeats, setUpgradeSeats] = useState<boolean>(false);
   const [upgradeStorage, setUpgradeStorage] = useState<boolean>(false);
@@ -33,24 +38,26 @@ export default function SubscriptionRenewalModal({
   const [newStorageLimitGb, setNewStorageLimitGb] = useState<string>('');
   const [validationError, setValidationError] = useState<string>('');
 
+  const activePlanSelection = changePlan ? selectedPlanCode : currentPlanSelection;
+
   const selectOptions = useMemo(
     () => planOptions.map(option => ({ value: option.value, label: option.label })),
     [planOptions]
   );
 
   const selectedPlan = useMemo(
-    () => planOptions.find(option => option.value === selectedPlanCode),
-    [planOptions, selectedPlanCode]
+    () => planOptions.find(option => option.value === activePlanSelection),
+    [activePlanSelection, planOptions]
   );
 
   const months = useMemo(() => {
-    if (!selectedPlanCode) return 0;
-    if (selectedPlanCode === 'custom') {
+    if (!activePlanSelection) return 0;
+    if (activePlanSelection === 'custom') {
       return Number.isFinite(customMonths) ? Math.max(1, customMonths) : 1;
     }
 
     return selectedPlan?.months ?? 0;
-  }, [customMonths, selectedPlan, selectedPlanCode]);
+  }, [activePlanSelection, customMonths, selectedPlan]);
 
   const seatPriceDifference = useMemo(() => {
     if (!upgradeSeats || !currentSeatsLimit || currentSeatsLimit <= 0 || months <= 0) return 0;
@@ -79,6 +86,7 @@ export default function SubscriptionRenewalModal({
   useEffect(() => {
     if (!isOpen) {
       setSelectedPlanCode('');
+      setChangePlan(false);
       setCustomMonths(1);
       setUpgradeSeats(false);
       setUpgradeStorage(false);
@@ -90,7 +98,10 @@ export default function SubscriptionRenewalModal({
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!selectedPlanCode) return;
+    if (!activePlanSelection) {
+      setValidationError('تعذر تحديد الباقة الحالية، يرجى اختيار الباقة يدوياً.');
+      return;
+    }
 
     if (upgradeSeats) {
       if (!canUpgradeSeats) {
@@ -121,8 +132,8 @@ export default function SubscriptionRenewalModal({
     setValidationError('');
 
     const payload: SubscriptionRenewalRequest = {
-      plan_selection: selectedPlanCode,
-      custom_months: selectedPlanCode === 'custom' ? Math.max(1, customMonths) : null,
+      plan_selection: activePlanSelection,
+      custom_months: activePlanSelection === 'custom' ? Math.max(1, customMonths) : null,
       upgrade_seats: upgradeSeats,
       upgrade_storage: upgradeStorage,
       new_seats_limit: upgradeSeats ? parseInt(newSeatsLimit, 10) : null,
@@ -146,19 +157,51 @@ export default function SubscriptionRenewalModal({
       <div className="ux-space-y-4">
         <div className="ux-flex ux-items-center ux-gap-2 ux-text-sm ux-text-gray-300">
           <Icon name="info-circle" className="ux-text-primary" />
-          اختر الباقة المناسبة (سعة المقاعد + الفئة)، وسيتم إرسال الطلب للإدارة للموافقة.
+          اختر ما تريد تعديله فقط، وسيتم إرسال الطلب للإدارة للموافقة.
         </div>
 
-        <Select
-          options={selectOptions}
-          value={selectedPlanCode}
-          onChange={setSelectedPlanCode}
-          placeholder="اختر الباقة"
-          className="ux-w-full"
-          icon="id-card"
-        />
+        <div className="ux-space-y-3 ux-rounded-lg ux-border ux-border-gray-700 ux-p-4">
+          <div className="ux-flex ux-items-center ux-justify-between">
+            <div>
+              <p className="ux-text-sm ux-font-medium ux-text-gray-100">هل تريد تعديل الباقة؟</p>
+              <p className="ux-text-xs ux-text-gray-400">لو لم تختَر، سيتم التجديد على نفس الباقة الحالية.</p>
+            </div>
+            <label className="ux-relative ux-inline-flex ux-h-6 ux-w-11 ux-cursor-pointer ux-items-center">
+              <input
+                type="checkbox"
+                checked={changePlan}
+                onChange={(event) => {
+                  const nextValue = event.target.checked;
+                  setChangePlan(nextValue);
+                  if (nextValue && !selectedPlanCode) {
+                    setSelectedPlanCode(currentPlanSelection);
+                  }
+                }}
+                className="ux-peer ux-sr-only"
+              />
+              <span className="ux-absolute ux-inset-0 ux-rounded-full ux-bg-gray-600 ux-transition-colors ux-duration-200 peer-checked:ux-bg-primary" />
+              <span className="ux-relative ux-ms-1 ux-h-4 ux-w-4 ux-rounded-full ux-bg-white ux-transition-transform ux-duration-200 peer-checked:ux-translate-x-5" />
+            </label>
+          </div>
 
-        {selectedPlanCode === 'custom' && (
+          <div className="ux-rounded-lg ux-bg-gray-900/70 ux-p-3 ux-text-sm ux-text-gray-200">
+            <span className="ux-text-gray-400">الباقة الحالية: </span>
+            <span className="ux-font-medium">{currentPlanLabel || selectedPlan?.label || 'غير محدد'}</span>
+          </div>
+
+          {changePlan && (
+            <Select
+              options={selectOptions}
+              value={selectedPlanCode}
+              onChange={setSelectedPlanCode}
+              placeholder="اختر الباقة الجديدة"
+              className="ux-w-full"
+              icon="id-card"
+            />
+          )}
+        </div>
+
+        {activePlanSelection === 'custom' && (
           <div className="ux-space-y-2">
             <label className="ux-text-sm ux-text-gray-300">عدد الشهور (مخصص)</label>
             <input
@@ -174,12 +217,19 @@ export default function SubscriptionRenewalModal({
         <div className="ux-space-y-3 ux-rounded-lg ux-border ux-border-gray-700 ux-p-4">
           <div className="ux-flex ux-items-center ux-justify-between">
             <span className="ux-text-sm ux-text-gray-200">هل تريد ترقية عدد الكراسي؟</span>
-            <input
-              type="checkbox"
-              checked={upgradeSeats}
-              onChange={(event) => setUpgradeSeats(event.target.checked)}
-              disabled={!canUpgradeSeats}
-            />
+            <label className={`ux-relative ux-inline-flex ux-h-6 ux-w-11 ux-items-center ${
+              !canUpgradeSeats ? 'ux-cursor-not-allowed ux-opacity-60' : 'ux-cursor-pointer'
+            }`}>
+              <input
+                type="checkbox"
+                checked={upgradeSeats}
+                onChange={(event) => setUpgradeSeats(event.target.checked)}
+                disabled={!canUpgradeSeats}
+                className="ux-peer ux-sr-only"
+              />
+              <span className="ux-absolute ux-inset-0 ux-rounded-full ux-bg-gray-600 ux-transition-colors ux-duration-200 peer-checked:ux-bg-primary" />
+              <span className="ux-relative ux-ms-1 ux-h-4 ux-w-4 ux-rounded-full ux-bg-white ux-transition-transform ux-duration-200 peer-checked:ux-translate-x-5" />
+            </label>
           </div>
           <p className="ux-text-xs ux-text-gray-400">
             الحالي: {currentSeatsLimit ?? 'غير محدود'}
@@ -199,12 +249,19 @@ export default function SubscriptionRenewalModal({
         <div className="ux-space-y-3 ux-rounded-lg ux-border ux-border-gray-700 ux-p-4">
           <div className="ux-flex ux-items-center ux-justify-between">
             <span className="ux-text-sm ux-text-gray-200">هل تريد ترقية المساحة؟</span>
-            <input
-              type="checkbox"
-              checked={upgradeStorage}
-              onChange={(event) => setUpgradeStorage(event.target.checked)}
-              disabled={!canUpgradeStorage}
-            />
+            <label className={`ux-relative ux-inline-flex ux-h-6 ux-w-11 ux-items-center ${
+              !canUpgradeStorage ? 'ux-cursor-not-allowed ux-opacity-60' : 'ux-cursor-pointer'
+            }`}>
+              <input
+                type="checkbox"
+                checked={upgradeStorage}
+                onChange={(event) => setUpgradeStorage(event.target.checked)}
+                disabled={!canUpgradeStorage}
+                className="ux-peer ux-sr-only"
+              />
+              <span className="ux-absolute ux-inset-0 ux-rounded-full ux-bg-gray-600 ux-transition-colors ux-duration-200 peer-checked:ux-bg-primary" />
+              <span className="ux-relative ux-ms-1 ux-h-4 ux-w-4 ux-rounded-full ux-bg-white ux-transition-transform ux-duration-200 peer-checked:ux-translate-x-5" />
+            </label>
           </div>
           <p className="ux-text-xs ux-text-gray-400">
             الحالي: {currentStorageLimitGb ? `${currentStorageLimitGb} GB` : 'غير محدود'}

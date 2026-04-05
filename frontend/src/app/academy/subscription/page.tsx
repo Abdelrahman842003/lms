@@ -10,6 +10,20 @@ import SubscriptionRenewalModal from '@/components/subscription/SubscriptionRene
 import { getAcademySubscription, requestAcademyRenewal } from '@/services/subscriptionService';
 import type { SubscriptionRenewalRequest, SubscriptionResponse } from '@/types/subscription.types';
 
+const resolvePlanSelection = (planType?: string, subscriptionPeriod?: string | null): string => {
+  if (planType === 'trial') return 'trial';
+  if (planType === 'custom') return 'custom';
+
+  if (planType === 'term') {
+    if (subscriptionPeriod === 'quarterly') return 'quarterly';
+    if (subscriptionPeriod === 'semi_annual') return 'semi_annual';
+    if (subscriptionPeriod === 'annual') return 'annual';
+    return 'monthly';
+  }
+
+  return 'monthly';
+};
+
 function SubscriptionPage() {
   const { user } = useAuth();
   const [subscriptionData, setSubscriptionData] = useState<SubscriptionResponse | null>(null);
@@ -62,6 +76,7 @@ function SubscriptionPage() {
   const subscription = subscriptionData?.subscription;
   const storage = subscription?.storage;
   const pendingRequest = subscriptionData?.pending_request;
+  const currentPlanSelection = resolvePlanSelection(subscription?.plan_type, subscription?.subscription_period);
 
   const getStatusColor = () => {
     if (subscription?.is_trial) return 'blue';
@@ -80,7 +95,6 @@ function SubscriptionPage() {
   const seatsColor = getSeatsColor();
 
   const handleRenewalSubmit = async (payload: SubscriptionRenewalRequest) => {
-    if (!payload.plan_selection) return;
     setRenewalSubmitting(true);
     try {
       await requestAcademyRenewal(payload);
@@ -438,6 +452,8 @@ function SubscriptionPage() {
           onClose={() => setRenewalOpen(false)}
           onSubmit={handleRenewalSubmit}
           planOptions={subscriptionData?.plan_options ?? []}
+          currentPlanSelection={currentPlanSelection}
+          currentPlanLabel={subscription?.plan_label ?? ''}
           currentSeatsLimit={subscription?.seats_limit ?? null}
           currentStorageLimitGb={storage?.limit_gb ?? null}
           pricePerSeat={subscription?.price_per_seat ?? 0}
