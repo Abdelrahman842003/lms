@@ -151,7 +151,13 @@ export async function getTeacherVideos(): Promise<VideoItem[]> {
 }
 
 export async function getTeacherVideo(videoId: string): Promise<VideoItem> {
-  const response = await fetchApi<{ video: VideoItem }>(`/teacher/videos/${videoId}`);
+  const response = await fetchApi<{ video: VideoItem }>(`/teacher/videos/${videoId}`, {
+    cache: 'no-store',
+    headers: {
+      'Cache-Control': 'no-cache',
+      'Pragma': 'no-cache',
+    },
+  });
   return response.video;
 }
 
@@ -166,7 +172,13 @@ export async function getAcademyVideos(): Promise<VideoItem[]> {
 }
 
 export async function getAcademyVideo(videoId: string): Promise<VideoItem> {
-  const response = await fetchApi<{ video: VideoItem }>(`/academy/videos/${videoId}`);
+  const response = await fetchApi<{ video: VideoItem }>(`/academy/videos/${videoId}`, {
+    cache: 'no-store',
+    headers: {
+      'Cache-Control': 'no-cache',
+      'Pragma': 'no-cache',
+    },
+  });
   return response.video;
 }
 

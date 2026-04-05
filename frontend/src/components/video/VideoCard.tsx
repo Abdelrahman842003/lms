@@ -197,6 +197,7 @@ export const VideoCard: React.FC<VideoCardBaseProps> = ({
   const watchedPct = watchProgress?.watched_percentage ?? 0;
   const procLabel = processingLabel(video);
 
+
   return (
     <div
       className={`group relative flex flex-col rounded-2xl border bg-[#101426]/60 backdrop-blur-sm overflow-hidden transition-all duration-300
@@ -302,6 +303,7 @@ export const VideoCard: React.FC<VideoCardBaseProps> = ({
                     <Icon name="trash" size="sm" />
                     <span>حذف</span>
                   </button>
+
                 </div>
               )}
             </div>

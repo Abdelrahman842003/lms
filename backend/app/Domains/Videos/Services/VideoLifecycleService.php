@@ -41,7 +41,13 @@ class VideoLifecycleService
         $query = Video::query()
             // Keep listing resilient: the API resource doesn't use owner/uploader/publishedBy payloads.
             // Avoid eager-loading morph relations here to prevent morph alias runtime mismatch failures.
-            ->with(['grade', 'groups', 'teacherReference'])
+            ->with([
+                'grade',
+                'groups',
+                'teacherReference',
+                'watchProgresses.student:id,name',
+                'quiz.attempts.student:id,name',
+            ])
             ->withCount(['likes', 'comments', 'attachments', 'watchProgresses', 'quiz'])
             ->where('owner_type', $context->ownerType->value)
             ->where('owner_id', $context->ownerId)

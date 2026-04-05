@@ -22,6 +22,7 @@ import {
 } from '@/services/videoService';
 import type { VideoAttachment, VideoComment, VideoItem, VideoQuiz } from '@/types/video.types';
 import { VideoQuizManager } from '@/components/video/VideoQuizManager';
+import { VideoStudentActivityDetails } from '@/components/video/VideoStudentActivityDetails';
 
 function formatDuration(seconds?: number | null): string {
   if (!seconds) return '—';
@@ -103,7 +104,7 @@ export default function AcademyVideoDetailPage() {
   const [loading, setLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'details' | 'comments' | 'quiz' | 'attachments'>('details');
+  const [activeTab, setActiveTab] = useState<'details' | 'student_activity' | 'comments' | 'quiz' | 'attachments'>('details');
 
   const [attachmentFiles, setAttachmentFiles] = useState<File[]>([]);
   const [isUploadingAttachments, setIsUploadingAttachments] = useState(false);
@@ -135,9 +136,9 @@ export default function AcademyVideoDetailPage() {
     if (!video) return;
     setIsProcessing(true);
     try {
-      const updated = await publishAcademyVideo(video.id);
-      setVideo(updated);
+      await publishAcademyVideo(video.id);
       toast.success('تم نشر الفيديو بنجاح');
+      await loadVideo();
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : 'فشل نشر الفيديو');
     } finally {
@@ -308,7 +309,7 @@ export default function AcademyVideoDetailPage() {
           )}
 
           <div className="flex gap-1 border-b border-white/10 pb-0">
-            {(['details', 'attachments', 'comments', 'quiz'] as const).map((tab) => (
+            {(['details', 'student_activity', 'attachments', 'comments', 'quiz'] as const).map((tab) => (
               <button
                 key={tab}
                 type="button"
@@ -321,6 +322,15 @@ export default function AcademyVideoDetailPage() {
               >
                 {tab === 'details' ? (
                   <span className="flex items-center gap-2"><Icon name="info-circle" size="sm" /> التفاصيل</span>
+                ) : tab === 'student_activity' ? (
+                  <span className="flex items-center gap-2">
+                    <Icon name="users" size="sm" /> الحضور والتفاعل
+                    {(video?.student_activity_summary?.target_students_count ?? 0) > 0 && (
+                      <span className="bg-primary/20 text-primary text-xs rounded-full px-2">
+                        {video?.student_activity_summary?.target_students_count}
+                      </span>
+                    )}
+                  </span>
                 ) : tab === 'attachments' ? (
                   <span className="flex items-center gap-2">
                     <Icon name="paperclip" size="sm" /> المرفقات
@@ -394,6 +404,10 @@ export default function AcademyVideoDetailPage() {
                 </div>
               )}
             </div>
+          )}
+
+          {activeTab === 'student_activity' && (
+            <VideoStudentActivityDetails video={video} defaultCollapsed={false} />
           )}
 
           {activeTab === 'attachments' && (

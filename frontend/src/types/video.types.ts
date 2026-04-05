@@ -112,6 +112,34 @@ export interface VideoComment {
   replies?: VideoComment[];
 }
 
+export interface VideoStudentActivitySummary {
+  target_students_count?: number;
+  attended_students_count: number;
+  quiz_attempted_students_count: number;
+  quiz_attempts_count: number;
+  quiz_passed_students_count: number;
+}
+
+export interface VideoStudentActivityDetail {
+  student_id: string;
+  student_name: string;
+  watch: {
+    status: string;
+    watched_seconds: number;
+    watched_percentage: number;
+    last_watched_at?: string | null;
+    completed_at?: string | null;
+  };
+  quiz: {
+    attempted: boolean;
+    attempts_count: number;
+    best_percentage?: number | null;
+    latest_percentage?: number | null;
+    best_status?: 'passed' | 'failed' | null;
+    last_attempt_at?: string | null;
+  };
+}
+
 export interface VideoItem {
   id: string;
   title: string;
@@ -147,6 +175,8 @@ export interface VideoItem {
   quiz_count?: number;
   attachments?: VideoAttachment[];
   quiz?: VideoQuiz | null;
+  student_activity_summary?: VideoStudentActivitySummary | null;
+  student_activity_details?: VideoStudentActivityDetail[];
   created_at?: string;
   updated_at?: string;
 }
