@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { ConfirmationModal, Icon } from '@/components/ui';
 import { NavbarOverlayDropdown } from './NavbarOverlayDropdown';
+import { normalizeStudentTeachers } from '@/utils/studentTeacherAccess';
 
 export const TeacherSelectionDropdown: React.FC = () => {
   const CLOSE_ANIMATION_MS = 220;
@@ -24,6 +25,8 @@ export const TeacherSelectionDropdown: React.FC = () => {
     onConfirm: () => {},
     showCancel: true,
   });
+
+  const teachers = useMemo(() => normalizeStudentTeachers(user?.teachers), [user?.teachers]);
 
   useEffect(() => {
     return () => {
@@ -186,14 +189,14 @@ export const TeacherSelectionDropdown: React.FC = () => {
         </div>
         
         <div className="notification-dropdown-list teacher-dropdown-list">
-          {(!user?.teachers || user.teachers.length === 0) ? (
+          {teachers.length === 0 ? (
             <div className="notification-dropdown-empty teacher-dropdown-empty">
               <span className="notification-dropdown-empty-icon"><Icon name="chalkboard-teacher" /></span>
               لا يوجد مدرسين مشترك معهم حالياً
             </div>
           ) : (
             <TeacherList
-              teachers={user.teachers}
+              teachers={teachers}
               selectedTeacher={selectedTeacher}
               onSelect={handleTeacherSelect}
             />

@@ -47,7 +47,7 @@ export default function StudentLayout({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [isLoading, user?.id, user?.userType]);
+  }, [isLoading, user?.id, user?.userType, refreshUser]);
 
   // Wait until core auth AND the fresh /me call are both done
   if (isLoading || !hasSynced) {
@@ -56,7 +56,24 @@ export default function StudentLayout({ children }: { children: ReactNode }) {
 
   const hasTeachers = !!user?.teachers?.length;
   const hasAccessibleTeacher = user?.teachers?.some((teacher) => isTeacherAccessible(teacher));
+  const hasNoTeachers = user?.userType === 'student' && !hasTeachers;
   const isDisabled = user?.userType === 'student' && hasTeachers && !hasAccessibleTeacher;
+
+  if (hasNoTeachers) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center text-center p-8 relative z-10">
+        <div className="w-24 h-24 rounded-full bg-white/5 flex items-center justify-center mb-6 backdrop-blur-sm border border-white/10">
+          <i className="fas fa-user-plus text-4xl text-gray-400"></i>
+        </div>
+        <h2 className="text-2xl font-bold text-white mb-3">
+          أنت لست مضمومًا إلى أي مدرس حالياً
+        </h2>
+        <p className="text-gray-400 max-w-md mx-auto text-lg">
+          يرجى التواصل مع الإدارة أو المدرس لإضافتك إلى مجموعة دراسية حتى تتمكن من استخدام المنصة.
+        </p>
+      </div>
+    );
+  }
 
   if (isDisabled) {
     return (

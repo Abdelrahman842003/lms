@@ -19,6 +19,7 @@ import {
 } from "@/services/authService";
 import { clearAccessToken } from "@/lib/tokenManager";
 import { AUTH_COOKIES, clearAuthCookie, clearAuthStorage, setAuthCookie } from "@/utils/authHelpers";
+import { normalizeStudentTeachers } from "@/utils/studentTeacherAccess";
 import { User } from "@/types";
 
 const VALID_USER_TYPES = ['teacher', 'student', 'secretary', 'parent', 'academy'] as const;
@@ -33,6 +34,8 @@ function isValidUserType(value: unknown): value is ValidUserType {
  * Centralized mapping to avoid code duplication across validateSession, login, etc.
  */
 function mapAuthResponseToUser(response: any, role: string): User {
+  const normalizedTeachers = normalizeStudentTeachers(response?.teachers ?? response?.user?.teachers);
+
   return {
     id: response.user.id,
     name: response.user.name,
@@ -46,7 +49,7 @@ function mapAuthResponseToUser(response: any, role: string): User {
     location: response.user.location,
     gender: response.user.gender,
     education_type: response.user.education_type,
-    teachers: response.teachers || response.user.teachers,
+  teachers: normalizedTeachers,
     permissions: response.user.permissions,
     is_independent_active: response.user.is_independent_active,
     academies: response.academies || response.user.academies,
@@ -86,7 +89,16 @@ export function CoreAuthProvider({ children }: { children: ReactNode }) {
       if (storedUser) {
         const storedUserObj = JSON.parse(storedUser);
         if (isValidUserType(storedUserObj?.userType)) {
-          cachedUser = storedUserObj;
+          const normalizedStoredUser: User = {
+            ...storedUserObj,
+            teachers: normalizeStudentTeachers(storedUserObj?.teachers),
+          };
+
+          cachedUser = normalizedStoredUser;
+
+          if (JSON.stringify(normalizedStoredUser) !== JSON.stringify(storedUserObj)) {
+            localStorage.setItem("user", JSON.stringify(normalizedStoredUser));
+          }
         } else {
           clearAuthStorage();
           clearAuthCookie(AUTH_COOKIES.AUTH_STATE);
@@ -264,7 +276,14 @@ export function CoreAuthProvider({ children }: { children: ReactNode }) {
 
   const updateUser = (userData: Partial<User>) => {
     if (user) {
-      const updatedUser = { ...user, ...userData };
+      const normalizedPatch: Partial<User> = {
+        ...userData,
+        ...(Object.prototype.hasOwnProperty.call(userData, "teachers") && {
+          teachers: normalizeStudentTeachers(userData.teachers),
+        }),
+      };
+
+      const updatedUser = { ...user, ...normalizedPatch };
       setUser(updatedUser);
       localStorage.setItem("user", JSON.stringify(updatedUser));
     }
