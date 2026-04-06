@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Enrollments\Services;
 
+use App\Domains\Application\Models\Setting;
 use App\Domains\Auth\Models\Academy;
 use App\Domains\Auth\Models\Teacher;
 use App\Domains\Enrollments\Models\Enrollment;
@@ -44,6 +45,13 @@ class EnrollmentStatusService
                     return $teacherTrial;
                 }
             }
+        }
+
+        // Fallback to global setting when no academy/teacher-specific value exists.
+        // Use direct query here to avoid hard dependency on Redis-backed cache in status calculation path.
+        $globalTrial = (int) (Setting::query()->where('key', 'trial_period_days')->value('value') ?? 0);
+        if ($globalTrial > 0) {
+            return $globalTrial;
         }
 
         // Default to 0 if no trial period is configured

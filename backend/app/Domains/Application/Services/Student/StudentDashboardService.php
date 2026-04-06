@@ -103,19 +103,26 @@ class StudentDashboardService
      */
     public function validateTeacherAndGetEnrollment(Student $student, string $teacherId): ?array
     {
-        // Validate Teacher & Enrollment Status
-        $teacher = Teacher::find($teacherId);
-        if (!$teacher || $teacher->status === 'suspended' || $teacher->isSubscriptionBlocked()) {
-            return null;
-        }
-
         // Get Enrollment (for Balance & Status)
         $enrollment = Enrollment::where('student_id', $student->id)
             ->where('teacher_id', $teacherId)
-            ->with(['academy:id,trial_period_days', 'teacher:id,trial_period_days'])
+            ->with(['academy:id,trial_period_days', 'teacher:id,trial_period_days,status'])
             ->first();
 
         if (!$enrollment || !$enrollment->is_active) {
+            return null;
+        }
+
+        $teacher = $enrollment->teacher;
+        if (!$teacher) {
+            return null;
+        }
+
+        $enrollmentStatus = (string) $enrollment->status;
+        $isTeacherSuspended = $teacher->status === 'suspended';
+        $isSubscriptionBlocked = $teacher->isSubscriptionBlocked();
+
+        if ($isTeacherSuspended || ($isSubscriptionBlocked && $enrollmentStatus !== 'trial')) {
             return null;
         }
 

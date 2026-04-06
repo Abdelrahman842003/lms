@@ -40,16 +40,22 @@ class StudentService
             ->with(['teacher:id,name,avatar_key,status', 'grade:id,name', 'group:id,name'])
             ->get()
             ->map(function ($enrollment) {
+                $enrollmentStatus = (string) $enrollment->status;
+                $isTeacherSuspended = $enrollment->teacher->status === 'suspended';
+                $isSubscriptionBlocked = $enrollment->teacher->isSubscriptionBlocked();
+
                 return [
                     'enrollment_id' => $enrollment->id,
                     'teacher_id' => $enrollment->teacher_id,
                     'teacher_name' => $enrollment->teacher->name,
                     'teacher_avatar' => $enrollment->teacher->avatar_url ?? null,
-                    'is_suspended' => $enrollment->teacher->status === 'suspended' || $enrollment->teacher->isSubscriptionBlocked(),
+                    'is_teacher_suspended' => $isTeacherSuspended,
+                    'is_subscription_blocked' => $isSubscriptionBlocked,
+                    'is_suspended' => $isTeacherSuspended || ($isSubscriptionBlocked && $enrollmentStatus !== 'trial'),
                     'grade_name' => $enrollment->grade?->name,
                     'group_name' => $enrollment->group?->name,
                     'balance' => $enrollment->balance,
-                    'status' => $enrollment->status,
+                    'status' => $enrollmentStatus,
                     'days_left' => $enrollment->days_left,
                     'enrolled_at' => $enrollment->created_at,
                 ];
@@ -77,16 +83,22 @@ class StudentService
         ];
 
         foreach ($enrollments as $enrollment) {
+            $enrollmentStatus = (string) $enrollment->status;
+            $isTeacherSuspended = $enrollment->teacher->status === 'suspended';
+            $isSubscriptionBlocked = $enrollment->teacher->isSubscriptionBlocked();
+
             $teacherData = [
                 'enrollment_id' => $enrollment->id,
                 'teacher_id' => $enrollment->teacher_id,
                 'teacher_name' => $enrollment->teacher->name,
                 'teacher_avatar' => $enrollment->teacher->avatar_url ?? null,
-                'is_suspended' => $enrollment->teacher->status === 'suspended' || $enrollment->teacher->isSubscriptionBlocked(),
+                'is_teacher_suspended' => $isTeacherSuspended,
+                'is_subscription_blocked' => $isSubscriptionBlocked,
+                'is_suspended' => $isTeacherSuspended || ($isSubscriptionBlocked && $enrollmentStatus !== 'trial'),
                 'grade_name' => $enrollment->grade?->name,
                 'group_name' => $enrollment->group?->name,
                 'balance' => $enrollment->balance,
-                'status' => $enrollment->status,
+                'status' => $enrollmentStatus,
                 'days_left' => $enrollment->days_left,
                 'enrolled_at' => $enrollment->created_at,
             ];
@@ -128,7 +140,11 @@ class StudentService
             ->where('is_active', true)
             ->firstOrFail();
 
-        if ($enrollment->teacher->status === 'suspended' || $enrollment->teacher->isSubscriptionBlocked()) {
+        $enrollmentStatus = (string) $enrollment->status;
+        $isTeacherSuspended = $enrollment->teacher->status === 'suspended';
+        $isSubscriptionBlocked = $enrollment->teacher->isSubscriptionBlocked();
+
+        if ($isTeacherSuspended || ($isSubscriptionBlocked && $enrollmentStatus !== 'trial')) {
             abort(403, "لا يمكنك الدخول لهذا المدرس حالياً بسبب حالة الاشتراك. يرجى التواصل مع الإدارة.");
         }
 

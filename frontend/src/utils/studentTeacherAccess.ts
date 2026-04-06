@@ -7,7 +7,33 @@ export function isTeacherAccessible(teacher: TeacherInfo | null | undefined): bo
     return false;
   }
 
-  return !teacher.is_suspended && ACCESSIBLE_STATUSES.has(teacher.status ?? "");
+  const status = teacher.status ?? "";
+  if (!ACCESSIBLE_STATUSES.has(status)) {
+    return false;
+  }
+
+  const hasFineGrainedFlags =
+    typeof teacher.is_teacher_suspended === "boolean" ||
+    typeof teacher.is_subscription_blocked === "boolean";
+
+  // Backward compatibility for older API payloads.
+  if (!hasFineGrainedFlags) {
+    if (status === "trial") {
+      return true;
+    }
+
+    return !teacher.is_suspended;
+  }
+
+  if (teacher.is_teacher_suspended) {
+    return false;
+  }
+
+  if (status === "trial") {
+    return true;
+  }
+
+  return !teacher.is_subscription_blocked;
 }
 
 export function pickPreferredTeacher(teachers: TeacherInfo[] | null | undefined): TeacherInfo | null {
@@ -18,7 +44,7 @@ export function pickPreferredTeacher(teachers: TeacherInfo[] | null | undefined)
   const preferredOrder = ["active", "grace_period", "trial"] as const;
 
   for (const status of preferredOrder) {
-    const match = teachers.find((teacher) => teacher.status === status && !teacher.is_suspended);
+    const match = teachers.find((teacher) => teacher.status === status && isTeacherAccessible(teacher));
     if (match) {
       return match;
     }

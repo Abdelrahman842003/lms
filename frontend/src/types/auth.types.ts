@@ -112,9 +112,11 @@ export interface TeacherInfo {
   group_name: string | null;
   balance: number;
   enrolled_at: string;
-  status?: 'active' | 'grace_period' | 'expired' | 'inactive';
+  status?: 'active' | 'grace_period' | 'trial' | 'expired' | 'inactive';
   days_left?: number;
   is_suspended?: boolean;
+  is_teacher_suspended?: boolean;
+  is_subscription_blocked?: boolean;
   academy_id?: string | null;
   academy_name?: string | null;
 }
