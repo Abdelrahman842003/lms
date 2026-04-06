@@ -6,7 +6,7 @@ import { StatCard } from '@/components/dashboard/StatCard';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { DataTable } from '@/components/dashboard/DataTable';
 import { Filter } from '@/components/Filter';
-import { LoadingSpinner, FormModal, Button, Icon, Input, Textarea, Badge } from '@/components/ui';
+import { FormModal, Button, Icon, Input, Textarea, Badge } from '@/components/ui';
 import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { getGrades, Grade } from '@/services/gradeService';
@@ -133,7 +133,7 @@ function NotificationsContent() {
   const fetchGroups = async () => {
     try {
       const response = await getGroups();
-      setGroups(response?.data || []);
+      setGroups((response as any)?.groups || (response as any)?.data || []);
     } catch (error) {
       console.error('Failed to fetch groups:', error);
       setGroups([]);
@@ -193,7 +193,12 @@ function NotificationsContent() {
     setIsLoading(true);
     
     try {
-      if (notificationType === 'voice' && voiceBlob) {
+      if (notificationType === 'voice') {
+        if (!voiceBlob) {
+          toast.error('سجّل رسالة صوتية أولاً قبل الإرسال');
+          return;
+        }
+
         await sendVoiceNotification({
           title: formData.title,
           voice: voiceBlob,
@@ -203,7 +208,6 @@ function NotificationsContent() {
           group_id: formData.group_id ? parseInt(formData.group_id) : undefined,
         });
         toast.success('تم إرسال الرسالة الصوتية بنجاح');
-        setCanSendVoice(false);
       } else {
         await sendNotification({
           title: formData.title,

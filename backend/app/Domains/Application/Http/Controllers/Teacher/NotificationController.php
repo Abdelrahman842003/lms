@@ -12,6 +12,8 @@ use App\Domains\Notifications\Models\SentNotification;
 use App\Domains\Application\Services\Teacher\NotificationService;
 use App\Domains\Notifications\Services\NotificationSettingsService;
 use App\Domains\Notifications\Services\VoiceNotificationService;
+use App\Domains\Subscriptions\Services\StorageQuotaService;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -23,6 +25,7 @@ class NotificationController extends Controller
         private NotificationService $notificationService,
         private VoiceNotificationService $voiceService,
         private NotificationSettingsService $notificationSettings,
+        private StorageQuotaService $storageQuota,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -101,11 +104,10 @@ class NotificationController extends Controller
      */
     public function checkVoiceLimit(Request $request): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
-        $canSend = $this->voiceService->canUserSendVoice($teacher);
-
         return $this->successResponse([
-            'can_send_voice' => $canSend,
+            // Voice notifications are no longer count-limited per day.
+            // Availability is effectively controlled by storage quota checks on upload.
+            'can_send_voice' => true,
             'max_duration' => VoiceNotificationService::MAX_DURATION,
         ]);
     }
@@ -117,15 +119,16 @@ class NotificationController extends Controller
     {
         $teacher = $this->getTeacherFromRequest($request);
 
-        // Check daily limit
-        if (!$this->voiceService->canUserSendVoice($teacher)) {
-            return $this->errorResponse('لقد استنفدت الحصة اليومية للرسائل الصوتية. حاول مرة أخرى غداً.', 429);
-        }
-
         try {
+            $voiceFile = $request->file('voice');
+            $voiceBytes = max(0, (int) ($voiceFile?->getSize() ?? 0));
+
+            // Enforce storage quota by bytes (package GB), not count-based daily limits.
+            $this->storageQuota->assertCanUpload($teacher, $voiceBytes);
+
             // Validate audio file
             $this->voiceService->validateAudioFile(
-                $request->file('voice'),
+                $voiceFile,
                 (int) $request->input('duration')
             );
 
@@ -143,8 +146,11 @@ class NotificationController extends Controller
             }
 
             // Store voice file
-            $voicePath = $this->voiceService->storeVoiceFile($request->file('voice'), $teacher);
+            $voicePath = $this->voiceService->storeVoiceFile($voiceFile, $teacher);
             $voiceUrl = $this->voiceService->getVoiceUrl($voicePath);
+
+            // Track storage consumption in teacher package usage.
+            $this->storageQuota->incrementUsage($teacher, $voiceBytes);
 
             // Send notification to recipients
             $channel = NotificationFactory::make('database');
@@ -168,9 +174,6 @@ class NotificationController extends Controller
                 'voice_duration' => (int) $request->input('duration'),
             ]);
 
-            // Mark daily limit as used
-            $this->voiceService->markDailyLimitUsed($teacher);
-
             // Send to parents
             $this->notificationService->sendToParents($recipients, $teacher, [
                 'title' => $request->input('title'),
@@ -186,6 +189,8 @@ class NotificationController extends Controller
                 'notification' => $sentNotification,
             ]);
 
+        } catch (AuthorizationException $e) {
+            return $this->errorResponse($e->getMessage(), 403);
         } catch (\InvalidArgumentException $e) {
             return $this->errorResponse($e->getMessage(), 422);
         } catch (\Exception $e) {

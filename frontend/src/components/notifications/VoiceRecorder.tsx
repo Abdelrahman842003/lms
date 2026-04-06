@@ -38,6 +38,15 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
   const targetLevelRef = useRef(0);
 
   useEffect(() => {
+    const isLocalhost = ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
+    const isSecure = window.isSecureContext || isLocalhost;
+
+    if (!isSecure) {
+      setIsSupported(false);
+      setError('تسجيل الصوت يتطلب اتصالاً آمناً (HTTPS) أو التشغيل على localhost.');
+      return;
+    }
+
     if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
       setIsSupported(false);
       setError('متصفحك لا يدعم تسجيل الصوت');
@@ -60,7 +69,7 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
     for (const type of types) {
       if (MediaRecorder.isTypeSupported(type)) return type;
     }
-    return 'audio/webm';
+    return '';
   };
 
   const analyzeAudio = useCallback(() => {
@@ -103,6 +112,9 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
       isRecordingRef.current = true;
 
       const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContextClass) {
+        throw new Error('AudioContextUnavailable');
+      }
       audioContextRef.current = new AudioContextClass();
       analyserRef.current = audioContextRef.current.createAnalyser();
       analyserRef.current.fftSize = 128;
@@ -112,7 +124,9 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
       source.connect(analyserRef.current);
 
       const mimeType = getMimeType();
-      const mediaRecorder = new MediaRecorder(stream, { mimeType });
+      const mediaRecorder = mimeType
+        ? new MediaRecorder(stream, { mimeType })
+        : new MediaRecorder(stream);
       mediaRecorderRef.current = mediaRecorder;
 
       mediaRecorder.ondataavailable = (event) => {
@@ -145,8 +159,37 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
         });
       }, 1000);
 
-    } catch (err) {
-      setError('فشل في بدء التسجيل. تأكد من السماح بصلاحيات الميكروفون.');
+    } catch (err: unknown) {
+      const errorName = err instanceof DOMException
+        ? err.name
+        : (err instanceof Error ? err.message : 'UnknownError');
+
+      if (errorName === 'NotAllowedError' || errorName === 'PermissionDeniedError') {
+        setError('تم رفض صلاحية الميكروفون. اسمح بالوصول للميكروفون من إعدادات المتصفح ثم أعد المحاولة.');
+        return;
+      }
+
+      if (errorName === 'NotFoundError' || errorName === 'DevicesNotFoundError') {
+        setError('لم يتم العثور على ميكروفون. تأكد من توصيل ميكروفون يعمل.');
+        return;
+      }
+
+      if (errorName === 'NotReadableError' || errorName === 'TrackStartError') {
+        setError('الميكروفون مستخدم بواسطة تطبيق آخر أو غير متاح حالياً. أغلق التطبيقات الأخرى وحاول مرة أخرى.');
+        return;
+      }
+
+      if (errorName === 'SecurityError') {
+        setError('تسجيل الصوت يتطلب HTTPS أو localhost.');
+        return;
+      }
+
+      if (errorName === 'AudioContextUnavailable') {
+        setError('متصفحك لا يدعم AudioContext المطلوب لتسجيل الصوت.');
+        return;
+      }
+
+      setError('فشل في بدء التسجيل. تأكد من صلاحية الميكروفون والاتصال الآمن (HTTPS).');
     }
   }, [maxDuration, analyzeAudio]);
 

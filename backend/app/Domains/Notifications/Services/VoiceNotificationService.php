@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Domains\Notifications\Services;
 
-use App\Domains\Application\Models\DailyVoiceLimit;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -35,14 +35,6 @@ class VoiceNotificationService
         'video/webm',              // Some browsers report WebM audio as video/webm
         'application/octet-stream', // Fallback for some browsers
     ];
-
-    /**
-     * Check if user can send a voice notification
-     */
-    public function canUserSendVoice($user): bool
-    {
-        return DailyVoiceLimit::canSendVoice($user);
-    }
 
     /**
      * Validate audio file
@@ -121,14 +113,10 @@ class VoiceNotificationService
      */
     public function getVoiceUrl(string $path): string
     {
-        return Storage::disk('r2')->url($path);
+        /** @var FilesystemAdapter $disk */
+        $disk = Storage::disk('r2');
+
+        return $disk->url($path);
     }
 
-    /**
-     * Mark user as having used their daily voice limit
-     */
-    public function markDailyLimitUsed($user): void
-    {
-        DailyVoiceLimit::markAsUsed($user);
-    }
 }
