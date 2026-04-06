@@ -16,8 +16,17 @@ class GroupService
     public function getGroups(Academy $academy, array $filters = [], int $perPage = 10): LengthAwarePaginator
     {
         $query = Group::where(function ($query) use ($academy) {
-            // Get groups that belong to this academy directly (created by academy)
-            $query->where('academy_id', $academy->id);
+            // Direct academy-owned groups
+            $query->where('academy_id', $academy->id)
+                // Legacy groups linked through academy-grade ownership
+                ->orWhereHas('grade', function ($gradeQuery) use ($academy) {
+                    $gradeQuery->where('academy_id', $academy->id);
+                })
+                // Legacy groups linked through teacher membership in academy
+                ->orWhereHas('teacher.academies', function ($academyQuery) use ($academy) {
+                    $academyQuery->where('academies.id', $academy->id)
+                        ->where('academy_teacher.is_active', true);
+                });
         });
 
         return $query->when(isset($filters['search']), function ($query) use ($filters) {
@@ -49,6 +58,7 @@ class GroupService
                 $q->where('academy_id', $academy->id)
                   ->where('academy_teacher.is_active', true);
             })->firstOrFail();
+        /** @var Teacher $teacher */
 
         // If grade_id is provided, verify it belongs to the teacher OR the academy
         if ($data->gradeId) {

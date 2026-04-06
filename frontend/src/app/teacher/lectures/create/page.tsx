@@ -37,13 +37,8 @@ export default function CreateLecturePage() {
           getGrades(1, 100),
           getGroups(1, 100)
         ]);
-        console.log('[DEBUG] Grades response:', gradesResponse);
-        console.log('[DEBUG] Groups response:', groupsResponse);
-        console.log('[DEBUG] Groups data:', groupsResponse.data);
-        console.log('[DEBUG] Groups array:', groupsResponse.data?.groups);
         setGrades(gradesResponse.data || []);
-        setGroups(groupsResponse.data?.groups || []);
-        console.log('[DEBUG] Groups state set to:', groupsResponse.data?.groups || []);
+        setGroups(groupsResponse.data || []);
       } catch (error) {
         console.error('Failed to fetch data:', error);
       }

@@ -29,11 +29,18 @@ class GroupService
                 : ($query instanceof \Illuminate\Database\Eloquent\Relations\Relation ? $query->getQuery() : $query)
         );
 
-        // Apply direct academy filter (groups now have academy_id column)
-        // Strict tenant isolation:
-        // independent => academy_id IS NULL
-        // academy => academy_id = selected academy id
-        $query = $this->applyDirectAcademyFilter($query, $academyId);
+        // Apply academy filter with compatibility for legacy data:
+        // - independent: only pure independent groups
+        // - academy: include direct academy groups and groups linked via grade academy
+        if ($academyId === 'independent') {
+            $query->whereNull('academy_id')
+                ->whereDoesntHave('grade', fn ($q) => $q->whereNotNull('academy_id'));
+        } elseif ($academyId) {
+            $query->where(function ($q) use ($academyId) {
+                $q->where('academy_id', $academyId)
+                    ->orWhereHas('grade', fn ($g) => $g->where('academy_id', $academyId));
+            });
+        }
 
         return $query->paginate($perPage);
     }

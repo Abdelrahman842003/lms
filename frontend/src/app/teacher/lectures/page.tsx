@@ -70,7 +70,7 @@ export default function TeacherLecturesPage() {
           getGroups(1, 100)
         ]);
         setGrades(gradesResponse.data);
-        setGroups(groupsResponse.data?.groups || []);
+        setGroups(groupsResponse.data || []);
       } catch (error) {
         console.error('Failed to fetch data:', error);
       }
