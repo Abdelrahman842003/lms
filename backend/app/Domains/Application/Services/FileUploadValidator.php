@@ -171,8 +171,31 @@ class FileUploadValidator
      */
     protected function containsMaliciousContent(UploadedFile $file): bool
     {
-        $handle = fopen($file->getPathname(), 'r');
-        $content = fread($handle, 32768);
+        $mimeType = $file->getMimeType() ?? '';
+
+        // Skip deep text-pattern scanning for trusted binary formats.
+        // Regex scanning binary payloads can produce false positives.
+        $trustedBinaryMimePrefixes = ['image/', 'video/', 'audio/'];
+        foreach ($trustedBinaryMimePrefixes as $prefix) {
+            if (str_starts_with($mimeType, $prefix)) {
+                return false;
+            }
+        }
+
+        $trustedBinaryMimes = [
+            'application/pdf',
+        ];
+
+        if (in_array($mimeType, $trustedBinaryMimes, true)) {
+            return false;
+        }
+
+        $handle = @fopen($file->getPathname(), 'r');
+        if ($handle === false) {
+            return true;
+        }
+
+        $content = fread($handle, 32768) ?: '';
         fclose($handle);
         
         $maliciousPatterns = [

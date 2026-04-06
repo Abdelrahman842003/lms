@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Media\Services;
 
 use App\Domains\Application\Exceptions\DomainException;
+use App\Domains\Auth\Models\Academy;
 use App\Domains\Auth\Models\Guardian;
 use App\Domains\Auth\Models\Secretary;
 use App\Domains\Auth\Models\Student;
@@ -20,6 +21,11 @@ class AvatarService
         $this->imageService = $imageService;
     }
 
+    private function getImageKeyColumn(string $type): string
+    {
+        return $type === 'academy' ? 'logo_key' : 'avatar_key';
+    }
+
     /**
      * Upload avatar for a user
      *
@@ -30,8 +36,10 @@ class AvatarService
      */
     public function uploadAvatar($user, string $type, UploadedFile $file): array
     {
+        $imageKeyColumn = $this->getImageKeyColumn($type);
+
         // Delete old avatar if exists
-        if ($user->avatar_key) {
+        if ($user->{$imageKeyColumn}) {
             $this->deleteAvatar($user, $type);
         }
 
@@ -45,9 +53,9 @@ class AvatarService
         // Get public URL
         $url = $this->imageService->getUrl($path);
 
-        // Update user's avatar_key in database with the R2 PATH
+    // Update user's image key in database with the R2 PATH
         // We store the path so we can delete it later easily
-        $user->update(['avatar_key' => $path]);
+    $user->update([$imageKeyColumn => $path]);
 
         return [
             'url' => $url,
@@ -64,18 +72,20 @@ class AvatarService
      */
     public function deleteAvatar($user, string $type): bool
     {
-        if (!$user->avatar_key) {
+        $imageKeyColumn = $this->getImageKeyColumn($type);
+
+        if (!$user->{$imageKeyColumn}) {
             return true;
         }
 
-        // The avatar_key now holds the R2 path
-        $path = $user->avatar_key;
+        // The image key now holds the R2 path
+        $path = $user->{$imageKeyColumn};
 
         // Delete from R2
         $this->imageService->delete($path);
 
-        // Clear avatar_key from database
-        $user->update(['avatar_key' => null]);
+    // Clear image key from database
+    $user->update([$imageKeyColumn => null]);
 
         return true;
     }
@@ -89,12 +99,14 @@ class AvatarService
      */
     public function getAvatarUrl($user, string $type): ?string
     {
-        if (!$user->avatar_key) {
+        $imageKeyColumn = $this->getImageKeyColumn($type);
+
+        if (!$user->{$imageKeyColumn}) {
             return null;
         }
 
-        // The avatar_key holds the path, we need to convert it to a full URL
-        return $this->imageService->getUrl($user->avatar_key);
+        // The image key holds the path, we need to convert it to a full URL
+        return $this->imageService->getUrl($user->{$imageKeyColumn});
     }
 
     /**
@@ -113,6 +125,8 @@ class AvatarService
             return 'secretary';
         } elseif ($user instanceof Guardian) {
             return 'parent';
+        } elseif ($user instanceof Academy) {
+            return 'academy';
         }
 
         throw new DomainException('Invalid user type');
