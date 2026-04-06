@@ -208,7 +208,6 @@ services:
       - "8080:8080"
     environment:
       <<: *backend-dev-env
-      REVERB_HOST: 0.0.0.0
     depends_on:
       - mysql
       - redis
@@ -399,7 +398,6 @@ services:
     restart: unless-stopped
     environment:
       <<: *backend-prod-env
-      REVERB_HOST: 0.0.0.0
     depends_on:
       - mysql
       - redis

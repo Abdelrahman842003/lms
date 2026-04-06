@@ -38,23 +38,33 @@ export const initializeEcho = (token: string): Echo<"reverb"> => {
     Pusher.logToConsole = false;
   }
 
-  // Production environment check
-  process.env.NODE_ENV === "production";
-
   // Clean base URL - remove trailing /api or / to avoid duplication
   const baseUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000")
     .replace(/\/api\/?$/, "")
     .replace(/\/$/, "");
 
+  const configuredHost = process.env.NEXT_PUBLIC_REVERB_HOST?.trim();
+  const configuredScheme = process.env.NEXT_PUBLIC_REVERB_SCHEME?.trim();
+  const configuredPort = Number(process.env.NEXT_PUBLIC_REVERB_PORT);
+
+  const windowHost = window.location.hostname;
+  const shouldUseWindowHost = !configuredHost || configuredHost === 'localhost' || configuredHost === '127.0.0.1';
+  const wsHost = shouldUseWindowHost ? windowHost : configuredHost;
+
+  const resolvedScheme = configuredScheme || (window.location.protocol === 'https:' ? 'https' : 'http');
+  const forceTLS = resolvedScheme === 'https';
+  const defaultPort = forceTLS ? 443 : 8080;
+  const wsPort = Number.isFinite(configuredPort) && configuredPort > 0 ? configuredPort : defaultPort;
+
   echoInstance = new Echo({
     broadcaster: "reverb",
     key: process.env.NEXT_PUBLIC_REVERB_APP_KEY || 'y2vqna5uho5zsdz6kdyz',
-    wsHost: process.env.NEXT_PUBLIC_REVERB_HOST || window.location.hostname,
-    wsPort: Number(process.env.NEXT_PUBLIC_REVERB_PORT) || 8080,
-    wssPort: Number(process.env.NEXT_PUBLIC_REVERB_PORT) || 8080,
-    forceTLS: process.env.NEXT_PUBLIC_REVERB_SCHEME === 'https',
+    wsHost,
+    wsPort,
+    wssPort: wsPort,
+    forceTLS,
     enabledTransports: ["ws", "wss"],
-  authEndpoint: `${baseUrl}/api/v1/broadcasting/auth`,
+    authEndpoint: `${baseUrl}/api/v1/broadcasting/auth`,
     auth: {
       headers: {
         Authorization: `Bearer ${token}`,
