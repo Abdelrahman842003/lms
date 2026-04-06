@@ -170,7 +170,16 @@ export function showErrorToast(error: ApiError | Error): void {
 
   // For now, keep logs in non-production only
   if (!IS_PROD) {
-    console.error('[Error]', error.message);
+    const isExpectedClientError =
+      error instanceof ApiError
+      && error.statusCode >= 400
+      && error.statusCode < 500;
+
+    if (isExpectedClientError) {
+      console.warn('[Handled API Error]', error.message);
+    } else {
+      console.error('[Error]', error.message);
+    }
   }
 
   // Dispatch custom event for global error handling

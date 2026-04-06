@@ -41,15 +41,25 @@ const extractItems = (payload: unknown): RawOptionItem[] => {
 };
 
 export default function TeacherCreateVideoPage() {
-  const { user, selectedAcademy, isLoading } = useAuth();
+  const { user, selectedAcademy, isLoading, refreshUser } = useAuth();
   const router = useRouter();
   const [grades, setGrades] = useState<OptionItem[]>([]);
   const [groups, setGroups] = useState<OptionItem[]>([]);
   const isIndependentSelected = !selectedAcademy || selectedAcademy?.id === 'independent';
+  const hasIndependentFlag = typeof user?.is_independent_active === 'boolean';
+  const isIndependentAccountActive = user?.is_independent_active === true;
 
   useEffect(() => {
     if (isLoading || user?.userType !== 'teacher') return;
     if (!isIndependentSelected) return;
+    if (hasIndependentFlag) return;
+
+    void refreshUser();
+  }, [hasIndependentFlag, isIndependentSelected, isLoading, refreshUser, user?.userType]);
+
+  useEffect(() => {
+  if (isLoading || user?.userType !== 'teacher') return;
+  if (!isIndependentSelected || !isIndependentAccountActive) return;
 
     const loadOptions = async () => {
       const [loadedGrades, loadedGroups] = await Promise.all([getGrades(), getGroups()]);
@@ -67,7 +77,7 @@ export default function TeacherCreateVideoPage() {
     };
 
     void loadOptions();
-  }, [isIndependentSelected, isLoading, user?.userType]);
+  }, [isIndependentAccountActive, isIndependentSelected, isLoading, user?.userType]);
 
   if (isLoading) {
     return (
@@ -87,6 +97,28 @@ export default function TeacherCreateVideoPage() {
         hint="تلميح: اختر (مدرس مستقل) من مبدّل الأكاديمية في أعلى الصفحة."
         actionHref="/teacher/dashboard"
         actionLabel="الرجوع للوحة التحكم"
+      />
+    );
+  }
+
+  if (!hasIndependentFlag) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <LoadingSpinner size="lg" />
+          <p className="text-gray-400 mt-4">جاري التحقق من صلاحية الحساب المستقل...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isIndependentAccountActive) {
+    return (
+      <AppNotFound
+        description="الحساب المستقل غير مفعّل حاليًا، لذلك لا يمكنك رفع فيديوهات مستقلة."
+        hint="يمكنك استخدام وضع الأكاديمية إن كان متاحًا، أو التواصل مع الإدارة لتفعيل الحساب المستقل."
+        actionHref="/teacher/videos"
+        actionLabel="الرجوع إلى الفيديوهات"
       />
     );
   }

@@ -347,6 +347,9 @@ export async function fetchApi<T = unknown>(
 
     const safeMessage = getErrorMessage(response.status);
     const serverMessage = typeof error?.message === 'string' ? error.message : null;
+    const resolvedMessage = response.status >= 500
+      ? safeMessage
+      : (serverMessage || safeMessage);
     if (IS_API_DEBUG_ENABLED && serverMessage) {
       console.error('[API Error Payload]', serverMessage);
     }
@@ -354,7 +357,7 @@ export async function fetchApi<T = unknown>(
 
     // Create ApiError instance
     const apiError = new ApiError(
-      safeMessage,
+      resolvedMessage,
       response.status,
       error.errors as Record<string, string[]> | undefined,
       error.data as Record<string, unknown> | undefined

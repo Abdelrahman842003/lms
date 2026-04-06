@@ -95,10 +95,12 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // معالجة AuthorizationException
         $exceptions->render(function (\Illuminate\Auth\Access\AuthorizationException $e, $request) {
+            $message = trim((string) $e->getMessage());
+
             return response()->json([
                 'status' => false,
                 'status_code' => 403,
-                'message' => 'غير مصرح لك بهذا الإجراء',
+                'message' => $message !== '' ? $message : 'غير مصرح لك بهذا الإجراء',
             ], 403);
         });
 
@@ -118,7 +120,19 @@ return Application::configure(basePath: dirname(__DIR__))
             ];
 
             $code = $e->getStatusCode();
-            $message = $messages[$code] ?? 'حدث خطأ غير متوقع';
+            $defaultMessage = $messages[$code] ?? 'حدث خطأ غير متوقع';
+            $exceptionMessage = trim((string) $e->getMessage());
+
+            // Keep specific exception messages when available, but filter generic framework placeholders.
+            $genericMessages = [
+                'Forbidden',
+                'This action is unauthorized.',
+                'Unauthenticated.',
+            ];
+
+            $message = ($exceptionMessage !== '' && !in_array($exceptionMessage, $genericMessages, true))
+                ? $exceptionMessage
+                : $defaultMessage;
 
             return response()->json([
                 'status' => false,
