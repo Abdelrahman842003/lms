@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { fetchApi } from '@/services/authService';
-import Link from 'next/link';
 import { Button, LoadingSpinner, Icon } from '@/components/ui/index';
 import { Badge } from '@/components/ui/Badge';
 
@@ -169,7 +168,7 @@ export default function StudentLeaderboardPage() {
 
       try {
         setLoading(true);
-        const data = await fetchApi(`/api/student/leaderboard/${selectedTeacher.teacher_id}`);
+        const data = await fetchApi(`/api/student/leaderboard/${selectedTeacher.teacher_id}`) as any;
         
         if (data) {
           const weekly = data.weekly || data.data?.weekly || [];
@@ -268,7 +267,6 @@ export default function StudentLeaderboardPage() {
         <div className={`flex flex-col sm:flex-row items-center justify-between mb-8 gap-4 transition-all duration-700 ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
           <div className="text-center sm:text-right">
             <h1 className="text-3xl md:text-4xl font-bold text-white mb-2 flex items-center justify-center sm:justify-start gap-3">
-              <span className="text-4xl md:text-5xl animate-bounce">🏆</span>
               لوحة الشرف
             </h1>
             <p className="text-gray-400 text-lg">
@@ -312,9 +310,6 @@ export default function StudentLeaderboardPage() {
           <div className="text-center py-20">
             <div className="relative inline-block">
               <LoadingSpinner size="lg" />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-2xl">🏆</span>
-              </div>
             </div>
             <p className="text-gray-400 mt-4 text-lg">جاري تحميل لوحة الشرف...</p>
           </div>
@@ -388,9 +383,7 @@ export default function StudentLeaderboardPage() {
             {top3.length > 0 && (
               <div className={`mb-12 transition-all duration-700 delay-300 ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
                 <h2 className="text-xl md:text-2xl font-bold text-white text-center mb-16 flex items-center justify-center gap-3">
-                  <span className="text-3xl">🏅</span>
                   الأوائل
-                  <span className="text-3xl">🏅</span>
                 </h2>
                 
                 <div className="flex items-end justify-center gap-4 md:gap-6">
