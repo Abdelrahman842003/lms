@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
-import { fetchApi } from '@/services/authService';
+import { fetchApi, getAuthHeaders, API_BASE_URL, csrf } from '@/services/authService';
 import { Button, LoadingSpinner, Icon } from '@/components/ui/index';
 
 interface Level {
@@ -69,16 +69,21 @@ export default function StudentAchievementsPage() {
   const [data, setData] = useState<AchievementsData | null>(null);
   const [showContent, setShowContent] = useState(false);
   const [downloadingCert, setDownloadingCert] = useState<string | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewCertData, setPreviewCertData] = useState<{ studentName: string; levelName: string; date: string; historyId: string; color: string; gender?: string } | null>(null);
   const userEmail =
     user && 'email' in user && typeof (user as { email?: unknown }).email === 'string'
       ? ((user as { email?: string }).email ?? '')
       : '';
+
+  const userGender = user && 'gender' in user ? (user as { gender?: string }).gender : '';
 
   const mockUser = {
     name: user?.name || 'طالب',
     email: userEmail,
     avatar: user?.avatar || '/images/avatars/default-avatar.png',
     role: 'student' as const,
+    gender: userGender,
   };
 
   useEffect(() => {
@@ -109,10 +114,43 @@ export default function StudentAchievementsPage() {
     loadAchievements();
   }, []);
 
+  const handlePreviewCertificate = (historyId: string) => {
+    const entry = data?.history?.find((h) => h.id === historyId);
+    if (!entry) return;
+
+    setPreviewCertData({
+      studentName: mockUser.name,
+      levelName: entry.level_name,
+      date: entry.achieved_at,
+      historyId: entry.id,
+      color: entry.level_color || '#8B5CF6',
+      gender: mockUser.gender
+    });
+    setPreviewOpen(true);
+  };
+
+  const handleClosePreview = () => {
+    setPreviewOpen(false);
+    setPreviewCertData(null);
+  };
+
   const handleDownloadCertificate = async (historyId: string) => {
     try {
       setDownloadingCert(historyId);
-      const response = await fetch(`/api/v1/student/achievements/certificate/${historyId}/download`, {
+      await csrf();
+      const cleanBaseUrl = API_BASE_URL.replace(/\/api\/?$/, '').replace(/\/$/, '');
+      const requestUrl = `${cleanBaseUrl}/api/v1/student/achievements/certificate/${historyId}/download?refresh=1`;
+      const headers = getAuthHeaders(
+        {
+          Accept: 'application/pdf',
+        },
+        requestUrl,
+        { method: 'GET' },
+      );
+
+      const response = await fetch(requestUrl, {
+        method: 'GET',
+        headers,
         credentials: 'include',
       });
       
@@ -162,20 +200,19 @@ export default function StudentAchievementsPage() {
     return Array.from(uniqueLevels.values()).sort((a, b) => a.sort_order - b.sort_order);
   }, [data?.levels_timeline]);
 
-  const currentLevelIndex = dedupedLevelsTimeline.findIndex((level) => level.is_current);
-  const visibleLevelsTimeline = dedupedLevelsTimeline.filter((level, index) => {
-    if (level.is_achieved || level.is_current) {
-      return true;
-    }
-
-    return currentLevelIndex >= 0 && index === currentLevelIndex + 1;
-  });
+  const visibleLevelsTimeline = dedupedLevelsTimeline; // إظهار كل المستويات حتى المقفلة
 
   const dedupedHistory = useMemo(() => {
     const history = data?.history || [];
     const uniqueHistory = new Map<string, HistoryEntry>();
 
     history.forEach((entry) => {
+      // إخفاء المستويات التي لم يتم اجتيازها فعلياً
+      const levelInfo = dedupedLevelsTimeline.find((l) => l.name === entry.level_name);
+      if (!levelInfo || !levelInfo.is_achieved) {
+        return;
+      }
+
       const dedupeKey = entry.level_name;
       const existing = uniqueHistory.get(dedupeKey);
 
@@ -192,10 +229,17 @@ export default function StudentAchievementsPage() {
       }
     });
 
-    return Array.from(uniqueHistory.values()).sort(
-      (a, b) => new Date(b.achieved_at).getTime() - new Date(a.achieved_at).getTime(),
-    );
-  }, [data?.history]);
+    return Array.from(uniqueHistory.values()).sort((a, b) => {
+      const orderA = dedupedLevelsTimeline.find((l) => l.name === a.level_name)?.sort_order ?? 0;
+      const orderB = dedupedLevelsTimeline.find((l) => l.name === b.level_name)?.sort_order ?? 0;
+      
+      if (orderA !== orderB) {
+        return orderA - orderB;
+      }
+      
+      return new Date(a.achieved_at).getTime() - new Date(b.achieved_at).getTime();
+    });
+  }, [data?.history, dedupedLevelsTimeline]);
 
   return (
     <DashboardLayout role="student" user={mockUser}>
@@ -211,9 +255,9 @@ export default function StudentAchievementsPage() {
 
       <div className="max-w-[1200px] mx-auto px-4">
         {/* Header */}
-        <div className={`flex flex-col sm:flex-row items-center justify-between mb-8 gap-4 transition-all duration-700 ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
+        <div className={`flex flex-col sm:flex-row items-center justify-between mb-2 sm:mb-3 lg:mb-4 sm:mb-3 sm:mb-2 sm:mb-3 lg:mb-4 lg:mb-6 lg:mb-8 gap-4 transition-all duration-700 ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
           <div className="text-center sm:text-right">
-            <h1 className="text-3xl md:text-4xl font-bold text-white mb-2 flex items-center justify-center sm:justify-start gap-3">
+            <h1 className="text-xl sm:text-lg sm:text-xl md:text-2xl lg:text-3xl lg:text-4xl font-bold text-white mb-2 flex items-center justify-center sm:justify-start gap-3">
               إنجازاتي
             </h1>
             <p className="text-gray-400 text-lg">
@@ -240,8 +284,8 @@ export default function StudentAchievementsPage() {
           </div>
         ) : error ? (
           <div className="text-center py-20 bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10">
-            <div className="text-6xl mb-4">😔</div>
-            <p className="text-red-400 text-lg mb-6">{error}</p>
+            <div className="text-6xl mb-2 sm:mb-3 lg:mb-4">😔</div>
+            <p className="text-red-400 text-lg mb-3 sm:mb-2 sm:mb-3 lg:mb-4 lg:mb-6">{error}</p>
             <Button variant="primary" onClick={() => window.location.reload()}>
               إعادة المحاولة
             </Button>
@@ -249,7 +293,7 @@ export default function StudentAchievementsPage() {
         ) : data ? (
           <>
             {/* Current Level Card */}
-            <div className={`mb-8 transition-all duration-700 delay-200 ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+            <div className={`mb-2 sm:mb-3 lg:mb-4 sm:mb-3 sm:mb-2 sm:mb-3 lg:mb-4 lg:mb-6 lg:mb-8 transition-all duration-700 delay-200 ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
               <div 
                 className="relative overflow-hidden backdrop-blur-xl rounded-3xl p-6 md:p-8 border shadow-2xl"
                 style={{ 
@@ -286,11 +330,11 @@ export default function StudentAchievementsPage() {
                   {/* Level Info */}
                   <div className="flex-1 text-center md:text-right">
                     <div className="text-sm text-gray-400 mb-1">مستواك الحالي</div>
-                    <h2 className="text-3xl md:text-4xl font-bold text-white mb-2">
+                    <h2 className="text-xl sm:text-lg sm:text-xl md:text-2xl lg:text-3xl lg:text-4xl font-bold text-white mb-2">
                       {data.current_level?.name || 'طالب مبتدئ'}
                     </h2>
                     {data.current_level?.description && (
-                      <p className="text-gray-300 text-lg mb-4">{data.current_level.description}</p>
+                      <p className="text-gray-300 text-lg mb-2 sm:mb-3 lg:mb-4">{data.current_level.description}</p>
                     )}
                     
                     {/* Progress Bar */}
@@ -334,7 +378,7 @@ export default function StudentAchievementsPage() {
 
                   {/* Total Points */}
                   <div className="text-center bg-white/10 backdrop-blur-sm rounded-2xl px-8 py-5 border border-white/10">
-                    <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-yellow-300 to-yellow-500 bg-clip-text text-transparent">
+                    <div className="text-xl sm:text-lg sm:text-xl md:text-2xl lg:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-yellow-300 to-yellow-500 bg-clip-text text-transparent">
                       {data.total_points.toLocaleString('ar-EG')}
                     </div>
                     <div className="text-sm text-gray-400 mt-1">إجمالي النقاط</div>
@@ -344,12 +388,12 @@ export default function StudentAchievementsPage() {
             </div>
 
             {/* Points Breakdown & Levels Timeline */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-2 sm:mb-3 lg:mb-4 sm:mb-3 sm:mb-2 sm:mb-3 lg:mb-4 lg:mb-6 lg:mb-8">
               {/* Points Breakdown */}
               {data.points_breakdown.length > 0 && (
                 <div className={`transition-all duration-700 delay-300 ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
                   <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-6 border border-white/10 h-full">
-                    <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
+                    <h3 className="text-xl font-bold text-white mb-3 sm:mb-2 sm:mb-3 lg:mb-4 lg:mb-6 flex items-center gap-3">
                       <span className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
                         <Icon name="chart-bar" className="text-primary" />
                       </span>
@@ -387,7 +431,7 @@ export default function StudentAchievementsPage() {
               {/* Levels Timeline */}
               <div className={`transition-all duration-700 delay-400 ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
                 <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-6 border border-white/10 h-full">
-                  <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
+                  <h3 className="text-xl font-bold text-white mb-3 sm:mb-2 sm:mb-3 lg:mb-4 lg:mb-6 flex items-center gap-3">
                     المستويات
                   </h3>
                   <div className="space-y-3 max-h-[400px] overflow-y-auto custom-scrollbar pl-2">
@@ -420,7 +464,7 @@ export default function StudentAchievementsPage() {
                               handleDownloadCertificate(level.history_id);
                             }
                           }}
-                          title={level.is_achieved ? 'تحميل الشهادة' : 'مستوى مقفل'}
+                          title={level.is_achieved ? 'عرض الشهادة' : 'مستوى مقفل'}
                           style={level.is_current ? {
                             borderColor: level.color || '#6366f1',
                             backgroundColor: `${level.color || '#6366f1'}20`,
@@ -470,9 +514,9 @@ export default function StudentAchievementsPage() {
 
             {/* Certificates History */}
             {dedupedHistory.length > 0 && (
-              <div className={`mb-8 transition-all duration-700 delay-500 ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+              <div className={`mb-2 sm:mb-3 lg:mb-4 sm:mb-3 sm:mb-2 sm:mb-3 lg:mb-4 lg:mb-6 lg:mb-8 transition-all duration-700 delay-500 ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
                 <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-6 md:p-8 border border-white/10">
-                  <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
+                  <h3 className="text-xl font-bold text-white mb-3 sm:mb-2 sm:mb-3 lg:mb-4 lg:mb-6 flex items-center gap-3">
                     الشهادات والإنجازات
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -510,7 +554,7 @@ export default function StudentAchievementsPage() {
 
                           {entry && (
                             <button
-                              onClick={() => handleDownloadCertificate(entry.id)}
+                              onClick={() => handlePreviewCertificate(entry.id)}
                               disabled={downloadingCert === entry.id}
                               className="w-full mt-2 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-300"
                               style={{
@@ -527,7 +571,7 @@ export default function StudentAchievementsPage() {
                               ) : (
                                 <>
                                   <Icon name="download" />
-                                  <span>تحميل الشهادة</span>
+                                  <span>عرض الشهادة</span>
                                 </>
                               )}
                             </button>
@@ -542,9 +586,9 @@ export default function StudentAchievementsPage() {
 
             {/* Empty History State */}
             {dedupedHistory.length === 0 && (
-              <div className={`mb-8 transition-all duration-700 delay-500 ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+              <div className={`mb-2 sm:mb-3 lg:mb-4 sm:mb-3 sm:mb-2 sm:mb-3 lg:mb-4 lg:mb-6 lg:mb-8 transition-all duration-700 delay-500 ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
                 <div className="text-center py-12 bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10">
-                  <div className="text-5xl mb-4">🚀</div>
+                  <div className="text-5xl mb-2 sm:mb-3 lg:mb-4">🚀</div>
                   <p className="text-gray-400 text-lg mb-2">لم تحقق أي إنجازات بعد</p>
                   <p className="text-sm text-gray-500">استمر في جمع النقاط للوصول إلى مستويات جديدة والحصول على شهادات!</p>
                 </div>
@@ -554,7 +598,152 @@ export default function StudentAchievementsPage() {
         ) : null}
       </div>
 
+
+      {previewOpen && previewCertData && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm px-4"
+          onClick={handleClosePreview}
+        >
+          <div
+            className="w-full max-w-4xl bg-slate-950/95 border border-white/10 rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh]"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 shrink-0">
+              <h3 className="text-white text-lg font-bold">معاينة الشهادة</h3>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="primary"
+                  onClick={() => window.print()}
+                  className="flex items-center gap-2 print:hidden"
+                >
+                  <Icon name="print" />
+                  <span>طباعة الشهادة</span>
+                </Button>
+                <Button variant="outline" onClick={handleClosePreview}>
+              معاينة الشهادة
+
+    إغلاق
+                </Button>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-auto p-4 md:p-8 bg-slate-900/80 custom-scrollbar flex items-center justify-center">
+              {/* React Native Certificate UI */}
+              <div 
+                id="certificate-print-wrapper"
+                className="relative w-full max-w-2xl lg:max-w-3xl overflow-hidden rounded shadow-[0_0_50px_rgba(0,0,0,0.5)] bg-slate-50 text-slate-800 flex items-center justify-center p-4 sm:p-6 md:p-8 lg:p-12 text-center border-4"
+                style={{ 
+                   borderColor: '#000000',
+                   minHeight: '350px',
+                   backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
+                }}
+              >
+                <div className="absolute inset-2 border-2 border-dashed pointer-events-none" style={{ borderColor: `#00000050` }}></div>
+                <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/50 to-white/90 pointer-events-none"></div>
+                
+                <div className="relative z-10 w-full">
+                  {/* Header */}
+                  <h1 
+                    className="text-2xl sm:text-xl sm:text-lg sm:text-xl md:text-2xl lg:text-3xl lg:text-4xl lg:text-5xl font-bold mb-2 sm:mb-3 lg:mb-4 sm:mb-3 sm:mb-2 sm:mb-3 lg:mb-4 lg:mb-6 lg:mb-8 font-serif uppercase tracking-widest"
+                    style={{ color: '#000000' }}
+                  >
+                    شهادة إنجاز
+                  </h1>
+                  
+                  {/* Body */}
+                  <p className="text-sm sm:text-base md:text-xl lg:text-2xl text-slate-600 mb-2 sm:mb-3 lg:mb-4 font-medium">
+                    {previewCertData.gender === 'female' ? 'بكل فخر واعتزاز، نشهد أن الطالبة' : 'بكل فخر واعتزاز، نشهد أن الطالب'}
+                  </p>
+                  
+                  <h2 className="text-xl sm:text-lg sm:text-xl md:text-2xl lg:text-3xl lg:text-4xl font-bold text-slate-900 mb-3 sm:mb-2 sm:mb-3 lg:mb-4 lg:mb-6 border-b-2 pb-2 inline-block px-8" 
+                      style={{ borderBottomColor: '#000000' }}>
+                    {previewCertData.studentName}
+                  </h2>
+                  
+                  <p className="text-sm sm:text-base md:text-xl lg:text-2xl text-slate-600 mb-2 sm:mb-3 lg:mb-4 font-medium">
+                    {previewCertData.gender === 'female' ? 'قد اجتازت بنجاح وتفوق متطلبات مستوى' : 'قد اجتاز بنجاح وتفوق متطلبات مستوى'}
+                  </p>
+                  
+                  <h3 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold mb-2 sm:mb-3 lg:mb-4 sm:mb-3 sm:mb-2 sm:mb-3 lg:mb-4 lg:mb-6 lg:mb-8 inline-block px-6 py-2 rounded-full" 
+                      style={{ backgroundColor: `${previewCertData.color}15`, color: previewCertData.color, border: `1px solid ${previewCertData.color}30` }}>
+                    {previewCertData.levelName}
+                  </h3>
+
+                  <p className="text-xs sm:text-sm md:text-lg lg:text-xl text-slate-500 mb-3 sm:mb-2 sm:mb-3 lg:mb-4 lg:mb-6 sm:mb-8 lg:mb-12 italic font-medium">
+                    مع خالص شكرنا وتقديرنا لما قدمه الوالدان الكريمان من دعم ومساندة وتوفير بيئة محفزة للنجاح
+                  </p>
+
+                  {/* Footer / Meta */}
+                  <div className="flex justify-between items-end w-full mt-auto pt-2 sm:pt-4 md:pt-8 lg:pt-12 relative px-0 sm:px-4 md:px-12 lg:px-24">
+                    <div className="text-center w-24 sm:w-32 md:w-40">
+                      <p className="text-[10px] sm:text-xs md:text-sm text-slate-500 mb-1 sm:mb-2 font-medium">تاريخ الإصدار</p>
+                      <p className="font-bold text-slate-700 border-t border-slate-300 pt-1 sm:pt-2 text-xs sm:text-sm md:text-lg">
+                        {new Date(previewCertData.date).toLocaleDateString('ar-EG')}
+                      </p>
+                    </div>
+                    
+                    <div className="w-10 h-10 sm:w-16 sm:h-16 md:w-20 md:h-20 lg:w-24 lg:h-24 rounded-full flex flex-col items-center justify-center border-2 md:border-[3px] bg-white shadow-lg relative transform rotate-[-15deg] shrink-0 mx-2"
+                         style={{ borderColor: '#000000', color: '#000000' }}>
+                      <div className="absolute inset-[2px] md:inset-1 border border-dashed rounded-full" style={{ borderColor: '#000000' }}></div>
+                      <Icon name="award" className="text-sm sm:text-sm sm:text-base md:text-xl lg:text-2xl mb-0 sm:mb-1 opacity-80" />
+                      <span className="font-bold text-[5px] sm:text-[8px] md:text-[10px] uppercase tracking-wider mt-[-2px] sm:mt-0">اعتماد نطاق</span>
+                    </div>
+
+                    <div className="text-center w-24 sm:w-32 md:w-40">
+                      <p className="text-[10px] sm:text-xs md:text-sm text-slate-500 mb-1 sm:mb-2 font-medium">توقيع الإدارة</p>
+                      <p className="font-bold text-slate-700 border-t border-slate-300 pt-1 sm:pt-2 text-sm sm:text-xs sm:text-sm md:text-lg lg:text-xl leading-tight" style={{ fontFamily: "cursive" }}>
+                        مؤسسة نطاق
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       {/* CSS for shimmer animation */}
+      <style jsx global>{`
+        @media print {
+          @page {
+            size: A4 landscape;
+            margin: 0;
+          }
+          body, html {
+            height: 100vh !important;
+            width: 100vw !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: hidden !important;
+          }
+          
+          /* إخفاء كل العناصر في الصفحة التي ليست الشهادة ولا تحتويها ولا هي بداخلها */
+          body *:not(:has(#certificate-print-wrapper)):not(#certificate-print-wrapper):not(#certificate-print-wrapper *) {
+            display: none !important;
+            visibility: hidden !important;
+          }
+
+          #certificate-print-wrapper {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            max-width: none !important;
+            border: none !important;
+            box-shadow: none !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            transform: scale(0.98);
+            transform-origin: center center;
+            /* سنحافظ على الـ flex الأصلي للشهادة دون تغييره هنا */
+          }
+        }
+
+
+      `}</style>
       <style jsx>{`
         @keyframes shimmer {
           0% { transform: translateX(100%); }
