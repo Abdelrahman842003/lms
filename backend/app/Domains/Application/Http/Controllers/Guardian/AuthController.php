@@ -104,7 +104,7 @@ class AuthController extends Controller
             return $this->errorResponse('غير مصرح', 401);
         }
 
-        $childrenData = $this->authService->getChildrenData($guardian->students);
+    $childrenData = $this->authService->getChildrenData($guardian->phone);
         
         // Format children avatars
         $children = $childrenData->map(function ($child) {
@@ -182,7 +182,7 @@ class AuthController extends Controller
             return $this->errorResponse('غير مصرح', 401);
         }
 
-        $childrenData = $this->authService->getChildrenData($guardian->students);
+    $childrenData = $this->authService->getChildrenData($guardian->phone);
         
         // Format children avatars
         $children = $childrenData->map(function ($child) {

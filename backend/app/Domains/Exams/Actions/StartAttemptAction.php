@@ -19,7 +19,7 @@ final class StartAttemptAction
     /**
      * @throws DomainException
      */
-    public function execute(Exam $exam, int $studentId): ExamAttempt
+    public function execute(Exam $exam, string $studentId): ExamAttempt
     {
         // 1. الامتحان مفعّل؟
         if (! $exam->is_active) {

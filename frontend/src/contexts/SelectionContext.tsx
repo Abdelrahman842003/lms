@@ -89,7 +89,7 @@ export function SelectionProvider({ children }: { children: ReactNode }) {
         );
 
         // If current is still valid, keep it. Otherwise switch to best.
-        if (isTeacherAccessible(updatedCurrent)) {
+        if (updatedCurrent && isTeacherAccessible(updatedCurrent)) {
           setSelectedTeacher(updatedCurrent);
           localStorage.setItem("selectedTeacher", JSON.stringify(updatedCurrent));
         } else if (bestTeacher) {
@@ -138,9 +138,21 @@ export function SelectionProvider({ children }: { children: ReactNode }) {
   // Handle parent children - get from localStorage or API call
   useEffect(() => {
     if (user?.userType === "parent") {
-      // Children data is loaded separately in the original AuthContext
-      // For now, just load from localStorage
+      const userChildren = Array.isArray(user.children) ? user.children : [];
       const storedChildren = localStorage.getItem("parentChildren");
+
+      if (userChildren.length > 0) {
+        setChildrenList(userChildren);
+        localStorage.setItem("parentChildren", JSON.stringify(userChildren));
+
+        if (!selectedChild) {
+          setSelectedChild(userChildren[0]);
+          localStorage.setItem("selectedChild", JSON.stringify(userChildren[0]));
+        }
+
+        return;
+      }
+
       if (storedChildren) {
         try {
           const childrenData = JSON.parse(storedChildren);

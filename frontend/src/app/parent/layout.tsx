@@ -5,6 +5,7 @@ import { ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { Icon } from '@/components/ui';
+import QuickLogoutButton from '@/components/auth/QuickLogoutButton';
 
 export default function ParentLayout({ children }: { children: ReactNode }) {
   const { user, isLoading, children: childrenList } = useAuth();
@@ -37,6 +38,7 @@ export default function ParentLayout({ children }: { children: ReactNode }) {
         <p className="text-gray-400 max-w-md mx-auto text-lg">
           لم يتم تسجيل أي طالب برقم هاتفك كولي أمر. يرجى التواصل مع المدرس لتسجيل رقمك.
         </p>
+        <QuickLogoutButton />
       </div>
     );
   }

@@ -31,6 +31,7 @@ export interface User {
     gender?: string
     education_type?: string
     teachers?: TeacherInfo[]
+    children?: ChildInfo[]
     permissions?: string[]
     is_independent_active?: boolean
     academies?: AcademyInfo[]
@@ -39,7 +40,7 @@ export interface User {
 }
 
 // Import for backward compatibility
-import { TeacherInfo, AcademyInfo } from './auth.types';
+import { TeacherInfo, AcademyInfo, ChildInfo } from './auth.types';
 
 /**
  * @deprecated Use Grade from teacher.types instead

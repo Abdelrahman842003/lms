@@ -62,7 +62,7 @@ final class ExamAttemptBuilder
     /**
      * يُنشئ ExamAttempt جديدة بترتيب عشوائي.
      */
-    public function createAttempt(Exam $exam, int $studentId): ExamAttempt
+    public function createAttempt(Exam $exam, string $studentId): ExamAttempt
     {
         $questionsOrder = $this->build($exam);
 

@@ -35,6 +35,11 @@ function isValidUserType(value: unknown): value is ValidUserType {
  */
 function mapAuthResponseToUser(response: any, role: string): User {
   const normalizedTeachers = normalizeStudentTeachers(response?.teachers ?? response?.user?.teachers);
+  const normalizedChildren = Array.isArray(response?.children)
+    ? response.children
+    : Array.isArray(response?.user?.children)
+      ? response.user.children
+      : [];
 
   return {
     id: response.user.id,
@@ -50,6 +55,7 @@ function mapAuthResponseToUser(response: any, role: string): User {
     gender: response.user.gender,
     education_type: response.user.education_type,
   teachers: normalizedTeachers,
+    children: normalizedChildren,
     permissions: response.user.permissions,
     is_independent_active: response.user.is_independent_active,
     academies: response.academies || response.user.academies,

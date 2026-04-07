@@ -4,6 +4,7 @@ import { StudentTeacherProvider } from '@/contexts/StudentTeacherContext';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { ReactNode, useEffect, useRef, useState } from 'react';
 import { isTeacherAccessible } from '@/utils/studentTeacherAccess';
+import QuickLogoutButton from '@/components/auth/QuickLogoutButton';
 
 export default function StudentLayout({ children }: { children: ReactNode }) {
   const { user, isLoading, refreshUser } = useAuth();
@@ -76,6 +77,7 @@ export default function StudentLayout({ children }: { children: ReactNode }) {
         <p className="text-gray-400 max-w-md mx-auto text-lg">
           يرجى التواصل مع الإدارة أو المدرس لإضافتك إلى مجموعة دراسية حتى تتمكن من استخدام المنصة.
         </p>
+        <QuickLogoutButton />
       </div>
     );
   }
@@ -92,6 +94,7 @@ export default function StudentLayout({ children }: { children: ReactNode }) {
         <p className="text-gray-400 max-w-md mx-auto text-lg">
           تم تعطيل حسابك من قبل جميع المدرسين المشترك معهم. يرجى التواصل مع مدرسك لتفعيل الاشتراك.
         </p>
+        <QuickLogoutButton />
       </div>
     );
   }

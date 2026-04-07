@@ -80,6 +80,13 @@ final readonly class GenerateTeacherReportAction
         $attendance = $sections['attendance'] ?? [];
         $subscription = $sections['subscription'] ?? [];
 
+        $totalStudents = $this->studentQueryService->totalLinkedStudents($teacher, $filters);
+        $activeStudents = $this->studentQueryService->activeStudentsCount($teacher, $filters);
+        $inactiveStudents = max(0, $totalStudents - $activeStudents);
+        $inactiveStudentsRatio = $totalStudents > 0
+            ? round(($inactiveStudents / $totalStudents) * 100, 2)
+            : 0.0;
+
         return [
             'teacher_id' => $teacher->id,
             'income_change_pct' => $incomeTrends['summary']['change_pct'] ?? null,
@@ -91,16 +98,9 @@ final readonly class GenerateTeacherReportAction
             'days_until_renewal' => $teacher->plan_expires_at
                 ? (int) max(0, now()->diffInDays($teacher->plan_expires_at, false))
                 : null,
-            'total_students' => $this->studentQueryService->totalLinkedStudents($teacher, $filters),
-            'active_students' => $this->studentQueryService->activeStudentsCount($teacher, $filters),
-            'inactive_students_ratio' => $totalStudents > 0
-                ? round(($inactiveStudents / max($totalStudents, 1) : 0) : 0
-0,
-        $inactiveStudentsRatio = ($totalStudents > 0 && $totalStudents > 0)
-                ? round(($inactiveStudents / max($totalStudents, 1) * 100, 2)
-                : 0,
-                $inactive_studentsRatio = 0,
-        }
+            'total_students' => $totalStudents,
+            'active_students' => $activeStudents,
+            'inactive_students_ratio' => $inactiveStudentsRatio,
             'groups' => $attendance['by_group'] ?? [],
             'income_by_group' => $sections['group_breakdown']['groups'] ?? [],
         ];
