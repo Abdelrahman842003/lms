@@ -21,11 +21,6 @@ class GroupService
                 // Legacy groups linked through academy-grade ownership
                 ->orWhereHas('grade', function ($gradeQuery) use ($academy) {
                     $gradeQuery->where('academy_id', $academy->id);
-                })
-                // Legacy groups linked through teacher membership in academy
-                ->orWhereHas('teacher.academies', function ($academyQuery) use ($academy) {
-                    $academyQuery->where('academies.id', $academy->id)
-                        ->where('academy_teacher.is_active', true);
                 });
         });
 
