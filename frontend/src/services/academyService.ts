@@ -353,6 +353,46 @@ export const getUnreadNotificationsCount = async () => {
   return response.data;
 };
 
+export const checkNotificationVoiceLimit = async () => {
+  const response = await axios.get(`${API_BASE_URL}/academy/notifications/voice-limit`, {
+    headers: getAuthHeaders(),
+  });
+  return response.data;
+};
+
+export const sendVoiceNotification = async (data: {
+  title: string;
+  voice: Blob;
+  duration: number;
+  target_type: 'teachers' | 'secretaries' | 'all';
+  target_ids?: string[];
+  type?: 'info' | 'warning' | 'success' | 'danger';
+}) => {
+  const formData = new FormData();
+  formData.append('title', data.title);
+  formData.append('voice', data.voice, 'voice.webm');
+  formData.append('duration', String(data.duration));
+  formData.append('target_type', data.target_type);
+  formData.append('type', data.type ?? 'info');
+
+  if (Array.isArray(data.target_ids) && data.target_ids.length > 0) {
+    data.target_ids.forEach((id) => formData.append('target_ids[]', id));
+  }
+
+  const response = await axios.post(
+    `${API_BASE_URL}/academy/notifications/voice`,
+    formData,
+    {
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'multipart/form-data',
+      },
+    }
+  );
+
+  return response.data;
+};
+
 // ========== Reports ==========
 export const getAttendanceReport = async (params: {
   date_from: string;
@@ -797,6 +837,8 @@ export default {
   // Notifications
   getNotifications,
   createNotification,
+  checkNotificationVoiceLimit,
+  sendVoiceNotification,
   markNotificationAsRead,
   sendNotificationToTeachers,
   getUnreadNotificationsCount,

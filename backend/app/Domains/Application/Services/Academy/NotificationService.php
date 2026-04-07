@@ -8,7 +8,10 @@ use App\Domains\Auth\Models\Academy;
 use App\Domains\Notifications\DTOs\NotificationData;
 use App\Domains\Notifications\Services\NotificationSettingsService;
 use App\Domains\Notifications\Services\NotificationService as RealtimeNotificationService;
+use App\Domains\Notifications\Services\VoiceNotificationService;
 use App\Domains\Notifications\Models\AcademyNotification;
+use App\Domains\Subscriptions\Services\StorageQuotaService;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use RuntimeException;
@@ -18,6 +21,8 @@ class NotificationService
     public function __construct(
         private NotificationSettingsService $notificationSettings,
         private RealtimeNotificationService $realtimeNotificationService,
+        private VoiceNotificationService $voiceService,
+        private StorageQuotaService $storageQuota,
     ) {}
 
     /**
@@ -78,7 +83,7 @@ class NotificationService
             throw new RuntimeException('إرسال الإشعارات للسكرتيرين متوقف من إعدادات النظام.');
         }
 
-        $dispatchMeta = $this->dispatchNotifications($academy, $data);
+    $dispatchMeta = $this->dispatchNotifications($academy, $data);
 
         return AcademyNotification::create([
             'academy_id' => $academy->id,
@@ -93,10 +98,70 @@ class NotificationService
         ]);
     }
 
+    public function createVoiceNotification(
+        Academy $academy,
+        string $title,
+        UploadedFile $voiceFile,
+        int $duration,
+        string $targetType = 'all',
+        array $targetIds = [],
+        string $type = 'info',
+        ?string $creatorId = null,
+    ): AcademyNotification {
+        if (! $this->notificationSettings->isInternalEnabled()) {
+            throw new RuntimeException('الإشعارات الداخلية متوقفة من إعدادات النظام.');
+        }
+
+        if ($targetType === 'teachers' && $this->notificationSettings->isTypeBlocked('teacher')) {
+            throw new RuntimeException('إرسال الإشعارات للمعلمين متوقف من إعدادات النظام.');
+        }
+
+        if ($targetType === 'secretaries' && $this->notificationSettings->isTypeBlocked('secretary')) {
+            throw new RuntimeException('إرسال الإشعارات للسكرتيرين متوقف من إعدادات النظام.');
+        }
+
+        $voiceBytes = max(0, (int) ($voiceFile->getSize() ?? 0));
+        $this->storageQuota->assertCanUpload($academy, $voiceBytes);
+        $this->voiceService->validateAudioFile($voiceFile, $duration);
+
+        $voicePath = $this->voiceService->storeVoiceFile($voiceFile, $academy);
+        $voiceUrl = $this->voiceService->getVoiceUrl($voicePath);
+
+        $this->storageQuota->incrementUsage($academy, $voiceBytes);
+
+        $data = new NotificationData(
+            title: $title,
+            message: '[رسالة صوتية]',
+            type: $type,
+            target_type: $targetType,
+            target_id: $targetIds[0] ?? null,
+            target_ids: $targetIds,
+        );
+
+        $dispatchMeta = $this->dispatchNotifications($academy, $data, [
+            'is_voice' => true,
+            'voice_url' => $voiceUrl,
+            'voice_path' => $voicePath,
+            'voice_duration' => $duration,
+        ]);
+
+        return AcademyNotification::create([
+            'academy_id' => $academy->id,
+            'created_by' => $creatorId,
+            'title' => $title,
+            'message' => '[رسالة صوتية]',
+            'type' => $type,
+            'target_type' => $targetType,
+            'target_ids' => $dispatchMeta['target_ids'],
+            'recipient_count' => $dispatchMeta['recipient_count'],
+            'recipient_snapshot' => $dispatchMeta['recipient_snapshot'],
+        ]);
+    }
+
     /**
      * @return array{target_ids: array<int, string>, recipient_count: int, recipient_snapshot: array<int, array<string, mixed>>|null}
      */
-    private function dispatchNotifications(Academy $academy, NotificationData $data): array
+    private function dispatchNotifications(Academy $academy, NotificationData $data, array $extraPayload = []): array
     {
         $targetIds = $this->normalizeTargetIds($data);
 
@@ -104,6 +169,7 @@ class NotificationService
             'academy_id' => $academy->id,
             'sender_role' => 'academy',
             'target_type' => $data->target_type,
+            ...$extraPayload,
         ];
 
         if (! empty($targetIds)) {

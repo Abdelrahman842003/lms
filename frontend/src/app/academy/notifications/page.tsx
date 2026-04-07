@@ -9,6 +9,8 @@ import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { useRouter } from 'next/navigation';
 import * as academyService from '@/services/academyService';
 import toast from 'react-hot-toast';
+import VoiceRecorder from '@/components/notifications/VoiceRecorder';
+import VoicePlayer from '@/components/notifications/VoicePlayer';
 
 import { Button, Icon, FormModal, Input, Textarea, Select } from '@/components/ui';
 
@@ -42,6 +44,9 @@ type NotificationRow = {
   created_at: string;
   source: 'sent' | 'received';
   is_read?: boolean;
+  is_voice?: boolean;
+  voice_url?: string;
+  voice_duration?: number;
 };
 
 type GenericRecord = Record<string, unknown>;
@@ -112,6 +117,14 @@ const normalizeNotification = (row: GenericRecord, source: 'sent' | 'received'):
     created_at: String(row?.created_at ?? new Date().toISOString()),
     source,
     is_read: typeof row?.is_read === 'boolean' ? row.is_read : undefined,
+    is_voice: Boolean(row?.is_voice ?? data?.is_voice),
+    voice_url: typeof (row?.voice_url ?? data?.voice_url) === 'string'
+      ? String(row?.voice_url ?? data?.voice_url)
+      : undefined,
+    voice_duration:
+      typeof (row?.voice_duration ?? data?.voice_duration) === 'number'
+        ? Number(row?.voice_duration ?? data?.voice_duration)
+        : undefined,
   };
 };
 
@@ -146,7 +159,14 @@ export default function NotificationsPage() {
   const [teachers, setTeachers] = useState<RecipientOption[]>([]);
   const [secretaries, setSecretaries] = useState<RecipientOption[]>([]);
   const [isRecipientsLoading, setIsRecipientsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [notificationType, setNotificationType] = useState<'text' | 'voice'>('text');
+  const [canSendVoice, setCanSendVoice] = useState(true);
+  const [maxVoiceDuration, setMaxVoiceDuration] = useState(40);
+  const [voiceBlob, setVoiceBlob] = useState<Blob | null>(null);
+  const [voiceDuration, setVoiceDuration] = useState(0);
+  const [voicePreviewUrl, setVoicePreviewUrl] = useState<string | null>(null);
   const [recipientMode, setRecipientMode] = useState<'all' | 'specific'>('all');
   const [recipientSearch, setRecipientSearch] = useState('');
   const [recipientsModalData, setRecipientsModalData] = useState<RecipientsModalData | null>(null);
@@ -240,6 +260,32 @@ export default function NotificationsPage() {
     }
   };
 
+  const fetchVoiceLimit = async () => {
+    try {
+      const response = await academyService.checkNotificationVoiceLimit();
+      const payload = (response?.data ?? response) as { can_send_voice?: boolean; max_duration?: number };
+      setCanSendVoice(payload?.can_send_voice !== false);
+      setMaxVoiceDuration(typeof payload?.max_duration === 'number' ? payload.max_duration : 40);
+    } catch {
+      setCanSendVoice(true);
+      setMaxVoiceDuration(40);
+    }
+  };
+
+  useEffect(() => {
+    if (!voiceBlob) {
+      setVoicePreviewUrl(null);
+      return;
+    }
+
+    const url = URL.createObjectURL(voiceBlob);
+    setVoicePreviewUrl(url);
+
+    return () => {
+      URL.revokeObjectURL(url);
+    };
+  }, [voiceBlob]);
+
   useEffect(() => {
     if (user?.userType === 'academy') {
       fetchNotifications();
@@ -249,8 +295,29 @@ export default function NotificationsPage() {
   useEffect(() => {
     if (showCreateModal && user?.userType === 'academy') {
       fetchRecipients();
+      fetchVoiceLimit();
     }
   }, [showCreateModal, user]);
+
+  const handleCloseCreateModal = () => {
+    setShowCreateModal(false);
+    setFormData({
+      title: '',
+      message: '',
+      target_type: 'all',
+      target_ids: [],
+    });
+    setRecipientMode('all');
+    setRecipientSearch('');
+    setNotificationType('text');
+    setVoiceBlob(null);
+    setVoiceDuration(0);
+  };
+
+  const handleRecordingComplete = (blob: Blob, duration: number) => {
+    setVoiceBlob(blob);
+    setVoiceDuration(duration);
+  };
 
   const handleTargetTypeChange = (value: string) => {
     setFormData((prev) => ({
@@ -290,42 +357,57 @@ export default function NotificationsPage() {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
     try {
       if (formData.target_type !== 'all' && recipientMode === 'specific' && formData.target_ids.length === 0) {
         toast.error('اختر مستلمًا واحدًا على الأقل أو غيّر النوع إلى كل الفئة');
         return;
       }
 
-      const response = await academyService.createNotification({
-        title: formData.title,
-        message: formData.message,
-        target_type: formData.target_type,
-        target_ids: formData.target_type !== 'all' && recipientMode === 'specific' ? formData.target_ids : undefined,
-        type: 'info',
-      });
+      const targetIds =
+        formData.target_type !== 'all' && recipientMode === 'specific' ? formData.target_ids : undefined;
 
-      const payload = response?.data ?? response;
+      let response: unknown;
+
+      if (notificationType === 'voice') {
+        if (!voiceBlob) {
+          toast.error('سجّل رسالة صوتية أولاً قبل الإرسال');
+          return;
+        }
+
+        response = await academyService.sendVoiceNotification({
+          title: formData.title,
+          voice: voiceBlob,
+          duration: voiceDuration,
+          target_type: formData.target_type,
+          target_ids: targetIds,
+          type: 'info',
+        });
+      } else {
+        response = await academyService.createNotification({
+          title: formData.title,
+          message: formData.message,
+          target_type: formData.target_type,
+          target_ids: targetIds,
+          type: 'info',
+        });
+      }
+
+      const responseRecord = asRecord(response);
+      const payload = asRecord(responseRecord?.data) ?? responseRecord;
       const created =
-        payload?.data?.notification ||
-        payload?.notification ||
-        payload?.data?.data ||
-        payload?.data ||
+        asRecord(asRecord(payload?.data)?.notification) ||
+        asRecord(payload?.notification) ||
+        asRecord(asRecord(payload?.data)?.data) ||
+        asRecord(payload?.data) ||
         null;
 
       if (created?.id) {
         setNotifications((prev) => [normalizeNotification(created, 'sent'), ...prev]);
       }
 
-      toast.success('تم إرسال الإشعار بنجاح');
-      setShowCreateModal(false);
-      setFormData({
-        title: '',
-        message: '',
-        target_type: 'all',
-        target_ids: [],
-      });
-      setRecipientMode('all');
-      setRecipientSearch('');
+      toast.success(notificationType === 'voice' ? 'تم إرسال الرسالة الصوتية بنجاح' : 'تم إرسال الإشعار بنجاح');
+      handleCloseCreateModal();
       await fetchNotifications();
     } catch (error: unknown) {
       const errorMessage: string =
@@ -337,6 +419,8 @@ export default function NotificationsPage() {
           : 'فشل في إرسال الإشعار';
 
       toast.error(errorMessage);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -358,7 +442,21 @@ export default function NotificationsPage() {
       key: 'message', 
       label: 'الرسالة', 
       sortable: false,
-      render: (value: string) => {
+      render: (value: string, row: NotificationRow) => {
+        if (row.is_voice) {
+          return (
+            <span className="inline-flex items-center gap-2 text-primary">
+              <Icon name="microphone" />
+              <span>رسالة صوتية</span>
+              {row.voice_duration ? (
+                <span className="text-gray-400">
+                  ({Math.floor(row.voice_duration / 60)}:{(row.voice_duration % 60).toString().padStart(2, '0')})
+                </span>
+              ) : null}
+            </span>
+          );
+        }
+
         const text = value || '';
         return text.length > 50 ? text.substring(0, 50) + '...' : text;
       }
@@ -462,14 +560,37 @@ export default function NotificationsPage() {
       {/* Create Modal */}
       <FormModal
         isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
+        onClose={handleCloseCreateModal}
         onSubmit={handleCreate}
         title="إرسال إشعار جديد"
-        submitText="إرسال"
+        isLoading={isSubmitting}
+        submitText={isSubmitting ? 'جاري الإرسال...' : 'إرسال'}
         cancelText="إلغاء"
         maxWidth="520px"
       >
         <div className="space-y-4">
+          <div className="flex gap-1.5 p-1 bg-[#12121a] rounded-xl">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setNotificationType('text')}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-medium transition-all ${notificationType === 'text' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+            >
+              <Icon name="file-alt" className="text-sm" />
+              <span>نص</span>
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setNotificationType('voice')}
+              disabled={!canSendVoice}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-medium transition-all ${notificationType === 'voice' ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' : canSendVoice ? 'text-gray-400 hover:text-white hover:bg-white/5' : 'text-gray-600 cursor-not-allowed'}`}
+            >
+              <Icon name="microphone" className="text-sm" />
+              <span>صوتي</span>
+            </Button>
+          </div>
+
           <Input
             id="title"
             label="العنوان"
@@ -479,15 +600,44 @@ export default function NotificationsPage() {
             placeholder="مثال: تنبيه هام"
           />
 
-          <Textarea
-            id="message"
-            label="الرسالة"
-            value={formData.message}
-            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setFormData({ ...formData, message: e.target.value })}
-            required
-            rows={4}
-            placeholder="اكتب رسالتك هنا..."
-          />
+          {notificationType === 'text' ? (
+            <Textarea
+              id="message"
+              label="الرسالة"
+              value={formData.message}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setFormData({ ...formData, message: e.target.value })}
+              required
+              rows={4}
+              placeholder="اكتب رسالتك هنا..."
+            />
+          ) : (
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-300">الرسالة الصوتية</label>
+              {voiceBlob && voicePreviewUrl ? (
+                <div className="space-y-3">
+                  <VoicePlayer voiceUrl={voicePreviewUrl} duration={voiceDuration} />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => {
+                      setVoiceBlob(null);
+                      setVoiceDuration(0);
+                    }}
+                    className="text-sm text-red-400 hover:text-red-300 flex items-center gap-1 p-0 h-auto"
+                  >
+                    <Icon name="redo" />
+                    <span>إعادة التسجيل</span>
+                  </Button>
+                </div>
+              ) : (
+                <VoiceRecorder
+                  maxDuration={maxVoiceDuration}
+                  onRecordingComplete={handleRecordingComplete}
+                  disabled={!canSendVoice}
+                />
+              )}
+            </div>
+          )}
 
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-300">الفئة المستهدفة</label>

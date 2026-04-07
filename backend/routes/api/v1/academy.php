@@ -65,12 +65,14 @@ Route::middleware(['auth:sanctum', EnsureActiveSubscription::class])->prefix('ac
     
     // Notifications - Rate limited to prevent spam
     Route::get('notifications', [NotificationController::class, 'index']);
+    Route::get('notifications/voice-limit', [NotificationController::class, 'checkVoiceLimit']);
     Route::get('notifications/unread-count', [NotificationController::class, 'unreadCount']);
     Route::middleware('throttle:notifications')->group(function () {
         Route::post('notifications', [NotificationController::class, 'store']);
         Route::post('notifications/{id}/read', [NotificationController::class, 'markAsRead']);
         Route::post('notifications/send-to-teachers', [NotificationController::class, 'sendToTeachers']);
     });
+    Route::middleware('throttle:voice-notifications')->post('notifications/voice', [NotificationController::class, 'storeVoice']);
     
     // Reports
     Route::get('reports/attendance', [ReportController::class, 'attendanceReport']);

@@ -8,8 +8,11 @@ use App\Domains\Notifications\DTOs\NotificationData;
 use App\Domains\Application\Http\Controllers\Controller;
 use App\Domains\Application\Http\Requests\Academy\SendToTeachersRequest;
 use App\Domains\Application\Http\Requests\Academy\StoreNotificationRequest;
+use App\Domains\Application\Http\Requests\Academy\StoreVoiceNotificationRequest;
 use App\Domains\Application\Http\Resources\Academy\NotificationResource;
 use App\Domains\Application\Services\Academy\NotificationService;
+use App\Domains\Notifications\Services\VoiceNotificationService;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -64,6 +67,45 @@ class NotificationController extends Controller
         return $this->successResponse(
             new NotificationResource($notification),
             'تم إرسال الإشعار بنجاح'
+        );
+    }
+
+    public function checkVoiceLimit(Request $request): JsonResponse
+    {
+        return $this->successResponse([
+            'can_send_voice' => true,
+            'max_duration' => VoiceNotificationService::MAX_DURATION,
+        ]);
+    }
+
+    public function storeVoice(StoreVoiceNotificationRequest $request): JsonResponse
+    {
+        $academy = $request->user();
+
+        try {
+            $notification = $this->service->createVoiceNotification(
+                academy: $academy,
+                title: (string) $request->validated('title'),
+                voiceFile: $request->file('voice'),
+                duration: (int) $request->validated('duration'),
+                targetType: (string) ($request->validated('target_type') ?? 'all'),
+                targetIds: $request->validated('target_ids') ?? [],
+                type: (string) ($request->validated('type') ?? 'info'),
+                creatorId: null,
+            );
+        } catch (AuthorizationException $e) {
+            return $this->errorResponse(message: $e->getMessage(), code: 403);
+        } catch (\InvalidArgumentException $e) {
+            return $this->errorResponse(message: $e->getMessage(), code: 422);
+        } catch (\RuntimeException $e) {
+            return $this->errorResponse(message: $e->getMessage(), code: 422);
+        } catch (\Throwable $e) {
+            return $this->errorResponse(message: 'حدث خطأ أثناء إرسال الرسالة الصوتية', code: 500);
+        }
+
+        return $this->successResponse(
+            new NotificationResource($notification),
+            'تم إرسال الرسالة الصوتية بنجاح'
         );
     }
 
