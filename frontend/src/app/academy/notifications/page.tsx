@@ -32,33 +32,117 @@ type RecipientsModalData = {
   recipients: RecipientSnapshot[];
 };
 
-const extractRows = (payload: any): any[] => {
-  if (Array.isArray(payload)) {
-    return payload;
+type NotificationRow = {
+  id: string;
+  title: string;
+  message: string;
+  target_type: string;
+  recipient_count: number;
+  recipient_snapshot: RecipientSnapshot[] | null;
+  created_at: string;
+  source: 'sent' | 'received';
+  is_read?: boolean;
+};
+
+type GenericRecord = Record<string, unknown>;
+
+type RecipientApiRow = {
+  id?: string;
+  name?: string;
+  is_active?: boolean;
+};
+
+const asRecord = (value: unknown): GenericRecord | null => {
+  if (typeof value === 'object' && value !== null) {
+    return value as GenericRecord;
   }
 
+  return null;
+};
+
+const extractRows = (payload: unknown): GenericRecord[] => {
+  if (Array.isArray(payload)) {
+    return payload.filter((item): item is GenericRecord => typeof item === 'object' && item !== null);
+  }
+
+  const root = asRecord(payload);
+  if (!root) return [];
+
+  const rootData = asRecord(root.data);
+  const rootDataData = asRecord(rootData?.data);
+  const rootNotifications = asRecord(root.notifications);
+  const rootTeachers = asRecord(root.teachers);
+  const rootSecretaries = asRecord(root.secretaries);
+  const rootDataNotifications = asRecord(rootData?.notifications);
+  const rootDataTeachers = asRecord(rootData?.teachers);
+  const rootDataSecretaries = asRecord(rootData?.secretaries);
+
   const rows =
-    (Array.isArray(payload?.data) && payload.data) ||
-    (Array.isArray(payload?.data?.data) && payload.data.data) ||
-    (Array.isArray(payload?.data?.notifications?.data) && payload.data.notifications.data) ||
-    (Array.isArray(payload?.notifications?.data) && payload.notifications.data) ||
-    (Array.isArray(payload?.data?.teachers?.data) && payload.data.teachers.data) ||
-    (Array.isArray(payload?.teachers?.data) && payload.teachers.data) ||
-    (Array.isArray(payload?.data?.secretaries?.data) && payload.data.secretaries.data) ||
-    (Array.isArray(payload?.secretaries?.data) && payload.secretaries.data) ||
-    (Array.isArray(payload?.data) && payload.data) ||
-    (Array.isArray(payload?.notifications) && payload.notifications) ||
-    (Array.isArray(payload?.teachers) && payload.teachers) ||
-    (Array.isArray(payload?.secretaries) && payload.secretaries) ||
+    (Array.isArray(rootData) && rootData) ||
+    (Array.isArray(rootDataData) && rootDataData) ||
+    (Array.isArray(rootDataNotifications?.data) && rootDataNotifications.data) ||
+    (Array.isArray(rootNotifications?.data) && rootNotifications.data) ||
+    (Array.isArray(rootDataTeachers?.data) && rootDataTeachers.data) ||
+    (Array.isArray(rootTeachers?.data) && rootTeachers.data) ||
+    (Array.isArray(rootDataSecretaries?.data) && rootDataSecretaries.data) ||
+    (Array.isArray(rootSecretaries?.data) && rootSecretaries.data) ||
+    (Array.isArray(rootData) && rootData) ||
+    (Array.isArray(root.notifications) && root.notifications) ||
+    (Array.isArray(root.teachers) && root.teachers) ||
+    (Array.isArray(root.secretaries) && root.secretaries) ||
     [];
 
-  return Array.isArray(rows) ? rows : [];
+  return Array.isArray(rows)
+    ? rows.filter((item): item is GenericRecord => typeof item === 'object' && item !== null)
+    : [];
+};
+
+const normalizeNotification = (row: GenericRecord, source: 'sent' | 'received'): NotificationRow => {
+  const data = (row?.data as GenericRecord | undefined) ?? {};
+
+  return {
+    id: String(row?.id ?? `${source}-${Math.random().toString(36).slice(2)}`),
+    title: String(row?.title ?? data?.title ?? 'بدون عنوان'),
+    message: String(row?.message ?? data?.message ?? ''),
+    target_type: String(row?.target_type ?? data?.target_type ?? (source === 'received' ? 'system' : 'all')),
+    recipient_count: Number(row?.recipient_count ?? data?.recipient_count ?? 0),
+    recipient_snapshot:
+      (Array.isArray(row?.recipient_snapshot) ? row.recipient_snapshot : null) ??
+      (Array.isArray(data?.recipient_snapshot) ? data.recipient_snapshot : null),
+    created_at: String(row?.created_at ?? new Date().toISOString()),
+    source,
+    is_read: typeof row?.is_read === 'boolean' ? row.is_read : undefined,
+  };
+};
+
+const extractNotificationRows = (payload: unknown): NotificationRow[] => {
+  const root = (payload as GenericRecord | undefined) ?? {};
+  const nestedData = (root.data as GenericRecord | undefined) ?? {};
+  const deepData = (nestedData.data as GenericRecord | undefined) ?? {};
+
+  const sentRows = extractRows(
+    nestedData.notifications ?? root.notifications ?? deepData.notifications
+  );
+  const receivedRows = extractRows(
+    nestedData.received_notifications ?? root.received_notifications ?? deepData.received_notifications
+  );
+
+  const merged = [
+    ...sentRows.map((row) => normalizeNotification(row, 'sent')),
+    ...receivedRows.map((row) => normalizeNotification(row, 'received')),
+  ];
+
+  const uniqueRows = Array.from(new Map(merged.map((row) => [row.id, row])).values());
+
+  return uniqueRows.sort(
+    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
 };
 
 export default function NotificationsPage() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const router = useRouter();
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<NotificationRow[]>([]);
   const [teachers, setTeachers] = useState<RecipientOption[]>([]);
   const [secretaries, setSecretaries] = useState<RecipientOption[]>([]);
   const [isRecipientsLoading, setIsRecipientsLoading] = useState(false);
@@ -82,7 +166,7 @@ export default function NotificationsPage() {
   const fetchNotifications = async () => {
     try {
       const response = await academyService.getNotifications(1, 50);
-      const rows = extractRows(response);
+      const rows = extractNotificationRows(response);
 
       if (rows.length > 0 || response) {
         setNotifications(rows);
@@ -115,10 +199,11 @@ export default function NotificationsPage() {
 
       setTeachers(
         teacherRows
-          .filter((teacher: any) => teacher?.id)
-          .filter((teacher: any) => teacher?.is_active !== false)
-          .map((teacher: any) => ({
-            id: teacher.id,
+          .map((teacher) => teacher as RecipientApiRow)
+          .filter((teacher) => Boolean(teacher.id))
+          .filter((teacher) => teacher.is_active !== false)
+          .map((teacher) => ({
+            id: String(teacher.id),
             name: teacher.name ?? 'بدون اسم',
             is_active: teacher.is_active,
           }))
@@ -126,10 +211,11 @@ export default function NotificationsPage() {
 
       setSecretaries(
         secretaryRows
-          .filter((secretary: any) => secretary?.id)
-          .filter((secretary: any) => secretary?.is_active !== false)
-          .map((secretary: any) => ({
-            id: secretary.id,
+          .map((secretary) => secretary as RecipientApiRow)
+          .filter((secretary) => Boolean(secretary.id))
+          .filter((secretary) => secretary.is_active !== false)
+          .map((secretary) => ({
+            id: String(secretary.id),
             name: secretary.name ?? 'بدون اسم',
             is_active: secretary.is_active,
           }))
@@ -190,7 +276,7 @@ export default function NotificationsPage() {
     });
   };
 
-  const openRecipientsModal = (row: any) => {
+  const openRecipientsModal = (row: NotificationRow) => {
     const recipients = Array.isArray(row?.recipient_snapshot) ? row.recipient_snapshot : [];
     if (recipients.length === 0) return;
 
@@ -227,7 +313,7 @@ export default function NotificationsPage() {
         null;
 
       if (created?.id) {
-        setNotifications((prev) => [created, ...prev]);
+        setNotifications((prev) => [normalizeNotification(created, 'sent'), ...prev]);
       }
 
       toast.success('تم إرسال الإشعار بنجاح');
@@ -241,18 +327,27 @@ export default function NotificationsPage() {
       setRecipientMode('all');
       setRecipientSearch('');
       await fetchNotifications();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'فشل في إرسال الإشعار');
+    } catch (error: unknown) {
+      const errorMessage: string =
+        typeof error === 'object' &&
+        error !== null &&
+        'response' in error &&
+        typeof (error as { response?: { data?: { message?: string } } }).response?.data?.message === 'string'
+          ? (error as { response?: { data?: { message?: string } } }).response?.data?.message || 'فشل في إرسال الإشعار'
+          : 'فشل في إرسال الإشعار';
+
+      toast.error(errorMessage);
     }
   };
 
   if (!authLoading && (!user || user.userType !== 'academy')) return null;
 
   const getTargetLabel = (target: string) => {
-    const labels: any = {
+    const labels: Record<string, string> = {
       teachers: 'المدرسين',
       secretaries: 'السكرتيرات',
       all: 'الجميع',
+      system: 'الوارد من النظام',
     };
     return labels[target] || target;
   };
@@ -263,13 +358,16 @@ export default function NotificationsPage() {
       key: 'message', 
       label: 'الرسالة', 
       sortable: false,
-      render: (value: string) => value.length > 50 ? value.substring(0, 50) + '...' : value 
+      render: (value: string) => {
+        const text = value || '';
+        return text.length > 50 ? text.substring(0, 50) + '...' : text;
+      }
     },
     {
       key: 'target_type',
       label: 'المستهدفين',
       sortable: true,
-      render: (value: string, row: any) => {
+      render: (value: string, row: NotificationRow) => {
         const label = getTargetLabel(value);
         const recipientCount = Number(row?.recipient_count ?? 0);
         const snapshot = Array.isArray(row?.recipient_snapshot) ? row.recipient_snapshot : [];
