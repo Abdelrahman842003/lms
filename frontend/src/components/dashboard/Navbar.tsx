@@ -617,6 +617,17 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
                     <Icon name="user" size="sm" />
                     <span>الملف الشخصي</span>
                   </Link>
+
+                  {role === 'student' && (
+                    <Link
+                      href="/student/achievements"
+                      className="navbar-dropdown-item"
+                      onClick={() => setIsDropdownOpen(false)}
+                    >
+                      <Icon name="medal" size="sm" />
+                      <span>إنجازاتي</span>
+                    </Link>
+                  )}
                   
                   {/* Subscription Link - Only for academy role or independent teachers */}
                   {(role === 'academy' || (role === 'teacher' && (!selectedAcademy?.id || selectedAcademy.id === 'independent'))) && (
@@ -771,6 +782,17 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
             <Icon name="user" size="sm" />
             <span>الملف الشخصي</span>
           </Link>
+
+          {role === 'student' && (
+            <Link
+              href="/student/achievements"
+              className="mobile-sidebar-link"
+              onClick={() => setIsMobileSidebarOpen(false)}
+            >
+              <Icon name="medal" size="sm" />
+              <span>إنجازاتي</span>
+            </Link>
+          )}
           <Button 
             variant="ghost"
             className="mobile-sidebar-link ux-w-full ux-justify-start"

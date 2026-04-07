@@ -64,7 +64,7 @@ class StudentPoint extends Model
     {
         $this->increment('total_points', $points);
 
-        return PointTransaction::create([
+        $transaction = PointTransaction::create([
             'student_id' => $this->student_id,
             'teacher_id' => $this->teacher_id,
             'type' => $type,
@@ -73,6 +73,21 @@ class StudentPoint extends Model
             'reference_id' => $referenceId,
             'description' => $description,
         ]);
+
+        // Check for level-up after points change (global across all teachers)
+        try {
+            $student = $this->student ?? \App\Domains\Auth\Models\Student::find($this->student_id);
+            if ($student) {
+                app(\App\Domains\Gamification\Services\LevelService::class)->checkAndLevelUp($student);
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Level-up check failed', [
+                'student_id' => $this->student_id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        return $transaction;
     }
 
     /**

@@ -6,6 +6,9 @@ namespace App\Domains\Auth\Models;
 
 use App\Domains\Enrollments\Models\Enrollment;
 use App\Domains\Enrollments\Models\Group;
+use App\Domains\Gamification\Models\GamificationLevel;
+use App\Domains\Gamification\Models\StudentLevelHistory;
+use App\Domains\Gamification\Models\StudentPoint;
 use App\Domains\Lectures\Models\Attendance;
 use App\Domains\Exams\Models\ExamResult;
 use App\Domains\Enrollments\Models\StudentActivityLog;
@@ -42,6 +45,7 @@ class Student extends Authenticatable
         'teacher_id',
         'guardian_id',
         'is_active',
+        'current_level_id',
     ];
 
     protected $hidden = [
@@ -190,5 +194,29 @@ class Student extends Authenticatable
     public function sentNotifications()
     {
         return $this->hasMany(SentNotification::class);
+    }
+
+    /**
+     * Current gamification level (global)
+     */
+    public function currentLevel()
+    {
+        return $this->belongsTo(GamificationLevel::class, 'current_level_id');
+    }
+
+    /**
+     * Level-up history
+     */
+    public function levelHistory()
+    {
+        return $this->hasMany(StudentLevelHistory::class);
+    }
+
+    /**
+     * Get total points across all teachers
+     */
+    public function getTotalPointsAcrossTeachers(): int
+    {
+        return (int) StudentPoint::where('student_id', $this->id)->sum('total_points');
     }
 }

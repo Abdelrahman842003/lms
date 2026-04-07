@@ -7,6 +7,7 @@ use App\Domains\Application\Http\Controllers\Student\StudentExamController;
 use App\Domains\Application\Http\Controllers\Student\StudentLectureController;
 use App\Domains\Application\Http\Controllers\Student\NotificationController;
 use App\Domains\Application\Http\Controllers\Student\GamificationController;
+use App\Domains\Application\Http\Controllers\Student\AchievementController;
 use App\Domains\Application\Http\Controllers\Student\MistakesController;
 use App\Domains\Application\Http\Controllers\Student\VideoController;
 use App\Domains\Application\Http\Controllers\Student\StudentVideoQuizController;
@@ -58,6 +59,10 @@ Route::middleware(['auth:sanctum', EnsureTeacherNotSuspendedForStudent::class])-
     Route::get('/points/{teacher}', [GamificationController::class, 'show']);
     Route::get('/points/{teacher}/history', [GamificationController::class, 'history']);
     Route::get('/leaderboard/{teacher}', [GamificationController::class, 'leaderboard']);
+    
+    // Achievements (إنجازاتي)
+    Route::get('/achievements', [AchievementController::class, 'index']);
+    Route::get('/achievements/certificate/{history}/download', [AchievementController::class, 'downloadCertificate']);
     
     // Mistakes (Smart Mistakes Notebook)
     Route::get('/mistakes', [MistakesController::class, 'index']);

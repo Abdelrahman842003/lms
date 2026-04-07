@@ -23,6 +23,7 @@ class FilamentPermissionSeeder extends Seeder
         'roles',
         'permissions',
         'settings',
+        'gamification_levels',
     ];
 
     /**
