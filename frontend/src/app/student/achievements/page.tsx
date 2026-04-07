@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { fetchApi } from '@/services/authService';
@@ -69,10 +69,14 @@ export default function StudentAchievementsPage() {
   const [data, setData] = useState<AchievementsData | null>(null);
   const [showContent, setShowContent] = useState(false);
   const [downloadingCert, setDownloadingCert] = useState<string | null>(null);
+  const userEmail =
+    user && 'email' in user && typeof (user as { email?: unknown }).email === 'string'
+      ? ((user as { email?: string }).email ?? '')
+      : '';
 
   const mockUser = {
     name: user?.name || 'طالب',
-    email: (user as any)?.email || '',
+    email: userEmail,
     avatar: user?.avatar || '/images/avatars/default-avatar.png',
     role: 'student' as const,
   };
@@ -81,12 +85,20 @@ export default function StudentAchievementsPage() {
     const loadAchievements = async () => {
       try {
         setLoading(true);
-        const response = await fetchApi('/api/student/achievements') as any;
-        const achievementsData = response?.data || response;
+        const response = await fetchApi('/api/student/achievements');
+        const achievementsData =
+          response && typeof response === 'object' && 'data' in response
+            ? (response as { data?: AchievementsData }).data
+            : (response as AchievementsData);
+
+        if (!achievementsData) {
+          throw new Error('Empty achievements payload');
+        }
+
         setData(achievementsData);
         setError(null);
         setTimeout(() => setShowContent(true), 300);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Failed to load achievements:', err);
         setError('فشل في تحميل بيانات الإنجازات');
       } finally {
@@ -126,6 +138,64 @@ export default function StudentAchievementsPage() {
   };
 
   const levelColor = data?.current_level?.color || '#6366f1';
+  const dedupedLevelsTimeline = useMemo(() => {
+    const levels = data?.levels_timeline || [];
+    const uniqueLevels = new Map<string, Level>();
+
+    levels.forEach((level) => {
+      const dedupeKey = `${level.sort_order}-${level.name}`;
+      const existing = uniqueLevels.get(dedupeKey);
+
+      if (!existing) {
+        uniqueLevels.set(dedupeKey, level);
+        return;
+      }
+
+      const existingScore = Number(existing.is_current) * 100 + Number(existing.is_achieved) * 10 + Number(Boolean(existing.history_id));
+      const nextScore = Number(level.is_current) * 100 + Number(level.is_achieved) * 10 + Number(Boolean(level.history_id));
+
+      if (nextScore > existingScore) {
+        uniqueLevels.set(dedupeKey, level);
+      }
+    });
+
+    return Array.from(uniqueLevels.values()).sort((a, b) => a.sort_order - b.sort_order);
+  }, [data?.levels_timeline]);
+
+  const currentLevelIndex = dedupedLevelsTimeline.findIndex((level) => level.is_current);
+  const visibleLevelsTimeline = dedupedLevelsTimeline.filter((level, index) => {
+    if (level.is_achieved || level.is_current) {
+      return true;
+    }
+
+    return currentLevelIndex >= 0 && index === currentLevelIndex + 1;
+  });
+
+  const dedupedHistory = useMemo(() => {
+    const history = data?.history || [];
+    const uniqueHistory = new Map<string, HistoryEntry>();
+
+    history.forEach((entry) => {
+      const dedupeKey = entry.level_name;
+      const existing = uniqueHistory.get(dedupeKey);
+
+      if (!existing) {
+        uniqueHistory.set(dedupeKey, entry);
+        return;
+      }
+
+      const existingDate = new Date(existing.achieved_at).getTime();
+      const nextDate = new Date(entry.achieved_at).getTime();
+
+      if (nextDate >= existingDate) {
+        uniqueHistory.set(dedupeKey, entry);
+      }
+    });
+
+    return Array.from(uniqueHistory.values()).sort(
+      (a, b) => new Date(b.achieved_at).getTime() - new Date(a.achieved_at).getTime(),
+    );
+  }, [data?.history]);
 
   return (
     <DashboardLayout role="student" user={mockUser}>
@@ -321,7 +391,7 @@ export default function StudentAchievementsPage() {
                     المستويات
                   </h3>
                   <div className="space-y-3 max-h-[400px] overflow-y-auto custom-scrollbar pl-2">
-                    {data.levels_timeline.map((level) => (
+                    {visibleLevelsTimeline.map((level) => (
                       <div
                         key={level.id}
                         className={`relative flex items-center gap-4 p-3 rounded-xl transition-all duration-300 ${
@@ -399,14 +469,14 @@ export default function StudentAchievementsPage() {
             </div>
 
             {/* Certificates History */}
-            {data.history.length > 0 && (
+            {dedupedHistory.length > 0 && (
               <div className={`mb-8 transition-all duration-700 delay-500 ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
                 <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-6 md:p-8 border border-white/10">
                   <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
                     الشهادات والإنجازات
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {data.history.map((entry) => (
+                    {dedupedHistory.map((entry) => (
                       <div
                         key={entry.id}
                         className="relative overflow-hidden bg-white/5 backdrop-blur-sm rounded-2xl p-5 border border-white/10 transition-all duration-300"
@@ -471,7 +541,7 @@ export default function StudentAchievementsPage() {
             )}
 
             {/* Empty History State */}
-            {data.history.length === 0 && (
+            {dedupedHistory.length === 0 && (
               <div className={`mb-8 transition-all duration-700 delay-500 ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
                 <div className="text-center py-12 bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10">
                   <div className="text-5xl mb-4">🚀</div>
