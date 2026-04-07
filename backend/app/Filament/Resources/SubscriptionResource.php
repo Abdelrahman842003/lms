@@ -383,10 +383,18 @@ class SubscriptionResource extends BaseResource
 
                 Tables\Columns\TextColumn::make('request_type')
                     ->label('نوع الطلب')
-                    ->state(fn (Subscription $record): string => static::resolveRequestTypeState($record))
+                    ->state(fn (Subscription $record): ?string => static::resolveRequestTypeState($record))
                     ->badge()
-                    ->color(fn (string $state): string => $state === SubscriptionRenewalService::REQUEST_TYPE_UPGRADE ? 'warning' : 'info')
-                    ->formatStateUsing(fn (string $state): string => $state === SubscriptionRenewalService::REQUEST_TYPE_UPGRADE ? 'طلب ترقية' : 'تجديد'),
+                    ->color(fn (?string $state): string => match ($state) {
+                        SubscriptionRenewalService::REQUEST_TYPE_UPGRADE => 'warning',
+                        SubscriptionRenewalService::REQUEST_TYPE_RENEWAL => 'info',
+                        default => 'gray',
+                    })
+                    ->formatStateUsing(fn (?string $state): string => match ($state) {
+                        SubscriptionRenewalService::REQUEST_TYPE_UPGRADE => 'طلب ترقية',
+                        SubscriptionRenewalService::REQUEST_TYPE_RENEWAL => 'تجديد',
+                        default => '—',
+                    }),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('تاريخ الإنشاء')
@@ -433,18 +441,18 @@ class SubscriptionResource extends BaseResource
                     ->label('طلب التجديد')
                     ->icon('heroicon-m-document-magnifying-glass')
                     ->color('info')
-                    ->visible(fn (Subscription $record): bool => $record->status === SubscriptionStatus::PENDING && ! static::isUpgradeRequest($record))
+                    ->visible(fn (Subscription $record): bool => $record->status === SubscriptionStatus::PENDING && static::isRequestRecord($record) && ! static::isUpgradeRequest($record))
                     ->url(fn (Subscription $record): string => static::getUrl('review-renewal', ['record' => $record])),
 
                 Action::make('reviewUpgrade')
                     ->label('طلب ترقية')
                     ->icon('heroicon-m-arrow-trending-up')
                     ->color('warning')
-                    ->visible(fn (Subscription $record): bool => $record->status === SubscriptionStatus::PENDING && static::isUpgradeRequest($record))
+                    ->visible(fn (Subscription $record): bool => $record->status === SubscriptionStatus::PENDING && static::isRequestRecord($record) && static::isUpgradeRequest($record))
                     ->url(fn (Subscription $record): string => static::getUrl('review-upgrade', ['record' => $record])),
 
                 Action::make('cancel')
-                    ->label(fn (Subscription $record): string => $record->status === SubscriptionStatus::PENDING && $record->request_type !== null
+                    ->label(fn (Subscription $record): string => $record->status === SubscriptionStatus::PENDING && static::isRequestRecord($record)
                         ? 'إلغاء الطلب'
                         : 'إلغاء الاشتراك')
                     ->icon('heroicon-m-x-circle')
@@ -452,7 +460,7 @@ class SubscriptionResource extends BaseResource
                     ->requiresConfirmation()
                     ->visible(fn (Subscription $record): bool => $record->status !== \App\Domains\Subscriptions\Enums\SubscriptionStatus::CANCELLED)
                     ->action(function (Subscription $record): void {
-                        if ($record->status === SubscriptionStatus::PENDING && $record->request_type !== null) {
+                        if ($record->status === SubscriptionStatus::PENDING && static::isRequestRecord($record)) {
                             $record->delete();
 
                             Notification::make()
@@ -478,7 +486,7 @@ class SubscriptionResource extends BaseResource
                     ->requiresConfirmation()
                     ->visible(function (Subscription $record): bool {
                         return $record->status === SubscriptionStatus::CANCELLED
-                            && $record->request_type !== null
+                            && static::isRequestRecord($record)
                             && (float) $record->amount_paid === 0.0
                             && $record->paid_at === null;
                     })
@@ -534,13 +542,29 @@ class SubscriptionResource extends BaseResource
             ->with(['subscriber']);
     }
 
-    private static function resolveRequestTypeState(Subscription $record): string
+    private static function resolveRequestTypeState(Subscription $record): ?string
     {
-        if ($record->status === SubscriptionStatus::PENDING && static::isUpgradeRequest($record)) {
+        if (! static::isRequestRecord($record)) {
+            return null;
+        }
+
+        if (static::isUpgradeRequest($record)) {
             return SubscriptionRenewalService::REQUEST_TYPE_UPGRADE;
         }
 
-        return $record->request_type ?: SubscriptionRenewalService::REQUEST_TYPE_RENEWAL;
+        return SubscriptionRenewalService::REQUEST_TYPE_RENEWAL;
+    }
+
+    private static function isRequestRecord(Subscription $record): bool
+    {
+        if (in_array($record->request_type, [
+            SubscriptionRenewalService::REQUEST_TYPE_RENEWAL,
+            SubscriptionRenewalService::REQUEST_TYPE_UPGRADE,
+        ], true)) {
+            return true;
+        }
+
+        return static::isUpgradeRequest($record);
     }
 
     private static function isUpgradeRequest(Subscription $record): bool

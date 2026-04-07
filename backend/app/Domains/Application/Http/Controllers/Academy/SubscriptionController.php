@@ -34,7 +34,7 @@ class SubscriptionController extends Controller
                 'month' => $pending->month?->format('Y-m-d'),
                 'amount_due' => (float) $pending->amount_due,
                 'status' => $pending->status?->value ?? (string) $pending->status,
-                'request_type' => (string) ($pending->request_type ?? SubscriptionRenewalService::REQUEST_TYPE_RENEWAL),
+                'request_type' => $pending->request_type,
                 'notes' => $pending->notes,
                 'upgrade_seats_from' => $pending->upgrade_seats_from,
                 'upgrade_seats_to' => $pending->upgrade_seats_to,
@@ -69,9 +69,11 @@ class SubscriptionController extends Controller
             return $this->errorResponse($exception->getMessage(), 422);
         }
 
+        $isUpgradeRequest = (bool) ($upgradePayload['upgrade_seats'] ?? false) || (bool) ($upgradePayload['upgrade_storage'] ?? false);
+
         return $this->successResponse([
             'subscription_id' => $subscription->id,
             'status' => $subscription->status?->value ?? (string) $subscription->status,
-        ], 'تم إرسال طلب التجديد بنجاح');
+        ], $isUpgradeRequest ? 'تم إرسال طلب الترقية بنجاح' : 'تم إرسال طلب التجديد بنجاح');
     }
 }

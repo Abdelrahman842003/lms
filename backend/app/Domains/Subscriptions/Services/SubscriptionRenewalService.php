@@ -72,9 +72,7 @@ class SubscriptionRenewalService
         $requestType = ($upgrade['upgrade_seats'] || $upgrade['upgrade_storage'])
             ? self::REQUEST_TYPE_UPGRADE
             : self::REQUEST_TYPE_RENEWAL;
-
-        $startDate = $this->resolveNextStartDate($subscriber);
-        $month = $startDate->copy()->startOfMonth();
+        $month = $this->resolveRequestMonth($subscriber, $requestType);
 
         $notes = $this->buildNotes(
             $meta['label'],
@@ -244,8 +242,45 @@ class SubscriptionRenewalService
             ->where('subscriber_id', $subscriber->getKey())
             ->where('subscriber_type', get_class($subscriber))
             ->where('status', SubscriptionStatus::PENDING->value)
+            ->where(function ($query): void {
+                $query
+                    ->whereNotNull('request_type')
+                    ->orWhereNotNull('upgrade_seats_from')
+                    ->orWhereNotNull('upgrade_seats_to')
+                    ->orWhereNotNull('upgrade_storage_from_gb')
+                    ->orWhereNotNull('upgrade_storage_to_gb')
+                    ->orWhere('upgrade_price_difference', '>', 0);
+            })
             ->orderByDesc('created_at')
             ->first();
+    }
+
+    private function resolveRequestMonth(Model $subscriber, string $requestType): Carbon
+    {
+        $pendingRequest = $this->getPendingRenewal($subscriber);
+        if ($pendingRequest?->month) {
+            return Carbon::parse($pendingRequest->month)->startOfMonth();
+        }
+
+        if ($requestType === self::REQUEST_TYPE_UPGRADE) {
+            $latestSubscription = Subscription::query()
+                ->where('subscriber_id', $subscriber->getKey())
+                ->where('subscriber_type', get_class($subscriber))
+                ->where('status', '!=', SubscriptionStatus::CANCELLED->value)
+                ->orderByDesc('month')
+                ->orderByDesc('created_at')
+                ->first();
+
+            if ($latestSubscription?->month) {
+                return Carbon::parse($latestSubscription->month)->startOfMonth();
+            }
+
+            return Carbon::today()->startOfMonth();
+        }
+
+        $startDate = $this->resolveNextStartDate($subscriber);
+
+        return $startDate->copy()->startOfMonth();
     }
 
     private function resolvePlanMeta(string $planSelection, ?int $customMonths): array

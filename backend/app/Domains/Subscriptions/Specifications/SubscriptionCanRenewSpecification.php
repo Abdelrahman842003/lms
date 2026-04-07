@@ -39,6 +39,15 @@ class SubscriptionCanRenewSpecification extends AbstractSpecification
         $pendingRenewal = Subscription::where('subscriber_id', $candidate->id)
             ->where('subscriber_type', get_class($candidate))
             ->where('status', 'pending')
+            ->where(function ($query): void {
+                $query
+                    ->whereNotNull('request_type')
+                    ->orWhereNotNull('upgrade_seats_from')
+                    ->orWhereNotNull('upgrade_seats_to')
+                    ->orWhereNotNull('upgrade_storage_from_gb')
+                    ->orWhereNotNull('upgrade_storage_to_gb')
+                    ->orWhere('upgrade_price_difference', '>', 0);
+            })
             ->whereMonth('created_at', now()->month)
             ->first();
 
