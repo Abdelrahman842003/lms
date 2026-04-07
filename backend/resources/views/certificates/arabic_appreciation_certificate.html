@@ -1,0 +1,141 @@
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap');
+  .cert-wrap {
+    display: flex; justify-content: center; align-items: center;
+    padding: 2rem 1rem; min-height: 500px;
+  }
+  .cert {
+    width: 720px; max-width: 100%;
+    background: #f5f2dc;
+    padding: 0;
+    position: relative;
+    font-family: 'Amiri', serif;
+    direction: rtl;
+  }
+  .outer-border {
+    position: absolute; inset: 8px;
+    border: 2px solid #1a3a6b;
+    pointer-events: none; z-index: 1;
+  }
+  .inner-border {
+    position: absolute; inset: 14px;
+    border: 1px solid #2a5298;
+    pointer-events: none; z-index: 1;
+  }
+  .cert-inner {
+    padding: 48px 64px 40px;
+    text-align: center;
+    position: relative;
+  }
+  .corner {
+    position: absolute; width: 36px; height: 36px;
+    border-color: #1a3a6b; border-style: solid;
+    z-index: 2;
+  }
+  .corner-tl { top: 18px; right: 18px; border-width: 3px 0 0 3px; }
+  .corner-tr { top: 18px; left: 18px;  border-width: 3px 3px 0 0; }
+  .corner-bl { bottom: 18px; right: 18px; border-width: 0 0 3px 3px; }
+  .corner-br { bottom: 18px; left: 18px;  border-width: 0 3px 3px 0; }
+
+  .cert-title {
+    font-size: 52px; font-weight: 700; color: #1a3a6b;
+    margin: 0 0 18px; line-height: 1.2;
+  }
+  .cert-subtitle {
+    font-size: 20px; color: #333; margin: 0 0 24px; font-weight: 400;
+  }
+  .cert-name {
+    font-size: 44px; font-weight: 700; color: #1a3a6b;
+    margin: 0 0 8px;
+  }
+  .name-underline {
+    width: 240px; height: 2px; background: #1a3a6b;
+    margin: 0 auto 28px;
+  }
+  .cert-body {
+    font-size: 18px; color: #222; line-height: 1.9;
+    max-width: 480px; margin: 0 auto 32px;
+  }
+  .medal-wrap {
+    margin: 8px auto 32px;
+    width: 80px; height: 80px;
+  }
+  .medal-svg { width: 80px; height: 80px; }
+  .cert-footer {
+    display: flex; justify-content: space-between;
+    align-items: flex-end; margin-top: 8px;
+    border-top: 1px solid #aaa; padding-top: 12px;
+    direction: rtl;
+  }
+  .footer-block {
+    text-align: center; min-width: 120px;
+  }
+  .footer-label {
+    font-size: 15px; color: #555; border-bottom: 1px solid #888;
+    padding-bottom: 4px; margin-bottom: 4px;
+  }
+  .footer-sub {
+    font-size: 14px; color: #777;
+  }
+</style>
+<div class="cert-wrap">
+  <div class="cert">
+    <div class="outer-border"></div>
+    <div class="inner-border"></div>
+    <div class="corner corner-tl"></div>
+    <div class="corner corner-tr"></div>
+    <div class="corner corner-bl"></div>
+    <div class="corner corner-br"></div>
+    <div class="cert-inner">
+      <div class="cert-title">شهادة تقدير</div>
+      <div class="cert-subtitle">يسعدنا أن نمنح هذه الشهادة إلى</div>
+      <div class="cert-name">أحمد مراد</div>
+      <div class="name-underline"></div>
+      <div class="cert-body">
+        تهانينا لك على مستواك الرائع ومجهودك المثمر فى العمل كل الشكر والتقدير<br>
+        لك مع تمنياتنا بمزيد من النجاح والتوفيق.
+      </div>
+      <div class="medal-wrap">
+        <svg class="medal-svg" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="goldGrad" cx="40%" cy="35%" r="55%">
+              <stop offset="0%" stop-color="#f5e17a"/>
+              <stop offset="40%" stop-color="#d4a017"/>
+              <stop offset="70%" stop-color="#b8860b"/>
+              <stop offset="100%" stop-color="#8B6914"/>
+            </radialGradient>
+            <radialGradient id="ribbonGrad" cx="50%" cy="30%" r="60%">
+              <stop offset="0%" stop-color="#e8c44a"/>
+              <stop offset="100%" stop-color="#b8860b"/>
+            </radialGradient>
+          </defs>
+          <polygon points="40,4 44,20 60,20 47,30 52,46 40,37 28,46 33,30 20,20 36,20" fill="url(#goldGrad)" stroke="#8B6914" stroke-width="0.5"/>
+          <circle cx="40" cy="54" r="20" fill="url(#goldGrad)" stroke="#8B6914" stroke-width="1"/>
+          <circle cx="40" cy="54" r="16" fill="none" stroke="#c9a227" stroke-width="0.8"/>
+          <circle cx="40" cy="54" r="12" fill="none" stroke="#e8c44a" stroke-width="0.5"/>
+          <line x1="34" y1="44" x2="46" y2="44" stroke="#c9a227" stroke-width="0.6"/>
+          <line x1="32" y1="47" x2="48" y2="47" stroke="#c9a227" stroke-width="0.6"/>
+          <line x1="31" y1="50" x2="49" y2="50" stroke="#c9a227" stroke-width="0.6"/>
+          <line x1="31" y1="53" x2="49" y2="53" stroke="#c9a227" stroke-width="0.6"/>
+          <line x1="31" y1="56" x2="49" y2="56" stroke="#c9a227" stroke-width="0.6"/>
+          <line x1="31" y1="59" x2="49" y2="59" stroke="#c9a227" stroke-width="0.6"/>
+          <line x1="32" y1="62" x2="48" y2="62" stroke="#c9a227" stroke-width="0.6"/>
+          <polygon points="36,65 40,78 44,65" fill="#b8860b"/>
+          <polygon points="44,65 50,76 50,65" fill="#c9a227" opacity="0.7"/>
+          <polygon points="36,65 30,76 30,65" fill="#c9a227" opacity="0.7"/>
+        </svg>
+      </div>
+      <div class="cert-footer">
+        <div class="footer-block">
+          <div class="footer-label">نطاق</div>
+          <div class="footer-sub">الشركة</div>
+        </div>
+        <div class="footer-block">
+          <div class="footer-label">التاريخ</div>
+          <div class="footer-sub">&nbsp;</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

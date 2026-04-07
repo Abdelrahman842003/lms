@@ -17,6 +17,7 @@ interface Level {
   max_points: number | null;
   is_current: boolean;
   is_achieved: boolean;
+  history_id: string | null;
 }
 
 interface HistoryEntry {
@@ -317,13 +318,10 @@ export default function StudentAchievementsPage() {
               <div className={`transition-all duration-700 delay-400 ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
                 <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-6 border border-white/10 h-full">
                   <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
-                    <span className="w-10 h-10 rounded-xl bg-yellow-500/20 flex items-center justify-center">
-                      <span className="text-lg">🎯</span>
-                    </span>
                     المستويات
                   </h3>
                   <div className="space-y-3 max-h-[400px] overflow-y-auto custom-scrollbar pl-2">
-                    {data.levels_timeline.map((level, index) => (
+                    {data.levels_timeline.map((level) => (
                       <div
                         key={level.id}
                         className={`relative flex items-center gap-4 p-3 rounded-xl transition-all duration-300 ${
@@ -334,24 +332,25 @@ export default function StudentAchievementsPage() {
                             : 'opacity-50'
                         }`}
                       >
-                        {/* Timeline line */}
-                        {index < data.levels_timeline.length - 1 && (
-                          <div 
-                            className={`absolute right-[27px] top-[48px] w-0.5 h-[calc(100%)] ${
-                              level.is_achieved ? 'bg-green-500/50' : 'bg-white/10'
-                            }`} 
-                          />
-                        )}
+                        {/* Timeline line removed */}
                         
                         {/* Level icon */}
                         <div 
                           className={`relative z-10 w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center text-xl border-2 transition-all ${
+                            level.is_achieved ? 'cursor-pointer hover:scale-110 active:scale-95' : 'cursor-not-allowed'
+                          } ${
                             level.is_current
                               ? 'shadow-lg'
                               : level.is_achieved
                               ? 'border-green-500/50'
                               : 'border-white/10 bg-white/5'
                           }`}
+                          onClick={() => {
+                            if (level.is_achieved && level.history_id) {
+                              handleDownloadCertificate(level.history_id);
+                            }
+                          }}
+                          title={level.is_achieved ? 'تحميل الشهادة' : 'مستوى مقفل'}
                           style={level.is_current ? {
                             borderColor: level.color || '#6366f1',
                             backgroundColor: `${level.color || '#6366f1'}20`,
@@ -361,9 +360,16 @@ export default function StudentAchievementsPage() {
                           } : {}}
                         >
                           {level.is_achieved ? (
-                            level.is_current ? level.icon || '⭐' : '✅'
+                            level.icon || '⭐'
                           ) : (
                             <span className="text-gray-500">🔒</span>
+                          )}
+
+                          {/* Downloading Indicator on Icon */}
+                          {downloadingCert === level.history_id && (
+                            <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center">
+                              <LoadingSpinner size="sm" />
+                            </div>
                           )}
                         </div>
 
@@ -384,8 +390,7 @@ export default function StudentAchievementsPage() {
                           </div>
                         </div>
 
-                        {/* Level emoji */}
-                        <div className="text-xl">{level.icon || ''}</div>
+                        {/* Right side info remains, left side icon removed */}
                       </div>
                     ))}
                   </div>
@@ -398,18 +403,15 @@ export default function StudentAchievementsPage() {
               <div className={`mb-8 transition-all duration-700 delay-500 ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
                 <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-6 md:p-8 border border-white/10">
                   <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
-                    <span className="w-10 h-10 rounded-xl bg-green-500/20 flex items-center justify-center">
-                      <span className="text-lg">📜</span>
-                    </span>
                     الشهادات والإنجازات
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {data.history.map((entry) => (
                       <div
                         key={entry.id}
-                        className="group relative overflow-hidden bg-white/5 hover:bg-white/10 backdrop-blur-sm rounded-2xl p-5 border border-white/10 hover:border-white/20 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl"
+                        className="relative overflow-hidden bg-white/5 backdrop-blur-sm rounded-2xl p-5 border border-white/10 transition-all duration-300"
                       >
-                        <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                        <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent opacity-0 transition-opacity duration-300"
                           style={{ background: `linear-gradient(135deg, ${entry.level_color}10, transparent)` }}
                         />
                         
@@ -436,11 +438,11 @@ export default function StudentAchievementsPage() {
                             </div>
                           </div>
 
-                          {entry.has_certificate && (
+                          {entry && (
                             <button
                               onClick={() => handleDownloadCertificate(entry.id)}
                               disabled={downloadingCert === entry.id}
-                              className="w-full mt-2 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 hover:scale-[1.02]"
+                              className="w-full mt-2 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-300"
                               style={{
                                 background: `linear-gradient(135deg, ${entry.level_color}30, ${entry.level_color}15)`,
                                 border: `1px solid ${entry.level_color}40`,

@@ -5,12 +5,16 @@ declare(strict_types=1);
 namespace App\Filament\Resources;
 
 use App\Domains\Gamification\Models\GamificationLevel;
-use Filament\Resources\Resource;
-use Filament\Schemas\Components\Section;
-use Filament\Schemas\Schema;
+use App\Filament\Resources\BaseResource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Forms;
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Actions\EditAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\BulkActionGroup;
 use Illuminate\Database\Eloquent\Builder;
 
 class GamificationLevelResource extends BaseResource
@@ -122,14 +126,14 @@ class GamificationLevelResource extends BaseResource
             ])
             ->defaultSort('sort_order')
             ->actions([
-                Tables\Actions\EditAction::make()
+                EditAction::make()
                     ->label('تعديل'),
-                Tables\Actions\DeleteAction::make()
+                DeleteAction::make()
                     ->label('حذف'),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make()
+                BulkActionGroup::make([
+                    DeleteBulkAction::make()
                         ->label('حذف المحدد'),
                 ]),
             ]);

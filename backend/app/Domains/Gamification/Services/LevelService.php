@@ -123,7 +123,46 @@ class LevelService
                 'points' => $sp->total_points,
             ]);
 
-        // Level history with certificate info
+        // All levels with achieved status
+        $levelHistoryMap = $student->levelHistory()->pluck('id', 'level_id')->toArray();
+        $currentSortOrder = $currentLevel?->sort_order ?? 0;
+
+        $levelsTimeline = $allLevels->map(function ($level) use ($currentLevel, &$levelHistoryMap, $currentSortOrder, $student, $totalPoints) {
+            $isAchieved = $level->sort_order <= $currentSortOrder;
+            $historyId = $levelHistoryMap[$level->id] ?? null;
+
+            // If achieved but no history record exists, create one now
+            if ($isAchieved && !$historyId) {
+                try {
+                    $history = StudentLevelHistory::create([
+                        'student_id' => $student->id,
+                        'level_id' => $level->id,
+                        'points_at_levelup' => $totalPoints, // Approximate
+                        'achieved_at' => now(),
+                    ]);
+                    $historyId = $history->id;
+                    $levelHistoryMap[$level->id] = $historyId;
+                } catch (\Throwable $e) {
+                    Log::error('Failed to auto-create missing level history', ['student' => $student->id, 'level' => $level->id]);
+                }
+            }
+            
+            return [
+                'id' => $level->id,
+                'name' => $level->name,
+                'description' => $level->description,
+                'icon' => $level->icon,
+                'color' => $level->color,
+                'min_points' => $level->min_points,
+                'max_points' => $level->max_points,
+                'sort_order' => $level->sort_order,
+                'is_current' => $currentLevel && $currentLevel->id === $level->id,
+                'is_achieved' => $isAchieved,
+                'history_id' => $historyId,
+            ];
+        });
+
+        // Level history with certificate info (Fetched after timeline to include newly created ones)
         $history = $student->levelHistory()
             ->with('level')
             ->orderByDesc('achieved_at')
@@ -136,21 +175,6 @@ class LevelService
                 'achieved_at' => $h->achieved_at->toISOString(),
                 'has_certificate' => $h->hasCertificate(),
             ]);
-
-        // All levels with achieved status
-        $achievedLevelIds = $student->levelHistory()->pluck('level_id')->toArray();
-        $levelsTimeline = $allLevels->map(fn ($level) => [
-            'id' => $level->id,
-            'name' => $level->name,
-            'description' => $level->description,
-            'icon' => $level->icon,
-            'color' => $level->color,
-            'min_points' => $level->min_points,
-            'max_points' => $level->max_points,
-            'sort_order' => $level->sort_order,
-            'is_current' => $currentLevel && $currentLevel->id === $level->id,
-            'is_achieved' => in_array($level->id, $achievedLevelIds),
-        ]);
 
         return [
             'total_points' => $totalPoints,
