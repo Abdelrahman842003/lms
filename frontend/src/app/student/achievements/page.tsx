@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
-import { fetchApi, getAuthHeaders, API_BASE_URL, csrf } from '@/services/authService';
+import { fetchApi } from '@/services/authService';
 import { Button, LoadingSpinner, Icon } from '@/components/ui/index';
 
 interface Level {
@@ -68,7 +68,6 @@ export default function StudentAchievementsPage() {
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<AchievementsData | null>(null);
   const [showContent, setShowContent] = useState(false);
-  const [downloadingCert, setDownloadingCert] = useState<string | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewCertData, setPreviewCertData] = useState<{ studentName: string; levelName: string; date: string; historyId: string; color: string; gender?: string } | null>(null);
   const userEmail =
@@ -132,47 +131,6 @@ export default function StudentAchievementsPage() {
   const handleClosePreview = () => {
     setPreviewOpen(false);
     setPreviewCertData(null);
-  };
-
-  const handleDownloadCertificate = async (historyId: string) => {
-    try {
-      setDownloadingCert(historyId);
-      await csrf();
-      const cleanBaseUrl = API_BASE_URL.replace(/\/api\/?$/, '').replace(/\/$/, '');
-      const requestUrl = `${cleanBaseUrl}/api/v1/student/achievements/certificate/${historyId}/download?refresh=1`;
-      const headers = getAuthHeaders(
-        {
-          Accept: 'application/pdf',
-        },
-        requestUrl,
-        { method: 'GET' },
-      );
-
-      const response = await fetch(requestUrl, {
-        method: 'GET',
-        headers,
-        credentials: 'include',
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to download certificate');
-      }
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `شهادة_إنجاز.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-    } catch (err) {
-      console.error('Failed to download certificate:', err);
-      alert('فشل في تحميل الشهادة');
-    } finally {
-      setDownloadingCert(null);
-    }
   };
 
   const levelColor = data?.current_level?.color || '#6366f1';
@@ -440,11 +398,16 @@ export default function StudentAchievementsPage() {
                         key={level.id}
                         className={`relative flex items-center gap-4 p-3 rounded-xl transition-all duration-300 ${
                           level.is_current
-                            ? 'bg-white/10 border border-white/20 shadow-lg'
+                            ? 'bg-white/10 border border-white/20 shadow-lg cursor-pointer hover:bg-white/15'
                             : level.is_achieved
-                            ? 'bg-white/5 border border-white/5'
+                            ? 'bg-white/5 border border-white/5 cursor-pointer hover:bg-white/10'
                             : 'opacity-50'
                         }`}
+                        onClick={() => {
+                          if (level.is_achieved && level.history_id) {
+                            handlePreviewCertificate(level.history_id);
+                          }
+                        }}
                       >
                         {/* Timeline line removed */}
                         
@@ -459,11 +422,6 @@ export default function StudentAchievementsPage() {
                               ? 'border-green-500/50'
                               : 'border-white/10 bg-white/5'
                           }`}
-                          onClick={() => {
-                            if (level.is_achieved && level.history_id) {
-                              handleDownloadCertificate(level.history_id);
-                            }
-                          }}
                           title={level.is_achieved ? 'عرض الشهادة' : 'مستوى مقفل'}
                           style={level.is_current ? {
                             borderColor: level.color || '#6366f1',
@@ -477,13 +435,6 @@ export default function StudentAchievementsPage() {
                             level.icon || '⭐'
                           ) : (
                             <span className="text-gray-500">🔒</span>
-                          )}
-
-                          {/* Downloading Indicator on Icon */}
-                          {downloadingCert === level.history_id && (
-                            <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center">
-                              <LoadingSpinner size="sm" />
-                            </div>
                           )}
                         </div>
 
@@ -555,7 +506,6 @@ export default function StudentAchievementsPage() {
                           {entry && (
                             <button
                               onClick={() => handlePreviewCertificate(entry.id)}
-                              disabled={downloadingCert === entry.id}
                               className="w-full mt-2 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-300"
                               style={{
                                 background: `linear-gradient(135deg, ${entry.level_color}30, ${entry.level_color}15)`,
@@ -563,17 +513,8 @@ export default function StudentAchievementsPage() {
                                 color: entry.level_color || '#fff',
                               }}
                             >
-                              {downloadingCert === entry.id ? (
-                                <>
-                                  <LoadingSpinner size="sm" />
-                                  <span>جاري التحميل...</span>
-                                </>
-                              ) : (
-                                <>
-                                  <Icon name="download" />
-                                  <span>عرض الشهادة</span>
-                                </>
-                              )}
+                              <Icon name="download" />
+                              <span>عرض الشهادة</span>
                             </button>
                           )}
                         </div>
@@ -601,14 +542,14 @@ export default function StudentAchievementsPage() {
 
       {previewOpen && previewCertData && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm px-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm px-4 print:bg-white print:items-start print:justify-start"
           onClick={handleClosePreview}
         >
           <div
-            className="w-full max-w-4xl bg-slate-950/95 border border-white/10 rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh]"
+            className="w-full max-w-4xl bg-slate-950/95 border border-white/10 rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh] print:max-w-none print:w-full print:h-screen print:max-h-screen print:border-none print:rounded-none print:shadow-none print:bg-white"
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 shrink-0">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 shrink-0 print:hidden">
               <h3 className="text-white text-lg font-bold">معاينة الشهادة</h3>
               <div className="flex items-center gap-2">
                 <Button
@@ -619,19 +560,17 @@ export default function StudentAchievementsPage() {
                   <Icon name="print" />
                   <span>طباعة الشهادة</span>
                 </Button>
-                <Button variant="outline" onClick={handleClosePreview}>
-              معاينة الشهادة
-
-    إغلاق
+                <Button variant="outline" onClick={handleClosePreview} className="print:hidden">
+                  إغلاق
                 </Button>
               </div>
             </div>
 
-            <div className="flex-1 overflow-auto p-4 md:p-8 bg-slate-900/80 custom-scrollbar flex items-center justify-center">
+            <div className="flex-1 overflow-auto p-4 md:p-8 bg-slate-900/80 custom-scrollbar flex items-center justify-center print:overflow-hidden print:p-0 print:bg-white print:block">
               {/* React Native Certificate UI */}
               <div 
                 id="certificate-print-wrapper"
-                className="relative w-full max-w-2xl lg:max-w-3xl overflow-hidden rounded shadow-[0_0_50px_rgba(0,0,0,0.5)] bg-slate-50 text-slate-800 flex items-center justify-center p-4 sm:p-6 md:p-8 lg:p-12 text-center border-4"
+                className="relative w-full max-w-2xl lg:max-w-3xl overflow-hidden rounded shadow-[0_0_50px_rgba(0,0,0,0.5)] bg-slate-50 text-slate-800 flex items-center justify-center p-4 sm:p-6 md:p-8 lg:p-12 text-center border-4 print:w-screen print:h-screen print:max-w-none print:border-8 print:shadow-none print:m-0 print:rounded-none"
                 style={{ 
                    borderColor: '#000000',
                    minHeight: '350px',
@@ -641,57 +580,61 @@ export default function StudentAchievementsPage() {
                 <div className="absolute inset-2 border-2 border-dashed pointer-events-none" style={{ borderColor: `#00000050` }}></div>
                 <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/50 to-white/90 pointer-events-none"></div>
                 
-                <div className="relative z-10 w-full">
+                <div className="relative z-10 w-full h-full flex flex-col justify-center print:justify-evenly py-4 md:py-8 lg:py-12 print:py-16">
                   {/* Header */}
                   <h1 
-                    className="text-2xl sm:text-xl sm:text-lg sm:text-xl md:text-2xl lg:text-3xl lg:text-4xl lg:text-5xl font-bold mb-2 sm:mb-3 lg:mb-4 sm:mb-3 sm:mb-2 sm:mb-3 lg:mb-4 lg:mb-6 lg:mb-8 font-serif uppercase tracking-widest"
+                    className="text-2xl sm:text-xl sm:text-lg sm:text-xl md:text-2xl lg:text-3xl lg:text-4xl lg:text-5xl print:text-5xl font-bold mb-2 sm:mb-3 lg:mb-4 sm:mb-3 sm:mb-2 sm:mb-3 lg:mb-4 lg:mb-6 lg:mb-8 print:mb-8 font-serif uppercase tracking-widest"
                     style={{ color: '#000000' }}
                   >
                     شهادة إنجاز
                   </h1>
                   
                   {/* Body */}
-                  <p className="text-sm sm:text-base md:text-xl lg:text-2xl text-slate-600 mb-2 sm:mb-3 lg:mb-4 font-medium">
+                  <p className="text-sm sm:text-base md:text-xl lg:text-2xl print:text-2xl text-slate-600 mb-2 sm:mb-3 lg:mb-4 print:mb-6 font-medium">
                     {previewCertData.gender === 'female' ? 'بكل فخر واعتزاز، نشهد أن الطالبة' : 'بكل فخر واعتزاز، نشهد أن الطالب'}
                   </p>
                   
-                  <h2 className="text-xl sm:text-lg sm:text-xl md:text-2xl lg:text-3xl lg:text-4xl font-bold text-slate-900 mb-3 sm:mb-2 sm:mb-3 lg:mb-4 lg:mb-6 border-b-2 pb-2 inline-block px-8" 
-                      style={{ borderBottomColor: '#000000' }}>
-                    {previewCertData.studentName}
-                  </h2>
+                  <div className="flex justify-center">
+                    <h2 className="text-xl sm:text-lg sm:text-xl md:text-2xl lg:text-3xl lg:text-4xl print:text-4xl font-bold text-slate-900 mb-3 sm:mb-2 sm:mb-3 lg:mb-4 lg:mb-6 print:mb-8 border-b-2 pb-2 inline-block px-8" 
+                        style={{ borderBottomColor: '#000000' }}>
+                      {previewCertData.studentName}
+                    </h2>
+                  </div>
                   
-                  <p className="text-sm sm:text-base md:text-xl lg:text-2xl text-slate-600 mb-2 sm:mb-3 lg:mb-4 font-medium">
+                  <p className="text-sm sm:text-base md:text-xl lg:text-2xl print:text-2xl text-slate-600 mb-2 sm:mb-3 lg:mb-4 print:mb-6 font-medium">
                     {previewCertData.gender === 'female' ? 'قد اجتازت بنجاح وتفوق متطلبات مستوى' : 'قد اجتاز بنجاح وتفوق متطلبات مستوى'}
                   </p>
                   
-                  <h3 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold mb-2 sm:mb-3 lg:mb-4 sm:mb-3 sm:mb-2 sm:mb-3 lg:mb-4 lg:mb-6 lg:mb-8 inline-block px-6 py-2 rounded-full" 
-                      style={{ backgroundColor: `${previewCertData.color}15`, color: previewCertData.color, border: `1px solid ${previewCertData.color}30` }}>
-                    {previewCertData.levelName}
-                  </h3>
+                  <div className="flex justify-center">
+                    <h3 className="text-lg sm:text-xl md:text-2xl lg:text-3xl print:text-3xl font-bold mb-2 sm:mb-3 lg:mb-4 sm:mb-3 sm:mb-2 sm:mb-3 lg:mb-4 lg:mb-6 lg:mb-8 print:mb-10 inline-block px-6 py-2 rounded-full" 
+                        style={{ backgroundColor: `${previewCertData.color}15`, color: previewCertData.color, border: `1px solid ${previewCertData.color}30` }}>
+                      {previewCertData.levelName}
+                    </h3>
+                  </div>
 
-                  <p className="text-xs sm:text-sm md:text-lg lg:text-xl text-slate-500 mb-3 sm:mb-2 sm:mb-3 lg:mb-4 lg:mb-6 sm:mb-8 lg:mb-12 italic font-medium">
+                  <p className="text-xs sm:text-sm md:text-lg lg:text-xl print:text-xl text-slate-500 mb-3 sm:mb-2 sm:mb-3 lg:mb-4 lg:mb-6 sm:mb-8 lg:mb-12 print:mb-16 italic font-medium">
                     مع خالص شكرنا وتقديرنا لما قدمه الوالدان الكريمان من دعم ومساندة وتوفير بيئة محفزة للنجاح
                   </p>
 
                   {/* Footer / Meta */}
-                  <div className="flex justify-between items-end w-full mt-auto pt-2 sm:pt-4 md:pt-8 lg:pt-12 relative px-0 sm:px-4 md:px-12 lg:px-24">
-                    <div className="text-center w-24 sm:w-32 md:w-40">
-                      <p className="text-[10px] sm:text-xs md:text-sm text-slate-500 mb-1 sm:mb-2 font-medium">تاريخ الإصدار</p>
-                      <p className="font-bold text-slate-700 border-t border-slate-300 pt-1 sm:pt-2 text-xs sm:text-sm md:text-lg">
+                  <div className="flex justify-between items-end w-full mt-auto pt-2 sm:pt-4 md:pt-8 lg:pt-12 print:pt-16 relative px-0 sm:px-4 md:px-12 lg:px-24 print:px-32">
+                    <div className="text-center w-24 sm:w-32 md:w-40 print:w-48">
+                      <p className="text-[10px] sm:text-xs md:text-sm print:text-base text-slate-500 mb-1 sm:mb-2 print:mb-3 font-medium">تاريخ الإصدار</p>
+                      <p className="font-bold text-slate-700 border-t border-slate-300 pt-1 sm:pt-2 print:pt-3 text-xs sm:text-sm md:text-lg print:text-xl">
                         {new Date(previewCertData.date).toLocaleDateString('ar-EG')}
                       </p>
                     </div>
                     
-                    <div className="w-10 h-10 sm:w-16 sm:h-16 md:w-20 md:h-20 lg:w-24 lg:h-24 rounded-full flex flex-col items-center justify-center border-2 md:border-[3px] bg-white shadow-lg relative transform rotate-[-15deg] shrink-0 mx-2"
+                    <div className="w-10 h-10 sm:w-16 sm:h-16 md:w-20 md:h-20 lg:w-24 lg:h-24 print:w-32 print:h-32 rounded-full flex flex-col items-center justify-center border-2 md:border-[3px] print:border-4 bg-white shadow-lg relative transform rotate-[-15deg] shrink-0 mx-2"
                          style={{ borderColor: '#000000', color: '#000000' }}>
                       <div className="absolute inset-[2px] md:inset-1 border border-dashed rounded-full" style={{ borderColor: '#000000' }}></div>
-                      <Icon name="award" className="text-sm sm:text-sm sm:text-base md:text-xl lg:text-2xl mb-0 sm:mb-1 opacity-80" />
-                      <span className="font-bold text-[5px] sm:text-[8px] md:text-[10px] uppercase tracking-wider mt-[-2px] sm:mt-0">اعتماد نطاق</span>
+                      <Icon name="award" className="text-sm sm:text-sm sm:text-base md:text-xl lg:text-2xl print:text-4xl mb-0 sm:mb-1 opacity-80" />
+                      <span className="font-bold text-[5px] sm:text-[8px] md:text-[10px] print:text-xs uppercase tracking-wider mt-[-2px] sm:mt-0">اعتماد نطاق</span>
                     </div>
 
-                    <div className="text-center w-24 sm:w-32 md:w-40">
-                      <p className="text-[10px] sm:text-xs md:text-sm text-slate-500 mb-1 sm:mb-2 font-medium">توقيع الإدارة</p>
-                      <p className="font-bold text-slate-700 border-t border-slate-300 pt-1 sm:pt-2 text-sm sm:text-xs sm:text-sm md:text-lg lg:text-xl leading-tight" style={{ fontFamily: "cursive" }}>
+                    <div className="text-center w-24 sm:w-32 md:w-40 print:w-48">
+                      <p className="text-[10px] sm:text-xs md:text-sm print:text-base text-slate-500 mb-1 sm:mb-2 print:mb-3 font-medium">توقيع الإدارة</p>
+                      <p className="font-bold text-slate-700 border-t border-slate-300 pt-1 sm:pt-2 print:pt-3 text-sm sm:text-xs sm:text-sm md:text-lg lg:text-xl print:text-2xl leading-tight" style={{ fontFamily: "cursive" }}>
                         مؤسسة نطاق
                       </p>
                     </div>
@@ -702,25 +645,30 @@ export default function StudentAchievementsPage() {
           </div>
         </div>
       )}
-      {/* CSS for shimmer animation */}
+      {/* CSS for print & animations */}
       <style jsx global>{`
         @media print {
           @page {
             size: A4 landscape;
             margin: 0;
           }
-          body, html {
-            height: 100vh !important;
-            width: 100vw !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            overflow: hidden !important;
+          
+          html, body {
+            width: 100%;
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: white;
+          }
+
+          body * {
+            visibility: hidden;
           }
           
-          /* إخفاء كل العناصر في الصفحة التي ليست الشهادة ولا تحتويها ولا هي بداخلها */
-          body *:not(:has(#certificate-print-wrapper)):not(#certificate-print-wrapper):not(#certificate-print-wrapper *) {
-            display: none !important;
-            visibility: hidden !important;
+          #certificate-print-wrapper,
+          #certificate-print-wrapper * {
+            visibility: visible;
           }
 
           #certificate-print-wrapper {
@@ -730,19 +678,18 @@ export default function StudentAchievementsPage() {
             width: 100vw !important;
             height: 100vh !important;
             margin: 0 !important;
-            padding: 0 !important;
-            max-width: none !important;
-            border: none !important;
-            box-shadow: none !important;
+            padding: 2rem !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: center !important;
+            align-items: center !important;
+            box-sizing: border-box !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
             transform: scale(0.98);
-            transform-origin: center center;
-            /* سنحافظ على الـ flex الأصلي للشهادة دون تغييره هنا */
+            transform-origin: center;
           }
         }
-
-
       `}</style>
       <style jsx>{`
         @keyframes shimmer {
