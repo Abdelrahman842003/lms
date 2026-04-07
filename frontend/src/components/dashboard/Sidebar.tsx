@@ -151,12 +151,6 @@ const getSidebarItems = (role: string): SidebarItem[] => {
       icon: 'fas fa-exclamation-circle',
       href: '/student/mistakes',
     },
-    {
-      id: 'leaderboard',
-      label: 'لوحة الشرف',
-      icon: 'fas fa-trophy',
-      href: '/student/leaderboard',
-    },
   ];
 };
 

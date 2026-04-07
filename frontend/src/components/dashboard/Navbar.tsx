@@ -221,12 +221,6 @@ const getNavItems = (role: string): SidebarItem[] => {
   return [
     ...commonItems,
     {
-      id: 'leaderboard',
-      label: 'لوحة الشرف',
-      icon: 'trophy',
-      href: '/student/leaderboard',
-    },
-    {
       id: 'mistakes',
       label: 'أخطائي',
       icon: 'exclamation-circle',

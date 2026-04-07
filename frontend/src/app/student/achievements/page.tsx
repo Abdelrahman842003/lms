@@ -5,6 +5,7 @@ import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { fetchApi } from '@/services/authService';
 import { Button, LoadingSpinner, Icon } from '@/components/ui/index';
+import { StudentHonorBoard } from '@/components/dashboard/StudentHonorBoard';
 
 interface Level {
   id: string;
@@ -535,6 +536,9 @@ export default function StudentAchievementsPage() {
                 </div>
               </div>
             )}
+
+            {/* Honor Board below achievements */}
+            <StudentHonorBoard />
           </>
         ) : null}
       </div>

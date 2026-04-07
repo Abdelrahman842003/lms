@@ -148,17 +148,17 @@ export default function StudentDashboard() {
 
       {/* Quick Access Section - Added for better navigation */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <Link href="/student/leaderboard" className="block group">
+        <Link href="/student/achievements" className="block group">
           <Button
             variant="ghost"
             className="w-full h-auto p-6 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-primary/50 rounded-2xl transition-all duration-300 flex items-center justify-between text-left"
           >
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center text-primary text-xl group-hover:scale-110 transition-transform">
-                <Icon name="trophy" className="text-xl" />
+                <Icon name="medal" className="text-xl" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-white mb-1">لوحة الشرف</h3>
+                <h3 className="text-lg font-bold text-white mb-1">إنجازاتي ولوحة الشرف</h3>
                 <p className="text-sm text-gray-400">نافس زملاءك واجمع النقاط</p>
               </div>
             </div>
