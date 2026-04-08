@@ -8,7 +8,7 @@ import { StatCard } from '@/components/dashboard/StatCard';
 import { LoadingSpinner, FormModal, Button, Icon, Input, Badge } from '@/components/ui';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { toast } from 'react-hot-toast';
-import axios from '@/lib/axios';
+import { fetchApi } from '@/services/authService';
 
 // Types
 interface FailedQuestion {
@@ -80,9 +80,9 @@ export default function ExamResultsPage() {
     try {
       setLoading(true);
       console.log('Fetching results for exam ID:', id);
-      const response = await axios.get(`/teacher/exams/${id}/results`);
-      setExam(response.data.data.exam);
-      setResults(response.data.data.results || []);
+      const response = await fetchApi<{ exam: ExamData; results: StudentResult[] }>(`/teacher/exams/${id}/results`);
+      setExam(response?.exam ?? null);
+      setResults(response?.results || []);
     } catch (error: any) {
       console.error('Error fetching exam results:', error);
       console.error('Exam ID requested:', id);
@@ -123,61 +123,19 @@ export default function ExamResultsPage() {
     return sorted.findIndex(r => r.id === studentId) + 1;
   };
 
-  // Loading state
-  if (loading) {
-    return (
-      <DashboardLayout
-        role={user?.userType as 'teacher' | 'secretary' || 'teacher'}
-        user={{ name: user?.name || '', avatar: user?.avatar || '' }}
-      >
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center">
-            <LoadingSpinner size="lg" className="mx-auto mb-4" />
-            <p className="text-gray-400">جاري تحميل النتائج...</p>
-          </div>
-        </div>
-      </DashboardLayout>
-    );
-  }
-
   return (
     <DashboardLayout
       role={user?.userType as 'teacher' | 'secretary' || 'teacher'}
       user={{ name: user?.name || 'المدرس', avatar: user?.avatar || '' }}
     >
-      {/* Header */}
       <div className="mb-6">
-        <div className="flex items-start justify-between gap-3 mb-3">
-          <div className="flex-1 min-w-0">
-            <h1 className="text-lg md:text-2xl font-bold text-white flex items-center gap-2">
-              <Icon name="poll" className="text-primary" />
-              <span className="truncate">{exam?.title}</span>
-            </h1>
-            <div className="flex flex-wrap items-center gap-2 mt-2 text-xs text-gray-400">
-              <span className="flex items-center gap-1 bg-gray-800/50 px-2 py-1 rounded">
-                <Icon name="book" />
-                {exam?.subject}
-              </span>
-              <span className="flex items-center gap-1 bg-gray-800/50 px-2 py-1 rounded">
-                <Icon name="clock" />
-                {exam?.duration} دقيقة
-              </span>
-              {exam?.date && (
-                <span className="flex items-center gap-1 bg-gray-800/50 px-2 py-1 rounded">
-                  <Icon name="calendar" />
-                  {new Date(exam.date).toLocaleDateString('ar-EG')}
-                </span>
-              )}
-            </div>
-          </div>
-          <Button
-            onClick={() => router.back()}
-            variant="ghost"
-            className="w-10 h-10 rounded-full !p-0 flex items-center justify-center"
-          >
-            <Icon name="arrow-right" />
-          </Button>
-        </div>
+        <Button
+          onClick={() => router.back()}
+          variant="ghost"
+          className="w-10 h-10 rounded-full !p-0 flex items-center justify-center"
+        >
+          <Icon name="arrow-right" />
+        </Button>
       </div>
 
       {/* Stats Grid */}
@@ -208,6 +166,13 @@ export default function ExamResultsPage() {
           color="danger"
         />
       </div>
+
+      {loading && (
+        <div className="flex items-center justify-center py-6 text-gray-400">
+          <LoadingSpinner size="sm" className="mx-2" />
+          جاري تحديث النتائج...
+        </div>
+      )}
 
       {/* Results Card */}
       <DashboardCard 

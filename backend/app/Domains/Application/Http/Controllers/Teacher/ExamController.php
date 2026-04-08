@@ -14,6 +14,7 @@ use App\Domains\Exams\Models\Exam;
 use App\Domains\Application\Services\Teacher\ExamService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 
@@ -33,8 +34,17 @@ class ExamController extends Controller
             Gate::authorize('viewResults', $exam);
 
             // فقط الطلاب الذين حضروا (لديهم attempt_id)
+            // + دعم بيانات قديمة قد تحتوي attempt_id = null رغم وجود محاولة فعلية.
             $results = $exam->results()
-                ->whereNotNull('attempt_id')
+                ->where(function ($query) use ($exam) {
+                    $query->whereNotNull('attempt_id')
+                        ->orWhereExists(function ($subQuery) use ($exam) {
+                            $subQuery->select(DB::raw(1))
+                                ->from('exam_attempts')
+                                ->whereColumn('exam_attempts.student_id', 'exam_results.student_id')
+                                ->where('exam_attempts.exam_id', $exam->id);
+                        });
+                })
                 ->with(['student'])
                 ->get();
 
@@ -123,7 +133,7 @@ class ExamController extends Controller
         Gate::authorize('update', $exam);
 
         try {
-            $data = ExamData::fromRequest($request);
+            $data = TeacherExamData::fromRequest($request);
             
             // التحقق من تعارض التواريخ كتحذير مبكر
             $warning = null;
