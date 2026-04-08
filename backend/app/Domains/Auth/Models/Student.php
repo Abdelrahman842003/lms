@@ -228,4 +228,9 @@ class Student extends Authenticatable
     {
         return (int) StudentPoint::where('student_id', $this->id)->sum('total_points');
     }
+
+    public function receivesBroadcastNotificationsOn(): string
+    {
+        return 'notifications.student.' . $this->id;
+    }
 }

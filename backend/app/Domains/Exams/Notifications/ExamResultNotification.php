@@ -52,7 +52,7 @@ class ExamResultNotification extends Notification implements ShouldBroadcast
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel('App.Models.User.' . $this->result->student_id),
+            new PrivateChannel('notifications.student.' . $this->result->student_id),
         ];
     }
 

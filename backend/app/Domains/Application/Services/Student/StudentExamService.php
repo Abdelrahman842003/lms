@@ -12,6 +12,7 @@ use App\Domains\Exams\Models\ExamResult;
 use App\Domains\Exams\Models\Question;
 use App\Domains\Auth\Models\Student;
 use App\Domains\Exams\Models\StudentAnswer;
+use App\Domains\Exams\Notifications\ExamResultNotification;
 use App\Domains\Application\Services\Student\MistakesService;
 use App\Domains\Gamification\Services\PointService;
 use Illuminate\Support\Facades\DB;
@@ -89,7 +90,7 @@ class StudentExamService
             ->first();
 
         if ($existingAttempt) {
-            if ($existingAttempt->status === 'in_progress') {
+            if ($this->getStatusValue($existingAttempt) === ExamAttemptStatus::IN_PROGRESS->value) {
                 // Check if questions still exist (in case exam was edited)
                 $questionsCount = Question::whereIn('id', $existingAttempt->questions_order)->count();
 
@@ -372,7 +373,7 @@ class StudentExamService
     {
         return DB::transaction(function () use ($attempt, $status, $terminatedReason): array {
             $attempt->refresh();
-            $attempt->loadMissing('exam');
+            $attempt->loadMissing('exam', 'student');
 
             $totalQuestions = count((array) $attempt->questions_order);
             $correctAnswers = StudentAnswer::where('exam_attempt_id', $attempt->id)
@@ -399,7 +400,7 @@ class StudentExamService
 
             $attempt->update($updateData);
 
-            ExamResult::updateOrCreate(
+            $result = ExamResult::updateOrCreate(
                 [
                     'exam_id' => $attempt->exam_id,
                     'student_id' => $attempt->student_id,
@@ -410,6 +411,15 @@ class StudentExamService
                     'percentage' => $percentage,
                 ]
             );
+
+            if ($attempt->student) {
+                $attempt->student->notify(new ExamResultNotification($result->fresh(['exam']), [
+                    'has_previous' => false,
+                    'message' => $status === ExamAttemptStatus::TERMINATED->value
+                        ? 'تم إنهاء الامتحان بسبب مخالفة.'
+                        : 'تم تسجيل نتيجة الامتحان بنجاح.',
+                ]));
+            }
 
             return $this->getAttemptData($attempt->fresh());
         });

@@ -6,7 +6,6 @@ namespace App\Domains\Exams\Notifications;
 
 use App\Domains\Exams\Models\Exam;
 use App\Domains\Notifications\Services\NotificationSettingsService;
-use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Notifications\Notification;
@@ -39,10 +38,4 @@ class ExamAbsentNotification extends Notification implements ShouldBroadcast
         ];
     }
 
-    public function broadcastOn(): array
-    {
-        return [
-            new PrivateChannel('App.Models.User.' . $this->exam->id),
-        ];
-    }
 }
