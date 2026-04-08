@@ -19,6 +19,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Spatie\Permission\Traits\HasRoles;
 
 class Student extends Authenticatable
@@ -210,6 +211,14 @@ class Student extends Authenticatable
     public function levelHistory()
     {
         return $this->hasMany(StudentLevelHistory::class);
+    }
+
+    /**
+     * Points per teacher (gamification wallet entries)
+     */
+    public function points(): HasMany
+    {
+        return $this->hasMany(StudentPoint::class);
     }
 
     /**

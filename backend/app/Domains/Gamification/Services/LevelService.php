@@ -82,10 +82,14 @@ class LevelService
      */
     public function getStudentAchievements(Student $student, ?string $teacherId = null): array
     {
+        $teacherId = is_string($teacherId) && trim($teacherId) !== '' ? $teacherId : null;
+
         if ($teacherId) {
-            $totalPoints = $student->points()->where('teacher_id', $teacherId)->sum('total_points');
+            $totalPoints = (int) StudentPoint::where('student_id', $student->id)
+                ->where('teacher_id', $teacherId)
+                ->sum('total_points');
         } else {
-            $totalPoints = $student->getTotalPointsAcrossTeachers();
+            $totalPoints = (int) $student->getTotalPointsAcrossTeachers();
         }
         
         $allLevels = GamificationLevel::allOrdered();
@@ -180,14 +184,18 @@ class LevelService
             ->with('level')
             ->orderByDesc('achieved_at')
             ->get()
-            ->map(fn ($h) => [
-                'id' => $h->id,
-                'level_name' => $h->level->name,
-                'level_icon' => $h->level->icon,
-                'level_color' => $h->level->color,
-                'achieved_at' => $h->achieved_at->toISOString(),
-                'has_certificate' => $h->hasCertificate(),
-            ]);
+            ->map(function ($h) {
+                $level = $h->level;
+
+                return [
+                    'id' => $h->id,
+                    'level_name' => $level?->name ?? 'مستوى غير معروف',
+                    'level_icon' => $level?->icon,
+                    'level_color' => $level?->color,
+                    'achieved_at' => $h->achieved_at?->toISOString() ?? $h->created_at?->toISOString(),
+                    'has_certificate' => $h->hasCertificate(),
+                ];
+            });
 
         return [
             'total_points' => $totalPoints,

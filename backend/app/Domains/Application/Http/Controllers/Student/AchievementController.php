@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace App\Domains\Application\Http\Controllers\Student;
 
 use App\Domains\Application\Http\Controllers\Controller;
+use App\Domains\Auth\Models\Student;
 use App\Domains\Gamification\Models\StudentLevelHistory;
 use App\Domains\Gamification\Services\LevelService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class AchievementController extends Controller
 {
@@ -22,9 +24,27 @@ class AchievementController extends Controller
     public function index(Request $request): JsonResponse
     {
         $student = $request->user();
-        $teacherId = $request->query('teacher_id');
+        if (!$student instanceof Student) {
+            return $this->errorResponse('غير مصرح بالوصول لهذه البيانات', null, 403);
+        }
 
-        $achievements = $this->levelService->getStudentAchievements($student, $teacherId);
+        $validated = $request->validate([
+            'teacher_id' => ['nullable', 'string', 'uuid'],
+        ]);
+
+        $teacherId = $validated['teacher_id'] ?? null;
+
+        try {
+            $achievements = $this->levelService->getStudentAchievements($student, $teacherId);
+        } catch (\Throwable $e) {
+            Log::error('Failed to fetch student achievements', [
+                'student_id' => $student->id,
+                'teacher_id' => $teacherId,
+                'error' => $e->getMessage(),
+            ]);
+
+            return $this->errorResponse('تعذر تحميل الإنجازات حالياً', null, 500);
+        }
 
         return $this->successResponse($achievements);
     }
@@ -37,7 +57,9 @@ class AchievementController extends Controller
         $student = $request->user();
         $teacherName = $request->query('teacher_name');
 
-        $history = \App\Domains\Gamification\Models\StudentLevelHistory::where('id', $historyId)
+        /** @var StudentLevelHistory $history */
+        $history = StudentLevelHistory::query()
+            ->where('id', $historyId)
             ->where('student_id', $student->id)
             ->firstOrFail();
 
