@@ -6,7 +6,7 @@ import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { LoadingSpinner, Button, Icon } from '@/components/ui';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
-import { getAttendees, exportAttendeesPDF, AttendeesResponse } from '@/services/lectureService';
+import { getAttendees, AttendeesResponse } from '@/services/lectureService';
 import { Filter } from '@/components/Filter';
 import toast from 'react-hot-toast';
 
@@ -46,16 +46,6 @@ export default function LectureAttendancePage() {
       fetchData();
     }
   }, [lectureId, groupId, dateFrom, dateTo]);
-
-  const handleExportPDF = async () => {
-    try {
-      await exportAttendeesPDF(lectureId);
-      toast.success('تم تحميل التقرير بنجاح');
-    } catch (error) {
-      console.error('Failed to export PDF:', error);
-      toast.error('فشل تحميل التقرير');
-    }
-  };
 
   // ... existing imports
 
@@ -134,15 +124,6 @@ export default function LectureAttendancePage() {
             </div>
           </div>
         </div>
-        <Button
-          onClick={handleExportPDF}
-          variant="primary"
-          className="max-md:w-full"
-          disabled={isLoading || !data || (selectedDateStatus !== 'active' && selectedDateFilter !== 'all' && selectedDateFilter !== 'last_month')}
-        >
-          <Icon name="file-pdf" />
-          <span>تصدير PDF</span>
-        </Button>
       </div>
 
       {/* Filters */}
