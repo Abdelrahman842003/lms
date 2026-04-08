@@ -5,17 +5,16 @@ declare(strict_types=1);
 namespace App\Domains\Application\Services\Student;
 
 use App\Domains\Application\Exceptions\DomainException;
+use App\Domains\Exams\Enums\ExamAttemptStatus;
 use App\Domains\Exams\Models\Exam;
 use App\Domains\Exams\Models\ExamAttempt;
 use App\Domains\Exams\Models\ExamResult;
 use App\Domains\Exams\Models\Question;
 use App\Domains\Auth\Models\Student;
 use App\Domains\Exams\Models\StudentAnswer;
-use App\Domains\Exams\Notifications\ExamResultNotification;
 use App\Domains\Application\Services\Student\MistakesService;
 use App\Domains\Gamification\Services\PointService;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 class StudentExamService
 {
@@ -84,6 +83,7 @@ class StudentExamService
     public function startExam(Student $student, Exam $exam): array
     {
         // Check if student already has an attempt
+        /** @var ExamAttempt|null $existingAttempt */
         $existingAttempt = ExamAttempt::where('exam_id', $exam->id)
             ->where('student_id', $student->id)
             ->first();
@@ -114,45 +114,305 @@ class StudentExamService
     }
 
     /**
-     * Build attempt data array for response
+     * Submit answer for current question.
+     *
+     * @throws DomainException
      */
-    private function getAttemptData(ExamAttempt $attempt): array
+    public function submitAnswer(ExamAttempt $attempt, ?string $answer): array
     {
-        $attempt->load('exam.questions');
+        $this->ensureAttemptInProgress($attempt);
+
+        $question = $attempt->getCurrentQuestion();
+        if (! $question) {
+            return $this->finalizeAttempt($attempt, ExamAttemptStatus::COMPLETED->value);
+        }
+
+        $normalizedAnswer = trim((string) $answer);
+        if ($normalizedAnswer === '') {
+            throw new DomainException('الرجاء اختيار إجابة قبل المتابعة.', 422);
+        }
+
+        $correctAnswer = trim((string) ($question->correct_answer ?? ''));
+        $options = is_array($question->options) ? $question->options : [];
+
+        if ($correctAnswer !== '' && ! array_is_list($options) && array_key_exists($correctAnswer, $options)) {
+            $correctAnswer = trim((string) $options[$correctAnswer]);
+        }
+
+        $isCorrect = mb_strtolower($normalizedAnswer) === mb_strtolower($correctAnswer);
+
+        StudentAnswer::updateOrCreate(
+            [
+                'exam_attempt_id' => $attempt->id,
+                'question_id' => $question->id,
+            ],
+            [
+                'answer' => $normalizedAnswer,
+                'is_correct' => $isCorrect,
+                'answered_at' => now(),
+            ]
+        );
+
+        $nextIndex = (int) $attempt->current_question_index + 1;
+        $totalQuestions = count((array) $attempt->questions_order);
+
+        if ($nextIndex >= $totalQuestions) {
+            $attempt->update(['current_question_index' => $totalQuestions]);
+            return $this->finalizeAttempt($attempt, ExamAttemptStatus::COMPLETED->value);
+        }
+
+        $attempt->update(['current_question_index' => $nextIndex]);
+
+        return $this->getAttemptData($attempt->fresh());
+    }
+
+    /**
+     * Skip current question (e.g. time expired).
+     *
+     * @throws DomainException
+     */
+    public function skipQuestion(ExamAttempt $attempt): array
+    {
+        $this->ensureAttemptInProgress($attempt);
+
+        $question = $attempt->getCurrentQuestion();
+        if (! $question) {
+            return $this->finalizeAttempt($attempt, ExamAttemptStatus::COMPLETED->value);
+        }
+
+        StudentAnswer::updateOrCreate(
+            [
+                'exam_attempt_id' => $attempt->id,
+                'question_id' => $question->id,
+            ],
+            [
+                'answer' => null,
+                'is_correct' => false,
+                'answered_at' => now(),
+            ]
+        );
+
+        $nextIndex = (int) $attempt->current_question_index + 1;
+        $totalQuestions = count((array) $attempt->questions_order);
+
+        if ($nextIndex >= $totalQuestions) {
+            $attempt->update(['current_question_index' => $totalQuestions]);
+            return $this->finalizeAttempt($attempt, ExamAttemptStatus::COMPLETED->value);
+        }
+
+        $attempt->update(['current_question_index' => $nextIndex]);
+
+        return $this->getAttemptData($attempt->fresh());
+    }
+
+    /**
+     * Terminate an in-progress exam attempt (anti-cheating or timeout).
+     */
+    public function terminateExam(ExamAttempt $attempt, ?string $reason = null): array
+    {
+        $status = $this->getStatusValue($attempt);
+
+        if ($status === ExamAttemptStatus::TERMINATED->value || $status === ExamAttemptStatus::COMPLETED->value) {
+            return $this->getAttemptData($attempt);
+        }
+
+        return $this->finalizeAttempt(
+            $attempt,
+            ExamAttemptStatus::TERMINATED->value,
+            $reason ?: 'manual_termination'
+        );
+    }
+
+    /**
+     * Get student's final result for exam.
+     */
+    public function getResult(Student $student, Exam $exam): ?array
+    {
+        $result = ExamResult::where('exam_id', $exam->id)
+            ->where('student_id', $student->id)
+            ->first();
+
+        if (! $result) {
+            return null;
+        }
+
+        $attempt = ExamAttempt::where('exam_id', $exam->id)
+            ->where('student_id', $student->id)
+            ->first();
+
+        $totalQuestions = $attempt ? count((array) $attempt->questions_order) : (int) ($exam->actual_question_count ?? 0);
+        $correctAnswers = $attempt
+            ? StudentAnswer::where('exam_attempt_id', $attempt->id)->where('is_correct', true)->count()
+            : 0;
 
         return [
-            'attempt_id' => $attempt->id,
-            'exam_id' => $attempt->exam_id,
-            'questions' => $this->buildQuestionsData($attempt),
-            'current_question_index' => $attempt->current_question_index ?? 0,
-            'time_remaining' => $this->calculateTimeRemaining($attempt),
-            'status' => $attempt->status,
+            'score' => (float) $result->score,
+            'max_score' => (float) ($exam->max_score ?? $totalQuestions),
+            'percentage' => (float) $result->percentage,
+            'correct_answers' => $correctAnswers,
+            'total_questions' => $totalQuestions,
+            'terminated' => $attempt ? $this->getStatusValue($attempt) === ExamAttemptStatus::TERMINATED->value : false,
+            'terminated_reason' => $attempt?->terminated_reason,
         ];
     }
 
     /**
-     * Build questions data for the attempt
+     * Build attempt data array for response
      */
-    private function buildQuestionsData(ExamAttempt $attempt): array
+    public function getAttemptData(ExamAttempt $attempt): array
     {
-        $questions = Question::whereIn('id', $attempt->questions_order)
-            ->get()
-            ->keyBy('id');
+        $attempt->loadMissing('exam');
 
-        return collect($attempt->questions_order)->map(function ($questionId) use ($questions) {
-            $question = $questions->get($questionId);
-            if (!$question) {
-                return null;
+        $status = $this->getStatusValue($attempt);
+        $totalQuestions = count((array) $attempt->questions_order);
+        $currentIndex = (int) ($attempt->current_question_index ?? 0);
+
+        $question = null;
+        if ($status === ExamAttemptStatus::IN_PROGRESS->value) {
+            $currentQuestion = $attempt->getCurrentQuestion();
+            if ($currentQuestion) {
+                $question = [
+                    'id' => $currentQuestion->id,
+                    'text' => $currentQuestion->text,
+                    'options' => $this->normalizeOptions($currentQuestion->options),
+                ];
+            }
+        }
+
+        $response = [
+            'status' => $status,
+            'attempt_id' => $attempt->id,
+            'exam' => [
+                'id' => $attempt->exam->id,
+                'title' => $attempt->exam->title,
+                'subject' => $attempt->exam->subject,
+                'time_per_question' => (int) ($attempt->exam->time_per_question ?? 60),
+            ],
+            'progress' => [
+                'current' => $totalQuestions > 0
+                    ? min($currentIndex + 1, $totalQuestions)
+                    : 0,
+                'total' => $totalQuestions,
+            ],
+            'question' => $question,
+        ];
+
+        if ($status !== ExamAttemptStatus::IN_PROGRESS->value) {
+            $response['result'] = $this->buildResultData($attempt);
+        }
+
+        return $response;
+    }
+
+    /**
+     * Normalize options payload for frontend consumption.
+     *
+     * @param mixed $rawOptions
+     * @return array<int, string>
+     */
+    private function normalizeOptions(mixed $rawOptions): array
+    {
+        if (! is_array($rawOptions)) {
+            return [];
+        }
+
+        if (array_is_list($rawOptions)) {
+            return array_values(array_map(static fn ($option): string => (string) $option, $rawOptions));
+        }
+
+        return array_values(array_map(static fn ($option): string => (string) $option, $rawOptions));
+    }
+
+    private function ensureAttemptInProgress(ExamAttempt $attempt): void
+    {
+        if ($this->getStatusValue($attempt) !== ExamAttemptStatus::IN_PROGRESS->value) {
+            throw new DomainException('هذه المحاولة منتهية أو مُلغاة.', 409);
+        }
+    }
+
+    private function getStatusValue(ExamAttempt $attempt): string
+    {
+        $status = $attempt->status;
+        if ($status instanceof ExamAttemptStatus) {
+            return $status->value;
+        }
+
+        return (string) $status;
+    }
+
+    private function buildResultData(ExamAttempt $attempt): array
+    {
+        $attempt->loadMissing('exam');
+
+        $totalQuestions = count((array) $attempt->questions_order);
+        $correctAnswers = StudentAnswer::where('exam_attempt_id', $attempt->id)
+            ->where('is_correct', true)
+            ->count();
+
+        $maxScore = (float) ($attempt->exam->max_score ?? $totalQuestions);
+        $score = $totalQuestions > 0
+            ? round(($correctAnswers / $totalQuestions) * $maxScore, 2)
+            : 0.0;
+        $percentage = $totalQuestions > 0
+            ? round(($correctAnswers / $totalQuestions) * 100, 2)
+            : 0.0;
+
+        return [
+            'score' => $score,
+            'max_score' => $maxScore,
+            'percentage' => $percentage,
+            'correct_answers' => $correctAnswers,
+            'total_questions' => $totalQuestions,
+            'terminated' => $this->getStatusValue($attempt) === ExamAttemptStatus::TERMINATED->value,
+            'terminated_reason' => $attempt->terminated_reason,
+        ];
+    }
+
+    private function finalizeAttempt(ExamAttempt $attempt, string $status, ?string $terminatedReason = null): array
+    {
+        return DB::transaction(function () use ($attempt, $status, $terminatedReason): array {
+            $attempt->refresh();
+            $attempt->loadMissing('exam');
+
+            $totalQuestions = count((array) $attempt->questions_order);
+            $correctAnswers = StudentAnswer::where('exam_attempt_id', $attempt->id)
+                ->where('is_correct', true)
+                ->count();
+
+            $maxScore = (float) ($attempt->exam->max_score ?? $totalQuestions);
+            $score = $totalQuestions > 0
+                ? round(($correctAnswers / $totalQuestions) * $maxScore, 2)
+                : 0.0;
+            $percentage = $totalQuestions > 0
+                ? round(($correctAnswers / $totalQuestions) * 100, 2)
+                : 0.0;
+
+            $updateData = [
+                'status' => $status,
+                'completed_at' => now(),
+                'current_question_index' => $totalQuestions,
+            ];
+
+            if ($status === ExamAttemptStatus::TERMINATED->value) {
+                $updateData['terminated_reason'] = $terminatedReason;
             }
 
-            return [
-                'id' => $question->id,
-                'text' => $question->text,
-                'options' => $question->options,
-                'duration' => $question->duration ?? 60,
-                // لا نُرسل الإجابة الصحيحة
-            ];
-        })->filter()->values()->all();
+            $attempt->update($updateData);
+
+            ExamResult::updateOrCreate(
+                [
+                    'exam_id' => $attempt->exam_id,
+                    'student_id' => $attempt->student_id,
+                ],
+                [
+                    'attempt_id' => $attempt->id,
+                    'score' => $score,
+                    'percentage' => $percentage,
+                ]
+            );
+
+            return $this->getAttemptData($attempt->fresh());
+        });
     }
 
     /**
@@ -161,8 +421,10 @@ class StudentExamService
     private function calculateTimeRemaining(ExamAttempt $attempt): int
     {
         $exam = $attempt->exam;
-        $elapsed = now()->diffInSeconds($attempt->started_at);
-        $totalTime = $exam->duration * 60; // Convert minutes to seconds
+        $elapsed = (int) now()->diffInSeconds($attempt->started_at ?? now(), true);
+        $durationMinutes = (float) ($exam->duration ?? 0);
+        $totalTime = (int) round($durationMinutes * 60); // Convert minutes to seconds
+
         return max(0, $totalTime - $elapsed);
     }
 }
