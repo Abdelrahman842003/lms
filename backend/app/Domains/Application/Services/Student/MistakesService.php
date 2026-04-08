@@ -23,6 +23,7 @@ class MistakesService
     ): FailedQuestion {
         $teacherId = $exam->teacher_id;
 
+        /** @var FailedQuestion|null $failedQuestion */
         $failedQuestion = FailedQuestion::where('student_id', $student->id)
             ->where('question_id', $question->id)
             ->first();
@@ -37,11 +38,13 @@ class MistakesService
                     'mastered_at' => null,
                 ]);
             }
+
+            \App\Domains\Application\Services\CacheService::forgetMistakesStats($student->id, $teacherId);
             return $failedQuestion;
         }
 
         // New failed question
-        return FailedQuestion::create([
+        $created = FailedQuestion::create([
             'student_id' => $student->id,
             'teacher_id' => $teacherId,
             'question_id' => $question->id,
@@ -49,6 +52,10 @@ class MistakesService
             'student_answer' => $studentAnswer,
             'times_failed' => 1,
         ]);
+
+        \App\Domains\Application\Services\CacheService::forgetMistakesStats($student->id, $teacherId);
+
+        return $created;
     }
 
     /**
@@ -133,6 +140,7 @@ class MistakesService
      */
     public function markAsMastered(string $failedQuestionId, string $studentId): bool
     {
+        /** @var FailedQuestion|null $failedQuestion */
         $failedQuestion = FailedQuestion::where('id', $failedQuestionId)
             ->where('student_id', $studentId)
             ->first();
@@ -142,6 +150,8 @@ class MistakesService
         }
 
         $failedQuestion->markAsMastered();
+        \App\Domains\Application\Services\CacheService::forgetMistakesStats($studentId, $failedQuestion->teacher_id);
+
         return true;
     }
 }

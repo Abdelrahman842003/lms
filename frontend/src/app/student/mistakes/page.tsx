@@ -36,6 +36,11 @@ interface Stats {
   }>;
 }
 
+interface MistakesApiResponse {
+  mistakes?: Mistake[];
+  stats?: Stats | null;
+}
+
 export default function MistakesPage() {
   const { user, selectedTeacher } = useAuth();
   const [mistakes, setMistakes] = useState<Mistake[]>([]);
@@ -59,7 +64,7 @@ export default function MistakesPage() {
       setError(null);
       console.log('Fetching mistakes for teacher:', selectedTeacher.teacher_id);
       
-      const response = await fetchApi(
+      const response = await fetchApi<MistakesApiResponse>(
         `/student/mistakes?teacher_id=${selectedTeacher.teacher_id}`
       );
       
@@ -72,9 +77,7 @@ export default function MistakesPage() {
       } else {
         console.error('Invalid response format:', response);
         
-        if (response && response.success === false) {
-             setError('حدث خطأ أثناء تحميل البيانات');
-        } else if (!response || Object.keys(response).length === 0) {
+     if (!response || Object.keys(response).length === 0) {
              console.error('Empty or null response received');
              setError('لم يتم استلام بيانات من الخادم');
         } else {
@@ -112,19 +115,11 @@ export default function MistakesPage() {
     }
 
     try {
-      const response = await fetchApi(`/student/mistakes/${id}/mastered`, {
+      await fetchApi(`/student/mistakes/${id}/mastered`, {
         method: 'POST',
       });
-      
-      if (response && response.success) {
-        // Success, do nothing (state already updated)
-        // toast.success('تم تسجيل السؤال كـ "فهمتها"');
-      } else {
-        // Revert on failure
-        setMistakes(previousMistakes);
-        setStats(previousStats);
-        console.error('Failed to mark as mastered, invalid response:', response);
-      }
+
+      // Success (no exception thrown) - state already updated optimistically
     } catch (error) {
       // Revert on error
       setMistakes(previousMistakes);

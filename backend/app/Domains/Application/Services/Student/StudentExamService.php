@@ -375,6 +375,8 @@ class StudentExamService
             $attempt->refresh();
             $attempt->loadMissing('exam', 'student');
 
+            $this->syncMistakesFromAttempt($attempt);
+
             $totalQuestions = count((array) $attempt->questions_order);
             $correctAnswers = StudentAnswer::where('exam_attempt_id', $attempt->id)
                 ->where('is_correct', true)
@@ -423,6 +425,32 @@ class StudentExamService
 
             return $this->getAttemptData($attempt->fresh());
         });
+    }
+
+    private function syncMistakesFromAttempt(ExamAttempt $attempt): void
+    {
+        $attempt->loadMissing('exam', 'student');
+
+        if (! $attempt->student || ! $attempt->exam) {
+            return;
+        }
+
+        StudentAnswer::where('exam_attempt_id', $attempt->id)
+            ->where('is_correct', false)
+            ->with('question')
+            ->get()
+            ->each(function (StudentAnswer $answer) use ($attempt): void {
+                if (! $answer->question) {
+                    return;
+                }
+
+                $this->mistakesService->trackWrongAnswer(
+                    $attempt->student,
+                    $answer->question,
+                    $attempt->exam,
+                    $answer->answer
+                );
+            });
     }
 
     /**

@@ -13,6 +13,13 @@ class StudentExamResource extends JsonResource
      */
     public function toArray($request): array
     {
+        $studentResult = $this->whenLoaded('results', function () {
+            return $this->results->first();
+        });
+
+        $score = $studentResult?->score !== null ? (float) $studentResult->score : null;
+        $percentage = $studentResult?->percentage !== null ? (float) $studentResult->percentage : null;
+
         return [
             'id' => $this->id,
             'title' => $this->title,
@@ -23,6 +30,11 @@ class StudentExamResource extends JsonResource
             'time_per_question' => $this->time_per_question,
             'date' => $this->date,
             'is_active' => $this->is_active,
+            'is_completed' => $studentResult !== null,
+            'student_score' => $score,
+            'student_percentage' => $percentage,
+            // Backward compatibility with older frontend stats card logic
+            'score' => $percentage,
         ];
     }
 }
