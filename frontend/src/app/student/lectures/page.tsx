@@ -15,6 +15,8 @@ import toast from 'react-hot-toast';
 interface ExtendedLecture extends Lecture {
   iso_start_time?: string;
   iso_end_time?: string;
+  display_title?: string;
+  display_description?: string | null;
 }
 
 export default function StudentLecturesPage() {
@@ -74,8 +76,8 @@ export default function StudentLecturesPage() {
       try {
         setLoading(true);
         const [lecturesRes, attendanceRes] = await Promise.all([
-          fetchApi(`/student/lectures?teacher_id=${selectedTeacher.teacher_id}`),
-          fetchApi(`/student/attendance?teacher_id=${selectedTeacher.teacher_id}`)
+          fetchApi<{ data: ExtendedLecture[] }>(`/student/lectures?teacher_id=${selectedTeacher.teacher_id}`),
+          fetchApi<{ data: any[] }>(`/student/attendance?teacher_id=${selectedTeacher.teacher_id}`)
         ]);
         
         setLectures(lecturesRes.data || []);
@@ -164,6 +166,8 @@ export default function StudentLecturesPage() {
               <div className="grid grid-cols-1 md:grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-5">
               {activeLectures.map((lecture) => {
                 const isAttended = attendance.some(a => a.lecture_id === lecture.id && (a.status === 'present' || a.status === 'late'));
+                const lectureTitle = lecture.display_title || lecture.title;
+                const lectureDescription = lecture.display_description ?? lecture.description;
                 
                 return (
                 <div
@@ -171,10 +175,10 @@ export default function StudentLecturesPage() {
                   className="p-5 bg-white/5 rounded-xl border border-success"
                 >
                   <h3 className="text-[1.05rem] font-bold text-white mb-2">
-                    {lecture.title}
+                    {lectureTitle}
                   </h3>
                   <p className="text-[0.85rem] text-gray-light mb-3">
-                    {lecture.description}
+                    {lectureDescription}
                   </p>
                   <div className="grid gap-3 mb-4">
                     <div className="flex items-center gap-2 text-[0.9rem] text-light">
@@ -235,6 +239,8 @@ export default function StudentLecturesPage() {
               otherLectures.map((lecture) => {
                 const isFinished = lecture.iso_end_time ? new Date(lecture.iso_end_time) < now : false;
                 const isAttended = attendance.some(a => a.lecture_id === lecture.id && (a.status === 'present' || a.status === 'late'));
+                const lectureTitle = lecture.display_title || lecture.title;
+                const lectureDescription = lecture.display_description ?? lecture.description;
                 
                 let badgeClass = 'badge-warning';
                 let badgeText = 'قادمة';
@@ -260,14 +266,14 @@ export default function StudentLecturesPage() {
                 >
                   <div className="flex justify-between items-start mb-2">
                     <h3 className="text-[1.05rem] font-bold text-white">
-                      {lecture.title}
+                      {lectureTitle}
                     </h3>
                     <span className={`px-2 py-1 rounded-md text-xs font-medium border ${badgeClass}`}>
                       {badgeText}
                     </span>
                   </div>
                   <p className="text-[0.85rem] text-gray-light mb-3">
-                    {lecture.description}
+                    {lectureDescription}
                   </p>
                   <div className="grid gap-3 mb-4">
                     <div className="flex items-center gap-2 text-[0.9rem] text-light">
@@ -297,7 +303,7 @@ export default function StudentLecturesPage() {
         isOpen={showScannerModal}
         onClose={() => setShowScannerModal(false)}
         onScanSuccess={handleScanSuccess}
-        lectureTitle={selectedLectureForScan?.title || ''}
+        lectureTitle={(selectedLectureForScan as ExtendedLecture | null)?.display_title || selectedLectureForScan?.title || ''}
         instructions="وجه الكاميرا نحو رمز QR الخاص بالمحاضرة لتسجيل الحضور"
       />
     </DashboardLayout>

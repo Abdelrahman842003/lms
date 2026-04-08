@@ -30,6 +30,9 @@ class StudentLectureService
             })
             ->with(['attendances' => function ($q) use ($student) {
                 $q->where('student_id', $student->id);
+            }, 'sessions' => function ($q) {
+                $q->whereDate('date', '>=', now()->toDateString())
+                    ->orderBy('date', 'asc');
             }])
             ->latest()
             ->paginate($perPage);
@@ -37,6 +40,12 @@ class StudentLectureService
         // Transform the collection
         $lectures->getCollection()->transform(function ($lecture) {
             $attendance = $lecture->attendances->first();
+            $nextSession = $lecture->sessions
+                ->first(fn ($session) => ! $session->is_cancelled);
+
+            $nextSessionTitle = $nextSession?->title;
+            $nextSessionDescription = $nextSession?->description;
+
             $lecture->is_attended = $attendance && $attendance->status === 'present';
             $lecture->date = $lecture->start_time?->format('Y-m-d');
             $lecture->time = $lecture->start_time?->format('H:i');
@@ -45,7 +54,17 @@ class StudentLectureService
             $lecture->duration = ($lecture->start_time && $lecture->end_time)
                 ? $lecture->start_time->diffInMinutes($lecture->end_time)
                 : 0;
+            $lecture->next_session_date = $nextSession?->date?->toDateString();
+            $lecture->next_session_title = $nextSessionTitle;
+            $lecture->next_session_description = $nextSessionDescription;
+            $lecture->display_title = filled($nextSessionTitle)
+                ? $nextSessionTitle
+                : $lecture->title;
+            $lecture->display_description = filled($nextSessionDescription)
+                ? $nextSessionDescription
+                : $lecture->description;
             unset($lecture->attendances);
+            unset($lecture->sessions);
             return $lecture;
         });
 

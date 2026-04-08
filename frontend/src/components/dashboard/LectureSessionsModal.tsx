@@ -19,6 +19,12 @@ export const LectureSessionsModal: React.FC<LectureSessionsModalProps> = ({ lect
   const [filter, setFilter] = useState<'upcoming' | 'past'>('upcoming');
   const [displayedDates, setDisplayedDates] = useState<string[]>([]);
 
+  const normalizeDate = (value: string): string => value.split('T')[0];
+
+  const findSessionByDate = (date: string) => {
+    return sessions.find((s) => normalizeDate(s.date) === date);
+  };
+
   useEffect(() => {
     if (lecture.is_recurring && lecture.recurrence_days) {
       const dates: string[] = [];
@@ -78,7 +84,7 @@ export const LectureSessionsModal: React.FC<LectureSessionsModalProps> = ({ lect
   };
 
   const handleEdit = (date: string) => {
-    const session = sessions.find(s => s.date === date);
+    const session = findSessionByDate(date);
     setEditingDate(date);
     setEditForm({
       title: session?.title || '',
@@ -145,7 +151,7 @@ export const LectureSessionsModal: React.FC<LectureSessionsModalProps> = ({ lect
           ) : (
             <div className="ux-space-y-4">
               {displayedDates.map(date => {
-                const session = sessions.find(s => s.date === date);
+                const session = findSessionByDate(date);
                 const isEditing = editingDate === date;
                 const dateObj = new Date(date);
                 const dayName = dateObj.toLocaleDateString('ar-EG', { weekday: 'long' });

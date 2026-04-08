@@ -31,7 +31,7 @@ export default function StudentDashboard() {
       if (selectedTeacher) {
         try {
             const timestamp = new Date().getTime();
-            const dashboardResponse = await fetchApi(`/student/dashboard?teacher_id=${selectedTeacher.teacher_id}&t=${timestamp}`);
+            const dashboardResponse = await fetchApi<any>(`/student/dashboard?teacher_id=${selectedTeacher.teacher_id}&t=${timestamp}`);
             if (dashboardResponse) {
                 setStats(dashboardResponse.stats || {
                     walletBalance: 0,
@@ -52,7 +52,7 @@ export default function StudentDashboard() {
       if (user && user.teachers && user.teachers.length > 0) {
         try {
             const lecturePromises = user.teachers.map(teacher => 
-                fetchApi(`/student/lectures?teacher_id=${teacher.teacher_id}`)
+        fetchApi<{ data: any[] }>(`/student/lectures?teacher_id=${teacher.teacher_id}`)
                     .then(res => ({ teacher, data: res.data || [] }))
                     .catch(err => {
                         console.error(`Failed to load lectures for teacher ${teacher.teacher_name}:`, err);
@@ -226,7 +226,7 @@ export default function StudentDashboard() {
                       )}
                       <div>
                         <h3 className="text-base font-semibold text-white mb-1.5">
-                            {lecture.title}
+              {lecture.display_title || lecture.title}
                         </h3>
                         <p className="text-sm text-gray-light">
                             <Icon name="calendar" className="ml-1.5" />

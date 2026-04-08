@@ -7,6 +7,11 @@ export interface Lecture {
   id: string;
   title: string;
   description: string | null;
+  display_title?: string;
+  display_description?: string | null;
+  next_session_date?: string | null;
+  next_session_title?: string | null;
+  next_session_description?: string | null;
   start_time: string;
   end_time: string;
   date: string;
