@@ -29,7 +29,7 @@ export function isTeacherAccessible(teacher: TeacherInfo | null | undefined): bo
     return false;
   }
 
-  if (status === "trial") {
+  if (status === "trial" || status === "active" || status === "grace_period") {
     return true;
   }
 

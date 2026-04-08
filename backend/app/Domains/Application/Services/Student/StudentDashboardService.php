@@ -122,7 +122,7 @@ class StudentDashboardService
         $isTeacherSuspended = $teacher->status === 'suspended';
         $isSubscriptionBlocked = $teacher->isSubscriptionBlocked();
 
-        if ($isTeacherSuspended || ($isSubscriptionBlocked && $enrollmentStatus !== 'trial')) {
+        if ($isTeacherSuspended) {
             return null;
         }
 
