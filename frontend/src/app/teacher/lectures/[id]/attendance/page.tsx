@@ -231,8 +231,8 @@ export default function LectureAttendancePage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5">
-                      {data.attendees.map((attendee) => (
-                        <tr key={attendee.id} className="hover:bg-white/5 transition-colors">
+                      {data.attendees.map((attendee, index) => (
+                        <tr key={attendee.id ?? attendee.student_id ?? `${attendee.student_phone}-${index}`} className="hover:bg-white/5 transition-colors">
                           <td className="px-6 py-4 text-white font-medium">{attendee.student_name}</td>
                           <td className="px-6 py-4 text-gray-300 font-mono" dir="ltr">{attendee.student_phone}</td>
                           <td className="px-6 py-4 text-center">

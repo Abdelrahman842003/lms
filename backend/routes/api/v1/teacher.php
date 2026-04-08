@@ -63,6 +63,9 @@ Route::middleware(['auth:sanctum', EnsureUserNotSuspended::class . ':teacher', E
     Route::put('/lectures/{lecture}/toggle-active', [LectureController::class, 'toggleActive']);
     Route::post('/lectures/{lecture}/end', [LectureController::class, 'endLecture']);
     Route::post('/lectures/{lecture}/cancel-session', [LectureController::class, 'cancelSession']);
+    Route::post('/lectures/{lecture}/qr-code', [LectureAttendanceController::class, 'generateQrCode']);
+    Route::get('/lectures/{lecture}/attendance', [LectureController::class, 'getAttendees']);
+    Route::post('/lectures/{lecture}/attendance', [LectureAttendanceController::class, 'recordAttendance']);
     Route::get('/lectures/{lecture}/attendees', [LectureController::class, 'getAttendees']);
     Route::get('/lectures/{lecture}/attendees/export', [LectureController::class, 'exportAttendees']);
     Route::get('/lectures/{lecture}/sessions', [LectureSessionController::class, 'index']);
