@@ -22,8 +22,9 @@ class AchievementController extends Controller
     public function index(Request $request): JsonResponse
     {
         $student = $request->user();
+        $teacherId = $request->query('teacher_id');
 
-        $achievements = $this->levelService->getStudentAchievements($student);
+        $achievements = $this->levelService->getStudentAchievements($student, $teacherId);
 
         return $this->successResponse($achievements);
     }
@@ -34,19 +35,25 @@ class AchievementController extends Controller
     public function downloadCertificate(Request $request, string $historyId): JsonResponse|\Symfony\Component\HttpFoundation\BinaryFileResponse
     {
         $student = $request->user();
+        $teacherName = $request->query('teacher_name');
 
-        $history = StudentLevelHistory::where('id', $historyId)
+        $history = \App\Domains\Gamification\Models\StudentLevelHistory::where('id', $historyId)
             ->where('student_id', $student->id)
             ->firstOrFail();
 
         if (!$history->hasCertificate()) {
             // Try to generate certificate if it doesn't exist
             try {
-                $certificatePath = $this->levelService->generateCertificate($history);
+                $certificatePath = $this->levelService->generateCertificate($history, $teacherName);
                 $history->update(['certificate_path' => $certificatePath]);
             } catch (\Throwable $e) {
                 return $this->errorResponse('الشهادة غير متاحة حالياً', null, 404);
             }
+        } else if ($teacherName) {
+            // Re-generate certificate with teacher name
+            try {
+                $certificatePath = $this->levelService->generateCertificate($history, $teacherName);
+            } catch (\Throwable $e) {}
         }
 
         $filePath = $this->levelService->getCertificatePath($history);

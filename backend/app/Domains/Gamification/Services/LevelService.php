@@ -80,17 +80,28 @@ class LevelService
     /**
      * Get student's complete achievement info for the achievements page.
      */
-    public function getStudentAchievements(Student $student): array
+    public function getStudentAchievements(Student $student, ?string $teacherId = null): array
     {
-        $totalPoints = $student->getTotalPointsAcrossTeachers();
+        if ($teacherId) {
+            $totalPoints = $student->points()->where('teacher_id', $teacherId)->sum('total_points');
+        } else {
+            $totalPoints = $student->getTotalPointsAcrossTeachers();
+        }
+        
         $allLevels = GamificationLevel::allOrdered();
-        $currentLevel = $student->currentLevel;
-
-        // If student has no level assigned yet, try to determine it
-        if (!$currentLevel) {
+        
+        // When filtering by a single teacher, calculate the dynamic level based on their points
+        if ($teacherId) {
             $currentLevel = GamificationLevel::findForPoints($totalPoints);
-            if ($currentLevel) {
-                $student->update(['current_level_id' => $currentLevel->id]);
+        } else {
+            $currentLevel = $student->currentLevel;
+
+            // If student has no level assigned yet, try to determine it
+            if (!$currentLevel) {
+                $currentLevel = GamificationLevel::findForPoints($totalPoints);
+                if ($currentLevel) {
+                    $student->update(['current_level_id' => $currentLevel->id]);
+                }
             }
         }
 
@@ -115,9 +126,11 @@ class LevelService
         }
 
         // Points breakdown per teacher
-        $pointsBreakdown = StudentPoint::where('student_id', $student->id)
-            ->with('teacher:id,name,avatar_key')
-            ->get()
+        $pointsQuery = StudentPoint::where('student_id', $student->id)->with('teacher:id,name,avatar_key');
+        if ($teacherId) {
+            $pointsQuery->where('teacher_id', $teacherId);
+        }
+        $pointsBreakdown = $pointsQuery->get()
             ->map(fn ($sp) => [
                 'teacher' => $sp->teacher,
                 'points' => $sp->total_points,
@@ -204,7 +217,7 @@ class LevelService
     /**
      * Generate a PDF certificate for a level-up achievement.
      */
-    public function generateCertificate(StudentLevelHistory $history): string
+    public function generateCertificate(StudentLevelHistory $history, ?string $teacherName = null): string
     {
         $history->loadMissing(['student', 'level']);
 
@@ -215,6 +228,7 @@ class LevelService
             'level_color' => $history->level->color,
             'achieved_at' => $history->achieved_at->format('Y/m/d'),
             'platform_name' => config('app.name', 'المنصة التعليمية'),
+            'teacher_name' => $teacherName,
         ];
 
         $pdf = Pdf::loadView('certificates.level-up', $data)

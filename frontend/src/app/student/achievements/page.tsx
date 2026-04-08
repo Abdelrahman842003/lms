@@ -64,13 +64,13 @@ interface AchievementsData {
 }
 
 export default function StudentAchievementsPage() {
-  const { user } = useAuth();
+  const { user, selectedTeacher } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<AchievementsData | null>(null);
   const [showContent, setShowContent] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
-  const [previewCertData, setPreviewCertData] = useState<{ studentName: string; levelName: string; date: string; historyId: string; color: string; gender?: string } | null>(null);
+  const [previewCertData, setPreviewCertData] = useState<{ studentName: string; levelName: string; date: string; historyId: string; color: string; gender?: string; teacherName?: string } | null>(null);
   const userEmail =
     user && 'email' in user && typeof (user as { email?: unknown }).email === 'string'
       ? ((user as { email?: string }).email ?? '')
@@ -90,7 +90,10 @@ export default function StudentAchievementsPage() {
     const loadAchievements = async () => {
       try {
         setLoading(true);
-        const response = await fetchApi('/api/student/achievements');
+        const url = selectedTeacher?.teacher_id 
+          ? `/api/student/achievements?teacher_id=${selectedTeacher.teacher_id}`
+          : '/api/student/achievements';
+        const response = await fetchApi(url);
         const achievementsData =
           response && typeof response === 'object' && 'data' in response
             ? (response as { data?: AchievementsData }).data
@@ -112,7 +115,7 @@ export default function StudentAchievementsPage() {
     };
 
     loadAchievements();
-  }, []);
+  }, [selectedTeacher?.teacher_id]);
 
   const handlePreviewCertificate = (historyId: string) => {
     const entry = data?.history?.find((h) => h.id === historyId);
@@ -346,48 +349,9 @@ export default function StudentAchievementsPage() {
               </div>
             </div>
 
-            {/* Points Breakdown & Levels Timeline */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-2 sm:mb-3 lg:mb-4 sm:mb-3 sm:mb-2 sm:mb-3 lg:mb-4 lg:mb-6 lg:mb-8">
-              {/* Points Breakdown */}
-              {data.points_breakdown.length > 0 && (
-                <div className={`transition-all duration-700 delay-300 ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-                  <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-6 border border-white/10 h-full">
-                    <h3 className="text-xl font-bold text-white mb-3 sm:mb-2 sm:mb-3 lg:mb-4 lg:mb-6 flex items-center gap-3">
-                      <span className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
-                        <Icon name="chart-bar" className="text-primary" />
-                      </span>
-                      توزيع النقاط
-                    </h3>
-                    <div className="space-y-4">
-                      {data.points_breakdown.map((item, index) => {
-                        const maxPoints = Math.max(...data.points_breakdown.map(p => p.points), 1);
-                        const percentage = (item.points / maxPoints) * 100;
-                        return (
-                          <div key={index} className="group">
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
-                                  <Icon name="chalkboard-teacher" className="text-gray-400 text-xs" />
-                                </div>
-                                <span className="text-white font-medium text-sm">{item.teacher.name}</span>
-                              </div>
-                              <span className="text-primary font-bold">{item.points.toLocaleString('ar-EG')}</span>
-                            </div>
-                            <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">
-                              <div 
-                                className="h-full bg-gradient-to-r from-primary to-cyan-400 rounded-full transition-all duration-700"
-                                style={{ width: `${percentage}%` }}
-                              />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Levels Timeline */}
+            {/* Levels Timeline */}
+              <div className="grid grid-cols-1 gap-6 mb-2 sm:mb-3 lg:mb-4 sm:mb-3 sm:mb-2 sm:mb-3 lg:mb-4 lg:mb-6 lg:mb-8">
+                {/* Levels Timeline */}
               <div className={`transition-all duration-700 delay-400 ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
                 <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-6 border border-white/10 h-full">
                   <h3 className="text-xl font-bold text-white mb-3 sm:mb-2 sm:mb-3 lg:mb-4 lg:mb-6 flex items-center gap-3">
