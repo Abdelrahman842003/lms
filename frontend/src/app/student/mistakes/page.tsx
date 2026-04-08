@@ -5,7 +5,7 @@ import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { fetchApi } from '@/services/authService';
 import Link from 'next/link';
-import { Button, LoadingSpinner, Icon } from '@/components/ui/index';
+import { Button, Icon } from '@/components/ui/index';
 
 interface Mistake {
   id: string;
@@ -182,15 +182,7 @@ export default function MistakesPage() {
             </div>
           </div>
         )}
-
-
-
-        {loading ? (
-          <div className="text-center py-16">
-            <LoadingSpinner size="lg" className="mx-auto" />
-            <p className="text-gray-400 mt-4">جاري التحميل...</p>
-          </div>
-        ) : !selectedTeacher ? (
+        {!selectedTeacher ? (
           <div className="text-center py-16 bg-white/5 rounded-2xl border border-white/10">
             <Icon name="user-graduate" size="2x" className="text-gray-500 mb-4" />
             <p className="text-gray-400">اختر مدرس لعرض أخطاءك</p>
@@ -208,7 +200,7 @@ export default function MistakesPage() {
               إعادة المحاولة
             </Button>
           </div>
-        ) : mistakes.length === 0 ? (
+        ) : loading ? null : mistakes.length === 0 ? (
           <div className="text-center py-16 bg-gradient-to-br from-success/10 to-success/5 rounded-2xl border border-success/30">
             <div className="text-6xl mb-4">🎉</div>
             <h3 className="text-xl font-bold text-white mb-2">

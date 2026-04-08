@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { fetchApi } from '@/services/authService';
-import { Button, LoadingSpinner, Icon } from '@/components/ui/index';
+import { Button, Icon } from '@/components/ui/index';
 import { StudentHonorBoard } from '@/components/dashboard/StudentHonorBoard';
 
 interface Level {
@@ -237,14 +237,7 @@ export default function StudentAchievementsPage() {
         </div>
 
         {/* Content */}
-        {loading ? (
-          <div className="text-center py-20">
-            <div className="relative inline-block">
-              <LoadingSpinner size="lg" />
-            </div>
-            <p className="text-gray-400 mt-4 text-lg">جاري تحميل الإنجازات...</p>
-          </div>
-        ) : error ? (
+        {loading ? null : error ? (
           <div className="text-center py-20 bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10">
             <div className="text-6xl mb-2 sm:mb-3 lg:mb-4">😔</div>
             <p className="text-red-400 text-lg mb-3 sm:mb-2 sm:mb-3 lg:mb-4 lg:mb-6">{error}</p>
