@@ -17,6 +17,7 @@ use App\Domains\Application\Models\TeacherAttendanceLog;
 use App\Domains\Auth\Models\Secretary;
 use App\Domains\Application\Traits\HasDeviceTokens;
 use App\Domains\Subscriptions\Traits\HasSubscriptionStatus;
+use App\Domains\Subscriptions\Traits\HasTenantPlan;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -25,7 +26,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 class Teacher extends Authenticatable
 {
-    use HasFactory, Notifiable, HasApiTokens, HasUuids, HasDeviceTokens, HasSubscriptionStatus;
+    use HasFactory, Notifiable, HasApiTokens, HasUuids, HasDeviceTokens, HasSubscriptionStatus, HasTenantPlan;
 
     protected static function newFactory()
     {
@@ -39,24 +40,15 @@ class Teacher extends Authenticatable
         'phone',
         'subject',
         'avatar_key',
-        'billing_notes',
-        'subscription_period',
         'custom_expires_at',
         'password',
         'status',
-        'plan_type',
-        'plan_expires_at',
-        'plan_max_students',
-        'is_unlimited_students',
-        'subscription_fee',
-        'paid_amount',
-        'storage_limit_gb',
-        'storage_used_bytes',
-        'discount_percent',
-        'discount_type',
-        'discount_scope',
         'is_independent_active',
-        'trial_period_days',
+        // Plan fields handled by HasTenantPlan trait
+        'trial_period_days', 'plan_type', 'subscription_period', 'plan_expires_at',
+        'plan_max_students', 'is_unlimited_students', 'subscription_fee',
+        'paid_amount', 'storage_limit_gb', 'storage_used_bytes',
+        'discount_percent', 'discount_type', 'discount_scope', 'billing_notes'
     ];
 
     protected $hidden = [
@@ -71,18 +63,8 @@ class Teacher extends Authenticatable
         return [
             'password' => 'hashed',
             'is_independent_active' => 'boolean',
-            'trial_period_days' => 'integer',
-            'is_unlimited_students' => 'boolean',
-            'plan_expires_at' => 'date',
             'custom_expires_at' => 'date',
             'status' => \App\Domains\Auth\Enums\TeacherStatus::class,
-            'subscription_fee' => 'decimal:2',
-            'paid_amount' => 'decimal:2',
-            'storage_limit_gb' => 'integer',
-            'storage_used_bytes' => 'integer',
-            'discount_percent' => 'decimal:2',
-            'discount_type' => 'string',
-            'discount_scope' => 'string',
         ];
     }
 
@@ -220,7 +202,9 @@ class Teacher extends Authenticatable
                     $subQuery->where('status', \App\Domains\Subscriptions\Enums\SubscriptionStatus::PAID->value)
                         ->where('month', '>=', now()->startOfMonth()->toDateString());
                 })
-                ->orWhere('plan_expires_at', '>=', now()->startOfDay());
+                ->orWhereHas('tenantPlan', function ($tpQuery) {
+                    $tpQuery->where('plan_expires_at', '>=', now()->startOfDay());
+                });
             })
             ->exists();
 

@@ -38,7 +38,6 @@ class Student extends Authenticatable
         'name',
         'avatar_key',
         'phone',
-        'parent_phone',
         'gender',
         'education_type',
         'location',
@@ -48,6 +47,14 @@ class Student extends Authenticatable
         'is_active',
         'current_level_id',
     ];
+
+    /**
+     * Backward compatibility: Get parent_phone from guardian
+     */
+    public function getParentPhoneAttribute()
+    {
+        return $this->guardian?->phone;
+    }
 
     protected $hidden = [
         'password',

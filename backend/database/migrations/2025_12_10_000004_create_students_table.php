@@ -14,11 +14,14 @@ return new class extends Migration
             $table->string('password');
             $table->string('avatar_key')->nullable();
             $table->rememberToken();
+            $table->foreignUuid('current_level_id')
+                ->nullable()
+                ->constrained('gamification_levels')
+                ->nullOnDelete();
             
             // Optional/Profile fields
             $table->string('location')->nullable();
             $table->string('phone')->nullable()->unique();
-            $table->string('parent_phone')->nullable();
             $table->uuid('guardian_id')->nullable();
             $table->string('gender')->default(\App\Domains\Auth\Enums\StudentGender::MALE->value);
             $table->string('education_type')->nullable();
@@ -27,6 +30,8 @@ return new class extends Migration
             
             $table->index('phone');
             $table->index('guardian_id');
+            $table->index('created_at', 'students_created_at_index');
+            $table->index('name', 'students_name_index');
         });
     }
 

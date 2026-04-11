@@ -25,6 +25,7 @@ return new class extends Migration
             $table->index(['teacher_id', 'created_at'], 'idx_point_transactions_teacher_created');
             $table->index(['student_id', 'teacher_id'], 'idx_point_transactions_student_teacher');
             $table->index('created_at'); // For weekly queries
+            $table->unique(['student_id', 'teacher_id', 'type', 'reference_type', 'reference_id'], 'unique_point_transaction');
         });
     }
 

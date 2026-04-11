@@ -61,6 +61,7 @@ class AcademyResource extends BaseResource
                             ->label('رقم الهاتف')
                             ->tel()
                             ->required()
+                            ->unique(ignoreRecord: true)
                             ->maxLength(20)
                             ->placeholder('01xxxxxxxxx'),
                     ])
@@ -728,7 +729,9 @@ class AcademyResource extends BaseResource
 
                 Tables\Filters\Filter::make('expired')
                     ->label('اشتراك منتهي')
-                    ->query(fn (Builder $query): Builder => $query->where('plan_expires_at', '<', now()))
+                    ->query(fn (Builder $query): Builder => $query->whereHas('tenantPlan', function ($tpQuery) {
+                        $tpQuery->where('plan_expires_at', '<', now());
+                    }))
                     ->toggle(),
             ])
             ->actions([
@@ -930,6 +933,10 @@ class AcademyResource extends BaseResource
 
     private static function resolveBillingMonths(callable $get): int
     {
+        if ($get('plan_selection') === 'trial') {
+            return 0;
+        }
+
         if ($get('update_subscription_duration') === false) {
             return self::resolveRemainingMonthsFromExpiry($get('plan_expires_at'));
         }

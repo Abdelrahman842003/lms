@@ -21,6 +21,11 @@ return new class extends Migration
             $table->integer('streak_5_bonus')->default(15);
             $table->integer('streak_10_bonus')->default(30);
             
+            $table->integer('video_watch_points')->default(5);
+            $table->integer('video_quiz_max_points')->default(20);
+            $table->integer('video_quiz_perfect_bonus')->default(5);
+            $table->integer('video_first_watch_bonus')->default(5);
+            
             // Feature toggles
             $table->boolean('is_enabled')->default(true);
             $table->boolean('show_leaderboard')->default(true);

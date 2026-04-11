@@ -15,7 +15,9 @@ class AcademyStatsWidget extends BaseWidget
         $totalAcademies = Academy::count();
         $activeAcademies = Academy::where('is_active', true)->count();
         $inactiveAcademies = Academy::where('is_active', false)->count();
-        $expiredSubscriptions = Academy::where('plan_expires_at', '<', now())->count();
+        $expiredSubscriptions = Academy::whereHas('tenantPlan', function ($query) {
+            $query->where('plan_expires_at', '<', now());
+        })->count();
 
         return [
             Stat::make('إجمالي الأكاديميات', $totalAcademies)

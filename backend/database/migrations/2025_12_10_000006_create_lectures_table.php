@@ -34,6 +34,11 @@ return new class extends Migration
             $table->index(['teacher_id', 'is_active'], 'lectures_teacher_active_index');
             $table->index(['grade_id', 'is_active'], 'lectures_grade_active_index');
             $table->index(['teacher_id', 'start_time', 'is_active'], 'idx_lectures_teacher_date');
+            $table->index(['teacher_id', 'start_time'], 'lectures_teacher_start_time_index');
+            $table->index(['academy_id', 'start_time'], 'lectures_academy_start_time_index');
+            $table->index('is_active', 'lectures_is_active_index');
+            $table->index('grade_id', 'lectures_grade_id_index');
+            $table->index('start_time', 'lectures_start_time_index');
         });
     }
 

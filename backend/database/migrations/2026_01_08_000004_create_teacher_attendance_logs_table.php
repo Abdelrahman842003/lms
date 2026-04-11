@@ -24,6 +24,10 @@ return new class extends Migration
 
             // Index for faster queries
             $table->index(['academy_id', 'teacher_id', 'date']);
+            $table->index(['academy_id', 'date'], 'attendance_academy_date_index');
+            $table->index(['teacher_id', 'date'], 'attendance_teacher_date_index');
+            $table->index('status', 'attendance_status_index');
+            $table->index('date', 'attendance_date_index');
         });
     }
 

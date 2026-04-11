@@ -19,34 +19,26 @@ use App\Domains\Subscriptions\Models\AcademySubscription;
 use App\Domains\Subscriptions\Enums\SubscriptionStatus;
 use App\Domains\Application\Models\TeacherAttendanceLog;
 use App\Domains\Subscriptions\Traits\HasSubscriptionStatus;
+use App\Domains\Subscriptions\Traits\HasTenantPlan;
 use App\Domains\Enrollments\Models\Group;
 
 class Academy extends Model implements AuthenticatableContract, AuthorizableContract
 {
-    use HasFactory, HasUuids, HasApiTokens, Authenticatable, Authorizable, HasSubscriptionStatus, Notifiable;
+    use HasFactory, HasUuids, HasApiTokens, Authenticatable, Authorizable, HasSubscriptionStatus, HasTenantPlan, Notifiable;
 
     protected $fillable = [
         'name',
         'phone',
         'logo_key',
-        'billing_notes',
         'password',
         'is_active',
         'status',
-        'plan_type',
-        'subscription_period',
-        'plan_expires_at',
-        'plan_max_students',
-        'is_unlimited_students',
-        'subscription_fee',
-        'paid_amount',
-        'storage_limit_gb',
-        'storage_used_bytes',
-        'discount_percent',
-        'discount_type',
-        'discount_scope',
-        'trial_period_days',
         'max_enrollments_limit',
+        // Plan fields handled by HasTenantPlan trait
+        'trial_period_days', 'plan_type', 'subscription_period', 'plan_expires_at',
+        'plan_max_students', 'is_unlimited_students', 'subscription_fee',
+        'paid_amount', 'storage_limit_gb', 'storage_used_bytes',
+        'discount_percent', 'discount_type', 'discount_scope', 'billing_notes'
     ];
 
     protected $hidden = [
@@ -58,17 +50,6 @@ class Academy extends Model implements AuthenticatableContract, AuthorizableCont
         return [
             'is_active' => 'boolean',
             'password' => 'hashed',
-            'trial_period_days' => 'integer',
-            'plan_expires_at' => 'date',
-            'plan_max_students' => 'integer',
-            'is_unlimited_students' => 'boolean',
-            'subscription_fee' => 'decimal:2',
-            'paid_amount' => 'decimal:2',
-            'storage_limit_gb' => 'integer',
-            'storage_used_bytes' => 'integer',
-            'discount_percent' => 'decimal:2',
-            'discount_type' => 'string',
-            'discount_scope' => 'string',
         ];
     }
 

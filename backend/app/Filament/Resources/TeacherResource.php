@@ -62,6 +62,7 @@ class TeacherResource extends BaseResource
                             ->label('رقم الهاتف')
                             ->tel()
                             ->required()
+                            ->unique(ignoreRecord: true)
                             ->maxLength(20)
                             ->placeholder('01xxxxxxxxx'),
                     ])
@@ -1021,6 +1022,10 @@ class TeacherResource extends BaseResource
 
     private static function resolveBillingMonths(callable $get): int
     {
+        if ($get('plan_selection') === 'trial') {
+            return 0;
+        }
+
         if ($get('update_subscription_duration') === false) {
             return self::resolveRemainingMonthsFromExpiry($get('plan_expires_at'));
         }

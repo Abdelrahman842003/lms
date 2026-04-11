@@ -21,6 +21,8 @@ return new class extends Migration
             $table->index(['exam_id', 'student_id'], 'exam_results_exam_student_index');
             $table->index(['exam_id', 'student_id'], 'idx_exam_results_lookup');
             $table->index(['student_id', 'created_at'], 'idx_exam_results_student');
+            $table->index(['student_id', 'created_at'], 'exam_results_student_index');
+            $table->index(['exam_id', 'score'], 'exam_results_exam_index');
         });
     }
 

@@ -107,8 +107,10 @@ class DashboardService
                 'student:id,name,phone,avatar_key',
                 'grade:id,name',
                 'group:id,name',
-                'academy:id,trial_period_days',
-                'teacher:id,trial_period_days',
+                'academy:id',
+                'academy.tenantPlan',
+                'teacher:id',
+                'teacher.tenantPlan',
             ]);
 
         $this->applyContextFilter($query, $academyId);

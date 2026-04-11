@@ -49,6 +49,18 @@ return new class extends Migration
             // Notes
             $table->text('notes')->nullable();
             
+            $table->string('request_type')->default('renewal');
+
+            $table->unsignedInteger('upgrade_seats_from')->nullable();
+            $table->unsignedInteger('upgrade_seats_to')->nullable();
+            $table->unsignedInteger('upgrade_storage_from_gb')->nullable();
+            $table->unsignedInteger('upgrade_storage_to_gb')->nullable();
+            $table->decimal('upgrade_price_difference', 10, 2)->default(0);
+
+            $table->timestamp('upgrade_reviewed_at')->nullable();
+            $table->uuid('upgrade_reviewed_by')->nullable();
+            $table->text('upgrade_rejection_reason')->nullable();
+
             $table->timestamps();
 
             // Unique constraint to prevent duplicate subscriptions for same subscriber/month
@@ -57,6 +69,7 @@ return new class extends Migration
             // Indexes for performance
             $table->index(['subscriber_type', 'status']);
             $table->index(['month', 'status']);
+            $table->index(['request_type', 'status'], 'subscriptions_request_type_status_idx');
         });
 
         // Enforce seats_count <= quota_limit at DB level when quota is المحدد

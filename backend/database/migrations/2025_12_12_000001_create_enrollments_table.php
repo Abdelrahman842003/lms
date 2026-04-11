@@ -33,8 +33,10 @@ return new class extends Migration
             $table->index('teacher_id');
             $table->index('academy_id');
             $table->index(['teacher_id', 'is_active'], 'enrollments_teacher_active_index');
+            $table->index(['student_id', 'is_active'], 'enrollments_student_active_index');
             $table->index(['grade_id', 'is_active'], 'enrollments_grade_active_index');
             $table->index(['teacher_id', 'grade_id', 'is_active'], 'idx_enrollments_lookup');
+            $table->index(['academy_id', 'teacher_id', 'is_active'], 'enrollments_academy_teacher_active_index');
             // Allow same student-teacher pair in different contexts (academy vs independent)
             $table->unique(['student_id', 'teacher_id', 'academy_id'], 'enrollment_context_unique');
         });

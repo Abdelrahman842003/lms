@@ -98,6 +98,8 @@ return new class extends Migration
 
             $table->unique(['video_id', 'student_id']);
             $table->index(['student_id', 'revoked_at']);
+            $table->index(['student_id', 'video_id'], 'vag_student_video_index');
+            $table->index(['revoked_at'], 'vag_revoked_index');
         });
 
         Schema::create('video_watch_progresses', function (Blueprint $table) {
@@ -116,6 +118,7 @@ return new class extends Migration
 
             $table->unique(['video_id', 'student_id']);
             $table->index(['student_id', 'status']);
+            $table->index(['student_id', 'video_id'], 'vwp_student_video_index');
         });
 
         Schema::create('video_likes', function (Blueprint $table) {
@@ -197,6 +200,8 @@ return new class extends Migration
 
             $table->unique(['video_id', 'student_id']);
             $table->index(['next_reminder_at', 'stopped_at']);
+            $table->index(['next_reminder_at', 'stopped_at'], 'vr_pending_index');
+            $table->index(['student_id', 'video_id'], 'vr_student_video_index');
         });
     }
 

@@ -19,6 +19,9 @@ return new class extends Migration
             $table->text('message');
             $table->string('type')->default(\App\Domains\Notifications\Enums\NotificationType::INFO->value);
             $table->string('target_type')->default(\App\Domains\Notifications\Enums\NotificationTargetType::ALL->value);
+            $table->json('target_ids')->nullable();
+            $table->unsignedInteger('recipient_count')->default(0);
+            $table->json('recipient_snapshot')->nullable();
             $table->json('read_by')->nullable(); // Array of user IDs who read the notification
             $table->timestamps();
 

@@ -23,11 +23,12 @@ class RecalculateSubscriptionFees extends Command
 
         // Recalculate Teachers
         $this->info('Processing Teachers...');
-        $teachers = Teacher::whereNotNull('plan_type')
-            ->where('plan_type', '!=', 'none')
-            ->where('plan_type', '!=', '')
-            ->where('plan_type', '!=', 'trial') // Skip trial plans
-            ->get();
+        $teachers = Teacher::whereHas('tenantPlan', function ($query) {
+            $query->whereNotNull('plan_type')
+                ->where('plan_type', '!=', 'none')
+                ->where('plan_type', '!=', '')
+                ->where('plan_type', '!=', 'trial'); // Skip trial plans
+        })->get();
 
         foreach ($teachers as $teacher) {
             $oldFee = $teacher->subscription_fee;

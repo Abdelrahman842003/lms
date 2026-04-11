@@ -28,6 +28,10 @@ return new class extends Migration
 
             // Performance indexes
             $table->index(['teacher_id', 'is_active'], 'exams_teacher_active_index');
+            $table->index(['teacher_id', 'is_active'], 'exams_teacher_is_active_index');
+            $table->index(['grade_id', 'group_id'], 'exams_grade_group_index');
+            $table->index('is_active', 'exams_is_active_index');
+            $table->index('date', 'exams_date_index');
         });
     }
 
