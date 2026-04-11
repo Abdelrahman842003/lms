@@ -78,14 +78,36 @@ class GamificationSetting extends Model
     }
 
     /**
-     * Get or create settings for a teacher with defaults
+     * Get or create settings for a teacher with defaults from global settings
      */
     public static function getOrCreate(string $teacherId): self
     {
-        return self::firstOrCreate(
-            ['teacher_id' => $teacherId],
-            self::DEFAULTS
-        );
+        $settings = self::where('teacher_id', $teacherId)->first();
+        
+        if (!$settings) {
+            $settings = new self(['teacher_id' => $teacherId]);
+        }
+
+        // ملء القيم من الإعدادات العامة
+        foreach (self::DEFAULTS as $key => $defaultValue) {
+            $globalValue = \App\Domains\Application\Models\Setting::getValue('gamification_' . $key);
+            if ($globalValue !== null) {
+                $settings->{$key} = is_numeric($globalValue) ? (int) $globalValue : $globalValue;
+            } else {
+                $settings->{$key} = $defaultValue;
+            }
+        }
+
+        return $settings;
+    }
+
+    /**
+     * Get global setting value with fallback to defaults
+     */
+    public static function getGlobalValue(string $key)
+    {
+        $globalValue = \App\Domains\Application\Models\Setting::getValue('gamification_' . $key);
+        return $globalValue !== null ? $globalValue : (self::DEFAULTS[$key] ?? null);
     }
 
     /**

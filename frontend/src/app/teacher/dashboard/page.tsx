@@ -140,19 +140,6 @@ export default function TeacherDashboard() {
       sortable: true,
       className: 'd-none-sm',
     },
-    {
-      key: 'attendance_stats',
-      label: 'الحضور (الشهر)',
-      className: 'd-none-lg',
-      render: (stats: any) => (
-        <div className="attendance-stats">
-          <span>{stats?.present_count || 0} / {stats?.total_lectures || 8}</span>
-          <span className="attendance-percentage">
-            {stats?.average || 0}%
-          </span>
-        </div>
-      ),
-    },
   ];
 
   return (

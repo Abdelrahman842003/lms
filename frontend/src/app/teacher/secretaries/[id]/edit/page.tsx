@@ -6,7 +6,8 @@ import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { Button, LoadingSpinner, Icon, Input } from '@/components/ui';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { secretaryService } from '@/services/secretaryService';
-import { getTeacherPermissions, Permission } from '@/services/roles';
+import { getPermissions } from '@/services/authService';
+import { Permission } from '@/types/teacher.types';
 import { useRouter, useParams } from 'next/navigation';
 
 export default function EditSecretaryPage() {
@@ -37,16 +38,18 @@ export default function EditSecretaryPage() {
       setIsLoading(true);
       const [secretaryResponse, permissionsResponse] = await Promise.all([
         secretaryService.getSecretary(secretaryId),
-        getTeacherPermissions(),
+        getPermissions(),
       ]);
 
       const secretary = secretaryResponse.secretary;
-      const permissionsList = permissionsResponse.data || [];
-      const secretaryPermissions = permissionsList.filter(
-        (p: Permission) => p.guard_name === 'secretary'
+      const permissionsList = Array.isArray(permissionsResponse) ? permissionsResponse : [];
+
+      // Filter out attendance for independent teachers
+      const filteredPermissions = permissionsList.filter(
+        (p: Permission) => p.name !== 'الحضور والانصراف'
       );
 
-      setAvailablePermissions(secretaryPermissions);
+      setAvailablePermissions(filteredPermissions);
       setFormData({
         name: secretary.name,
         phone: secretary.phone || '',

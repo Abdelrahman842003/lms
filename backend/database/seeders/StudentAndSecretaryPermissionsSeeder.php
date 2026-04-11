@@ -12,39 +12,25 @@ class StudentAndSecretaryPermissionsSeeder extends Seeder
         // Reset cached roles and permissions
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
-        // Cleanup English permissions if they exist
-        $englishPermissions = [
-            'view_lectures', 'view_exams', 'take_exams', 'view_grades', 'view_assignments', 'submit_assignments',
-            'manage_students', 'manage_lectures', 'manage_exams', 'manage_attendance', 'view_reports', 'manage_payments'
-        ];
-        Permission::whereIn('name', $englishPermissions)->delete();
+        // 1. Wipe ALL existing permissions for student and secretary guards to start fresh
+        Permission::whereIn('guard_name', ['student', 'secretary'])->delete();
 
-        // Student Permissions (Arabic)
-        $studentPermissions = [
-            'مشاهدة المحاضرات',
-            'مشاهدة الامتحانات',
-            'أداء الامتحانات',
-            'مشاهدة الدرجات',
-            'مشاهدة الواجبات',
-            'تسليم الواجبات',
-        ];
-
-        foreach ($studentPermissions as $permission) {
-            Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'student']);
-        }
-
-        // Secretary Permissions (Arabic)
+        // 2. The ONLY Secretary Permissions allowed (Exact naming as requested)
         $secretaryPermissions = [
-            'إدارة الطلاب',
-            'إدارة المحاضرات',
-            'إدارة الامتحانات',
-            'إدارة الحضور',
-            'مشاهدة التقارير',
-            'إدارة المدفوعات',
+            'الطلاب',
+            'المجموعات',
+            'الصفوف الدراسية',
+            'المحاضرات',
+            'الفيديوهات التعليمية',
+            'الامتحانات',
+            'التقارير',
+            'الاختبارات',
+            'لوحة الشرف',
+            'الحضور والانصراف',
         ];
 
         foreach ($secretaryPermissions as $permission) {
-            Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'secretary']);
+            Permission::create(['name' => $permission, 'guard_name' => 'secretary']);
         }
     }
 }

@@ -50,41 +50,11 @@ class EnrollmentResource extends JsonResource
             'location' => $this->whenLoaded('student', fn() => $this->student->location),
             'permissions' => $this->whenLoaded('student', fn() => $this->student->getAllPermissions()->pluck('name')),
             
-            // Attendance Stats (Current Month)
-            'attendance_stats' => $this->whenLoaded('student', fn() => $this->calculateAttendanceStats($this->student)),
-            
             // Exam Stats
             'exam_stats' => $this->whenLoaded('student', fn() => $this->calculateExamStats($this->student)),
             
             'created_at' => $this->whenLoaded('student', fn() => $this->student->created_at),
             'updated_at' => $this->updated_at,
-        ];
-    }
-
-    private function calculateAttendanceStats($student)
-    {
-        $currentMonth = now()->month;
-        
-        // Only load if relationship is loaded
-        if (!$student->relationLoaded('attendances')) {
-            return [
-                'present_count' => 0,
-                'total_lectures' => 8,
-                'average' => 0,
-            ];
-        }
-
-        $attendances = $student->attendances->filter(function ($attendance) use ($currentMonth) {
-            return $attendance->created_at->month === $currentMonth;
-        });
-
-        $presentCount = $attendances->where('status', 'present')->count();
-        $totalLectures = 8; 
-        
-        return [
-            'present_count' => $presentCount,
-            'total_lectures' => $totalLectures,
-            'average' => $totalLectures > 0 ? round(($presentCount / $totalLectures) * 100, 1) : 0,
         ];
     }
 

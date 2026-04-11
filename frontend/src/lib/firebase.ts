@@ -18,8 +18,19 @@ export const initializeFirebase = (config: any) => {
 
   try {
     app = initializeApp(config);
-    if (typeof window !== "undefined") {
-      messaging = getMessaging(app);
+    
+    // Only initialize messaging if we are in the browser and have an appId
+    // Firebase messaging strictly requires appId to function.
+    if (typeof window !== "undefined" && config.appId) {
+      try {
+        messaging = getMessaging(app);
+      } catch (messagingError) {
+        console.warn('[Firebase] Messaging initialization failed (likely missing permissions or config):', messagingError);
+      }
+    } else if (typeof window !== "undefined" && !config.appId) {
+      if (IS_FIREBASE_DEBUG) {
+        console.warn('[Firebase] Messaging skipped: Missing appId in config');
+      }
     }
     // Store VAPID key if provided in config (it might be passed as a separate property or part of the object)
     // We assume the backend sends 'vapidKey' or we look for it in the passed config

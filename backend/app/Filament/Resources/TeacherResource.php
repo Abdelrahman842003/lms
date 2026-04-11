@@ -138,6 +138,8 @@ class TeacherResource extends BaseResource
                     ])
                     ->columns(2),
 
+
+
                 Section::make('الأكاديميات')
                     ->schema([
                         Select::make('academies')

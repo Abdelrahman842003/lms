@@ -14,13 +14,6 @@ if (! function_exists('_r2_setting')) {
             // DB not ready (migration, first boot, etc.) — fall through to env
         }
 
-        if (function_exists('docker_secret')) {
-            $secretValue = docker_secret($secretName);
-            if ($secretValue !== null && $secretValue !== '') {
-                return $secretValue;
-            }
-        }
-
         return env($envFallback, $default);
     }
 }

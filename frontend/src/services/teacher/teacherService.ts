@@ -452,13 +452,23 @@ export async function getSecretaries(
   page = 1, 
   search = '', 
   status = ''
-): Promise<{ secretaries: Secretary[] }> {
+): Promise<{ secretaries: Secretary[]; total: number; last_page: number }> {
   const queryParams = new URLSearchParams({
     page: page.toString(),
     ...(search && { search }),
     ...(status && { status }),
   });
-  return await fetchApi(`/api/teacher/secretaries?${queryParams}`);
+
+  const res = await fetchApi<any>(`/api/teacher/secretaries?${queryParams}`);
+  const secretariesData = res.secretaries?.data || res.secretaries || [];
+  const total = res.secretaries?.total || res.total || 0;
+  const last_page = res.secretaries?.last_page || res.last_page || 1;
+  
+  return {
+    secretaries: secretariesData,
+    total: total,
+    last_page: last_page
+  };
 }
 
 /**
@@ -515,8 +525,8 @@ export async function deleteSecretary(id: string): Promise<unknown> {
  * Get all permissions
  */
 export async function getPermissions(): Promise<Permission[]> {
-  const res = await fetchApi<{ permissions: Permission[] }>('/teacher/permissions');
-  return res.permissions;
+  const res = await fetchApi<Permission[]>('/teacher/permissions');
+  return Array.isArray(res) ? res : [];
 }
 
 // ============================================

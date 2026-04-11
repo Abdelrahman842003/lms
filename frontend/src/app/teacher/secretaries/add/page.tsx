@@ -6,7 +6,8 @@ import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { Button, LoadingSpinner, Icon, Input } from '@/components/ui';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { secretaryService } from '@/services/secretaryService';
-import { getTeacherPermissions, Permission } from '@/services/roles';
+import { getPermissions } from '@/services/authService';
+import { Permission } from '@/types/teacher.types';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 
@@ -33,15 +34,14 @@ export default function AddSecretaryPage() {
 
   const fetchPermissions = async () => {
     try {
-      const response = await getTeacherPermissions();
-      const permissionsList = Array.isArray(response.data) 
-        ? response.data 
-        : (Array.isArray(response) ? response : []);
+      const response = await getPermissions();
+      const permissionsList = Array.isArray(response) ? response : [];
         
-      const secretaryPermissions = permissionsList.filter(
-        (p: Permission) => p.guard_name === 'secretary'
+      // Show all except attendance which is for academies only
+      const teacherSidePermissions = permissionsList.filter(
+        (p: Permission) => p.name !== 'الحضور والانصراف'
       );
-      setAvailablePermissions(secretaryPermissions);
+      setAvailablePermissions(teacherSidePermissions);
     } catch (error) {
       console.error('Failed to fetch permissions:', error);
     }

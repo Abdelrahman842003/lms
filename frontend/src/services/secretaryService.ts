@@ -31,7 +31,16 @@ export const secretaryService = {
       ...(search && { search }),
       ...(status && { status }),
     });
-    return fetchApi(`/api/teacher/secretaries?${queryParams}`);
+    const res = await fetchApi<any>(`/api/teacher/secretaries?${queryParams}`);
+    const secretariesData = res.secretaries?.data || res.secretaries || [];
+    const total = res.secretaries?.total || res.total || 0;
+    const last_page = res.secretaries?.last_page || res.last_page || 1;
+    
+    return {
+      secretaries: secretariesData,
+      total: total,
+      last_page: last_page
+    };
   },
 
   // Get single secretary

@@ -16,11 +16,6 @@ export interface StudentDashboardData {
   days_left: number | null;
   upcoming_lectures: StudentLecture[];
   recent_exams: StudentExamResult[];
-  attendance_stats: {
-    total: number;
-    attended: number;
-    rate: number;
-  };
 }
 
 /**

@@ -48,9 +48,9 @@ export default function SecretariesPage() {
     try {
       setIsLoading(true);
       const response = await getSecretaries(currentPage, searchQuery, statusFilter);
-      setSecretaries(response.data);
-      setTotalPages(response.last_page);
-      setTotalItems(response.total);
+      setSecretaries(response.secretaries || []);
+      setTotalPages(response.last_page || 1);
+      setTotalItems(response.total || 0);
     } catch (error) {
       console.error('Failed to fetch secretaries:', error);
     } finally {

@@ -121,24 +121,7 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4 sm:mb-6">
-        <StatCard
-          title="حضور الشهر"
-          value={`${student.attendance_stats?.present_count || 0} / ${student.attendance_stats?.total_lectures || 0}`}
-          icon="fas fa-calendar-check"
-          color="primary"
-          variant="centered"
-        />
-
-        <StatCard
-          title="متوسط الحضور"
-          value={student.attendance_stats?.average || 0}
-          icon="fas fa-chart-pie"
-          color="success"
-          suffix="%"
-          variant="centered"
-        />
-
+      <div className="grid grid-cols-1 sm:grid-cols-1 gap-3 mb-4 sm:mb-6">
         <StatCard
           title="متوسط الامتحانات"
           value={student.exam_stats?.month_average || 0}

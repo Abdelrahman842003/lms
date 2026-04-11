@@ -34,16 +34,14 @@ export default function AddSecretaryPage() {
   const fetchPermissions = async () => {
     try {
       const response = await getAcademyPermissions();
-      const permissionsList = Array.isArray(response.data) 
-        ? response.data 
-        : (Array.isArray(response) ? response : []);
+      // response is usually the data array directly because of fetchApi wrapper
+      const permissionsList = Array.isArray(response) 
+        ? response 
+        : ((response as any).data && Array.isArray((response as any).data) ? (response as any).data : []);
         
-      const secretaryPermissions = permissionsList.filter(
-        (p: Permission) => p.guard_name === 'secretary'
-      );
-      setAvailablePermissions(secretaryPermissions);
+      setAvailablePermissions(permissionsList);
     } catch (error) {
-      // Error handled silently
+      console.error('Failed to fetch permissions:', error);
     }
   };
 

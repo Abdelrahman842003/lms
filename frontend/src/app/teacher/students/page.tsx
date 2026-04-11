@@ -165,19 +165,6 @@ export default function StudentsPage() {
       className: 'd-none-md',
       render: (_: any, row: any) => row.group_name || '-',
     },
-    {
-      key: 'attendance_stats',
-      label: 'الحضور (الشهر)',
-      className: 'd-none-lg',
-      render: (stats: any) => (
-        <div className="flex flex-col gap-1">
-          <span>{stats?.present_count || 0} / {stats?.total_lectures || 0}</span>
-          <span className="text-[0.8em] text-gray-light">
-            {stats?.average || 0}%
-          </span>
-        </div>
-      ),
-    },
   ];
 
   const actions = [

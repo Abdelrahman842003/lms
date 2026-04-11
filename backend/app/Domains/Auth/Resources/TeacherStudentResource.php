@@ -33,32 +33,11 @@ class TeacherStudentResource extends JsonResource
             'location' => $this->location,
             'permissions' => $this->getAllPermissions()->pluck('name'),
             
-            // Attendance Stats (Current Month)
-            'attendance_stats' => $this->calculateAttendanceStats(),
-            
             // Exam Stats
             'exam_stats' => $this->calculateExamStats(),
             
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
-        ];
-    }
-
-    private function calculateAttendanceStats()
-    {
-        $currentMonth = now()->month;
-        $attendances = $this->attendances->filter(function ($attendance) use ($currentMonth) {
-            return $attendance->created_at->month === $currentMonth;
-        });
-
-        $presentCount = $attendances->where('status', 'present')->count();
-        // User mentioned 8 lectures per month as a baseline
-        $totalLectures = 8; 
-        
-        return [
-            'present_count' => $presentCount,
-            'total_lectures' => $totalLectures,
-            'average' => $totalLectures > 0 ? round(($presentCount / $totalLectures) * 100, 1) : 0,
         ];
     }
 

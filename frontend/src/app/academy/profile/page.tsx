@@ -30,7 +30,6 @@ export default function AcademyProfilePage() {
     name: '',
     phone: '',
     location: '',
-    trialPeriodDays: '4',
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
@@ -61,7 +60,6 @@ export default function AcademyProfilePage() {
         name: user.name || '',
         phone: user.phone || '',
         location: user.location || '',
-        trialPeriodDays: String(user.trial_period_days ?? user.effective_trial_period_days ?? 4),
       }));
     }
   }, [user]);
@@ -203,7 +201,6 @@ export default function AcademyProfilePage() {
           name: formData.name,
           phone: formData.phone,
           location: formData.location,
-          trial_period_days: Number(formData.trialPeriodDays || 4),
         }),
       });
 
@@ -440,20 +437,6 @@ export default function AcademyProfilePage() {
                     type="text"
                     value={formData.location}
                     onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                    disabled={!isEditing}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-gray-light text-sm mb-2 font-semibold">
-                    مدة الفترة التجريبية (بالأيام)
-                  </label>
-                  <Input
-                    type="number"
-                    min={1}
-                    max={365}
-                    value={formData.trialPeriodDays}
-                    onChange={(e) => setFormData({ ...formData, trialPeriodDays: e.target.value })}
                     disabled={!isEditing}
                   />
                 </div>
