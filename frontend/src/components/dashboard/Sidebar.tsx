@@ -15,7 +15,7 @@ interface SidebarProps {
   };
   isOpen: boolean;
   onClose: () => void;
-  permissions?: string[];
+  permissions?: any[];
 }
 
 const getSidebarItems = (role: string): SidebarItem[] => {
@@ -163,55 +163,71 @@ const getRoleLabel = (role: string): string => {
   return labels[role] || role;
 };
 
-// Map menu items to required permissions
+// Map menu items to required feature keys or permission names
 const permissionMap: Record<string, string[]> = {
-  students: ['view students', 'create students', 'edit students', 'delete students'],
-  secretaries: [], // Secretaries cannot manage other secretaries
-  groups: ['view groups', 'create groups', 'edit groups', 'delete groups'],
-  grades: ['view grades', 'create grades', 'edit grades', 'delete grades'],
-  lectures: ['view lectures', 'create lectures', 'edit lectures', 'delete lectures'],
-  videos: ['view videos', 'create videos', 'edit videos', 'delete videos', 'publish videos'],
-  exams: ['view exams', 'create exams', 'edit exams', 'delete exams'],
-  notifications: ['send notifications'],
-  attendance: ['manage lecture attendance'],
-  reports: ['view reports'],
-  dashboard: ['view dashboard'],
-  gamification: ['view dashboard'], // Everyone with dashboard access can see leaderboard
+  students: ['students', 'view students', 'create students', 'edit students', 'delete students'],
+  secretaries: ['secretaries'], // Now a secretary can see this if granted the 'secretaries' key
+  groups: ['groups', 'view groups', 'create groups', 'edit groups', 'delete groups'],
+  grades: ['grades', 'view grades', 'create grades', 'edit grades', 'delete grades'],
+  lectures: ['lectures', 'lessons', 'view lectures', 'create lectures', 'edit lectures', 'delete lectures'],
+  videos: ['videos', 'courses', 'levels', 'content_mgmt', 'view videos', 'create videos', 'edit videos', 'delete videos', 'publish videos'],
+  exams: ['exams', 'exams_mgmt', 'view exams', 'create exams', 'edit exams', 'delete exams'],
+  notifications: ['notifications', 'send notifications'],
+  attendance: ['attendance', 'manage lecture attendance'],
+  reports: ['reports', 'stats', 'view reports'],
+  dashboard: ['dashboard', 'view dashboard'],
+  gamification: ['honor_roll', 'view dashboard'], // honor_roll is used for leaderboard
 };
 
-const filterItemsByPermissions = (items: SidebarItem[], permissions: string[]): SidebarItem[] => {
+const filterItemsByPermissions = (items: SidebarItem[], permissions: any[]): SidebarItem[] => {
+  const userPermKeys = permissions.map(p => typeof p === 'string' ? p : p.key);
+  const userPermNames = permissions.reduce((acc: any, p) => {
+    if (typeof p !== 'string') acc[p.key] = p.name;
+    return acc;
+  }, {});
+
+  const updateItemLabel = (item: SidebarItem) => {
+    const requiredKeys = permissionMap[item.id] || [];
+    const matchingKey = requiredKeys.find(k => userPermNames[k]);
+    if (matchingKey && userPermNames[matchingKey]) {
+      return { ...item, label: userPermNames[matchingKey] };
+    }
+    return item;
+  };
+
   return items.filter(item => {
     // Dashboard is always visible
     if (item.id === 'dashboard') return true;
     
     // Check if user has ANY of the required permissions for this menu
-    const requiredPerms = permissionMap[item.id] || [];
-    if (requiredPerms.length === 0 && !item.children) return false;
+    const requiredKeys = permissionMap[item.id] || [];
+    if (requiredKeys.length === 0 && !item.children) return false;
     
-    const hasPermission = requiredPerms.some(perm => permissions.includes(perm));
+    const hasPermission = requiredKeys.some(key => userPermKeys.includes(key));
     
     if (item.children) {
       // For parent items, check if any child should be visible
       const visibleChildren = item.children.filter(child => {
-        const childPerms = permissionMap[child.id] || [];
-        return childPerms.some(perm => permissions.includes(perm));
-      });
+        const childKeys = permissionMap[child.id] || [];
+        return childKeys.some(key => userPermKeys.includes(key));
+      }).map(updateItemLabel);
+      
       if (visibleChildren.length > 0) {
-        return { ...item, children: visibleChildren };
+        return true;
       }
       return false;
     }
     
     return hasPermission;
   }).map(item => {
-    if (item.children) {
-      const visibleChildren = item.children.filter(child => {
-        const childPerms = permissionMap[child.id] || [];
-        return childPerms.some(perm => permissions.includes(perm));
-      });
-      return { ...item, children: visibleChildren };
+    const updatedItem = updateItemLabel(item);
+    if (updatedItem.children) {
+      updatedItem.children = updatedItem.children.filter(child => {
+        const childKeys = permissionMap[child.id] || [];
+        return childKeys.some(key => userPermKeys.includes(key));
+      }).map(updateItemLabel);
     }
-    return item;
+    return updatedItem;
   });
 };
 

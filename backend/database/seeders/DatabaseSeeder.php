@@ -33,6 +33,8 @@ class DatabaseSeeder extends Seeder
 
         $this->call([
             FilamentPermissionSeeder::class,
+            PermissionSeeder::class,
+            SecretaryAppPermissionsSeeder::class,
             // AcademySeeder::class,
             // CompleteSeeder::class,
             // AttachTeachersToAcademySeeder::class,

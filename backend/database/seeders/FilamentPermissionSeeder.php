@@ -19,6 +19,7 @@ class FilamentPermissionSeeder extends Seeder
         'teachers',
         'students',
         'secretaries',
+        'app_permissions',
         'subscriptions',
         'roles',
         'permissions',

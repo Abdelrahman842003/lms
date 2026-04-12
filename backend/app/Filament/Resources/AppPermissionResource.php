@@ -5,16 +5,16 @@ declare(strict_types=1);
 namespace App\Filament\Resources;
 
 use Spatie\Permission\Models\Permission;
+use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Section;
+use Filament\Schemas\Schema;
 use Filament\Actions\EditAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Filament\Forms\Form;
 use Illuminate\Database\Eloquent\Builder;
 
 class AppPermissionResource extends BaseResource
@@ -36,7 +36,7 @@ class AppPermissionResource extends BaseResource
         return 'الصلاحيات والأدوار';
     }
 
-    public static function form(\Filament\Schemas\Schema $schema): \Filament\Schemas\Schema
+    public static function form(Schema $schema): Schema
     {
         return $schema
             ->components([
@@ -48,6 +48,11 @@ class AppPermissionResource extends BaseResource
                             ->maxLength(255)
                             ->placeholder('مثال: إدارة الطلاب'),
 
+                        TextInput::make('feature_key')
+                            ->label('المفتاح الثابت (Feature Key)')
+                            ->helperText('لا تقم بتغيير هذا الحقل إلا إذا كنت متأكداً، فهو يربط الكود بالاسم.')
+                            ->maxLength(255),
+
                         Select::make('guard_name')
                             ->label('نوع المستخدم (Guard)')
                             ->options([
@@ -57,7 +62,7 @@ class AppPermissionResource extends BaseResource
                             ->required()
                             ->default('secretary'),
                     ])
-                    ->columns(2),
+                    ->columns(3),
             ]);
     }
 
@@ -70,6 +75,12 @@ class AppPermissionResource extends BaseResource
                     ->searchable()
                     ->sortable()
                     ->weight('font-bold'),
+
+                Tables\Columns\TextColumn::make('feature_key')
+                    ->label('المفتاح (Key)')
+                    ->searchable()
+                    ->badge()
+                    ->color('gray'),
 
                 Tables\Columns\TextColumn::make('guard_name')
                     ->label('Guard')
