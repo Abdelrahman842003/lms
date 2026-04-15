@@ -1,30 +1,5 @@
 <?php
 
-if (! function_exists('_cloudflare_setting')) {
-    /**
-     * Resolve Cloudflare setting from DB settings table first,
-     * then fall back to Docker secret, then env/default.
-     */
-    function _cloudflare_setting(string $dbKey, string $secretName, ?string $envKey = null, mixed $default = null): mixed
-    {
-        try {
-            $value = \App\Domains\Application\Models\Setting::getValue($dbKey);
-            if ($value !== null && $value !== '') {
-                return $value;
-            }
-        } catch (\Throwable) {
-            // DB not ready during early bootstrap/migrations.
-        }
-
-        $secretValue = docker_secret($secretName);
-        if ($secretValue !== null && $secretValue !== '') {
-            return $secretValue;
-        }
-
-        return $envKey ? env($envKey, $default) : $default;
-    }
-}
-
 return [
 
     /*
@@ -61,22 +36,22 @@ return [
     ],
 
     'firebase' => [
-        'credentials' => docker_secret('FIREBASE_CREDENTIALS', storage_path('firebase/service-account.json')),
-        'project_id' => docker_secret('FIREBASE_PROJECT_ID'),
+        'credentials' => env('FIREBASE_CREDENTIALS'),
+        'project_id' => env('FIREBASE_PROJECT_ID'),
     ],
 
     'cloudflare' => [
         'r2' => [
-            'access_key_id' => _cloudflare_setting('cloudflare_r2_access_key_id', 'CLOUDFLARE_R2_ACCESS_KEY_ID', 'R2_ACCESS_KEY_ID'),
-            'secret_access_key' => _cloudflare_setting('cloudflare_r2_secret_access_key', 'CLOUDFLARE_R2_SECRET_ACCESS_KEY', 'R2_SECRET_ACCESS_KEY'),
-            'bucket' => _cloudflare_setting('cloudflare_r2_bucket', 'CLOUDFLARE_R2_BUCKET', 'R2_BUCKET_NAME'),
-            'endpoint' => _cloudflare_setting('cloudflare_r2_endpoint', 'CLOUDFLARE_R2_ENDPOINT', 'R2_ENDPOINT', 'https://' . env('R2_ACCOUNT_ID') . '.r2.cloudflarestorage.com'),
-            'public_url' => _cloudflare_setting('cloudflare_r2_public_url', 'CLOUDFLARE_R2_PUBLIC_URL', 'R2_PUBLIC_DOMAIN'),
+            'access_key_id' => env('CLOUDFLARE_R2_ACCESS_KEY_ID'),
+            'secret_access_key' => env('CLOUDFLARE_R2_SECRET_ACCESS_KEY'),
+            'bucket' => env('CLOUDFLARE_R2_BUCKET'),
+            'endpoint' => env('CLOUDFLARE_R2_ENDPOINT'),
+            'public_url' => env('CLOUDFLARE_R2_PUBLIC_URL'),
         ],
         'kv' => [
-            'account_id' => _cloudflare_setting('cloudflare_kv_account_id', 'CLOUDFLARE_KV_ACCOUNT_ID', 'CLOUDFLARE_KV_ACCOUNT_ID'),
-            'namespace_id' => _cloudflare_setting('cloudflare_kv_namespace_id', 'CLOUDFLARE_KV_NAMESPACE_ID', 'CLOUDFLARE_KV_NAMESPACE_ID'),
-            'api_token' => _cloudflare_setting('cloudflare_kv_api_token', 'CLOUDFLARE_KV_API_TOKEN', 'CLOUDFLARE_KV_API_TOKEN'),
+            'account_id' => env('CLOUDFLARE_KV_ACCOUNT_ID'),
+            'namespace_id' => env('CLOUDFLARE_KV_NAMESPACE_ID'),
+            'api_token' => env('CLOUDFLARE_KV_API_TOKEN'),
         ],
     ],
 

@@ -48,64 +48,6 @@ class SettingsServiceProvider extends ServiceProvider
                 }
 
                 switch ($setting->key) {
-                    // Firebase
-                    case 'firebase_service_account':
-                        // Try to decode JSON, if fails, use as string (path?)
-                        $json = json_decode($value, true);
-                        Config::set('services.firebase.credentials', $json ?? $value);
-                        break;
-                    case 'firebase_api_key':
-                        Config::set('services.firebase.api_key', $value);
-                        break;
-                    case 'firebase_auth_domain':
-                        Config::set('services.firebase.auth_domain', $value);
-                        break;
-                    case 'firebase_project_id':
-                        Config::set('services.firebase.project_id', $value);
-                        break;
-                    case 'firebase_storage_bucket':
-                        Config::set('services.firebase.storage_bucket', $value);
-                        break;
-                    case 'firebase_messaging_sender_id':
-                        Config::set('services.firebase.messaging_sender_id', $value);
-                        break;
-                    case 'firebase_app_id':
-                        Config::set('services.firebase.app_id', $value);
-                        break;
-
-                    // Cloudflare R2
-                    case 'cloudflare_r2_access_key_id':
-                        Config::set('filesystems.disks.r2.key', $value);
-                        Config::set('services.cloudflare.r2.access_key_id', $value);
-                        break;
-                    case 'cloudflare_r2_secret_access_key':
-                        Config::set('filesystems.disks.r2.secret', $value);
-                        Config::set('services.cloudflare.r2.secret_access_key', $value);
-                        break;
-                    case 'cloudflare_r2_bucket':
-                        Config::set('filesystems.disks.r2.bucket', $value);
-                        Config::set('services.cloudflare.r2.bucket', $value);
-                        break;
-                    case 'cloudflare_r2_endpoint':
-                        Config::set('filesystems.disks.r2.endpoint', $value);
-                        Config::set('services.cloudflare.r2.endpoint', $value);
-                        break;
-                    case 'cloudflare_r2_public_url':
-                        Config::set('filesystems.disks.r2.url', $value);
-                        Config::set('services.cloudflare.r2.public_url', $value);
-                        break;
-
-                    // Cloudflare KV
-                    case 'cloudflare_kv_account_id':
-                        Config::set('services.cloudflare.kv.account_id', $value);
-                        break;
-                    case 'cloudflare_kv_namespace_id':
-                        Config::set('services.cloudflare.kv.namespace_id', $value);
-                        break;
-                    case 'cloudflare_kv_api_token':
-                        Config::set('services.cloudflare.kv.api_token', $value);
-                        break;
-
                     // AI
                     case 'openai_api_key':
                         Config::set('services.openai.api_key', $value);

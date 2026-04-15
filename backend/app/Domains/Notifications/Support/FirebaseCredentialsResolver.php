@@ -59,16 +59,27 @@ final class FirebaseCredentialsResolver
             return null;
         }
 
+        // 1. Try JSON directly
         $decoded = json_decode($value, true);
         if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
             return $decoded;
         }
 
-        if (! is_file($value)) {
-            return null;
+        // 2. Try as a file path
+        if (is_file($value)) {
+            return $value;
         }
 
-        return $value;
+        // 3. Try as Base64 encoded JSON
+        $base64Decoded = base64_decode($value, true);
+        if ($base64Decoded !== false) {
+            $decoded = json_decode($base64Decoded, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                return $decoded;
+            }
+        }
+
+        return null;
     }
 
     /**

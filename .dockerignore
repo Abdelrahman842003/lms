@@ -21,3 +21,7 @@ secrets/
 *.md
 Makefile
 docker-compose*.yml
+backend/vendor/
+backend/node_modules/
+frontend/node_modules/
+frontend/.next/

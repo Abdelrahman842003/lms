@@ -33,59 +33,27 @@ class IntegrationSettingsPage extends Page implements HasForms
 
     protected string $view = 'filament.pages.system-settings';
 
-    protected const SETTING_KEYS = [
-        'firebase_service_account',
-        'firebase_project_id',
-        'firebase_api_key',
-        'firebase_auth_domain',
-        'firebase_storage_bucket',
-        'firebase_messaging_sender_id',
-        'firebase_app_id',
-        'cloudflare_r2_access_key_id',
-        'cloudflare_r2_secret_access_key',
-        'cloudflare_r2_bucket',
-        'cloudflare_r2_endpoint',
-        'cloudflare_r2_public_url',
-        'cloudflare_kv_account_id',
-        'cloudflare_kv_api_token',
-        'cloudflare_kv_namespace_id',
-    ];
-
-    protected const SECRET_FILES = [
-        'firebase_project_id' => ['firebase_project_id.txt', 'firebase_project_id'],
-        'cloudflare_r2_access_key_id' => ['cloudflare_r2_access_key_id.txt', 'cloudflare_r2_access_key_id'],
-        'cloudflare_r2_secret_access_key' => ['cloudflare_r2_secret_access_key.txt', 'cloudflare_r2_secret_access_key'],
-        'cloudflare_r2_bucket' => ['cloudflare_r2_bucket.txt', 'cloudflare_r2_bucket'],
-        'cloudflare_r2_endpoint' => ['cloudflare_r2_endpoint.txt', 'cloudflare_r2_endpoint'],
-        'cloudflare_r2_public_url' => ['cloudflare_r2_public_url.txt', 'cloudflare_r2_public_url'],
-        'cloudflare_kv_account_id' => ['cloudflare_kv_account_id.txt', 'cloudflare_kv_account_id'],
-        'cloudflare_kv_api_token' => ['cloudflare_kv_api_token.txt', 'cloudflare_kv_api_token'],
-        'cloudflare_kv_namespace_id' => ['cloudflare_kv_namespace_id.txt', 'cloudflare_kv_namespace_id'],
-    ];
-
     public ?array $data = [];
 
     public function mount(): void
     {
-        $state = [];
-
-        foreach (self::SETTING_KEYS as $key) {
-            $state[$key] = (string) Setting::getValue($key, '');
-        }
-
-        if ($state['firebase_service_account'] === '') {
-            $state['firebase_service_account'] = $this->readFirebaseServiceAccountSecret() ?? '';
-        }
-
-        foreach (self::SECRET_FILES as $key => $filenames) {
-            if ($state[$key] !== '') {
-                continue;
-            }
-
-            $state[$key] = $this->readSecretFile($filenames) ?? '';
-        }
-
-        $this->form->fill($state);
+        $this->form->fill([
+            'firebase_service_account' => config('services.firebase.credentials'),
+            'firebase_project_id' => config('services.firebase.project_id'),
+            'firebase_api_key' => config('services.firebase.api_key'),
+            'firebase_auth_domain' => config('services.firebase.auth_domain'),
+            'firebase_storage_bucket' => config('services.firebase.storage_bucket'),
+            'firebase_messaging_sender_id' => config('services.firebase.messaging_sender_id'),
+            'firebase_app_id' => config('services.firebase.app_id'),
+            'cloudflare_r2_access_key_id' => config('services.cloudflare.r2.access_key_id'),
+            'cloudflare_r2_secret_access_key' => config('services.cloudflare.r2.secret_access_key'),
+            'cloudflare_r2_bucket' => config('services.cloudflare.r2.bucket'),
+            'cloudflare_r2_endpoint' => config('services.cloudflare.r2.endpoint'),
+            'cloudflare_r2_public_url' => config('services.cloudflare.r2.public_url'),
+            'cloudflare_kv_account_id' => config('services.cloudflare.kv.account_id'),
+            'cloudflare_kv_api_token' => config('services.cloudflare.kv.api_token'),
+            'cloudflare_kv_namespace_id' => config('services.cloudflare.kv.namespace_id'),
+        ]);
     }
 
     public function form(Schema $schema): Schema
@@ -94,267 +62,104 @@ class IntegrationSettingsPage extends Page implements HasForms
             ->statePath('data')
             ->components([
                 Section::make('Firebase')
+                    ->description('يتم إدارة هذه الإعدادات عبر متغيرات البيئة (Environment Variables) في Coolify.')
                     ->schema([
                         Textarea::make('firebase_service_account')
-                            ->label('Service Account (JSON أو مسار ملف)')
+                            ->label('Service Account (JSON)')
                             ->rows(9)
-                            ->helperText('يمكن إدخال JSON مباشرة أو مسار ملف داخل السيرفر.'),
+                            ->disabled()
+                            ->dehydrated(false),
 
                         TextInput::make('firebase_project_id')
                             ->label('Project ID')
-                            ->maxLength(255),
+                            ->disabled()
+                            ->dehydrated(false),
 
                         TextInput::make('firebase_api_key')
                             ->label('API Key')
-                            ->maxLength(500),
+                            ->disabled()
+                            ->dehydrated(false),
 
                         TextInput::make('firebase_auth_domain')
                             ->label('Auth Domain')
-                            ->maxLength(255),
+                            ->disabled()
+                            ->dehydrated(false),
 
                         TextInput::make('firebase_storage_bucket')
                             ->label('Storage Bucket')
-                            ->maxLength(255),
+                            ->disabled()
+                            ->dehydrated(false),
 
                         TextInput::make('firebase_messaging_sender_id')
                             ->label('Messaging Sender ID')
-                            ->maxLength(255),
+                            ->disabled()
+                            ->dehydrated(false),
 
                         TextInput::make('firebase_app_id')
                             ->label('App ID')
-                            ->maxLength(255),
+                            ->disabled()
+                            ->dehydrated(false),
                     ])
                     ->columns(2),
 
                 Section::make('Cloudflare R2')
+                    ->description('يتم إدارة هذه الإعدادات عبر متغيرات البيئة (Environment Variables) في Coolify.')
                     ->schema([
                         TextInput::make('cloudflare_r2_access_key_id')
                             ->label('Access Key ID')
-                            ->maxLength(255),
+                            ->disabled()
+                            ->dehydrated(false),
 
                         TextInput::make('cloudflare_r2_secret_access_key')
                             ->label('Secret Access Key')
                             ->password()
                             ->revealable()
-                            ->maxLength(255),
+                            ->disabled()
+                            ->dehydrated(false),
 
                         TextInput::make('cloudflare_r2_bucket')
                             ->label('Bucket')
-                            ->maxLength(255),
+                            ->disabled()
+                            ->dehydrated(false),
 
                         TextInput::make('cloudflare_r2_endpoint')
                             ->label('Endpoint')
-                            ->maxLength(500),
+                            ->disabled()
+                            ->dehydrated(false),
 
                         TextInput::make('cloudflare_r2_public_url')
                             ->label('Public URL')
-                            ->maxLength(500),
+                            ->disabled()
+                            ->dehydrated(false),
                     ])
                     ->columns(2),
 
                 Section::make('Cloudflare KV')
+                    ->description('يتم إدارة هذه الإعدادات عبر متغيرات البيئة (Environment Variables) في Coolify.')
                     ->schema([
                         TextInput::make('cloudflare_kv_account_id')
                             ->label('Account ID')
-                            ->maxLength(255),
+                            ->disabled()
+                            ->dehydrated(false),
 
                         TextInput::make('cloudflare_kv_api_token')
                             ->label('API Token')
                             ->password()
                             ->revealable()
-                            ->maxLength(500),
+                            ->disabled()
+                            ->dehydrated(false),
 
                         TextInput::make('cloudflare_kv_namespace_id')
                             ->label('Namespace ID')
-                            ->maxLength(255),
+                            ->disabled()
+                            ->dehydrated(false),
                     ])
-                    ->columns(2)
-                    ->footerActions([
-                        \Filament\Actions\Action::make('save_integrations')
-                            ->label('حفظ التكاملات')
-                            ->icon('heroicon-m-puzzle-piece')
-                            ->color('primary')
-                            ->action(fn () => $this->save()),
-                    ]),
+                    ->columns(2),
             ]);
     }
 
     public function save(): void
     {
-        try {
-            $state = $this->form->getState();
-
-            $firebaseServiceAccount = trim((string) ($state['firebase_service_account'] ?? ''));
-            $state['firebase_service_account'] = $this->normalizeFirebaseServiceAccount($firebaseServiceAccount);
-
-            if ($state['firebase_service_account'] === null) {
-                Notification::make()
-                    ->danger()
-                    ->title('صيغة Firebase Service Account غير صحيحة')
-                    ->send();
-                return;
-            }
-
-            foreach (self::SETTING_KEYS as $key) {
-                if (! array_key_exists($key, $state)) {
-                    continue;
-                }
-
-                Setting::updateOrCreate(
-                    ['key' => $key],
-                    [
-                        'value' => trim((string) $state[$key]),
-                        'group' => 'integration',
-                    ]
-                );
-            }
-
-            Cache::flush();
-
-            Notification::make()
-                ->success()
-                ->title('تم حفظ إعدادات Firebase و Cloudflare بنجاح')
-                ->send();
-        } catch (\Exception $e) {
-            Notification::make()
-                ->danger()
-                ->title('حدث خطأ أثناء حفظ الإعدادات: ' . $e->getMessage())
-                ->send();
-        }
-    }
-
-    public function importFromSecrets(): void
-    {
-        $imported = [];
-
-        $firebaseServiceAccount = $this->readFirebaseServiceAccountSecret();
-        if ($firebaseServiceAccount !== null) {
-            $imported['firebase_service_account'] = $firebaseServiceAccount;
-        }
-
-        foreach (self::SECRET_FILES as $key => $filenames) {
-            $value = $this->readSecretFile($filenames);
-            if ($value === null) {
-                continue;
-            }
-
-            $imported[$key] = $value;
-        }
-
-        if ($imported === []) {
-            Notification::make()
-                ->danger()
-                ->title('لم يتم العثور على ملفات secrets المطلوبة')
-                ->send();
-            return;
-        }
-
-        $this->form->fill(array_merge($this->form->getState(), $imported));
-
-        Notification::make()
-            ->success()
-            ->title('تم تحميل القيم من مجلد secrets. اضغط حفظ لتثبيتها.')
-            ->send();
-    }
-
-    private function normalizeFirebaseServiceAccount(string $value): ?string
-    {
-        if ($value === '') {
-            return '';
-        }
-
-        if (is_file($value)) {
-            $content = trim((string) file_get_contents($value));
-            if ($content === '') {
-                return null;
-            }
-
-            $decoded = json_decode($content, true);
-
-            return (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) ? $content : null;
-        }
-
-        $decoded = json_decode($value, true);
-
-        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-            return $value;
-        }
-
-        if (str_starts_with($value, '{') || str_starts_with($value, '[')) {
-            return null;
-        }
-
-        return $value;
-    }
-
-    /**
-     * @param array<int, string> $filenames
-     */
-    private function readSecretFile(array $filenames): ?string
-    {
-        foreach ($this->secretsDirectories() as $directory) {
-            foreach ($filenames as $filename) {
-                $path = $directory . DIRECTORY_SEPARATOR . $filename;
-
-                if (! is_file($path) || ! is_readable($path)) {
-                    continue;
-                }
-
-                $content = trim((string) file_get_contents($path));
-
-                if ($content !== '') {
-                    return $content;
-                }
-            }
-        }
-
-        return null;
-    }
-
-    private function readFirebaseServiceAccountSecret(): ?string
-    {
-        foreach ($this->secretsDirectories() as $directory) {
-            foreach (['firebase_credentials.json', 'firebase_credentials'] as $filename) {
-                $path = $directory . DIRECTORY_SEPARATOR . $filename;
-                if (! is_file($path) || ! is_readable($path)) {
-                    continue;
-                }
-
-                $content = trim((string) file_get_contents($path));
-                if ($content !== '') {
-                    return $content;
-                }
-            }
-
-            $matches = glob($directory . DIRECTORY_SEPARATOR . '*firebase*adminsdk*.json');
-            if ($matches === false || $matches === []) {
-                continue;
-            }
-
-            sort($matches);
-            $content = trim((string) file_get_contents($matches[0]));
-            if ($content !== '') {
-                return $content;
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * @return array<int, string>
-     */
-    private function secretsDirectories(): array
-    {
-        $directories = [
-            trim((string) env('SECRETS_DIR', '')),
-            dirname(base_path()) . DIRECTORY_SEPARATOR . 'secrets',
-            base_path('secrets'),
-            '/run/secrets',
-        ];
-
-        $directories = array_values(array_unique(array_filter($directories, fn (string $dir): bool => $dir !== '')));
-
-        return array_values(array_filter($directories, fn (string $dir): bool => is_dir($dir)));
+        // Save functionality is deprecated and moved to Environment Variables.
     }
 }
