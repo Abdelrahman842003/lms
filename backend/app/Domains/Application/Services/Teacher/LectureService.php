@@ -350,8 +350,14 @@ class LectureService
 
     public function recordAttendance(Lecture $lecture, string $studentId): array
     {
-        // Check if student is already attended
-        $existingAttendance = Attendance::where('lecture_id', $lecture->id)
+        // Find or create a lecture session for today
+        $session = $lecture->sessions()->updateOrCreate(
+            ['date' => now()->toDateString()],
+            ['title' => $lecture->title . ' - ' . now()->toDateString()]
+        );
+
+        // Check if student is already attended for this session
+        $existingAttendance = Attendance::where('lecture_session_id', $session->id)
             ->where('student_id', $studentId)
             ->first();
 
@@ -364,6 +370,7 @@ class LectureService
 
         Attendance::create([
             'lecture_id' => $lecture->id,
+            'lecture_session_id' => $session->id,
             'student_id' => $studentId,
             'status' => 'present',
         ]);

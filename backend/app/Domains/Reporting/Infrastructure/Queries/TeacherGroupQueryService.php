@@ -12,6 +12,7 @@ use App\Domains\Lectures\Models\Lecture;
 use App\Domains\Lectures\Models\LectureSession;
 use App\Domains\Reporting\Domain\ValueObjects\ReportFilters;
 use App\Domains\Subscriptions\Models\PaymentLog;
+use Illuminate\Support\Facades\DB;
 
 final class TeacherGroupQueryService
 {

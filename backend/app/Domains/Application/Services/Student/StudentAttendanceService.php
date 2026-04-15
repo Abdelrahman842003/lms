@@ -50,11 +50,18 @@ class StudentAttendanceService
             throw new DomainException('QR code has expired');
         }
 
+        // Find or create a lecture session for today
+        $session = $lecture->sessions()->updateOrCreate(
+            ['date' => now()->toDateString()],
+            ['title' => $lecture->title . ' - ' . now()->toDateString()]
+        );
+
         // Create or update attendance record
         $attendance = Attendance::firstOrCreate(
             [
                 'lecture_id' => $lecture->id,
                 'student_id' => $student->id,
+                'lecture_session_id' => $session->id,
             ],
             [
                 'status' => 'present',
