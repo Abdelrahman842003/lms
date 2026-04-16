@@ -18,7 +18,7 @@ services:
     networks:
       - lms_network
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_PASSWORD}"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$${DB_PASSWORD}"]
       interval: 10s
       timeout: 10s
       retries: 10
@@ -44,12 +44,13 @@ services:
       start_period: 30s
 
   # Laravel Octane (Backend)
-...
-
+  octane:
     build:
       context: ./backend
       dockerfile: Dockerfile
       target: production
+      args:
+        APP_KEY: ${APP_KEY}
     container_name: lms_octane_prod
     restart: unless-stopped
     environment:
@@ -83,12 +84,17 @@ services:
       context: ./backend
       dockerfile: Dockerfile
       target: production
+      args:
+        APP_KEY: ${APP_KEY}
     container_name: lms_horizon_prod
     restart: unless-stopped
     environment:
       APP_ENV: production
       APP_KEY: ${APP_KEY}
       DB_HOST: mysql
+      DB_DATABASE: ${DB_DATABASE}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
       REDIS_HOST: redis
       REDIS_PASSWORD: ${REDIS_PASSWORD}
     depends_on:
@@ -103,11 +109,19 @@ services:
       context: ./backend
       dockerfile: Dockerfile
       target: production
+      args:
+        APP_KEY: ${APP_KEY}
     container_name: lms_reverb_prod
     restart: unless-stopped
     environment:
       APP_ENV: production
       APP_KEY: ${APP_KEY}
+      DB_HOST: mysql
+      DB_DATABASE: ${DB_DATABASE}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      REDIS_HOST: redis
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
       REVERB_APP_ID: ${REVERB_APP_ID}
       REVERB_APP_KEY: ${REVERB_APP_KEY}
       REVERB_APP_SECRET: ${REVERB_APP_SECRET}
@@ -137,6 +151,7 @@ services:
         NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET}
         NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID}
         NEXT_PUBLIC_FIREBASE_APP_ID: ${NEXT_PUBLIC_FIREBASE_APP_ID}
+        NEXT_PUBLIC_FIREBASE_VAPID_KEY: ${NEXT_PUBLIC_FIREBASE_VAPID_KEY}
         NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID: ${NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID}
     container_name: lms_frontend_prod
     restart: unless-stopped

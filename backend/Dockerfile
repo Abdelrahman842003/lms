@@ -51,6 +51,10 @@ RUN chown -R www-data:www-data /var/www/backend \
     && chmod -R 755 /var/www/backend/storage \
     && chmod -R 755 /var/www/backend/bootstrap/cache
 
+# Build-time environment variables for caching
+ARG APP_KEY
+ENV APP_KEY=$APP_KEY
+
 # Only cache routes and views at build time. 
 # Config MUST be cached at runtime or not at all to read Coolify env vars.
 RUN php artisan route:cache && php artisan view:cache
