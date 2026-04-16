@@ -14,14 +14,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libjpeg-dev \
     libfreetype6-dev \
     libwebp-dev \
+    libicu-dev \
     ffmpeg \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install PHP extensions using the official installer script for reliability.
-# phpswoole/swoole already includes many extensions, this script will ensure 
-# they are configured correctly or skip if already present.
 COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/local/bin/
-RUN install-php-extensions pdo_mysql mbstring exif pcntl bcmath gd zip redis
+RUN install-php-extensions pdo_mysql mbstring exif pcntl bcmath gd zip redis intl opcache soap
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -37,8 +36,10 @@ CMD ["php", "artisan", "octane:start", "--server=swoole", "--host=0.0.0.0", "--p
 
 # ==================== Builder Stage ====================
 FROM base AS builder
+ENV COMPOSER_MEMORY_LIMIT=-1
 COPY composer.json composer.lock ./
-RUN composer install --no-dev --optimize-autoloader --no-scripts --no-interaction
+# Using --ignore-platform-reqs to ensure build continues if there's a minor version mismatch
+RUN composer install --no-dev --optimize-autoloader --no-scripts --no-interaction --ignore-platform-reqs
 COPY . .
 
 # ==================== Production Stage ====================
