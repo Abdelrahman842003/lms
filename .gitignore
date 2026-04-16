@@ -4,50 +4,7 @@ secrets/
 # Temporary setup scripts (setup-secrets.sh is kept for Makefile)
 setup_r2.sh
 
-# Personal editor configs
-.kilocodemodes
-!secrets/README.md
-!secrets/.gitkeep
-# Never commit actual secret files - only templates allowed
-secrets/*.txt
-secrets/*.json
-!secrets/*.example.json
-!secrets/*.example.txt
-dist/
-build/
-.next/
 
-# Environment files - NEVER commit any .env files
-.env
-.env.*
-!.env.example
-!.env.development.example
-!.env.production.example
-
-# Firebase credentials (IMPORTANT: Never commit these!)
-*firebase*.json
-!firebase.example.json
-!*.firebase.example.json
-neetaq-*-firebase-*.json
-.DS_Store
-coverage/
-.idea/
-.vscode/
-*.log
-vendor/
-*firebase-adminsdk*.json
-backend/storage/firebase/service-account.json
-cookie.txt
-
-# Local tools & secrets
-Makefile
-setup-secrets.sh
-docker-compose.dev.yml
-# docker-compose.yml (removed from ignore for Coolify)
-nginx/
-
-# Additional private directories
-.github/
 .opencode/command/
 .roo/commands/
 .specify/
