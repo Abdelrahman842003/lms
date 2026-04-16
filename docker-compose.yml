@@ -22,6 +22,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+      start_period: 60s
 
   # Redis
   redis:
@@ -34,10 +35,11 @@ services:
     networks:
       - lms_network
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      test: ["CMD-SHELL", "redis-cli -a \"$${REDIS_PASSWORD}\" ping | grep PONG"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 30s
 
   # Laravel Octane (Backend)
   octane:
