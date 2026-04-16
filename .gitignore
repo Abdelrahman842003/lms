@@ -38,3 +38,9 @@ vendor/
 *firebase-adminsdk*.json
 backend/storage/firebase/service-account.json
 cookie.txt
+
+# Local tools & secrets
+Makefile
+setup-secrets.sh
+docker-compose.yml
+nginx/
