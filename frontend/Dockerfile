@@ -1,4 +1,4 @@
-# Multi-stage build للـ Production
+# ==================== Base Stage ====================
 FROM node:20-alpine AS base
 
 # ==================== Dependencies ====================
@@ -7,7 +7,23 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN npm ci
 
-# ==================== Builder ====================
+# ==================== Development Stage ====================
+FROM base AS development
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+
+# Build Arguments for dev
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+
+EXPOSE 3000
+ENV PORT 3000
+ENV HOSTNAME "0.0.0.0"
+
+CMD ["npm", "run", "dev"]
+
+# ==================== Builder Stage ====================
 FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
@@ -16,7 +32,7 @@ COPY . .
 # Build Next.js
 ENV NEXT_TELEMETRY_DISABLED 1
 
-# Build Arguments
+# Build Arguments (Passed at build time)
 ARG NEXT_PUBLIC_API_URL
 ARG NEXT_PUBLIC_REVERB_APP_KEY
 ARG NEXT_PUBLIC_REVERB_HOST
@@ -29,6 +45,7 @@ ARG NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
 ARG NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
 ARG NEXT_PUBLIC_FIREBASE_APP_ID
 ARG NEXT_PUBLIC_FIREBASE_VAPID_KEY
+ARG NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
 
 # Environment Variables
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
@@ -43,10 +60,11 @@ ENV NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=$NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
 ENV NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=$NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
 ENV NEXT_PUBLIC_FIREBASE_APP_ID=$NEXT_PUBLIC_FIREBASE_APP_ID
 ENV NEXT_PUBLIC_FIREBASE_VAPID_KEY=$NEXT_PUBLIC_FIREBASE_VAPID_KEY
+ENV NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=$NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
 
 RUN npm run build
 
-# ==================== Production ====================
+# ==================== Production Stage ====================
 FROM base AS production
 WORKDIR /app
 

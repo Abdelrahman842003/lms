@@ -42,5 +42,6 @@ cookie.txt
 # Local tools & secrets
 Makefile
 setup-secrets.sh
-docker-compose.yml
+docker-compose.dev.yml
+# docker-compose.yml (removed from ignore for Coolify)
 nginx/
