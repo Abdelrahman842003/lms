@@ -44,8 +44,7 @@ services:
       start_period: 30s
 
   # Laravel Octane (Backend)
-...
-
+  octane:
     build:
       context: ./backend
       dockerfile: Dockerfile
