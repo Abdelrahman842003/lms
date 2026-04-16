@@ -45,3 +45,10 @@ setup-secrets.sh
 docker-compose.dev.yml
 # docker-compose.yml (removed from ignore for Coolify)
 nginx/
+
+# Additional private directories
+.github/
+.opencode/command/
+.roo/commands/
+.specify/
+

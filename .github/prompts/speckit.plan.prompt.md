@@ -1,3 +1,0 @@
----
-description: Speckit plan prompt
----
