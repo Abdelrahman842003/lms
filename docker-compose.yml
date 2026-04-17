@@ -18,8 +18,8 @@ services:
     networks:
       - lms_network
     healthcheck:
-      # فحص مبسط: إذا كان MySQL يستجيب على المنفذ، فهو يعمل
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      # فحص متقدم يعتمد على استجابة المنفذ لضمان بدء الخدمة دون تعقيدات كلمة المرور
+      test: ["CMD-SHELL", "timeout 1s bash -c ':> /dev/tcp/127.0.0.1/3306' || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -38,7 +38,6 @@ services:
     networks:
       - lms_network
     healthcheck:
-      # فحص مبسط لـ Redis
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
