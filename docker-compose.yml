@@ -8,7 +8,6 @@ services:
     image: mysql:8.0
     container_name: lms_mysql_prod
     restart: unless-stopped
-    command: --default-authentication-plugin=mysql_native_password
     environment:
       MYSQL_DATABASE: ${DB_DATABASE:-lms}
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
@@ -19,10 +18,10 @@ services:
     networks:
       - lms_network
     healthcheck:
-      # فحص بسيط وموثوق يتأكد أن المحرك يستجيب
-      test: ["CMD", "mysqladmin", "ping", "-p${DB_PASSWORD}"]
+      # فحص بسيط ومضمون: التأكد أن المحرك يستجيب لطلبات الـ Ping
+      test: ["CMD", "mysqladmin", "ping", "-u", "root"]
       interval: 10s
-      timeout: 10s
+      timeout: 5s
       retries: 10
       start_period: 60s
 
