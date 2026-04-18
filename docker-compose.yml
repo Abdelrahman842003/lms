@@ -1,16 +1,16 @@
 # ============================================
-# NEETAQ LMS PRODUCTION - COOLIFY OPTIMIZED
+# NEETAQ LMS PRODUCTION - COOLIFY OPTIMIZED (V2)
 # ============================================
 
 services:
-  # Database (MariaDB - Optimized)
+  # Database
   database:
     image: mariadb:10.11
     restart: unless-stopped
     environment:
-      MYSQL_DATABASE: ${DB_DATABASE:-neetaq}
+      MYSQL_DATABASE: ${DB_DATABASE}
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
-      MYSQL_USER: ${DB_USERNAME:-lms_user}
+      MYSQL_USER: ${DB_USERNAME}
       MYSQL_PASSWORD: ${DB_PASSWORD}
     volumes:
       - db_data_v4:/var/lib/mysql
@@ -22,7 +22,7 @@ services:
       timeout: 10s
       retries: 5
 
-  # Redis (Lightweight)
+  # Redis
   redis:
     image: redis:7-alpine
     restart: unless-stopped
@@ -37,7 +37,7 @@ services:
       timeout: 10s
       retries: 5
 
-  # Laravel Octane (Backend API)
+  # Laravel Octane
   octane:
     build:
       context: ./backend
@@ -66,8 +66,8 @@ services:
       REVERB_HOST: reverb
       REVERB_PORT: 8080
       REVERB_SCHEME: http
-      OCTANE_SERVER: swoole
-      TRUSTED_PROXIES: "*"
+      OCTANE_SERVER: ${OCTANE_SERVER:-swoole}
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-*}
     depends_on:
       - database
       - redis
@@ -75,9 +75,8 @@ services:
       - lms_network
     labels:
       - "coolify.managed=true"
-      - "coolify.service.name=backend"
 
-  # Laravel Horizon (Queues Management)
+  # Laravel Horizon
   horizon:
     build:
       context: ./backend
@@ -102,7 +101,7 @@ services:
     networks:
       - lms_network
 
-  # Laravel Reverb (WebSockets Server)
+  # Laravel Reverb
   reverb:
     build:
       context: ./backend
