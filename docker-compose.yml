@@ -1,5 +1,5 @@
 # ============================================
-# NEETAQ LMS PRODUCTION - UNLOCKED VERSION
+# NEETAQ LMS PRODUCTION - COOLIFY ULTIMATE UNLOCK
 # ============================================
 
 services:
@@ -7,11 +7,7 @@ services:
   database:
     image: mariadb:10.11
     restart: unless-stopped
-    environment:
-      MYSQL_DATABASE: ${MY_DB_NAME:-neetaq}
-      MYSQL_ROOT_PASSWORD: ${MY_DB_PASS:-Abdo842003..}
-      MYSQL_USER: ${MY_DB_USER:-lms_user}
-      MYSQL_PASSWORD: ${MY_DB_PASS:-Abdo842003..}
+    # كوليفاي سيقوم بحقن MYSQL_DATABASE و MYSQL_ROOT_PASSWORD تلقائياً من الواجهة
     volumes:
       - db_data_v4:/var/lib/mysql
     networks:
@@ -26,16 +22,10 @@ services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
-    command: redis-server --requirepass ${MY_REDIS_PASS:-Abdo842003..}
-    volumes:
-      - redis_data_v4:/data
+    # سنستخدم الأمر الافتراضي، ويمكنك إضافة الباسورد من واجهة كوليفاي في خانة الـ Command إذا أردت
+    # أو سيعمل بدون باسورد داخلياً وهو آمن داخل شبكة دكر
     networks:
       - lms_network
-    healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${MY_REDIS_PASS:-Abdo842003..}", "ping"]
-      interval: 20s
-      timeout: 10s
-      retries: 5
 
   # Laravel Octane
   octane:
@@ -43,32 +33,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
       target: production
-      args:
-        APP_KEY: ${MY_APP_KEY}
     restart: unless-stopped
-    environment:
-      APP_NAME: "${MY_APP_NAME}"
-      APP_ENV: production
-      APP_KEY: "${MY_APP_KEY}"
-      APP_URL: "${MY_APP_URL}"
-      DB_HOST: database
-      DB_DATABASE: "${MY_DB_NAME}"
-      DB_USERNAME: "${MY_DB_USER}"
-      DB_PASSWORD: "${MY_DB_PASS}"
-      REDIS_HOST: redis
-      REDIS_PASSWORD: "${MY_REDIS_PASS}"
-      SESSION_DRIVER: redis
-      CACHE_STORE: redis
-      QUEUE_CONNECTION: redis
-      BROADCAST_CONNECTION: reverb
-      REVERB_APP_ID: "${MY_REVERB_ID}"
-      REVERB_APP_KEY: "${MY_REVERB_KEY}"
-      REVERB_APP_SECRET: "${MY_REVERB_SECRET}"
-      REVERB_HOST: reverb
-      REVERB_PORT: 8080
-      REVERB_SCHEME: http
-      OCTANE_SERVER: swoole
-      TRUSTED_PROXIES: "*"
     depends_on:
       - database
       - redis
@@ -83,20 +48,8 @@ services:
       context: ./backend
       dockerfile: Dockerfile
       target: production
-      args:
-        APP_KEY: ${MY_APP_KEY}
     restart: unless-stopped
     command: php artisan horizon
-    environment:
-      APP_ENV: production
-      APP_KEY: "${MY_APP_KEY}"
-      DB_HOST: database
-      DB_DATABASE: "${MY_DB_NAME}"
-      DB_USERNAME: "${MY_DB_USER}"
-      DB_PASSWORD: "${MY_DB_PASS}"
-      REDIS_HOST: redis
-      REDIS_PASSWORD: "${MY_REDIS_PASS}"
-      QUEUE_CONNECTION: redis
     depends_on:
       - octane
     networks:
@@ -108,18 +61,8 @@ services:
       context: ./backend
       dockerfile: Dockerfile
       target: production
-      args:
-        APP_KEY: ${MY_APP_KEY}
     restart: unless-stopped
     command: php artisan reverb:start --host=0.0.0.0 --port=8080
-    environment:
-      APP_ENV: production
-      APP_KEY: "${MY_APP_KEY}"
-      REVERB_APP_ID: "${MY_REVERB_ID}"
-      REVERB_APP_KEY: "${MY_REVERB_KEY}"
-      REVERB_APP_SECRET: "${MY_REVERB_SECRET}"
-      REVERB_HOST: 0.0.0.0
-      REVERB_PORT: 8080
     depends_on:
       - redis
     networks:
@@ -131,12 +74,6 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       target: production
-      args:
-        NEXT_PUBLIC_API_URL: ${MY_APP_URL}
-        NEXT_PUBLIC_REVERB_APP_KEY: ${MY_REVERB_KEY}
-        NEXT_PUBLIC_REVERB_HOST: ${MY_REVERB_PUB_HOST}
-        NEXT_PUBLIC_REVERB_PORT: 443
-        NEXT_PUBLIC_REVERB_SCHEME: https
     restart: unless-stopped
     depends_on:
       - octane
