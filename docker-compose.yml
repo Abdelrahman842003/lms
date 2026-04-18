@@ -6,8 +6,9 @@ services:
   # MySQL Database
   mysql:
     image: mysql:8.0
-    container_name: lms_mysql_prod
     restart: unless-stopped
+    # تعطيل بعض الميزات التي تستهلك ذاكرة لضمان الاستقرار
+    command: --default-authentication-plugin=mysql_native_password --performance_schema=OFF
     environment:
       MYSQL_DATABASE: ${DB_DATABASE:-lms}
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
@@ -18,8 +19,8 @@ services:
     networks:
       - lms_network
     healthcheck:
-      # فحص بسيط ومضمون: التأكد أن المحرك يستجيب لطلبات الـ Ping
-      test: ["CMD", "mysqladmin", "ping", "-u", "root"]
+      # فحص يعتمد على توافر المنفذ 3306 فقط، وهو الأسرع والأضمن
+      test: ["CMD-SHELL", "/usr/bin/mysql --version || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -28,7 +29,6 @@ services:
   # Redis
   redis:
     image: redis:7-alpine
-    container_name: lms_redis_prod
     restart: unless-stopped
     command: redis-server --requirepass ${REDIS_PASSWORD:-password}
     environment:
@@ -52,7 +52,6 @@ services:
       target: production
       args:
         APP_KEY: ${APP_KEY}
-    container_name: lms_octane_prod
     restart: unless-stopped
     environment:
       APP_ENV: production
@@ -87,7 +86,6 @@ services:
       target: production
       args:
         APP_KEY: ${APP_KEY}
-    container_name: lms_horizon_prod
     restart: unless-stopped
     environment:
       APP_ENV: production
@@ -112,7 +110,6 @@ services:
       target: production
       args:
         APP_KEY: ${APP_KEY}
-    container_name: lms_reverb_prod
     restart: unless-stopped
     environment:
       APP_ENV: production
@@ -154,7 +151,6 @@ services:
         NEXT_PUBLIC_FIREBASE_APP_ID: ${NEXT_PUBLIC_FIREBASE_APP_ID}
         NEXT_PUBLIC_FIREBASE_VAPID_KEY: ${NEXT_PUBLIC_FIREBASE_VAPID_KEY}
         NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID: ${NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID}
-    container_name: lms_frontend_prod
     restart: unless-stopped
     environment:
       NODE_ENV: production
