@@ -1,0 +1,20 @@
+# ============================================
+# LOCAL DEVELOPMENT OVERRIDES
+# ============================================
+
+services:
+  database:
+    ports:
+      - "3307:3306"
+
+  octane:
+    ports:
+      - "8000:8000"
+
+  reverb:
+    ports:
+      - "8080:8080"
+
+  frontend:
+    ports:
+      - "3000:3000"
