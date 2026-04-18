@@ -1,17 +1,17 @@
 # ============================================
-# NEETAQ LMS - FINAL PRODUCTION (LINKED & SECURE)
+# NEETAQ LMS - FINAL PRODUCTION (SMART LINKING)
 # ============================================
 
 services:
-  # Database (MariaDB)
+  # Database (MariaDB - Linked to DB_ variables)
   database:
     image: mariadb:10.11
     restart: unless-stopped
     environment:
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
     volumes:
       - db_data_v4:/var/lib/mysql
     networks:
@@ -140,7 +140,6 @@ services:
       - octane
     networks:
       - lms_network
-
 
 networks:
   lms_network:
