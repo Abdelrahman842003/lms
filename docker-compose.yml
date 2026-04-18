@@ -17,7 +17,7 @@ services:
     networks:
       - lms_network
     healthcheck:
-      test: ["CMD", "mariadb-admin", "ping", "-h", "localhost"]
+      test: ["CMD", "mariadb-admin", "ping", "-h", "localhost", "-u", "${DB_USERNAME}", "-p${DB_PASSWORD}"]
       interval: 20s
       timeout: 10s
       retries: 5
