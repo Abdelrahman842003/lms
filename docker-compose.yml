@@ -1,18 +1,15 @@
 # ============================================
-# LMS PRODUCTION DEPLOYMENT (Coolify) - ULTRA STABLE VERSION
+# LMS PRODUCTION DEPLOYMENT (Coolify Optimized)
 # ============================================
 
 services:
-  # MySQL Database - Optimized for low RAM
+  # MySQL Database - High Compatibility for Coolify
   mysql:
     image: mysql:8.0
     restart: unless-stopped
-    command: 
-      - --default-authentication-plugin=mysql_native_password
-      - --performance-schema=OFF
-      - --innodb-buffer-pool-size=64M
-      - --innodb-log-buffer-size=1M
-      - --max-connections=50
+    # تشغيل كـ root لتجنب مشاكل صلاحيات Volumes في Coolify
+    user: "root"
+    command: mysqld --default-authentication-plugin=mysql_native_password --performance-schema=OFF --innodb-buffer-pool-size=32M --innodb-log-buffer-size=1M --max-connections=50
     environment:
       MYSQL_DATABASE: ${DB_DATABASE:-lms}
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
@@ -25,19 +22,20 @@ services:
     deploy:
       resources:
         limits:
-          memory: 512M # حماية الخادم من استهلاك MySQL المفرط
+          memory: 512M
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h localhost || exit 1"]
-      interval: 15s
+      # فحص بسيط جداً للتأكد أن المحرك بدأ فعلياً
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 20s
       timeout: 10s
       retries: 10
-      start_period: 120s # زيادة وقت السماح عند التشغيل الأول
+      start_period: 60s
 
-  # Redis - High Performance / Low RAM
+  # Redis - Optimized for Resources
   redis:
     image: redis:7-alpine
     restart: unless-stopped
-    command: redis-server --requirepass ${REDIS_PASSWORD:-password} --maxmemory 128mb --maxmemory-policy allkeys-lru
+    command: redis-server --requirepass ${REDIS_PASSWORD:-password} --maxmemory 64mb --maxmemory-policy allkeys-lru
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD:-password}
     volumes:
@@ -66,6 +64,7 @@ services:
     environment:
       APP_ENV: production
       APP_KEY: ${APP_KEY}
+      APP_DEBUG: "false"
       DB_HOST: mysql
       DB_DATABASE: ${DB_DATABASE}
       DB_USERNAME: ${DB_USERNAME}
@@ -80,12 +79,8 @@ services:
         condition: service_healthy
     networks:
       - lms_network
-    deploy:
-      resources:
-        limits:
-          memory: 512M
 
-  # Laravel Horizon (Queue Manager)
+  # Laravel Horizon (Queues)
   horizon:
     build:
       context: ./backend
@@ -109,10 +104,6 @@ services:
         condition: service_started
     networks:
       - lms_network
-    deploy:
-      resources:
-        limits:
-          memory: 256M
 
   # Laravel Reverb (WebSockets)
   reverb:
@@ -142,12 +133,8 @@ services:
       - redis
     networks:
       - lms_network
-    deploy:
-      resources:
-        limits:
-          memory: 256M
 
-  # Next.js Frontend (Standalone Mode)
+  # Next.js Frontend
   frontend:
     build:
       context: ./frontend
@@ -165,10 +152,6 @@ services:
         condition: service_started
     networks:
       - lms_network
-    deploy:
-      resources:
-        limits:
-          memory: 512M
 
 networks:
   lms_network:
