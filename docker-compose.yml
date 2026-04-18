@@ -3,13 +3,10 @@
 # ============================================
 
 services:
-  # MySQL Database - High Compatibility for Coolify
+  # MariaDB - Light & Stable alternative to MySQL
   mysql:
-    image: mysql:8.0
+    image: mariadb:10.11
     restart: unless-stopped
-    # تشغيل كـ root لتجنب مشاكل صلاحيات Volumes في Coolify
-    user: "root"
-    command: mysqld --default-authentication-plugin=mysql_native_password --performance-schema=OFF --innodb-buffer-pool-size=32M --innodb-log-buffer-size=1M --max-connections=50
     environment:
       MYSQL_DATABASE: ${DB_DATABASE:-lms}
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
@@ -22,20 +19,19 @@ services:
     deploy:
       resources:
         limits:
-          memory: 512M
+          memory: 512M # حد أقصى لحماية السيرفر
     healthcheck:
-      # فحص بسيط جداً للتأكد أن المحرك بدأ فعلياً
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      interval: 20s
-      timeout: 10s
+      test: ["CMD", "mariadb-admin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
       retries: 10
-      start_period: 60s
+      start_period: 30s
 
-  # Redis - Optimized for Resources
+  # Redis - Optimized Memory
   redis:
     image: redis:7-alpine
     restart: unless-stopped
-    command: redis-server --requirepass ${REDIS_PASSWORD:-password} --maxmemory 64mb --maxmemory-policy allkeys-lru
+    command: redis-server --requirepass ${REDIS_PASSWORD:-password} --maxmemory 128mb --maxmemory-policy allkeys-lru
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD:-password}
     volumes:
@@ -71,6 +67,12 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       REDIS_HOST: redis
       REDIS_PASSWORD: ${REDIS_PASSWORD:-password}
+      REVERB_APP_ID: ${REVERB_APP_ID}
+      REVERB_APP_KEY: ${REVERB_APP_KEY}
+      REVERB_APP_SECRET: ${REVERB_APP_SECRET}
+      REVERB_HOST: ${REVERB_HOST}
+      REVERB_PORT: 8080
+      REVERB_SCHEME: https
       OCTANE_SERVER: swoole
     depends_on:
       mysql:
@@ -79,6 +81,10 @@ services:
         condition: service_healthy
     networks:
       - lms_network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
 
   # Laravel Horizon (Queues)
   horizon:
@@ -104,6 +110,10 @@ services:
         condition: service_started
     networks:
       - lms_network
+    deploy:
+      resources:
+        limits:
+          memory: 256M
 
   # Laravel Reverb (WebSockets)
   reverb:
@@ -133,6 +143,10 @@ services:
       - redis
     networks:
       - lms_network
+    deploy:
+      resources:
+        limits:
+          memory: 256M
 
   # Next.js Frontend
   frontend:
@@ -146,12 +160,24 @@ services:
         NEXT_PUBLIC_REVERB_HOST: ${NEXT_PUBLIC_REVERB_HOST}
         NEXT_PUBLIC_REVERB_PORT: ${NEXT_PUBLIC_REVERB_PORT}
         NEXT_PUBLIC_REVERB_SCHEME: ${NEXT_PUBLIC_REVERB_SCHEME}
+        NEXT_PUBLIC_FIREBASE_API_KEY: ${NEXT_PUBLIC_FIREBASE_API_KEY}
+        NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN}
+        NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${NEXT_PUBLIC_FIREBASE_PROJECT_ID}
+        NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET}
+        NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID}
+        NEXT_PUBLIC_FIREBASE_APP_ID: ${NEXT_PUBLIC_FIREBASE_APP_ID}
+        NEXT_PUBLIC_FIREBASE_VAPID_KEY: ${NEXT_PUBLIC_FIREBASE_VAPID_KEY}
+        NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID: ${NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID}
     restart: unless-stopped
     depends_on:
       octane:
         condition: service_started
     networks:
       - lms_network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
 
 networks:
   lms_network:
