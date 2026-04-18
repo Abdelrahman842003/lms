@@ -8,6 +8,7 @@ storage/logs/*
 storage/framework/cache/*
 storage/framework/sessions/*
 storage/framework/views/*
+storage/app/private/certificates
 bootstrap/cache/*
 .phpunit.result.cache
 tests/

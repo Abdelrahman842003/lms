@@ -1,11 +1,29 @@
+# Dependencies
 node_modules/
+vendor/
+
+# Environment Files (Keep examples ONLY)
+.env
+.env.local
+.env.production
+.env.development
+.env.test
+.env.backup
+*.env
+!*.env.example
+!*.env.production.example
+
+# IDEs & OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+*.log
+.phpunit.result.cache
+
+# Project Specific
 secrets/
-
-# Temporary setup scripts (setup-secrets.sh is kept for Makefile)
 setup_r2.sh
-
-
-.opencode/command/
-.roo/commands/
+.opencode/
+.roo/
 .specify/
-
