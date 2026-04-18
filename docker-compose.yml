@@ -1,42 +1,39 @@
 # ============================================
-# LMS PRODUCTION DEPLOYMENT (Coolify Bulletproof)
+# LMS PRODUCTION - FINAL AUDITED VERSION
 # ============================================
 
 services:
-  # MySQL 5.7 - The most stable and resource-friendly version
+  # Database (MariaDB 10.11 LTS - Optimized)
   database:
-    image: mysql:5.7
+    image: mariadb:10.11
     restart: unless-stopped
-    user: "0:0" # Force root permissions for volumes
-    cap_add:
-      - SYS_NICE
-    command: --default-authentication-plugin=mysql_native_password --innodb-buffer-pool-size=64M
+    user: "0:0"
     environment:
-      MYSQL_DATABASE: ${DB_DATABASE:-lms}
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-password}
-      MYSQL_USER: ${DB_USERNAME:-lms_user}
-      MYSQL_PASSWORD: ${DB_PASSWORD:-password}
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
     volumes:
-      - db_data_v3:/var/lib/mysql
+      - db_data_final:/var/lib/mysql
     networks:
       - lms_network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
     healthcheck:
-      # فحص مرن جداً لضمان تجاوز مرحلة الـ Startup بنجاح
-      test: ["CMD-SHELL", "mysqladmin ping -h localhost || exit 0"]
-      interval: 15s
-      timeout: 10s
-      retries: 5
-      start_period: 60s
+      test: ["CMD", "mariadb-admin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
-  # Redis - Ultra Light
+  # Redis (7-Alpine)
   redis:
     image: redis:7-alpine
     restart: unless-stopped
-    command: redis-server --requirepass ${REDIS_PASSWORD:-password} --maxmemory 64mb --maxmemory-policy allkeys-lru
-    environment:
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-password}
+    command: redis-server --requirepass ${REDIS_PASSWORD} --maxmemory 128mb --maxmemory-policy allkeys-lru
     volumes:
-      - redis_data_v3:/data
+      - redis_data_final:/data
     networks:
       - lms_network
     healthcheck:
@@ -57,23 +54,22 @@ services:
     environment:
       APP_ENV: production
       APP_KEY: ${APP_KEY}
-      APP_DEBUG: "false"
+      APP_URL: ${APP_URL}
       DB_HOST: database
       DB_DATABASE: ${DB_DATABASE}
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
       REDIS_HOST: redis
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-password}
-      REVERB_APP_ID: ${REVERB_APP_ID}
-      REVERB_APP_KEY: ${REVERB_APP_KEY}
-      REVERB_APP_SECRET: ${REVERB_APP_SECRET}
-      REVERB_HOST: ${REVERB_HOST}
-      REVERB_PORT: 8080
-      REVERB_SCHEME: https
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      SESSION_DRIVER: redis
+      CACHE_STORE: redis
+      QUEUE_CONNECTION: redis
+      BROADCAST_CONNECTION: reverb
+      TRUSTED_PROXIES: "*"
       OCTANE_SERVER: swoole
     depends_on:
       database:
-        condition: service_started
+        condition: service_healthy
       redis:
         condition: service_healthy
     networks:
@@ -93,14 +89,11 @@ services:
       APP_ENV: production
       APP_KEY: ${APP_KEY}
       DB_HOST: database
-      DB_DATABASE: ${DB_DATABASE}
-      DB_USERNAME: ${DB_USERNAME}
-      DB_PASSWORD: ${DB_PASSWORD}
       REDIS_HOST: redis
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-password}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      QUEUE_CONNECTION: redis
     depends_on:
-      octane:
-        condition: service_started
+      - octane
     networks:
       - lms_network
 
@@ -117,12 +110,6 @@ services:
     environment:
       APP_ENV: production
       APP_KEY: ${APP_KEY}
-      DB_HOST: database
-      DB_DATABASE: ${DB_DATABASE}
-      DB_USERNAME: ${DB_USERNAME}
-      DB_PASSWORD: ${DB_PASSWORD}
-      REDIS_HOST: redis
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-password}
       REVERB_APP_ID: ${REVERB_APP_ID}
       REVERB_APP_KEY: ${REVERB_APP_KEY}
       REVERB_APP_SECRET: ${REVERB_APP_SECRET}
@@ -133,7 +120,7 @@ services:
     networks:
       - lms_network
 
-  # Next.js Frontend
+  # Next.js Frontend (Built with All Public Keys)
   frontend:
     build:
       context: ./frontend
@@ -141,7 +128,7 @@ services:
       target: production
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
-        NEXT_PUBLIC_REVERB_APP_KEY: ${NEXT_PUBLIC_REVERB_APP_KEY}
+        NEXT_PUBLIC_REVERB_APP_KEY: ${REVERB_APP_KEY}
         NEXT_PUBLIC_REVERB_HOST: ${NEXT_PUBLIC_REVERB_HOST}
         NEXT_PUBLIC_REVERB_PORT: ${NEXT_PUBLIC_REVERB_PORT}
         NEXT_PUBLIC_REVERB_SCHEME: ${NEXT_PUBLIC_REVERB_SCHEME}
@@ -155,8 +142,7 @@ services:
         NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID: ${NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID}
     restart: unless-stopped
     depends_on:
-      octane:
-        condition: service_started
+      - octane
     networks:
       - lms_network
 
@@ -165,5 +151,5 @@ networks:
     driver: bridge
 
 volumes:
-  db_data_v3:
-  redis_data_v3:
+  db_data_final:
+  redis_data_final:
