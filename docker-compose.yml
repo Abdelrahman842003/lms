@@ -1,10 +1,10 @@
 # ============================================
-# LMS PRODUCTION DEPLOYMENT (Coolify Optimized)
+# LMS PRODUCTION DEPLOYMENT (Coolify Optimized - Fresh DB)
 # ============================================
 
 services:
-  # MariaDB - Light & Stable alternative to MySQL
-  mysql:
+  # MariaDB - Light & Stable
+  database:
     image: mariadb:10.11
     restart: unless-stopped
     environment:
@@ -13,13 +13,13 @@ services:
       MYSQL_USER: ${DB_USERNAME:-lms_user}
       MYSQL_PASSWORD: ${DB_PASSWORD}
     volumes:
-      - mysql_data:/var/lib/mysql
+      - db_data_v1:/var/lib/mysql
     networks:
       - lms_network
     deploy:
       resources:
         limits:
-          memory: 512M # حد أقصى لحماية السيرفر
+          memory: 512M
     healthcheck:
       test: ["CMD", "mariadb-admin", "ping", "-h", "localhost"]
       interval: 10s
@@ -35,7 +35,7 @@ services:
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD:-password}
     volumes:
-      - redis_data:/data
+      - redis_data_v1:/data
     networks:
       - lms_network
     deploy:
@@ -61,7 +61,7 @@ services:
       APP_ENV: production
       APP_KEY: ${APP_KEY}
       APP_DEBUG: "false"
-      DB_HOST: mysql
+      DB_HOST: database
       DB_DATABASE: ${DB_DATABASE}
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
@@ -75,16 +75,12 @@ services:
       REVERB_SCHEME: https
       OCTANE_SERVER: swoole
     depends_on:
-      mysql:
+      database:
         condition: service_healthy
       redis:
         condition: service_healthy
     networks:
       - lms_network
-    deploy:
-      resources:
-        limits:
-          memory: 512M
 
   # Laravel Horizon (Queues)
   horizon:
@@ -99,7 +95,7 @@ services:
     environment:
       APP_ENV: production
       APP_KEY: ${APP_KEY}
-      DB_HOST: mysql
+      DB_HOST: database
       DB_DATABASE: ${DB_DATABASE}
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
@@ -110,10 +106,6 @@ services:
         condition: service_started
     networks:
       - lms_network
-    deploy:
-      resources:
-        limits:
-          memory: 256M
 
   # Laravel Reverb (WebSockets)
   reverb:
@@ -128,7 +120,7 @@ services:
     environment:
       APP_ENV: production
       APP_KEY: ${APP_KEY}
-      DB_HOST: mysql
+      DB_HOST: database
       DB_DATABASE: ${DB_DATABASE}
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
@@ -143,10 +135,6 @@ services:
       - redis
     networks:
       - lms_network
-    deploy:
-      resources:
-        limits:
-          memory: 256M
 
   # Next.js Frontend
   frontend:
@@ -174,15 +162,11 @@ services:
         condition: service_started
     networks:
       - lms_network
-    deploy:
-      resources:
-        limits:
-          memory: 512M
 
 networks:
   lms_network:
     driver: bridge
 
 volumes:
-  mysql_data:
-  redis_data:
+  db_data_v1:
+  redis_data_v1:
