@@ -7,8 +7,12 @@ services:
   mysql:
     image: mysql:8.0
     restart: unless-stopped
-    # تعطيل بعض الميزات التي تستهلك ذاكرة لضمان الاستقرار
-    command: --default-authentication-plugin=mysql_native_password --performance_schema=OFF
+    # إعدادات لتقليل استهلاك الذاكرة وضمان التوافق
+    command: 
+      - --default-authentication-plugin=mysql_native_password
+      - --performance-schema=OFF
+      - --innodb-buffer-pool-size=128M
+      - --innodb-log-buffer-size=1M
     environment:
       MYSQL_DATABASE: ${DB_DATABASE:-lms}
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
@@ -19,8 +23,8 @@ services:
     networks:
       - lms_network
     healthcheck:
-      # فحص يعتمد على توافر المنفذ 3306 فقط، وهو الأسرع والأضمن
-      test: ["CMD-SHELL", "/usr/bin/mysql --version || exit 1"]
+      # فحص بسيط لا يتطلب كلمة مرور، فقط يتأكد أن الخدمة تستجيب
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
       timeout: 5s
       retries: 10
