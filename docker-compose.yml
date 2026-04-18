@@ -1,149 +1,56 @@
 # ============================================
-# NEETAQ LMS - FINAL PRODUCTION READY
+# NEETAQ LMS - EMERGENCY UNLOCK (STRIPPED VERSION)
 # ============================================
 
 services:
-  # Database (Optimized for Production)
   database:
     image: mariadb:10.11
     restart: unless-stopped
-    environment:
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     volumes:
       - db_data_v4:/var/lib/mysql
     networks:
       - lms_network
-    healthcheck:
-      test: ["CMD", "mariadb-admin", "ping", "-h", "localhost"]
-      interval: 20s
-      timeout: 10s
-      retries: 5
 
-  # Redis (Secure Internal Link)
   redis:
     image: redis:7-alpine
     restart: unless-stopped
-    command: redis-server --requirepass ${REDIS_PASSWORD}
-    volumes:
-      - redis_data_v4:/data
     networks:
       - lms_network
-    healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
-      interval: 20s
-      timeout: 10s
-      retries: 5
 
-  # Laravel Octane (Main Backend API)
   octane:
     build:
       context: ./backend
       dockerfile: Dockerfile
       target: production
-      args:
-        APP_KEY: ${APP_KEY}
     restart: unless-stopped
-    environment:
-      APP_NAME: "${APP_NAME}"
-      APP_ENV: production
-      APP_KEY: "${APP_KEY}"
-      APP_URL: "${APP_URL}"
-      DB_HOST: database
-      DB_DATABASE: "${DB_DATABASE}"
-      DB_USERNAME: "${DB_USERNAME}"
-      DB_PASSWORD: "${DB_PASSWORD}"
-      REDIS_HOST: redis
-      REDIS_PASSWORD: "${REDIS_PASSWORD}"
-      SESSION_DRIVER: redis
-      CACHE_STORE: redis
-      QUEUE_CONNECTION: redis
-      BROADCAST_CONNECTION: reverb
-      REVERB_APP_ID: "${REVERB_APP_ID}"
-      REVERB_APP_KEY: "${REVERB_APP_KEY}"
-      REVERB_APP_SECRET: "${REVERB_APP_SECRET}"
-      REVERB_HOST: reverb
-      REVERB_PORT: 8080
-      REVERB_SCHEME: http
-      OCTANE_SERVER: "${OCTANE_SERVER}"
-      TRUSTED_PROXIES: "*"
-    depends_on:
-      - database
-      - redis
     networks:
       - lms_network
-    labels:
-      - "coolify.managed=true"
 
-  # Laravel Horizon (Background Queues)
   horizon:
     build:
       context: ./backend
       dockerfile: Dockerfile
       target: production
-      args:
-        APP_KEY: ${APP_KEY}
-    restart: unless-stopped
     command: php artisan horizon
-    environment:
-      APP_ENV: production
-      APP_KEY: "${APP_KEY}"
-      DB_HOST: database
-      DB_DATABASE: "${DB_DATABASE}"
-      DB_USERNAME: "${DB_USERNAME}"
-      DB_PASSWORD: "${DB_PASSWORD}"
-      REDIS_HOST: redis
-      REDIS_PASSWORD: "${REDIS_PASSWORD}"
-      QUEUE_CONNECTION: redis
-    depends_on:
-      - octane
     networks:
       - lms_network
 
-  # Laravel Reverb (WebSockets Service)
   reverb:
     build:
       context: ./backend
       dockerfile: Dockerfile
       target: production
-      args:
-        APP_KEY: ${APP_KEY}
-    restart: unless-stopped
     command: php artisan reverb:start --host=0.0.0.0 --port=8080
-    environment:
-      APP_ENV: production
-      APP_KEY: "${APP_KEY}"
-      REVERB_APP_ID: "${REVERB_APP_ID}"
-      REVERB_APP_KEY: "${REVERB_APP_KEY}"
-      REVERB_APP_SECRET: "${REVERB_APP_SECRET}"
-      REVERB_HOST: 0.0.0.0
-      REVERB_PORT: 8080
-    depends_on:
-      - redis
     networks:
       - lms_network
 
-  # Next.js Frontend (Final Build)
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
       target: production
-      args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
-        NEXT_PUBLIC_REVERB_APP_KEY: ${NEXT_PUBLIC_REVERB_APP_KEY}
-        NEXT_PUBLIC_REVERB_HOST: ${NEXT_PUBLIC_REVERB_HOST}
-        NEXT_PUBLIC_REVERB_PORT: ${NEXT_PUBLIC_REVERB_PORT}
-        NEXT_PUBLIC_REVERB_SCHEME: ${NEXT_PUBLIC_REVERB_SCHEME}
-    restart: unless-stopped
-    depends_on:
-      - octane
     networks:
       - lms_network
-    labels:
-      - "coolify.managed=true"
 
 networks:
   lms_network:
