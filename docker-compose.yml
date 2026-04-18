@@ -1,5 +1,5 @@
 # ============================================
-# LMS PRODUCTION - FAIL-SAFE VERSION
+# NEETAQ LMS PRODUCTION - COOLIFY OPTIMIZED
 # ============================================
 
 services:
@@ -7,18 +7,16 @@ services:
   database:
     image: mariadb:10.11
     restart: unless-stopped
-    user: "0:0"
     environment:
-      MYSQL_DATABASE: ${DB_DATABASE:-lms}
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-root_password}
+      MYSQL_DATABASE: ${DB_DATABASE:-neetaq}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
       MYSQL_USER: ${DB_USERNAME:-lms_user}
-      MYSQL_PASSWORD: ${DB_PASSWORD:-lms_password}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
     volumes:
       - db_data_v4:/var/lib/mysql
     networks:
       - lms_network
     healthcheck:
-      # فحص ينجح دائماً مؤقتاً لضمان عدم توقف الـ Deployment
       test: ["CMD", "mariadb-admin", "ping", "-h", "localhost"]
       interval: 20s
       timeout: 10s
@@ -28,19 +26,18 @@ services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
-    # إضافة كلمة سر افتراضية لضمان عدم فشل الأمر
-    command: redis-server --requirepass ${REDIS_PASSWORD:-password}
+    command: redis-server --requirepass ${REDIS_PASSWORD}
     volumes:
       - redis_data_v4:/data
     networks:
       - lms_network
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
       interval: 20s
       timeout: 10s
       retries: 5
 
-  # Laravel Octane (Backend)
+  # Laravel Octane (Backend API)
   octane:
     build:
       context: ./backend
@@ -52,33 +49,35 @@ services:
     environment:
       APP_ENV: production
       APP_KEY: ${APP_KEY}
-      APP_URL: ${APP_URL:-http://localhost}
-      DB_CONNECTION: ${DB_CONNECTION:-mysql}
+      APP_URL: ${APP_URL}
       DB_HOST: database
-      DB_DATABASE: ${DB_DATABASE:-lms}
-      DB_USERNAME: ${DB_USERNAME:-lms_user}
-      DB_PASSWORD: ${DB_PASSWORD:-lms_password}
+      DB_DATABASE: ${DB_DATABASE}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
       REDIS_HOST: redis
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-password}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
       SESSION_DRIVER: redis
       CACHE_STORE: redis
       QUEUE_CONNECTION: redis
       BROADCAST_CONNECTION: reverb
-      REVERB_APP_ID: ${REVERB_APP_ID:-123456}
-      REVERB_APP_KEY: ${REVERB_APP_KEY:-key}
-      REVERB_APP_SECRET: ${REVERB_APP_SECRET:-secret}
+      REVERB_APP_ID: ${REVERB_APP_ID}
+      REVERB_APP_KEY: ${REVERB_APP_KEY}
+      REVERB_APP_SECRET: ${REVERB_APP_SECRET}
       REVERB_HOST: reverb
       REVERB_PORT: 8080
       REVERB_SCHEME: http
-      TRUSTED_PROXIES: "*"
       OCTANE_SERVER: swoole
+      TRUSTED_PROXIES: "*"
     depends_on:
       - database
       - redis
     networks:
       - lms_network
+    labels:
+      - "coolify.managed=true"
+      - "coolify.service.name=backend"
 
-  # Laravel Horizon (Queues)
+  # Laravel Horizon (Queues Management)
   horizon:
     build:
       context: ./backend
@@ -88,32 +87,22 @@ services:
         APP_KEY: ${APP_KEY}
     restart: unless-stopped
     command: php artisan horizon
-    healthcheck:
-      disable: true
     environment:
       APP_ENV: production
       APP_KEY: ${APP_KEY}
-      DB_CONNECTION: ${DB_CONNECTION:-mysql}
       DB_HOST: database
-      DB_DATABASE: ${DB_DATABASE:-lms}
-      DB_USERNAME: ${DB_USERNAME:-lms_user}
-      DB_PASSWORD: ${DB_PASSWORD:-lms_password}
+      DB_DATABASE: ${DB_DATABASE}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
       REDIS_HOST: redis
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-password}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
       QUEUE_CONNECTION: redis
-      BROADCAST_CONNECTION: reverb
-      REVERB_APP_ID: ${REVERB_APP_ID:-123456}
-      REVERB_APP_KEY: ${REVERB_APP_KEY:-key}
-      REVERB_APP_SECRET: ${REVERB_APP_SECRET:-secret}
-      REVERB_HOST: reverb
-      REVERB_PORT: 8080
-      REVERB_SCHEME: http
     depends_on:
       - octane
     networks:
       - lms_network
 
-  # Laravel Reverb (WebSockets)
+  # Laravel Reverb (WebSockets Server)
   reverb:
     build:
       context: ./backend
@@ -126,16 +115,11 @@ services:
     environment:
       APP_ENV: production
       APP_KEY: ${APP_KEY}
-      REVERB_APP_ID: ${REVERB_APP_ID:-123456}
-      REVERB_APP_KEY: ${REVERB_APP_KEY:-key}
-      REVERB_APP_SECRET: ${REVERB_APP_SECRET:-secret}
+      REVERB_APP_ID: ${REVERB_APP_ID}
+      REVERB_APP_KEY: ${REVERB_APP_KEY}
+      REVERB_APP_SECRET: ${REVERB_APP_SECRET}
       REVERB_HOST: 0.0.0.0
       REVERB_PORT: 8080
-    healthcheck:
-      test: ["CMD", "nc", "-z", "localhost", "8080"]
-      interval: 20s
-      timeout: 10s
-      retries: 5
     depends_on:
       - redis
     networks:
@@ -148,11 +132,11 @@ services:
       dockerfile: Dockerfile
       target: production
       args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+        NEXT_PUBLIC_API_URL: ${APP_URL}
         NEXT_PUBLIC_REVERB_APP_KEY: ${REVERB_APP_KEY}
         NEXT_PUBLIC_REVERB_HOST: ${NEXT_PUBLIC_REVERB_HOST}
         NEXT_PUBLIC_REVERB_PORT: ${NEXT_PUBLIC_REVERB_PORT}
-        NEXT_PUBLIC_REVERB_SCHEME: ${NEXT_PUBLIC_REVERB_SCHEME:-https}
+        NEXT_PUBLIC_REVERB_SCHEME: ${NEXT_PUBLIC_REVERB_SCHEME}
         NEXT_PUBLIC_FIREBASE_API_KEY: ${NEXT_PUBLIC_FIREBASE_API_KEY}
         NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN}
         NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${NEXT_PUBLIC_FIREBASE_PROJECT_ID}
@@ -166,6 +150,8 @@ services:
       - octane
     networks:
       - lms_network
+    labels:
+      - "coolify.managed=true"
 
 networks:
   lms_network:

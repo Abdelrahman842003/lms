@@ -46,22 +46,26 @@ COPY . .
 FROM base AS production
 COPY --from=builder /var/www/backend /var/www/backend
 
-# Permissions setup
-RUN chown -R www-data:www-data /var/www/backend \
-    && chmod -R 755 /var/www/backend/storage \
-    && chmod -R 755 /var/www/backend/bootstrap/cache
+# Set working directory
+WORKDIR /var/www/backend
 
-# Build-time environment variables for caching
+# Permissions setup (Done as root before switching user)
+RUN chown -R www-data:www-data /var/www/backend \
+    && chmod -R 775 /var/www/backend/storage \
+    && chmod -R 775 /var/www/backend/bootstrap/cache
+
+# Build-time environment variables
 ARG APP_KEY
 ENV APP_KEY=$APP_KEY
 
-# Only cache routes and views at build time. 
-# Config MUST be cached at runtime or not at all to read Coolify env vars.
+# Cache routes and views (BUT NOT CONFIG - to allow Coolify env vars at runtime)
 RUN php artisan route:cache && php artisan view:cache
 
+# Switch to non-root user for security
 USER www-data
+
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s \
     CMD php artisan octane:status || exit 1
 
 EXPOSE 8000
-CMD ["php", "artisan", "octane:start", "--server=swoole", "--host=0.0.0.0", "--port=8000", "--workers=4", "--task-workers=6", "--max-requests=500"]
+CMD ["php", "artisan", "octane:start", "--server=swoole", "--host=0.0.0.0", "--port=8000", "--workers=auto", "--max-requests=500"]
