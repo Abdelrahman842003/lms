@@ -1,5 +1,5 @@
 # ============================================
-# NEETAQ LMS - PRODUCTION (HEALTH-CHECK OPTIMIZED)
+# NEETAQ LMS - PRODUCTION (FINAL ROUTING FIX)
 # ============================================
 
 services:
@@ -72,8 +72,8 @@ services:
       - "coolify.port=8000"
       - "traefik.enable=true"
       - "traefik.docker.network=coolify"
-      # Health Check Configuration
-      - "traefik.http.services.backend-api.loadbalancer.healthcheck.path=/health-check"
+      # Health Check Configuration (Changed to /)
+      - "traefik.http.services.backend-api.loadbalancer.healthcheck.path=/"
       - "traefik.http.services.backend-api.loadbalancer.healthcheck.interval=10s"
       # Routing for main API (api.neetaq.com)
       - "traefik.http.routers.backend-api.rule=Host(`api.neetaq.com`)"
