@@ -1,9 +1,9 @@
 # ============================================
-# NEETAQ LMS - FINAL PRODUCTION (SMART LINKING)
+# NEETAQ LMS - FINAL PRODUCTION (OCTANE + HORIZON)
 # ============================================
 
 services:
-  # Database (MariaDB - Linked to DB_ variables)
+  # Database (MariaDB)
   database:
     image: mariadb:10.11
     restart: unless-stopped
@@ -27,8 +27,8 @@ services:
     networks:
       - lms_network
 
-  # Laravel Octane (Backend)
-  octane:
+  # Backend (Octane + Horizon via Supervisor)
+  backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -64,33 +64,10 @@ services:
       - redis
     networks:
       - lms_network
+    labels:
+      - "coolify.managed=true"
 
-  # Laravel Horizon
-  horizon:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-      target: production
-      args:
-        APP_KEY: ${APP_KEY}
-    restart: unless-stopped
-    command: php artisan horizon
-    environment:
-      APP_ENV: production
-      APP_KEY: "${APP_KEY}"
-      DB_HOST: database
-      DB_DATABASE: "${DB_DATABASE}"
-      DB_USERNAME: "${DB_USERNAME}"
-      DB_PASSWORD: "${DB_PASSWORD}"
-      REDIS_HOST: redis
-      REDIS_PASSWORD: "${REDIS_PASSWORD}"
-      QUEUE_CONNECTION: redis
-    depends_on:
-      - octane
-    networks:
-      - lms_network
-
-  # Laravel Reverb
+  # Laravel Reverb (Back to separate service)
   reverb:
     build:
       context: ./backend
@@ -127,7 +104,7 @@ services:
         NEXT_PUBLIC_REVERB_SCHEME: ${NEXT_PUBLIC_REVERB_SCHEME}
     restart: unless-stopped
     depends_on:
-      - octane
+      - backend
     networks:
       - lms_network
 

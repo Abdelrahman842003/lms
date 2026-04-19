@@ -16,9 +16,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libwebp-dev \
     libicu-dev \
     ffmpeg \
+    supervisor \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Install PHP extensions using the official installer script for reliability.
+# Install PHP extensions
 COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/local/bin/
 RUN install-php-extensions pdo_mysql mbstring exif pcntl bcmath gd zip redis intl opcache soap
 
@@ -38,7 +39,6 @@ CMD ["php", "artisan", "octane:start", "--server=swoole", "--host=0.0.0.0", "--p
 FROM base AS builder
 ENV COMPOSER_MEMORY_LIMIT=-1
 COPY composer.json composer.lock ./
-# Using --ignore-platform-reqs to ensure build continues if there's a minor version mismatch
 RUN composer install --no-dev --optimize-autoloader --no-scripts --no-interaction --ignore-platform-reqs
 COPY . .
 
@@ -49,23 +49,28 @@ COPY --from=builder /var/www/backend /var/www/backend
 # Set working directory
 WORKDIR /var/www/backend
 
-# Permissions setup (Done as root before switching user)
+# Copy Supervisor configuration
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+# Permissions setup
 RUN chown -R www-data:www-data /var/www/backend \
     && chmod -R 775 /var/www/backend/storage \
-    && chmod -R 775 /var/www/backend/bootstrap/cache
+    && chmod -R 775 /var/www/backend/bootstrap/cache \
+    && mkdir -p /var/log/supervisor && chown -R www-data:www-data /var/log/supervisor \
+    && touch /var/run/supervisord.pid && chown www-data:www-data /var/run/supervisord.pid
 
 # Build-time environment variables
 ARG APP_KEY
 ENV APP_KEY=$APP_KEY
 
-# Cache routes and views (BUT NOT CONFIG - to allow Coolify env vars at runtime)
+# Cache routes and views
 RUN php artisan route:cache && php artisan view:cache
 
-# Switch to non-root user for security
+# Switch to non-root user
 USER www-data
 
-HEALTHCHECK --interval=30s --timeout=3s --start-period=40s \
-    CMD php artisan octane:status || exit 1
+# Expose Octane and Reverb ports
+EXPOSE 8000 8080
 
-EXPOSE 8000
-CMD ["php", "artisan", "octane:start", "--server=swoole", "--host=0.0.0.0", "--port=8000", "--workers=auto", "--max-requests=500"]
+# Start Supervisor to manage all processes
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
