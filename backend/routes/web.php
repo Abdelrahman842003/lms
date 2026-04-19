@@ -11,7 +11,11 @@ Route::get('/health', function () {
 });
 
 Route::get('/', function () {
-    return view('welcome');
+    return response()->json([
+        'message' => 'Welcome to Neetaq API',
+        'status' => 'connected',
+        'service' => 'octane'
+    ]);
 });
 
 Route::get('/test-user', function () {
