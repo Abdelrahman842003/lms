@@ -55,9 +55,7 @@ COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 # Permissions setup
 RUN chown -R www-data:www-data /var/www/backend \
     && chmod -R 775 /var/www/backend/storage \
-    && chmod -R 775 /var/www/backend/bootstrap/cache \
-    && mkdir -p /var/log/supervisor && chown -R www-data:www-data /var/log/supervisor \
-    && touch /var/run/supervisord.pid && chown www-data:www-data /var/run/supervisord.pid
+    && chmod -R 775 /var/www/backend/bootstrap/cache
 
 # Build-time environment variables
 ARG APP_KEY
@@ -69,8 +67,8 @@ RUN php artisan route:cache && php artisan view:cache
 # Switch to non-root user
 USER www-data
 
-# Expose Octane and Reverb ports
-EXPOSE 8000 8080
+# Expose Octane port
+EXPOSE 8000
 
 # Start Supervisor to manage all processes
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
