@@ -1,5 +1,5 @@
 # ============================================
-# NEETAQ LMS - PRODUCTION (ULTIMATE NETWORK & LABEL FIX)
+# NEETAQ LMS - FINAL PRODUCTION (SYNC WITH REPORT)
 # ============================================
 
 services:
@@ -71,7 +71,17 @@ services:
       - "coolify.managed=true"
       - "coolify.port=8000"
       - "traefik.enable=true"
-      # إبقاء توجيه الريفيرب فقط لأنه بورت استثنائي (8080)
+      - "traefik.docker.network=coolify"
+      # Health Check Configuration (Sync with /up)
+      - "traefik.http.services.backend-api.loadbalancer.healthcheck.path=/up"
+      - "traefik.http.services.backend-api.loadbalancer.healthcheck.interval=10s"
+      # Routing for main API (api.neetaq.com)
+      - "traefik.http.routers.backend-api.rule=Host(`api.neetaq.com`)"
+      - "traefik.http.routers.backend-api.entrypoints=websecure"
+      - "traefik.http.routers.backend-api.tls=true"
+      - "traefik.http.routers.backend-api.service=backend-api"
+      - "traefik.http.services.backend-api.loadbalancer.server.port=8000"
+      # Routing for Reverb (reverb.neetaq.com)
       - "traefik.http.routers.backend-reverb.rule=Host(`reverb.neetaq.com`)"
       - "traefik.http.routers.backend-reverb.entrypoints=websecure"
       - "traefik.http.routers.backend-reverb.tls=true"
@@ -101,6 +111,7 @@ services:
       - "coolify.managed=true"
       - "coolify.port=3000"
       - "traefik.enable=true"
+      - "traefik.docker.network=coolify"
 
 networks:
   coolify:
@@ -109,3 +120,17 @@ networks:
 volumes:
   db_data_v4:
   redis_data_v4:
+ Here is the updated code:
+...
+      - coolify
+    labels:
+      - "coolify.managed=true"
+      - "coolify.port=8000"
+      - "traefik.enable=true"
+      - "traefik.docker.network=coolify"
+      # Health Check Configuration (Sync with /up)
+      - "traefik.http.services.backend-api.loadbalancer.healthcheck.path=/up"
+      - "traefik.http.services.backend-api.loadbalancer.healthcheck.interval=10s"
+      # Routing for main API (api.neetaq.com)
+      - "traefik.http.routers.backend-api.rule=Host(`api.neetaq.com`)"
+...

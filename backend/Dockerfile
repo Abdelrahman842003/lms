@@ -61,8 +61,8 @@ RUN chown -R www-data:www-data /var/www/backend \
 ARG APP_KEY
 ENV APP_KEY=$APP_KEY
 
-# Cache routes and views
-RUN php artisan route:cache && php artisan view:cache
+# Cache views only (Keep routes dynamic for Octane flexibility)
+RUN php artisan view:cache
 
 # Switch to non-root user
 USER www-data
