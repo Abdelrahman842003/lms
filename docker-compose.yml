@@ -1,5 +1,5 @@
 # ============================================
-# NEETAQ LMS - PRODUCTION (FINAL CONNECTIVITY FIX)
+# NEETAQ LMS - PRODUCTION (NO HEALTHCHECKS)
 # ============================================
 
 services:
