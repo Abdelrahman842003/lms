@@ -1,9 +1,9 @@
 # ============================================
-# NEETAQ LMS - FINAL PRODUCTION (SUPERVISOR & MULTI-DOMAIN)
+# NEETAQ LMS - PRODUCTION (NETWORK & ROUTING FIX)
 # ============================================
 
 services:
-  # Database (MariaDB - Linked to DB_ variables)
+  # Database (MariaDB)
   database:
     image: mariadb:10.11
     restart: unless-stopped
@@ -16,6 +16,7 @@ services:
       - db_data_v4:/var/lib/mysql
     networks:
       - lms_network
+      - coolify
 
   # Redis (Secure)
   redis:
@@ -26,6 +27,7 @@ services:
       - redis_data_v4:/data
     networks:
       - lms_network
+      - coolify
 
   # Backend (Octane + Horizon + Reverb via Supervisor)
   backend:
@@ -64,16 +66,12 @@ services:
       - redis
     networks:
       - lms_network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/up"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 20s
+      - coolify
+    # Healthcheck removed to force Traefik routing
     labels:
       - "coolify.managed=true"
-      # Routing for main API (api.neetaq.com)
       - "traefik.enable=true"
+      # Routing for main API (api.neetaq.com)
       - "traefik.http.routers.backend-api.rule=Host(`api.neetaq.com`)"
       - "traefik.http.routers.backend-api.entrypoints=websecure"
       - "traefik.http.routers.backend-api.tls=true"
@@ -103,10 +101,15 @@ services:
       - backend
     networks:
       - lms_network
+      - coolify
+    labels:
+      - "coolify.managed=true"
 
 networks:
   lms_network:
     driver: bridge
+  coolify:
+    external: true
 
 volumes:
   db_data_v4:
