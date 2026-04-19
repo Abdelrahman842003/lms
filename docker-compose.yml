@@ -1,5 +1,5 @@
 # ============================================
-# NEETAQ LMS - FINAL CLEAN VERSION (NO CONFLICT)
+# NEETAQ LMS - PRODUCTION (ULTIMATE NETWORK & LABEL FIX)
 # ============================================
 
 services:
@@ -71,8 +71,7 @@ services:
       - "coolify.managed=true"
       - "coolify.port=8000"
       - "traefik.enable=true"
-      - "traefik.docker.network=coolify"
-      # ONLY Reverb explicit routing
+      # إبقاء توجيه الريفيرب فقط لأنه بورت استثنائي (8080)
       - "traefik.http.routers.backend-reverb.rule=Host(`reverb.neetaq.com`)"
       - "traefik.http.routers.backend-reverb.entrypoints=websecure"
       - "traefik.http.routers.backend-reverb.tls=true"
@@ -102,7 +101,6 @@ services:
       - "coolify.managed=true"
       - "coolify.port=3000"
       - "traefik.enable=true"
-      - "traefik.docker.network=coolify"
 
 networks:
   coolify:
