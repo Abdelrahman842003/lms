@@ -1,9 +1,9 @@
 # ============================================
-# NEETAQ LMS - PRODUCTION (FINAL ROUTING FIX)
+# NEETAQ LMS - FINAL CLEAN VERSION (NO CONFLICT)
 # ============================================
 
 services:
-  # Database (MariaDB)
+  # Database
   database:
     image: mariadb:10.11
     restart: unless-stopped
@@ -17,7 +17,7 @@ services:
     networks:
       - coolify
 
-  # Redis (Secure)
+  # Redis
   redis:
     image: redis:7-alpine
     restart: unless-stopped
@@ -72,16 +72,7 @@ services:
       - "coolify.port=8000"
       - "traefik.enable=true"
       - "traefik.docker.network=coolify"
-      # Health Check Configuration (Changed to /)
-      - "traefik.http.services.backend-api.loadbalancer.healthcheck.path=/"
-      - "traefik.http.services.backend-api.loadbalancer.healthcheck.interval=10s"
-      # Routing for main API (api.neetaq.com)
-      - "traefik.http.routers.backend-api.rule=Host(`api.neetaq.com`)"
-      - "traefik.http.routers.backend-api.entrypoints=websecure"
-      - "traefik.http.routers.backend-api.tls=true"
-      - "traefik.http.routers.backend-api.service=backend-api"
-      - "traefik.http.services.backend-api.loadbalancer.server.port=8000"
-      # Routing for Reverb (reverb.neetaq.com)
+      # ONLY Reverb explicit routing
       - "traefik.http.routers.backend-reverb.rule=Host(`reverb.neetaq.com`)"
       - "traefik.http.routers.backend-reverb.entrypoints=websecure"
       - "traefik.http.routers.backend-reverb.tls=true"
@@ -112,10 +103,6 @@ services:
       - "coolify.port=3000"
       - "traefik.enable=true"
       - "traefik.docker.network=coolify"
-      - "traefik.http.routers.frontend.rule=Host(`neetaq.com`)"
-      - "traefik.http.routers.frontend.entrypoints=websecure"
-      - "traefik.http.routers.frontend.tls=true"
-      - "traefik.http.services.frontend.loadbalancer.server.port=3000"
 
 networks:
   coolify:
@@ -124,3 +111,45 @@ networks:
 volumes:
   db_data_v4:
   redis_data_v4:
+ Here is the updated code:
+...
+      REVERB_SCHEME: http
+      OCTANE_SERVER: swoole
+      TRUSTED_PROXIES: "*"
+    depends_on:
+      - database
+      - redis
+    networks:
+      - coolify
+    labels:
+      - "coolify.managed=true"
+      - "coolify.port=8000"
+      - "traefik.enable=true"
+      - "traefik.docker.network=coolify"
+      # ONLY Reverb explicit routing
+      - "traefik.http.routers.backend-reverb.rule=Host(`reverb.neetaq.com`)"
+      - "traefik.http.routers.backend-reverb.entrypoints=websecure"
+      - "traefik.http.routers.backend-reverb.tls=true"
+      - "traefik.http.routers.backend-reverb.service=backend-reverb"
+      - "traefik.http.services.backend-reverb.loadbalancer.server.port=8080"
+
+  # Next.js Frontend
+  frontend:
+...
+        NEXT_PUBLIC_REVERB_PORT: ${NEXT_PUBLIC_REVERB_PORT}
+        NEXT_PUBLIC_REVERB_SCHEME: ${NEXT_PUBLIC_REVERB_SCHEME}
+    restart: unless-stopped
+    expose:
+      - 3000
+    depends_on:
+      - backend
+    networks:
+      - coolify
+    labels:
+      - "coolify.managed=true"
+      - "coolify.port=3000"
+      - "traefik.enable=true"
+      - "traefik.docker.network=coolify"
+
+networks:
+...
