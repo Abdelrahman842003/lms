@@ -1,9 +1,9 @@
 # ============================================
-# NEETAQ LMS - FINAL PRODUCTION (OCTANE + HORIZON)
+# NEETAQ LMS - FINAL PRODUCTION (SUPERVISOR & MULTI-DOMAIN)
 # ============================================
 
 services:
-  # Database (MariaDB)
+  # Database (MariaDB - Linked to DB_ variables)
   database:
     image: mariadb:10.11
     restart: unless-stopped
@@ -27,7 +27,7 @@ services:
     networks:
       - lms_network
 
-  # Backend (Octane + Horizon via Supervisor)
+  # Backend (Octane + Horizon + Reverb via Supervisor)
   backend:
     build:
       context: ./backend
@@ -64,31 +64,27 @@ services:
       - redis
     networks:
       - lms_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/up"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
     labels:
       - "coolify.managed=true"
-
-  # Laravel Reverb (Back to separate service)
-  reverb:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-      target: production
-      args:
-        APP_KEY: ${APP_KEY}
-    restart: unless-stopped
-    command: php artisan reverb:start --host=0.0.0.0 --port=8080
-    environment:
-      APP_ENV: production
-      APP_KEY: "${APP_KEY}"
-      REVERB_APP_ID: "${REVERB_APP_ID}"
-      REVERB_APP_KEY: "${REVERB_APP_KEY}"
-      REVERB_APP_SECRET: "${REVERB_APP_SECRET}"
-      REVERB_HOST: 0.0.0.0
-      REVERB_PORT: 8080
-    depends_on:
-      - redis
-    networks:
-      - lms_network
+      # Routing for main API (api.neetaq.com)
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend-api.rule=Host(`api.neetaq.com`)"
+      - "traefik.http.routers.backend-api.entrypoints=websecure"
+      - "traefik.http.routers.backend-api.tls=true"
+      - "traefik.http.routers.backend-api.service=backend-api"
+      - "traefik.http.services.backend-api.loadbalancer.server.port=8000"
+      # Routing for Reverb (reverb.neetaq.com)
+      - "traefik.http.routers.backend-reverb.rule=Host(`reverb.neetaq.com`)"
+      - "traefik.http.routers.backend-reverb.entrypoints=websecure"
+      - "traefik.http.routers.backend-reverb.tls=true"
+      - "traefik.http.routers.backend-reverb.service=backend-reverb"
+      - "traefik.http.services.backend-reverb.loadbalancer.server.port=8080"
 
   # Next.js Frontend
   frontend:

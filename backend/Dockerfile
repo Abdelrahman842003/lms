@@ -67,8 +67,8 @@ RUN php artisan route:cache && php artisan view:cache
 # Switch to non-root user
 USER www-data
 
-# Expose Octane port
-EXPOSE 8000
+# Expose ports for Octane and Reverb
+EXPOSE 8000 8080
 
-# Start Supervisor to manage all processes
+# Start Supervisor to manage all processes (Octane + Horizon + Reverb)
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
