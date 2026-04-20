@@ -37,9 +37,10 @@ services:
       - 8000
       - 8080
     environment:
-      SERVICE_FQDN_BACKEND: api.neetaq.com
-      SERVICE_FQDN_REVERB: reverb.neetaq.com
-      APP_URL: "https://api.neetaq.com"
+      # المتغيرات دي هتظهر لك في Coolify UI وتقدر تغيرها من هناك
+      SERVICE_FQDN_BACKEND: ${SERVICE_FQDN_BACKEND:-api.neetaq.com}
+      SERVICE_FQDN_REVERB: ${SERVICE_FQDN_REVERB:-reverb.neetaq.com}
+      APP_URL: "https://${SERVICE_FQDN_BACKEND:-api.neetaq.com}"
       DB_HOST: database
       DB_DATABASE: "${DB_DATABASE}"
       DB_USERNAME: "${DB_USERNAME}"
@@ -53,7 +54,7 @@ services:
       REVERB_APP_ID: "${REVERB_APP_ID}"
       REVERB_APP_KEY: "${REVERB_APP_KEY}"
       REVERB_APP_SECRET: "${REVERB_APP_SECRET}"
-      REVERB_HOST: reverb.neetaq.com
+      REVERB_HOST: ${SERVICE_FQDN_REVERB:-reverb.neetaq.com}
       REVERB_PORT: 443
       REVERB_SCHEME: https
       OCTANE_SERVER: swoole
@@ -67,7 +68,8 @@ services:
       - "coolify.managed=true"
       - "coolify.port=8000"
       - "traefik.enable=true"
-      - "traefik.http.routers.backend-reverb.rule=Host(`reverb.neetaq.com`)"
+      # التوجيه الديناميكي للـ Reverb باستخدام المتغير
+      - "traefik.http.routers.backend-reverb.rule=Host(`${SERVICE_FQDN_REVERB:-reverb.neetaq.com}`)"
       - "traefik.http.routers.backend-reverb.entrypoints=websecure"
       - "traefik.http.routers.backend-reverb.tls=true"
       - "traefik.http.routers.backend-reverb.service=backend-reverb"
@@ -85,7 +87,7 @@ services:
     expose:
       - 3000
     environment:
-      SERVICE_FQDN_FRONTEND: neetaq.com
+      SERVICE_FQDN_FRONTEND: ${SERVICE_FQDN_FRONTEND:-neetaq.com}
     depends_on:
       - backend
     networks:
