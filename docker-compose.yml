@@ -1,5 +1,5 @@
 # ============================================
-# NEETAQ LMS - PRODUCTION (COOLIFY OPTIMIZED)
+# NEETAQ LMS - PRODUCTION (FINAL COOLIFY VERSION)
 # ============================================
 
 services:
@@ -37,28 +37,26 @@ services:
       - 8000
       - 8080
     environment:
-      # المتغيرات دي هتظهر لك في Coolify UI وتقدر تغيرها من هناك
+      # المتغيرات دي هي اللي بتخلي الخانات تظهر في واجهة Coolify
       SERVICE_FQDN_BACKEND: ${SERVICE_FQDN_BACKEND:-api.neetaq.com}
       SERVICE_FQDN_REVERB: ${SERVICE_FQDN_REVERB:-reverb.neetaq.com}
       APP_URL: "https://${SERVICE_FQDN_BACKEND:-api.neetaq.com}"
+      REVERB_HOST: ${SERVICE_FQDN_REVERB:-reverb.neetaq.com}
+      REVERB_PORT: 443
+      REVERB_SCHEME: https
+      # متغيرات الربط الأساسية
       DB_HOST: database
       DB_DATABASE: "${DB_DATABASE}"
       DB_USERNAME: "${DB_USERNAME}"
       DB_PASSWORD: "${DB_PASSWORD}"
       REDIS_HOST: redis
       REDIS_PASSWORD: "${REDIS_PASSWORD}"
-      SESSION_DRIVER: redis
-      CACHE_STORE: redis
-      QUEUE_CONNECTION: redis
-      BROADCAST_CONNECTION: reverb
+      OCTANE_SERVER: swoole
+      TRUSTED_PROXIES: "*"
+      # Reverb Config
       REVERB_APP_ID: "${REVERB_APP_ID}"
       REVERB_APP_KEY: "${REVERB_APP_KEY}"
       REVERB_APP_SECRET: "${REVERB_APP_SECRET}"
-      REVERB_HOST: ${SERVICE_FQDN_REVERB:-reverb.neetaq.com}
-      REVERB_PORT: 443
-      REVERB_SCHEME: https
-      OCTANE_SERVER: swoole
-      TRUSTED_PROXIES: "*"
     depends_on:
       - database
       - redis
@@ -68,7 +66,7 @@ services:
       - "coolify.managed=true"
       - "coolify.port=8000"
       - "traefik.enable=true"
-      # التوجيه الديناميكي للـ Reverb باستخدام المتغير
+      # توجيه الريفيرب للدومين الخاص بيه وبورت 8080 داخلياً
       - "traefik.http.routers.backend-reverb.rule=Host(`${SERVICE_FQDN_REVERB:-reverb.neetaq.com}`)"
       - "traefik.http.routers.backend-reverb.entrypoints=websecure"
       - "traefik.http.routers.backend-reverb.tls=true"
