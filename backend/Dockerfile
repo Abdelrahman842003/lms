@@ -1,5 +1,4 @@
-# ==================== Base Stage ====================
-FROM phpswoole/swoole:5.1-php8.3 AS base
+FROM phpswoole/swoole:5.1-php8.3 AS production
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -28,47 +27,19 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/backend
 
-# ==================== Development Stage ====================
-FROM base AS development
-COPY composer.json composer.lock ./
-RUN composer install --no-interaction --no-scripts
-EXPOSE 8000
-CMD ["php", "artisan", "octane:start", "--server=swoole", "--host=0.0.0.0", "--port=8000", "--watch"]
-
-# ==================== Builder Stage ====================
-FROM base AS builder
-ENV COMPOSER_MEMORY_LIMIT=-1
-COPY composer.json composer.lock ./
-RUN composer install --no-dev --optimize-autoloader --no-scripts --no-interaction --ignore-platform-reqs
+# Copy application files
 COPY . .
 
-# ==================== Production Stage ====================
-FROM base AS production
-COPY --from=builder /var/www/backend /var/www/backend
-
-# Set working directory
-WORKDIR /var/www/backend
-
-# Copy Supervisor configuration
-COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+# Install dependencies
+RUN composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs
 
 # Permissions setup
 RUN chown -R www-data:www-data /var/www/backend \
     && chmod -R 775 /var/www/backend/storage \
     && chmod -R 775 /var/www/backend/bootstrap/cache
 
-# Build-time environment variables
-ARG APP_KEY
-ENV APP_KEY=$APP_KEY
-
-# Cache views only (Keep routes dynamic for Octane flexibility)
-RUN php artisan view:cache
-
-# Switch to non-root user
-USER www-data
-
-# Expose ports for Octane and Reverb
+# Expose Octane & Reverb
 EXPOSE 8000 8080
 
-# Start Supervisor to manage all processes (Octane + Horizon + Reverb)
+# Start Supervisor as root
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]

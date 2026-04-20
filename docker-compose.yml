@@ -1,9 +1,8 @@
 # ============================================
-# NEETAQ LMS - PRODUCTION (COOLIFY AUTOMATED ROUTING)
+# NEETAQ LMS - PRODUCTION (COOLIFY OPTIMIZED)
 # ============================================
 
 services:
-  # Database
   database:
     image: mariadb:10.11
     restart: unless-stopped
@@ -16,9 +15,7 @@ services:
       - db_data_v4:/var/lib/mysql
     networks:
       - coolify
-      - t1056ppyi6akj3hfm55zd17d
 
-  # Redis
   redis:
     image: redis:7-alpine
     restart: unless-stopped
@@ -27,9 +24,7 @@ services:
       - redis_data_v4:/data
     networks:
       - coolify
-      - t1056ppyi6akj3hfm55zd17d
 
-  # Backend (Octane + Horizon + Reverb via Supervisor)
   backend:
     build:
       context: ./backend
@@ -42,10 +37,9 @@ services:
       - 8000
       - 8080
     environment:
-      APP_NAME: "${APP_NAME}"
-      APP_ENV: production
-      APP_KEY: "${APP_KEY}"
-      APP_URL: "${APP_URL}"
+      SERVICE_FQDN_BACKEND: api.neetaq.com
+      SERVICE_FQDN_REVERB: reverb.neetaq.com
+      APP_URL: "https://api.neetaq.com"
       DB_HOST: database
       DB_DATABASE: "${DB_DATABASE}"
       DB_USERNAME: "${DB_USERNAME}"
@@ -59,9 +53,9 @@ services:
       REVERB_APP_ID: "${REVERB_APP_ID}"
       REVERB_APP_KEY: "${REVERB_APP_KEY}"
       REVERB_APP_SECRET: "${REVERB_APP_SECRET}"
-      REVERB_HOST: reverb
-      REVERB_PORT: 8080
-      REVERB_SCHEME: http
+      REVERB_HOST: reverb.neetaq.com
+      REVERB_PORT: 443
+      REVERB_SCHEME: https
       OCTANE_SERVER: swoole
       TRUSTED_PROXIES: "*"
     depends_on:
@@ -69,19 +63,16 @@ services:
       - redis
     networks:
       - coolify
-      - t1056ppyi6akj3hfm55zd17d
     labels:
       - "coolify.managed=true"
       - "coolify.port=8000"
       - "traefik.enable=true"
-      # إبقاء توجيه الريفيرب يدوياً لأنه يحتاج بورت 8080 ودومين مختلف
       - "traefik.http.routers.backend-reverb.rule=Host(`reverb.neetaq.com`)"
       - "traefik.http.routers.backend-reverb.entrypoints=websecure"
       - "traefik.http.routers.backend-reverb.tls=true"
       - "traefik.http.routers.backend-reverb.service=backend-reverb"
       - "traefik.http.services.backend-reverb.loadbalancer.server.port=8080"
 
-  # Next.js Frontend
   frontend:
     build:
       context: ./frontend
@@ -90,26 +81,21 @@ services:
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
         NEXT_PUBLIC_REVERB_APP_KEY: ${NEXT_PUBLIC_REVERB_APP_KEY}
-        NEXT_PUBLIC_REVERB_HOST: ${NEXT_PUBLIC_REVERB_HOST}
-        NEXT_PUBLIC_REVERB_PORT: ${NEXT_PUBLIC_REVERB_PORT}
-        NEXT_PUBLIC_REVERB_SCHEME: ${NEXT_PUBLIC_REVERB_SCHEME}
     restart: unless-stopped
     expose:
       - 3000
+    environment:
+      SERVICE_FQDN_FRONTEND: neetaq.com
     depends_on:
       - backend
     networks:
       - coolify
-      - t1056ppyi6akj3hfm55zd17d
     labels:
       - "coolify.managed=true"
       - "coolify.port=3000"
-      - "traefik.enable=true"
 
 networks:
   coolify:
-    external: true
-  t1056ppyi6akj3hfm55zd17d:
     external: true
 
 volumes:

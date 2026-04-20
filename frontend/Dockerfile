@@ -7,49 +7,19 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN npm ci --legacy-peer-deps
 
-# ==================== Development Stage ====================
-FROM base AS development
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
-
-# Build Arguments for dev
-ARG NEXT_PUBLIC_API_URL
-ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
-
-EXPOSE 3000
-ENV PORT 3000
-ENV HOSTNAME "0.0.0.0"
-
-CMD ["npm", "run", "dev"]
-
 # ==================== Builder Stage ====================
 FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Build Next.js
-ENV NEXT_TELEMETRY_DISABLED 1
-
-# Increase memory limit for Node.js build process
-ENV NODE_OPTIONS="--max-old-space-size=2048"
-
-# Build Arguments (Passed at build time)
+# Build Arguments
 ARG NEXT_PUBLIC_API_URL
 ARG NEXT_PUBLIC_REVERB_APP_KEY
-ARG NEXT_PUBLIC_REVERB_HOST
-ARG NEXT_PUBLIC_REVERB_PORT
-ARG NEXT_PUBLIC_REVERB_SCHEME
 
-# Environment Variables
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_REVERB_APP_KEY=$NEXT_PUBLIC_REVERB_APP_KEY
-ENV NEXT_PUBLIC_REVERB_HOST=$NEXT_PUBLIC_REVERB_HOST
-ENV NEXT_PUBLIC_REVERB_PORT=$NEXT_PUBLIC_REVERB_PORT
-ENV NEXT_PUBLIC_REVERB_SCHEME=$NEXT_PUBLIC_REVERB_SCHEME
 
-# Run build with increased memory and disable static generation errors if possible
 RUN npm run build
 
 # ==================== Production Stage ====================
@@ -57,12 +27,10 @@ FROM base AS production
 WORKDIR /app
 
 ENV NODE_ENV production
-ENV NEXT_TELEMETRY_DISABLED 1
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Copy built files
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
@@ -70,7 +38,6 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 USER nextjs
 
 EXPOSE 3000
-
 ENV PORT 3000
 ENV HOSTNAME "0.0.0.0"
 
