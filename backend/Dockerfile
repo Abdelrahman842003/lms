@@ -30,6 +30,9 @@ WORKDIR /var/www/backend
 # Copy application files
 COPY . .
 
+# Copy Supervisor configuration to the correct path
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
 # Install dependencies
 RUN composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs
 
