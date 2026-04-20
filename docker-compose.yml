@@ -1,5 +1,5 @@
 # ============================================
-# NEETAQ LMS - FINAL PRODUCTION (FIXED)
+# NEETAQ LMS - PRODUCTION (COOLIFY AUTOMATED ROUTING)
 # ============================================
 
 services:
@@ -16,6 +16,7 @@ services:
       - db_data_v4:/var/lib/mysql
     networks:
       - coolify
+      - t1056ppyi6akj3hfm55zd17d
 
   # Redis
   redis:
@@ -26,6 +27,7 @@ services:
       - redis_data_v4:/data
     networks:
       - coolify
+      - t1056ppyi6akj3hfm55zd17d
 
   # Backend (Octane + Horizon + Reverb via Supervisor)
   backend:
@@ -67,21 +69,12 @@ services:
       - redis
     networks:
       - coolify
+      - t1056ppyi6akj3hfm55zd17d
     labels:
       - "coolify.managed=true"
       - "coolify.port=8000"
       - "traefik.enable=true"
-      - "traefik.docker.network=coolify"
-      # Health Check
-      - "traefik.http.services.backend-api.loadbalancer.healthcheck.path=/up"
-      - "traefik.http.services.backend-api.loadbalancer.healthcheck.interval=10s"
-      # API Routing
-      - "traefik.http.routers.backend-api.rule=Host(`api.neetaq.com`)"
-      - "traefik.http.routers.backend-api.entrypoints=websecure"
-      - "traefik.http.routers.backend-api.tls=true"
-      - "traefik.http.routers.backend-api.service=backend-api"
-      - "traefik.http.services.backend-api.loadbalancer.server.port=8000"
-      # Reverb Routing
+      # إبقاء توجيه الريفيرب يدوياً لأنه يحتاج بورت 8080 ودومين مختلف
       - "traefik.http.routers.backend-reverb.rule=Host(`reverb.neetaq.com`)"
       - "traefik.http.routers.backend-reverb.entrypoints=websecure"
       - "traefik.http.routers.backend-reverb.tls=true"
@@ -107,14 +100,16 @@ services:
       - backend
     networks:
       - coolify
+      - t1056ppyi6akj3hfm55zd17d
     labels:
       - "coolify.managed=true"
       - "coolify.port=3000"
       - "traefik.enable=true"
-      - "traefik.docker.network=coolify"
 
 networks:
   coolify:
+    external: true
+  t1056ppyi6akj3hfm55zd17d:
     external: true
 
 volumes:
