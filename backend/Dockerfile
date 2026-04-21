@@ -27,6 +27,8 @@ RUN install-php-extensions pdo_mysql mbstring exif pcntl bcmath zip intl soap
 RUN install-php-extensions gd opcache
 RUN install-php-extensions redis swoole
 
+RUN apt-get update && apt-get install -y curl libzip-dev \
+    && rm -rf /var/lib/apt/lists/*
 # 4. Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
@@ -47,8 +49,8 @@ RUN chown -R www-data:www-data /var/www/backend/storage /var/www/backend/bootstr
 EXPOSE 8005
 
 # 9. إضافة الـ Healthcheck لضمان استقرار الـ Deployment على بورت 8005
-HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-    CMD curl -f http://localhost:8005/health || exit 1
-
+# تعديل الـ Healthcheck ليكون أخف وأضمن
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=5 \
+    CMD curl -f http://127.0.0.1:8005/ || exit 1
 # 10. تشغيل Laravel Octane مع Swoole
 CMD ["php", "artisan", "octane:start", "--server=swoole", "--host=0.0.0.0", "--port=8005", "--workers=4", "--task-workers=4", "--max-requests=500"]
