@@ -9,9 +9,10 @@ RUN npm run build
 # Stage 2: Final image
 FROM php:8.3-cli
 
-# Install system dependencies
+# Install system dependencies (Adding wget for Coolify Healthcheck)
 RUN apt-get update && apt-get install -y \
     curl \
+    wget \
     && rm -rf /var/lib/apt/lists/*
 
 # Install PHP extensions installer
