@@ -2,9 +2,6 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::get('/health-check', function () {
-    return response('OK', 200);
-});
 
 Route::get('/health', function () {
     return response()->json(['status' => 'ok', 'service' => 'octane']);

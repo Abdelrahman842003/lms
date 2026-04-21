@@ -51,7 +51,7 @@ EXPOSE 8005
 
 # 9. إضافة الـ Healthcheck لضمان استقرار الـ Deployment على بورت 8005
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-    CMD curl -f http://localhost:8005/health-check || exit 1
+    CMD curl -f http://localhost:8005/health || exit 1
 
 # 10. تشغيل Laravel Octane مع Swoole
 CMD ["php", "artisan", "octane:start", "--server=swoole", "--host=0.0.0.0", "--port=8005", "--workers=4", "--task-workers=4", "--max-requests=500"]
