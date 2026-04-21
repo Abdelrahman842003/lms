@@ -44,9 +44,6 @@ COPY --from=assets-builder /app/public/build ./public/build
 RUN composer install --no-interaction --optimize-autoloader --no-dev
 RUN chown -R www-data:www-data /var/www/backend/storage /var/www/backend/bootstrap/cache
 
-# 8. تنفيذ الـ Caching لزيادة الأداء في الـ Production
-RUN php artisan config:cache && php artisan route:cache
-
 EXPOSE 8005
 
 # 9. إضافة الـ Healthcheck لضمان استقرار الـ Deployment على بورت 8005
