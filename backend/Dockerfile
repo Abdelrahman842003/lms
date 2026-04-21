@@ -9,6 +9,11 @@ RUN npm run build
 # Stage 2: Final image
 FROM php:8.3-cli
 
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
 # Install PHP extensions installer
 COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/local/bin/
 
