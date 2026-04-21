@@ -48,9 +48,4 @@ RUN chown -R www-data:www-data /var/www/backend/storage /var/www/backend/bootstr
 
 EXPOSE 8005
 
-# 9. إضافة الـ Healthcheck لضمان استقرار الـ Deployment على بورت 8005
-# تعديل الـ Healthcheck ليكون أخف وأضمن
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=5 \
-    CMD curl -f http://127.0.0.1:8005/ || exit 1
-# 10. تشغيل Laravel Octane مع Swoole
 CMD ["php", "artisan", "octane:start", "--server=swoole", "--host=0.0.0.0", "--port=8005", "--workers=4", "--task-workers=4", "--max-requests=500"]
