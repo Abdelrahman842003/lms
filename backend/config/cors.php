@@ -20,13 +20,9 @@ return [
     'allowed_methods' => ['*'],
 
     'allowed_origins' => [
-        'http://localhost:3000',
-        'http://127.0.0.1:3000',
-        'http://localhost',
-        'http://127.0.0.1',
-        'http://75.119.130.3',
-        'http://neetaq.com',
         'https://neetaq.com',
+        'https://www.neetaq.com', 
+        'https://api.neetaq.com'
     ],
 
     'allowed_origins_patterns' => [],
