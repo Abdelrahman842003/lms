@@ -53,4 +53,3 @@ EXPOSE 8005
 # 10. تشغيل الـ Migrations مع الـ Server في أمر واحد لضمان استقرار الداتابيز
 CMD php artisan config:cache && \
     php artisan route:cache && \
-    php artisan octane:start --server=swoole --host=0.0.0.0 --port=8005
