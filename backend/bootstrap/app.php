@@ -36,12 +36,8 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
         
         $middleware->validateCsrfTokens(except: [
-            'api/student/attend',
-            'api/teacher/lectures/*/attendance',
-            'api/teacher/lectures/*/qr-code',
-            'api/teacher/lectures/*/toggle-active',
-            'api/broadcasting/auth',
-            'api/teacher/lectures',
+            'api/*',
+            'broadcasting/auth',
         ]);
     })
 
