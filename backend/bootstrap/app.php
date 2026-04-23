@@ -34,7 +34,8 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
         
         $middleware->validateCsrfTokens(except: [
-            'broadcasting/auth', // الـ api/* مستثنى تلقائياً في Laravel 11
+            'api/*',
+            'broadcasting/auth',
         ]);
     })
 
