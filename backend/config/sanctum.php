@@ -34,7 +34,7 @@ return [
     |
     */
 
-    'guard' => ['web', 'admin', 'teacher', 'student', 'secretary', 'guardian'],
+    'guard' => ['web', 'teacher', 'student', 'secretary', 'guardian', 'academy'],
 
     /*
     |--------------------------------------------------------------------------
