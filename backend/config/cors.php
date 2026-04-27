@@ -23,6 +23,7 @@ return [
         'https://neetaq.com',
         'https://www.neetaq.com', 
         'https://api.neetaq.com',
+        'https://ws.neetaq.com',
         'http://localhost:3000',
         'http://localhost:8000',
         'http://127.0.0.1:3000',
