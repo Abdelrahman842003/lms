@@ -1,14 +1,13 @@
 'use client';
 
 import React from 'react';
-import '@/styles/landing.css';
 
-import Hero from '@/components/landing/Hero';
+import LandingPage from '@/components/landing/LandingPage';
 
 export default function HomePage() {
   return (
     <main>
-      <Hero />
+      <LandingPage />
     </main>
   );
 }
