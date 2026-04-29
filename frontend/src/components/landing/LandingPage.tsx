@@ -1,17 +1,38 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { fetchApi } from '@/services/authService';
-import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { useSettings } from '@/contexts/SettingsContext';
-import { toast } from 'react-hot-toast';
 import LandingLayout from './LandingLayout';
 
+interface LandingContent {
+  hero: {
+    badge: string;
+    title: string;
+    subtitle: string;
+    description: string;
+    cta_primary: string;
+    cta_secondary: string;
+  };
+  features: Array<{ icon: string; title: string; description: string }>;
+  stats: Array<{ label: string; value: string }>;
+  testimonials: Array<{ name: string; role: string; quote: string }>;
+}
+
 export default function LandingPage() {
-  const [whatsappNumber, setWhatsappNumber] = useState<string>('');
+  const { settings } = useSettings();
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const router = useRouter();
+
+  const landingContent = useMemo<LandingContent | null>(() => {
+    if (!settings.landing_page_content) return null;
+    try {
+      return JSON.parse(settings.landing_page_content);
+    } catch (e) {
+      console.error('Failed to parse landing page content', e);
+      return null;
+    }
+  }, [settings.landing_page_content]);
 
   useEffect(() => {
     const handleGlobalMouseMove = (e: MouseEvent) => {
@@ -39,27 +60,30 @@ export default function LandingPage() {
     return { ref, inView };
   };
 
-  useEffect(() => {
-    const fetchSettings = async () => {
-      try {
-        const data = await fetchApi('/api/v1/public-settings', { method: 'GET' }) as any;
-        if (data?.whatsappNumber) setWhatsappNumber(data.whatsappNumber);
-      } catch (error) {
-        console.error('Failed to fetch settings:', error);
-      }
-    };
-    fetchSettings();
-  }, []);
-
   const buildWhatsAppUrl = (rawNumber: string): string | null => {
     if (!rawNumber) return null;
     const normalized = rawNumber.replace(/[^0-9]/g, '');
     return normalized ? `https://wa.me/${normalized}?text=${encodeURIComponent('السلام عليكم، أريد الاستفسار عن المنصة')}` : null;
   };
 
-  const waUrl = buildWhatsAppUrl(whatsappNumber);
+  const waUrl = buildWhatsAppUrl(settings.whatsappNumber);
   const heroAnim = useInView(0.1);
   const ctaAnim = useInView(0.2);
+
+  // Default content if not loaded or failed
+  const content = landingContent || {
+    hero: {
+      badge: 'نقدم لكم نطاق',
+      title: 'النظام الذي يفهم التعليم',
+      subtitle: 'كما تفهمه أنت.',
+      description: 'بعيداً عن الأدوات التقليدية، نطاق هو نظام تشغيل متكامل مصمم خصيصاً للمؤسسات التعليمية.',
+      cta_primary: 'ابدأ تجربة مجانية',
+      cta_secondary: 'الأسعار',
+    },
+    features: [],
+    stats: [],
+    testimonials: []
+  };
 
   return (
     <LandingLayout>
@@ -77,17 +101,17 @@ export default function LandingPage() {
           }}
         >
           <div className="inline-flex items-center gap-2 px-5 py-2 mb-8 rounded-full border border-white/10 bg-white/[0.03] text-gray-400 text-[0.85rem]">
-            <span>نقدم لكم نيتاق</span>
+            <span>{content.hero.badge}</span>
           </div>
 
           <h1 className="text-[2.5rem] sm:text-[3.2rem] md:text-[4rem] lg:text-[4.5rem] font-extrabold leading-[1.15] mb-6 tracking-tight">
-            النظام الذي يفهم التعليم
+            {content.hero.title}
             <br />
-            <span className="text-white">كما تفهمه أنت.</span>
+            <span className="text-white">{content.hero.subtitle}</span>
           </h1>
 
           <p className="text-[1.05rem] md:text-[1.15rem] text-gray-400 max-w-[580px] mx-auto mb-10 leading-relaxed">
-            بعيداً عن الأدوات التقليدية، نيتاق هو نظام تشغيل متكامل مصمم خصيصاً للمؤسسات التعليمية.
+            {content.hero.description}
           </p>
 
           <div className="flex items-center justify-center gap-4 mb-16 md:mb-20 flex-wrap">
@@ -95,7 +119,7 @@ export default function LandingPage() {
               onClick={() => router.push('/login')}
               className="group flex items-center gap-2 px-7 py-3.5 bg-[#3249A9] hover:bg-[#283d8f] text-white font-bold rounded-full transition-all duration-300 text-[0.95rem] shadow-[0_0_30px_rgba(50,73,169,0.25)]"
             >
-              <span>ابدأ تجربة مجانية</span>
+              <span>{content.hero.cta_primary}</span>
               <svg className="w-4 h-4 rtl:rotate-180 transition-transform group-hover:-translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7M17 7H7M17 7v10" />
               </svg>
@@ -107,7 +131,7 @@ export default function LandingPage() {
               }}
               className="group flex items-center gap-2 px-7 py-3.5 text-gray-300 hover:text-white font-semibold transition-all duration-300 text-[0.95rem]"
             >
-              <span>الأسعار</span>
+              <span>{content.hero.cta_secondary}</span>
               <svg className="w-4 h-4 rtl:rotate-180 transition-transform group-hover:-translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7M17 7H7M17 7v10" />
               </svg>
@@ -130,7 +154,7 @@ export default function LandingPage() {
                        <div className="w-5 h-5 md:w-6 md:h-6 rounded-md bg-[#3249A9]/20 flex items-center justify-center shrink-0">
                          <div className="w-2.5 h-2.5 md:w-3 md:h-3 bg-[#3249A9] rounded-sm"></div>
                        </div>
-                       <span className="font-bold text-[10px] md:text-sm text-white hidden sm:block">نيتاق التعليمية</span>
+                       <span className="font-bold text-[10px] md:text-sm text-white hidden sm:block">نطاق التعليمية</span>
                     </div>
                     <div className="flex flex-col gap-1 px-2 md:px-3 flex-1 overflow-hidden">
                       <div className="px-2 md:px-3 py-1.5 md:py-2 mx-1 md:mx-0 bg-white/5 rounded-lg text-[#27c93f] text-[9px] md:text-xs font-semibold flex items-center justify-center sm:justify-start gap-2 cursor-pointer transition-colors shadow-inner">
@@ -170,6 +194,39 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Stats Section Dynamic */}
+      {content.stats.length > 0 && (
+        <section className="py-10 md:py-16 bg-white/[0.02] border-y border-white/5">
+          <div className="max-w-[1200px] mx-auto px-6 grid grid-cols-2 md:grid-cols-3 gap-8 text-center">
+            {content.stats.map((stat, idx) => (
+              <div key={idx} className="flex flex-col gap-2">
+                <span className="text-3xl md:text-4xl font-extrabold text-[#3249A9]">{stat.value}</span>
+                <span className="text-gray-400 font-medium">{stat.label}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Features Section Dynamic */}
+      {content.features.length > 0 && (
+        <section className="py-20 md:py-28">
+          <div className="max-w-[1200px] mx-auto px-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-right">
+              {content.features.map((feature, idx) => (
+                <div key={idx} className="bg-[#15192B] p-8 rounded-3xl border border-white/5 hover:border-white/20 transition-all duration-300">
+                  <div className="w-14 h-14 bg-[#3249A9]/10 rounded-2xl flex items-center justify-center mb-6 text-[#3249A9]">
+                    <i className={`text-2xl ${feature.icon.includes('heroicon') ? 'fas fa-rocket' : feature.icon}`}></i>
+                  </div>
+                  <h3 className="text-xl font-bold mb-3 text-white">{feature.title}</h3>
+                  <p className="text-gray-400 leading-relaxed text-sm">{feature.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* CTA Section */}
       <section className="py-20 md:py-28" style={{ perspective: '1500px' }}>
         <div className="w-[90%] md:w-[75%] max-w-[1000px] mx-auto">
@@ -182,7 +239,7 @@ export default function LandingPage() {
             <div className="absolute top-0 right-1/2 translate-x-1/2 w-[300px] h-[300px] bg-[#3249A9] rounded-full blur-[180px] opacity-[0.06] pointer-events-none" />
             <div className="relative z-10 flex flex-col items-center w-full">
               <h2 className="text-[1.9rem] md:text-[2.6rem] font-extrabold leading-[1.3] mb-8">
-                وفّر ٢٠٪ من وقتك في المهام الروتينية.
+                وفر وقتك وجهدك في المهام الروتينية مع نطاق.
               </h2>
               <button
                 onClick={() => router.push('/login')}

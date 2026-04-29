@@ -96,6 +96,32 @@ export default async function RootLayout({
 
     const maintenanceMode = settings?.maintenanceMode === 'true';
 
+    const organizationSchema = {
+        '@context': 'https://schema.org',
+        '@type': 'EducationalOrganization',
+        'name': settings?.geo_business_name || settings?.seo_title || 'نطاق التعليمية',
+        'description': settings?.seo_description,
+        'url': 'https://neetaq.com',
+        'logo': 'https://neetaq.com/logo.png',
+        'address': {
+            '@type': 'PostalAddress',
+            'streetAddress': settings?.geo_address,
+            'addressLocality': settings?.geo_city,
+            'addressRegion': settings?.geo_region,
+            'addressCountry': settings?.geo_country_code || 'EG'
+        },
+        'geo': settings?.geo_latitude && settings?.geo_longitude ? {
+            '@type': 'GeoCoordinates',
+            'latitude': settings.geo_latitude,
+            'longitude': settings.geo_longitude
+        } : undefined,
+        'contactPoint': {
+            '@type': 'ContactPoint',
+            'telephone': settings?.whatsappNumber,
+            'contactType': 'customer service'
+        }
+    };
+
     return (
     <html lang="ar" dir="rtl" className="h-full" data-scroll-behavior="smooth">
             <head>
@@ -114,6 +140,10 @@ export default async function RootLayout({
                 <script
                     type="application/ld+json"
                     dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+                />
+                <script
+                    type="application/ld+json"
+                    dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
                 />
             </head>
             <body

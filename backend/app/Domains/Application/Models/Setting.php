@@ -14,7 +14,10 @@ class Setting extends Model
     protected function casts(): array
     {
         return [
-            //
+            'value' => 'string', // Default to string, but we handle JSON manually in some places. 
+            // Actually, since we use getValue which handles caching and decryption, 
+            // we should be careful with casting here. 
+            // Let's stick to the current logic but ensure it's robust.
         ];
     }
 

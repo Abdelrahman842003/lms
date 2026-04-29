@@ -22,6 +22,7 @@ class HorizonServiceProvider extends HorizonApplicationServiceProvider
 
         $isLocal = $this->app->environment('local');
 
+        /*
         Telescope::filter(function (IncomingEntry $entry) use ($isLocal) {
             return $isLocal ||
                    $entry->isReportableException() ||
@@ -30,6 +31,7 @@ class HorizonServiceProvider extends HorizonApplicationServiceProvider
                    $entry->isScheduledTask() ||
                    $entry->hasMonitoredTag();
         });
+        */
     }
 
     /**
@@ -41,6 +43,7 @@ class HorizonServiceProvider extends HorizonApplicationServiceProvider
             return;
         }
 
+        /*
         Telescope::hideRequestParameters(['_token']);
 
         Telescope::hideRequestHeaders([
@@ -48,6 +51,7 @@ class HorizonServiceProvider extends HorizonApplicationServiceProvider
             'x-csrf-token',
             'x-xsrf-token',
         ]);
+        */
     }
 
     /**
@@ -57,9 +61,8 @@ class HorizonServiceProvider extends HorizonApplicationServiceProvider
      */
     protected function gate(): void
     {
-        Gate::define('viewTelescope', function ($user = null) {
-            // هنا بنستخدم الـ admin guard زي ما عملنا في هورايزون بالظبط
-            return Auth::guard('admin')->check();
+        Gate::define('viewHorizon', function ($user = null) {
+            return \Illuminate\Support\Facades\Auth::guard('admin')->check();
         });
     }
 }
