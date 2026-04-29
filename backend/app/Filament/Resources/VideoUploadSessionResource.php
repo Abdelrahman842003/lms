@@ -19,6 +19,8 @@ use Illuminate\Database\Eloquent\Builder;
 class VideoUploadSessionResource extends BaseResource
 {
     protected static ?string $model = VideoUploadSession::class;
+    
+    protected static ?string $recordTitleAttribute = 'id';
 
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-arrow-up-tray';
 

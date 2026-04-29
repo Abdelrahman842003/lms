@@ -22,9 +22,20 @@ use App\Domains\Subscriptions\Traits\HasSubscriptionStatus;
 use App\Domains\Subscriptions\Traits\HasTenantPlan;
 use App\Domains\Enrollments\Models\Group;
 
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
+
 class Academy extends Model implements AuthenticatableContract, AuthorizableContract
 {
-    use HasFactory, HasUuids, HasApiTokens, Authenticatable, Authorizable, HasSubscriptionStatus, HasTenantPlan, Notifiable;
+    use HasFactory, HasUuids, HasApiTokens, Authenticatable, Authorizable, HasSubscriptionStatus, HasTenantPlan, Notifiable, LogsActivity;
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['name', 'phone', 'is_active', 'status', 'plan_type', 'plan_expires_at'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
+    }
 
     protected $fillable = [
         'name',

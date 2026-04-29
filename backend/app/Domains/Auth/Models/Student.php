@@ -22,9 +22,20 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Spatie\Permission\Traits\HasRoles;
 
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
+
 class Student extends Authenticatable
 {
-    use HasFactory, Notifiable, HasApiTokens, HasUuids, HasRoles, HasDeviceTokens;
+    use HasFactory, Notifiable, HasApiTokens, HasUuids, HasRoles, HasDeviceTokens, LogsActivity;
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['name', 'phone', 'is_active', 'gender', 'education_type', 'current_level_id'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
+    }
 
     protected static function newFactory()
     {

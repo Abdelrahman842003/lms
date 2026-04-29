@@ -24,9 +24,20 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
+
 class Teacher extends Authenticatable
 {
-    use HasFactory, Notifiable, HasApiTokens, HasUuids, HasDeviceTokens, HasSubscriptionStatus, HasTenantPlan;
+    use HasFactory, Notifiable, HasApiTokens, HasUuids, HasDeviceTokens, HasSubscriptionStatus, HasTenantPlan, LogsActivity;
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['name', 'phone', 'subject', 'status', 'plan_type', 'plan_expires_at'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
+    }
 
     protected static function newFactory()
     {

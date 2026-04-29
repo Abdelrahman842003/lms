@@ -26,6 +26,7 @@ use Illuminate\View\Middleware\ShareErrorsFromSession;
 use ShuvroRoy\FilamentSpatieLaravelBackup\FilamentSpatieLaravelBackupPlugin;
 use ShuvroRoy\FilamentSpatieLaravelHealth\FilamentSpatieLaravelHealthPlugin;
 use AlizHarb\ActivityLog\ActivityLogPlugin;
+use CharrafiMed\GlobalSearchModal\GlobalSearchModalPlugin;
 use Openplain\FilamentShadcnTheme\Color as ShadcnColor;
 
 class AdminPanelProvider extends PanelProvider
@@ -41,6 +42,7 @@ class AdminPanelProvider extends PanelProvider
                 ->label('سجل النشاط')
                 ->pluralLabel('سجلات الأنشطة')
                 ->navigationGroup('الإعدادات'),
+            GlobalSearchModalPlugin::make(),
         ];
 
         return $panel
@@ -67,7 +69,7 @@ class AdminPanelProvider extends PanelProvider
             ->topNavigation(false)
             ->databaseNotifications()
             ->databaseNotificationsPolling('30s')
-            ->globalSearch(false)
+            ->globalSearch(true)
             ->globalSearchDebounce('400ms')
             ->spa()
             // Resource Discovery

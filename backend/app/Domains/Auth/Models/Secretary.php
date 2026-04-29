@@ -13,9 +13,20 @@ use Spatie\Permission\Traits\HasRoles;
 use App\Domains\Application\Traits\HasDeviceTokens;
 use App\Domains\Auth\Models\Academy;
 
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
+
 class Secretary extends Authenticatable
 {
-    use HasFactory, Notifiable, HasApiTokens, HasUuids, HasRoles, HasDeviceTokens;
+    use HasFactory, Notifiable, HasApiTokens, HasUuids, HasRoles, HasDeviceTokens, LogsActivity;
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['name', 'phone', 'is_active'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
+    }
 
     protected static function newFactory()
     {

@@ -26,6 +26,13 @@ use Illuminate\Database\Eloquent\Builder;
 class VideoResource extends BaseResource
 {
     protected static ?string $model = Video::class;
+    
+    protected static ?string $recordTitleAttribute = 'title';
+    
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['title', 'teacher_reference_name'];
+    }
 
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-film';
 

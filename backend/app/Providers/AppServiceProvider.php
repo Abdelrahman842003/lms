@@ -364,6 +364,7 @@ class AppServiceProvider extends ServiceProvider
                 'Spatie\\Health\\Checks\\Checks\\UsedDiskSpaceCheck',
                 'Spatie\\Health\\Checks\\Checks\\RedisMemoryUsageCheck',
                 'Spatie\\Health\\Checks\\Checks\\HorizonCheck',
+                'Spatie\\Health\\Checks\\Checks\\BackupsCheck',
             ];
 
             $checks = [];
