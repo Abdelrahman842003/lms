@@ -163,6 +163,21 @@ class SubscriptionResource extends BaseResource
 
                                 $notes = (string) ($get('notes') ?? '');
                                 $set('notes', static::upsertPlanLabelInNotes($notes, $planLabel));
+                                
+                                // 2. Update month (expiry date) based on plan duration
+                                $trialDays = (int) \App\Domains\Application\Services\HelperService::getTrialPeriodDays();
+                                $newMonth = match ($state) {
+                                    'trial' => now()->addDays($trialDays),
+                                    'monthly' => now()->addMonth(),
+                                    'quarterly' => now()->addMonths(3),
+                                    'semi_annual' => now()->addMonths(6),
+                                    'annual' => now()->addYear(),
+                                    default => null,
+                                };
+
+                                if ($newMonth) {
+                                    $set('month', $newMonth->format('Y-m-d'));
+                                }
                             }),
 
                         TextInput::make('custom_period_months')
@@ -175,7 +190,7 @@ class SubscriptionResource extends BaseResource
                         Hidden::make('type')
                             ->required(),
 
-                        DatePicker::make('month')
+                        DatePicker::make('month')->disabled(fn ($get, string $operation): bool => $operation === 'edit' && ! (bool) ($get('update_subscription_duration') ?? false))->readOnly(fn ($get) => $get('plan_selection') !== 'custom' && $get('plan_selection') !== null)
                             ->label('الشهر')
                             ->required()
                             ->default(now()),
