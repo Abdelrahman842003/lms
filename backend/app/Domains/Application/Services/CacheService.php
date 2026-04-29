@@ -29,6 +29,7 @@ class CacheService
     public static function forgetSetting(string $key): void
     {
         Cache::tags(['settings'])->forget("setting:{$key}");
+        Cache::tags(['settings'])->forget('public_settings');
     }
 
     public static function forgetAllSettings(): void

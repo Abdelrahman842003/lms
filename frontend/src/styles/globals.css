@@ -467,23 +467,28 @@ body[data-season-theme="hijri_new_year"] .grid-pattern {
 }
 
 /* Simple scrollbar without transitions */
+/* Enhanced premium scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 100px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: var(--radius-md);
+  background: linear-gradient(180deg, var(--primary) 0%, var(--secondary) 100%);
+  border-radius: 100px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+  transition: all 0.3s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: linear-gradient(180deg, var(--primary-light) 0%, var(--secondary-light) 100%);
+  background-clip: content-box;
 }
 
 /* Hide horizontal scrollbar to prevent brown bar on navbar */
@@ -492,8 +497,9 @@ body[data-season-theme="hijri_new_year"] .grid-pattern {
 }
 
 html, body {
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: var(--primary) rgba(255, 255, 255, 0.05); /* Firefox */
+  -ms-overflow-style: auto; /* IE and Edge */
 }
 
 /* Ensure toast notifications are always centered */

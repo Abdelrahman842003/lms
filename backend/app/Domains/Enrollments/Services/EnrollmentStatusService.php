@@ -25,7 +25,7 @@ class EnrollmentStatusService
                     return $academyTrial;
                 }
             } else {
-                $academyTrial = (int) (Academy::query()->whereKey($enrollment->academy_id)->value('trial_period_days') ?? 0);
+                $academyTrial = (int) (Academy::find($enrollment->academy_id)?->trial_period_days ?? 0);
                 if ($academyTrial > 0) {
                     return $academyTrial;
                 }
@@ -40,7 +40,7 @@ class EnrollmentStatusService
                     return $teacherTrial;
                 }
             } else {
-                $teacherTrial = (int) (Teacher::query()->whereKey($enrollment->teacher_id)->value('trial_period_days') ?? 0);
+                $teacherTrial = (int) (Teacher::find($enrollment->teacher_id)?->trial_period_days ?? 0);
                 if ($teacherTrial > 0) {
                     return $teacherTrial;
                 }

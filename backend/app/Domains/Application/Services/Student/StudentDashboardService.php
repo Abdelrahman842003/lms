@@ -66,7 +66,7 @@ class StudentDashboardService
         $enrollment = Enrollment::where('student_id', $student->id)
             ->where('teacher_id', $teacherId)
             ->where('is_active', true)
-            ->with(['academy:id,trial_period_days', 'teacher:id,trial_period_days'])
+            ->with(['academy:id', 'teacher:id'])
             ->firstOrFail();
 
         // Count lectures directly in DB

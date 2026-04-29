@@ -11,8 +11,23 @@ use Carbon\Carbon;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
-class EditAcademy extends EditRecord
-{
+class EditAcademy extends EditRecord {
+    
+    protected function mutateFormDataBeforeFill(array $data): array
+    {
+        $planFields = [
+            'trial_period_days', 'plan_type', 'subscription_period', 'plan_expires_at',
+            'plan_max_students', 'is_unlimited_students', 'subscription_fee',
+            'paid_amount', 'storage_limit_gb', 'storage_used_bytes',
+            'discount_percent', 'discount_type', 'discount_scope', 'billing_notes'
+        ];
+
+        foreach ($planFields as $field) {
+            $value = $this->record->getAttribute($field); if ($value instanceof \Carbon\Carbon) { $value = $value->toDateString(); } $data[$field] = $value;
+        }
+
+        return $data;
+    }
     protected static string $resource = AcademyResource::class;
 
     protected function mutateFormDataBeforeSave(array $data): array

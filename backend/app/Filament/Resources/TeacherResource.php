@@ -328,7 +328,7 @@ class TeacherResource extends BaseResource
                                 }
                             }),
 
-                        DatePicker::make('plan_expires_at')
+                        DatePicker::make('plan_expires_at')->afterStateHydrated(fn ($state, $set) => $state ? $set('plan_expires_at', \Carbon\Carbon::parse($state)->format('Y-m-d')) : null)
                             ->label('تاريخ انتهاء الاشتراك')
                             ->default(now()->addDays(\App\Domains\Application\Services\HelperService::getTrialPeriodDays())->format('Y-m-d'))
                             ->required()

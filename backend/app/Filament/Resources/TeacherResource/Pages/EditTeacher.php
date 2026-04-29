@@ -16,6 +16,22 @@ class EditTeacher extends EditRecord
     protected static string $resource = TeacherResource::class;
 
     protected ?string $originalStatus = null;
+    
+    protected function mutateFormDataBeforeFill(array $data): array
+    {
+        $planFields = [
+            'trial_period_days', 'plan_type', 'subscription_period', 'plan_expires_at',
+            'plan_max_students', 'is_unlimited_students', 'subscription_fee',
+            'paid_amount', 'storage_limit_gb', 'storage_used_bytes',
+            'discount_percent', 'discount_type', 'discount_scope', 'billing_notes'
+        ];
+
+        foreach ($planFields as $field) {
+            $value = $this->record->getAttribute($field); if ($value instanceof \Carbon\Carbon) { $value = $value->toDateString(); } $data[$field] = $value;
+        }
+
+        return $data;
+    }
 
     protected function mutateFormDataBeforeSave(array $data): array
     {

@@ -53,10 +53,35 @@ class SettingsService
 
     public function getPublicSettings(): Collection
     {
-        return \Illuminate\Support\Facades\Cache::remember('public_settings', 3600, function () {
+        return \Illuminate\Support\Facades\Cache::tags(['settings'])->remember('public_settings', 3600, function () {
             $keys = [
-                'siteName', 
-...
+                'siteName',
+                'siteDescription',
+                'whatsappNumber',
+                'maintenanceMode',
+                'seo_title',
+                'seo_description',
+                'seo_keywords',
+                'seo_og_title',
+                'seo_og_description',
+                'seo_og_image',
+                'seo_twitter_handle',
+                'seo_google_verification',
+                'seo_bing_verification',
+                'geo_business_name',
+                'geo_address',
+                'geo_city',
+                'geo_region',
+                'geo_country_code',
+                'geo_latitude',
+                'geo_longitude',
+                'seasonal_theme',
+                'seasonal_theme_enabled',
+                'seasonal_theme_palettes',
+                'seasonal_theme_apply_primary',
+                'seasonal_theme_apply_secondary',
+                'seasonal_theme_apply_bg_start',
+                'seasonal_theme_apply_bg_end',
                 'landing_page_content',
             ];
 
