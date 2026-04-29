@@ -43,36 +43,30 @@ export default function LoginPage() {
   const contactAdminNumber = (settings.whatsappNumber || settings.support_phone || '').trim();
   const hasContactNumber = contactAdminNumber.replace(/[^0-9]/g, '').length > 0;
 
-  // Real-time Phone Validation (Egyptian Style)
   const validatePhone = (val: string) => {
     const phone = val.replace(/[^0-9]/g, '');
     if (!phone) return { error: 'رقم الهاتف مطلوب', isValid: false };
     if (!phone.startsWith('01')) return { error: 'يجب أن يبدأ بـ 01', isValid: false };
     if (!/^01[0125]/.test(phone)) return { error: 'كود الشركة غير صحيح', isValid: false };
-    if (phone.length !== 11) return { error: `مطلوب 11 رقم (حالياً ${phone.length})`, isValid: false };
+    if (phone.length !== 11) return { error: `مطلوب 11 رقم`, isValid: false };
     return { error: '', isValid: true };
   };
 
-  // Real-time Password Validation
   const validatePassword = (val: string) => {
     if (!val) return { error: 'كلمة المرور مطلوبة', isValid: false };
-    if (val.length < 6) return { error: 'يجب أن تكون 6 أحرف على الأقل', isValid: false };
+    if (val.length < 6) return { error: 'ضعيفة جداً', isValid: false };
     return { error: '', isValid: true };
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     let val = value;
-    
     if (name === 'phone') {
       val = value.replace(/[^0-9]/g, '').slice(0, 11);
-      const v = validatePhone(val);
-      setValidation(prev => ({ ...prev, phone: v }));
+      setValidation(prev => ({ ...prev, phone: validatePhone(val) }));
     } else {
-      const v = validatePassword(val);
-      setValidation(prev => ({ ...prev, password: v }));
+      setValidation(prev => ({ ...prev, password: validatePassword(val) }));
     }
-
     setFormData(prev => ({ ...prev, [name]: val }));
     if (serverError) setServerError('');
   };
@@ -93,20 +87,16 @@ export default function LoginPage() {
 
     try {
       await login(formData.phone, formData.password, userType);
-      const paths: Record<string, string> = { 
-        student: '/student/teachers', 
-        parent: '/parent/children', 
-        academy: '/academy/dashboard' 
-      };
+      const paths: Record<string, string> = { student: '/student/teachers', parent: '/parent/children', academy: '/academy/dashboard' };
       router.push(paths[userType] || (userType === 'secretary' ? '/teacher/dashboard' : `/${userType}/dashboard`));
     } catch (err: any) {
       setIsLoading(false);
       const status = err?.statusCode ?? err?.status;
-      if (status === 401) setServerError('بيانات الدخول غير صحيحة، تأكد من الرقم وكلمة المرور');
+      if (status === 401) setServerError('بيانات الدخول غير صحيحة');
       else if (status === 429) {
         setIsBanned(true);
         setCountdown(err?.data?.retry_after || 60);
-        setServerError('تم حظرك مؤقتاً لكثرة المحاولات');
+        setServerError('تم حظرك مؤقتاً');
       } else setServerError(err.message || 'حدث خطأ غير متوقع');
     }
   };
@@ -121,119 +111,130 @@ export default function LoginPage() {
   return (
     <LandingLayout>
       <PageTransition>
-        <div className="flex-1 flex items-center justify-center py-10 px-4 sm:px-6 lg:px-8 bg-[#080b14]/50">
-          <div className="w-full max-w-[460px] relative">
-            {/* Animated Glow behind card */}
-            <div className="absolute -inset-1 bg-gradient-to-r from-[#3249A9] to-blue-600 rounded-[2.5rem] blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
+        <div className="relative min-h-[calc(100vh-200px)] flex items-center justify-center py-16 px-6">
+          
+          <div className="w-full max-w-[1200px] grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             
-            <div className="relative bg-[#111524]/90 backdrop-blur-2xl border border-white/10 p-6 md:p-10 rounded-[2.2rem] shadow-2xl overflow-hidden">
-              <div className="flex flex-col items-center text-center mb-8">
-                <div className="w-14 h-14 bg-white/5 rounded-2xl flex items-center justify-center mb-4 border border-white/10 shadow-[inset_0_0_15px_rgba(255,255,255,0.05)]">
-                  <img src="/logo.png" alt="Logo" className="w-9 h-9 object-contain" />
-                </div>
-                <h2 className="text-xl md:text-2xl font-bold text-white mb-2">تسجيل الدخول</h2>
-                <p className="text-gray-400 text-sm md:text-base">مرحباً بك في منصة نيتاق التعليمية</p>
+            {/* Left Side: Creative Text (Hidden on mobile or centered) */}
+            <div className="hidden lg:block text-right space-y-6">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/[0.03] text-gray-400 text-sm">
+                <span>أهلاً بك مجدداً في نيتاق</span>
               </div>
+              <h1 className="text-[3.5rem] font-extrabold leading-[1.1] tracking-tight">
+                ابدأ رحلتك
+                <br />
+                <span className="text-[#3249A9]">التعليمية الآن.</span>
+              </h1>
+              <p className="text-gray-400 text-xl max-w-[450px] leading-relaxed">
+                ادخل إلى عالم من الابتكار، حيث نجمع لك كل ما تحتاجه للنجاح في مكان واحد.
+              </p>
+            </div>
 
-              <div className="mb-8">
-                <p className="text-right text-[0.8rem] text-gray-500 mb-3 px-1">اختر نوع الحساب:</p>
-                <UserTypeSelector userType={userType} onChange={setUserType} />
-              </div>
-
-              <form onSubmit={handleSubmit} className="space-y-6" noValidate>
-                {serverError && (
-                  <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 text-sm animate-shake">
-                    <Icon name="exclamation-circle" />
-                    <span>{serverError}</span>
-                  </div>
-                )}
-
-                <div className="space-y-1 group">
-                  <div className="flex justify-between items-center px-1">
-                    <span className={`text-[0.7rem] ${validation.phone.error ? 'text-red-400' : 'text-gray-500'}`}>
-                      {validation.phone.error || (validation.phone.isValid ? 'رقم صحيح ✓' : '')}
-                    </span>
-                    <label className="text-sm font-medium text-gray-300">رقم الهاتف</label>
-                  </div>
-                  <Input
-                    id="phone"
-                    name="phone"
-                    type="tel"
-                    placeholder="01xxxxxxxxx"
-                    value={formData.phone}
-                    onChange={handleInputChange}
-                    icon="fas fa-phone"
-                    required
-                    className={`
-                      bg-white/[0.03] border-white/10 text-white text-base py-4 rounded-xl
-                      focus:bg-white/[0.06] transition-all duration-300
-                      ${validation.phone.error ? 'border-red-500/50 focus:border-red-500' : 'focus:border-[#3249A9]'}
-                      ${validation.phone.isValid ? 'border-green-500/30' : ''}
-                    `}
-                  />
+            {/* Right Side: Integrated Form */}
+            <div className="w-full max-w-[480px] mx-auto lg:mr-auto lg:ml-0">
+              <div className="space-y-10">
+                
+                {/* Mobile Heading */}
+                <div className="lg:hidden text-center space-y-4 mb-10">
+                   <h1 className="text-4xl font-extrabold tracking-tight">
+                     ابدأ رحلتك <span className="text-[#3249A9]">الآن</span>
+                   </h1>
                 </div>
 
-                <div className="space-y-1">
-                  <div className="flex justify-between items-center px-1">
-                     <span className={`text-[0.7rem] ${validation.password.error ? 'text-red-400' : 'text-gray-500'}`}>
-                      {validation.password.error || (validation.password.isValid ? 'كلمة مرور مقبولة ✓' : '')}
-                    </span>
-                    <label className="text-sm font-medium text-gray-300">كلمة المرور</label>
-                  </div>
-                  <Input
-                    id="password"
-                    name="password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={formData.password}
-                    onChange={handleInputChange}
-                    icon="fas fa-lock"
-                    required
-                    className={`
-                      bg-white/[0.03] border-white/10 text-white text-base py-4 rounded-xl
-                      focus:bg-white/[0.06] transition-all duration-300
-                      ${validation.password.error ? 'border-red-500/50 focus:border-red-500' : 'focus:border-[#3249A9]'}
-                      ${validation.password.isValid ? 'border-green-500/30' : ''}
-                    `}
-                  />
+                {/* User Type Selector Area */}
+                <div className="space-y-4">
+                  <UserTypeSelector userType={userType} onChange={setUserType} />
                 </div>
 
-                <div className="flex justify-end">
-                  <button
-                    type="button"
-                    onClick={() => setIsForgotPasswordOpen(true)}
-                    className="text-xs text-gray-400 hover:text-[#3249A9] transition-colors font-medium"
-                  >
-                    نسيت كلمة السر؟
-                  </button>
-                </div>
-
-                <Button
-                  type="submit"
-                  loading={isLoading}
-                  disabled={isBanned || (!validation.phone.isValid && formData.phone.length > 0)}
-                  className={`
-                    w-full py-4 text-white font-bold rounded-2xl transition-all shadow-xl text-base flex items-center justify-center gap-3
-                    ${isBanned ? 'bg-gray-700' : 'bg-[#3249A9] hover:bg-[#283d8f] hover:scale-[1.02] active:scale-[0.98] shadow-[#3249A9]/20'}
-                  `}
-                >
-                  {isBanned ? (
-                    `انتظر ${countdown} ثانية`
-                  ) : (
-                    <>
-                      <span>دخول المنصة</span>
-                      <Icon name="arrow-left" size="sm" />
-                    </>
+                <form onSubmit={handleSubmit} className="space-y-8" noValidate>
+                  {serverError && (
+                    <div className="flex items-center gap-3 p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 text-sm">
+                      <Icon name="exclamation-circle" />
+                      <span>{serverError}</span>
+                    </div>
                   )}
-                </Button>
-              </form>
-              
-              <div className="mt-8 pt-6 border-t border-white/5 text-center">
-                 <p className="text-gray-500 text-xs">
-                   تواجه مشكلة؟ <button onClick={() => setIsForgotPasswordOpen(true)} className="text-[#3249A9] hover:underline">تواصل مع الدعم الفني</button>
-                 </p>
+
+                  <div className="space-y-6">
+                    <div className="space-y-2 group">
+                      <div className="flex justify-between items-center px-1">
+                        <span className={`text-[0.75rem] font-medium ${validation.phone.error ? 'text-red-400' : 'text-green-500'}`}>
+                          {validation.phone.error || (validation.phone.isValid ? '✓ جاهز' : '')}
+                        </span>
+                        <label className="text-sm font-bold text-gray-400">رقم الهاتف</label>
+                      </div>
+                      <Input
+                        id="phone"
+                        name="phone"
+                        type="tel"
+                        placeholder="01xxxxxxxxx"
+                        value={formData.phone}
+                        onChange={handleInputChange}
+                        icon="fas fa-phone"
+                        required
+                        className={`
+                          bg-transparent border-b-2 border-t-0 border-x-0 border-white/10 rounded-none px-0 py-5 text-xl
+                          focus:border-[#3249A9] focus:ring-0 transition-all duration-500
+                          ${validation.phone.error ? 'border-red-500/50' : ''}
+                        `}
+                      />
+                    </div>
+
+                    <div className="space-y-2 group">
+                      <div className="flex justify-between items-center px-1">
+                        <span className={`text-[0.75rem] font-medium ${validation.password.error ? 'text-red-400' : 'text-green-500'}`}>
+                          {validation.password.error || (validation.password.isValid ? '✓ جاهز' : '')}
+                        </span>
+                        <label className="text-sm font-bold text-gray-400">كلمة المرور</label>
+                      </div>
+                      <Input
+                        id="password"
+                        name="password"
+                        type="password"
+                        placeholder="••••••••"
+                        value={formData.password}
+                        onChange={handleInputChange}
+                        icon="fas fa-lock"
+                        required
+                        className={`
+                          bg-transparent border-b-2 border-t-0 border-x-0 border-white/10 rounded-none px-0 py-5 text-xl
+                          focus:border-[#3249A9] focus:ring-0 transition-all duration-500
+                          ${validation.password.error ? 'border-red-500/50' : ''}
+                        `}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => setIsForgotPasswordOpen(true)}
+                      className="text-sm text-gray-500 hover:text-[#3249A9] transition-colors font-bold"
+                    >
+                      نسيت كلمة السر؟
+                    </button>
+                  </div>
+
+                  <Button
+                    type="submit"
+                    loading={isLoading}
+                    disabled={isBanned}
+                    className={`
+                      w-full py-5 text-white font-black rounded-2xl transition-all shadow-[0_20px_40px_rgba(50,73,169,0.2)] text-lg
+                      ${isBanned ? 'bg-gray-800' : 'bg-[#3249A9] hover:bg-[#283d8f] hover:-translate-y-1 active:translate-y-0'}
+                    `}
+                  >
+                    {isBanned ? `انتظر ${countdown} ثانية` : 'دخول المنصة'}
+                  </Button>
+                </form>
+
+                <div className="text-center">
+                   <p className="text-gray-500 text-sm">
+                     تحتاج مساعدة؟ <button onClick={() => setIsForgotPasswordOpen(true)} className="text-[#3249A9] font-bold hover:underline">تواصل معنا</button>
+                   </p>
+                </div>
               </div>
             </div>
+
           </div>
         </div>
       </PageTransition>

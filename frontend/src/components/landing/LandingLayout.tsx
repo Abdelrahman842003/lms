@@ -10,7 +10,7 @@ interface LandingLayoutProps {
 
 export default function LandingLayout({ children }: LandingLayoutProps) {
   return (
-    <div className="min-h-screen relative flex flex-col bg-[#080b14] text-white font-[Tajawal] selection:bg-[#3249A9] selection:text-white overflow-x-hidden">
+    <div className="min-h-screen relative flex flex-col bg-transparent text-white font-[Tajawal] selection:bg-[#3249A9] selection:text-white overflow-x-hidden">
       {/* Background Gradients */}
       <div className="fixed inset-0 z-0 pointer-events-none">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#3249A9]/[0.03] rounded-full blur-[120px]" />
