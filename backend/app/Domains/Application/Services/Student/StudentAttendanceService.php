@@ -10,6 +10,7 @@ use App\Domains\Lectures\Models\Attendance;
 use App\Domains\Lectures\Models\Lecture;
 use App\Domains\Gamification\Models\PointTransaction;
 use App\Domains\Gamification\Services\PointService;
+use App\Domains\Lectures\Services\AttendanceQueueService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Crypt;
@@ -17,7 +18,8 @@ use Illuminate\Support\Facades\Crypt;
 class StudentAttendanceService
 {
     public function __construct(
-        private PointService $pointService
+        private PointService $pointService,
+        private AttendanceQueueService $queueService
     ) {}
 
     /**
@@ -50,6 +52,40 @@ class StudentAttendanceService
             throw new DomainException('QR code has expired');
         }
 
+        // Check if student already marked attendance for this lecture today
+        $existing = Attendance::where('lecture_id', $lecture->id)
+            ->where('student_id', $student->id)
+            ->whereHas('session', function ($q) {
+                $q->where('date', now()->toDateString());
+            })
+            ->first();
+
+        if ($existing) {
+            return [
+                'status' => 'success',
+                'attendance' => $existing,
+                'lecture' => $lecture,
+                'was_recently_created' => false,
+                'point_transaction' => null,
+            ];
+        }
+
+        // Queue the student instead of processing immediately
+        $position = $this->queueService->addStudentToQueue((string) $lecture->id, (string) $student->id);
+
+        return [
+            'status' => 'queued',
+            'position' => $position,
+            'lecture_id' => $lecture->id,
+            'lecture_title' => $lecture->title
+        ];
+    }
+
+    /**
+     * Process a queued attendance request
+     */
+    public function processQueuedAttendance(Student $student, Lecture $lecture): array
+    {
         // Find or create a lecture session for today
         $session = $lecture->sessions()->updateOrCreate(
             ['date' => now()->toDateString()],
@@ -57,7 +93,7 @@ class StudentAttendanceService
         );
 
         // Create or update attendance record
-        $attendance = Attendance::firstOrCreate(
+        $attendance = Attendance::updateOrCreate(
             [
                 'lecture_id' => $lecture->id,
                 'student_id' => $student->id,
@@ -69,11 +105,6 @@ class StudentAttendanceService
         );
 
         $wasRecentlyCreated = $attendance->wasRecentlyCreated;
-        
-        // Update status if already exists
-        if (!$wasRecentlyCreated && $attendance->status !== 'present') {
-            $attendance->update(['status' => 'present']);
-        }
 
         // Load lecture with teacher
         $lecture->load('teacher');
@@ -96,8 +127,11 @@ class StudentAttendanceService
         }
 
         return [
+            'status' => 'success',
             'attendance' => $attendance,
-            'lecture' => $lecture,
+            'lecture' => [
+                'title' => $lecture->title,
+            ],
             'was_recently_created' => $wasRecentlyCreated,
             'point_transaction' => $pointTransaction,
         ];

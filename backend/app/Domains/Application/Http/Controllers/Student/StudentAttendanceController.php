@@ -45,11 +45,22 @@ class StudentAttendanceController extends Controller
         try {
             $result = $this->attendanceService->markAttendance($student, $token);
 
+            if ($result['status'] === 'queued') {
+                return $this->successResponse([
+                    'status' => 'queued',
+                    'position' => $result['position'],
+                    'lecture_id' => $result['lecture_id'],
+                    'lecture_title' => $result['lecture_title'],
+                    'message' => 'أنت في قائمة الانتظار، سيتم تسجيل حضورك خلال لحظات',
+                ]);
+            }
+
             $message = $result['was_recently_created']
                 ? 'تم تسجيل الحضور بنجاح'
                 : 'تم تحديث الحضور بنجاح';
 
             return $this->successResponse([
+                'status' => 'success',
                 'message' => $message,
                 'lecture' => $result['lecture']->title,
                 'points_earned' => $result['point_transaction']?->points ?? 0,

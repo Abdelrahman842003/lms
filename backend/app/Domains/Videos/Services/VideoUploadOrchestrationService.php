@@ -159,6 +159,62 @@ class VideoUploadOrchestrationService
         ];
     }
 
+    /**
+     * Resume an interrupted multipart upload.
+     */
+    public function resumeUpload(
+        string $sessionId,
+        string $uploaderType,
+        string $uploaderId
+    ): array {
+        $session = VideoUploadSession::query()->findOrFail($sessionId);
+
+        // Ownership check
+        if (! $session->isOwnedBy($uploaderType, $uploaderId)) {
+            throw new AuthorizationException('غير مصرح باستكمال هذا الرفع.');
+        }
+
+        // Terminal state check
+        if ($session->status->isTerminal()) {
+            throw new AuthorizationException('جلسة الرفع منتهية أو ملغاة مسبقاً.');
+        }
+
+        // Fetch already uploaded parts from R2
+        $uploadedParts = $this->r2->listParts($session->object_key, $session->r2_upload_id);
+        $uploadedPartNumbers = array_column($uploadedParts, 'PartNumber');
+
+        // Identify missing parts
+        $missingParts = [];
+        $ttl = $this->settings->presignedUrlTtlSeconds();
+
+        for ($i = 1; $i <= $session->total_parts; $i++) {
+            if (! in_array($i, $uploadedPartNumbers, true)) {
+                $missingParts[] = [
+                    'part_number' => $i,
+                    'url'         => $this->r2->presignPartUrl($session->object_key, $session->r2_upload_id, $i, $ttl),
+                ];
+            }
+        }
+
+        // Calculate progress percentage (PHP native functions)
+        $progress = $session->total_parts > 0 
+            ? min(99, (int) round((count($uploadedParts) / $session->total_parts) * 100))
+            : 0;
+
+        return [
+            'session_id'       => $session->id,
+            'video_id'         => $session->video_id,
+            'file_name'        => $session->declared_filename,
+            'file_size'        => $session->declared_size_bytes,
+            'total_parts'      => $session->total_parts,
+            'chunk_size_bytes' => $this->settings->chunk_size_bytes ?? ($this->settings->chunkSizeMb() * 1024 * 1024),
+            'missing_parts'    => $missingParts,
+            'uploaded_count'   => count($uploadedParts),
+            'progress'         => $progress,
+            'presigned_ttl'    => $ttl,
+        ];
+    }
+
     // ─────────────────────────────────────────────────────────────────
     // STEP 2  –  Complete
     // ─────────────────────────────────────────────────────────────────
@@ -188,9 +244,39 @@ class VideoUploadOrchestrationService
         $session->update(['status' => VideoUploadSessionStatus::COMPLETING]);
 
         // Fetch ETags directly from R2 — browser CORS cannot expose ETag headers
-        $sdkParts = $this->r2->listParts($session->object_key, $session->r2_upload_id);
+        // Added retry logic (3 attempts) to handle R2 eventual consistency
+        $sdkParts = [];
+        $attempts = 0;
+        $maxAttempts = 3;
+
+        while ($attempts < $maxAttempts) {
+            try {
+                $sdkParts = $this->r2->listParts($session->object_key, $session->r2_upload_id);
+                
+                if (count($sdkParts) >= $session->total_parts) {
+                    break;
+                }
+
+                $attempts++;
+                if ($attempts < $maxAttempts) {
+                    sleep(1); // Wait 1s before retry
+                }
+            } catch (\Throwable $e) {
+                Log::warning("listParts attempt {$attempts} failed: " . $e->getMessage());
+                $attempts++;
+                if ($attempts >= $maxAttempts) throw $e;
+            }
+        }
 
         try {
+            if (empty($sdkParts)) {
+                throw new \Exception('لا توجد أجزاء مرفوعة لهذا الفيديو في R2.');
+            }
+
+            if (count($sdkParts) < $session->total_parts) {
+                throw new \Exception("عدد الأجزاء المكتشفة (" . count($sdkParts) . ") أقل من المتوقع ({$session->total_parts}). يرجى المحاولة مرة أخرى.");
+            }
+
             $this->r2->completeMultipartUpload(
                 $session->object_key,
                 $session->r2_upload_id,
@@ -209,6 +295,8 @@ class VideoUploadOrchestrationService
             Log::error('completeMultipartUpload failed', [
                 'session_id' => $sessionId,
                 'error'      => $e->getMessage(),
+                'found_parts' => count($sdkParts),
+                'expected_parts' => $session->total_parts
             ]);
 
             throw $e;
@@ -216,21 +304,25 @@ class VideoUploadOrchestrationService
 
         // ── Finalize verification ──────────────────────────────────
         $meta = $this->r2->objectMeta($session->object_key);
-
+        
         $session->update([
             'status'       => VideoUploadSessionStatus::COMPLETED,
             'completed_at' => now(),
         ]);
 
         $video = $session->video;
-        $verifiedSize = (int) ($meta['size'] ?? $session->declared_size_bytes);
+        if (!$video) {
+            throw new \Exception('الفيديو المرتبط بهذه الجلسة لم يعد موجوداً.');
+        }
+
+        $verifiedSize = (int) (($meta['size'] ?? 0) ?: $session->declared_size_bytes);
 
         $video->update([
             'status'           => VideoStatus::UPLOADED,
             'processing_status' => VideoProcessingStatus::PENDING,
             'original_path'    => $session->object_key,
             'video_size_bytes' => $verifiedSize,
-            'video_mime'       => $meta['content_type'] ?: $session->declared_mime,
+            'video_mime'       => ($meta['content_type'] ?? null) ?: $session->declared_mime,
         ]);
 
         // Increment storage quota with the verified file size

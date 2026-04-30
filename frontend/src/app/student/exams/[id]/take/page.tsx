@@ -61,6 +61,9 @@ export default function TakeExamPage() {
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [timeLeft, setTimeLeft] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const [waiting, setWaiting] = useState(false);
+  const [queuePosition, setQueuePosition] = useState(0);
+
   
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const attemptIdRef = useRef<string | null>(null);
@@ -350,9 +353,29 @@ export default function TakeExamPage() {
   if (loading) {
     return (
       <DashboardLayout role="student" user={user || undefined}>
-        <div className="flex flex-col items-center justify-center min-h-[60vh] text-white">
-          <LoadingSpinner size="lg" className="mb-4" />
-          <p className="text-xl">جاري تحميل الامتحان...</p>
+        <div className="flex flex-col items-center justify-center min-h-[60vh] text-white text-center p-5">
+          {waiting ? (
+            <>
+              <div className="w-24 h-24 mb-8 relative">
+                <div className="absolute inset-0 rounded-full border-4 border-primary/20 animate-ping"></div>
+                <div className="absolute inset-0 rounded-full border-4 border-t-primary animate-spin"></div>
+                <div className="absolute inset-0 flex items-center justify-center text-primary font-bold text-2xl">
+                  {queuePosition}
+                </div>
+              </div>
+              <h2 className="text-2xl font-bold mb-4">أنت في غرفة الانتظار</h2>
+              <p className="text-gray-light max-w-md mx-auto leading-relaxed">
+                هناك ضغط كبير على السيرفر حالياً. ترتيبك في الطابور هو <span className="text-primary font-bold">#{queuePosition}</span>.
+                <br />
+                سيتم دخولك للامتحان تلقائياً فور جاهزية دورك، لا تغلق هذه الصفحة.
+              </p>
+            </>
+          ) : (
+            <>
+              <LoadingSpinner size="lg" className="mb-4" />
+              <p className="text-xl">جاري تحميل الامتحان...</p>
+            </>
+          )}
         </div>
       </DashboardLayout>
     );
@@ -539,3 +562,4 @@ export default function TakeExamPage() {
     </DashboardLayout>
   );
 }
+

@@ -14,9 +14,10 @@ function AttendanceContent() {
   const { user, isLoading: authLoading } = useAuth();
   const token = searchParams.get('token');
   
-  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
+  const [status, setStatus] = useState<'loading' | 'queued' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState('جاري تسجيل الحضور...');
   const [lectureTitle, setLectureTitle] = useState('');
+  const [queuePosition, setQueuePosition] = useState(0);
 
   useEffect(() => {
     if (authLoading) return;
@@ -37,6 +38,45 @@ function AttendanceContent() {
     markAttendance();
   }, [user, authLoading, token, router]);
 
+  // WebSocket listener for queue
+  useEffect(() => {
+    if (status !== 'queued' || !user?.id) return;
+
+    let channel: any = null;
+
+    const setupEcho = async () => {
+      try {
+        const { initializeEcho } = await import('@/lib/echo');
+        const authToken = getAuthToken();
+        if (!authToken) return;
+
+        const echo = initializeEcho(authToken);
+        channel = echo.private(`notifications.student.${user.id}`)
+          .listen('.AttendanceProcessed', (data: any) => {
+            const result = data.result;
+            if (result.status === 'success') {
+              setStatus('success');
+              setMessage(result.was_recently_created ? 'تم تسجيل الحضور بنجاح!' : 'تم تحديث الحضور بنجاح!');
+              setLectureTitle(result.lecture?.title || '');
+            } else {
+              setStatus('error');
+              setMessage(result.message || 'فشل تسجيل الحضور.');
+            }
+          });
+      } catch (error) {
+        console.error('Echo setup failed:', error);
+      }
+    };
+
+    setupEcho();
+
+    return () => {
+      if (channel) {
+        channel.stopListening('.AttendanceProcessed');
+      }
+    };
+  }, [status, user?.id]);
+
   const markAttendance = async () => {
     try {
       const authToken = getAuthToken();
@@ -53,6 +93,14 @@ function AttendanceContent() {
       const data = await response.json();
 
       if (response.ok) {
+        if (data.status === 'queued') {
+          setStatus('queued');
+          setMessage(data.message);
+          setQueuePosition(data.position);
+          setLectureTitle(data.lecture_title || '');
+          return;
+        }
+        
         setStatus('success');
         setMessage(data.message || 'تم تسجيل الحضور بنجاح!');
         setLectureTitle(data.lecture || '');
@@ -87,6 +135,27 @@ function AttendanceContent() {
               <LoadingSpinner size="lg" className="mx-auto mb-6 w-16 h-16" />
               <h2 className="text-2xl font-bold text-white mb-2">جاري تسجيل الحضور</h2>
               <p className="text-gray-light">{message}</p>
+            </>
+          )}
+
+          {status === 'queued' && (
+            <>
+              <div className="w-20 h-20 mb-8 relative mx-auto">
+                <div className="absolute inset-0 rounded-full border-4 border-primary/20 animate-ping"></div>
+                <div className="absolute inset-0 rounded-full border-4 border-t-primary animate-spin"></div>
+                <div className="absolute inset-0 flex items-center justify-center text-primary font-bold text-xl">
+                  {queuePosition}
+                </div>
+              </div>
+              <h2 className="text-2xl font-bold text-white mb-2">في قائمة الانتظار</h2>
+              <p className="text-gray-light mb-4">{message}</p>
+              {lectureTitle && (
+                <div className="bg-white/5 rounded-lg p-4 mb-6">
+                  <p className="text-sm text-gray-light mb-1">المحاضرة</p>
+                  <p className="text-lg font-semibold text-white">{lectureTitle}</p>
+                </div>
+              )}
+              <p className="text-xs text-gray-light italic">سيتم التحويل تلقائياً، لا تغلق الصفحة...</p>
             </>
           )}
 

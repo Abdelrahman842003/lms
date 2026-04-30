@@ -33,25 +33,4 @@ class TeacherReportController extends Controller
 
         return $this->successResponse($report);
     }
-
-    /**
-     * Download report as PDF for the authenticated teacher
-     */
-    public function myReportPdf(TeacherReportRequest $request): Response
-    {
-        $validated = $request->validated();
-        $startDate = Carbon::parse($validated['start_date'])->startOfDay();
-        $endDate = Carbon::parse($validated['end_date'])->endOfDay();
-
-        $teacher = $this->getTeacherFromRequest($request);
-        $report = $this->reportService->getTeacherReport($teacher, $startDate, $endDate);
-
-        $pdfContent = $this->reportService->generatePdf($report, 'teacher', 'تقرير المدرس: ' . $teacher->name);
-        
-        $filename = 'my-report-' . $startDate->format('Y-m-d') . '-to-' . $endDate->format('Y-m-d') . '.pdf';
-
-        return response($pdfContent)
-            ->header('Content-Type', 'application/pdf')
-            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
-    }
 }

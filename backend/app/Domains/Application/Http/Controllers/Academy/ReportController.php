@@ -85,41 +85,4 @@ class ReportController extends Controller
 
         return $this->successResponse($report);
     }
-
-    public function exportPDF(ExportReportRequest $request)
-    {
-        $academy = $this->getAcademy($request);
-        
-        if (!$academy) {
-            return $this->errorResponse('Unauthorized', 403);
-        }
-        
-        $reportType = $request->validated('report_type');
-        $reportData = [];
-
-        switch ($reportType) {
-            case 'attendance':
-                $reportData = $this->service->generateAttendanceReport(
-                    $academy,
-                    $request->validated('date_from'),
-                    $request->validated('date_to'),
-                    $request->validated('teacher_id')
-                );
-                break;
-
-            case 'teachers':
-                $reportData = $this->service->generateTeachersReport($academy);
-                break;
-
-            case 'monthly':
-                $reportData = $this->service->generateMonthlyReport(
-                    $academy,
-                    (int) $request->validated('month'),
-                    (int) $request->validated('year')
-                );
-                break;
-        }
-
-        return $this->service->exportToPDF($reportType, $reportData);
-    }
 }

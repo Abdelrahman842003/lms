@@ -97,9 +97,14 @@ class StudentExamService
                 if ($questionsCount !== count($existingAttempt->questions_order)) {
                     // Exam was modified, delete invalid attempt and start over
                     $existingAttempt->delete();
-                    // Create a new attempt after deletion
-                    $newAttempt = $this->attemptBuilder->createAttempt($exam, $student->id);
-                    return $this->getAttemptData($newAttempt);
+                    
+                    // Put in queue instead of creating immediately
+                    $position = $this->queueService->addStudentToQueue((string) $exam->id, (string) $student->id);
+                    return [
+                        'status' => 'waiting',
+                        'position' => $position,
+                        'exam_id' => $exam->id
+                    ];
                 }
 
                 // Return existing attempt
@@ -109,9 +114,14 @@ class StudentExamService
             throw new DomainException('لقد قمت بأداء هذا الامتحان مسبقاً');
         }
 
-        // No existing attempt, create a new one
-        $newAttempt = $this->attemptBuilder->createAttempt($exam, $student->id);
-        return $this->getAttemptData($newAttempt);
+        // No existing attempt, put student in the entry queue
+        $position = $this->queueService->addStudentToQueue((string) $exam->id, (string) $student->id);
+        
+        return [
+            'status' => 'waiting',
+            'position' => $position,
+            'exam_id' => $exam->id
+        ];
     }
 
     /**

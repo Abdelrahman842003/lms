@@ -215,7 +215,7 @@ class NotificationService
 
         foreach ($allowedRecipients->chunk($batchSize) as $recipientChunk) {
             foreach ($recipientChunk as $notifiable) {
-                $notificationIds[] = $this->send(
+                \App\Domains\Notifications\Jobs\ProcessNotificationJob::dispatch(
                     $notifiable,
                     $userType,
                     $title,
@@ -420,7 +420,13 @@ class NotificationService
         string $type = 'general'
     ): void {
         foreach ($students as $student) {
-            $this->sendToParent($student, $title, $message, $data, $type);
+            \App\Domains\Notifications\Jobs\ProcessParentNotificationJob::dispatch(
+                $student,
+                $title,
+                $message,
+                $data,
+                $type
+            );
         }
     }
 }

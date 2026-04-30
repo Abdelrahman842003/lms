@@ -87,6 +87,23 @@ class VideoUploadController extends Controller
     }
 
     /**
+     * POST /api/v1/academy/videos/resume-upload/{sessionId}
+     */
+    public function resumeUpload(Request $request, string $sessionId): JsonResponse
+    {
+        /** @var Academy $academy */
+        $academy = $request->user();
+
+        $result = $this->orchestration->resumeUpload(
+            sessionId:    $sessionId,
+            uploaderType: $academy->getMorphClass(),
+            uploaderId:   (string) $academy->id,
+        );
+
+        return $this->successResponse($result, 'تم استرداد حالة الرفع.');
+    }
+
+    /**
      * GET /api/v1/academy/videos/upload-status/{sessionId}
      */
     public function uploadStatus(Request $request, string $sessionId): JsonResponse

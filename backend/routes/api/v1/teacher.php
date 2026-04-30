@@ -115,7 +115,6 @@ Route::middleware(['auth:sanctum', EnsureUserNotSuspended::class . ':teacher', E
     
     // Reports (Legacy)
     Route::get('reports/my-report', [TeacherReportController::class, 'myReport']);
-    Route::get('reports/my-report/pdf', [TeacherReportController::class, 'myReportPdf']);
     
     // Reports (Reporting Domain - v2)
     Route::get('reports/overview', [TeacherReportingController::class, 'overview']);
@@ -136,6 +135,7 @@ Route::middleware(['auth:sanctum', EnsureUserNotSuspended::class . ':teacher', E
     Route::middleware('throttle:video-upload')->group(function () {
         Route::post('videos/initiate-upload', [VideoUploadController::class, 'initiateUpload']);
         Route::post('videos/complete-upload', [VideoUploadController::class, 'completeUpload']);
+        Route::post('videos/resume-upload/{sessionId}', [VideoUploadController::class, 'resumeUpload']);
     });
     Route::delete('videos/abort-upload', [VideoUploadController::class, 'abortUpload']);
     Route::get('videos/upload-status/{sessionId}', [VideoUploadController::class, 'uploadStatus']);

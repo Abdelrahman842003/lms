@@ -78,7 +78,6 @@ Route::middleware(['auth:sanctum', EnsureActiveSubscription::class])->prefix('ac
     Route::get('reports/attendance', [ReportController::class, 'attendanceReport']);
     Route::get('reports/teachers', [ReportController::class, 'teachersReport']);
     Route::get('reports/monthly', [ReportController::class, 'monthlyReport']);
-    Route::get('reports/export-pdf', [ReportController::class, 'exportPDF']);
 
     // New Academy Reports (Reporting Foundation)
     Route::get('reports/snapshot', [AcademyReportController::class, 'snapshot']);
@@ -141,6 +140,7 @@ Route::middleware(['auth:sanctum', EnsureActiveSubscription::class])->prefix('ac
     // Videos Management (New: Direct-to-R2 multipart upload)
     Route::post('videos/initiate-upload', [VideoUploadController::class, 'initiateUpload'])->middleware('throttle:video-upload');
     Route::post('videos/complete-upload', [VideoUploadController::class, 'completeUpload']);
+    Route::post('videos/resume-upload/{sessionId}', [VideoUploadController::class, 'resumeUpload']);
     Route::delete('videos/abort-upload', [VideoUploadController::class, 'abortUpload']);
     Route::get('videos/upload-status/{sessionId}', [VideoUploadController::class, 'uploadStatus']);
     // Videos CRUD (store no longer accepts video bytes — use initiate-upload instead)

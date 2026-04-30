@@ -53,3 +53,12 @@ Schedule::job(RecalculateLeaderboard::class)->hourly();
 // Clean up expired tokens daily at 2 AM (off-peak hours)
 Schedule::command('tokens:cleanup')->dailyAt('02:00');
 
+// التنظيف الدوري للملفات المؤقتة
+Schedule::command('system:cleanup')->dailyAt('03:00');
+
+// معالجة الاشتراكات المنتهية للطلاب والمدرسين والأكاديميات
+Schedule::command('subscriptions:process-expirations')->dailyAt('04:00');
+
+// تنظيف سجلات النشاط القديمة (أكثر من 90 يوم)
+Schedule::command('activitylog:clean')->weekly();
+

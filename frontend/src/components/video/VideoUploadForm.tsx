@@ -3,7 +3,9 @@
 import React, { useMemo, useState } from 'react';
 import { Filter } from '@/components/Filter';
 import { Button, FilePicker, Icon, Input, Textarea } from '@/components/ui';
-import { useVideoUpload } from '@/hooks/useVideoUpload';
+import { useVideoUploadContext } from '@/contexts/VideoUploadContext';
+import { useAuth } from '@/contexts/EnhancedAuthContext';
+
 import type { VideoItem } from '@/types/video.types';
 
 interface OptionItem {
@@ -48,25 +50,23 @@ export function VideoUploadForm({
   const [attachments, setAttachments] = useState<File[]>([]);
   const [formError, setFormError] = useState<string | null>(null);
 
-  const { state, startUpload, cancelUpload, reset } = useVideoUpload({
-    mode,
-    onCompleted: (videoId) => {
-      // The video record is already created on the server; fetch its data
-      // via onCreated callback — for now we pass a minimal stub so the parent
-      // can refresh the list. The parent should re-fetch to get full data.
-      onCreated({ id: videoId } as VideoItem);
+  const { state: uploadState, startUpload, cancelUpload, reset } = useVideoUploadContext();
+
+  // Watch for completion to reset form and notify parent
+  React.useEffect(() => {
+    if (uploadState.phase === 'completed' && uploadState.videoId) {
+      onCreated({ id: uploadState.videoId } as VideoItem);
       resetForm();
-    },
-    onAborted: () => {
-      // Let user try again
-    },
-  });
+    }
+  }, [uploadState.phase, uploadState.videoId, onCreated]);
+
 
   const isUploading =
-    state.phase === 'preparing' ||
-    state.phase === 'uploading' ||
-    state.phase === 'retrying' ||
-    state.phase === 'completing';
+    uploadState.phase === 'preparing' ||
+    uploadState.phase === 'uploading' ||
+    uploadState.phase === 'retrying' ||
+    uploadState.phase === 'completing';
+
 
   const filteredGroups = useMemo(() => {
     if (!gradeId) return [];
@@ -127,7 +127,8 @@ export function VideoUploadForm({
       scheduled_at: scheduledAt || undefined,
       teacher_reference_id: mode === 'academy' ? teacherReferenceId : undefined,
       teacher_reference_name: mode === 'academy' ? selectedTeacher?.name : undefined,
-    }, attachments);
+    }, mode, attachments);
+
   };
 
   const handleCancel = () => {
@@ -269,29 +270,29 @@ export function VideoUploadForm({
         <div className="mt-6 rounded-xl border border-primary/40 bg-primary/10 p-5 space-y-3">
           {/* Header row */}
           <div className="flex items-center justify-between">
-            <p className="text-sm font-medium text-white">{PHASE_LABELS[state.phase] ?? 'جاري الرفع...'}</p>
-            <span className="text-lg font-bold text-primary tabular-nums">{state.progress}%</span>
+            <p className="text-sm font-medium text-white">{PHASE_LABELS[uploadState.phase] ?? 'جاري الرفع...'}</p>
+            <span className="text-lg font-bold text-primary tabular-nums">{uploadState.progress}%</span>
           </div>
 
           {/* Progress bar */}
           <div className="relative h-3 w-full rounded-full bg-white/10 overflow-hidden">
             <div
               className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-primary to-primary/70 transition-all duration-200"
-              style={{ width: `${state.progress}%` }}
+              style={{ width: `${uploadState.progress}%` }}
             />
           </div>
 
           {/* Part counter */}
-          {state.totalParts > 1 && (
+          {uploadState.totalParts > 1 && (
             <p className="text-xs text-gray-400 text-start">
-              الجزء <span className="text-white font-semibold">{state.currentPart}</span> من{' '}
-              <span className="text-white font-semibold">{state.totalParts}</span>
+              الجزء <span className="text-white font-semibold">{uploadState.currentPart}</span> من{' '}
+              <span className="text-white font-semibold">{uploadState.totalParts}</span>
             </p>
           )}
 
           {/* Cancel button */}
           <div className="text-end pt-1">
-            <Button type="button" variant="destructive" size="sm" onClick={() => cancelUpload('cancelled by user')}>
+            <Button type="button" variant="destructive" size="sm" onClick={() => cancelUpload(mode, 'cancelled by user')}>
               إلغاء الرفع
             </Button>
           </div>
@@ -299,18 +300,18 @@ export function VideoUploadForm({
       )}
 
       {/* ── Completion ── */}
-      {state.phase === 'completed' && (
+      {uploadState.phase === 'completed' && (
         <div className="mt-6 rounded-xl border border-green-500/30 bg-green-500/10 p-4">
           <p className="text-sm text-green-300">تم رفع الفيديو بنجاح! جاري معالجته...</p>
         </div>
       )}
 
       {/* ── Errors ── */}
-      {(formError || state.error) && (
-        <p className="mt-4 text-sm text-red-300">{formError ?? state.error}</p>
+      {(formError || uploadState.error) && (
+        <p className="mt-4 text-sm text-red-300">{formError ?? uploadState.error}</p>
       )}
 
-      {state.phase === 'aborted' && !state.error && (
+      {uploadState.phase === 'aborted' && !uploadState.error && (
         <p className="mt-4 text-sm text-yellow-400">تم إلغاء الرفع. يمكنك البدء من جديد.</p>
       )}
 
@@ -320,7 +321,7 @@ export function VideoUploadForm({
           variant="outline"
           className="flex-1"
           onClick={handleCancel}
-          disabled={state.phase === 'completing'}
+          disabled={uploadState.phase === 'completing'}
         >
           {isUploading ? 'إلغاء الرفع' : 'إلغاء'}
         </Button>
@@ -329,7 +330,7 @@ export function VideoUploadForm({
           variant="primary"
           className="flex-1"
           loading={isUploading}
-          disabled={isUploading || state.phase === 'completed'}
+          disabled={isUploading || uploadState.phase === 'completed'}
         >
           <Icon name="upload" />
           <span>رفع الفيديو</span>
@@ -338,3 +339,4 @@ export function VideoUploadForm({
     </form>
   );
 }
+
