@@ -53,7 +53,7 @@ class SettingsService
 
     public function getPublicSettings(): Collection
     {
-        return \Illuminate\Support\Facades\Cache::tags(['settings'])->remember('public_settings', 3600, function () {
+        $callback = function () {
             $keys = [
                 'siteName',
                 'siteDescription',
@@ -136,6 +136,12 @@ class SettingsService
             }
             
             return collect($mapped);
-        });
+        };
+
+        try {
+            return \Illuminate\Support\Facades\Cache::tags(['settings'])->remember('public_settings', 3600, $callback);
+        } catch (\BadMethodCallException $e) {
+            return \Illuminate\Support\Facades\Cache::remember('public_settings', 3600, $callback);
+        }
     }
 }

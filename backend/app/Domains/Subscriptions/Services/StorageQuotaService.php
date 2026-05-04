@@ -90,6 +90,11 @@ class StorageQuotaService
             return;
         }
 
+        if (method_exists($owner, 'tenantPlan')) {
+            $owner->tenantPlan()->increment('storage_used_bytes', $bytes);
+            return;
+        }
+
         $owner->increment('storage_used_bytes', $bytes);
     }
 
@@ -106,13 +111,22 @@ class StorageQuotaService
             return;
         }
 
-        // Atomic operation: GREATEST(0, storage_used_bytes - ?)
-        // This prevents race conditions and negative values
-        DB::statement(
-            'UPDATE ' . $owner->getTable() .
-            ' SET storage_used_bytes = GREATEST(0, storage_used_bytes - ?) WHERE id = ?',
-            [$bytes, $owner->getKey()]
-        );
+        if (method_exists($owner, 'tenantPlan')) {
+            \Illuminate\Support\Facades\DB::table('tenant_plans')
+                ->where('tenant_id', $owner->id)
+                ->where('tenant_type', $owner->getMorphClass())
+                ->update([
+                    'storage_used_bytes' => \Illuminate\Support\Facades\DB::raw("GREATEST(0, CAST(storage_used_bytes AS SIGNED) - {$bytes})")
+                ]);
+        } else {
+            // Atomic operation: GREATEST(0, storage_used_bytes - ?)
+            // This prevents race conditions and negative values
+            \Illuminate\Support\Facades\DB::statement(
+                'UPDATE ' . $owner->getTable() .
+                ' SET storage_used_bytes = GREATEST(0, storage_used_bytes - ?) WHERE id = ?',
+                [$bytes, $owner->getKey()]
+            );
+        }
 
         // Refresh the model to reflect the new value
         $owner->refresh();

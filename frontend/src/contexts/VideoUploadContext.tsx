@@ -9,9 +9,9 @@ import {
   completeAcademyUpload, 
   abortTeacherUpload, 
   abortAcademyUpload,
-  uploadAttachments,
-  fetchApi
+  uploadAttachments
 } from '@/services/videoService';
+import { fetchApi } from '@/services/api/baseApi';
 import type { InitiateUploadPayload, VideoItem } from '@/types/video.types';
 import toast from 'react-hot-toast';
 

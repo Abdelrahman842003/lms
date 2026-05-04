@@ -29,14 +29,19 @@ trait HasTenantPlan
     protected static function bootHasTenantPlan()
     {
         $cleanup = function ($model) {
+            // Get columns of the current model's table to avoid unsetting real columns
+            $columns = \Illuminate\Support\Facades\Schema::getColumnListing($model->getTable());
+            
             foreach (static::$planFields as $field) {
                 if (array_key_exists($field, $model->attributes)) {
+                    // Always store in planAttributes for synchronization
                     $model->planAttributes[$field] = $model->attributes[$field];
-                    unset($model->attributes[$field]);
-                }
-                // Also check and remove from original to be safe
-                if (array_key_exists($field, $model->original)) {
-                    unset($model->original[$field]);
+                    
+                    // ONLY unset if the field is NOT a real column in the database table
+                    // to avoid "Unknown column" errors during save.
+                    if (!in_array($field, $columns)) {
+                        unset($model->attributes[$field]);
+                    }
                 }
             }
         };
@@ -48,8 +53,10 @@ trait HasTenantPlan
         static::saved(function ($model) {
             $planData = [];
             foreach (static::$planFields as $field) {
-                if (array_key_exists($field, $model->planAttributes)) {
-                    $planData[$field] = $model->planAttributes[$field];
+                // Get value either from planAttributes or directly from the model
+                $val = $model->planAttributes[$field] ?? $model->getAttribute($field);
+                if ($val !== null) {
+                    $planData[$field] = $val;
                 }
             }
 
@@ -58,9 +65,6 @@ trait HasTenantPlan
                     ['tenant_id' => $model->id, 'tenant_type' => $model->getMorphClass()],
                     $planData
                 );
-
-                // Clear temporal storage after saving
-                $model->planAttributes = array_diff_key($model->planAttributes, array_flip(static::$planFields));
             }
         });
     }
@@ -80,43 +84,30 @@ trait HasTenantPlan
     {
         if (in_array($key, static::$planFields)) {
             $this->planAttributes[$key] = $value;
-            // Also ensure it's removed from main attributes if it somehow got there
-            if (isset($this->attributes[$key])) {
-                unset($this->attributes[$key]);
-            }
-            return $this;
+            // We don't unset here anymore to allow Eloquent to handle real columns
+            // The 'saving' listener above will handle unsetting only if necessary.
         }
 
         return parent::setAttribute($key, $value);
     }
 
     /**
-     * Override getAttribute/magic __get to handle plan fields.
+     * Override getAttribute to handle plan fields.
      */
     public function getAttribute($key)
     {
         if (in_array($key, static::$planFields)) {
-            // Return from planAttributes if already set (during creation/update)
             if (array_key_exists($key, $this->planAttributes)) {
                 return $this->planAttributes[$key];
             }
             
-            // Otherwise, get from relation (lazily or eagerly loaded)
-            return $this->tenantPlan->$key;
+            // Try to get from the relation, but avoid infinite loops
+            $plan = $this->getRelationValue('tenantPlan');
+            if ($plan && isset($plan->$key)) {
+                return $plan->$key;
+            }
         }
 
         return parent::getAttribute($key);
-    }
-
-    /**
-     * Check if an attribute is set (for isset() or empty()).
-     */
-    public function __isset($key)
-    {
-        if (in_array($key, static::$planFields)) {
-            return true;
-        }
-
-        return parent::__isset($key);
     }
 }
