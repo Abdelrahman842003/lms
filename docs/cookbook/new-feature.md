@@ -539,9 +539,8 @@ export const studyMaterialService = {
     if (data.publishedAt) formData.append('published_at', data.publishedAt);
 
     return apiClient.post('/teacher/study-materials', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
-  },
+      // headers: { 'Content-Type': 'multipart/form-data' }, // Avoid manual Content-Type with FormData
+    });  },
 
   async delete(id: string): Promise<void> {
     return apiClient.delete(`/teacher/study-materials/${id}`);

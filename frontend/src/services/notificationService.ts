@@ -86,39 +86,43 @@ export interface SendVoiceNotificationData {
   group_id?: number;
 }
 
+const getVoiceFilename = (voice: Blob): string => {
+  const mimeType = (voice.type || '').split(';')[0].trim();
+  const extensionMap: Record<string, string> = {
+    'audio/webm': 'weba',
+    'video/webm': 'webm',
+    'audio/ogg': 'ogg',
+    'audio/mpeg': 'mp3',
+    'audio/mp4': 'm4a',
+    'audio/x-m4a': 'm4a',
+    'audio/wav': 'wav',
+    'audio/opus': 'opus',
+  };
+
+  const extension = extensionMap[mimeType] || 'weba';
+  return `voice.${extension}`;
+};
+
 export const sendVoiceNotification = async (data: SendVoiceNotificationData) => {
   const endpoint = getNotificationEndpoint() + '/voice';
-  const token = getAccessToken();
-  const baseUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/api\/?$/, '').replace(/\/$/, '');
   
   const formData = new FormData();
   formData.append('title', data.title);
-  formData.append('voice', data.voice, 'voice.webm');
-  formData.append('duration', data.duration.toString());
+  formData.append('voice', data.voice, getVoiceFilename(data.voice));
+  formData.append('duration', Math.round(data.duration).toString());
   formData.append('recipient_type', data.recipient_type);
   
-  if (data.grade_id) {
+  if (data.grade_id && !isNaN(data.grade_id)) {
     formData.append('grade_id', data.grade_id.toString());
   }
-  if (data.group_id) {
+  if (data.group_id && !isNaN(data.group_id)) {
     formData.append('group_id', data.group_id.toString());
   }
 
-  const response = await fetch(`${baseUrl}${endpoint}`, {
+  return await fetchApi(endpoint, {
     method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Accept': 'application/json',
-    },
     body: formData,
   });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || 'فشل في إرسال الرسالة الصوتية');
-  }
-
-  return response.json();
 };
 
 export const storeDeviceToken = async (token: string) => {

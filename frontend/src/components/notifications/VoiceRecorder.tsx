@@ -11,6 +11,10 @@ interface VoiceRecorderProps {
 }
 
 type RecordingState = 'idle' | 'recording' | 'preview';
+type MicPermissionState = PermissionState | 'unknown';
+
+const PERMISSION_DENIED_MESSAGE =
+  'تم رفض صلاحية الميكروفون. اسمح بالوصول للميكروفون من إعدادات المتصفح ثم أعد المحاولة.';
 
 export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
   maxDuration = 90,
@@ -23,6 +27,7 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [isSupported, setIsSupported] = useState(true);
+  const [permissionState, setPermissionState] = useState<MicPermissionState>('unknown');
   const [error, setError] = useState<string | null>(null);
   const [smoothLevel, setSmoothLevel] = useState(0);
   const [bars, setBars] = useState<number[]>([15, 15, 15, 15, 15]);
@@ -52,6 +57,49 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
       setError('متصفحك لا يدعم تسجيل الصوت');
     }
   }, []);
+
+  useEffect(() => {
+    if (!navigator?.permissions?.query) {
+      setPermissionState('unknown');
+      return;
+    }
+
+    let isActive = true;
+    let status: PermissionStatus | null = null;
+
+    navigator.permissions
+      .query({ name: 'microphone' as PermissionName })
+      .then((result) => {
+        if (!isActive) return;
+        status = result;
+        setPermissionState(result.state);
+
+        status.onchange = () => {
+          if (isActive) setPermissionState(status?.state ?? 'unknown');
+        };
+      })
+      .catch(() => {
+        if (isActive) setPermissionState('unknown');
+      });
+
+    return () => {
+      isActive = false;
+      if (status) status.onchange = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isSupported) return;
+
+    if (permissionState === 'denied') {
+      setError(PERMISSION_DENIED_MESSAGE);
+      return;
+    }
+
+    if (permissionState === 'granted' && error === PERMISSION_DENIED_MESSAGE) {
+      setError(null);
+    }
+  }, [permissionState, isSupported, error]);
 
   useEffect(() => {
     return () => {
@@ -103,6 +151,10 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
   const startRecording = useCallback(async () => {
     try {
       setError(null);
+      if (permissionState === 'denied') {
+        setError(PERMISSION_DENIED_MESSAGE);
+        return;
+      }
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
       });
@@ -165,7 +217,7 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
         : (err instanceof Error ? err.message : 'UnknownError');
 
       if (errorName === 'NotAllowedError' || errorName === 'PermissionDeniedError') {
-        setError('تم رفض صلاحية الميكروفون. اسمح بالوصول للميكروفون من إعدادات المتصفح ثم أعد المحاولة.');
+        setError(PERMISSION_DENIED_MESSAGE);
         return;
       }
 
@@ -222,6 +274,7 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
 
   const progress = (duration / maxDuration) * 100;
   const isNearLimit = duration >= maxDuration - 10;
+  const isPermissionDenied = permissionState === 'denied';
 
   // Smooth color
   const r = Math.round(59 + smoothLevel * 140);
@@ -366,8 +419,9 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
           <div className="ux-flex ux-items-center ux-gap-3 ux-w-full">
             {recordingState === 'idle' && (
               <Button
+                type="button"
                 onClick={startRecording}
-                disabled={disabled}
+                disabled={disabled || isPermissionDenied}
                 className="ux-w-full ux-py-3dot5 ux-bg-gradient-to-r ux-from-blue-600 ux-to-indigo-600 ux-hover-from-blue-500 ux-hover-to-indigo-500 ux-text-white ux-rounded-xl ux-font-semibold ux-shadow-lg ux-shadow-blue-500-25 ux-hover-shadow-blue-500-40 ux-hover-translate-y-0dot5 ux-active-translate-y-0 ux-transition-all ux-disabled-opacity-50 ux-disabled-cursor-not-allowed group"
               >
                 <Icon name="microphone" className="ux-mr-2 ux-group-hover-scale-110 ux-transition-transform" />
@@ -377,6 +431,7 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
 
             {recordingState === 'recording' && (
               <Button
+                type="button"
                 onClick={stopRecording}
                 variant="outline"
                 className="ux-w-full ux-py-3dot5 ux-border-red-500-20 ux-text-red-400 ux-hover-text-red-300 ux-hover-bg-red-500-20 ux-hover-border-red-500-30 ux-rounded-xl ux-font-semibold ux-transition-all ux-flex ux-items-center ux-justify-center ux-gap-2 group"
@@ -389,6 +444,7 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
             {recordingState === 'preview' && (
               <>
                 <Button 
+                  type="button"
                   onClick={resetRecording} 
                   variant="outline"
                   className="ux-flex-1 ux-py-3dot5 ux-bg-gray-700-50 ux-hover-bg-gray-700 ux-text-gray-300 ux-hover-text-white ux-rounded-xl ux-font-medium ux-transition-all ux-flex ux-items-center ux-justify-center ux-gap-2"
@@ -397,6 +453,7 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
                   إعادة
                 </Button>
                 <Button 
+                  type="button"
                   onClick={confirmRecording} 
                   variant="primary"
                   className="ux-flex-2 ux-py-3dot5 ux-bg-gradient-to-r ux-from-emerald-600 ux-to-teal-600 ux-hover-from-emerald-500 ux-hover-to-teal-500 ux-text-white ux-rounded-xl ux-font-semibold ux-shadow-lg ux-shadow-emerald-500-25 ux-hover-shadow-emerald-500-40 ux-hover-translate-y-0dot5 ux-active-translate-y-0 ux-transition-all ux-flex ux-items-center ux-justify-center ux-gap-2"
@@ -411,6 +468,7 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
           {/* Cancel Button */}
           {onCancel && recordingState !== 'recording' && (
             <Button 
+              type="button"
               onClick={onCancel} 
               variant="ghost"
               className="ux-mt-4 ux-text-gray-500 ux-hover-text-gray-300 ux-text-sm ux-font-medium ux-transition-colors"

@@ -194,7 +194,16 @@ class NotificationController extends Controller
         } catch (\InvalidArgumentException $e) {
             return $this->errorResponse($e->getMessage(), 422);
         } catch (\Exception $e) {
-            return $this->errorResponse('حدث خطأ أثناء إرسال الرسالة الصوتية', 500);
+            \Illuminate\Support\Facades\Log::error('Voice Notification Error: ' . $e->getMessage(), [
+                'teacher_id' => $teacher->id,
+                'exception' => $e
+            ]);
+            
+            $message = config('app.debug') 
+                ? 'حدث خطأ: ' . $e->getMessage() 
+                : 'حدث خطأ أثناء إرسال الرسالة الصوتية';
+                
+            return $this->errorResponse($message, 500);
         }
     }
 

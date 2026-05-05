@@ -360,6 +360,23 @@ export const checkNotificationVoiceLimit = async () => {
   return response.data;
 };
 
+const getVoiceFilename = (voice: Blob): string => {
+  const mimeType = (voice.type || '').split(';')[0].trim();
+  const extensionMap: Record<string, string> = {
+    'audio/webm': 'weba',
+    'video/webm': 'webm',
+    'audio/ogg': 'ogg',
+    'audio/mpeg': 'mp3',
+    'audio/mp4': 'm4a',
+    'audio/x-m4a': 'm4a',
+    'audio/wav': 'wav',
+    'audio/opus': 'opus',
+  };
+
+  const extension = extensionMap[mimeType] || 'weba';
+  return `voice.${extension}`;
+};
+
 export const sendVoiceNotification = async (data: {
   title: string;
   voice: Blob;
@@ -370,7 +387,7 @@ export const sendVoiceNotification = async (data: {
 }) => {
   const formData = new FormData();
   formData.append('title', data.title);
-  formData.append('voice', data.voice, 'voice.webm');
+  formData.append('voice', data.voice, getVoiceFilename(data.voice));
   formData.append('duration', String(data.duration));
   formData.append('target_type', data.target_type);
   formData.append('type', data.type ?? 'info');
@@ -385,7 +402,6 @@ export const sendVoiceNotification = async (data: {
     {
       headers: {
         ...getAuthHeaders(),
-        'Content-Type': 'multipart/form-data',
       },
     }
   );

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { generateCSPHeader } from '@/lib/security';
 
 /**
  * Valid user roles for type checking
@@ -47,22 +48,35 @@ export function middleware(request: NextRequest) {
   const isAuthRoute = pathname === '/login' || pathname === '/register';
   const isLandingPage = pathname === '/';
 
+  // Create response object
+  let response = NextResponse.next();
+
   // 1. Redirect unauthenticated users from protected routes to login
   if (isProtectedRoute && !hasSession) {
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('redirect', pathname);
-    return NextResponse.redirect(loginUrl);
+    response = NextResponse.redirect(loginUrl);
   }
 
   // 2. Redirect authenticated users from auth routes to their dashboard
-  if ((isAuthRoute || isLandingPage) && hasSession) {
+  else if ((isAuthRoute || isLandingPage) && hasSession) {
     const redirectUrl = getRedirectUrlForRole(userRole, request.url);
     if (redirectUrl) {
-      return NextResponse.redirect(redirectUrl);
+      response = NextResponse.redirect(redirectUrl);
     }
   }
 
-  return NextResponse.next();
+  // 3. Add Security Headers (CSP)
+  // This helps prevent XSS and other attacks while allowing necessary resources.
+  response.headers.set('Content-Security-Policy', generateCSPHeader());
+  response.headers.set('X-Frame-Options', 'DENY');
+  response.headers.set('X-Content-Type-Options', 'nosniff');
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  
+  // Microphone is allowed for voice recording features
+  response.headers.set('Permissions-Policy', 'camera=(), microphone=(self), geolocation=(), interest-cohort=()');
+
+  return response;
 }
 
 export const config = {

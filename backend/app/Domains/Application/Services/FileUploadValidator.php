@@ -33,6 +33,12 @@ class FileUploadValidator
             'audio/wav',
             'audio/ogg',
             'audio/webm',
+            'audio/opus',
+            'audio/mp4',
+            'audio/x-m4a',
+            'video/webm',
+            'application/octet-stream',
+            'audio/x-matroska',
         ],
     ];
 
@@ -40,7 +46,7 @@ class FileUploadValidator
         'video' => ['mp4', 'mov', 'avi', 'webm'],
         'image' => ['jpg', 'jpeg', 'png', 'gif', 'webp'],
         'document' => ['pdf', 'doc', 'docx'],
-        'audio' => ['mp3', 'wav', 'ogg', 'weba'],
+        'audio' => ['mp3', 'wav', 'ogg', 'weba', 'webm', 'm4a', 'mp4', 'opus'],
     ];
 
     protected array $maxFileSizes = [
@@ -83,6 +89,17 @@ class FileUploadValidator
             $errors[] = "File contains potentially malicious content.";
         }
 
+        if (!empty($errors)) {
+            \Illuminate\Support\Facades\Log::warning('File validation failed', [
+                'type' => $type,
+                'mime' => $file->getMimeType(),
+                'client_mime' => $file->getClientMimeType(),
+                'extension' => $file->getClientOriginalExtension(),
+                'size' => $file->getSize(),
+                'errors' => $errors
+            ]);
+        }
+
         return $errors;
     }
 
@@ -98,6 +115,10 @@ class FileUploadValidator
     {
         $allowed = $this->allowedMimeTypes[$type] ?? [];
         $mimeType = $file->getMimeType();
+
+        if ($type === 'audio' && $mimeType === 'application/octet-stream') {
+            return true;
+        }
         
         return in_array($mimeType, $allowed);
     }
@@ -134,6 +155,10 @@ class FileUploadValidator
         }
         
         $mimeType = $file->getMimeType();
+
+        if ($mimeType === 'application/octet-stream' && in_array($extension, $this->allowedExtensions['audio'] ?? [], true)) {
+            return false;
+        }
         
         // Map extensions to expected MIME types
         $extensionMimeMap = [
@@ -144,15 +169,17 @@ class FileUploadValidator
             'gif' => ['image/gif'],
             'webp' => ['image/webp'],
             // Videos
-            'mp4' => ['video/mp4'],
+            'mp4' => ['video/mp4', 'audio/mp4'],
             'mov' => ['video/quicktime'],
             'avi' => ['video/x-msvideo'],
-            'webm' => ['video/webm'],
+            'webm' => ['video/webm', 'audio/webm', 'audio/x-matroska'],
             // Audio
             'mp3' => ['audio/mpeg'],
             'wav' => ['audio/wav'],
             'ogg' => ['audio/ogg'],
-            'weba' => ['audio/webm'],
+            'weba' => ['audio/webm', 'video/webm', 'audio/x-matroska'],
+            'm4a' => ['audio/x-m4a', 'audio/mp4'],
+            'opus' => ['audio/opus', 'audio/ogg'],
             // Documents
             'pdf' => ['application/pdf'],
             'doc' => ['application/msword'],

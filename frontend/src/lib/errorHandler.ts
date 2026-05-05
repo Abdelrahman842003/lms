@@ -166,8 +166,18 @@ export function handleApiError(error: unknown): never {
  * Note: This should be integrated with your toast library (react-hot-toast, sonner, etc.)
  */
 export function showErrorToast(error: ApiError | Error): void {
+  let displayMessage = error.message;
+
+  // For validation errors, try to get the first specific field error
+  if (error instanceof ApiError && error.isValidationError()) {
+    const firstError = error.getFirstValidationError();
+    if (firstError) {
+      displayMessage = firstError;
+    }
+  }
+
   // Use react-hot-toast
-  toast.error(error.message);
+  toast.error(displayMessage);
 
   // For now, keep logs in non-production only
   if (!IS_PROD) {

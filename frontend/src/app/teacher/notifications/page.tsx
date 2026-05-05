@@ -88,6 +88,38 @@ function NotificationsContent() {
         setFilter('from_developer');
       }
     }
+
+    // Listen for real-time notifications from Reverb (via NotificationDropdown)
+    const handleRealtimeNotification = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const data = customEvent.detail;
+      
+      const newReceivedNotif: ReceivedNotification = {
+        id: data.notification_id || Date.now().toString(),
+        type: data.type || 'general',
+        data: {
+          title: data.title,
+          message: data.message,
+          is_voice: data.data?.is_voice || data.is_voice,
+          voice_url: data.data?.voice_url || data.voice_url,
+          voice_duration: data.data?.voice_duration || data.voice_duration,
+          sender_name: data.data?.sender_name,
+        },
+        read_at: null,
+        created_at: data.created_at || new Date().toISOString()
+      };
+
+      setReceivedNotifications(prev => {
+        // Prevent duplicates
+        if (prev.some(n => n.id === newReceivedNotif.id)) return prev;
+        return [newReceivedNotif, ...prev];
+      });
+    };
+
+    window.addEventListener('notification:reverb:received', handleRealtimeNotification);
+    return () => {
+      window.removeEventListener('notification:reverb:received', handleRealtimeNotification);
+    };
   }, [searchParams]);
 
   const fetchVoiceLimit = async () => {
@@ -190,8 +222,22 @@ function NotificationsContent() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.title.trim()) {
+      toast.error('عنوان الرسالة مطلوب');
+      return;
+    }
+
+    if (formData.recipient_type === 'grade' && !formData.grade_id) {
+      toast.error('يرجى اختيار الصف الدراسي');
+      return;
+    }
+
+    if (formData.recipient_type === 'group' && !formData.group_id) {
+      toast.error('يرجى اختيار المجموعة');
+      return;
+    }
+
     setIsLoading(true);
-    
     try {
       if (notificationType === 'voice') {
         if (!voiceBlob) {
@@ -204,17 +250,22 @@ function NotificationsContent() {
           voice: voiceBlob,
           duration: voiceDuration,
           recipient_type: formData.recipient_type as any,
-          grade_id: formData.grade_id ? parseInt(formData.grade_id) : undefined,
-          group_id: formData.group_id ? parseInt(formData.group_id) : undefined,
+          grade_id: formData.grade_id && !isNaN(parseInt(formData.grade_id)) ? parseInt(formData.grade_id) : undefined,
+          group_id: formData.group_id && !isNaN(parseInt(formData.group_id)) ? parseInt(formData.group_id) : undefined,
         });
         toast.success('تم إرسال الرسالة الصوتية بنجاح');
       } else {
+        if (!formData.message.trim()) {
+          toast.error('نص الرسالة مطلوب');
+          setIsLoading(false);
+          return;
+        }
         await sendNotification({
           title: formData.title,
           message: formData.message,
           recipient_type: formData.recipient_type as any,
-          grade_id: formData.grade_id ? parseInt(formData.grade_id) : undefined,
-          group_id: formData.group_id ? parseInt(formData.group_id) : undefined,
+          grade_id: formData.grade_id && !isNaN(parseInt(formData.grade_id)) ? parseInt(formData.grade_id) : undefined,
+          group_id: formData.group_id && !isNaN(parseInt(formData.group_id)) ? parseInt(formData.group_id) : undefined,
         });
         toast.success('تم إرسال الإخطار بنجاح');
       }

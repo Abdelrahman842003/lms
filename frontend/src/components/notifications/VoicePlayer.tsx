@@ -27,27 +27,36 @@ export const VoicePlayer: React.FC<VoicePlayerProps> = ({
     if (!voiceUrl) return '';
     if (voiceUrl.startsWith('blob:')) return voiceUrl;
 
-    let apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
-    if (apiUrl.startsWith('/')) apiUrl = `http://localhost:8000${apiUrl}`;
-    if (!apiUrl.endsWith('/api')) apiUrl = apiUrl.replace(/\/?$/, '/api');
+    let apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+    if (!apiUrl.endsWith('/api/v1')) apiUrl = `${apiUrl.replace(/\/$/, '')}/api/v1`;
     
+    // If it's a full R2/Storage URL, extract the path
     if (voiceUrl.includes('files.neetaq.com') || voiceUrl.includes('.r2.dev')) {
       try {
         const url = new URL(voiceUrl);
-        return `${apiUrl}/media/${url.pathname.replace(/^\//, '')}`;
+        const path = url.pathname.replace(/^\//, '');
+        return `${apiUrl}/media/${path}`;
       } catch {
-        return `${apiUrl}/media/voice/${voiceUrl}`;
+        // Fallback if URL parsing fails
       }
     }
     
-    if (voiceUrl.includes('/api/media/')) return voiceUrl;
-    
-    if (voiceUrl.includes('voice_notifications')) {
-      return `${apiUrl}/media/${voiceUrl.replace(/^\/?storage\//, '').replace(/^\//, '')}`;
+    // Clean the path
+    let path = voiceUrl;
+    if (path.includes('/api/v1/media/')) {
+        path = path.split('/api/v1/media/')[1];
+    } else if (path.includes('/api/media/')) {
+        path = path.split('/api/media/')[1];
     }
     
-    const path = voiceUrl.startsWith('/storage/') ? voiceUrl.replace('/storage/', '') : voiceUrl;
-    return `${apiUrl}/media/${path}`;
+    path = path.replace(/^\/?storage\//, '').replace(/^\//, '');
+    
+    // Ensure we don't have duplicate voice_notifications in path
+    if (path.startsWith('voice_notifications/')) {
+        return `${apiUrl}/media/${path}`;
+    }
+    
+    return `${apiUrl}/media/voice/${path}`;
   }, [voiceUrl]);
 
   // Create audio element on mount

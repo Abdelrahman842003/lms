@@ -90,9 +90,14 @@ class VoiceNotificationService
         $month    = now()->format('m');
         $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
 
-        $path = "voice_notifications/{$year}/{$month}/{$filename}";
+        $directory = "voice_notifications/{$year}/{$month}";
+        
+        // Use putFileAs for better performance and reliability
+        $path = Storage::disk('r2')->putFileAs($directory, $file, $filename);
 
-        Storage::disk('r2')->put($path, file_get_contents($file->getRealPath()));
+        if (!$path) {
+            throw new \RuntimeException('Failed to store voice file to R2');
+        }
 
         return $path;
     }

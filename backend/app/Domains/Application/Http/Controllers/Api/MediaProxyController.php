@@ -19,6 +19,7 @@ class MediaProxyController extends Controller
     {
         $path = $this->sanitizePath($path);
 
+        // If the path already contains voice_notifications, don't prepend it again
         if (!str_starts_with($path, 'voice_notifications/')) {
             $path = 'voice_notifications/' . $path;
         }
@@ -32,7 +33,8 @@ class MediaProxyController extends Controller
      */
     public function media(Request $request, string $path): StreamedResponse
     {
-        return $this->streamFromR2($this->sanitizePath($path));
+        $path = $this->sanitizePath($path);
+        return $this->streamFromR2($path);
     }
 
     /**
@@ -43,7 +45,13 @@ class MediaProxyController extends Controller
         // Resolve any ../ sequences
         $path = str_replace(['../', '..\\', "\0"], '', $path);
         // Strip leading slashes
-        return ltrim($path, '/\\');
+        $path = ltrim($path, '/\\');
+        // Handle common prefix mistakes from frontend
+        $path = str_replace('api/media/', '', $path);
+        $path = str_replace('v1/media/', '', $path);
+        $path = str_replace('api/v1/media/', '', $path);
+        
+        return $path;
     }
 
     /**
@@ -54,26 +62,28 @@ class MediaProxyController extends Controller
         $disk = Storage::disk('r2');
 
         if (!$disk->exists($path)) {
+            \Illuminate\Support\Facades\Log::error("Media file not found in R2: " . $path);
             abort(404, 'File not found');
         }
 
-        /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
-        $disk        = Storage::disk('r2');
-        $mimeType    = method_exists($disk, 'mimeType') ? ($disk->mimeType($path) ?: 'application/octet-stream') : 'application/octet-stream';
+        $mimeType    = $disk->mimeType($path) ?: 'application/octet-stream';
         $size        = $disk->size($path);
         $lastModified = $disk->lastModified($path);
+        $frontendUrl = config('app.frontend_url', 'http://localhost:3000');
 
         return new StreamedResponse(function () use ($disk, $path) {
             $stream = $disk->readStream($path);
-            fpassthru($stream);
-            fclose($stream);
+            if ($stream) {
+                fpassthru($stream);
+                fclose($stream);
+            }
         }, 200, [
             'Content-Type'                     => $mimeType,
             'Content-Length'                   => $size,
             'Last-Modified'                    => gmdate('D, d M Y H:i:s', $lastModified) . ' GMT',
             'Cache-Control'                    => 'private, max-age=3600',
             'Accept-Ranges'                    => 'bytes',
-            'Access-Control-Allow-Origin'      => (string) config('app.url'),
+            'Access-Control-Allow-Origin'      => $frontendUrl,
             'Access-Control-Allow-Methods'     => 'GET, HEAD',
             'Access-Control-Allow-Credentials' => 'true',
         ]);

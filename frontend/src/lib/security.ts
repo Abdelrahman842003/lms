@@ -117,7 +117,9 @@ export function generateCSPHeader(): string {
     // Allow Google Fonts + cdnjs (Font Awesome) font files
     "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com",
     "img-src 'self' data: https: blob: https://images.neetaq.com",
-    "media-src 'self' data: https: blob:",
+    isDev
+      ? "media-src 'self' data: https: blob: http://127.0.0.1:* http://localhost:*"
+      : "media-src 'self' data: https: blob:",
     // In dev, also allow http://127.0.0.1 and http://localhost for direct API calls
     isDev
       ? "connect-src 'self' https: http://127.0.0.1:* http://localhost:* wss: ws:"

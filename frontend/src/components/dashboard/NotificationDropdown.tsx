@@ -331,7 +331,6 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
             const exists = prev.some(n => n.id === newNotification.id);
             if (exists) {
               return prev;
-              return prev;
             }
             return [newNotification, ...prev];
           });
@@ -504,7 +503,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
         
         <div className="notification-dropdown-footer">
           <Link 
-            href={role === 'parent' ? '/parent/children' : `/${role}/notifications`}
+            href="/notifications"
             className="notification-dropdown-link"
             onClick={closeDropdown}
           >

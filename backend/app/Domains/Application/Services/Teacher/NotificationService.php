@@ -27,7 +27,7 @@ class NotificationService
     public function getRecipients(Teacher $teacher, string $recipientType, ?string $gradeId = null, ?string $groupId = null, int $limit = 500): Collection
     {
         $guardianColumns = ['id', 'phone'];
-        $studentColumns = ['id', 'name', 'phone', 'parent_phone', 'guardian_id'];
+        $studentColumns = ['id', 'name', 'phone', 'guardian_id'];
         
         $query = match ($recipientType) {
             'all' => Student::with(['guardian:' . implode(',', $guardianColumns)])

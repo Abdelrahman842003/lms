@@ -77,10 +77,10 @@ Route::prefix('v1')->group(function () {
     Route::get('/public-settings', [\App\Domains\Application\Http\Controllers\Api\PublicController::class, 'publicSettings']);
 
     // ============================================
-    // Media Proxy Routes (Stream files from R2) — auth:sanctum required to prevent unauthorized access
+    // Media Proxy Routes (Stream files from R2)
     // Rate limited to prevent abuse
     // ============================================
-    Route::middleware(['auth:sanctum', 'throttle:video-stream'])->group(function () {
+    Route::middleware(['throttle:video-stream'])->group(function () {
         Route::get('/media/voice/{path}', [\App\Domains\Application\Http\Controllers\Api\MediaProxyController::class, 'voice'])
             ->where('path', '.*');
         Route::get('/media/{path}', [\App\Domains\Application\Http\Controllers\Api\MediaProxyController::class, 'media'])

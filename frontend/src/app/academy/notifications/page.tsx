@@ -290,6 +290,34 @@ export default function NotificationsPage() {
     if (user?.userType === 'academy') {
       fetchNotifications();
     }
+
+    // Listen for real-time notifications from Reverb (via NotificationDropdown)
+    const handleRealtimeNotification = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const data = customEvent.detail;
+      
+      const newReceivedNotif = normalizeNotification({
+        id: data.notification_id || Date.now().toString(),
+        type: data.type || 'general',
+        title: data.title,
+        message: data.message,
+        data: data.data || {},
+        created_at: data.created_at || new Date().toISOString()
+      }, 'received');
+
+      setNotifications(prev => {
+        // Prevent duplicates
+        if (prev.some(n => n.id === newReceivedNotif.id)) return prev;
+        return [newReceivedNotif, ...prev].sort(
+          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
+      });
+    };
+
+    window.addEventListener('notification:reverb:received', handleRealtimeNotification);
+    return () => {
+      window.removeEventListener('notification:reverb:received', handleRealtimeNotification);
+    };
   }, [user]);
 
   useEffect(() => {

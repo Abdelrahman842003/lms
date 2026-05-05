@@ -56,6 +56,36 @@ function StudentNotificationsContent() {
         setFilter('received');
       }
     }
+
+    // Listen for real-time notifications from Reverb (via NotificationDropdown)
+    const handleRealtimeNotification = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const data = customEvent.detail;
+      
+      const newReceivedNotif: ReceivedNotification = {
+        id: data.notification_id || Date.now().toString(),
+        type: data.type || 'general',
+        data: {
+          title: data.title,
+          message: data.message,
+          sender_name: data.data?.sender_name,
+          ...data.data
+        },
+        read_at: null,
+        created_at: data.created_at || new Date().toISOString()
+      };
+
+      setReceivedNotifications(prev => {
+        // Prevent duplicates
+        if (prev.some(n => n.id === newReceivedNotif.id)) return prev;
+        return [newReceivedNotif, ...prev];
+      });
+    };
+
+    window.addEventListener('notification:reverb:received', handleRealtimeNotification);
+    return () => {
+      window.removeEventListener('notification:reverb:received', handleRealtimeNotification);
+    };
   }, [searchParams]);
 
   const fetchNotifications = async () => {
