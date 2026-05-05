@@ -15,6 +15,47 @@ const ScanAttendanceModal: React.FC<ScanAttendanceModalProps> = ({ isOpen, onClo
   const isScanningRef = useRef<boolean>(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
+  const getQrBox = (viewfinderWidth: number, viewfinderHeight: number) => {
+    const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+    const size = Math.floor(minEdge * 0.7);
+    const bounded = Math.max(180, Math.min(280, size));
+    return { width: bounded, height: bounded };
+  };
+
+  const getCameraSupportMessage = () => {
+    if (typeof window === 'undefined') return null;
+    if (!window.isSecureContext) {
+      return 'تشغيل الكاميرا يتطلب HTTPS أو localhost.';
+    }
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      return 'الكاميرا غير مدعومة في هذا المتصفح.';
+    }
+    return null;
+  };
+
+  const getCameraErrorMessage = (error: any) => {
+    if (typeof window !== 'undefined' && !window.isSecureContext) {
+      return 'تشغيل الكاميرا يتطلب HTTPS أو localhost.';
+    }
+
+    const name = String(error?.name || '').toLowerCase();
+    const message = String(error?.message || '').toLowerCase();
+
+    if (name.includes('notallowed') || message.includes('permission') || message.includes('denied')) {
+      return 'تم رفض إذن الكاميرا. فعّل الإذن من إعدادات المتصفح.';
+    }
+    if (name.includes('notfound') || message.includes('not found') || message.includes('no camera')) {
+      return 'لم يتم العثور على كاميرا على هذا الجهاز.';
+    }
+    if (name.includes('notreadable') || message.includes('device in use')) {
+      return 'الكاميرا مستخدمة حالياً بواسطة تطبيق آخر.';
+    }
+    if (name.includes('overconstrained') || message.includes('constraints')) {
+      return 'تعذر تهيئة الكاميرا بالإعدادات المطلوبة.';
+    }
+    return 'فشل الوصول إلى الكاميرا. يرجى التحقق من الأذونات.';
+  };
+
   useEffect(() => {
     let mounted = true;
 
@@ -26,12 +67,18 @@ const ScanAttendanceModal: React.FC<ScanAttendanceModalProps> = ({ isOpen, onClo
           
           if (!mounted) return;
 
+          const supportMessage = getCameraSupportMessage();
+          if (supportMessage) {
+            toast.error(supportMessage);
+            return;
+          }
+
           const scanner = new Html5Qrcode("attendance-reader");
           scannerRef.current = scanner;
 
           const config = {
             fps: 10,
-            qrbox: { width: 250, height: 250 },
+            qrbox: getQrBox,
             aspectRatio: 1.0
           };
 
@@ -81,30 +128,40 @@ const ScanAttendanceModal: React.FC<ScanAttendanceModalProps> = ({ isOpen, onClo
             }
           };
 
+          let lastError: any = null;
+
           try {
             // Attempt 1: Back Camera (Environment)
             await scanner.start({ facingMode: "environment" }, config, onSuccess, () => {});
             isScanningRef.current = true;
+            return;
           } catch (err) {
-            try {
-              // Attempt 2: User Camera (Front/Webcam)
-              await scanner.start({ facingMode: "user" }, config, onSuccess, () => {});
-              isScanningRef.current = true;
-            } catch (err2) {
-              try {
-                // Attempt 3: First available camera ID
-                const devices = await Html5Qrcode.getCameras();
-                if (devices && devices.length > 0) {
-                  await scanner.start(devices[0].id, config, onSuccess, () => {});
-                  isScanningRef.current = true;
-                } else {
-                  throw new Error("No cameras found");
-                }
-              } catch (err3) {
-                toast.error('فشل الوصول إلى الكاميرا. يرجى التحقق من الأذونات.');
-              }
-            }
+            lastError = err;
           }
+
+          try {
+            // Attempt 2: User Camera (Front/Webcam)
+            await scanner.start({ facingMode: "user" }, config, onSuccess, () => {});
+            isScanningRef.current = true;
+            return;
+          } catch (err2) {
+            lastError = err2;
+          }
+
+          try {
+            // Attempt 3: First available camera ID
+            const devices = await Html5Qrcode.getCameras();
+            if (devices && devices.length > 0) {
+              await scanner.start(devices[0].id, config, onSuccess, () => {});
+              isScanningRef.current = true;
+              return;
+            }
+            lastError = new Error("No cameras found");
+          } catch (err3) {
+            lastError = err3;
+          }
+
+          toast.error(getCameraErrorMessage(lastError));
         } catch (err) {
           toast.error('حدث خطأ في تشغيل الماسح الضوئي');
         }

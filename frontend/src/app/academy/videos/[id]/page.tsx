@@ -179,7 +179,7 @@ export default function AcademyVideoDetailPage() {
     if (!video || attachmentFiles.length === 0) return;
     setIsUploadingAttachments(true);
     try {
-      const { promise } = uploadAttachments(`/academy/videos/${video.id}/attachments`, attachmentFiles, video.id);
+      const { promise } = uploadAttachments('/academy/videos', attachmentFiles, video.id);
       await promise;
       setAttachmentFiles([]);
       if (attachmentInputRef.current) attachmentInputRef.current.value = '';

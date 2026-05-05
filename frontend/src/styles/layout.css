@@ -129,8 +129,11 @@
 .navbar-scan-btn {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 16px;
+  gap: 0;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  justify-content: center;
   background: rgba(66, 99, 235, 0.1);
   border: 1px solid rgba(66, 99, 235, 0.3);
   border-radius: 10px;
@@ -152,6 +155,16 @@
 
 .navbar-scan-btn i {
   font-size: 1.1rem;
+}
+
+.navbar-scan-icon {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.navbar-scan-label {
+  display: none;
+  line-height: 1;
 }
 
 /* Navbar User */
@@ -565,6 +578,35 @@
 
   .navbar-menu-toggle {
     display: flex;
+  }
+}
+
+@media (max-width: 1024px) {
+  .navbar-right-group {
+    gap: 10px;
+  }
+
+  .navbar-scan-btn {
+    width: 44px !important;
+    height: 44px;
+    padding: 0;
+    gap: 0;
+    justify-content: center;
+  }
+
+  .navbar-scan-label {
+    display: none;
+  }
+
+  .navbar-upload-manager .navbar-upload-progress {
+    display: none;
+  }
+
+  .navbar-upload-manager .navbar-upload-trigger {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    justify-content: center;
   }
 }
 

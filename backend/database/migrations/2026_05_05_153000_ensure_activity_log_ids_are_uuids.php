@@ -15,8 +15,9 @@ return new class extends Migration
         $tableName = config('activitylog.table_name') ?? 'activity_log';
 
         Schema::connection($connection)->table($tableName, function (Blueprint $table) {
-            $table->uuid('subject_id')->nullable()->change();
-            $table->uuid('causer_id')->nullable()->change();
+            // Check current column type if possible, but change() is usually safe
+            $table->char('subject_id', 36)->nullable()->change();
+            $table->char('causer_id', 36)->nullable()->change();
         });
     }
 

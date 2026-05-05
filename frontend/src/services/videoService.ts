@@ -98,61 +98,74 @@ export async function getAcademyUploadStatus(sessionId: string): Promise<UploadS
   return fetchApi<UploadSessionStatus>(`/academy/videos/upload-status/${sessionId}`);
 }
 
-// ─── Upload a single attachment (still goes through server) ─────────────────
-
-function buildAttachmentsFormData(attachments: File[]): FormData {
-  const fd = new FormData();
-  attachments.forEach((file) => fd.append('attachments[]', file));
-  return fd;
-}
+// ─── Direct-to-R2 Attachment Upload ──────────────────────────────────────────
 
 export function uploadAttachments(
-  endpoint: string,
+  endpointPrefix: string, // e.g. '/teacher/videos' or '/academy/videos'
   attachments: File[],
   videoId: string
 ): { promise: Promise<void>; cancel: () => void } {
-  const formData = buildAttachmentsFormData(attachments);
-  const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-  const apiPath = `/api/v1${cleanEndpoint}`;
-  const url = `${getApiBaseUrl()}${apiPath}`;
-  const xhr = new XMLHttpRequest();
+  let isCancelled = false;
+  const xhrPool: XMLHttpRequest[] = [];
 
-  const promise = new Promise<void>((resolve, reject) => {
-    xhr.open('POST', url, true);
-    const headers = getAuthHeaders({}, url, { method: 'POST', body: formData });
-    Object.entries(headers).forEach(([key, value]) => xhr.setRequestHeader(key, value));
-    xhr.withCredentials = true;
-    xhr.onerror = () => {
-      console.error('[uploadAttachments] Network Error:', url);
-      reject(new Error('فشل رفع المرفقات.'));
-    };
-    xhr.onabort = () => reject(new Error('تم إلغاء رفع المرفقات.'));
-    xhr.onload = () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        resolve();
-        return;
-      }
-      try {
-        const parsed = JSON.parse(xhr.responseText);
-        let errorMsg = parsed?.message || 'فشل رفع المرفقات.';
-        
-        // Extract detailed validation errors if present
-        if (parsed?.errors && typeof parsed.errors === 'object') {
-          const details = Object.values(parsed.errors).flat().join(' | ');
-          if (details) errorMsg += ` (${details})`;
-        }
-        
-        console.error('[uploadAttachments] Server Error:', xhr.status, parsed);
-        reject(new Error(errorMsg));
-      } catch {
-        console.error('[uploadAttachments] Invalid Response:', xhr.status, xhr.responseText);
-        reject(new Error('استجابة غير صالحة من الخادم.'));
-      }
-    };
-    xhr.send(formData);
-  });
+  const promise = (async () => {
+    // 1. Initiate: Get presigned PUT URLs for all attachments
+    const filesMetadata = attachments.map(f => ({
+      name: f.name,
+      mime: f.type || 'application/octet-stream',
+      size: f.size
+    }));
 
-  return { promise, cancel: () => xhr.abort() };
+    const initiateRes = await fetchApi<any[]>(`${endpointPrefix}/${videoId}/attachments/initiate-direct-upload`, {
+      method: 'POST',
+      body: JSON.stringify({ files: filesMetadata }),
+    });
+
+    if (isCancelled) return;
+
+    // 2. Upload: PUT each file to its presigned URL
+    const uploadPromises = initiateRes.map(async (info, index) => {
+      const file = attachments[index];
+      
+      const response = await fetch(info.put_url, {
+        method: 'PUT',
+        body: file,
+        headers: {
+          'Content-Type': 'application/octet-stream',
+        },
+        mode: 'cors',
+      });
+
+      if (!response.ok) {
+        throw new Error(`فشل رفع ${info.name} (Status: ${response.status})`);
+      }
+
+      return {
+        name: info.name,
+        file_path: info.file_path,
+        mime_type: info.mime_type,
+        file_size: info.file_size
+      };
+    });
+
+    const completedAttachments = await Promise.all(uploadPromises);
+    
+    if (isCancelled) return;
+
+    // 3. Complete: Tell the server to save the attachment records
+    await fetchApi(`${endpointPrefix}/${videoId}/attachments/complete-direct-upload`, {
+      method: 'POST',
+      body: JSON.stringify({ attachments: completedAttachments }),
+    });
+  })();
+
+  return { 
+    promise, 
+    cancel: () => {
+      isCancelled = true;
+      xhrPool.forEach(xhr => xhr.abort());
+    } 
+  };
 }
 
 // ─── Video listing ───────────────────────────────────────────────────────────

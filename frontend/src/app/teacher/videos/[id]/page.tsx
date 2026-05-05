@@ -291,7 +291,7 @@ export default function TeacherVideoDetailPage() {
     if (!video || attachmentFiles.length === 0) return;
     setIsUploadingAttachments(true);
     try {
-      const { promise } = uploadAttachments(`/teacher/videos/${video.id}/attachments`, attachmentFiles, video.id);
+      const { promise } = uploadAttachments('/teacher/videos', attachmentFiles, video.id);
       await promise;
       setAttachmentFiles([]);
       if (attachmentInputRef.current) attachmentInputRef.current.value = '';

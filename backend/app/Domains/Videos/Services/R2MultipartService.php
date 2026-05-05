@@ -98,6 +98,28 @@ class R2MultipartService
     }
 
     /**
+     * Generate a presigned PUT URL for a single-part upload.
+     * Ideal for smaller files like attachments (still avoids server bytes).
+     */
+    public function presignPutUrl(string $objectKey, ?string $contentType = null, int $ttlSeconds = 3600): string
+    {
+        $params = [
+            'Bucket' => $this->bucket,
+            'Key'    => $objectKey,
+        ];
+
+        if ($contentType) {
+            $params['ContentType'] = $contentType;
+        }
+
+        $cmd = $this->client->getCommand('PutObject', $params);
+
+        $request = $this->client->createPresignedRequest($cmd, "+{$ttlSeconds} seconds");
+
+        return (string) $request->getUri();
+    }
+
+    /**
      * Step 3: Complete the multipart upload.
      * $parts format: [ ['PartNumber' => 1, 'ETag' => '"abc..."'], ... ]
      *

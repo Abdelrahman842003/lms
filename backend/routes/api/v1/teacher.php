@@ -138,6 +138,8 @@ Route::middleware(['auth:sanctum', EnsureUserNotSuspended::class . ':teacher', E
         Route::post('videos/pause-upload', [VideoUploadController::class, 'pauseUpload']);
         Route::post('videos/complete-upload', [VideoUploadController::class, 'completeUpload']);
         Route::post('videos/resume-upload/{sessionId}', [VideoUploadController::class, 'resumeUpload']);
+        Route::post('videos/{video}/attachments/initiate-direct-upload', [VideoUploadController::class, 'initiateAttachmentUploads']);
+        Route::post('videos/{video}/attachments/complete-direct-upload', [VideoUploadController::class, 'completeAttachmentUploads']);
     });
     Route::delete('videos/abort-upload', [VideoUploadController::class, 'abortUpload']);
     Route::get('videos/upload-status/{sessionId}', [VideoUploadController::class, 'uploadStatus']);

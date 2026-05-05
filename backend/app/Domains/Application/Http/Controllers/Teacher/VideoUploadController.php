@@ -170,4 +170,55 @@ class VideoUploadController extends Controller
             'completed_at' => $session->completed_at?->toIso8601String(),
         ]);
     }
+
+    /**
+     * POST /api/v1/teacher/videos/{video}/attachments/initiate-direct-upload
+     */
+    public function initiateAttachmentUploads(Request $request, \App\Domains\Videos\Models\Video $video): JsonResponse
+    {
+        /** @var Teacher $teacher */
+        $teacher = $request->user();
+
+        if (! $this->policy->update($teacher, $video)) {
+            throw new AuthorizationException('غير مصرح لك برفع مرفقات لهذا الفيديو.');
+        }
+
+        $request->validate([
+            'files'        => ['required', 'array', 'min:1'],
+            'files.*.name' => ['required', 'string'],
+            'files.*.mime' => ['required', 'string'],
+            'files.*.size' => ['required', 'integer'],
+        ]);
+
+        $payload = $this->orchestration->initiateAttachmentUploads($video, $request->input('files'));
+
+        return $this->successResponse($payload, 'تم تهيئة روابط رفع المرفقات.');
+    }
+
+    /**
+     * POST /api/v1/teacher/videos/{video}/attachments/complete-direct-upload
+     */
+    public function completeAttachmentUploads(Request $request, \App\Domains\Videos\Models\Video $video): JsonResponse
+    {
+        /** @var Teacher $teacher */
+        $teacher = $request->user();
+
+        if (! $this->policy->update($teacher, $video)) {
+            throw new AuthorizationException('غير مصرح لك بإكمال رفع مرفقات لهذا الفيديو.');
+        }
+
+        $request->validate([
+            'attachments'            => ['required', 'array', 'min:1'],
+            'attachments.*.name'      => ['required', 'string'],
+            'attachments.*.file_path' => ['required', 'string'],
+            'attachments.*.mime_type' => ['required', 'string'],
+            'attachments.*.file_size' => ['required', 'integer'],
+        ]);
+
+        $context = $this->actorResolver->resolveIndependentTeacher($teacher);
+
+        $this->orchestration->completeAttachmentUploads($video, $request->input('attachments'), $context);
+
+        return $this->successResponse([], 'تم حفظ المرفقات بنجاح.');
+    }
 }

@@ -12,8 +12,6 @@ import MaintenanceGuard from '@/components/MaintenanceGuard';
 import SeasonalDecorations from '@/components/SeasonalDecorations';
 import { resolveSeasonalThemeFromSettings } from '@/lib/seasonalTheme';
 import { VideoUploadProvider } from '@/contexts/VideoUploadContext';
-import { FloatingUploadManager } from '@/components/video/FloatingUploadManager';
-
 
 // Fetch SEO settings from API
 const getSeoSettings = async () => {
@@ -166,9 +164,7 @@ export default async function RootLayout({
                     <div className="relative z-10 max-w-[1200px] mx-auto">
                         {children}
                     </div>
-                    <FloatingUploadManager />
-                    <Toaster position="top-center" />
-                  </MaintenanceGuard>
+                    <Toaster position="top-center" />                  </MaintenanceGuard>
                 </VideoUploadProvider>
                 </AuthProvider>
                 </SettingsProvider>

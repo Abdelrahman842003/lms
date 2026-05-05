@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { SidebarItem } from '@/types/dashboard';
 import { NotificationDropdown } from './NotificationDropdown';
+import { NavbarUploadManager } from './NavbarUploadManager';
 import { TeacherSelectionDropdown } from './TeacherSelectionDropdown';
 import { AcademySelector } from './AcademySelector';
 import ScanAttendanceModal from './ScanAttendanceModal';
@@ -580,10 +581,13 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
                 className="navbar-scan-btn"
                 title="تسجيل الحضور والانصراف"
               >
-                <Icon name="qrcode" size="sm" />
-                <span className="ux-hidden ux-lg-inline">تسجيل الحضور</span>
+                <Icon name="qrcode" size="lg" className="navbar-scan-icon" />
+                <span className="navbar-scan-label ux-hidden ux-lg-inline">تسجيل الحضور</span>
               </Button>
             )}
+
+            {/* Upload Manager */}
+            <NavbarUploadManager />
 
             {/* Notification Dropdown */}
             <NotificationDropdown role={role} />
@@ -737,6 +741,19 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
         </div>
 
         <div className="mobile-sidebar-nav">
+          {role === 'teacher' && selectedAcademy?.id && selectedAcademy.id !== 'independent' && (
+            <button
+              type="button"
+              className="mobile-sidebar-link mobile-sidebar-action"
+              onClick={() => {
+                setIsScanAttendanceModalOpen(true);
+                setIsMobileSidebarOpen(false);
+              }}
+            >
+              <Icon name="qrcode" size="sm" />
+              <span>تسجيل الحضور والانصراف</span>
+            </button>
+          )}
           {items.map((item) => (
             <React.Fragment key={item.id}>
               {item.children ? (

@@ -146,13 +146,14 @@ export function VideoUploadProvider({ children }: { children: React.ReactNode })
         return; // Success
       } catch (err: any) {
         const isRateLimit = err?.statusCode === 429;
+        const isTerminal = err?.statusCode >= 400 && err?.statusCode < 500 && !isRateLimit;
+        
         const delay = isRateLimit ? 2000 * attempt : 1000 * Math.pow(2, attempt - 1);
         
         console.warn(`Failed to report part ${partNumber} success (attempt ${attempt}/${maxRetries}):`, err.message);
         
-        if (attempt === maxRetries) {
-          console.error(`Final failure reporting part ${partNumber} success. This part will need re-uploading if session is resumed.`);
-          return;
+        if (attempt === maxRetries || isTerminal) {
+          throw new Error(`فشل تأكيد استلام الجزء ${partNumber} من قبل الخادم: ${err.message}`);
         }
 
         await new Promise(resolve => setTimeout(resolve, delay));
@@ -325,12 +326,12 @@ export function VideoUploadProvider({ children }: { children: React.ReactNode })
       toast.success('تم رفع الفيديو بنجاح! مجهودك في أمان.');
 
       if (attachments && attachments.length > 0) {
-        const attachEndpoint = mode === 'teacher'
-            ? `/teacher/videos/${finalVideoId}/attachments`
-            : `/academy/videos/${finalVideoId}/attachments`;
+        const attachEndpointPrefix = mode === 'teacher'
+            ? `/teacher/videos`
+            : `/academy/videos`;
 
         try {
-          const { promise } = uploadAttachments(attachEndpoint, attachments, finalVideoId);
+          const { promise } = uploadAttachments(attachEndpointPrefix, attachments, finalVideoId);
           await promise;
         } catch (err: unknown) {
           const errorMessage = err instanceof Error ? err.message : 'فشل رفع المرفقات';

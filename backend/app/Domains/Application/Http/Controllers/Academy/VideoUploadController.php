@@ -23,6 +23,7 @@ class VideoUploadController extends Controller
     public function __construct(
         private readonly VideoUploadOrchestrationService $orchestration,
         private readonly VideoActorResolverService $actorResolver,
+        private readonly \App\Domains\Videos\Policies\VideoPolicy $policy,
     ) {}
 
     /**
@@ -162,5 +163,60 @@ class VideoUploadController extends Controller
             'initiated_at' => $session->initiated_at?->toIso8601String(),
             'completed_at' => $session->completed_at?->toIso8601String(),
         ]);
+    }
+
+    /**
+     * POST /api/v1/academy/videos/{video}/attachments/initiate-direct-upload
+     */
+    public function initiateAttachmentUploads(Request $request, \App\Domains\Videos\Models\Video $video): JsonResponse
+    {
+        /** @var Academy|\App\Domains\Auth\Models\Secretary $user */
+        $user = $request->user();
+        $academyId = $request->header('X-Academy-Id');
+
+        $context = $this->actorResolver->resolveAcademyUpload($user, $academyId);
+
+        if (! $this->policy->update($user, $video)) {
+            throw new AuthorizationException('غير مصرح لك برفع مرفقات لهذا الفيديو.');
+        }
+
+        $request->validate([
+            'files'        => ['required', 'array', 'min:1'],
+            'files.*.name' => ['required', 'string'],
+            'files.*.mime' => ['required', 'string'],
+            'files.*.size' => ['required', 'integer'],
+        ]);
+
+        $payload = $this->orchestration->initiateAttachmentUploads($video, $request->input('files'));
+
+        return $this->successResponse($payload, 'تم تهيئة روابط رفع المرفقات.');
+    }
+
+    /**
+     * POST /api/v1/academy/videos/{video}/attachments/complete-direct-upload
+     */
+    public function completeAttachmentUploads(Request $request, \App\Domains\Videos\Models\Video $video): JsonResponse
+    {
+        /** @var Academy|\App\Domains\Auth\Models\Secretary $user */
+        $user = $request->user();
+        $academyId = $request->header('X-Academy-Id');
+
+        $context = $this->actorResolver->resolveAcademyUpload($user, $academyId);
+
+        if (! $this->policy->update($user, $video)) {
+            throw new AuthorizationException('غير مصرح لك بإكمال رفع مرفقات لهذا الفيديو.');
+        }
+
+        $request->validate([
+            'attachments'            => ['required', 'array', 'min:1'],
+            'attachments.*.name'      => ['required', 'string'],
+            'attachments.*.file_path' => ['required', 'string'],
+            'attachments.*.mime_type' => ['required', 'string'],
+            'attachments.*.file_size' => ['required', 'integer'],
+        ]);
+
+        $this->orchestration->completeAttachmentUploads($video, $request->input('attachments'), $context);
+
+        return $this->successResponse([], 'تم حفظ المرفقات بنجاح.');
     }
 }

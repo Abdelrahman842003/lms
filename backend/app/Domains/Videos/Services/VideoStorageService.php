@@ -60,6 +60,20 @@ class VideoStorageService
         return $path;
     }
 
+    public function generateAttachmentPath(Video $video, string $originalName): string
+    {
+        $safeName = Str::slug(pathinfo($originalName, PATHINFO_FILENAME));
+        $extension = strtolower((string) pathinfo($originalName, PATHINFO_EXTENSION)) ?: 'bin';
+        
+        return sprintf(
+            'videos/attachments/%s/%s-%s.%s',
+            $video->id,
+            $safeName !== '' ? $safeName : 'attachment',
+            Str::uuid()->toString(),
+            $extension,
+        );
+    }
+
     public function uploadAttachment(Video $video, UploadedFile $file): string
     {
         $safeName = Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME));

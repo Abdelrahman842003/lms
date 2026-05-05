@@ -36,6 +36,7 @@ class VideoUploadOrchestrationService
         private readonly R2MultipartService $r2,
         private readonly VideoSettingsService $settings,
         private readonly VideoLifecycleService $lifecycle,
+        private readonly VideoStorageService $storage,
         private readonly StorageQuotaService $storageQuota,
     ) {}
 
@@ -101,6 +102,11 @@ class VideoUploadOrchestrationService
                 'session_id' => $existingSession->id,
                 'fingerprint' => $fingerprint,
             ]);
+
+            // Update fingerprint if missing
+            if (empty($existingSession->file_fingerprint) && $fingerprint) {
+                $existingSession->update(['file_fingerprint' => $fingerprint]);
+            }
 
             return $this->resumeUpload(
                 $existingSession->id,
@@ -641,6 +647,48 @@ class VideoUploadOrchestrationService
         }
 
         return $r2Parts;
+    }
+
+    public function initiateAttachmentUploads(Video $video, array $files): array
+    {
+        $results = [];
+        $ttl     = $this->settings->presignedUrlTtlSeconds();
+
+        foreach ($files as $file) {
+            $fileName = $file['name'] ?? 'attachment';
+            $mimeType = $file['mime'] ?? 'application/octet-stream';
+
+            $path   = $this->storage->generateAttachmentPath($video, $fileName);
+            
+            // We force 'application/octet-stream' for the signature to match the frontend request.
+            // This is the most reliable way to avoid signature mismatches across different browsers.
+            $putUrl = $this->r2->presignPutUrl($path, 'application/octet-stream', $ttl);
+
+            $results[] = [
+                'name'      => $fileName,
+                'put_url'   => $putUrl,
+                'file_path' => $path,
+                'mime_type' => $mimeType,
+                'file_size' => (int) ($file['size'] ?? 0),
+            ];
+        }
+
+        return $results;
+    }
+
+    public function completeAttachmentUploads(Video $video, array $attachments, VideoActorContext $actor): void
+    {
+        foreach ($attachments as $data) {
+            $video->attachments()->create([
+                'title'            => pathinfo($data['name'] ?? '', PATHINFO_FILENAME),
+                'file_name'        => $data['name'] ?? 'attachment',
+                'file_path'        => $data['file_path'],
+                'mime_type'        => $data['mime_type'],
+                'file_size'        => $data['file_size'],
+                'uploaded_by_type' => $actor->uploaderMorphType(),
+                'uploaded_by_id'   => $actor->uploaderId(),
+            ]);
+        }
     }
 
     /**
