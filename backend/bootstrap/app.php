@@ -47,6 +47,12 @@ return Application::configure(basePath: dirname(__DIR__))
         // معالجة ValidationException
         $exceptions->render(function (\Illuminate\Validation\ValidationException $e, $request) use ($shouldReturnJson) {
             if ($shouldReturnJson($request)) {
+                \Log::error('Validation Error for ' . $request->fullUrl(), [
+                    'errors' => $e->errors(),
+                    'data' => $request->all(),
+                    'files' => $request->allFiles(),
+                ]);
+
                 return response()->json([
                     'status' => false,
                     'status_code' => 422,

@@ -113,11 +113,11 @@ class VideoResource extends JsonResource
             }),
             'student_activity_summary' => $this->when(
                 $studentActivityPayload !== null,
-                $studentActivityPayload['summary']
+                fn () => $studentActivityPayload['summary']
             ),
             'student_activity_details' => $this->when(
                 $studentActivityPayload !== null,
-                $studentActivityPayload['students']
+                fn () => $studentActivityPayload['students']
             ),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,

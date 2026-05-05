@@ -312,30 +312,36 @@ export function VideoUploadProvider({ children }: { children: React.ReactNode })
       const currentSessionId = sessionIdRef.current;
       if (!currentSessionId) throw new Error('Session ID is missing');
 
-      if (mode === 'teacher') await completeTeacherUpload(currentSessionId);
-      else await completeAcademyUpload(currentSessionId);
+      const completeRes = mode === 'teacher' 
+        ? await completeTeacherUpload(currentSessionId)
+        : await completeAcademyUpload(currentSessionId);
       
+      // Use the videoId returned from completion if available, otherwise fallback to context
+      const finalVideoId = completeRes.video_id || videoId;
+
       localStorage.removeItem(STORAGE_KEY);
       setSavedSession(null);
-      patch({ phase: 'completed' });
+      patch({ phase: 'completed', videoId: finalVideoId });
       toast.success('تم رفع الفيديو بنجاح! مجهودك في أمان.');
+
+      if (attachments && attachments.length > 0) {
+        const attachEndpoint = mode === 'teacher'
+            ? `/teacher/videos/${finalVideoId}/attachments`
+            : `/academy/videos/${finalVideoId}/attachments`;
+
+        try {
+          const { promise } = uploadAttachments(attachEndpoint, attachments, finalVideoId);
+          await promise;
+        } catch (err: unknown) {
+          const errorMessage = err instanceof Error ? err.message : 'فشل رفع المرفقات';
+          console.error('فشل رفع المرفقات:', errorMessage);
+          toast.error(`فشل رفع المرفقات: ${errorMessage}`);
+        }
+      }
     } catch (err: any) {
       const message = err.message || 'فشل إكمال الرفع.';
       patch({ phase: 'failed', error: message });
       toast.error(message);
-    }
-
-    if (attachments && attachments.length > 0) {
-      const attachEndpoint = mode === 'teacher'
-          ? `/teacher/videos/${videoId}/attachments`
-          : `/academy/videos/${videoId}/attachments`;
-
-      try {
-        const { promise } = uploadAttachments(attachEndpoint, attachments, videoId);
-        await promise;
-      } catch (err: unknown) {
-        console.error('فشل رفع المرفقات:', err);
-      }
     }
   };
 

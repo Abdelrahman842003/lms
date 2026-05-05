@@ -100,10 +100,9 @@ export async function getAcademyUploadStatus(sessionId: string): Promise<UploadS
 
 // ─── Upload a single attachment (still goes through server) ─────────────────
 
-function buildAttachmentsFormData(attachments: File[], videoId: string): FormData {
+function buildAttachmentsFormData(attachments: File[]): FormData {
   const fd = new FormData();
-  fd.append('video_id', videoId);
-  attachments.forEach((file, index) => fd.append(`attachments[${index}]`, file));
+  attachments.forEach((file) => fd.append('attachments[]', file));
   return fd;
 }
 
@@ -112,7 +111,7 @@ export function uploadAttachments(
   attachments: File[],
   videoId: string
 ): { promise: Promise<void>; cancel: () => void } {
-  const formData = buildAttachmentsFormData(attachments, videoId);
+  const formData = buildAttachmentsFormData(attachments);
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
   const apiPath = `/api/v1${cleanEndpoint}`;
   const url = `${getApiBaseUrl()}${apiPath}`;
@@ -123,7 +122,10 @@ export function uploadAttachments(
     const headers = getAuthHeaders({}, url, { method: 'POST', body: formData });
     Object.entries(headers).forEach(([key, value]) => xhr.setRequestHeader(key, value));
     xhr.withCredentials = true;
-    xhr.onerror = () => reject(new Error('فشل رفع المرفقات.'));
+    xhr.onerror = () => {
+      console.error('[uploadAttachments] Network Error:', url);
+      reject(new Error('فشل رفع المرفقات.'));
+    };
     xhr.onabort = () => reject(new Error('تم إلغاء رفع المرفقات.'));
     xhr.onload = () => {
       if (xhr.status >= 200 && xhr.status < 300) {
@@ -132,8 +134,18 @@ export function uploadAttachments(
       }
       try {
         const parsed = JSON.parse(xhr.responseText);
-        reject(new Error(parsed?.message || 'فشل رفع المرفقات.'));
+        let errorMsg = parsed?.message || 'فشل رفع المرفقات.';
+        
+        // Extract detailed validation errors if present
+        if (parsed?.errors && typeof parsed.errors === 'object') {
+          const details = Object.values(parsed.errors).flat().join(' | ');
+          if (details) errorMsg += ` (${details})`;
+        }
+        
+        console.error('[uploadAttachments] Server Error:', xhr.status, parsed);
+        reject(new Error(errorMsg));
       } catch {
+        console.error('[uploadAttachments] Invalid Response:', xhr.status, xhr.responseText);
         reject(new Error('استجابة غير صالحة من الخادم.'));
       }
     };
