@@ -4,6 +4,8 @@
  * with user-friendly Arabic messages and toast notifications
  */
 
+import { toast } from 'react-hot-toast';
+
 const IS_PROD = process.env.NODE_ENV === 'production';
 
 /**
@@ -164,9 +166,8 @@ export function handleApiError(error: unknown): never {
  * Note: This should be integrated with your toast library (react-hot-toast, sonner, etc.)
  */
 export function showErrorToast(error: ApiError | Error): void {
-  // If you're using react-hot-toast:
-  // import { toast } from 'react-hot-toast';
-  // toast.error(error.message);
+  // Use react-hot-toast
+  toast.error(error.message);
 
   // For now, keep logs in non-production only
   if (!IS_PROD) {
@@ -192,9 +193,7 @@ export function showErrorToast(error: ApiError | Error): void {
  * Show success toast notification
  */
 export function showSuccessToast(message: string): void {
-  // If you're using react-hot-toast:
-  // import { toast } from 'react-hot-toast';
-  // toast.success(message);
+  toast.success(message);
 
   if (!IS_PROD) {
     console.info('[Success]', message);

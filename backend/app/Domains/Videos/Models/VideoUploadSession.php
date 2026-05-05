@@ -16,6 +16,7 @@ class VideoUploadSession extends Model
 
     protected $fillable = [
         'video_id',
+        'file_fingerprint',
         'uploader_type',
         'uploader_id',
         'r2_upload_id',
@@ -47,6 +48,11 @@ class VideoUploadSession extends Model
     public function video(): BelongsTo
     {
         return $this->belongsTo(Video::class);
+    }
+
+    public function parts(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(VideoUploadPart::class, 'session_id');
     }
 
     public function uploader(): MorphTo

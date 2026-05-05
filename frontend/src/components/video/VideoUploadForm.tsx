@@ -24,13 +24,16 @@ interface VideoUploadFormProps {
 
 // Human-readable phase labels (Arabic)
 const PHASE_LABELS: Record<string, string> = {
-  preparing:  'جاري تجهيز الرفع...',
-  uploading:  'جاري رفع الفيديو...',
-  retrying:   'إعادة المحاولة...',
-  completing: 'جاري إكمال الرفع...',
-  completed:  'تم الرفع بنجاح ✓',
-  failed:     'فشل الرفع',
-  aborted:    'تم إلغاء الرفع',
+  draft:       'مسودة',
+  initiating:  'جاري التجهيز...',
+  uploading:   'جاري الرفع...',
+  paused:      'تم الإيقاف مؤقتاً',
+  interrupted: 'منقطع - يرجى الاستكمال',
+  retrying:    'إعادة المحاولة...',
+  completing:  'جاري الإكمال...',
+  completed:   'اكتمل الرفع ✓',
+  failed:      'فشل الرفع',
+  aborted:     'ملغى',
 };
 
 export function VideoUploadForm({
@@ -50,7 +53,7 @@ export function VideoUploadForm({
   const [attachments, setAttachments] = useState<File[]>([]);
   const [formError, setFormError] = useState<string | null>(null);
 
-  const { state: uploadState, startUpload, cancelUpload, reset } = useVideoUploadContext();
+  const { state: uploadState, startUpload, cancelUpload, reset, pauseUpload } = useVideoUploadContext();
 
   // Watch for completion to reset form and notify parent
   React.useEffect(() => {
@@ -62,7 +65,7 @@ export function VideoUploadForm({
 
 
   const isUploading =
-    uploadState.phase === 'preparing' ||
+    uploadState.phase === 'initiating' ||
     uploadState.phase === 'uploading' ||
     uploadState.phase === 'retrying' ||
     uploadState.phase === 'completing';
@@ -277,7 +280,7 @@ export function VideoUploadForm({
           {/* Progress bar */}
           <div className="relative h-3 w-full rounded-full bg-white/10 overflow-hidden">
             <div
-              className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-primary to-primary/70 transition-all duration-200"
+              className={`absolute inset-y-0 left-0 rounded-full transition-all duration-200 ${uploadState.phase === 'paused' ? 'bg-orange-500' : 'bg-gradient-to-r from-primary to-primary/70'}`}
               style={{ width: `${uploadState.progress}%` }}
             />
           </div>
@@ -290,8 +293,13 @@ export function VideoUploadForm({
             </p>
           )}
 
-          {/* Cancel button */}
-          <div className="text-end pt-1">
+          {/* Cancel/Pause buttons */}
+          <div className="flex justify-end gap-2 pt-1">
+            {isUploading && (
+               <Button type="button" variant="outline" size="sm" onClick={pauseUpload}>
+               إيقاف مؤقت
+             </Button>
+            )}
             <Button type="button" variant="destructive" size="sm" onClick={() => cancelUpload(mode, 'cancelled by user')}>
               إلغاء الرفع
             </Button>

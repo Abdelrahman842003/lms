@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Application\Http\Controllers\Teacher;
 
+use App\Domains\Application\Http\Requests\Teacher\Video\ReportPartSuccessRequest;
 use App\Domains\Application\Http\Controllers\Controller;
 use App\Domains\Application\Http\Requests\Teacher\Video\AbortUploadRequest;
 use App\Domains\Application\Http\Requests\Teacher\Video\CompleteUploadRequest;
@@ -46,11 +47,47 @@ class VideoUploadController extends Controller
         $payload = $this->orchestration->initiateUpload(
             data:         $data,
             context:      $context,
-            fileDeclaration: $request->only(['file_name', 'file_size', 'file_mime', 'total_parts']),
+            fileDeclaration: $request->only(['file_name', 'file_size', 'file_mime', 'total_parts', 'file_fingerprint']),
             initiatorIp:  (string) $request->ip(),
         );
 
         return $this->successResponse($payload, 'تم تهيئة جلسة الرفع. ارفع الأجزاء مباشرةً إلى R2.', 201);
+    }
+
+    /**
+     * POST /api/v1/teacher/videos/report-part-success
+     */
+    public function reportPartSuccess(ReportPartSuccessRequest $request): JsonResponse
+    {
+        /** @var Teacher $teacher */
+        $teacher = $request->user();
+
+        $this->orchestration->reportPartSuccess(
+            sessionId:    (string) $request->validated('session_id'),
+            partNumber:   (int) $request->validated('part_number'),
+            etag:         (string) $request->validated('etag'),
+            uploaderType: $teacher->getMorphClass(),
+            uploaderId:   (string) $teacher->id,
+        );
+
+        return $this->successResponse([], 'تم تسجيل نجاح الجزء.');
+    }
+
+    /**
+     * POST /api/v1/teacher/videos/pause-upload
+     */
+    public function pauseUpload(Request $request): JsonResponse
+    {
+        /** @var Teacher $teacher */
+        $teacher = $request->user();
+
+        $this->orchestration->pauseUpload(
+            sessionId:    (string) $request->input('session_id'),
+            uploaderType: $teacher->getMorphClass(),
+            uploaderId:   (string) $teacher->id,
+        );
+
+        return $this->successResponse([], 'تم إيقاف الرفع مؤقتاً.');
     }
 
     /**

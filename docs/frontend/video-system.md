@@ -9,20 +9,23 @@ The video system covers uploading large video files to R2, secure token-based pl
 
 ## Upload Flow
 
-**Source:** `hooks/useVideoUpload.ts`
+**Source:** `contexts/VideoUploadContext.tsx`
 
-Upload is driven by a state machine with six phases:
+Upload is driven by a state machine with nine phases:
 
 ```
-idle → preparing → uploading → retrying → completing → completed
+draft → initiating → uploading → retrying → paused → interrupted → completing → completed → failed
 ```
 
-1. **idle** -- No upload in progress.
-2. **preparing** -- Calling the API to initiate a multipart upload and receive presigned URLs for each chunk.
+1. **draft** -- No upload in progress.
+2. **initiating** -- Calling the API to initiate a multipart upload and receive presigned URLs for each chunk.
 3. **uploading** -- Uploading chunks concurrently via `XMLHttpRequest`. Each chunk reports progress individually, which is aggregated into a single progress percentage.
 4. **retrying** -- If a chunk fails, it is retried with exponential backoff before the entire upload is marked as failed.
-5. **completing** -- All chunks uploaded; calling the API to finalize the multipart upload on R2.
-6. **completed** -- Upload finished successfully.
+5. **paused** -- User paused the upload; in-flight requests are interrupted.
+6. **interrupted** -- Upload stopped due to refresh, disconnect, or navigation.
+7. **completing** -- All chunks uploaded; calling the API to finalize the multipart upload on R2.
+8. **completed** -- Upload finished successfully.
+9. **failed** -- Upload failed after retries or a server-side validation error.
 
 Key behaviors:
 
@@ -31,6 +34,15 @@ Key behaviors:
 - **Exponential backoff retries** -- Failed chunks back off and retry automatically.
 - **Abort support** -- In-progress XHR requests are cancelled when the user aborts or the component unmounts.
 - **Real-time progress tracking** -- The hook exposes a `progress` value (0--100) derived from individual chunk `ProgressEvent` data.
+- **Part success reporting** -- Each successful chunk reports `part_number` and `etag` to the API for server-side tracking.
+- **Resume support** -- A pending session is stored in local storage and can be resumed after refresh by selecting the same file.
+
+### Resume flow
+
+- A pending session is persisted under a local storage key (`neetaq_pending_video_v2`).
+- On refresh, the floating upload manager prompts the user to select the same file.
+- The client calls `/videos/resume-upload/{sessionId}` and receives only missing parts.
+- The server syncs uploaded parts from R2 when needed to avoid restarting from zero.
 
 ### VideoUploadForm
 
@@ -113,8 +125,11 @@ The service module wraps all video-related API calls. Endpoints are namespaced b
 | Operation          | Method   | Description                                                      |
 | ------------------ | -------- | ---------------------------------------------------------------- |
 | initiateUpload     | POST     | Start a multipart upload; returns presigned chunk URLs           |
+| reportPartSuccess  | POST     | Record a part success (part number + ETag)                       |
+| pauseUpload        | POST     | Pause an in-progress upload                                      |
+| resumeUpload       | POST     | Resume an existing session and return missing parts              |
 | completeUpload     | POST     | Finalize a multipart upload after all chunks are sent            |
-| abortUpload        | POST     | Cancel an in-progress multipart upload                           |
+| abortUpload        | DELETE   | Cancel an in-progress multipart upload                           |
 | listVideos         | GET      | List videos with pagination and filters                          |
 | getWatchProgress   | GET      | Retrieve the current student's watch progress for a video        |
 | updateProgress     | POST     | Save the student's watch position                                |
@@ -135,7 +150,7 @@ The service module wraps all video-related API calls. Endpoints are namespaced b
 | `VideoWatchProgress`       | Student's watch position and completion percentage               |
 | `PlaybackTokenPayload`     | Data sent when requesting a playback token (video ID, fingerprint) |
 | `InitiateUploadPayload`    | Data sent to start an upload (file name, size, content type)     |
-| `InitiateUploadResponse`   | Presigned URLs and upload ID returned by the initiate endpoint   |
+| `InitiateUploadResponse`   | Session ID, chunk size, and presigned/missing parts              |
 | `CompleteUploadResponse`   | Confirmation and final video metadata after upload completion    |
 | `VideoComment`             | A single comment or reply, including author info and timestamps  |
 

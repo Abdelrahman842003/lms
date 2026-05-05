@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Videos\Services;
 
+use App\Domains\Videos\Models\VideoUploadPart;
 use App\Domains\Auth\Models\Academy;
 use App\Domains\Auth\Models\Teacher;
 use App\Domains\Videos\DTOs\CreateVideoData;
@@ -43,7 +44,7 @@ class VideoUploadOrchestrationService
     // ─────────────────────────────────────────────────────────────────
 
     /**
-     * @param  array<string, mixed>  $fileDeclaration  Keys: file_name, file_mime, file_size, total_parts
+     * @param  array<string, mixed>  $fileDeclaration  Keys: file_name, file_mime, file_size, total_parts, file_fingerprint
      * @return array<string, mixed>  Payload for the frontend
      */
     public function initiateUpload(
@@ -54,6 +55,58 @@ class VideoUploadOrchestrationService
     ): array {
         if (! $this->settings->directUploadEnabled()) {
             throw new AuthorizationException('رفع الفيديو المباشر غير مفعّل حالياً.');
+        }
+
+        $fingerprint = (string) ($fileDeclaration['file_fingerprint'] ?? '');
+        $declaredName = (string) ($fileDeclaration['file_name'] ?? '');
+        $declaredSize = (int) ($fileDeclaration['file_size'] ?? 0);
+        $contentType  = (string) ($fileDeclaration['file_mime'] ?? '');
+        $totalParts   = (int) ($fileDeclaration['total_parts'] ?? 0);
+
+        $existingSession = null;
+
+        // Try to find a resumable session for this user + fingerprint
+        if ($fingerprint) {
+            $existingSession = VideoUploadSession::query()
+                ->where('uploader_type', $context->uploaderMorphType())
+                ->where('uploader_id', $context->uploaderId())
+                ->where('file_fingerprint', $fingerprint)
+                ->whereNotIn('status', [
+                    VideoUploadSessionStatus::COMPLETED,
+                    VideoUploadSessionStatus::ABORTED,
+                ])
+                ->latest()
+                ->first();
+        }
+
+        // Fallback resume: match by declared file metadata (name/size/mime)
+        if (! $existingSession && $declaredName !== '' && $declaredSize > 0 && $contentType !== '') {
+            $existingSession = VideoUploadSession::query()
+                ->where('uploader_type', $context->uploaderMorphType())
+                ->where('uploader_id', $context->uploaderId())
+                ->where('declared_filename', $declaredName)
+                ->where('declared_size_bytes', $declaredSize)
+                ->where('declared_mime', $contentType)
+                ->whereNotIn('status', [
+                    VideoUploadSessionStatus::COMPLETED,
+                    VideoUploadSessionStatus::ABORTED,
+                ])
+                ->where('initiated_at', '>=', now()->subDays(7))
+                ->latest()
+                ->first();
+        }
+
+        if ($existingSession && ! $existingSession->status->isTerminal()) {
+            Log::info('Found existing session for resume, resuming instead of creating new.', [
+                'session_id' => $existingSession->id,
+                'fingerprint' => $fingerprint,
+            ]);
+
+            return $this->resumeUpload(
+                $existingSession->id,
+                $context->uploaderMorphType(),
+                (string) $context->uploaderId()
+            );
         }
 
         // Check plan limits using declared file size
@@ -103,7 +156,7 @@ class VideoUploadOrchestrationService
         $ttl        = $this->settings->presignedUrlTtlSeconds();
         $partUrls   = $this->r2->presignAllPartUrls($objectKey, $r2UploadId, $totalParts, $ttl);
 
-        // Persist the session in a transaction
+        // Persist the session and parts in a transaction
         $session = DB::transaction(function () use (
             $video,
             $context,
@@ -113,10 +166,12 @@ class VideoUploadOrchestrationService
             $declaredSize,
             $declaredName,
             $totalParts,
-            $initiatorIp
+            $initiatorIp,
+            $fingerprint
         ): VideoUploadSession {
-            return VideoUploadSession::query()->create([
+            $session = VideoUploadSession::query()->create([
                 'video_id'          => $video->id,
+                'file_fingerprint'  => $fingerprint,
                 'uploader_type'     => $context->uploaderMorphType(),
                 'uploader_id'       => $context->uploaderId(),
                 'r2_upload_id'      => $r2UploadId,
@@ -125,10 +180,36 @@ class VideoUploadOrchestrationService
                 'declared_mime'     => $contentType,
                 'declared_size_bytes' => $declaredSize,
                 'total_parts'       => $totalParts,
-                'status'            => VideoUploadSessionStatus::PENDING_UPLOAD,
+                'status'            => VideoUploadSessionStatus::INITIATING,
                 'initiator_ip'      => $initiatorIp,
+                'initiated_at'      => now(),
             ]);
+
+            // Create pending parts
+            $chunkSize = $this->settings->chunkSizeMb() * 1024 * 1024;
+            $partsData = [];
+            for ($i = 1; $i <= $totalParts; $i++) {
+                $isLast = ($i === $totalParts);
+                $size = $isLast ? ($declaredSize - (($totalParts - 1) * $chunkSize)) : $chunkSize;
+                
+                $partsData[] = [
+                    'id'           => Str::uuid()->toString(),
+                    'session_id'   => $session->id,
+                    'part_number'  => $i,
+                    'size_bytes'   => $size,
+                    'status'       => 'pending',
+                    'created_at'   => now(),
+                    'updated_at'   => now(),
+                ];
+            }
+            
+            VideoUploadPart::query()->insert($partsData);
+
+            return $session;
         });
+
+        // Transition to UPLOADING now that metadata is saved
+        $session->update(['status' => VideoUploadSessionStatus::UPLOADING]);
 
         $this->logAudit('upload.initiated', $video, $context, [
             'session_id'   => $session->id,
@@ -136,6 +217,7 @@ class VideoUploadOrchestrationService
             'total_parts'  => $totalParts,
             'declared_size' => $declaredSize,
             'declared_mime' => $contentType,
+            'fingerprint'   => $fingerprint
         ]);
 
         // Convert the keyed map {1: url, 2: url} → [{part_number: 1, url: ...}, ...]
@@ -156,6 +238,9 @@ class VideoUploadOrchestrationService
             'retry_attempts'   => $this->settings->partRetryAttempts(),
             'presigned_parts'  => $presignedParts,
             'presigned_ttl'    => $ttl,
+            'total_parts'      => $totalParts,
+            'uploaded_parts'   => [],
+            'progress'         => 0,
         ];
     }
 
@@ -167,7 +252,7 @@ class VideoUploadOrchestrationService
         string $uploaderType,
         string $uploaderId
     ): array {
-        $session = VideoUploadSession::query()->findOrFail($sessionId);
+        $session = VideoUploadSession::query()->with('parts')->findOrFail($sessionId);
 
         // Ownership check
         if (! $session->isOwnedBy($uploaderType, $uploaderId)) {
@@ -179,27 +264,39 @@ class VideoUploadOrchestrationService
             throw new AuthorizationException('جلسة الرفع منتهية أو ملغاة مسبقاً.');
         }
 
-        // Fetch already uploaded parts from R2
-        $uploadedParts = $this->r2->listParts($session->object_key, $session->r2_upload_id);
-        $uploadedPartNumbers = array_column($uploadedParts, 'PartNumber');
+        // Sync from R2 to recover progress if the browser didn't report part success.
+        $this->syncUploadedPartsFromR2($session);
 
-        // Identify missing parts
-        $missingParts = [];
+        // Legacy safety: if this session predates parts tracking, seed pending parts now.
+        $this->seedPartsIfMissing($session);
+
+        // Fetch missing parts from DB after sync
+        $missingPartsRecords = $session->parts()->where('status', '!=', 'uploaded')->get();
+        
         $ttl = $this->settings->presignedUrlTtlSeconds();
-
-        for ($i = 1; $i <= $session->total_parts; $i++) {
-            if (! in_array($i, $uploadedPartNumbers, true)) {
-                $missingParts[] = [
-                    'part_number' => $i,
-                    'url'         => $this->r2->presignPartUrl($session->object_key, $session->r2_upload_id, $i, $ttl),
-                ];
-            }
+        $missingParts = [];
+        
+        foreach ($missingPartsRecords as $part) {
+            $missingParts[] = [
+                'part_number' => $part->part_number,
+                'url'         => $this->r2->presignPartUrl($session->object_key, $session->r2_upload_id, $part->part_number, $ttl),
+            ];
         }
 
-        // Calculate progress percentage (PHP native functions)
+        $uploadedParts = $session->parts()
+            ->where('status', 'uploaded')
+            ->pluck('part_number')
+            ->toArray();
+
+        $uploadedCount = count($uploadedParts);
         $progress = $session->total_parts > 0 
-            ? min(99, (int) round((count($uploadedParts) / $session->total_parts) * 100))
+            ? min(99, (int) round(($uploadedCount / $session->total_parts) * 100))
             : 0;
+
+        // If it was paused/interrupted, move it back to uploading
+        if ($session->status !== VideoUploadSessionStatus::UPLOADING) {
+            $session->update(['status' => VideoUploadSessionStatus::UPLOADING]);
+        }
 
         return [
             'session_id'       => $session->id,
@@ -207,12 +304,60 @@ class VideoUploadOrchestrationService
             'file_name'        => $session->declared_filename,
             'file_size'        => $session->declared_size_bytes,
             'total_parts'      => $session->total_parts,
-            'chunk_size_bytes' => $this->settings->chunk_size_bytes ?? ($this->settings->chunkSizeMb() * 1024 * 1024),
+            'chunk_size_bytes' => $this->settings->chunkSizeMb() * 1024 * 1024,
             'missing_parts'    => $missingParts,
-            'uploaded_count'   => count($uploadedParts),
+            'uploaded_parts'   => $uploadedParts,
+            'uploaded_count'   => $uploadedCount,
             'progress'         => $progress,
             'presigned_ttl'    => $ttl,
         ];
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    // NEW: Report Part Success
+    // ─────────────────────────────────────────────────────────────────
+
+    public function reportPartSuccess(
+        string $sessionId,
+        int $partNumber,
+        string $etag,
+        string $uploaderType,
+        string $uploaderId
+    ): void {
+        $session = VideoUploadSession::query()->findOrFail($sessionId);
+
+        if (! $session->isOwnedBy($uploaderType, $uploaderId)) {
+            throw new AuthorizationException('غير مصرح بتحديث هذه الجلسة.');
+        }
+
+        VideoUploadPart::query()
+            ->where('session_id', $sessionId)
+            ->where('part_number', $partNumber)
+            ->update([
+                'status' => 'uploaded',
+                'etag'   => $etag,
+                'updated_at' => now(),
+            ]);
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    // NEW: Pause Upload
+    // ─────────────────────────────────────────────────────────────────
+
+    public function pauseUpload(
+        string $sessionId,
+        string $uploaderType,
+        string $uploaderId
+    ): void {
+        $session = VideoUploadSession::query()->findOrFail($sessionId);
+
+        if (! $session->isOwnedBy($uploaderType, $uploaderId)) {
+            throw new AuthorizationException('غير مصرح بإيقاف هذا الرفع.');
+        }
+
+        if ($session->status === VideoUploadSessionStatus::UPLOADING) {
+            $session->update(['status' => VideoUploadSessionStatus::PAUSED]);
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────
@@ -220,7 +365,7 @@ class VideoUploadOrchestrationService
     // ─────────────────────────────────────────────────────────────────
 
     /**
-     * @param  array<int, array{part_number: int, etag: string}>  $parts  (ignored — ETags fetched from R2 directly)
+     * @param  array<int, array{part_number: int, etag: string}>  $parts  (ignored — ETags taken from DB)
      * @return array<string, mixed>
      */
     public function completeUpload(
@@ -229,7 +374,7 @@ class VideoUploadOrchestrationService
         string $uploaderType,
         string $uploaderId
     ): array {
-        $session = VideoUploadSession::query()->findOrFail($sessionId);
+        $session = VideoUploadSession::query()->with('parts')->findOrFail($sessionId);
 
         // Ownership check
         if (! $session->isOwnedBy($uploaderType, $uploaderId)) {
@@ -243,44 +388,36 @@ class VideoUploadOrchestrationService
 
         $session->update(['status' => VideoUploadSessionStatus::COMPLETING]);
 
-        // Fetch ETags directly from R2 — browser CORS cannot expose ETag headers
-        // Added retry logic (3 attempts) to handle R2 eventual consistency
-        $sdkParts = [];
-        $attempts = 0;
-        $maxAttempts = 3;
+        // Use ETags from DB as the source of truth, but sync from R2 if incomplete.
+        $dbParts = $session->parts()
+            ->where('status', 'uploaded')
+            ->orderBy('part_number')
+            ->get();
 
-        while ($attempts < $maxAttempts) {
-            try {
-                $sdkParts = $this->r2->listParts($session->object_key, $session->r2_upload_id);
-                
-                if (count($sdkParts) >= $session->total_parts) {
-                    break;
-                }
+        if ($dbParts->count() < $session->total_parts) {
+            $this->syncUploadedPartsFromR2($session);
 
-                $attempts++;
-                if ($attempts < $maxAttempts) {
-                    sleep(1); // Wait 1s before retry
-                }
-            } catch (\Throwable $e) {
-                Log::warning("listParts attempt {$attempts} failed: " . $e->getMessage());
-                $attempts++;
-                if ($attempts >= $maxAttempts) throw $e;
-            }
+            $dbParts = $session->parts()
+                ->where('status', 'uploaded')
+                ->orderBy('part_number')
+                ->get();
         }
 
+        if ($dbParts->count() < $session->total_parts) {
+            $session->update(['status' => VideoUploadSessionStatus::INTERRUPTED]);
+            throw new \Exception("لم يتم تسجيل جميع الأجزاء في قاعدة البيانات ({$dbParts->count()} من اصل {$session->total_parts}). يرجى التأكد من رفع جميع الأجزاء.");
+        }
+
+        $formattedParts = $dbParts->map(fn($p) => [
+            'PartNumber' => $p->part_number,
+            'ETag'       => $p->etag,
+        ])->toArray();
+
         try {
-            if (empty($sdkParts)) {
-                throw new \Exception('لا توجد أجزاء مرفوعة لهذا الفيديو في R2.');
-            }
-
-            if (count($sdkParts) < $session->total_parts) {
-                throw new \Exception("عدد الأجزاء المكتشفة (" . count($sdkParts) . ") أقل من المتوقع ({$session->total_parts}). يرجى المحاولة مرة أخرى.");
-            }
-
             $this->r2->completeMultipartUpload(
                 $session->object_key,
                 $session->r2_upload_id,
-                $sdkParts,
+                $formattedParts,
             );
         } catch (\Throwable $e) {
             $session->update(['status' => VideoUploadSessionStatus::FAILED]);
@@ -288,17 +425,9 @@ class VideoUploadOrchestrationService
             if ($video) {
                 $video->update([
                     'status'           => VideoStatus::FAILED,
-                    'processing_error' => 'فشل إكمال الرفع: ' . $e->getMessage(),
+                    'processing_error' => 'فشل إكمال الرفع في R2: ' . $e->getMessage(),
                 ]);
             }
-
-            Log::error('completeMultipartUpload failed', [
-                'session_id' => $sessionId,
-                'error'      => $e->getMessage(),
-                'found_parts' => count($sdkParts),
-                'expected_parts' => $session->total_parts
-            ]);
-
             throw $e;
         }
 
@@ -325,22 +454,21 @@ class VideoUploadOrchestrationService
             'video_mime'       => ($meta['content_type'] ?? null) ?: $session->declared_mime,
         ]);
 
-        // Increment storage quota with the verified file size
+        // Increment storage quota
         $owner = $this->resolveOwnerForVideo($video);
         if ($owner !== null && $verifiedSize > 0) {
             $this->storageQuota->incrementUsage($owner, $verifiedSize);
         }
 
-        // Dispatch processing job (FFmpeg transcoding on server — server DOES touch bytes
-        // only for transcoding, which is necessary and server-side by design)
+        // Dispatch processing job
         \App\Domains\Videos\Jobs\ProcessUploadedVideoJob::dispatch($video->id);
 
         $this->logAudit('upload.completed', $video, null, [
             'session_id'  => $sessionId,
             'uploader_id' => $uploaderId,
-            'parts_count' => count($parts),
+            'parts_count' => $dbParts->count(),
             'object_key'  => $session->object_key,
-            'verified_size' => $meta['size'] ?? null,
+            'verified_size' => $verifiedSize,
         ]);
 
         return [
@@ -452,5 +580,105 @@ class VideoUploadOrchestrationService
         }
 
         return null;
+    }
+
+    /**
+     * Sync uploaded parts from R2 to DB to enable reliable resume/complete.
+     */
+    /**
+     * @return array<int, array{PartNumber: int, ETag: string}>
+     */
+    private function syncUploadedPartsFromR2(VideoUploadSession $session): array
+    {
+        try {
+            $r2Parts = $this->r2->listParts($session->object_key, $session->r2_upload_id);
+        } catch (\Throwable $e) {
+            Log::warning('R2 listParts failed while syncing upload progress', [
+                'session_id' => $session->id,
+                'upload_id'  => $session->r2_upload_id,
+                'error'      => $e->getMessage(),
+            ]);
+            return [];
+        }
+
+        if (empty($r2Parts)) {
+            return [];
+        }
+
+        $chunkSize = $this->settings->chunkSizeMb() * 1024 * 1024;
+        $declaredSize = (int) ($session->declared_size_bytes ?? 0);
+        $totalParts = (int) ($session->total_parts ?? 0);
+
+        foreach ($r2Parts as $part) {
+            $partNumber = (int) ($part['PartNumber'] ?? 0);
+            $etag = (string) ($part['ETag'] ?? '');
+
+            if ($partNumber <= 0) {
+                continue;
+            }
+
+            $sizeBytes = 0;
+            if ($declaredSize > 0 && $totalParts > 0) {
+                $isLast = ($partNumber === $totalParts);
+                $sizeBytes = $isLast
+                    ? max(0, $declaredSize - (($totalParts - 1) * $chunkSize))
+                    : $chunkSize;
+            }
+
+            VideoUploadPart::query()->updateOrCreate(
+                [
+                    'session_id'  => $session->id,
+                    'part_number' => $partNumber,
+                ],
+                [
+                    'size_bytes' => $sizeBytes,
+                    'status'     => 'uploaded',
+                    'etag'       => $etag,
+                    'updated_at' => now(),
+                    'created_at' => now(),
+                ]
+            );
+        }
+
+        return $r2Parts;
+    }
+
+    /**
+     * Seed missing part rows for legacy sessions that predate video_upload_parts.
+     */
+    private function seedPartsIfMissing(VideoUploadSession $session): void
+    {
+        if ($session->parts()->count() > 0) {
+            return;
+        }
+
+        $totalParts = (int) ($session->total_parts ?? 0);
+        if ($totalParts <= 0) {
+            return;
+        }
+
+        $chunkSize = $this->settings->chunkSizeMb() * 1024 * 1024;
+        $declaredSize = (int) ($session->declared_size_bytes ?? 0);
+
+        $partsData = [];
+        for ($i = 1; $i <= $totalParts; $i++) {
+            $isLast = ($i === $totalParts);
+            $size = $declaredSize > 0
+                ? ($isLast ? max(0, $declaredSize - (($totalParts - 1) * $chunkSize)) : $chunkSize)
+                : 0;
+
+            $partsData[] = [
+                'id'           => Str::uuid()->toString(),
+                'session_id'   => $session->id,
+                'part_number'  => $i,
+                'size_bytes'   => $size,
+                'status'       => 'pending',
+                'upload_attempts' => 0,
+                'created_at'   => now(),
+                'updated_at'   => now(),
+            ];
+        }
+
+        VideoUploadPart::query()->insert($partsData);
     }
 }

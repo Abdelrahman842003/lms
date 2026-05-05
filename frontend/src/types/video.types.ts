@@ -232,6 +232,8 @@ export interface InitiateUploadPayload {
   file_mime: string;
   /** How many parts the client intends to upload */
   total_parts: number;
+  /** Local fingerprint (name-size-lastModified) */
+  file_fingerprint: string;
 }
 
 /** Presigned URL for a single part */
@@ -244,8 +246,13 @@ export interface PresignedPart {
 export interface InitiateUploadResponse {
   session_id: string;
   video_id: string;
-  presigned_parts: PresignedPart[];
+  presigned_parts?: PresignedPart[];
+  missing_parts?: PresignedPart[];
+  uploaded_parts?: number[];
   chunk_size_bytes: number;
+  progress?: number;
+  uploaded_count?: number;
+  total_parts?: number;
 }
 
 /** Part number collected after each PUT (ETag fetched server-side via listParts) */
@@ -262,7 +269,7 @@ export interface CompleteUploadResponse {
 /** Server response from /upload-status/:sessionId */
 export interface UploadSessionStatus {
   session_id: string;
-  status: 'pending_upload' | 'uploading' | 'completing' | 'completed' | 'aborted' | 'failed';
+  status: 'draft' | 'initiating' | 'uploading' | 'paused' | 'interrupted' | 'completing' | 'completed' | 'aborted' | 'failed';
   video_id: string;
   initiated_at: string;
   completed_at?: string | null;

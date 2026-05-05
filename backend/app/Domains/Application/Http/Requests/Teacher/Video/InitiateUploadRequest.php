@@ -30,14 +30,15 @@ class InitiateUploadRequest extends FormRequest
             'available_from' => ['nullable', 'date'],
             'available_until' => ['nullable', 'date', 'after_or_equal:available_from'],
 
-            'file_name'   => ['required', 'string', 'max:512'],
-            'file_size'   => ['required', 'integer', 'min:1'],
-            'file_mime'   => [
+            'file_name'        => ['required', 'string', 'max:512'],
+            'file_size'        => ['required', 'integer', 'min:1'],
+            'file_mime'        => [
                 'required',
                 'string',
                 'in:' . implode(',', $settings->allowedVideoMimeTypes()),
             ],
-            'total_parts' => ['required', 'integer', 'min:1', 'max:10000'],
+            'total_parts'      => ['required', 'integer', 'min:1', 'max:10000'],
+            'file_fingerprint' => ['required', 'string', 'max:512'],
         ];
     }
 

@@ -138,9 +138,13 @@ Route::middleware(['auth:sanctum', EnsureActiveSubscription::class])->prefix('ac
     Route::put('exams/{exam}/end', [ExamController::class, 'endExam']);
     
     // Videos Management (New: Direct-to-R2 multipart upload)
-    Route::post('videos/initiate-upload', [VideoUploadController::class, 'initiateUpload'])->middleware('throttle:video-upload');
-    Route::post('videos/complete-upload', [VideoUploadController::class, 'completeUpload']);
-    Route::post('videos/resume-upload/{sessionId}', [VideoUploadController::class, 'resumeUpload']);
+    Route::middleware('throttle:video-upload')->group(function () {
+        Route::post('videos/initiate-upload', [VideoUploadController::class, 'initiateUpload']);
+        Route::post('videos/report-part-success', [VideoUploadController::class, 'reportPartSuccess']);
+        Route::post('videos/pause-upload', [VideoUploadController::class, 'pauseUpload']);
+        Route::post('videos/complete-upload', [VideoUploadController::class, 'completeUpload']);
+        Route::post('videos/resume-upload/{sessionId}', [VideoUploadController::class, 'resumeUpload']);
+    });
     Route::delete('videos/abort-upload', [VideoUploadController::class, 'abortUpload']);
     Route::get('videos/upload-status/{sessionId}', [VideoUploadController::class, 'uploadStatus']);
     // Videos CRUD (store no longer accepts video bytes — use initiate-upload instead)

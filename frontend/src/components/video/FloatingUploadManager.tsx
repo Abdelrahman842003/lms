@@ -6,22 +6,25 @@ import { Button, Icon } from '@/components/ui';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 
 const PHASE_LABELS: Record<string, string> = {
-  preparing:  'جاري التجهيز...',
-  uploading:  'جاري الرفع...',
-  retrying:   'إعادة المحاولة...',
-  completing: 'جاري الإكمال...',
-  completed:  'اكتمل الرفع ✓',
-  failed:     'فشل الرفع',
-  aborted:    'ملغى',
+  draft:       'مسودة',
+  initiating:  'جاري التجهيز...',
+  uploading:   'جاري الرفع...',
+  paused:      'تم الإيقاف مؤقتاً',
+  interrupted: 'منقطع - يرجى الاستكمال',
+  retrying:    'إعادة المحاولة...',
+  completing:  'جاري الإكمال...',
+  completed:   'اكتمل الرفع ✓',
+  failed:      'فشل الرفع',
+  aborted:     'ملغى',
 };
 
 export function FloatingUploadManager() {
-  const { state, isMinimized, setIsMinimized, cancelUpload, reset, savedSession, resumeUpload } = useVideoUploadContext();
+  const { state, isMinimized, setIsMinimized, cancelUpload, reset, savedSession, resumeUpload, pauseUpload } = useVideoUploadContext();
   const { user } = useAuth();
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
-  const isVisible = state.phase !== 'idle' || !!savedSession;
-  const isUploading = ['preparing', 'uploading', 'retrying', 'completing'].includes(state.phase);
+  const isVisible = state.phase !== 'draft' || !!savedSession;
+  const isUploading = ['initiating', 'uploading', 'retrying', 'completing'].includes(state.phase);
 
   if (!isVisible || !user) return null;
 
@@ -34,7 +37,7 @@ export function FloatingUploadManager() {
     }
   };
 
-  const isRecoverable = savedSession && state.phase === 'idle';
+  const isRecoverable = (savedSession && state.phase === 'draft') || state.phase === 'interrupted';
 
   return (
     <div className={`fixed bottom-6 right-6 z-[9999] transition-all duration-300 transform ${isMinimized ? 'translate-y-4 translate-x-4 scale-90' : 'translate-y-0 translate-x-0 scale-100'}`}>
@@ -50,9 +53,9 @@ export function FloatingUploadManager() {
       {isMinimized ? (
         <button
           onClick={() => setIsMinimized(false)}
-          className={`w-14 h-14 rounded-full shadow-2xl flex items-center justify-center relative overflow-hidden group transition-colors duration-500 ${isRecoverable ? 'bg-yellow-500 animate-pulse' : 'bg-primary'}`}
+          className={`w-14 h-14 rounded-full shadow-2xl flex items-center justify-center relative overflow-hidden group transition-colors duration-500 ${isRecoverable ? 'bg-yellow-500 animate-pulse' : (state.phase === 'paused' ? 'bg-orange-500' : 'bg-primary')}`}
         >
-          <Icon name={isRecoverable ? 'bolt' : 'upload'} className={isUploading ? 'animate-bounce' : ''} />
+          <Icon name={isRecoverable ? 'bolt' : (state.phase === 'paused' ? 'pause' : 'upload')} className={isUploading ? 'animate-bounce' : ''} />
           {isUploading && (
             <div 
               className="absolute inset-x-0 bottom-0 bg-white/20 transition-all duration-300"
@@ -64,13 +67,13 @@ export function FloatingUploadManager() {
           </span>
         </button>
       ) : (
-        <div className={`w-80 bg-gray-900 border rounded-2xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom-5 transition-all duration-500 ${isRecoverable ? 'border-yellow-500/50 shadow-yellow-500/20' : 'border-white/10'}`}>
+        <div className={`w-80 bg-gray-900 border rounded-2xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom-5 transition-all duration-500 ${isRecoverable ? 'border-yellow-500/50 shadow-yellow-500/20' : (state.phase === 'paused' ? 'border-orange-500/50 shadow-orange-500/20' : 'border-white/10')}`}>
           {/* Header */}
-          <div className={`${isRecoverable ? 'bg-yellow-500/20' : 'bg-gray-800'} px-4 py-3 flex items-center justify-between border-b border-white/5 transition-colors duration-500`}>
+          <div className={`${isRecoverable ? 'bg-yellow-500/20' : (state.phase === 'paused' ? 'bg-orange-500/20' : 'bg-gray-800')} px-4 py-3 flex items-center justify-between border-b border-white/5 transition-colors duration-500`}>
             <div className="flex items-center gap-2">
-              <div className={`w-2 h-2 rounded-full ${isUploading ? 'bg-primary animate-pulse' : (isRecoverable ? 'bg-yellow-500 animate-pulse' : 'bg-green-500')}`} />
+              <div className={`w-2 h-2 rounded-full ${isUploading ? 'bg-primary animate-pulse' : (isRecoverable ? 'bg-yellow-500 animate-pulse' : (state.phase === 'paused' ? 'bg-orange-500' : 'bg-green-500'))}`} />
               <span className="text-sm font-semibold text-white">
-                {isRecoverable ? 'استعادة مجهودك!' : 'مدير الرفع'}
+                {isRecoverable ? 'استعادة مجهودك!' : (state.phase === 'paused' ? 'الرفع متوقف' : 'مدير الرفع')}
               </span>
             </div>
             <div className="flex items-center gap-1">
@@ -80,7 +83,7 @@ export function FloatingUploadManager() {
               >
                 <Icon name="minus" size="xs" />
               </button>
-              {!isUploading && (
+              {state.phase !== 'uploading' && state.phase !== 'initiating' && state.phase !== 'completing' && (
                 <button 
                   onClick={reset}
                   className="p-1.5 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg"
@@ -100,9 +103,9 @@ export function FloatingUploadManager() {
                     <Icon name="bolt" size="3x" />
                   </div>
                   <p className="text-xs text-yellow-100 leading-relaxed relative z-10">
-                    رائع! اكتشفنا فيديو لم يكتمل رفعه:
+                    {state.phase === 'interrupted' ? 'انقطع الرفع! لا تقلق، يمكنك الاستكمال:' : 'رائع! اكتشفنا فيديو لم يكتمل رفعه:'}
                     <br />
-                    <span className="font-bold text-white block mt-1">"{savedSession.fileInfo.name}"</span>
+                    <span className="font-bold text-white block mt-1">"{savedSession?.fileInfo.name || 'الفيديو غير معروف'}"</span>
                   </p>
                 </div>
                 <Button 
@@ -128,7 +131,7 @@ export function FloatingUploadManager() {
                 {/* Progress Bar */}
                 <div className="relative h-2 w-full rounded-full bg-white/5 overflow-hidden">
                   <div
-                    className={`absolute inset-y-0 left-0 rounded-full transition-all duration-300 ${state.phase === 'failed' ? 'bg-red-500' : 'bg-primary'}`}
+                    className={`absolute inset-y-0 left-0 rounded-full transition-all duration-300 ${state.phase === 'failed' ? 'bg-red-500' : (state.phase === 'paused' ? 'bg-orange-500' : 'bg-primary')}`}
                     style={{ width: `${state.progress}%` }}
                   />
                 </div>
@@ -157,21 +160,50 @@ export function FloatingUploadManager() {
                 )}
 
                 {/* Actions */}
-                {isUploading && (
-                  <div className="pt-2">
-                    <Button 
-                      onClick={() => cancelUpload(mode)}
-                      variant="destructive" 
-                      size="xs" 
-                      className="w-full py-1.5"
-                    >
-                      إلغاء الرفع
-                    </Button>
-                  </div>
-                )}
-                
-                {!isUploading && state.phase === 'failed' && (
-                  <div className="pt-2">
+                <div className="flex gap-2 pt-2">
+                  {isUploading && (
+                    <>
+                      <Button 
+                        onClick={pauseUpload}
+                        variant="outline" 
+                        size="xs" 
+                        className="flex-1 py-1.5"
+                      >
+                        إيقاف مؤقت
+                      </Button>
+                      <Button 
+                        onClick={() => cancelUpload(mode)}
+                        variant="destructive" 
+                        size="xs" 
+                        className="flex-1 py-1.5"
+                      >
+                        إلغاء
+                      </Button>
+                    </>
+                  )}
+                  
+                  {state.phase === 'paused' && (
+                    <>
+                      <Button 
+                        onClick={() => fileInputRef.current?.click()}
+                        variant="primary" 
+                        size="xs" 
+                        className="flex-1 py-1.5"
+                      >
+                        استئناف
+                      </Button>
+                      <Button 
+                        onClick={() => cancelUpload(mode)}
+                        variant="destructive" 
+                        size="xs" 
+                        className="flex-1 py-1.5"
+                      >
+                        إلغاء
+                      </Button>
+                    </>
+                  )}
+
+                  {!isUploading && state.phase === 'failed' && (
                     <Button 
                       onClick={reset}
                       variant="outline" 
@@ -180,8 +212,8 @@ export function FloatingUploadManager() {
                     >
                       حاول مرة أخرى
                     </Button>
-                  </div>
-                )}
+                  )}
+                </div>
               </>
             )}
           </div>

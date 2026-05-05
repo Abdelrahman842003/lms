@@ -6,12 +6,16 @@ namespace App\Domains\Videos\Enums;
 
 enum VideoUploadSessionStatus: string
 {
+    case DRAFT        = 'draft';
     case PENDING_UPLOAD = 'pending_upload';
-    case UPLOADING      = 'uploading';
-    case COMPLETING     = 'completing';
-    case COMPLETED      = 'completed';
-    case ABORTED        = 'aborted';
-    case FAILED         = 'failed';
+    case INITIATING   = 'initiating';
+    case UPLOADING    = 'uploading';
+    case PAUSED       = 'paused';
+    case INTERRUPTED  = 'interrupted';
+    case COMPLETING   = 'completing';
+    case COMPLETED    = 'completed';
+    case ABORTED      = 'aborted';
+    case FAILED       = 'failed';
 
     public function isTerminal(): bool
     {

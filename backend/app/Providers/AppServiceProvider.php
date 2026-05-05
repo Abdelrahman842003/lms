@@ -481,7 +481,7 @@ class AppServiceProvider extends ServiceProvider
 
         // Video upload endpoints - prevent storage abuse
         RateLimiter::for('video-upload', function (Request $request) {
-            return Limit::perMinute(6)->by(($request->user()?->id ?? 'guest') . '|' . $request->ip());
+            return Limit::perMinute(100)->by(($request->user()?->id ?? 'guest') . '|' . $request->ip());
         });
 
         // General file upload endpoints - prevent storage abuse

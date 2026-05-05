@@ -134,6 +134,8 @@ Route::middleware(['auth:sanctum', EnsureUserNotSuspended::class . ':teacher', E
     // Videos Management - Upload rate limited
     Route::middleware('throttle:video-upload')->group(function () {
         Route::post('videos/initiate-upload', [VideoUploadController::class, 'initiateUpload']);
+        Route::post('videos/report-part-success', [VideoUploadController::class, 'reportPartSuccess']);
+        Route::post('videos/pause-upload', [VideoUploadController::class, 'pauseUpload']);
         Route::post('videos/complete-upload', [VideoUploadController::class, 'completeUpload']);
         Route::post('videos/resume-upload/{sessionId}', [VideoUploadController::class, 'resumeUpload']);
     });
