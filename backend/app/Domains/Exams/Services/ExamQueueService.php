@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Redis;
 class ExamQueueService
 {
     private const QUEUE_PREFIX = 'exam_entry_queue:';
+    private const ACTIVE_QUEUES_KEY = 'exam_entry_queues_active';
 
     /**
      * Add student to the exam entry queue
@@ -20,6 +21,9 @@ class ExamQueueService
             
             // Use current timestamp as score for FIFO ordering
             Redis::zadd($key, (string) now()->getTimestamp(), $studentId);
+            
+            // Add exam to the set of active queues
+            Redis::sadd(self::ACTIVE_QUEUES_KEY, $examId);
             
             return $this->getStudentPosition($examId, $studentId);
         } catch (\Exception $e) {
@@ -58,6 +62,11 @@ class ExamQueueService
                 // Remove them from the queue
                 Redis::zrem($key, ...$students);
             }
+
+            // Check if queue is now empty
+            if (Redis::zcard($key) === 0) {
+                Redis::srem(self::ACTIVE_QUEUES_KEY, $examId);
+            }
             
             return $students;
         } catch (\Exception $e) {
@@ -71,11 +80,7 @@ class ExamQueueService
     public function getActiveQueues(): array
     {
         try {
-            $keys = Redis::keys(self::QUEUE_PREFIX . '*');
-            
-            return array_map(function ($key) {
-                return str_replace(config('database.redis.options.prefix') . self::QUEUE_PREFIX, '', $key);
-            }, $keys);
+            return Redis::smembers(self::ACTIVE_QUEUES_KEY) ?: [];
         } catch (\Exception $e) {
             return [];
         }
@@ -89,6 +94,10 @@ class ExamQueueService
         try {
             $key = self::QUEUE_PREFIX . $examId;
             Redis::zrem($key, $studentId);
+            
+            if (Redis::zcard($key) === 0) {
+                Redis::srem(self::ACTIVE_QUEUES_KEY, $examId);
+            }
         } catch (\Exception $e) {
             // Ignore
         }
