@@ -18,6 +18,11 @@ class VideoComment extends Model
     use HasUuids;
     use SoftDeletes;
 
+    protected static function newFactory()
+    {
+        return \Database\Factories\VideoCommentFactory::new();
+    }
+
     protected $fillable = [
         'video_id',
         'parent_id',

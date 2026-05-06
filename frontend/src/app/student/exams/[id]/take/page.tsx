@@ -78,19 +78,79 @@ export default function TakeExamPage() {
       });
       
       if (response) {
-        setAttemptData(response);
-        attemptIdRef.current = response.attempt_id;
-        if (response.exam?.time_per_question) {
-          setTimeLeft(response.exam.time_per_question);
+        if (response.status === 'waiting') {
+          setWaiting(true);
+          setQueuePosition(response.position || 0);
+          // Don't set loading to false yet, we want to show the waiting room
+        } else {
+          setAttemptData(response);
+          attemptIdRef.current = response.attempt_id;
+          if (response.exam?.time_per_question) {
+            setTimeLeft(response.exam.time_per_question);
+          }
+          setLoading(false);
         }
       }
     } catch (error: any) {
       toast.error(error.message || 'حدث خطأ أثناء بدء الامتحان');
       router.push('/student/exams');
-    } finally {
       setLoading(false);
     }
   }, [examId, router]);
+
+  // WebSocket Listener for Queue Admission
+  useEffect(() => {
+    if (!waiting || !user?.id) return;
+
+    const { getEcho } = require('@/lib/echo');
+    const echo = getEcho();
+
+    if (echo) {
+      const channel = echo.private(`notifications.student.${user.id}`);
+      
+      channel.listen('.ExamAttemptReady', (data: any) => {
+        if (data.attemptData && data.attemptData.exam?.id === examId) {
+          setAttemptData(data.attemptData);
+          attemptIdRef.current = data.attemptData.attempt_id;
+          if (data.attemptData.exam?.time_per_question) {
+            setTimeLeft(data.attemptData.exam.time_per_question);
+          }
+          setWaiting(false);
+          setLoading(false);
+          toast.success('تم دخولك للامتحان بنجاح!');
+        }
+      });
+
+      return () => {
+        channel.stopListening('.ExamAttemptReady');
+      };
+    } else {
+      // Fallback: poll status every 5 seconds if Echo is not available
+      const interval = setInterval(async () => {
+        try {
+          const response = await fetchApi(`/student/exams/${examId}/start`, {
+            method: 'POST',
+          });
+          if (response && response.status !== 'waiting') {
+            setAttemptData(response);
+            attemptIdRef.current = response.attempt_id;
+            if (response.exam?.time_per_question) {
+              setTimeLeft(response.exam.time_per_question);
+            }
+            setWaiting(false);
+            setLoading(false);
+            clearInterval(interval);
+          } else if (response) {
+            setQueuePosition(response.position || 0);
+          }
+        } catch (e) {
+          console.error('Polling error:', e);
+        }
+      }, 5000);
+
+      return () => clearInterval(interval);
+    }
+  }, [waiting, user?.id, examId]);
 
   // Submit answer
   const submitAnswer = useCallback(async (answer: string | null) => {

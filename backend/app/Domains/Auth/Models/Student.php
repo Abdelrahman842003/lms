@@ -49,6 +49,7 @@ class Student extends Authenticatable
         'name',
         'avatar_key',
         'phone',
+        'parent_phone',
         'gender',
         'education_type',
         'location',
@@ -64,7 +65,9 @@ class Student extends Authenticatable
      */
     public function getParentPhoneAttribute()
     {
-        return $this->guardian?->phone;
+        $parentPhone = $this->attributes['parent_phone'] ?? null;
+
+        return $parentPhone ?: $this->guardian?->phone;
     }
 
     protected $hidden = [

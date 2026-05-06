@@ -17,10 +17,16 @@ use Illuminate\Support\Facades\Crypt;
 
 class StudentAttendanceService
 {
+    private PointService $pointService;
+    private AttendanceQueueService $queueService;
+
     public function __construct(
-        private PointService $pointService,
-        private AttendanceQueueService $queueService
-    ) {}
+        PointService $pointService,
+        AttendanceQueueService $queueService
+    ) {
+        $this->pointService = $pointService;
+        $this->queueService = $queueService;
+    }
 
     /**
      * Get attendance records for a student and teacher
