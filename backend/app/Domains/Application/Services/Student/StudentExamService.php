@@ -24,17 +24,20 @@ class StudentExamService
     private MistakesService $mistakesService;
     private \App\Domains\Exams\Builders\ExamAttemptBuilder $attemptBuilder;
     private ExamQueueService $queueService;
+    private \App\Domains\Exams\Actions\StartAttemptAction $startAttemptAction;
 
     public function __construct(
         PointService $pointService,
         MistakesService $mistakesService,
         \App\Domains\Exams\Builders\ExamAttemptBuilder $attemptBuilder,
-        ExamQueueService $queueService
+        ExamQueueService $queueService,
+        \App\Domains\Exams\Actions\StartAttemptAction $startAttemptAction
     ) {
         $this->pointService = $pointService;
         $this->mistakesService = $mistakesService;
         $this->attemptBuilder = $attemptBuilder;
         $this->queueService = $queueService;
+        $this->startAttemptAction = $startAttemptAction;
     }
 
     /**
@@ -112,6 +115,12 @@ class StudentExamService
                     
                     // Put in queue instead of creating immediately
                     $position = $this->queueService->addStudentToQueue((string) $exam->id, (string) $student->id);
+                    
+                    if ($position === 0) {
+                        $attempt = $this->startAttemptAction->execute($exam, (string) $student->id);
+                        return $this->getAttemptData($attempt);
+                    }
+
                     return [
                         'status' => 'waiting',
                         'position' => $position,
@@ -129,6 +138,11 @@ class StudentExamService
         // No existing attempt, put student in the entry queue
         $position = $this->queueService->addStudentToQueue((string) $exam->id, (string) $student->id);
         
+        if ($position === 0) {
+            $attempt = $this->startAttemptAction->execute($exam, (string) $student->id);
+            return $this->getAttemptData($attempt);
+        }
+
         return [
             'status' => 'waiting',
             'position' => $position,

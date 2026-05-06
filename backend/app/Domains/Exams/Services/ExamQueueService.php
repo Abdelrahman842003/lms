@@ -15,12 +15,17 @@ class ExamQueueService
      */
     public function addStudentToQueue(string $examId, string $studentId): int
     {
-        $key = self::QUEUE_PREFIX . $examId;
-        
-        // Use current timestamp as score for FIFO ordering
-        Redis::zadd($key, (string) now()->getTimestamp(), $studentId);
-        
-        return $this->getStudentPosition($examId, $studentId);
+        try {
+            $key = self::QUEUE_PREFIX . $examId;
+            
+            // Use current timestamp as score for FIFO ordering
+            Redis::zadd($key, (string) now()->getTimestamp(), $studentId);
+            
+            return $this->getStudentPosition($examId, $studentId);
+        } catch (\Exception $e) {
+            // If Redis is not available, return 0 to indicate bypass
+            return 0;
+        }
     }
 
     /**
@@ -28,10 +33,14 @@ class ExamQueueService
      */
     public function getStudentPosition(string $examId, string $studentId): int
     {
-        $key = self::QUEUE_PREFIX . $examId;
-        $rank = Redis::zrank($key, $studentId);
-        
-        return $rank !== null ? $rank + 1 : 0;
+        try {
+            $key = self::QUEUE_PREFIX . $examId;
+            $rank = Redis::zrank($key, $studentId);
+            
+            return $rank !== null ? $rank + 1 : 0;
+        } catch (\Exception $e) {
+            return 0;
+        }
     }
 
     /**
@@ -39,17 +48,21 @@ class ExamQueueService
      */
     public function fetchNextBatch(string $examId, int $batchSize = 50): array
     {
-        $key = self::QUEUE_PREFIX . $examId;
-        
-        // Get the first $batchSize students
-        $students = Redis::zrange($key, 0, $batchSize - 1);
-        
-        if (!empty($students)) {
-            // Remove them from the queue
-            Redis::zrem($key, ...$students);
+        try {
+            $key = self::QUEUE_PREFIX . $examId;
+            
+            // Get the first $batchSize students
+            $students = Redis::zrange($key, 0, $batchSize - 1);
+            
+            if (!empty($students)) {
+                // Remove them from the queue
+                Redis::zrem($key, ...$students);
+            }
+            
+            return $students;
+        } catch (\Exception $e) {
+            return [];
         }
-        
-        return $students;
     }
 
     /**
@@ -57,11 +70,15 @@ class ExamQueueService
      */
     public function getActiveQueues(): array
     {
-        $keys = Redis::keys(self::QUEUE_PREFIX . '*');
-        
-        return array_map(function ($key) {
-            return str_replace(config('database.redis.options.prefix') . self::QUEUE_PREFIX, '', $key);
-        }, $keys);
+        try {
+            $keys = Redis::keys(self::QUEUE_PREFIX . '*');
+            
+            return array_map(function ($key) {
+                return str_replace(config('database.redis.options.prefix') . self::QUEUE_PREFIX, '', $key);
+            }, $keys);
+        } catch (\Exception $e) {
+            return [];
+        }
     }
 
     /**
@@ -69,7 +86,11 @@ class ExamQueueService
      */
     public function removeFromQueue(string $examId, string $studentId): void
     {
-        $key = self::QUEUE_PREFIX . $examId;
-        Redis::zrem($key, $studentId);
+        try {
+            $key = self::QUEUE_PREFIX . $examId;
+            Redis::zrem($key, $studentId);
+        } catch (\Exception $e) {
+            // Ignore
+        }
     }
 }
