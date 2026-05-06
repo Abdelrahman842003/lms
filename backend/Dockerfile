@@ -52,4 +52,5 @@ EXPOSE 8005
 # 10. Start commands: Migrations, Caching, and Octane
 CMD php artisan config:cache && \
     php artisan route:cache && \
+    php artisan migrate --force && \
     php artisan octane:start --server=swoole --host=0.0.0.0 --port=8005 --workers=4 --task-workers=4 --max-requests=500
