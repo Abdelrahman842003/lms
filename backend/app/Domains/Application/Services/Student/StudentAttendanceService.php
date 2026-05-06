@@ -79,6 +79,10 @@ class StudentAttendanceService
         // Queue the student instead of processing immediately
         $position = $this->queueService->addStudentToQueue((string) $lecture->id, (string) $student->id);
 
+        if ($position === 0) {
+            return $this->processQueuedAttendance($student, $lecture);
+        }
+
         return [
             'status' => 'queued',
             'position' => $position,
