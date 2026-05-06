@@ -14,16 +14,28 @@ use App\Domains\Auth\Models\Student;
 use App\Domains\Exams\Models\StudentAnswer;
 use App\Domains\Exams\Notifications\ExamResultNotification;
 use App\Domains\Application\Services\Student\MistakesService;
+use App\Domains\Exams\Services\ExamQueueService;
 use App\Domains\Gamification\Services\PointService;
 use Illuminate\Support\Facades\DB;
 
 class StudentExamService
 {
+    private PointService $pointService;
+    private MistakesService $mistakesService;
+    private \App\Domains\Exams\Builders\ExamAttemptBuilder $attemptBuilder;
+    private ExamQueueService $queueService;
+
     public function __construct(
-        private PointService $pointService,
-        private MistakesService $mistakesService,
-        private \App\Domains\Exams\Builders\ExamAttemptBuilder $attemptBuilder
-    ) {}
+        PointService $pointService,
+        MistakesService $mistakesService,
+        \App\Domains\Exams\Builders\ExamAttemptBuilder $attemptBuilder,
+        ExamQueueService $queueService
+    ) {
+        $this->pointService = $pointService;
+        $this->mistakesService = $mistakesService;
+        $this->attemptBuilder = $attemptBuilder;
+        $this->queueService = $queueService;
+    }
 
     /**
      * Get exam details

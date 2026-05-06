@@ -80,6 +80,9 @@ Route::middleware(['auth:sanctum', EnsureTeacherNotSuspendedForStudent::class])-
     Route::get('/videos/{video}/attachments/{attachmentId}/view-url', [VideoController::class, 'attachmentViewUrl']);
     Route::post('/videos/{video}/progress', [VideoController::class, 'updateProgress']);
     Route::post('/videos/{video}/like', [VideoController::class, 'toggleLike']);
+    Route::get('/videos/{video}/comments', [VideoController::class, 'comments']);
+    Route::post('/videos/{video}/comments', [VideoController::class, 'storeComment']);
+    Route::delete('/videos/{video}/comments/{commentId}', [VideoController::class, 'deleteOwnComment']);
     
     // Video Quiz
     Route::get('/videos/{video}/quiz', [StudentVideoQuizController::class, 'show']);

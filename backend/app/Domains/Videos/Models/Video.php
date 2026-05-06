@@ -28,6 +28,11 @@ class Video extends Model
     use HasUuids;
     use SoftDeletes;
 
+    protected static function newFactory()
+    {
+        return \Database\Factories\VideoFactory::new();
+    }
+
     protected $fillable = [
         'owner_type',
         'owner_id',
