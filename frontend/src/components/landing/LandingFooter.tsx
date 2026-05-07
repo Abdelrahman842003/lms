@@ -25,6 +25,7 @@ export default function LandingFooter() {
           <div className="flex flex-wrap items-center justify-center md:justify-end gap-x-6 gap-y-3 text-[0.85rem] text-gray-400 order-2 md:order-3">
             <Link href="/about" className="hover:text-[#3249A9] transition-colors">عن نيتاق</Link>
             <Link href="/features" className="hover:text-[#3249A9] transition-colors">المميزات</Link>
+            <Link href="/pricing" className="hover:text-[#3249A9] transition-colors">الأسعار</Link>
             <Link href="/contact" className="hover:text-[#3249A9] transition-colors">تواصل معنا</Link>
             <button onClick={() => window.open('/privacy', '_blank')} className="hover:text-[#3249A9] transition-colors">سياسة الخصوصية</button>
           </div>

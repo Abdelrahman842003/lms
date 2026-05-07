@@ -69,9 +69,19 @@ abstract class BaseResource extends Resource
     {
         $model = static::getModel();
         $modelClass = class_basename($model);
-        $policyClass = "App\\Policies\\{$modelClass}Policy";
+        
+        $policyClasses = [
+            "App\\Policies\\{$modelClass}Policy",
+            "App\\Domains\\Application\\Policies\\{$modelClass}Policy",
+        ];
 
-        return class_exists($policyClass) ? $policyClass : null;
+        foreach ($policyClasses as $policyClass) {
+            if (class_exists($policyClass)) {
+                return $policyClass;
+            }
+        }
+
+        return null;
     }
 
     /**

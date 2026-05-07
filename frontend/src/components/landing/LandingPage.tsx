@@ -195,8 +195,7 @@ export default function LandingPage() {
             </button>
             <button
               onClick={() => {
-                if (waUrl) window.open(waUrl, '_blank');
-                else router.push('/contact');
+                router.push('/pricing');
               }}
               className="group flex items-center gap-2 px-7 py-3.5 text-gray-300 hover:text-white font-semibold transition-all duration-300 text-[0.95rem] hover:bg-white/5 rounded-full"
             >

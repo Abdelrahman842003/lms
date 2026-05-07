@@ -27,6 +27,7 @@ export default function LandingNavbar() {
   const navLinks = [
     { name: 'الرئيسية', path: '/' },
     { name: 'مميزات المنصة', path: '/features' },
+    { name: 'الأسعار', path: '/pricing' },
     { name: 'من نحن', path: '/about' },
     { name: 'التواصل', path: '/contact' },
   ];

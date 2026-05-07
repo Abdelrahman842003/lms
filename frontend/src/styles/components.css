@@ -233,9 +233,24 @@
   font-weight: 600;
   font-family: "Tajawal", sans-serif;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   border: none;
   text-decoration: none;
+  outline: none;
+  user-select: none;
+}
+
+.btn:focus {
+  outline: none;
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.btn:active {
+  transform: scale(0.98);
 }
 
 .btn i {

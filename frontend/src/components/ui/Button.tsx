@@ -7,7 +7,8 @@ import React from 'react';
 import { clsx } from 'clsx';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'destructive';
+  // شلنا الـ outline من هنا
+  variant?: 'primary' | 'secondary' | 'ghost' | 'destructive';
   size?: 'sm' | 'md' | 'lg';
   loading?: boolean;
   children: React.ReactNode;
@@ -25,7 +26,6 @@ export const Button: React.FC<ButtonProps> = ({
   const variantStyles = {
     primary: 'btn-primary',
     secondary: 'btn-secondary',
-    outline: 'btn-outline',
     ghost: 'btn-ghost',
     destructive: 'btn-danger',
   };

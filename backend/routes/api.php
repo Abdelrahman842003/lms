@@ -72,9 +72,10 @@ Route::prefix('v1')->group(function () {
     });
 
     // ============================================
-    // Public Settings
+    // Public Settings & Pricing
     // ============================================
     Route::get('/public-settings', [\App\Domains\Application\Http\Controllers\Api\PublicController::class, 'publicSettings']);
+    Route::get('/pricing-packages', [\App\Http\Controllers\Api\PricingController::class, 'index']);
 
     // ============================================
     // Media Proxy Routes (Stream files from R2)
