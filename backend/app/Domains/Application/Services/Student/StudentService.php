@@ -205,4 +205,18 @@ class StudentService
             'recent_attendance' => $attendances,
         ];
     }
+
+    /**
+     * Update student profile
+     */
+    public function updateProfile(Student $student, array $data): Student
+    {
+        if (isset($data['password'])) {
+            $data['password'] = Hash::make($data['password']);
+        }
+
+        $student->update($data);
+
+        return $student;
+    }
 }

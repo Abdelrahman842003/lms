@@ -15,7 +15,7 @@ function generateUUID() {
     return crypto.randomUUID();
   }
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+    const r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
     return v.toString(16);
   });
 }
@@ -40,7 +40,7 @@ const getCoveredMonths = (start: string, end: string) => {
   const startDate = new Date(start);
   const endDate = new Date(end);
   
-  let current = new Date(startDate.getFullYear(), startDate.getMonth(), 15);
+  const current = new Date(startDate.getFullYear(), startDate.getMonth(), 15);
   
   while (current < endDate) {
     monthsList.push(new Intl.DateTimeFormat('ar-EG', { month: 'long' }).format(current));
@@ -356,7 +356,7 @@ export default function PaymentPage({ params }: { params: Promise<{ id: string }
                                 return;
                               }
                               
-                              let diff = (date.getFullYear() - effectiveStartDate.getFullYear()) * 12 + (date.getMonth() - effectiveStartDate.getMonth());
+                              const diff = (date.getFullYear() - effectiveStartDate.getFullYear()) * 12 + (date.getMonth() - effectiveStartDate.getMonth());
                               setMonths(Math.max(1, diff + 1));
                             }}
                             style={isPaid && colors ? {

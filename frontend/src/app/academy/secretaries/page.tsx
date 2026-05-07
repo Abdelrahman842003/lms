@@ -172,7 +172,7 @@ export default function AcademySecretariesPage() {
     {
       label: 'حذف',
       icon: 'trash',
-      variant: 'danger' as 'danger',
+      variant: 'danger' as const,
       onClick: (row: any) => handleDelete(row),
     },
   ];

@@ -63,7 +63,7 @@ const getCoveredMonths = (start: string, end: string) => {
   const endDate = new Date(end);
   
   // Start from the month of the start date
-  let current = new Date(startDate.getFullYear(), startDate.getMonth(), 15); // Middle of month to be safe
+  const current = new Date(startDate.getFullYear(), startDate.getMonth(), 15); // Middle of month to be safe
   
   while (current < endDate) {
     monthsList.push(new Intl.DateTimeFormat('ar-EG', { month: 'long' }).format(current));
@@ -437,7 +437,7 @@ function PaymentPage({ params }: { params: Promise<{ id: string }> }) {
                                     effectiveStartDate = nextDay;
                                   }
                                   
-                                  let diff = (date.getFullYear() - effectiveStartDate.getFullYear()) * 12 + (date.getMonth() - effectiveStartDate.getMonth());
+                                  const diff = (date.getFullYear() - effectiveStartDate.getFullYear()) * 12 + (date.getMonth() - effectiveStartDate.getMonth());
                                   setMonths(Math.max(1, diff + 1));
                                   }}
                                   style={isPaid && colors ? {

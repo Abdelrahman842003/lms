@@ -19,28 +19,31 @@ class GrantExamXp implements ShouldQueue
     public function handle(ExamCompleted $event): void
     {
         $attempt    = $event->attempt;
-        $studentId  = (int) $attempt->student_id;
+        $studentId  = $attempt->student_id;
         $percentage = $event->percentage;
+        $teacherId  = $attempt->exam->teacher_id;
 
-        // XP rule:
-        //  - percentage >= 90 → 50 XP
-        //  - percentage >= 70 → 30 XP
-        //  - percentage >= 50 → 15 XP
-        //  - أقل → 5 XP (مجرد مشاركة)
-        $xp = match (true) {
-            $percentage >= 90 => 50,
-            $percentage >= 70 => 30,
-            $percentage >= 50 => 15,
-            default           => 5,
-        };
+        // تفويض عملية الحساب والمنح لـ GrantXpAction باستخدام الـ Strategy المناسبة
+        try {
+            app(\App\Domains\Gamification\Actions\GrantXpAction::class)->execute(
+                studentId: (string) $studentId,
+                teacherId: (string) $teacherId,
+                strategy: new \App\Domains\Gamification\Strategies\ExamXpCalculator(),
+                context: ['percentage' => $percentage],
+                referenceId: (string) $attempt->exam_id,
+                type: 'exam'
+            );
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Failed to grant Exam XP', [
+                'student_id' => $studentId,
+                'exam_id' => $attempt->exam_id,
+                'error' => $e->getMessage()
+            ]);
+        }
 
-        // TODO: استبدل بـ GrantXpAction بعد تنفيذ Phase 9
-        // app(GrantXpAction::class)->execute($studentId, $xp, 'exam', $attempt->exam_id);
-
-        \Illuminate\Support\Facades\Log::info('ExamXP queued', [
+        \Illuminate\Support\Facades\Log::info('ExamXP processed', [
             'student_id' => $studentId,
             'exam_id'    => $attempt->exam_id,
-            'xp'         => $xp,
             'percentage' => $percentage,
         ]);
     }

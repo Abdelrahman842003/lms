@@ -344,7 +344,7 @@ export default function AcademyStudentsPage() {
     {
       label: 'إلغاء ربط',
       icon: 'trash-alt',
-      variant: 'danger' as 'danger',
+      variant: 'danger' as const,
       onClick: (row: any) => handleDelete(row),
     },
   ];

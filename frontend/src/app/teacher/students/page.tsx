@@ -171,7 +171,7 @@ export default function StudentsPage() {
     {
       label: 'تفعيل الاشتراك',
       icon: 'fas fa-bolt',
-      variant: 'success' as 'success',
+      variant: 'success' as const,
       onClick: (row: any) => router.push(`/teacher/students/${row.id}/payment`),
       hidden: (row: any) => row.status === 'active',
     },
@@ -190,7 +190,7 @@ export default function StudentsPage() {
     {
       label: 'إلغاء الربط',
       icon: 'fas fa-unlink',
-      variant: 'danger' as 'danger',
+      variant: 'danger' as const,
       onClick: (row: any) => handleDelete(row),
     },
     {

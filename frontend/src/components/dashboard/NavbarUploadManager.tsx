@@ -38,6 +38,19 @@ export const NavbarUploadManager: React.FC = () => {
   const isUploading = ['initiating', 'uploading', 'retrying', 'completing'].includes(state.phase);
   const isRecoverable = (savedSession && state.phase === 'draft') || state.phase === 'interrupted';
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isOpen]);
+
   // Only show for teachers/academy and when there's an active or saved upload
   if (!user || (user.role !== 'teacher' && user.role !== 'academy' && user.role !== 'secretary') || !isVisible) {
     return null;
@@ -51,19 +64,6 @@ export const NavbarUploadManager: React.FC = () => {
       resumeUpload(file);
     }
   };
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isOpen]);
 
   return (
     <div className="navbar-upload-manager ux-relative" ref={containerRef}>

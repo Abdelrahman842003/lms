@@ -309,7 +309,7 @@ export default function AcademyTeachersPage() {
     {
       label: 'التفاصيل',
       icon: 'eye',
-      variant: 'default' as 'default',
+      variant: 'default' as const,
       onClick: (row: any) => router.push(`/academy/teachers/${row.id}`),
     },
     {
@@ -322,7 +322,7 @@ export default function AcademyTeachersPage() {
     {
       label: 'حذف',
       icon: 'trash',
-      variant: 'danger' as 'danger',
+      variant: 'danger' as const,
       onClick: (row: any) => handleDelete(row),
     },
   ];

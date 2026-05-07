@@ -24,25 +24,27 @@ class NotifyGroupOnActivation implements ShouldQueue
             return;
         }
 
-        // جمع FCM tokens لطلاب المجموعة النشطين
-        $studentIds = \App\Domains\Enrollments\Models\Enrollment::where('group_id', $groupId)
-            ->where('is_active', true)
-            ->pluck('student_id');
+        // جمع طلاب المجموعة النشطين
+        $students = \App\Domains\Auth\Models\Student::whereHas('enrollments', function ($q) use ($groupId) {
+            $q->where('group_id', $groupId)
+              ->where('is_active', true);
+        })->get();
 
-        $tokens = DeviceToken::whereIn('tokenable_id', $studentIds)
-            ->where('tokenable_type', \App\Domains\Auth\Models\Student::class)
-            ->pluck('token');
-
-        if ($tokens->isEmpty()) {
+        if ($students->isEmpty()) {
             return;
         }
 
-        // إرسال batch notifications
-        // TODO: ربط FCM/Firebase adapter
-        // FCMService::sendToTokens($tokens, [
-        //     'title' => 'بدأت المحاضرة 🎓',
-        //     'body'  => $lecture->title,
-        //     'data'  => ['lecture_id' => $lecture->id],
-        // ]);
+        // إرسال الإشعارات عبر الخدمة المركزية (Reverb + FCM)
+        app(\App\Domains\Notifications\Services\NotificationService::class)->sendToMany(
+            $students,
+            'student',
+            'بدأت المحاضرة 🎓',
+            $lecture->title,
+            [
+                'lecture_id' => $lecture->id,
+                'teacher_name' => $lecture->teacher->name ?? '',
+            ],
+            'lecture_activation'
+        );
     }
 }

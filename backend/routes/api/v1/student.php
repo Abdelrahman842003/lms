@@ -23,6 +23,7 @@ Route::post('/login/student', [StudentAuthController::class, 'login'])
 Route::middleware(['auth:sanctum', EnsureTeacherNotSuspendedForStudent::class])->prefix('student')->group(function () {
     Route::post('/logout', [StudentAuthController::class, 'logout']);
     Route::get('/me', [StudentAuthController::class, 'me']);
+    Route::put('/profile', [StudentAuthController::class, 'updateProfile']);
     Route::post('/change-password', [StudentAuthController::class, 'changePassword']);
     
     // Attendance - Rate limited to prevent spam

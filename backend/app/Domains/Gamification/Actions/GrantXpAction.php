@@ -27,7 +27,7 @@ use Illuminate\Support\Facades\DB;
 final class GrantXpAction
 {
     public function execute(
-        int $studentId,
+        string $studentId,
         string $teacherId,
         XpCalculationStrategy $strategy,
         array $context = [],

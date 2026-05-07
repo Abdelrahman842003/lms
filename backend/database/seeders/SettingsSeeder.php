@@ -17,7 +17,9 @@ class SettingsSeeder extends Seeder
             SeoSettingsSeeder::class,
             SystemRolesSeeder::class,
             AdminAccountSeeder::class,
-            GamificationLevelSeeder::class,
+            VideoSettingsSeeder::class,
+            GamificationSettingsSeeder::class,
+            LandingPageSeeder::class,
         ]);
     }
 }

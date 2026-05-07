@@ -21,7 +21,6 @@ class AdminAccountSeeder extends Seeder
             [
                 'name' => 'Super Admin',
                 'password' => Hash::make('password'),
-                'is_admin' => true,
             ]
         );
 

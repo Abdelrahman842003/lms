@@ -40,7 +40,7 @@ export const LectureSessionsModal: React.FC<LectureSessionsModalProps> = ({ lect
 
       if (filter === 'upcoming') {
         // Generate next 2 occurrences
-        let current = new Date(today);
+        const current = new Date(today);
         let count = 0;
         while (count < 2) {
           if (targetDays.includes(current.getDay())) {
@@ -51,7 +51,7 @@ export const LectureSessionsModal: React.FC<LectureSessionsModalProps> = ({ lect
         }
       } else {
         // Generate past occurrences (last 3 months)
-        let current = new Date(today);
+        const current = new Date(today);
         current.setDate(current.getDate() - 1); // Start from yesterday
         const threeMonthsAgo = new Date(today);
         threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);

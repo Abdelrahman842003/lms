@@ -144,7 +144,7 @@ export default function SecretariesPage() {
     {
       label: 'حذف',
       icon: 'fas fa-trash',
-      variant: 'danger' as 'danger',
+      variant: 'danger' as const,
       onClick: (row: Secretary) => handleDelete(row),
     },
     {

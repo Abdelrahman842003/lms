@@ -8,7 +8,7 @@ import { getGrades, getGroups, getLeaderboard } from '@/services/academyService'
 import { Filter } from '@/components/Filter';
 import Link from 'next/link';
 
-import { Button, Icon, Input, Badge, LoadingSpinner } from '@/components/ui';
+import { Button, Icon, Input, LoadingSpinner } from '@/components/ui';
 interface LeaderboardEntry {
   rank: number;
   student_id: string;

@@ -211,7 +211,7 @@ export const deleteGradeByName = async (name: string) => {
 };
 
 // ========== Groups Management ==========
-export const getGroups = async (page = 1, perPage = 10, filters: { search?: string; grade_id?: string; teacher_id?: string } = {}) => {
+export const getGroups = async (page = 1, perPage = 10, filters: { search?: string; grade_id?: string; grade_name?: string; teacher_id?: string } = {}) => {
   const response = await axios.get(`${API_BASE_URL}/academy/groups`, {
     headers: getAuthHeaders(),
     params: { page, per_page: perPage, ...filters },

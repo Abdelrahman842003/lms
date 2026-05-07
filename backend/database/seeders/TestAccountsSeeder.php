@@ -42,8 +42,6 @@ class TestAccountsSeeder extends Seeder
                 'name' => 'Najah Academy',
                 'password' => Hash::make($password),
                 'is_active' => true,
-                'status' => 'active',
-                'max_enrollments_limit' => 1000,
             ]
         );
         $this->command->info('Test Academy created: 01000000001 / password');
@@ -107,9 +105,7 @@ class TestAccountsSeeder extends Seeder
                 'name' => 'Yassin Student',
                 'password' => Hash::make($password),
                 'gender' => \App\Domains\Auth\Enums\StudentGender::MALE,
-                'education_type' => \App\Domains\Auth\Enums\StudentEducationType::NATIONAL,
-                'is_active' => true,
-                'teacher_id' => $teacher->id,
+                'education_type' => \App\Domains\Auth\Enums\StudentEducationType::GENERAL,
                 'guardian_id' => $parent->id,
             ]
         );

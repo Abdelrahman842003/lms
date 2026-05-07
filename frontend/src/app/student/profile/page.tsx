@@ -14,6 +14,7 @@ import QRCode from 'react-qr-code';
 export default function StudentProfilePage() {
   const { user, isLoading, updateUser } = useAuth();
   const [isEditing, setIsEditing] = React.useState(false);
+  const [isSaving, setIsSaving] = React.useState(false);
   const [avatarUrl, setAvatarUrl] = React.useState<string | null>(null);
   const [avatarPreview, setAvatarPreview] = React.useState<string | null>(null);
   const [isUploadingAvatar, setIsUploadingAvatar] = React.useState(false);
@@ -187,9 +188,50 @@ export default function StudentProfilePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement profile update
-    // TODO: Implement profile update API call
-    setIsEditing(false);
+    setIsSaving(true);
+
+    try {
+      const token = getAuthToken();
+      const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const API_URL = BASE_URL.endsWith('/api') ? BASE_URL : `${BASE_URL}/api`;
+
+      const response = await fetch(`${API_URL}/student/profile`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          phone: formData.phone,
+          parent_phone: formData.parent_phone,
+          location: formData.location,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || 'فشل تحديث الملف الشخصي');
+      }
+
+      // Update user in context - assuming the API returns { status: true, data: user }
+      const updatedUser = result.data || result;
+      updateUser({
+        name: updatedUser.name,
+        phone: updatedUser.phone,
+        parent_phone: updatedUser.parent_phone,
+        location: updatedUser.location,
+      });
+      
+      toast.success('تم تحديث الملف الشخصي بنجاح');
+      setIsEditing(false);
+    } catch (err: any) {
+      toast.error(err.message || 'حدث خطأ أثناء تحديث الملف الشخصي');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const validatePasswordForm = () => {
@@ -401,13 +443,11 @@ export default function StudentProfilePage() {
                     label="الاسم"
                     value={formData.name}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, name: e.target.value })}
-                    disabled={true}
+                    disabled={!isEditing}
                     isLoading={isLoading}
                     className="!text-center"
                   />
                 </div>
-
-
 
                 <div>
                   <Input
@@ -415,7 +455,7 @@ export default function StudentProfilePage() {
                     label="رقم الهاتف"
                     value={formData.phone}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, phone: e.target.value })}
-                    disabled={true}
+                    disabled={!isEditing}
                     isLoading={isLoading}
                     className="!text-center"
                   />
@@ -427,7 +467,7 @@ export default function StudentProfilePage() {
                     label="رقم ولي الأمر"
                     value={formData.parent_phone}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, parent_phone: e.target.value })}
-                    disabled={true}
+                    disabled={!isEditing}
                     isLoading={isLoading}
                     className="!text-center"
                   />
@@ -448,12 +488,16 @@ export default function StudentProfilePage() {
 
               {isEditing && (
                 <div className="mt-6 flex gap-3 justify-end">
-                  <Button type="button" variant="outline" onClick={() => setIsEditing(false)}>
+                  <Button type="button" variant="outline" onClick={() => setIsEditing(false)} disabled={isSaving}>
                     إلغاء
                   </Button>
-                  <Button type="submit" variant="primary">
-                    <Icon name="save" className="ml-2" />
-                    <span>حفظ التغييرات</span>
+                  <Button type="submit" variant="primary" disabled={isSaving}>
+                    {isSaving ? (
+                      <LoadingSpinner size="sm" color="white" className="ml-2" />
+                    ) : (
+                      <Icon name="save" className="ml-2" />
+                    )}
+                    <span>{isSaving ? 'جاري الحفظ...' : 'حفظ التغييرات'}</span>
                   </Button>
                 </div>
               )}

@@ -7,6 +7,7 @@ namespace App\Domains\Application\Http\Controllers\Student;
 use App\Domains\Application\Http\Controllers\Controller;
 use App\Domains\Application\Http\Requests\Auth\ChangePasswordRequest;
 use App\Domains\Application\Http\Requests\Auth\StudentLoginRequest;
+use App\Domains\Application\Http\Requests\Student\UpdateProfileRequest;
 use App\Domains\Application\Http\Resources\Student\StudentResource;
 use App\Domains\Auth\Services\DeviceLimitService;
 use App\Domains\Auth\Services\LoginAttemptService;
@@ -114,6 +115,14 @@ class AuthController extends Controller
         ]);
 
         return $this->successResponse(null, 'تم تغيير كلمة المرور بنجاح');
+    }
+
+    public function updateProfile(UpdateProfileRequest $request)
+    {
+        $student = $request->user();
+        $this->studentService->updateProfile($student, $request->validated());
+
+        return $this->successResponse(new StudentResource($student), 'تم تحديث الملف الشخصي بنجاح');
     }
 
     /**
