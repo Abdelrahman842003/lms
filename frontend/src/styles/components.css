@@ -4027,3 +4027,187 @@
 }
 
 /* TW_ALIAS_END */
+
+/* Advanced Print Styles for Reports */
+@media print {
+  /* Report Filters - Hide completely */
+  .report-filters,
+  .filters-container {
+    display: none !important;
+  }
+
+  /* Report Sections - Full width optimization */
+  .report-section,
+  [class*="report-"],
+  [class*="snapshot"],
+  [class*="trends"],
+  [class*="activity"],
+  [class*="attendance"],
+  [class*="breakdown"],
+  [class*="subscription"],
+  [class*="alerts"] {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    margin: 0 !important;
+    padding: 8px !important;
+    margin-bottom: 10px !important;
+  }
+
+  /* KPI Grid Optimization */
+  .kpi-grid,
+  .kpi-container,
+  [class*="kpi"],
+  [class*="snapshot"] {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 6px !important;
+    page-break-inside: avoid !important;
+  }
+
+  .kpi-card,
+  .stat-item {
+    padding: 8px !important;
+    margin: 0 !important;
+    font-size: 11px !important;
+    break-inside: avoid !important;
+  }
+
+  .kpi-value {
+    font-size: 14px !important;
+  }
+
+  .kpi-label {
+    font-size: 10px !important;
+  }
+
+  /* Chart Optimization */
+  canvas,
+  [role="img"],
+  [class*="chart"],
+  [class*="graph"] {
+    max-width: 100% !important;
+    height: auto !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Table Optimization for Reports */
+  .report-table,
+  [class*="income-table"],
+  [class*="activity-table"],
+  [class*="attendance-table"],
+  .data-table {
+    font-size: 10px !important;
+    margin: 0 !important;
+    page-break-inside: avoid !important;
+  }
+
+  .report-table th,
+  [class*="table"] th,
+  .data-table th {
+    padding: 6px 8px !important;
+    font-size: 10px !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+  }
+
+  .report-table td,
+  [class*="table"] td,
+  .data-table td {
+    padding: 6px 8px !important;
+    font-size: 10px !important;
+  }
+
+  /* Row Styling */
+  tbody tr {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  /* Remove Table Search and Pagination */
+  .table-search,
+  .table-search-wrapper,
+  .table-pagination,
+  .pagination,
+  [class*="pagination"],
+  [class*="filter"],
+  .report-header {
+    display: none !important;
+  }
+
+  /* Group Breakdown Optimization */
+  [class*="group-breakdown"],
+  [class*="group-row"] {
+    page-break-inside: avoid !important;
+    margin-bottom: 8px !important;
+  }
+
+  /* Subscription Card */
+  [class*="subscription"] {
+    page-break-inside: avoid !important;
+  }
+
+  /* Alerts Section */
+  [class*="alerts"],
+  [class*="alert-item"],
+  [class*="recommendation"] {
+    page-break-inside: avoid !important;
+    margin-bottom: 8px !important;
+  }
+
+  /* Modal and Overlay Hide */
+  .modal-overlay,
+  .modal-content,
+  [class*="drilldown"],
+  .drilldown-container,
+  [class*="popup"] {
+    display: none !important;
+  }
+
+  /* Optimize spacing in report layout */
+  .max-w-7xl {
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Section Headers */
+  [class*="report"] h2,
+  [class*="report"] h3,
+  .section-title {
+    page-break-after: avoid !important;
+    margin-top: 8px !important;
+    margin-bottom: 6px !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+  }
+
+  /* Text Truncation Prevention */
+  .truncate,
+  [class*="truncate"] {
+    white-space: normal !important;
+    overflow: visible !important;
+  }
+
+  /* Column Width Optimization */
+  th, td {
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+  }
+
+  /* Icon Styling for Print */
+  [class*="icon"],
+  i,
+  svg {
+    color: rgba(255, 255, 255, 0.8) !important;
+  }
+
+  /* Reduce transparency for better print visibility */
+  rgba {
+    opacity: 1 !important;
+  }
+
+  /* Link styling for print */
+  a {
+    text-decoration: none !important;
+    color: inherit !important;
+  }
+}

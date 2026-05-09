@@ -811,11 +811,11 @@ select:focus {
   }
 }
 
-/* Print styles - Optimized for A4 consistency and correct dimensions */
+/* Print styles - Optimized for full-page printing with all details */
 @media print {
   @page {
     size: A4;
-    margin: 10mm;
+    margin: 5mm;
   }
 
   * {
@@ -825,14 +825,20 @@ select:focus {
     text-rendering: optimizeLegibility;
   }
 
+  html, body {
+    width: 100% !important;
+    height: 100% !important;
+  }
+
   body {
     background: var(--dark) !important;
     color: var(--white) !important;
-    width: 210mm; /* A4 width */
-    margin: 0 auto !important;
-    padding: 0 !important;
+    margin: 0 !important;
+    padding: 5mm !important;
     overflow: visible !important;
     display: block !important;
+    font-size: 13px !important;
+    line-height: 1.4 !important;
   }
 
   /* Reset layout constraints for print */
@@ -847,53 +853,73 @@ select:focus {
     min-height: auto !important;
   }
 
-  /* Handle Sidebar and Main Content */
+  /* Use full width - remove sidebar spacing */
   .dashboard-main {
-    margin-right: 280px !important; /* Keep sidebar space if present */
+    margin-right: 0 !important;
+    margin-left: 0 !important;
+    width: 100% !important;
   }
 
   .sidebar {
-    position: absolute !important;
-    height: 100% !important;
-    transform: none !important;
+    display: none !important;
   }
 
-  /* Fix Navbar in print */
+  .sidebar-overlay,
+  .mobile-sidebar-overlay {
+    display: none !important;
+  }
+
+  /* Hide Navbar in print to maximize content space */
   .navbar {
-    position: absolute !important;
-    width: 100% !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+    display: none !important;
   }
 
-  /* Ensure content grids look good */
+  /* Maximize grid content */
   .stats-grid,
   .content-grid {
     display: grid !important;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) !important;
-    gap: 15px !important;
-    page-break-inside: avoid;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 8px !important;
+    page-break-inside: avoid !important;
   }
 
-  /* Prevent cards from breaking between pages */
+  /* Make stat cards compact */
   .stat-card,
   .dashboard-card,
   .card,
   .feature-card {
     page-break-inside: avoid !important;
     break-inside: avoid !important;
-    margin-bottom: 20px !important;
+    margin: 0 !important;
+    padding: 10px !important;
+    margin-bottom: 8px !important;
+    font-size: 12px !important;
   }
 
-  body::before {
-    display: block !important;
-    opacity: 0.1 !important;
-    position: absolute !important;
+  /* Optimize table display */
+  .data-table {
+    font-size: 11px !important;
+    margin: 0 !important;
+  }
+
+  .data-table th {
+    padding: 8px 10px !important;
+    font-size: 11px !important;
+  }
+
+  .data-table td {
+    padding: 8px 10px !important;
+    font-size: 11px !important;
+  }
+
+  /* Hide decorative elements */
+  body::before,
+  body::after {
+    display: none !important;
   }
 
   .grid-pattern {
-    display: block !important;
-    opacity: 0.05 !important;
-    position: absolute !important;
+    display: none !important;
   }
 
   /* Hide UI elements that shouldn't be printed */
@@ -907,19 +933,46 @@ select:focus {
   .sidebar-toggle,
   .mobile-sidebar-overlay,
   .sidebar-overlay,
-  button, 
-  .btn:not(.btn-print-visible) {
+  .navbar,
+  button:not(.btn-print-visible), 
+  .btn:not(.btn-print-visible),
+  [class*="hide-print"],
+  [data-print-hide="true"] {
     display: none !important;
   }
 
-  /* Ensure glass effects still look okay without blur */
+  /* Optimize colors and borders for print */
   .glass-effect,
-  .navbar,
   .stat-card,
   .dashboard-card {
-    background-color: rgba(255, 255, 255, 0.05) !important;
+    background-color: rgba(255, 255, 255, 0.08) !important;
     backdrop-filter: none !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  }
+
+  /* Chart optimization */
+  canvas {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+
+  /* Reduce spacing for print efficiency */
+  .mb-8 {
+    margin-bottom: 0.5rem !important;
+  }
+
+  .gap-6 {
+    gap: 0.5rem !important;
+  }
+
+  /* Table styling for print */
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+
+  tr, td, th {
+    page-break-inside: avoid !important;
   }
 }
 
