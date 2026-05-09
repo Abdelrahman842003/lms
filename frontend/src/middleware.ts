@@ -19,7 +19,7 @@ function getRedirectUrlForRole(role: string | undefined, baseUrl: string): strin
   const roleRoutes: Record<UserRole, string> = {
     student: '/student/dashboard',
     teacher: '/teacher/dashboard',
-    secretary: '/secretary/dashboard',
+    secretary: '/teacher/dashboard',
     parent: '/parent/children',
     academy: '/academy/dashboard',
   };

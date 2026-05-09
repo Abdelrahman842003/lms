@@ -61,6 +61,11 @@ class Academy extends Model implements AuthenticatableContract, AuthorizableCont
         return [
             'is_active' => 'boolean',
             'password' => 'hashed',
+            'plan_expires_at' => 'date',
+            'is_unlimited_students' => 'boolean',
+            'subscription_fee' => 'decimal:2',
+            'paid_amount' => 'decimal:2',
+            'discount_percent' => 'decimal:2',
         ];
     }
 

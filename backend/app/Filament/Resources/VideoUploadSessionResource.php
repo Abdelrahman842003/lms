@@ -81,16 +81,24 @@ class VideoUploadSessionResource extends BaseResource
                     ->label('الحالة')
                     ->badge()
                     ->color(fn (VideoUploadSessionStatus $state): string => match ($state) {
-                        VideoUploadSessionStatus::COMPLETED      => 'success',
-                        VideoUploadSessionStatus::UPLOADING,
-                        VideoUploadSessionStatus::PENDING_UPLOAD,
+                        VideoUploadSessionStatus::DRAFT          => 'gray',
+                        VideoUploadSessionStatus::INITIATING     => 'info',
+                        VideoUploadSessionStatus::PENDING_UPLOAD => 'info',
+                        VideoUploadSessionStatus::UPLOADING      => 'info',
+                        VideoUploadSessionStatus::PAUSED         => 'warning',
+                        VideoUploadSessionStatus::INTERRUPTED    => 'danger',
                         VideoUploadSessionStatus::COMPLETING     => 'warning',
+                        VideoUploadSessionStatus::COMPLETED      => 'success',
                         VideoUploadSessionStatus::ABORTED        => 'gray',
                         VideoUploadSessionStatus::FAILED         => 'danger',
                     })
                     ->formatStateUsing(fn (VideoUploadSessionStatus $state): string => match ($state) {
+                        VideoUploadSessionStatus::DRAFT          => 'مسودة',
                         VideoUploadSessionStatus::PENDING_UPLOAD => 'في الانتظار',
+                        VideoUploadSessionStatus::INITIATING     => 'جاري التهيئة',
                         VideoUploadSessionStatus::UPLOADING      => 'جاري الرفع',
+                        VideoUploadSessionStatus::PAUSED         => 'متوقف مؤقتاً',
+                        VideoUploadSessionStatus::INTERRUPTED    => 'منقطع',
                         VideoUploadSessionStatus::COMPLETING     => 'جاري الإكمال',
                         VideoUploadSessionStatus::COMPLETED      => 'مكتملة',
                         VideoUploadSessionStatus::ABORTED        => 'ملغاة',
@@ -129,8 +137,12 @@ class VideoUploadSessionResource extends BaseResource
                     ->label('الحالة')
                     ->options(collect(VideoUploadSessionStatus::cases())
                         ->mapWithKeys(fn ($s) => [$s->value => match ($s) {
+                            VideoUploadSessionStatus::DRAFT          => 'مسودة',
                             VideoUploadSessionStatus::PENDING_UPLOAD => 'في الانتظار',
+                            VideoUploadSessionStatus::INITIATING     => 'جاري التهيئة',
                             VideoUploadSessionStatus::UPLOADING      => 'جاري الرفع',
+                            VideoUploadSessionStatus::PAUSED         => 'متوقف مؤقتاً',
+                            VideoUploadSessionStatus::INTERRUPTED    => 'منقطع',
                             VideoUploadSessionStatus::COMPLETING     => 'جاري الإكمال',
                             VideoUploadSessionStatus::COMPLETED      => 'مكتملة',
                             VideoUploadSessionStatus::ABORTED        => 'ملغاة',

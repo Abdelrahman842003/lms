@@ -6,6 +6,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 import LandingLayout from './LandingLayout';
 
 interface LandingContent {
+  project_name: string;
   hero: {
     badge: string;
     title: string;

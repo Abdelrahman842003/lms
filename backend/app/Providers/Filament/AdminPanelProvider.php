@@ -80,6 +80,9 @@ class AdminPanelProvider extends PanelProvider
             ->pages([
                 Dashboard::class,
             ])
+            ->resources([
+                \App\Filament\Resources\PricingPackageResource::class,
+            ])
             // Widget Discovery
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             // Registered Widgets with proper columns/span
@@ -112,8 +115,40 @@ class AdminPanelProvider extends PanelProvider
             ])
             // RTL support for Arabic
             ->renderHook(
+                'panels::global-search.after',
+                fn (): string => '
+                    <button type="button" onclick="window.print()" class="filament-icon-button flex items-center justify-center rounded-full w-9 h-9 text-gray-500 hover:bg-gray-500/10 focus:outline-none transition-all dark:text-gray-400 dark:hover:bg-gray-400/10" title="طباعة الصفحة">
+                        <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.821V21h10.56v-7.179m-10.56 0a2.381 2.381 0 01-2.38-2.38V6.621c0-1.314 1.066-2.38 2.38-2.38h10.56c1.314 0 2.38 1.066 2.38 2.38v4.82c0 1.314-1.066 2.38-2.38 2.38m-10.56 0h10.56M9 10.125h3M9 8.25h6m-3 9.75h3" />
+                        </svg>
+                    </button>
+                ',
+            )
+            ->renderHook(
                 'panels::head.start',
-                fn (): string => '<meta name="direction" content="rtl">',
+                fn (): string => '
+                    <meta name="direction" content="rtl">
+                    <style>
+                        @media print {
+                            * {
+                                -webkit-print-color-adjust: exact !important;
+                                print-color-adjust: exact !important;
+                            }
+                            .fi-sidebar, .fi-topbar-item:has(button[onclick="window.print()"]), .fi-topbar-item:has(.fi-icon-btn) {
+                                /* We might want to keep the topbar but hide action buttons */
+                            }
+                            /* Hide navigation and buttons during print in admin */
+                            .fi-sidebar, .fi-topbar, .fi-btn, .fi-icon-btn {
+                                /* display: none !important; */ /* User said "whole screen", so maybe keep layout but hide buttons */
+                            }
+                            
+                            /* Better approach: only hide specific UI controls */
+                            button[onclick="window.print()"], .fi-topbar-search-container, .fi-user-menu {
+                                display: none !important;
+                            }
+                        }
+                    </style>
+                ',
             )
             ->renderHook(
                 'panels::body.end',

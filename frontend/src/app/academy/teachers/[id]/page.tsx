@@ -197,7 +197,7 @@ export default function TeacherDetailsPage() {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as any)}
-            className={`px-6 py-3 rounded-t-xl flex items-center gap-2 transition-all whitespace-nowrap font-medium outline-none focus:outline-none focus:ring-0 ${
+            className={`px-6 py-3 rounded-t-xl flex items-center gap-2 transition-all whitespace-nowrap font-medium ${
               activeTab === tab.id
                 ? 'bg-[#101426]/15 text-primary'
                 : 'text-gray-400 hover:text-white hover:bg-white/5'

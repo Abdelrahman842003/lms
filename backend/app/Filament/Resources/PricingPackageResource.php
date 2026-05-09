@@ -5,11 +5,15 @@ declare(strict_types=1);
 namespace App\Filament\Resources;
 
 use App\Domains\Subscriptions\Models\PricingPackage;
-use Filament\Forms\Components\Section;
+use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Repeater;
 use Filament\Schemas\Schema;
+use Filament\Actions\EditAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\BulkActionGroup;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
@@ -45,30 +49,34 @@ class PricingPackageResource extends BaseResource
                         TextInput::make('name_en')
                             ->label('اسم الباقة (بالإنجليزي)')
                             ->maxLength(255),
-                        Section::make('التسعير الشهري')
-                            ->schema([
-                                TextInput::make('price')
-                                    ->label('السعر الشهري الأساسي')
-                                    ->numeric()
-                                    ->prefix('ج.م')
-                                    ->required(),
-                                TextInput::make('discount_price')
-                                    ->label('سعر الخصم الشهري (اختياري)')
-                                    ->numeric()
-                                    ->prefix('ج.م'),
-                            ])->columns(2),
-                        Section::make('التسعير السنوي')
-                            ->schema([
-                                TextInput::make('yearly_price')
-                                    ->label('السعر السنوي الأساسي')
-                                    ->numeric()
-                                    ->prefix('ج.م')
-                                    ->required(),
-                                TextInput::make('yearly_discount_price')
-                                    ->label('سعر الخصم السنوي (اختياري)')
-                                    ->numeric()
-                                    ->prefix('ج.م'),
-                            ])->columns(2),
+                    ])->columns(2),
+
+                Section::make('التسعير الشهري')
+                    ->schema([
+                        TextInput::make('price')
+                            ->label('السعر الشهري الأساسي')
+                            ->numeric()
+                            ->prefix('ج.م')
+                            ->required(),
+                        TextInput::make('discount_percentage')
+                            ->label('نسبة الخصم الشهري')
+                            ->numeric()
+                            ->suffix('%')
+                            ->default(0),
+                    ])->columns(2),
+
+                Section::make('التسعير السنوي')
+                    ->schema([
+                        TextInput::make('yearly_price')
+                            ->label('السعر السنوي الأساسي')
+                            ->numeric()
+                            ->prefix('ج.م')
+                            ->required(),
+                        TextInput::make('yearly_discount_percentage')
+                            ->label('نسبة الخصم السنوي')
+                            ->numeric()
+                            ->suffix('%')
+                            ->default(0),
                     ])->columns(2),
 
                 Section::make('الحدود والمميزات')
@@ -120,7 +128,11 @@ class PricingPackageResource extends BaseResource
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('price')
-                    ->label('السعر')
+                    ->label('السعر الشهري')
+                    ->money('EGP')
+                    ->sortable(),
+                TextColumn::make('yearly_price')
+                    ->label('السعر السنوي')
                     ->money('EGP')
                     ->sortable(),
                 TextColumn::make('max_students')
@@ -144,12 +156,12 @@ class PricingPackageResource extends BaseResource
                     ->label('الحالة النشطة'),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                EditAction::make(),
+                DeleteAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ])
             ->defaultSort('sort_order', 'asc');

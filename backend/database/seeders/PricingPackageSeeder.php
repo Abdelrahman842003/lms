@@ -38,8 +38,9 @@ class PricingPackageSeeder extends Seeder
                 'max_students' => 500,
                 'storage_limit_gb' => 2,
                 'price' => 2500,
-                'yearly_price' => 25000,
-                'yearly_discount_price' => 22000,
+                'discount_percentage' => 0,
+                'yearly_price' => 30000,
+                'yearly_discount_percentage' => 15,
                 'is_popular' => true,
                 'sort_order' => 2,
                 'features' => [
@@ -55,8 +56,9 @@ class PricingPackageSeeder extends Seeder
                 'max_students' => 1000,
                 'storage_limit_gb' => 5,
                 'price' => 4500,
-                'yearly_price' => 45000,
-                'yearly_discount_price' => 40000,
+                'discount_percentage' => 10,
+                'yearly_price' => 54000,
+                'yearly_discount_percentage' => 20,
                 'is_popular' => false,
                 'sort_order' => 3,
                 'features' => [
@@ -72,8 +74,9 @@ class PricingPackageSeeder extends Seeder
                 'max_students' => 3000,
                 'storage_limit_gb' => 20,
                 'price' => 10000,
-                'yearly_price' => 100000,
-                'yearly_discount_price' => 85000,
+                'discount_percentage' => 15,
+                'yearly_price' => 120000,
+                'yearly_discount_percentage' => 25,
                 'is_popular' => false,
                 'sort_order' => 4,
                 'features' => [
@@ -89,8 +92,9 @@ class PricingPackageSeeder extends Seeder
                 'max_students' => 0, // Unlimited
                 'storage_limit_gb' => 100,
                 'price' => 25000,
-                'yearly_price' => 250000,
-                'yearly_discount_price' => 200000,
+                'discount_percentage' => 20,
+                'yearly_price' => 300000,
+                'yearly_discount_percentage' => 30,
                 'is_popular' => false,
                 'sort_order' => 5,
                 'features' => [

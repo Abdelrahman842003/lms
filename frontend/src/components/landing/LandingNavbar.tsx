@@ -1,14 +1,26 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { useSettings } from '@/contexts/SettingsContext';
 
 export default function LandingNavbar() {
+  const { settings } = useSettings();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
+
+  const projectName = useMemo(() => {
+    if (!settings.landing_page_content) return 'نيتاق';
+    try {
+      const content = JSON.parse(settings.landing_page_content);
+      return content.project_name || 'نيتاق';
+    } catch (e) {
+      return 'نيتاق';
+    }
+  }, [settings.landing_page_content]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -40,8 +52,8 @@ export default function LandingNavbar() {
         >
           {/* Logo area */}
           <Link href="/" className="flex items-center gap-2 md:gap-3 group cursor-pointer">
-            <img src="/logo.png" alt="Neetaq Logo" className="w-[1.2rem] h-[1.2rem] md:w-[1.6rem] md:h-[1.6rem] object-contain group-hover:scale-110 transition-transform" />
-            <span className="text-white font-bold tracking-wide text-base md:text-xl">نيتاق</span>
+            <img src="/logo.png" alt={`${projectName} Logo`} className="w-[1.2rem] h-[1.2rem] md:w-[1.6rem] md:h-[1.6rem] object-contain group-hover:scale-110 transition-transform" />
+            <span className="text-white font-bold tracking-wide text-base md:text-xl">{projectName}</span>
           </Link>
           
           {/* Links (Desktop) */}
@@ -72,7 +84,7 @@ export default function LandingNavbar() {
             {/* Mobile Menu Button */}
             <button 
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="lg:hidden w-9 h-9 flex flex-col justify-center items-center gap-1.5 focus:outline-none bg-white/5 rounded-full border border-white/10"
+              className="lg:hidden w-9 h-9 flex flex-col justify-center items-center gap-1.5 bg-white/5 rounded-full border border-white/10"
             >
               <span className={`w-4 h-0.5 bg-white rounded transition-all duration-300 ${isMobileMenuOpen ? 'rotate-45 translate-y-2' : ''}`}></span>
               <span className={`w-4 h-0.5 bg-white rounded transition-all duration-300 ${isMobileMenuOpen ? 'opacity-0' : ''}`}></span>

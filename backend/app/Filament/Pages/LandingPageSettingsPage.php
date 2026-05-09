@@ -41,6 +41,7 @@ class LandingPageSettingsPage extends Page implements HasForms
         $content = json_decode(Setting::getValue('landing_page_content', '{}'), true);
 
         $this->form->fill([
+            'project_name' => $content['project_name'] ?? 'نيتاق',
             'hero_badge' => $content['hero']['badge'] ?? '',
             'hero_title' => $content['hero']['title'] ?? '',
             'hero_subtitle' => $content['hero']['subtitle'] ?? '',
@@ -58,6 +59,14 @@ class LandingPageSettingsPage extends Page implements HasForms
         return $schema
             ->statePath('data')
             ->components([
+                Section::make('إعدادات عامة')
+                    ->schema([
+                        TextInput::make('project_name')
+                            ->label('اسم المشروع')
+                            ->maxLength(50)
+                            ->required(),
+                    ]),
+
                 Section::make('قسم الـ Hero')
                     ->description('العنوان الرئيسي والوصف في أعلى الصفحة.')
                     ->schema([
@@ -163,6 +172,7 @@ class LandingPageSettingsPage extends Page implements HasForms
             $state = $this->form->getState();
 
             $content = [
+                'project_name' => $state['project_name'],
                 'hero' => [
                     'badge' => $state['hero_badge'],
                     'title' => $state['hero_title'],

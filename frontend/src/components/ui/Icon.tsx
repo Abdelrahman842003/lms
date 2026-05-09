@@ -187,20 +187,16 @@ export const IconButton: React.FC<IconButtonProps> = ({
     'ux-rounded-lg',
     'ux-transition-all',
     'ux-duration-200',
-    'ux-focus-outline-none',
-    'ux-focus-ring-2',
-    'ux-focus-ring-offset-2',
-    'ux-focus-ring-offset-dark',
     'ux-disabled-opacity-50',
     'ux-disabled-cursor-not-allowed',
   ];
 
   const variantStyles = {
-    default: 'ux-bg-white-5 ux-text-gray-300 ux-hover-bg-white-10 ux-focus-ring-gray-500',
-    primary: 'ux-bg-primary-20 ux-text-primary ux-hover-bg-primary-30 ux-focus-ring-primary',
-    secondary: 'ux-bg-gray-600 ux-text-white ux-hover-bg-gray-500 ux-focus-ring-gray-500',
-    ghost: 'ux-bg-transparent ux-text-gray-400 ux-hover-text-white ux-hover-bg-white-5 ux-focus-ring-gray-500',
-    danger: 'ux-bg-red-500-20 ux-text-red-500 ux-hover-bg-red-500-30 ux-focus-ring-red-500',
+    default: 'ux-bg-white-5 ux-text-gray-300 ux-hover-bg-white-10',
+    primary: 'ux-bg-primary-20 ux-text-primary ux-hover-bg-primary-30',
+    secondary: 'ux-bg-gray-600 ux-text-white ux-hover-bg-gray-500',
+    ghost: 'ux-bg-transparent ux-text-gray-400 ux-hover-text-white ux-hover-bg-white-5',
+    danger: 'ux-bg-red-500-20 ux-text-red-500 ux-hover-bg-red-500-30',
   };
 
   const sizeStyles = {

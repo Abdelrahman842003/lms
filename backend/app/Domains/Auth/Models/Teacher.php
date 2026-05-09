@@ -76,6 +76,11 @@ class Teacher extends Authenticatable
             'is_independent_active' => 'boolean',
             'custom_expires_at' => 'date',
             'status' => \App\Domains\Auth\Enums\TeacherStatus::class,
+            'plan_expires_at' => 'date',
+            'is_unlimited_students' => 'boolean',
+            'subscription_fee' => 'decimal:2',
+            'paid_amount' => 'decimal:2',
+            'discount_percent' => 'decimal:2',
         ];
     }
 

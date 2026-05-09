@@ -11,7 +11,7 @@ class PricingPackagePolicy extends BasePolicy
      */
     protected function getResourceName(): string
     {
-        return 'pricing-packages';
+        return 'pricingpackage';
     }
 
     /**

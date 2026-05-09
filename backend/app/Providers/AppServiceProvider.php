@@ -151,6 +151,9 @@ use App\Domains\Notifications\Observers\BroadcastChannelObserver;
 use App\Domains\Notifications\Observers\DatabaseChannelObserver;
 use App\Domains\Notifications\Observers\FcmChannelObserver;
 
+use App\Domains\Subscriptions\Models\PricingPackage;
+use App\Domains\Application\Policies\PricingPackagePolicy;
+
 class AppServiceProvider extends ServiceProvider
 {
     /**
@@ -328,6 +331,8 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(VideoQuiz::class, VideoQuizPolicy::class);
         Gate::policy(VideoQuizQuestion::class, VideoQuizQuestionPolicy::class);
         Gate::policy(VideoQuizAttempt::class, VideoQuizAttemptPolicy::class);
+
+        Gate::policy(PricingPackage::class, PricingPackagePolicy::class);
 
         // Register cache invalidation observers
         Student::observe(StudentObserver::class);

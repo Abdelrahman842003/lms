@@ -24,7 +24,7 @@ const getSidebarItems = (role: string): SidebarItem[] => {
       id: 'dashboard',
       label: 'لوحة التحكم',
       icon: 'fas fa-home',
-      href: `/${role}/dashboard`,
+      href: role === 'secretary' ? '/teacher/dashboard' : `/${role}/dashboard`,
     },
   ];
 

@@ -2976,7 +2976,7 @@
   @apply flex-wrap;
 }
 
-.ux-focus-border-primary:focus {
+.ux-focus-border-primary:focus-visible {
   @apply border-primary;
 }
 
@@ -2984,11 +2984,11 @@
   @apply outline-none;
 }
 
-.ux-focus-ring-1:focus {
+.ux-focus-ring-1:focus-visible {
   @apply ring-1;
 }
 
-.ux-focus-ring-primary:focus {
+.ux-focus-ring-primary:focus-visible {
   --tw-ring-color: var(--primary);
 }
 

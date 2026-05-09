@@ -12,9 +12,9 @@ interface PricingPackage {
   max_students: number;
   storage_limit_gb: number;
   price: string;
-  discount_price: string | null;
+  discount_percentage: string | null;
   yearly_price: string;
-  yearly_discount_price: string | null;
+  yearly_discount_percentage: string | null;
   features: Array<{ feature: string }>;
   is_active: boolean;
   is_popular: boolean;
@@ -82,7 +82,7 @@ export default function PricingPage() {
             
             <div className="flex items-center gap-2 animate-bounce">
               <span className="text-[10px] bg-[#27c93f]/10 text-[#27c93f] px-3 py-1 rounded-full font-black border border-[#27c93f]/20 shadow-sm">
-                وفر 20% عند الاشتراك السنوي ⚡
+                وفر حتى 30% عند الاشتراك السنوي ⚡
               </span>
             </div>
           </div>
@@ -95,9 +95,12 @@ export default function PricingPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {packages.map((pkg) => {
-              const currentPrice = billingCycle === 'monthly' ? parseFloat(pkg.price) : parseFloat(pkg.yearly_price);
-              const currentDiscount = billingCycle === 'monthly' ? pkg.discount_price : pkg.yearly_discount_price;
-              const hasPrice = currentPrice > 0;
+              const originalPrice = billingCycle === 'monthly' ? parseFloat(pkg.price) : parseFloat(pkg.yearly_price);
+              const discountPercent = billingCycle === 'monthly' ? parseFloat(pkg.discount_percentage || '0') : parseFloat(pkg.yearly_discount_percentage || '0');
+              
+              const discountedPrice = originalPrice * (1 - discountPercent / 100);
+              const hasPrice = originalPrice > 0;
+              const hasDiscount = discountPercent > 0;
 
               return (
                 <div
@@ -114,11 +117,12 @@ export default function PricingPage() {
                     </div>
                   )}
 
-                  <div className="mb-8">
-                    <h3 className="text-2xl font-black text-white mb-2">{pkg.name_ar}</h3>
+                <div className="mb-8">
+                  <h3 className="text-2xl font-black text-white mb-2">{pkg.name_ar}</h3>
+                  <div className="flex flex-col gap-1">
                     <div className="flex items-baseline gap-2">
                       <span className="text-4xl font-black text-white">
-                        {!hasPrice ? 'مجاناً' : `${currentPrice.toLocaleString()} ج.م`}
+                        {!hasPrice ? 'مجاناً' : `${discountedPrice.toLocaleString()} ج.م`}
                       </span>
                       {hasPrice && (
                         <span className="text-gray-500 text-sm font-bold">
@@ -126,14 +130,18 @@ export default function PricingPage() {
                         </span>
                       )}
                     </div>
-                    {currentDiscount && (
-                      <div className="mt-1">
-                        <span className="text-gray-500 line-through text-sm">
-                          {parseFloat(currentDiscount).toLocaleString()} ج.م
+                    {hasPrice && hasDiscount && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-gray-500 line-through text-sm font-medium">
+                          {originalPrice.toLocaleString()} ج.م
+                        </span>
+                        <span className="text-[10px] bg-[#27c93f]/10 text-[#27c93f] px-1.5 py-0.5 rounded font-black">
+                          خصم {discountPercent}%
                         </span>
                       </div>
                     )}
                   </div>
+                </div>
 
                   <div className="flex flex-col gap-4 mb-10 flex-1">
                     <div className="flex items-center gap-3">
@@ -185,7 +193,7 @@ export default function PricingPage() {
         <div className="mt-24 bg-[#0B0F1A] rounded-[3rem] p-10 md:p-16 border border-white/5 text-center">
           <h2 className="text-3xl md:text-4xl font-black mb-6">هل تحتاج إلى باقة مخصصة؟</h2>
           <p className="text-gray-400 text-lg mb-10 max-w-2xl mx-auto">
-            إذا كانت لديك احتياجات خاصة لمؤسستك التعليمية الكبيرة، يسعدنا تقديم عرض سعر مخصص يتناسب مع متطلباتك.
+            إذا كانت لديك احتياجات خاصة لمؤسستك تعليمية الكبيرة، يسعدنا تقديم عرض سعر مخصص يتناسب مع متطلباتك.
           </p>
           <button
             onClick={() => router.push('/contact')}

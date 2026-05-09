@@ -12,6 +12,44 @@
   ::after {
     border-color: #ffffff1f;
   }
+
+  button,
+  [role="button"],
+  input[type="button"],
+  input[type="submit"],
+  input[type="reset"] {
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    outline: none;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+
+  button:focus,
+  [role="button"]:focus {
+    outline: none;
+  }
+
+  button:focus-visible,
+  [role="button"]:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+  }
+
+  button:active,
+  [role="button"]:active {
+    transform: scale(0.98);
+  }
+
+  /* Reset default anchor focus if it's used as a button */
+  a:focus {
+    outline: none;
+  }
+
+  a:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+  }
 }
 
 *:not(.fa):not(.fas):not(.far):not(.fab):not(.fa-solid):not(.fa-regular):not(
@@ -659,50 +697,27 @@ html, body {
 }
 
 /* Focus styles for accessibility */
+/* Global Focus Management */
 *:focus {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
-  border-radius: var(--radius-sm);
+  outline: none;
 }
 
-button:focus,
-a:focus,
+*:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Specific focus for form elements (always show focus on interaction for clarity) */
 input:focus,
 textarea:focus,
 select:focus {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
-  box-shadow: 0 0 0 4px rgba(66, 99, 235, 0.1);
+  outline: none;
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 3px rgba(66, 99, 235, 0.15) !important;
 }
 
 /* High contrast mode support */
-@media (prefers-contrast: high) {
-  :root {
-    --glass-bg: rgba(255, 255, 255, 0.15);
-    --glass-border: rgba(255, 255, 255, 0.3);
-  }
-
-  .text-gradient {
-    background: var(--white);
-    -webkit-background-clip: unset;
-    -webkit-text-fill-color: unset;
-    background-clip: unset;
-    color: var(--white);
-  }
-}
-
-/* Enhanced input focus effects */
-input:focus,
-textarea:focus,
-select:focus {
-  box-shadow: 0 0 0 3px rgba(66, 99, 235, 0.1);
-}
-
-/* Custom focus rings */
-.focus-ring:focus {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(66, 99, 235, 0.3);
-}
 
 /* Gradient text effects */
 .text-gradient-primary {
@@ -796,16 +811,115 @@ select:focus {
   }
 }
 
-/* Print styles */
+/* Print styles - Optimized for A4 consistency and correct dimensions */
 @media print {
-  body::before,
-  .grid-pattern {
-    display: none;
+  @page {
+    size: A4;
+    margin: 10mm;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+    text-rendering: optimizeLegibility;
   }
 
   body {
-    background: white;
-    color: black;
+    background: var(--dark) !important;
+    color: var(--white) !important;
+    width: 210mm; /* A4 width */
+    margin: 0 auto !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    display: block !important;
+  }
+
+  /* Reset layout constraints for print */
+  .dashboard-container-navbar,
+  .dashboard-layout-navbar,
+  .dashboard-main,
+  .dashboard-main-navbar {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: block !important;
+    min-height: auto !important;
+  }
+
+  /* Handle Sidebar and Main Content */
+  .dashboard-main {
+    margin-right: 280px !important; /* Keep sidebar space if present */
+  }
+
+  .sidebar {
+    position: absolute !important;
+    height: 100% !important;
+    transform: none !important;
+  }
+
+  /* Fix Navbar in print */
+  .navbar {
+    position: absolute !important;
+    width: 100% !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  }
+
+  /* Ensure content grids look good */
+  .stats-grid,
+  .content-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) !important;
+    gap: 15px !important;
+    page-break-inside: avoid;
+  }
+
+  /* Prevent cards from breaking between pages */
+  .stat-card,
+  .dashboard-card,
+  .card,
+  .feature-card {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    margin-bottom: 20px !important;
+  }
+
+  body::before {
+    display: block !important;
+    opacity: 0.1 !important;
+    position: absolute !important;
+  }
+
+  .grid-pattern {
+    display: block !important;
+    opacity: 0.05 !important;
+    position: absolute !important;
+  }
+
+  /* Hide UI elements that shouldn't be printed */
+  .notification-trigger-btn,
+  .navbar-print-btn,
+  .mobile-print-btn,
+  .logout-item,
+  .navbar-user-chevron,
+  .navbar-menu-toggle,
+  .print-btn-container,
+  .sidebar-toggle,
+  .mobile-sidebar-overlay,
+  .sidebar-overlay,
+  button, 
+  .btn:not(.btn-print-visible) {
+    display: none !important;
+  }
+
+  /* Ensure glass effects still look okay without blur */
+  .glass-effect,
+  .navbar,
+  .stat-card,
+  .dashboard-card {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    backdrop-filter: none !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
   }
 }
 
@@ -817,12 +931,4 @@ select {
   border-color: rgba(255, 255, 255, 0.1) !important;
   color: white !important;
   backdrop-filter: blur(10px);
-}
-
-input:focus,
-textarea:focus,
-select:focus {
-  background-color: rgba(255, 255, 255, 0.08) !important;
-  border-color: var(--primary) !important;
-  box-shadow: 0 0 0 3px rgba(66, 99, 235, 0.1) !important;
 }

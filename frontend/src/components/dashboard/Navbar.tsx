@@ -30,7 +30,7 @@ const getNavItems = (role: string): SidebarItem[] => {
       id: 'dashboard',
       label: 'لوحة التحكم',
       icon: 'home',
-      href: `/${role}/dashboard`,
+      href: role === 'secretary' ? '/teacher/dashboard' : `/${role}/dashboard`,
     },
   ];
 
@@ -586,6 +586,18 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
               </Button>
             )}
 
+            {/* Global Print Button */}
+            <div className="navbar-user print-btn-container ux-hidden ux-sm-block">
+              <button
+                type="button"
+                className="navbar-user-clickable notification-trigger-btn"
+                onClick={() => window.print()}
+                title="طباعة الصفحة"
+              >
+                <Icon name="print" className="notification-trigger-icon" />
+              </button>
+            </div>
+
             {/* Upload Manager */}
             <NavbarUploadManager />
 
@@ -730,14 +742,25 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
               <p className="mobile-sidebar-user-name">{user?.name || ''}</p>
             </div>
           </div>
-          <Button 
-            variant="ghost"
-            size="sm"
-            className="mobile-sidebar-close"
-            onClick={() => setIsMobileSidebarOpen(false)}
-          >
-            <Icon name="times" />
-          </Button>
+          <div className="ux-flex ux-items-center ux-gap-2">
+            <Button 
+              variant="ghost"
+              size="sm"
+              onClick={() => window.print()}
+              className="mobile-print-btn"
+              title="طباعة"
+            >
+              <Icon name="print" />
+            </Button>
+            <Button 
+              variant="ghost"
+              size="sm"
+              className="mobile-sidebar-close"
+              onClick={() => setIsMobileSidebarOpen(false)}
+            >
+              <Icon name="times" />
+            </Button>
+          </div>
         </div>
 
         <div className="mobile-sidebar-nav">
