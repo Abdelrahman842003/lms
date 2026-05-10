@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import LandingLayout from '@/components/landing/LandingLayout';
 import { fetchApi } from '@/services/api/baseApi';
 import { useRouter } from 'next/navigation';
+import { useSettings } from '@/contexts/SettingsContext';
 
 interface PricingPackage {
   id: string;
@@ -26,6 +27,38 @@ export default function PricingPage() {
   const [loading, setLoading] = useState(true);
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const router = useRouter();
+  const { settings } = useSettings();
+
+  const handleSubscribe = (pkg: PricingPackage) => {
+    const originalPrice = billingCycle === 'monthly' ? parseFloat(pkg.price) : parseFloat(pkg.yearly_price);
+    const discountPercent = billingCycle === 'monthly' ? parseFloat(pkg.discount_percentage || '0') : parseFloat(pkg.yearly_discount_percentage || '0');
+    const discountedPrice = originalPrice * (1 - discountPercent / 100);
+    const hasDiscount = discountPercent > 0;
+    
+    const defaultTemplate = `السلام عليكم، أرغب في الاشتراك في المنصة:
+- الباقة: {package_name}
+- نوع الاشتراك: {billing_cycle}
+- السعر: {price}
+{discount_info}`;
+
+    const template = settings.pricingWhatsappMessage || settings.pricing_whatsapp_message || defaultTemplate;
+    
+    const message = template
+      .replace('{package_name}', pkg.name_ar)
+      .replace('{billing_cycle}', billingCycle === 'monthly' ? 'شهري' : 'سنوي')
+      .replace('{price}', originalPrice > 0 ? `${discountedPrice.toLocaleString()} ج.م` : 'مجاني')
+      .replace('{discount_info}', hasDiscount ? `- الخصم المطبق: ${discountPercent}%` : '')
+      .trim();
+
+    const contactNumber = (settings.whatsappNumber || settings.support_phone || '').trim();
+    const normalizedNumber = contactNumber.replace(/[^0-9]/g, '');
+    
+    if (normalizedNumber) {
+      window.open(`https://wa.me/${normalizedNumber}?text=${encodeURIComponent(message)}`, '_blank');
+    } else {
+      router.push('/login');
+    }
+  };
 
   useEffect(() => {
     const loadPackages = async () => {
@@ -175,7 +208,7 @@ export default function PricingPage() {
                   </div>
 
                   <button
-                    onClick={() => router.push('/login')}
+                    onClick={() => handleSubscribe(pkg)}
                     className={`w-full py-4 rounded-2xl font-black transition-all duration-300 ${
                       pkg.is_popular
                         ? 'bg-[#3249A9] hover:bg-[#283d8f] text-white shadow-[0_10px_30px_rgba(50,73,169,0.3)]'
@@ -196,7 +229,16 @@ export default function PricingPage() {
             إذا كانت لديك احتياجات خاصة لمؤسستك تعليمية الكبيرة، يسعدنا تقديم عرض سعر مخصص يتناسب مع متطلباتك.
           </p>
           <button
-            onClick={() => router.push('/contact')}
+            onClick={() => {
+              const contactNumber = (settings.whatsappNumber || settings.support_phone || '').trim();
+              const normalizedNumber = contactNumber.replace(/[^0-9]/g, '');
+              if (normalizedNumber) {
+                const message = encodeURIComponent('السلام عليكم، أرغب في الاستفسار عن باقة مخصصة للمنصة.');
+                window.open(`https://wa.me/${normalizedNumber}?text=${message}`, '_blank');
+              } else {
+                router.push('/contact');
+              }
+            }}
             className="px-10 py-4 border border-white/10 hover:border-[#3249A9] rounded-full text-white font-black transition-all"
           >
             تواصل معنا

@@ -41,6 +41,7 @@ class SystemSettingsPage extends Page implements HasForms
     protected const SETTING_KEYS = [
         // General
         'whatsappNumber',
+        'pricing_whatsapp_message',
         // SEO
         'seo_title',
         'seo_description',
@@ -84,6 +85,7 @@ class SystemSettingsPage extends Page implements HasForms
         $this->form->fill(array_merge([
             // General
             'whatsappNumber' => Setting::getValue('whatsappNumber', ''),
+            'pricing_whatsapp_message' => Setting::getValue('pricing_whatsapp_message', "السلام عليكم، أرغب في الاشتراك في المنصة:\n- الباقة: {package_name}\n- نوع الاشتراك: {billing_cycle}\n- السعر: {price}\n{discount_info}"),
             // SEO
             'seo_title' => Setting::getValue('seo_title', ''),
             'seo_description' => Setting::getValue('seo_description', ''),
@@ -131,6 +133,11 @@ class SystemSettingsPage extends Page implements HasForms
             ->components([
                 Section::make('عام')
                     ->schema([
+                        Textarea::make('pricing_whatsapp_message')
+                            ->label('رسالة اشتراك الباقات')
+                            ->rows(5)
+                            ->helperText('القوالب المتاحة: {package_name}, {price}, {billing_cycle}, {discount_info}'),
+
                         TextInput::make('whatsappNumber')
                             ->label('رقم التواصل مع الإدارة')
                             ->tel()

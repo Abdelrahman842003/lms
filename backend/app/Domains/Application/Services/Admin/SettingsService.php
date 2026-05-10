@@ -58,6 +58,7 @@ class SettingsService
                 'siteName',
                 'siteDescription',
                 'whatsappNumber',
+                'pricing_whatsapp_message',
                 'maintenanceMode',
                 'seo_title',
                 'seo_description',

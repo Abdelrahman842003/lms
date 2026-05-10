@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\DB;
 
 class AcademyDistributionChart extends ChartWidget
 {
-    protected ?string $heading = 'Academies by Subscription Plan';
+    protected ?string $heading = 'الأكاديميات حسب خطة الاشتراك';
 
     protected static ?int $sort = 4;
 

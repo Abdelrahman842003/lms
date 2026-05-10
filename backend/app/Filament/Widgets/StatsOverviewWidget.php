@@ -136,7 +136,7 @@ class StatsOverviewWidget extends BaseWidget
 
         for ($i = 6; $i >= 0; $i--) {
             $date = now()->subDays($i);
-            $labels[] = $date->format('M d');
+            $labels[] = $date->translatedFormat('M d');
 
             $query = $modelClass::whereDate('created_at', $date);
 

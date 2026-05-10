@@ -6,6 +6,7 @@ namespace App\Filament\Pages;
 
 use App\Domains\Application\Models\Setting;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Notifications\Notification;
@@ -40,6 +41,7 @@ class SubscriptionSettingsPage extends Page implements HasForms
         'default_academy_storage_gb',
         'teacher_storage_price_per_gb',
         'academy_storage_price_per_gb',
+        'pricing_whatsapp_message',
     ];
 
     public ?array $data = [];
@@ -54,6 +56,7 @@ class SubscriptionSettingsPage extends Page implements HasForms
             'default_academy_storage_gb'    => Setting::getValue('default_academy_storage_gb', ''),
             'teacher_storage_price_per_gb'  => Setting::getValue('teacher_storage_price_per_gb', '0'),
             'academy_storage_price_per_gb'  => Setting::getValue('academy_storage_price_per_gb', '0'),
+            'pricing_whatsapp_message'      => Setting::getValue('pricing_whatsapp_message', "السلام عليكم، أرغب في الاشتراك في المنصة:\n- الباقة: {package_name}\n- نوع الاشتراك: {billing_cycle}\n- السعر: {price}\n{discount_info}"),
         ]);
     }
 
@@ -80,6 +83,12 @@ class SubscriptionSettingsPage extends Page implements HasForms
                             ->numeric()
                             ->step(0.1)
                             ->default('40'),
+
+                        Textarea::make('pricing_whatsapp_message')
+                            ->label('رسالة اشتراك الباقات')
+                            ->rows(5)
+                            ->columnSpan(2)
+                            ->helperText('القوالب المتاحة: {package_name}, {price}, {billing_cycle}, {discount_info}'),
                     ])
                     ->columns(2)
                     ->footerActions([

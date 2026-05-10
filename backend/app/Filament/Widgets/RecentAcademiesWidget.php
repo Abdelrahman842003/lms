@@ -17,7 +17,7 @@ use Illuminate\Database\Eloquent\Builder;
 
 class RecentAcademiesWidget extends BaseWidget
 {
-    protected static ?string $heading = 'Recent Academies';
+    protected static ?string $heading = 'أحدث الأكاديميات';
 
     protected static ?int $sort = 2;
 
@@ -33,6 +33,7 @@ class RecentAcademiesWidget extends BaseWidget
             )
             ->columns([
                 Tables\Columns\TextColumn::make('name')
+                    ->label('الاسم')
                     ->searchable()
                     ->sortable()
                     ->weight('font-bold')
@@ -40,25 +41,27 @@ class RecentAcademiesWidget extends BaseWidget
                     ->iconColor('primary'),
 
                 Tables\Columns\TextColumn::make('phone')
+                    ->label('رقم الهاتف')
                     ->searchable()
                     ->toggleable()
                     ->icon('heroicon-o-phone'),
 
                 Tables\Columns\TextColumn::make('created_at')
-                    ->dateTime('M d, Y')
+                    ->label('تاريخ التسجيل')
                     ->sortable()
                     ->since()
                     ->icon('heroicon-o-calendar'),
 
                 Tables\Columns\IconColumn::make('is_active')
+                    ->label('الحالة')
                     ->boolean()
                     ->trueIcon('heroicon-o-check-circle')
                     ->falseIcon('heroicon-o-x-circle')
                     ->trueColor('success')
-                    ->falseColor('danger')
-                    ->label('Active'),
+                    ->falseColor('danger'),
 
                 Tables\Columns\TextColumn::make('plan_type')
+                    ->label('خطة الاشتراك')
                     ->badge()
                     ->color(fn ($state): string => match (is_string($state) ? $state : $state->value) {
                         'pro' => 'success',
@@ -78,14 +81,15 @@ class RecentAcademiesWidget extends BaseWidget
             ])
             ->actions([
                 Action::make('view')
+                    ->label('عرض')
                     ->url(fn (Academy $record): string => AcademyResource::getUrl('view', ['record' => $record]))
                     ->icon('heroicon-o-eye')
                     ->color('primary'),
             ])
             ->defaultSort('created_at', 'desc')
             ->paginated(false)
-            ->emptyStateHeading('No academies found')
-            ->emptyStateDescription('Academies will appear here once they register.')
+            ->emptyStateHeading('لم يتم العثور على أكاديميات')
+            ->emptyStateDescription('ستظهر الأكاديميات هنا بمجرد تسجيلها.')
             ->emptyStateIcon('heroicon-o-building-office-2');
     }
 
