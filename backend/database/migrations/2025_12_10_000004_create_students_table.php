@@ -22,6 +22,7 @@ return new class extends Migration
             // Optional/Profile fields
             $table->string('location')->nullable();
             $table->string('phone')->nullable()->unique();
+            $table->string('parent_phone')->nullable();
             $table->uuid('guardian_id')->nullable();
             $table->string('gender')->default(\App\Domains\Auth\Enums\StudentGender::MALE->value);
             $table->string('education_type')->nullable();
@@ -29,6 +30,7 @@ return new class extends Migration
             $table->timestamps();
             
             $table->index('phone');
+            $table->index('parent_phone');
             $table->index('guardian_id');
             $table->index('created_at', 'students_created_at_index');
             $table->index('name', 'students_name_index');

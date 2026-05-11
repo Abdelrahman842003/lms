@@ -20,7 +20,11 @@ return new class extends Migration
             $table->integer('max_students')->default(0);
             $table->integer('storage_limit_gb')->default(0);
             $table->decimal('price', 10, 2)->default(0.00);
-            $table->decimal('discount_price', 10, 2)->nullable();
+            $table->decimal('discount_percentage', 10, 2)->nullable();
+            $table->decimal('half_yearly_price', 10, 2)->default(0.00);
+            $table->decimal('half_yearly_discount_percentage', 10, 2)->nullable();
+            $table->decimal('yearly_price', 10, 2)->default(0.00);
+            $table->decimal('yearly_discount_percentage', 10, 2)->nullable();
             $table->json('features')->nullable();
             $table->boolean('is_active')->default(true);
             $table->boolean('is_popular')->default(false);

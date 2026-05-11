@@ -11,6 +11,7 @@ return new class extends Migration
         Schema::create('attendances', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('lecture_id')->constrained('lectures')->onDelete('cascade');
+            $table->foreignUuid('lecture_session_id')->nullable()->constrained('lecture_sessions')->nullOnDelete();
             $table->foreignUuid('student_id')->constrained('students')->onDelete('cascade');
             $table->string('status')->default(\App\Domains\Lectures\Enums\StudentAttendanceStatus::ABSENT->value);
             $table->timestamps();
@@ -22,6 +23,7 @@ return new class extends Migration
             $table->index(['student_id', 'lecture_id'], 'idx_attendance_student');
             $table->index(['lecture_id', 'status'], 'attendances_lecture_status_index');
             $table->index(['student_id', 'created_at'], 'attendances_student_index');
+            $table->index(['lecture_session_id', 'status'], 'idx_attendance_session_status');
         });
     }
 
