@@ -1,8 +1,41 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
+import { useSettings } from '@/contexts/SettingsContext';
+
+interface LandingContent {
+  about: {
+    title: string;
+    description: string;
+    mission: string;
+    values: Array<{ value: string }>;
+  };
+}
 
 export default function AboutUs() {
+  const { settings } = useSettings();
+
+  const content = useMemo(() => {
+    if (!settings.landing_page_content) return null;
+    try {
+      return JSON.parse(settings.landing_page_content) as LandingContent;
+    } catch (e) {
+      return null;
+    }
+  }, [settings.landing_page_content]);
+
+  const about = content?.about || {
+    title: 'رؤيتنا في نيتاق',
+    description: 'نيتاق ليست مجرد منصة تعليمية، بل هي شريكك الاستراتيجي في رحلة التحول الرقمي. تأسست المنصة لتلبية احتياجات المؤسسات التعليمية، المعلمين المستقلين، والأكاديميات لمواكبة تطلعات الجيل الجديد بأساليب مبتكرة تعتمد على الذكاء الاصطناعي والتفاعل المباشر.',
+    mission: 'نهدف إلى تمكين المبدعين وصناع المحتوى التعليمي من إدارة وتوسيع أعمالهم بكل سهولة من خلال توفير بنية تحتية تقنية موثوقة ومدعومة بأحدث الأدوات التي تساعد على التفاعل بشكل احترافي مع الطلاب وتطوير مستوياتهم.',
+    values: [
+      { value: 'الابتكار المستمر والتطوير التقني.' },
+      { value: 'الجودة الشاملة في تجربة المستخدم.' },
+      { value: 'الأمان والحفاظ على الخصوصية والبيانات.' },
+      { value: 'الشفافية في التعامل والأسعار.' },
+    ]
+  };
+
   return (
     <div className="relative overflow-x-hidden text-white font-[Tajawal] selection:bg-[#3249A9] selection:text-white pb-20">
       
@@ -13,11 +46,11 @@ export default function AboutUs() {
           </div>
           
           <h1 className="text-[2.5rem] md:text-[4rem] font-extrabold leading-[1.15] mb-6 tracking-tight">
-            رؤيتنا في <span className="text-[#3249A9]">نيتاق</span>
+            {about.title}
           </h1>
           
           <p className="text-[1.05rem] md:text-[1.15rem] text-gray-400 max-w-[750px] mx-auto mb-16 leading-relaxed">
-            نيتاق ليست مجرد منصة تعليمية، بل هي شريكك الاستراتيجي في رحلة التحول الرقمي. تأسست المنصة لتلبية احتياجات المؤسسات التعليمية، المعلمين المستقلين، والأكاديميات لمواكبة تطلعات الجيل الجديد بأساليب مبتكرة تعتمد على الذكاء الاصطناعي والتفاعل المباشر.
+            {about.description}
           </p>
 
           <div className="bg-[#15192B] border border-white/10 rounded-3xl p-8 md:p-12 text-right relative overflow-hidden shadow-2xl">
@@ -28,29 +61,19 @@ export default function AboutUs() {
               <div>
                 <h3 className="text-2xl font-bold text-white mb-4">مهمتنا</h3>
                 <p className="text-gray-400 leading-relaxed text-[0.95rem]">
-                  نهدف إلى تمكين المبدعين وصناع المحتوى التعليمي من إدارة وتوسيع أعمالهم بكل سهولة من خلال توفير بنية تحتية تقنية موثوقة ومدعومة بأحدث الأدوات التي تساعد على التفاعل بشكل احترافي مع الطلاب وتطوير مستوياتهم.
+                  {about.mission}
                 </p>
               </div>
               
               <div>
                 <h3 className="text-2xl font-bold text-white mb-4">قيمنا الجوهرية</h3>
                 <ul className="space-y-3 text-gray-400 text-[0.95rem]">
-                  <li className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#3249A9]"></span>
-                    الابتكار المستمر والتطوير التقني.
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#3249A9]"></span>
-                    الجودة الشاملة في تجربة المستخدم.
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#3249A9]"></span>
-                    الأمان والحفاظ على الخصوصية والبيانات.
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#3249A9]"></span>
-                    الشفافية في التعامل والأسعار.
-                  </li>
+                  {about.values.map((v, i) => (
+                    <li key={i} className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#3249A9]"></span>
+                      {v.value}
+                    </li>
+                  ))}
                 </ul>
               </div>
             </div>

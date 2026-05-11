@@ -14,6 +14,8 @@ interface PricingPackage {
   storage_limit_gb: number;
   price: string;
   discount_percentage: string | null;
+  half_yearly_price: string;
+  half_yearly_discount_percentage: string | null;
   yearly_price: string;
   yearly_discount_percentage: string | null;
   features: Array<{ feature: string }>;
@@ -25,13 +27,29 @@ interface PricingPackage {
 export default function PricingPage() {
   const [packages, setPackages] = useState<PricingPackage[]>([]);
   const [loading, setLoading] = useState(true);
-  const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'semi-annual' | 'yearly'>('monthly');
   const router = useRouter();
   const { settings } = useSettings();
 
   const handleSubscribe = (pkg: PricingPackage) => {
-    const originalPrice = billingCycle === 'monthly' ? parseFloat(pkg.price) : parseFloat(pkg.yearly_price);
-    const discountPercent = billingCycle === 'monthly' ? parseFloat(pkg.discount_percentage || '0') : parseFloat(pkg.yearly_discount_percentage || '0');
+    let originalPrice = 0;
+    let discountPercent = 0;
+    let cycleLabel = '';
+
+    if (billingCycle === 'monthly') {
+      originalPrice = parseFloat(pkg.price);
+      discountPercent = parseFloat(pkg.discount_percentage || '0');
+      cycleLabel = 'شهري';
+    } else if (billingCycle === 'semi-annual') {
+      originalPrice = parseFloat(pkg.half_yearly_price);
+      discountPercent = parseFloat(pkg.half_yearly_discount_percentage || '0');
+      cycleLabel = 'نصف سنوي';
+    } else {
+      originalPrice = parseFloat(pkg.yearly_price);
+      discountPercent = parseFloat(pkg.yearly_discount_percentage || '0');
+      cycleLabel = 'سنوي';
+    }
+
     const discountedPrice = originalPrice * (1 - discountPercent / 100);
     const hasDiscount = discountPercent > 0;
     
@@ -45,7 +63,7 @@ export default function PricingPage() {
     
     const message = template
       .replace('{package_name}', pkg.name_ar)
-      .replace('{billing_cycle}', billingCycle === 'monthly' ? 'شهري' : 'سنوي')
+      .replace('{billing_cycle}', cycleLabel)
       .replace('{price}', originalPrice > 0 ? `${discountedPrice.toLocaleString()} ج.م` : 'مجاني')
       .replace('{discount_info}', hasDiscount ? `- الخصم المطبق: ${discountPercent}%` : '')
       .trim();
@@ -75,6 +93,10 @@ export default function PricingPage() {
     loadPackages();
   }, []);
 
+  const maxMonthlyDiscount = Math.max(...packages.map(pkg => parseFloat(pkg.discount_percentage || '0')), 0);
+  const maxSemiAnnualDiscount = Math.max(...packages.map(pkg => parseFloat(pkg.half_yearly_discount_percentage || '0')), 0);
+  const maxYearlyDiscount = Math.max(...packages.map(pkg => parseFloat(pkg.yearly_discount_percentage || '0')), 0);
+
   return (
     <LandingLayout>
       <div className="max-w-[1200px] mx-auto px-6 py-16 md:py-24">
@@ -84,43 +106,49 @@ export default function PricingPage() {
             اختر الباقة المناسبة لاحتياجاتك التعليمية. جميع الباقات تشمل دعم فني متكامل وتحديثات مستمرة.
           </p>
 
-          {/* Billing Toggle - Redesigned Segmented Control */}
+          {/* Billing Toggle - Restored Original Style */}
           <div className="flex flex-col items-center gap-4">
-            <div className="relative p-1 bg-[#15192B] border border-white/5 rounded-2xl flex items-center w-fit min-w-[280px]">
+            <div className="relative p-1 bg-[#15192B] border border-white/5 rounded-2xl flex items-center w-fit min-w-[300px] md:min-w-[450px]">
               {/* Sliding background */}
               <div 
                 className={`absolute h-[calc(100%-8px)] rounded-xl bg-[#3249A9] shadow-lg shadow-[#3249A9]/20 transition-all duration-300 ease-out ${
-                  billingCycle === 'monthly' ? 'w-[48%] translate-x-[2%]' : 'w-[48%] translate-x-[102%] rtl:translate-x-[-102%]'
+                  billingCycle === 'monthly' 
+                    ? 'w-[32%] translate-x-[2%] rtl:translate-x-[-2%]' 
+                    : billingCycle === 'semi-annual'
+                    ? 'w-[32%] translate-x-[104%] rtl:translate-x-[-104%]'
+                    : 'w-[32%] translate-x-[206%] rtl:translate-x-[-206%]'
                 }`}
               />
               
               <button
                 onClick={() => setBillingCycle('monthly')}
-                className={`relative flex-1 py-3 px-8 text-sm font-black transition-colors duration-300 z-10 ${
+                className={`relative flex-1 py-3 px-4 text-xs md:text-sm font-black transition-colors duration-300 z-10 flex flex-col items-center justify-center ${
                   billingCycle === 'monthly' ? 'text-white' : 'text-gray-500 hover:text-gray-300'
                 }`}
               >
-                الدفع الشهري
+                <span>1 شهر</span>
               </button>
               
               <button
+                onClick={() => setBillingCycle('semi-annual')}
+                className={`relative flex-1 py-3 px-4 text-xs md:text-sm font-black transition-colors duration-300 z-10 flex flex-col items-center justify-center ${
+                  billingCycle === 'semi-annual' ? 'text-white' : 'text-gray-500 hover:text-gray-300'
+                }`}
+              >
+                <span>6 شهور</span>
+              </button>
+
+              <button
                 onClick={() => setBillingCycle('yearly')}
-                className={`relative flex-1 py-3 px-8 text-sm font-black transition-colors duration-300 z-10 flex items-center justify-center gap-2 ${
+                className={`relative flex-1 py-3 px-4 text-xs md:text-sm font-black transition-colors duration-300 z-10 flex flex-col items-center justify-center ${
                   billingCycle === 'yearly' ? 'text-white' : 'text-gray-500 hover:text-gray-300'
                 }`}
               >
-                الدفع السنوي
+                <span>12 شهر</span>
               </button>
-            </div>
-            
-            <div className="flex items-center gap-2 animate-bounce">
-              <span className="text-[10px] bg-[#27c93f]/10 text-[#27c93f] px-3 py-1 rounded-full font-black border border-[#27c93f]/20 shadow-sm">
-                وفر حتى 30% عند الاشتراك السنوي ⚡
-              </span>
             </div>
           </div>
         </div>
-
         {loading ? (
           <div className="flex justify-center items-center min-h-[400px]">
             <div className="w-12 h-12 border-4 border-[#3249A9] border-t-transparent rounded-full animate-spin"></div>
@@ -128,12 +156,30 @@ export default function PricingPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {packages.map((pkg) => {
-              const originalPrice = billingCycle === 'monthly' ? parseFloat(pkg.price) : parseFloat(pkg.yearly_price);
-              const discountPercent = billingCycle === 'monthly' ? parseFloat(pkg.discount_percentage || '0') : parseFloat(pkg.yearly_discount_percentage || '0');
+              let originalPrice = 0;
+              let discountPercent = 0;
+              let cycleText = '';
+
+              if (billingCycle === 'monthly') {
+                originalPrice = parseFloat(pkg.price);
+                discountPercent = parseFloat(pkg.discount_percentage || '0');
+                cycleText = 'شهر';
+              } else if (billingCycle === 'semi-annual') {
+                originalPrice = parseFloat(pkg.half_yearly_price);
+                discountPercent = parseFloat(pkg.half_yearly_discount_percentage || '0');
+                cycleText = '6 شهور';
+              } else {
+                originalPrice = parseFloat(pkg.yearly_price);
+                discountPercent = parseFloat(pkg.yearly_discount_percentage || '0');
+                cycleText = 'سنة';
+              }
               
               const discountedPrice = originalPrice * (1 - discountPercent / 100);
+              const savingsAmount = originalPrice - discountedPrice;
               const hasPrice = originalPrice > 0;
               const hasDiscount = discountPercent > 0;
+
+              const savingsPeriodText = billingCycle === 'monthly' ? 'شهرياً' : billingCycle === 'semi-annual' ? 'كل 6 شهور' : 'سنوياً';
 
               return (
                 <div
@@ -159,18 +205,26 @@ export default function PricingPage() {
                       </span>
                       {hasPrice && (
                         <span className="text-gray-500 text-sm font-bold">
-                          / {billingCycle === 'monthly' ? 'شهرياً' : 'سنوياً'}
+                          / {cycleText}
                         </span>
                       )}
                     </div>
                     {hasPrice && hasDiscount && (
-                      <div className="flex items-center gap-2">
-                        <span className="text-gray-500 line-through text-sm font-medium">
-                          {originalPrice.toLocaleString()} ج.م
-                        </span>
-                        <span className="text-[10px] bg-[#27c93f]/10 text-[#27c93f] px-1.5 py-0.5 rounded font-black">
-                          خصم {discountPercent}%
-                        </span>
+                      <div className="flex flex-col gap-1.5 mt-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-gray-500 line-through text-sm font-medium">
+                            {originalPrice.toLocaleString()} ج.م
+                          </span>
+                          <span className="text-[11px] bg-[#16a34a] text-white px-2 py-0.5 rounded-lg font-black shadow-sm">
+                            وفر {discountPercent}%
+                          </span>
+                        </div>
+                        <div className="text-[#16a34a] text-xs font-black flex items-center gap-1">
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                          </svg>
+                          أنت توفر {savingsAmount.toLocaleString()} ج.م {savingsPeriodText}
+                        </div>
                       </div>
                     )}
                   </div>

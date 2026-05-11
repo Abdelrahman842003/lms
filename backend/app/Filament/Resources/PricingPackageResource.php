@@ -65,6 +65,20 @@ class PricingPackageResource extends BaseResource
                             ->default(0),
                     ])->columns(2),
 
+                Section::make('التسعير نصف السنوي')
+                    ->schema([
+                        TextInput::make('half_yearly_price')
+                            ->label('السعر نصف السنوي الأساسي')
+                            ->numeric()
+                            ->prefix('ج.م')
+                            ->required(),
+                        TextInput::make('half_yearly_discount_percentage')
+                            ->label('نسبة الخصم نصف السنوي')
+                            ->numeric()
+                            ->suffix('%')
+                            ->default(0),
+                    ])->columns(2),
+
                 Section::make('التسعير السنوي')
                     ->schema([
                         TextInput::make('yearly_price')
@@ -129,6 +143,10 @@ class PricingPackageResource extends BaseResource
                     ->sortable(),
                 TextColumn::make('price')
                     ->label('السعر الشهري')
+                    ->money('EGP')
+                    ->sortable(),
+                TextColumn::make('half_yearly_price')
+                    ->label('السعر نصف السنوي')
                     ->money('EGP')
                     ->sortable(),
                 TextColumn::make('yearly_price')

@@ -1,10 +1,39 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
+import { useSettings } from '@/contexts/SettingsContext';
+
+interface LandingContent {
+  contact: {
+    title: string;
+    description: string;
+    email: string;
+    phone: string;
+    address: string;
+  };
+}
 
 export default function ContactUs() {
+  const { settings } = useSettings();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+
+  const content = useMemo(() => {
+    if (!settings.landing_page_content) return null;
+    try {
+      return JSON.parse(settings.landing_page_content) as LandingContent;
+    } catch (e) {
+      return null;
+    }
+  }, [settings.landing_page_content]);
+
+  const contact = content?.contact || {
+    title: 'نحن هنا لمساعدتك.',
+    description: 'تواصل معنا لأي استفسار أو للحصول على عرض سعر مخصص لمنصتك التعليمية، فريقنا متواجد للرد على كافة أسئلتك.',
+    email: 'info@neetaq.com',
+    phone: '+20 100 000 0000',
+    address: 'المملكة العربية السعودية، الرياض'
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,11 +56,11 @@ export default function ContactUs() {
             </div>
             
             <h1 className="text-[2.5rem] md:text-[4rem] font-extrabold leading-[1.15] mb-6 tracking-tight">
-              نحن هنا <span className="text-[#3249A9]">لمساعدتك.</span>
+              {contact.title}
             </h1>
             
             <p className="text-[1.05rem] md:text-[1.15rem] text-gray-400 max-w-[650px] mx-auto leading-relaxed">
-              تواصل معنا لأي استفسار أو للحصول على عرض سعر مخصص لمنصتك التعليمية، فريقنا متواجد للرد على كافة أسئلتك.
+              {contact.description}
             </p>
           </div>
 
@@ -95,7 +124,7 @@ export default function ContactUs() {
                 <div>
                   <h4 className="text-white font-bold text-lg mb-1">البريد الإلكتروني</h4>
                   <p className="text-gray-400 text-sm mb-2">للرد على استفساراتكم بخصوص المنصة والمبيعات.</p>
-                  <a href="mailto:info@neetaq.com" className="text-[#3249A9] font-medium text-sm hover:underline" dir="ltr">info@neetaq.com</a>
+                  <a href={`mailto:${contact.email}`} className="text-[#3249A9] font-medium text-sm hover:underline" dir="ltr">{contact.email}</a>
                 </div>
               </div>
 
@@ -106,7 +135,7 @@ export default function ContactUs() {
                 <div>
                   <h4 className="text-white font-bold text-lg mb-1">الدعم الفني والواتساب</h4>
                   <p className="text-gray-400 text-sm mb-2">تحدث مباشرة مع فريق المبيعات عبر الواتساب.</p>
-                  <div className="text-[#3249A9] font-medium text-sm" dir="ltr">+20 100 000 0000</div>
+                  <div className="text-[#3249A9] font-medium text-sm" dir="ltr">{contact.phone}</div>
                 </div>
               </div>
 
@@ -117,7 +146,7 @@ export default function ContactUs() {
                 <div>
                   <h4 className="text-white font-bold text-lg mb-1">المقر الرئيسي</h4>
                   <p className="text-gray-400 text-sm mb-2">ندعوك لزيارتنا في مقر الشركة للتعرف علينا عن قرب.</p>
-                  <div className="text-sm text-gray-400">المملكة العربية السعودية، الرياض</div>
+                  <div className="text-sm text-gray-400">{contact.address}</div>
                 </div>
               </div>
             </div>

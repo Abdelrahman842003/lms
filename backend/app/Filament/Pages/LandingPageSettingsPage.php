@@ -51,6 +51,15 @@ class LandingPageSettingsPage extends Page implements HasForms
             'features' => $content['features'] ?? [],
             'stats' => $content['stats'] ?? [],
             'testimonials' => $content['testimonials'] ?? [],
+            'about_title' => $content['about']['title'] ?? '',
+            'about_description' => $content['about']['description'] ?? '',
+            'about_mission' => $content['about']['mission'] ?? '',
+            'about_values' => $content['about']['values'] ?? [],
+            'contact_title' => $content['contact']['title'] ?? '',
+            'contact_description' => $content['contact']['description'] ?? '',
+            'contact_email' => $content['contact']['email'] ?? '',
+            'contact_phone' => $content['contact']['phone'] ?? '',
+            'contact_address' => $content['contact']['address'] ?? '',
         ]);
     }
 
@@ -68,7 +77,7 @@ class LandingPageSettingsPage extends Page implements HasForms
                     ]),
 
                 Section::make('قسم الـ Hero')
-                    ->description('العنوان الرئيسي والوصف في أعلى الصفحة.')
+                    ->description('العنوان الرئيسي والوصف في أعلى الصفحة الرئيسية.')
                     ->schema([
                         TextInput::make('hero_badge')
                             ->label('النص العلوي (Badge)')
@@ -93,6 +102,45 @@ class LandingPageSettingsPage extends Page implements HasForms
                         TextInput::make('hero_cta_secondary')
                             ->label('نص الزر الثانوي')
                             ->maxLength(30),
+                    ])
+                    ->columns(2),
+
+                Section::make('صفحة من نحن (About Us)')
+                    ->schema([
+                        TextInput::make('about_title')
+                            ->label('عنوان صفحة من نحن')
+                            ->maxLength(100),
+                        Textarea::make('about_description')
+                            ->label('الوصف التعريفي')
+                            ->rows(3),
+                        Textarea::make('about_mission')
+                            ->label('مهمتنا')
+                            ->rows(3),
+                        Repeater::make('about_values')
+                            ->label('قيمنا الجوهرية')
+                            ->schema([
+                                TextInput::make('value')
+                                    ->label('القيمة')
+                                    ->required(),
+                            ])
+                            ->columnSpan(2),
+                    ])
+                    ->columns(2),
+
+                Section::make('صفحة التواصل (Contact Us)')
+                    ->schema([
+                        TextInput::make('contact_title')
+                            ->label('عنوان صفحة التواصل')
+                            ->maxLength(100),
+                        Textarea::make('contact_description')
+                            ->label('وصف صفحة التواصل')
+                            ->rows(2),
+                        TextInput::make('contact_email')
+                            ->label('البريد الإلكتروني للتواصل'),
+                        TextInput::make('contact_phone')
+                            ->label('رقم الهاتف المعلن'),
+                        TextInput::make('contact_address')
+                            ->label('العنوان الفعلي'),
                     ])
                     ->columns(2),
 
@@ -180,6 +228,19 @@ class LandingPageSettingsPage extends Page implements HasForms
                     'description' => $state['hero_description'],
                     'cta_primary' => $state['hero_cta_primary'],
                     'cta_secondary' => $state['hero_cta_secondary'],
+                ],
+                'about' => [
+                    'title' => $state['about_title'],
+                    'description' => $state['about_description'],
+                    'mission' => $state['about_mission'],
+                    'values' => $state['about_values'],
+                ],
+                'contact' => [
+                    'title' => $state['contact_title'],
+                    'description' => $state['contact_description'],
+                    'email' => $state['contact_email'],
+                    'phone' => $state['contact_phone'],
+                    'address' => $state['contact_address'],
                 ],
                 'features' => $state['features'],
                 'stats' => $state['stats'],

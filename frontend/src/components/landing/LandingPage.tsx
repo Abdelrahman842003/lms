@@ -15,6 +15,19 @@ interface LandingContent {
     cta_primary: string;
     cta_secondary: string;
   };
+  about: {
+    title: string;
+    description: string;
+    mission: string;
+    values: Array<{ value: string }>;
+  };
+  contact: {
+    title: string;
+    description: string;
+    email: string;
+    phone: string;
+    address: string;
+  };
   features: Array<{ icon: string; title: string; description: string }>;
   stats: Array<{ label: string; value: string }>;
   testimonials: Array<{ name: string; role: string; quote: string }>;
@@ -149,6 +162,22 @@ export default function LandingPage() {
       description: 'بعيداً عن الأدوات التقليدية، نطاق هو نظام تشغيل متكامل مصمم خصيصاً للمؤسسات التعليمية.',
       cta_primary: 'ابدأ تجربة مجانية',
       cta_secondary: 'الأسعار',
+    },
+    about: {
+      title: 'رؤيتنا في نيتاق',
+      description: 'نيتاق ليست مجرد منصة تعليمية، بل هي شريكك الاستراتيجي في رحلة التحول الرقمي.',
+      mission: 'نهدف إلى تمكين المبدعين وصناع المحتوى التعليمي من إدارة وتوسيع أعمالهم بكل سهولة.',
+      values: [
+        { value: 'الابتكار المستمر والتطوير التقني.' },
+        { value: 'الجودة الشاملة في تجربة المستخدم.' },
+      ]
+    },
+    contact: {
+      title: 'تواصل معنا',
+      description: 'نحن هنا للإجابة على جميع استفساراتك.',
+      email: 'support@neetaq.com',
+      phone: '+201000000000',
+      address: 'المملكة العربية السعودية، الرياض'
     },
     features: [],
     stats: [],
