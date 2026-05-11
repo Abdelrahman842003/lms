@@ -13,6 +13,11 @@ class SettingsSeeder extends Seeder
      */
     public function run(): void
     {
+        // Truncate settings table to ensure a clean state
+        \Illuminate\Support\Facades\Schema::disableForeignKeyConstraints();
+        \Illuminate\Support\Facades\DB::table('settings')->truncate();
+        \Illuminate\Support\Facades\Schema::enableForeignKeyConstraints();
+
         $this->call([
             SeoSettingsSeeder::class,
             SystemRolesSeeder::class,
