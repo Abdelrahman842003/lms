@@ -233,8 +233,8 @@ export default function PricingPage() {
               const contactNumber = (settings.whatsappNumber || settings.support_phone || '').trim();
               const normalizedNumber = contactNumber.replace(/[^0-9]/g, '');
               if (normalizedNumber) {
-                const message = encodeURIComponent('السلام عليكم، أرغب في الاستفسار عن باقة مخصصة للمنصة.');
-                window.open(`https://wa.me/${normalizedNumber}?text=${message}`, '_blank');
+                const template = settings.generalWhatsappMessage || settings.general_whatsapp_message || 'السلام عليكم، أرغب في الاستفسار عن باقة مخصصة للمنصة.';
+                window.open(`https://wa.me/${normalizedNumber}?text=${encodeURIComponent(template)}`, '_blank');
               } else {
                 router.push('/contact');
               }

@@ -110,12 +110,21 @@ export default function LandingNavbar() {
               </Link>
             );
           })}
-          <Link
-            href="/login"
+          <button
+            onClick={() => {
+              const contactNumber = (settings.whatsappNumber || settings.support_phone || '').trim();
+              const normalizedNumber = contactNumber.replace(/[^0-9]/g, '');
+              if (normalizedNumber) {
+                const template = settings.freeTrialWhatsappMessage || settings.free_trial_whatsapp_message || 'السلام عليكم، أرغب في بدء تجربة مجانية للمنصة لمدة 14 يوم.';
+                window.open(`https://wa.me/${normalizedNumber}?text=${encodeURIComponent(template)}`, '_blank');
+              } else {
+                router.push('/login');
+              }
+            }}
             className="mt-4 px-10 py-4 bg-[#3249A9] text-white font-black rounded-2xl text-xl shadow-[0_0_30px_rgba(50,73,169,0.3)]"
           >
-            ابدأ الآن
-          </Link>
+            ابدأ تجربة مجانية
+          </button>
       </div>
     </>
   );

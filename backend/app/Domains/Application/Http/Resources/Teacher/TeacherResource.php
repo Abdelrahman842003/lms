@@ -44,7 +44,7 @@ class TeacherResource extends JsonResource
             'trial_period_days' => $this->trial_period_days !== null ? (int) $this->trial_period_days : null,
             'effective_trial_period_days' => $this->trial_period_days !== null
                 ? (int) $this->trial_period_days
-                : (int) \App\Domains\Application\Models\Setting::getValue('trial_period_days', 4),
+                : (int) \App\Domains\Application\Models\Setting::getValue('trial_period_days', 14),
             'joined' => $this->created_at ? $this->created_at->format('Y-m-d') : null,
             'created_at' => $this->created_at ? $this->created_at->toIso8601String() : null,
             'subscription_fee' => (float) $this->subscription_fee,

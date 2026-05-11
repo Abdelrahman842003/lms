@@ -186,10 +186,19 @@ export default function LandingPage() {
 
           <div className="flex items-center justify-center gap-4 mb-16 md:mb-20 flex-wrap px-4">
             <button
-              onClick={() => router.push('/login')}
+              onClick={() => {
+                const contactNumber = (settings.whatsappNumber || settings.support_phone || '').trim();
+                const normalizedNumber = contactNumber.replace(/[^0-9]/g, '');
+                if (normalizedNumber) {
+                  const template = settings.freeTrialWhatsappMessage || settings.free_trial_whatsapp_message || 'السلام عليكم، أرغب في بدء تجربة مجانية للمنصة لمدة 14 يوم.';
+                  window.open(`https://wa.me/${normalizedNumber}?text=${encodeURIComponent(template)}`, '_blank');
+                } else {
+                  router.push('/login');
+                }
+              }}
               className="group flex items-center gap-2 px-7 py-3.5 bg-[#3249A9] hover:bg-[#283d8f] text-white font-bold rounded-full transition-all duration-300 text-[0.95rem] shadow-[0_10px_30px_rgba(50,73,169,0.25)] hover:shadow-[0_15px_40px_rgba(50,73,169,0.35)] hover:-translate-y-0.5"
             >
-              <span>{content.hero.cta_primary}</span>
+              <span>ابدأ تجربة مجانية لمدة 14 يوم</span>
               <svg className="w-4 h-4 rtl:rotate-180 transition-transform group-hover:-translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7M17 7H7M17 7v10" />
               </svg>
@@ -501,10 +510,19 @@ export default function LandingPage() {
                 جاهز للارتقاء بمؤسستك <br className="hidden md:block" /> التعليمية للمستوى القادم؟
               </h2>
               <button
-                onClick={() => router.push('/login')}
+                onClick={() => {
+                  const contactNumber = (settings.whatsappNumber || settings.support_phone || '').trim();
+                  const normalizedNumber = contactNumber.replace(/[^0-9]/g, '');
+                  if (normalizedNumber) {
+                    const template = settings.freeTrialWhatsappMessage || settings.free_trial_whatsapp_message || 'السلام عليكم، أرغب في بدء تجربة مجانية للمنصة لمدة 14 يوم.';
+                    window.open(`https://wa.me/${normalizedNumber}?text=${encodeURIComponent(template)}`, '_blank');
+                  } else {
+                    router.push('/login');
+                  }
+                }}
                 className="group inline-flex items-center gap-3 px-10 py-5 bg-[#3249A9] hover:bg-[#283d8f] text-white font-black rounded-full transition-all duration-300 text-[1.1rem] shadow-[0_20px_50px_rgba(50,73,169,0.3)] hover:shadow-[0_25px_60px_rgba(50,73,169,0.4)] hover:-translate-y-1"
               >
-                <span>ابدأ الآن مجاناً</span>
+                <span>ابدأ تجربة مجانية لمدة 14 يوم</span>
                 <svg className="w-5 h-5 rtl:rotate-180 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                 </svg>
