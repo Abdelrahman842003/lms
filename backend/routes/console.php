@@ -48,16 +48,47 @@ Schedule::job(CheckExpiringSubscriptions::class)->dailyAt('09:00');
 // إعادة حساب Leaderboard كل ساعة
 Schedule::job(RecalculateLeaderboard::class)->hourly();
 
+// ─── Lectures & Exams ──────────────────────────────────────────────────────
+
+// إغلاق المحاضرات المنتهية كل 10 دقائق
+Schedule::command('lectures:end-expired')->everyTenMinutes();
+
+// إغلاق الامتحانات المنتهية كل 5 دقائق
+Schedule::command('exams:end-expired')->everyFiveMinutes();
+
+// فحص حالة المحاضرات كل ساعة
+Schedule::command('lectures:check-status')->hourly();
+
+// مزامنة مهام المحاضرات يومياً كإجراء احترازي
+Schedule::command('lectures:sync-jobs')->daily();
+
+// ─── Payments & Subscriptions ──────────────────────────────────────────────
+
+// انتهاء صلاحية المدفوعات المعلقة كل ساعة
+Schedule::command('payments:expire')->hourly();
+
+// إعادة حساب رسوم الاشتراكات يومياً
+Schedule::command('subscriptions:recalculate-fees')->daily();
+
 // ─── Token Security Cleanup ─────────────────────────────────────────────────
 
 // Clean up expired tokens daily at 2 AM (off-peak hours)
 Schedule::command('tokens:cleanup')->dailyAt('02:00');
+
+// تنظيف توكنات الأجهزة القديمة يومياً
+Schedule::command('tokens:clean')->dailyAt('02:30');
 
 // التنظيف الدوري للملفات المؤقتة
 Schedule::command('system:cleanup')->dailyAt('03:00');
 
 // معالجة الاشتراكات المنتهية للطلاب والمدرسين والأكاديميات
 Schedule::command('subscriptions:process-expirations')->dailyAt('04:00');
+
+// تنظيف التنبيهات القديمة يومياً
+Schedule::command('notifications:clean')->dailyAt('05:00');
+
+// إعادة حساب استهلاك المساحة يومياً
+Schedule::command('storage:recalculate')->dailyAt('06:00');
 
 // تنظيف سجلات النشاط القديمة (أكثر من 90 يوم)
 Schedule::command('activitylog:clean')->weekly();
