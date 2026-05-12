@@ -221,7 +221,7 @@ return [
             ],
             'waiting-room-supervisor' => [
                 'connection' => 'redis',
-                'queue' => ['waiting-room'],
+                'queue' => ['waiting-room', 'default'],
                 'balance' => 'auto',
                 'maxProcesses' => 20,
                 'tries' => 3,
