@@ -35,39 +35,6 @@ stopwaitsecs=3600
 ```
 
 ### ب. ملف إعدادات Laravel Reverb (للبث المباشر WebSockets)
-`/etc/supervisor/conf.d/laravel-reverb.conf`
-
-```ini
-[program:laravel-reverb]
-process_name=%(program_name)s
-command=php /var/www/backend/artisan reverb:start
-autostart=true
-autorestart=true
-user=www-data
-redirect_stderr=true
-stdout_logfile=/var/www/backend/storage/logs/reverb.log
-```
-
-### ج. ملف إعدادات معالجة الطوابير الخاصة (Attendance & Exams)
-`/etc/supervisor/conf.d/laravel-custom-queues.conf`
-
-```ini
-[program:attendance-processor]
-command=php /var/www/backend/artisan attendance:process-queue --batch=50 --sleep=2
-autostart=true
-autorestart=true
-user=www-data
-stdout_logfile=/var/www/backend/storage/logs/attendance.log
-
-[program:exams-processor]
-command=php /var/www/backend/artisan exams:process-queue --batch=50 --sleep=2
-autostart=true
-autorestart=true
-user=www-data
-stdout_logfile=/var/www/backend/storage/logs/exams.log
-```
-
-### د. ملف إعدادات Laravel Octane (اختياري - إذا كنت تستخدمه في الإنتاج)
 `/etc/supervisor/conf.d/laravel-octane.conf`
 
 ```ini

@@ -14,7 +14,6 @@ use App\Domains\Auth\Models\Student;
 use App\Domains\Exams\Models\StudentAnswer;
 use App\Domains\Exams\Notifications\ExamResultNotification;
 use App\Domains\Application\Services\Student\MistakesService;
-use App\Domains\Exams\Services\ExamQueueService;
 use App\Domains\Gamification\Services\PointService;
 use Illuminate\Support\Facades\DB;
 
@@ -23,20 +22,17 @@ class StudentExamService
     private PointService $pointService;
     private MistakesService $mistakesService;
     private \App\Domains\Exams\Builders\ExamAttemptBuilder $attemptBuilder;
-    private ExamQueueService $queueService;
     private \App\Domains\Exams\Actions\StartAttemptAction $startAttemptAction;
 
     public function __construct(
         PointService $pointService,
         MistakesService $mistakesService,
         \App\Domains\Exams\Builders\ExamAttemptBuilder $attemptBuilder,
-        ExamQueueService $queueService,
         \App\Domains\Exams\Actions\StartAttemptAction $startAttemptAction
     ) {
         $this->pointService = $pointService;
         $this->mistakesService = $mistakesService;
         $this->attemptBuilder = $attemptBuilder;
-        $this->queueService = $queueService;
         $this->startAttemptAction = $startAttemptAction;
     }
 
@@ -113,17 +109,12 @@ class StudentExamService
                     // Exam was modified, delete invalid attempt and start over
                     $existingAttempt->delete();
                     
-                    // Put in queue instead of creating immediately
-                    $position = $this->queueService->addStudentToQueue((string) $exam->id, (string) $student->id);
-                    
-                    if ($position === 0) {
-                        $attempt = $this->startAttemptAction->execute($exam, (string) $student->id);
-                        return $this->getAttemptData($attempt);
-                    }
+                    // Dispatch job for processing
+                    ProcessExamEntryJob::dispatch((string) $exam->id, (string) $student->id);
 
                     return [
                         'status' => 'waiting',
-                        'position' => $position,
+                        'position' => 1, // Generic position as we don't track it manually anymore
                         'exam_id' => $exam->id
                     ];
                 }
@@ -135,17 +126,12 @@ class StudentExamService
             throw new DomainException('لقد قمت بأداء هذا الامتحان مسبقاً');
         }
 
-        // No existing attempt, put student in the entry queue
-        $position = $this->queueService->addStudentToQueue((string) $exam->id, (string) $student->id);
-        
-        if ($position === 0) {
-            $attempt = $this->startAttemptAction->execute($exam, (string) $student->id);
-            return $this->getAttemptData($attempt);
-        }
+        // No existing attempt, dispatch job for processing
+        ProcessExamEntryJob::dispatch((string) $exam->id, (string) $student->id);
 
         return [
             'status' => 'waiting',
-            'position' => $position,
+            'position' => 1,
             'exam_id' => $exam->id
         ];
     }
@@ -498,6 +484,29 @@ class StudentExamService
         $elapsed = (int) now()->diffInSeconds($attempt->started_at ?? now(), true);
         $durationMinutes = (float) ($exam->duration ?? 0);
         $totalTime = (int) round($durationMinutes * 60); // Convert minutes to seconds
+
+        return max(0, $totalTime - $elapsed);
+    }
+}
+swer
+                );
+            });
+    }
+
+    /**
+     * Calculate remaining time for the exam attempt
+     */
+    private function calculateTimeRemaining(ExamAttempt $attempt): int
+    {
+        $exam = $attempt->exam;
+        $elapsed = (int) now()->diffInSeconds($attempt->started_at ?? now(), true);
+        $durationMinutes = (float) ($exam->duration ?? 0);
+        $totalTime = (int) round($durationMinutes * 60); // Convert minutes to seconds
+
+        return max(0, $totalTime - $elapsed);
+    }
+}
+nvert minutes to seconds
 
         return max(0, $totalTime - $elapsed);
     }

@@ -9,8 +9,8 @@ use App\Domains\Auth\Models\Student;
 use App\Domains\Lectures\Models\Attendance;
 use App\Domains\Lectures\Models\Lecture;
 use App\Domains\Gamification\Models\PointTransaction;
-use App\Domains\Gamification\Services\PointService;
-use App\Domains\Lectures\Services\AttendanceQueueService;
+use App\Domains\Gamification\Models\PointService;
+use App\Domains\Lectures\Jobs\ProcessAttendanceEntryJob;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Crypt;
@@ -18,14 +18,11 @@ use Illuminate\Support\Facades\Crypt;
 class StudentAttendanceService
 {
     private PointService $pointService;
-    private AttendanceQueueService $queueService;
 
     public function __construct(
-        PointService $pointService,
-        AttendanceQueueService $queueService
+        PointService $pointService
     ) {
         $this->pointService = $pointService;
-        $this->queueService = $queueService;
     }
 
     /**
@@ -76,16 +73,12 @@ class StudentAttendanceService
             ];
         }
 
-        // Queue the student instead of processing immediately
-        $position = $this->queueService->addStudentToQueue((string) $lecture->id, (string) $student->id);
-
-        if ($position === 0) {
-            return $this->processQueuedAttendance($student, $lecture);
-        }
+        // Dispatch job for processing
+        ProcessAttendanceEntryJob::dispatch((string) $lecture->id, (string) $student->id);
 
         return [
             'status' => 'queued',
-            'position' => $position,
+            'position' => 1,
             'lecture_id' => $lecture->id,
             'lecture_title' => $lecture->title
         ];
@@ -178,6 +171,14 @@ class StudentAttendanceService
     private function isQrCodeExpired(Lecture $lecture, string $token): bool
     {
         // For legacy codes, check expiration from DB
+        if ($lecture->qr_code === $token && $lecture->qr_code_expires_at) {
+            return Carbon::now()->greaterThan($lecture->qr_code_expires_at);
+        }
+
+        return false;
+    }
+}
+eck expiration from DB
         if ($lecture->qr_code === $token && $lecture->qr_code_expires_at) {
             return Carbon::now()->greaterThan($lecture->qr_code_expires_at);
         }

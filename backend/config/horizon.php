@@ -219,11 +219,29 @@ return [
                 'balanceMaxShift' => 1,
                 'balanceCooldown' => 3,
             ],
+            'waiting-room-supervisor' => [
+                'connection' => 'redis',
+                'queue' => ['waiting-room'],
+                'balance' => 'auto',
+                'maxProcesses' => 20,
+                'tries' => 3,
+            ],
+            'notifications-supervisor' => [
+                'connection' => 'redis',
+                'queue' => ['notifications'],
+                'balance' => 'auto',
+                'maxProcesses' => 10,
+            ],
         ],
 
         'local' => [
             'supervisor-1' => [
                 'maxProcesses' => 3,
+            ],
+            'waiting-room-supervisor' => [
+                'connection' => 'redis',
+                'queue' => ['waiting-room'],
+                'maxProcesses' => 5,
             ],
         ],
     ],

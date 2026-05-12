@@ -51,10 +51,10 @@ Schedule::job(RecalculateLeaderboard::class)->hourly();
 // ─── Lectures & Exams ──────────────────────────────────────────────────────
 
 // إغلاق المحاضرات المنتهية كل 10 دقائق
-Schedule::command('lectures:end-expired')->everyTenMinutes();
+Schedule::job(new EndExpiredLecturesJob)->everyTenMinutes()->withoutOverlapping();
 
 // إغلاق الامتحانات المنتهية كل 5 دقائق
-Schedule::command('exams:end-expired')->everyFiveMinutes();
+Schedule::job(new EndExpiredExamsJob)->everyFiveMinutes()->withoutOverlapping();
 
 // فحص حالة المحاضرات كل ساعة
 Schedule::command('lectures:check-status')->hourly();
@@ -91,5 +91,8 @@ Schedule::command('notifications:clean')->dailyAt('05:00');
 Schedule::command('storage:recalculate')->dailyAt('06:00');
 
 // تنظيف سجلات النشاط القديمة (أكثر من 90 يوم)
+Schedule::command('activitylog:clean')->weekly();
+
+�وم)
 Schedule::command('activitylog:clean')->weekly();
 
