@@ -36,11 +36,10 @@ class ProcessAttendanceEntryJob implements ShouldQueue
     public function handle(StudentAttendanceService $attendanceService): void
     {
         // Redis Throttling to prevent DB overload
-        // Allow 10 students per second per lecture
+        // Allow 20 students per second for a smoother flow
         Redis::throttle("attendance-entry:{$this->lectureId}")
-            ->allow(10)
+            ->allow(20)
             ->every(1)
-            ->block(10)
             ->then(function () use ($attendanceService) {
                 $lecture = Lecture::find($this->lectureId);
                 $student = Student::find($this->studentId);

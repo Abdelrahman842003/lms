@@ -223,7 +223,8 @@ return [
                 'connection' => 'redis',
                 'queue' => ['waiting-room', 'default'],
                 'balance' => 'auto',
-                'maxProcesses' => 20,
+                'minProcesses' => 3,
+                'maxProcesses' => 30,
                 'tries' => 3,
             ],
             'notifications-supervisor' => [

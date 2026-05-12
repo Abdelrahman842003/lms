@@ -37,12 +37,11 @@ class ProcessExamEntryJob implements ShouldQueue
         StartAttemptAction $startAttemptAction,
         StudentExamService $studentExamService
     ): void {
-        // Redis Throttling to prevent DB overload and race conditions
-        // Allow 10 students per second per exam
+        // Redis Throttling to prevent DB overload
+        // Allow 20 students per second for a smoother flow
         Redis::throttle("exam-entry:{$this->examId}")
-            ->allow(10)
+            ->allow(20)
             ->every(1)
-            ->block(10)
             ->then(function () use ($startAttemptAction, $studentExamService) {
                 $exam = Exam::find($this->examId);
                 
