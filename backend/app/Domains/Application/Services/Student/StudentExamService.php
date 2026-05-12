@@ -15,20 +15,23 @@ use App\Domains\Exams\Models\StudentAnswer;
 use App\Domains\Exams\Notifications\ExamResultNotification;
 use App\Domains\Application\Services\Student\MistakesService;
 use App\Domains\Gamification\Services\PointService;
+use App\Domains\Exams\Jobs\ProcessExamEntryJob;
+use App\Domains\Exams\Builders\ExamAttemptBuilder;
+use App\Domains\Exams\Actions\StartAttemptAction;
 use Illuminate\Support\Facades\DB;
 
 class StudentExamService
 {
     private PointService $pointService;
     private MistakesService $mistakesService;
-    private \App\Domains\Exams\Builders\ExamAttemptBuilder $attemptBuilder;
-    private \App\Domains\Exams\Actions\StartAttemptAction $startAttemptAction;
+    private ExamAttemptBuilder $attemptBuilder;
+    private StartAttemptAction $startAttemptAction;
 
     public function __construct(
         PointService $pointService,
         MistakesService $mistakesService,
-        \App\Domains\Exams\Builders\ExamAttemptBuilder $attemptBuilder,
-        \App\Domains\Exams\Actions\StartAttemptAction $startAttemptAction
+        ExamAttemptBuilder $attemptBuilder,
+        StartAttemptAction $startAttemptAction
     ) {
         $this->pointService = $pointService;
         $this->mistakesService = $mistakesService;
