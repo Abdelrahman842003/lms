@@ -74,11 +74,12 @@ class StudentAttendanceService
         }
 
         // Dispatch job for processing
-        ProcessAttendanceEntryJob::dispatch((string) $lecture->id, (string) $student->id);
+        $position = (int) \Illuminate\Support\Facades\Redis::incr("waiting-room:lecture:{$lecture->id}:joined");
+        ProcessAttendanceEntryJob::dispatch((string) $lecture->id, (string) $student->id, $position);
 
         return [
             'status' => 'queued',
-            'position' => 1,
+            'position' => $position,
             'lecture_id' => $lecture->id,
             'lecture_title' => $lecture->title
         ];
