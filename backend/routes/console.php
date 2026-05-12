@@ -1,7 +1,9 @@
 <?php
 
+use App\Domains\Exams\Jobs\EndExpiredExamsJob;
 use App\Domains\Gamification\Jobs\RecalculateLeaderboard;
 use App\Domains\Lectures\Jobs\CloseExpiredLecture;
+use App\Domains\Lectures\Jobs\EndExpiredLecturesJob;
 use App\Domains\Subscriptions\Jobs\CheckExpiringSubscriptions;
 use App\Domains\Subscriptions\Jobs\ProcessExpiredSubscriptions;
 use Illuminate\Foundation\Inspiring;
@@ -93,6 +95,4 @@ Schedule::command('storage:recalculate')->dailyAt('06:00');
 // تنظيف سجلات النشاط القديمة (أكثر من 90 يوم)
 Schedule::command('activitylog:clean')->weekly();
 
-�وم)
-Schedule::command('activitylog:clean')->weekly();
 
