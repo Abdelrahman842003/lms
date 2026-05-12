@@ -488,26 +488,4 @@ class StudentExamService
         return max(0, $totalTime - $elapsed);
     }
 }
-swer
-                );
-            });
-    }
 
-    /**
-     * Calculate remaining time for the exam attempt
-     */
-    private function calculateTimeRemaining(ExamAttempt $attempt): int
-    {
-        $exam = $attempt->exam;
-        $elapsed = (int) now()->diffInSeconds($attempt->started_at ?? now(), true);
-        $durationMinutes = (float) ($exam->duration ?? 0);
-        $totalTime = (int) round($durationMinutes * 60); // Convert minutes to seconds
-
-        return max(0, $totalTime - $elapsed);
-    }
-}
-nvert minutes to seconds
-
-        return max(0, $totalTime - $elapsed);
-    }
-}
