@@ -8,6 +8,7 @@ use App\Domains\Exams\Actions\StartAttemptAction;
 use App\Domains\Exams\Models\Exam;
 use App\Domains\Exams\Events\ExamAttemptReady;
 use App\Domains\Application\Services\Student\StudentExamService;
+use App\Domains\Exams\Events\ExamQueueProgress;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -16,9 +17,6 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
 
-use App\Domains\Exams\Events\ExamQueueProgress;
-use Illuminate\Bus\Queueable;
-...
 class ProcessExamEntryJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;

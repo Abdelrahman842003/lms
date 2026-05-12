@@ -8,6 +8,7 @@ use App\Domains\Lectures\Models\Lecture;
 use App\Domains\Auth\Models\Student;
 use App\Domains\Application\Services\Student\StudentAttendanceService;
 use App\Domains\Lectures\Events\AttendanceProcessed;
+use App\Domains\Lectures\Events\LectureQueueProgress;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -16,9 +17,6 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
 
-use App\Domains\Lectures\Events\LectureQueueProgress;
-use Illuminate\Bus\Queueable;
-...
 class ProcessAttendanceEntryJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
