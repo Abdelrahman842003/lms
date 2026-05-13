@@ -609,11 +609,11 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
                 )}
               </div>
 
-              {/* Sidebar Toggle - Enabled for all screen sizes */}
+              {/* Sidebar Toggle - Hidden on mobile, as navigation is now in Bottom Nav */}
               {role !== 'parent' && (
                 <button 
                   onClick={toggleMobileSidebar}
-                  className="w-10 h-10 md:w-11 md:h-11 rounded-xl flex items-center justify-center bg-white/5 border border-white/5 text-gray-light/40 hover:text-primary transition-all"
+                  className="w-10 h-10 md:w-11 md:h-11 rounded-xl items-center justify-center bg-white/5 border border-white/5 text-gray-light/40 hover:text-primary transition-all hidden lg:flex"
                 >
                   <Icon name="bars" />
                 </button>
