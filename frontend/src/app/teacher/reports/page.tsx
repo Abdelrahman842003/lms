@@ -89,18 +89,27 @@ export default function TeacherReportsPage() {
 
   return (
     <DashboardLayout role={(user?.userType as 'teacher' | 'secretary') || 'teacher'} user={user || undefined}>
-      <div className="max-w-7xl mx-auto">
-        <h1 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-          <Icon name="chart" className="text-primary" />
-          التقارير
-        </h1>
-
-        <ReportFilters
-          filters={filters}
-          onFiltersChange={setFilters}
-          onApply={loadReport}
-          loading={loading}
-        />
+      <div className="space-y-6 animate-in fade-in duration-700">
+        
+        {/* Immersive Header */}
+        <div className="flex flex-col md:flex-row items-center justify-between gap-6 px-2 relative z-50">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary text-2xl shadow-[0_0_20px_rgba(66,99,235,0.1)]">
+              <Icon name="chart-line" />
+            </div>
+            <div>
+              <h1 className="text-xl font-black text-white uppercase tracking-tight">مركز التحليلات والتقارير</h1>
+              <p className="text-[10px] font-bold text-gray-light/20 uppercase tracking-widest">متابعة الأداء المالي والأكاديمي بشكل مفصل</p>
+            </div>
+          </div>
+          
+          <ReportFilters
+            filters={filters}
+            onFiltersChange={setFilters}
+            onApply={loadReport}
+            loading={loading}
+          />
+        </div>
 
         {loading ? (
           <>
