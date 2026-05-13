@@ -251,41 +251,63 @@ export const Sidebar: React.FC<SidebarProps> = ({ role, user, isOpen, onClose, p
   // If selectedAcademy has an ID, it means the teacher is in "Academy Dashboard" mode
   // OR if we are still loading (isLoading is true), we default to "Restricted" mode to prevent flicker
   
-  if (role === 'teacher' && (selectedAcademy?.id || isLoading)) {
-    if (selectedAcademy?.id === 'independent') {
+  if (role === 'teacher') {
+    const isIndependent = selectedAcademy?.id === 'independent' || (!selectedAcademy?.id && !isLoading);
+
+    if (isIndependent) {
       // Independent Teacher Mode
       // Remove Attendance (not needed for independent)
       items = items.filter(item => item.id !== 'attendance');
     } else {
       // Academy Teacher Mode (or loading)
-      // They should NOT see: Secretary, Grades (Classes), Reports, Subscription, Videos
-      // They SHOULD see: Attendance
+      // They should NOT see: Secretary, Grades (Classes), Reports, Subscription
+      // They SHOULD see: Attendance, Videos (now always visible)
       items = items
         .filter(item =>
           item.id !== 'reports' &&
-          item.id !== 'videos' &&
           item.id !== 'subscription' // Hide subscription for non-independent teachers
         )
         .map(item => {
           if (item.id === 'gamification') {
             return { ...item, href: '/academy/gamification' };
           }
+          if (item.id === 'videos') {
+            return { ...item, href: '/academy/videos' };
+          }
+          if (item.id === 'attendance') {
+            return { ...item, href: '/academy/attendance' };
+          }
+          if (item.id === 'exams') {
+            return { ...item, href: '/academy/exams' };
+          }
+          if (item.id === 'lectures') {
+            return { ...item, href: '/academy/lectures' };
+          }
+          if (item.id === 'notifications') {
+            return { ...item, href: '/academy/notifications' };
+          }
           if (item.children) {
             return {
               ...item,
-              children: item.children.filter(child =>
-                child.id !== 'secretaries' && // Remove Secretary
-                child.id !== 'grades'         // Remove Grades (Classes)
-              )
+              children: item.children
+                .filter(child =>
+                  child.id !== 'secretaries' && // Remove Secretary
+                  child.id !== 'grades'         // Remove Grades (Classes)
+                )
+                .map(child => {
+                  if (child.id === 'students') {
+                    return { ...child, href: '/academy/students' };
+                  }
+                  if (child.id === 'groups') {
+                    return { ...child, href: '/academy/groups' };
+                  }
+                  return child;
+                })
             };
           }
           return item;
         });
     }
-  }
-
-  if (role === 'teacher' && selectedAcademy?.id !== 'independent') {
-    items = items.filter(item => item.id !== 'videos');
   }
 
   const [expandedItems, setExpandedItems] = React.useState<string[]>([]);

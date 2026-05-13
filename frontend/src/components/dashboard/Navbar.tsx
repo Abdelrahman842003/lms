@@ -385,17 +385,15 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
   // If selectedAcademy has an ID, it means the teacher is in "Academy Dashboard" mode
   // OR if we are still loading (isLoading is true), we default to "Restricted" mode to prevent flicker
   
-  if (role === 'teacher' && (selectedAcademy?.id || isLoading)) {
-    if (selectedAcademy?.id === 'independent') {
-      // Independent Teacher Mode
-      // Remove Attendance (not needed for independent)
-      items = items.filter(item => item.id !== 'attendance');
-    } else {
+  if (role === 'teacher') {
+    const isAcademyMode = (selectedAcademy?.id && selectedAcademy.id !== 'independent') || isLoading;
+    
+    if (isAcademyMode) {
       // Academy Teacher Mode (or loading)
       // They should NOT see: Secretary, Grades (Classes), Reports
-      // They SHOULD see: Attendance
+      // They SHOULD see: Attendance, Videos
       items = items
-        .filter(item => item.id !== 'reports' && item.id !== 'videos') // Remove Reports and Videos
+        .filter(item => item.id !== 'reports') // Remove Reports
         .map(item => {
           if (item.children) {
             return {
@@ -408,12 +406,13 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
           }
           return item;
         });
+    } else {
+      // Independent Teacher Mode (selectedAcademy.id === 'independent' OR null)
+      // Remove Attendance (not needed for independent)
+      items = items.filter(item => item.id !== 'attendance');
     }
   }
 
-  if (role === 'teacher' && selectedAcademy?.id !== 'independent') {
-    items = items.filter(item => item.id !== 'videos');
-  }
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [activeSubMenu, setActiveSubMenu] = useState<string | null>(null);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
