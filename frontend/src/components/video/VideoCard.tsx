@@ -2,22 +2,13 @@
 
 /**
  * VideoCard — unified card component used by both Teacher & Student pages.
- *
- * Protection / Security features:
- *  1. No raw video URL is ever rendered in the DOM.
- *  2. Right-click context menu is disabled on thumbnail to prevent "Save video as".
- *  3. Thumbnail uses a decoy overlay that absorbs drag events.
- *  4. Teacher variant shows status badges + action menu (publish / retry / delete).
- *  5. Student variant shows watch-progress bar + completion badge.
- *  6. Long press on thumbnail shows a subtle "Protected Content" toast instead of
- *     allowing any media interaction.
- *  7. CSS `user-select: none` and `pointer-events: none` on media elements.
  */
 
 import React, { useRef } from 'react';
 import Link from 'next/link';
 import { Icon } from '@/components/ui/Icon';
 import { Badge } from '@/components/ui/Badge';
+import { cn } from '@/utils';
 import type { VideoItem, VideoWatchProgress } from '@/types/video.types';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -35,7 +26,7 @@ export function formatVideoDuration(seconds?: number | null): string {
 function formatDisplayDate(video: VideoItem): string {
   const raw = video.published_at || video.scheduled_at || video.created_at;
   if (!raw) return '—';
-  return new Date(raw).toLocaleDateString('ar-EG');
+  return new Date(raw).toLocaleDateString('ar-EG', { day: 'numeric', month: 'long' });
 }
 
 // ─── Status helpers (teacher) ────────────────────────────────────────────────
@@ -78,9 +69,9 @@ function processingLabel(video: VideoItem): string | null {
 // ─── Watch-progress helpers (student) ────────────────────────────────────────
 
 function progressColor(pct: number): string {
-  if (pct >= 80) return 'bg-emerald-400';
-  if (pct >= 40) return 'bg-primary';
-  return 'bg-blue-400';
+  if (pct >= 80) return 'bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.5)]';
+  if (pct >= 40) return 'bg-primary shadow-[0_0_10px_rgba(66,99,235,0.5)]';
+  return 'bg-blue-400 shadow-[0_0_10px_rgba(96,165,250,0.5)]';
 }
 
 function progressLabel(pct: number): string {
@@ -92,12 +83,7 @@ function progressLabel(pct: number): string {
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
 
-/** Protected thumbnail — blocks right-click, drag, and long-press save. */
-function ProtectedThumbnail({
-  thumbnailUrl,
-}: {
-  thumbnailUrl?: string | null;
-}) {
+function ProtectedThumbnail({ thumbnailUrl }: { thumbnailUrl?: string | null }) {
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const cancelLong = () => {
@@ -105,15 +91,12 @@ function ProtectedThumbnail({
   };
 
   return (
-    /* Outer wrapper — absorbs context-menu & drag */
     <div
-      className="relative aspect-video w-full overflow-hidden rounded-xl bg-[#0a0f1e] select-none"
+      className="relative aspect-video w-full overflow-hidden rounded-2xl bg-[#0a0f1e] select-none"
       onContextMenu={(e) => e.preventDefault()}
       onDragStart={(e) => e.preventDefault()}
       onTouchStart={() => {
-        longPressTimer.current = setTimeout(() => {
-          /* silently swallow — no save dialog */
-        }, 500);
+        longPressTimer.current = setTimeout(() => {}, 500);
       }}
       onTouchEnd={cancelLong}
       onTouchMove={cancelLong}
@@ -122,47 +105,51 @@ function ProtectedThumbnail({
         <>
           <img
             src={thumbnailUrl}
-            alt=""          /* empty alt = decorative, avoids scraping hints */
+            alt=""
             draggable={false}
-            className="w-full h-full object-cover pointer-events-none"
+            className="w-full h-full object-cover pointer-events-none transition-transform duration-700 group-hover:scale-110"
             style={{ userSelect: 'none' }}
           />
-          {/* Invisible overlay captures any stray pointer events */}
-          <div className="absolute inset-0" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity" />
         </>
       ) : (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-gray-600">
-          <Icon name="film" className="text-3xl text-primary/30" />
-          <span className="text-xs text-gray-600">بدون صورة مصغرة</span>
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-white/5 to-white/0">
+          <Icon name="film" className="text-4xl text-primary/20" />
+          <span className="text-[10px] font-black uppercase tracking-widest text-gray-light/20">لا توجد صورة</span>
         </div>
       )}
 
-      {/* Play badge */}
-      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-        <div className="w-12 h-12 rounded-full bg-primary/80 backdrop-blur-sm flex items-center justify-center shadow-lg">
-          <Icon name="play" className="text-white text-lg ml-0.5" />
+      {/* Play Overlay */}
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="w-14 h-14 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-2xl scale-75 opacity-0 group-hover:scale-100 group-hover:opacity-100 transition-all duration-300">
+          <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center shadow-[0_0_20px_rgba(66,99,235,0.6)]">
+            <Icon name="play" className="text-white text-lg ml-1" />
+          </div>
         </div>
       </div>
-
-      {/* Duration badge */}
     </div>
   );
 }
 
-/** Row used inside the info grid. */
-function MetaRow({ icon, children }: { icon: string; children: React.ReactNode }) {
+function InfoTile({ icon, label, color = 'primary' }: { icon: string; label: string; color?: 'primary' | 'secondary' | 'warning' | 'info' }) {
+  const colors = {
+    primary: 'text-primary bg-primary/5 border-primary/10',
+    secondary: 'text-secondary bg-secondary/5 border-secondary/10',
+    warning: 'text-warning bg-warning/5 border-warning/10',
+    info: 'text-info bg-info/5 border-info/10',
+  };
+
   return (
-    <div className="flex items-center gap-2 text-sm text-gray-400">
-      <Icon name={icon} className="w-4 text-primary flex-shrink-0" size="sm" />
-      <span>{children}</span>
+    <div className={cn("flex items-center gap-2 p-2 rounded-xl border transition-all", colors[color])}>
+      <Icon name={icon} size="xs" />
+      <span className="text-[10px] font-bold truncate">{label}</span>
     </div>
   );
 }
 
-// ─── Main interfaces ──────────────────────────────────────────────────────────
+// ─── Interfaces ──────────────────────────────────────────────────────────────
 
 interface TeacherActions {
-  /** teacher-only actions */
   isMenuOpen: boolean;
   onMenuToggle: (e: React.MouseEvent) => void;
   onPublish: () => void;
@@ -170,20 +157,17 @@ interface TeacherActions {
   onDelete: () => void;
 }
 
-interface VideoCardBaseProps {
+interface VideoCardProps {
   video: VideoItem;
   href: string;
-  /** Shows teacher action buttons + status badges */
   role: 'teacher' | 'student';
-  /** Optional watch progress (student only) */
   watchProgress?: VideoWatchProgress | null;
-  /** Teacher-specific callbacks (required when role="teacher") */
   teacherActions?: TeacherActions;
 }
 
 // ─── VideoCard ────────────────────────────────────────────────────────────────
 
-export const VideoCard: React.FC<VideoCardBaseProps> = ({
+export const VideoCard: React.FC<VideoCardProps> = ({
   video,
   href,
   role,
@@ -197,252 +181,189 @@ export const VideoCard: React.FC<VideoCardBaseProps> = ({
   const watchedPct = watchProgress?.watched_percentage ?? 0;
   const procLabel = processingLabel(video);
 
-
   return (
     <div
-      className={`group relative flex flex-col rounded-2xl border bg-[#101426]/60 backdrop-blur-sm overflow-hidden transition-all duration-300
-        hover:shadow-[0_12px_40px_rgba(0,0,0,0.4)] hover:-translate-y-0.5
-        ${isPublished
-          ? 'border-primary/40 shadow-[0_0_20px_rgba(66,99,235,0.15)]'
-          : 'border-white/10 hover:border-white/20'
-        }`}
+      className={cn(
+        "group relative flex flex-col rounded-[2.5rem] border premium-glass premium-border overflow-hidden transition-all duration-500 hover:-translate-y-2",
+        isPublished ? "shadow-[0_20px_50px_rgba(66,99,235,0.15)] border-primary/20" : "hover:border-white/20"
+      )}
     >
-      {/* ── Thumbnail ── */}
-      <Link href={href} className="block relative">
+      {/* ── Thumbnail Section ── */}
+      <Link href={href} className="block relative p-3 pb-0">
         <ProtectedThumbnail thumbnailUrl={video.thumbnail_url} />
-        {/* Duration chip */}
+        
+        {/* Duration Chip */}
         {video.duration_seconds && (
-          <span className="absolute bottom-2 left-2 px-2 py-0.5 rounded-md bg-black/70 text-white text-xs font-mono backdrop-blur-sm select-none pointer-events-none">
+          <span className="absolute bottom-5 left-5 px-3 py-1 rounded-lg bg-black/60 text-white text-[10px] font-black tracking-widest backdrop-blur-md border border-white/10">
             {formatVideoDuration(video.duration_seconds)}
           </span>
         )}
-        {/* Student: progress bar on thumbnail */}
-        {!isTeacher && watchedPct > 0 && (
-          <div className="absolute bottom-0 left-0 right-0 h-1">
-            <div
-              className={`h-full transition-all ${progressColor(watchedPct)}`}
-              style={{ width: `${watchedPct}%` }}
-            />
-          </div>
-        )}
+
+        {/* Status Badge Over Thumbnail */}
+        <div className="absolute top-6 right-6">
+          <Badge 
+            variant={statusVariant(video)} 
+            size="sm" 
+            className="shadow-xl backdrop-blur-md"
+          >
+            {statusLabel(video)}
+          </Badge>
+        </div>
       </Link>
 
-      {/* ── Body ── */}
-      <div className="flex flex-col flex-1 p-4 gap-3">
+      {/* ── Content Body ── */}
+      <div className="flex flex-col flex-1 p-6 md:p-8 gap-4">
+        
+        {/* Header: Title & Actions */}
+        <div className="flex items-start justify-between gap-4">
+          <Link href={href} className="flex-1">
+            <h3 className="text-lg md:text-xl font-black text-white leading-tight group-hover:text-primary transition-colors line-clamp-2">
+              {video.title}
+            </h3>
+          </Link>
 
-        {/* Top row: badges + menu (teacher) OR progress badge (student) */}
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex flex-wrap gap-1.5">
-            {isTeacher ? (
-              <>
-                <Badge variant={statusVariant(video)} size="sm">{statusLabel(video)}</Badge>
-                {procLabel && (
-                  <Badge variant={video.processing_status === 'failed' ? 'danger' : 'info'} size="sm">
-                    {procLabel}
-                  </Badge>
-                )}
-                {video.teacher_reference?.name && (
-                  <Badge variant="info" size="sm" icon="chalkboard-teacher">
-                    {video.teacher_reference.name}
-                  </Badge>
-                )}
-              </>
-            ) : (
-              <>
-                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border
-                  ${watchedPct >= 80
-                    ? 'bg-emerald-400/10 text-emerald-400 border-emerald-400/20'
-                    : watchedPct > 0
-                    ? 'bg-primary/10 text-primary border-primary/20'
-                    : 'bg-white/5 text-gray-400 border-white/10'}`}>
-                  <Icon name={watchedPct >= 80 ? 'check-circle' : watchedPct > 0 ? 'play-circle' : 'play'} size="sm" />
-                  {progressLabel(watchedPct)}
-                </span>
-                {video.grade?.name && (
-                  <Badge variant="info" size="sm" icon="graduation-cap">{video.grade.name}</Badge>
-                )}
-              </>
-            )}
-          </div>
-
-          {/* Teacher 3-dot menu */}
           {isTeacher && teacherActions && (
-            <div className="relative flex-shrink-0">
+            <div className="relative">
               <button
-                type="button"
-                className="w-8 h-8 rounded-lg bg-white/5 hover:bg-primary/20 border border-white/10 hover:border-primary/40 flex items-center justify-center transition-all"
                 onClick={teacherActions.onMenuToggle}
+                className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-light hover:text-white hover:bg-primary/20 hover:border-primary/40 transition-all"
               >
-                <Icon name="ellipsis-v" size="sm" color="inherit" />
+                <Icon name="ellipsis-v" />
               </button>
 
               {teacherActions.isMenuOpen && (
-                <div className="actions-menu show actions-menu-card z-20">
+                <div className="absolute left-0 top-12 w-48 rounded-2xl premium-glass premium-border p-2 z-50 animate-in fade-in zoom-in-95 duration-200">
                   {canPublish && (
-                    <button
-                      className="actions-menu-item w-full"
-                      onClick={(e) => { e.stopPropagation(); teacherActions.onPublish(); }}
-                    >
-                      <Icon name="upload" size="sm" />
+                    <button onClick={(e) => { e.stopPropagation(); teacherActions.onPublish(); }} className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold text-white hover:bg-primary/20 transition-all">
+                      <Icon name="upload" className="text-primary" />
                       <span>نشر الفيديو</span>
                     </button>
                   )}
                   {canRetry && (
-                    <button
-                      className="actions-menu-item w-full"
-                      onClick={(e) => { e.stopPropagation(); teacherActions.onRetryProcessing(); }}
-                    >
-                      <Icon name="sync" size="sm" />
+                    <button onClick={(e) => { e.stopPropagation(); teacherActions.onRetryProcessing(); }} className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold text-white hover:bg-warning/20 transition-all">
+                      <Icon name="sync" className="text-warning" />
                       <span>إعادة المعالجة</span>
                     </button>
                   )}
-                  <button
-                    className="actions-menu-item danger w-full"
-                    onClick={(e) => { e.stopPropagation(); teacherActions.onDelete(); }}
-                  >
-                    <Icon name="trash" size="sm" />
-                    <span>حذف</span>
+                  <button onClick={(e) => { e.stopPropagation(); teacherActions.onDelete(); }} className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold text-red-400 hover:bg-red-500/20 transition-all">
+                    <Icon name="trash" />
+                    <span>حذف الفيديو</span>
                   </button>
-
                 </div>
               )}
             </div>
           )}
         </div>
 
-        {/* Title */}
-        <Link
-          href={href}
-          className="text-base font-bold text-white leading-snug hover:text-primary transition-colors line-clamp-2"
-        >
-          {video.title}
-        </Link>
-
         {/* Description */}
-        <p className="text-sm text-gray-400 line-clamp-2 min-h-[40px] leading-relaxed">
-          {video.description || 'بدون وصف'}
+        <p className="text-xs text-gray-light/50 line-clamp-2 leading-relaxed">
+          {video.description || 'لا يوجد وصف مضاف لهذا الفيديو التعليمي.'}
         </p>
 
-        {/* Meta grid */}
-        <div className="grid gap-2 flex-1">
-          <MetaRow icon="calendar">{formatDisplayDate(video)}</MetaRow>
-          {video.grade?.name && isTeacher && (
-            <MetaRow icon="graduation-cap">{video.grade.name}</MetaRow>
+        {/* Info Grid (Tiles) */}
+        <div className="grid grid-cols-2 gap-2">
+          <InfoTile icon="calendar" label={formatDisplayDate(video)} color="primary" />
+          <InfoTile icon="users" label={`${video.groups?.length || 0} مجموعات`} color="info" />
+          {video.grade?.name && (
+            <div className="col-span-2">
+              <InfoTile icon="graduation-cap" label={video.grade.name} color="secondary" />
+            </div>
           )}
-          <MetaRow icon="users">{video.groups?.length || 0} مجموعة</MetaRow>
-          <div className="flex items-center gap-4 text-sm text-gray-400 pt-1 border-t border-white/5">
-            <span className="flex items-center gap-1.5">
-              <Icon name="thumbs-up" size="sm" className="text-primary" />
-              {video.likes_count ?? 0}
-            </span>
-            <span className="flex items-center gap-1.5">
-              <Icon name="comments" size="sm" className="text-primary" />
-              {video.comments_count ?? 0}
-            </span>
-            {isTeacher && (
-              <span className="flex items-center gap-1.5">
-                <Icon name="paperclip" size="sm" className="text-primary" />
-                {video.attachments_count ?? 0}
-              </span>
-            )}
-            {isTeacher && (
-              <span className="flex items-center gap-1.5">
-                <Icon name="book-open" size="sm" className="text-primary" />
-                {video.quiz_count ?? (video.quiz ? 1 : 0)}
-              </span>
-            )}
-          </div>
         </div>
 
-        {/* Student: watch progress card */}
-        {!isTeacher && watchedPct > 0 && (
-          <div className="space-y-1 pt-2 border-t border-white/5">
-            <div className="flex justify-between text-xs text-gray-500">
-              <span>تقدم المشاهدة</span>
-              <span className={watchedPct >= 80 ? 'text-emerald-400' : 'text-primary'}>{watchedPct}%</span>
-            </div>
-            <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
-              <div
-                className={`h-full rounded-full transition-all ${progressColor(watchedPct)}`}
-                style={{ width: `${watchedPct}%` }}
-              />
-            </div>
+        {/* Stats Row */}
+        <div className="flex items-center gap-4 py-4 border-y border-white/5">
+          <div className="flex items-center gap-1.5 text-[10px] font-black text-gray-light/60">
+            <Icon name="thumbs-up" size="xs" className="text-primary" />
+            {video.likes_count ?? 0}
           </div>
-        )}
-
-        {/* Teacher: action buttons */}
-        {isTeacher && teacherActions && (
-          <div className="flex gap-2 pt-2 border-t border-white/5">
-            {canPublish && (
-              <button
-                type="button"
-                onClick={teacherActions.onPublish}
-                className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-medium bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 hover:border-primary/40 transition-all"
-              >
-                <Icon name="upload" size="sm" />
-                نشر
-              </button>
-            )}
-            {canRetry && (
-              <button
-                type="button"
-                onClick={teacherActions.onRetryProcessing}
-                className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-medium bg-orange-400/10 hover:bg-orange-400/20 text-orange-400 border border-orange-400/20 transition-all"
-              >
-                <Icon name="sync" size="sm" />
-                إعادة
-              </button>
-            )}
-            {isPublished && (
-              <div className="flex items-center justify-center text-xs text-emerald-400 gap-1.5 flex-1">
-                <Icon name="check-circle" size="sm" />
-                <span>متاح للطلاب</span>
-              </div>
-            )}
-            <Link
-              href={href}
-              className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-medium bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white border border-white/10 hover:border-white/20 transition-all"
-            >
-              <Icon name="eye" size="sm" />
-              عرض
-            </Link>
+          <div className="flex items-center gap-1.5 text-[10px] font-black text-gray-light/60">
+            <Icon name="comments" size="xs" className="text-secondary" />
+            {video.comments_count ?? 0}
           </div>
-        )}
+          {isTeacher && (
+            <div className="flex items-center gap-1.5 text-[10px] font-black text-gray-light/60">
+              <Icon name="paperclip" size="xs" className="text-info" />
+              {video.attachments_count ?? 0}
+            </div>
+          )}
+        </div>
 
-        {/* Student: view button */}
-        {!isTeacher && (
-          <Link
-            href={href}
-            className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 hover:border-primary/40 transition-all mt-auto"
-          >
-            <Icon name="play-circle" size="sm" />
-            مشاهدة الفيديو
-          </Link>
-        )}
+        {/* Footer Actions */}
+        <div className="pt-2 mt-auto">
+          {isTeacher ? (
+            <div className="flex gap-2">
+              <Link
+                href={href}
+                className="flex-1 flex items-center justify-center gap-2 h-12 rounded-[1rem] bg-white/5 border border-white/10 text-white text-xs font-black hover:bg-white/10 transition-all"
+              >
+                <Icon name="eye" size="sm" />
+                <span>عرض التفاصيل</span>
+              </Link>
+              {canPublish && (
+                <button
+                  onClick={teacherActions.onPublish}
+                  className="flex-1 flex items-center justify-center gap-2 h-12 rounded-[1rem] bg-primary text-white text-xs font-black shadow-[0_5px_15px_rgba(66,99,235,0.4)] hover:shadow-[0_8px_25px_rgba(66,99,235,0.6)] transition-all"
+                >
+                  <Icon name="upload" size="sm" />
+                  <span>نشر الآن</span>
+                </button>
+              )}
+              {isPublished && (
+                <div className="flex flex-1 items-center justify-center gap-2 text-success font-black text-[10px]">
+                  <Icon name="check-circle" size="xs" />
+                  <span>متاح للطلاب</span>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {watchedPct > 0 && (
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-gray-light/40 px-1">
+                    <span>تقدم المشاهدة</span>
+                    <span className={watchedPct >= 80 ? 'text-success' : 'text-primary'}>{watchedPct}%</span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-white/5 border border-white/5 overflow-hidden">
+                    <div
+                      className={cn("h-full rounded-full transition-all duration-700", progressColor(watchedPct))}
+                      style={{ width: `${watchedPct}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+              <Link
+                href={href}
+                className="w-full flex items-center justify-center gap-3 h-14 rounded-2xl bg-gradient-to-r from-primary to-secondary text-white text-sm font-black hover:shadow-[0_10px_30px_rgba(66,99,235,0.4)] transition-all"
+              >
+                <Icon name="play-circle" />
+                <span>مشاهدة الفيديو</span>
+              </Link>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
 };
 
-// ─── Skeleton loader ──────────────────────────────────────────────────────────
+// ─── Skeleton Loader ──────────────────────────────────────────────────────────
 
 export function VideoCardSkeleton() {
   return (
-    <div className="rounded-2xl border border-white/10 bg-[#101426]/60 overflow-hidden animate-pulse">
-      <div className="aspect-video bg-white/5" />
-      <div className="p-4 space-y-3">
-        <div className="flex gap-2">
-          <div className="h-5 w-16 rounded-full bg-white/10" />
-          <div className="h-5 w-12 rounded-full bg-white/5" />
+    <div className="rounded-[2.5rem] border border-white/10 bg-[#101426]/60 p-3 space-y-4 animate-pulse">
+      <div className="aspect-video rounded-2xl bg-white/5" />
+      <div className="p-4 space-y-4">
+        <div className="h-6 w-3/4 bg-white/5 rounded-lg" />
+        <div className="space-y-2">
+          <div className="h-3 w-full bg-white/5 rounded" />
+          <div className="h-3 w-2/3 bg-white/5 rounded" />
         </div>
-        <div className="h-5 w-3/4 rounded bg-white/10" />
-        <div className="h-4 w-full rounded bg-white/5" />
-        <div className="h-4 w-2/3 rounded bg-white/5" />
-        <div className="flex gap-3 pt-2">
-          <div className="h-3 w-20 rounded bg-white/5" />
-          <div className="h-3 w-16 rounded bg-white/5" />
+        <div className="grid grid-cols-2 gap-2">
+          <div className="h-8 bg-white/5 rounded-xl" />
+          <div className="h-8 bg-white/5 rounded-xl" />
         </div>
-        <div className="h-9 w-full rounded-xl bg-white/5" />
+        <div className="h-12 w-full bg-white/5 rounded-2xl" />
       </div>
     </div>
   );

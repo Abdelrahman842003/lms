@@ -3,7 +3,9 @@
 import React from 'react';
 import { useState } from 'react';
 import { Icon } from '@/components/ui/Icon';
+import { Badge } from '@/components/ui/Badge';
 import type { VideoItem, VideoStudentActivityDetail } from '@/types/video.types';
+import { cn } from '@/utils';
 
 interface VideoStudentActivityDetailsProps {
   video: VideoItem;
@@ -37,39 +39,39 @@ function watchStatusLabel(status?: string): string {
     case 'started':
       return 'بدأ المشاهدة';
     case 'watched_pending_quiz':
-      return 'أنهى المشاهدة وينتظر الاختبار';
+      return 'أنهى المشاهدة';
     default:
       return 'لم يبدأ';
   }
 }
 
 function quizStatusLabel(detail: VideoStudentActivityDetail): string {
-  if (!detail.quiz?.attempted) return 'لم يحل الاختبار بعد';
-  return detail.quiz?.best_status === 'passed' ? 'ناجح' : 'لم ينجح بعد';
+  if (!detail.quiz?.attempted) return 'لم يحل الاختبار';
+  return detail.quiz?.best_status === 'passed' ? 'ناجح' : 'لم ينجح';
 }
 
 function watchStatusVariant(status?: string): string {
   switch (status) {
     case 'completed':
-      return 'bg-emerald-400/10 text-emerald-300 border-emerald-400/25';
+      return 'bg-success/10 text-success border-success/20';
     case 'in_progress':
     case 'started':
-      return 'bg-primary/10 text-primary border-primary/25';
+      return 'bg-primary/10 text-primary border-primary/20';
     case 'watched_pending_quiz':
-      return 'bg-amber-400/10 text-amber-300 border-amber-400/25';
+      return 'bg-info/10 text-info border-info/20';
     default:
-      return 'bg-white/5 text-gray-300 border-white/10';
+      return 'bg-white/5 text-gray-light/40 border-white/5';
   }
 }
 
 function quizStatusVariant(detail: VideoStudentActivityDetail): string {
   if (!detail.quiz?.attempted) {
-    return 'bg-white/5 text-gray-300 border-white/10';
+    return 'bg-white/5 text-gray-light/40 border-white/5';
   }
 
   return detail.quiz?.best_status === 'passed'
-    ? 'bg-emerald-400/10 text-emerald-300 border-emerald-400/25'
-    : 'bg-rose-400/10 text-rose-300 border-rose-400/25';
+    ? 'bg-success/10 text-success border-success/20'
+    : 'bg-danger/10 text-danger border-danger/20';
 }
 
 export function VideoStudentActivityDetails({ video, defaultCollapsed = true }: VideoStudentActivityDetailsProps) {
@@ -99,47 +101,63 @@ export function VideoStudentActivityDetails({ video, defaultCollapsed = true }: 
     : 0;
 
   return (
-    <section className="rounded-2xl border border-white/10 bg-[#0f162d]/55 p-4 sm:p-5 space-y-4">
-      <div className="rounded-xl border border-white/10 bg-gradient-to-r from-primary/15 via-primary/5 to-transparent p-4">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="space-y-1">
-            <h3 className="text-white font-bold flex items-center gap-2 text-base sm:text-lg">
-              <Icon name="users" className="text-primary" />
-              تفاصيل حضور وتفاعل الطلاب
-            </h3>
-            <p className="text-xs sm:text-sm text-gray-300">
-              إجمالي الطلاب في التقرير: <span className="text-white font-semibold">{totalInReport}</span>
-            </p>
+    <section className="space-y-6 animate-in fade-in duration-700">
+      
+      {/* Summary Header Card */}
+      <div className="rounded-[2rem] premium-glass premium-border p-6 md:p-8 relative overflow-hidden group">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity" />
+        
+        <div className="flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
+          <div className="flex items-center gap-6">
+            <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary text-2xl shadow-xl">
+              <Icon name="users" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-xl font-black text-white">تحليلات الحضور والتفاعل</h3>
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-bold text-gray-light/40 uppercase tracking-widest">إجمالي الطلاب:</span>
+                <Badge variant="info" size="sm" className="font-black">{totalInReport}</Badge>
+              </div>
+            </div>
           </div>
 
           <button
             type="button"
             onClick={() => setIsExpanded((prev) => !prev)}
-            className="px-3 py-1.5 rounded-lg border border-primary/30 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-medium transition-all flex items-center gap-1.5"
+            className={cn(
+              "h-12 px-6 rounded-xl border font-black text-xs uppercase tracking-widest transition-all flex items-center gap-2",
+              isExpanded 
+                ? "bg-white/5 border-white/10 text-white hover:bg-white/10" 
+                : "bg-primary border-primary text-white shadow-lg shadow-primary/20 hover:shadow-primary/40"
+            )}
           >
             <Icon name={isExpanded ? 'eye-slash' : 'eye'} size="sm" />
-            {isExpanded ? 'إخفاء التفاصيل' : 'عرض التفاصيل'}
+            <span>{isExpanded ? 'إخفاء التقارير' : 'تحليل البيانات'}</span>
           </button>
         </div>
+
+        {/* Global Metrics Row (Inside Header when collapsed, or always visible?) */}
+        {isExpanded && (
+          <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 mt-8 animate-in slide-in-from-top-4 duration-500">
+            <MetricBox title="حضروا" value={String(attendedCount)} icon="play" color="primary" />
+            <MetricBox title="حلوا الاختبار" value={String(attemptedCount)} icon="edit" color="secondary" />
+            <MetricBox title="المحاولات" value={String(attemptsCount)} icon="sync" color="info" />
+            <MetricBox title="الناجحين" value={String(passedCount)} icon="check-circle" color="success" />
+            <MetricBox title="متوسط المشاهدة" value={formatPercent(averageWatch)} icon="clock" color="warning" />
+            <MetricBox title="معدل الإنجاز" value={formatPercent(completionRate)} icon="chart-bar" color="primary" />
+          </div>
+        )}
       </div>
 
       {isExpanded && (
-        <>
-          <div className="grid grid-cols-2 lg:grid-cols-6 gap-2.5">
-            <MetricBox title="حضروا المحاضرة" value={String(attendedCount)} />
-            <MetricBox title="حلّوا الاختبار" value={String(attemptedCount)} />
-            <MetricBox title="إجمالي المحاولات" value={String(attemptsCount)} />
-            <MetricBox title="الناجحين" value={String(passedCount)} />
-            <MetricBox title="متوسط الحضور" value={formatPercent(averageWatch)} />
-            <MetricBox title="معدل الإنجاز" value={formatPercent(completionRate)} />
-          </div>
-
+        <div className="space-y-4 animate-in fade-in duration-500">
           {details.length === 0 ? (
-            <div className="rounded-xl border border-white/10 bg-white/5 p-5 text-sm text-gray-300 text-center">
-              لا توجد بيانات حضور/اختبار مسجلة للطلاب في هذا الفيديو حتى الآن.
+            <div className="rounded-[2rem] premium-glass premium-border p-12 text-center text-gray-light/20 italic">
+              <Icon name="search" className="text-4xl mb-4 opacity-10" />
+              <p>لا توجد بيانات مسجلة للطلاب حتى اللحظة.</p>
             </div>
           ) : (
-            <div className="space-y-2.5 max-h-[560px] overflow-y-auto pr-1">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[800px] overflow-y-auto pr-2 scrollbar-premium">
               {details.map((student, index) => {
                 const watchedPct = student.watch?.watched_percentage ?? 0;
                 const bestPct = student.quiz?.best_percentage ?? 0;
@@ -149,79 +167,95 @@ export function VideoStudentActivityDetails({ video, defaultCollapsed = true }: 
                 return (
                   <article
                     key={student.student_id}
-                    className="rounded-xl border border-white/10 bg-[#0b1227]/70 p-3.5 space-y-3 hover:border-primary/30 transition-colors"
+                    className="rounded-[1.5rem] premium-glass premium-border p-5 space-y-4 hover:border-primary/40 hover:-translate-y-1 transition-all duration-300"
                   >
-                    <div className="flex flex-wrap items-start justify-between gap-2">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="w-7 h-7 rounded-full bg-primary/20 text-primary text-[11px] flex items-center justify-center font-semibold shrink-0">
+                    {/* Student Info & Status Row */}
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-[10px] font-black text-gray-light/60">
                           {index + 1}
-                        </span>
-                        <div className="min-w-0">
-                          <h4 className="text-sm font-semibold text-white truncate">{student.student_name}</h4>
-                          <p className="text-[11px] text-gray-500">#{student.student_id.slice(0, 8)}</p>
+                        </div>
+                        <div className="flex flex-col">
+                          <h4 className="text-sm font-black text-white truncate max-w-[150px]">{student.student_name}</h4>
+                          <span className="text-[10px] font-bold text-gray-light/20 tracking-widest uppercase">ID: {student.student_id.slice(0, 8)}</span>
                         </div>
                       </div>
 
-                      <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
-                        <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
-                          حضور {formatPercent(watchedPct)}
-                        </span>
-                        <span className={`px-2 py-0.5 rounded-full border ${watchStatusVariant(student.watch?.status)}`}>
+                      <div className="flex flex-wrap items-center justify-end gap-1.5">
+                        <Badge variant={watchedPct >= 80 ? 'success' : 'info'} size="xs" className="font-black text-[9px]">{formatPercent(watchedPct)}</Badge>
+                        <span className={cn("px-2 py-0.5 rounded-lg border text-[9px] font-black uppercase tracking-widest", watchStatusVariant(student.watch?.status))}>
                           {watchStatusLabel(student.watch?.status)}
                         </span>
-                        <span className={`px-2 py-0.5 rounded-full border ${quizStatusVariant(student)}`}>
+                        <span className={cn("px-2 py-0.5 rounded-lg border text-[9px] font-black uppercase tracking-widest", quizStatusVariant(student))}>
                           {quizStatusLabel(student)}
                         </span>
                       </div>
                     </div>
 
-                    <div className="space-y-1.5">
-                      <div className="flex items-center justify-between text-[11px] text-gray-400">
-                        <span>التقدم في المشاهدة</span>
-                        <span>زمن المشاهدة: {formatDuration(student.watch?.watched_seconds ?? 0)}</span>
+                    {/* Progress Visualizer */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-gray-light/40">
+                        <span>التقدم الفعلي</span>
+                        <span className="text-white">{formatDuration(student.watch?.watched_seconds ?? 0)}</span>
                       </div>
-                      <div className="h-2 rounded-full bg-white/10 overflow-hidden">
+                      <div className="h-2 rounded-full bg-white/5 border border-white/5 overflow-hidden">
                         <div
-                          className="h-full rounded-full bg-gradient-to-r from-primary/70 to-emerald-400/70"
+                          className="h-full rounded-full bg-gradient-to-r from-primary via-secondary to-success shadow-[0_0_10px_rgba(66,99,235,0.4)] transition-all duration-1000"
                           style={{ width: `${Math.min(100, Math.max(0, watchedPct))}%` }}
                         />
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 text-[11px]">
-                      <DataPill label="عدد المحاولات" value={String(attempts)} />
-                      <DataPill label="أفضل نتيجة" value={student.quiz?.attempted ? formatPercent(bestPct) : '—'} />
-                      <DataPill label="آخر نتيجة" value={student.quiz?.attempted ? formatPercent(latestPct) : '—'} />
-                      <DataPill
-                        label="آخر محاولة"
-                        value={student.quiz?.last_attempt_at ? new Date(student.quiz.last_attempt_at).toLocaleDateString('ar-EG') : '—'}
-                      />
+                    {/* Quiz Data Grid */}
+                    <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/5">
+                      <DataPill label="المحاولات" value={String(attempts)} icon="sync" />
+                      <DataPill label="أفضل نتيجة" value={student.quiz?.attempted ? formatPercent(bestPct) : '—'} icon="star" />
+                      <DataPill label="آخر نتيجة" value={student.quiz?.attempted ? formatPercent(latestPct) : '—'} icon="clock" />
+                      <DataPill label="آخر محاولة" value={student.quiz?.last_attempt_at ? new Date(student.quiz.last_attempt_at).toLocaleDateString('ar-EG') : '—'} icon="calendar" />
                     </div>
                   </article>
                 );
               })}
             </div>
           )}
-        </>
+        </div>
       )}
     </section>
   );
 }
 
-function MetricBox({ title, value }: { title: string; value: string }) {
+function MetricBox({ title, value, icon, color = 'primary' }: { title: string; value: string; icon: string; color?: string }) {
+  const colors: Record<string, string> = {
+    primary: 'text-primary bg-primary/10 border-primary/20',
+    secondary: 'text-secondary bg-secondary/10 border-secondary/20',
+    info: 'text-info bg-info/10 border-info/20',
+    success: 'text-success bg-success/10 border-success/20',
+    warning: 'text-warning bg-warning/10 border-warning/20',
+  };
+
   return (
-    <div className="rounded-xl border border-white/10 bg-white/5 px-2.5 py-2.5 text-center">
-      <div className="text-[11px] text-gray-400">{title}</div>
-      <div className="text-base font-bold text-white mt-0.5">{value}</div>
+    <div className="rounded-2xl border border-white/10 bg-white/5 p-4 flex flex-col items-center justify-center gap-2 transition-all hover:bg-white/10 group">
+      <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center text-sm shadow-lg transition-transform group-hover:scale-110", colors[color])}>
+        <Icon name={icon} />
+      </div>
+      <div className="flex flex-col items-center">
+        <span className="text-[9px] font-black uppercase tracking-widest text-gray-light/40">{title}</span>
+        <span className="text-lg font-black text-white mt-1">{value}</span>
+      </div>
     </div>
   );
 }
 
-function DataPill({ label, value }: { label: string; value: string }) {
+function DataPill({ label, value, icon }: { label: string; value: string; icon: string }) {
   return (
-    <div className="rounded-lg border border-white/10 bg-white/5 px-2 py-1.5">
-      <div className="text-gray-500">{label}</div>
-      <div className="text-gray-200 font-medium mt-0.5">{value}</div>
+    <div className="rounded-xl border border-white/5 bg-white/2 p-2.5 flex items-center gap-2 hover:bg-white/5 transition-all">
+      <div className="w-6 h-6 rounded-md bg-white/5 flex items-center justify-center text-primary/40 text-[10px]">
+        <Icon name={icon} />
+      </div>
+      <div className="flex flex-col overflow-hidden">
+        <span className="text-[8px] font-black uppercase tracking-widest text-gray-light/20 truncate">{label}</span>
+        <span className="text-[11px] font-black text-white/90 truncate">{value}</span>
+      </div>
     </div>
   );
 }
