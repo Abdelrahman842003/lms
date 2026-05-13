@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Icon } from '@/components/ui/Icon';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
+import { getTeacherAcademies } from '@/services/authService';
+import { AcademySelector } from './AcademySelector';
 
 interface NavItem {
   id: string;
@@ -224,10 +226,31 @@ const getNavItems = (role: string): NavItem[] => {
 export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ role }) => {
   const pathname = usePathname();
   const router = useRouter();
-  const { logout } = useAuth();
+  const { user: authUser, logout, isLoading } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [hasAcademies, setHasAcademies] = useState(false);
+  const [isAcademyModalOpen, setIsAcademyModalOpen] = useState(false);
+  
   const items = getNavItems(role);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // Check for academies (Teacher only)
+  useEffect(() => {
+    const checkAcademies = async () => {
+      if (role === 'teacher' && !isLoading && authUser?.userType === 'teacher') {
+        try {
+          const response = await getTeacherAcademies();
+          const academiesList = response.academies || [];
+          setHasAcademies(academiesList.length > 0);
+        } catch (error) {
+          console.error('Failed to check academies:', error);
+          setHasAcademies(false);
+        }
+      }
+    };
+
+    checkAcademies();
+  }, [role, isLoading, authUser]);
 
   // Close menu when route changes
   useEffect(() => {
@@ -284,7 +307,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ role }) => {
                     className={`flex flex-col items-center justify-center gap-2 p-4 rounded-3xl transition-all border ${
                       pathname === item.href 
                         ? 'bg-primary/20 text-primary border-primary/20 shadow-lg shadow-primary/10' 
-                        : 'bg-white/5 text-gray-light/60 border-white/5 hover:bg-white/10'
+                        : 'bg-white/5 text-gray-light/60 border-white/5'
                     }`}
                   >
                     <Icon name={item.icon as any} size="sm" />
@@ -293,18 +316,39 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ role }) => {
                 ))}
               </div>
 
-              {/* Logout & Profile Section */}
+              {/* Action Section */}
               <div className="pt-4 border-t border-white/5 space-y-2">
                 <Link
                   href={`/${role}/profile`}
-                  className="flex items-center justify-center gap-3 p-4 rounded-2xl bg-white/5 text-white/80 font-bold text-xs border border-white/5"
+                  className="flex items-center justify-center gap-3 p-4 rounded-2xl bg-white/10 text-white font-bold text-xs border border-white/10 shadow-lg"
                 >
                   <Icon name="user" size="xs" className="text-primary" />
                   <span>الملف الشخصي</span>
                 </Link>
+
+                {role === 'teacher' && (
+                  <Link
+                    href="/teacher/subscription"
+                    className="flex items-center justify-center gap-3 p-4 rounded-2xl bg-amber-500/10 text-amber-400 font-bold text-xs border border-amber-500/10 shadow-lg"
+                  >
+                    <Icon name="crown" size="xs" />
+                    <span>اشتراكي</span>
+                  </Link>
+                )}
+
+                {hasAcademies && (
+                  <button
+                    onClick={() => setIsAcademyModalOpen(true)}
+                    className="w-full flex items-center justify-center gap-3 p-4 rounded-2xl bg-primary/10 text-primary font-bold text-xs border border-primary/10 shadow-lg"
+                  >
+                    <Icon name="exchange-alt" size="xs" />
+                    <span>تبديل الأكاديمية / مستقل</span>
+                  </button>
+                )}
+
                 <button
                   onClick={handleLogout}
-                  className="w-full flex items-center justify-center gap-3 p-4 rounded-2xl bg-rose-500/10 text-rose-400 font-black text-xs border border-rose-500/10"
+                  className="w-full flex items-center justify-center gap-3 p-4 rounded-2xl bg-rose-500/20 text-rose-400 font-black text-xs border border-rose-500/20 shadow-lg"
                 >
                   <Icon name="sign-out-alt" size="xs" />
                   <span>تسجيل الخروج</span>
@@ -313,10 +357,16 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ role }) => {
             </div>
             
             {/* Arrow */}
-            <div className="w-6 h-6 bg-black/80 border-r border-b border-white/10 absolute -bottom-3 left-1/2 -translate-x-1/2 rotate-45 z-[-1]" />
+            <div className="w-6 h-6 bg-black/90 border-r border-b border-white/10 absolute -bottom-3 left-1/2 -translate-x-1/2 rotate-45 z-[-1]" />
           </div>
         </div>
       )}
+
+      {/* Academy Selector Modal */}
+      <AcademySelector 
+        isOpen={isAcademyModalOpen}
+        onClose={() => setIsAcademyModalOpen(false)}
+      />
 
       {/* Main Nav Bar */}
       <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-md z-[200] md:hidden">
@@ -327,7 +377,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ role }) => {
               <Link
                 key={item.id}
                 href={item.href}
-                className={`relative flex-1 flex flex-col items-center justify-center gap-1.5 transition-all duration-500 group py-1.5 ${
+                className={`relative flex-1 flex flex-col items-center justify-center gap-1.5 transition-all duration-500 py-1.5 ${
                   isActive ? 'text-primary' : 'text-gray-light/40'
                 }`}
               >
@@ -335,7 +385,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ role }) => {
                   <div className="absolute -top-1 w-8 h-8 bg-primary/20 blur-xl rounded-full animate-pulse"></div>
                 )}
                 
-                <div className={`relative flex items-center justify-center transition-transform duration-500 ${isActive ? 'scale-110 -translate-y-1' : 'group-active:scale-95'}`}>
+                <div className={`relative flex items-center justify-center transition-transform duration-500 ${isActive ? 'scale-110 -translate-y-1' : 'active:scale-95'}`}>
                    <Icon 
                      name={item.icon as any} 
                      size={isActive ? 'lg' : 'sm'} 
@@ -355,11 +405,11 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ role }) => {
           {hasMore && (
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className={`relative flex-1 flex flex-col items-center justify-center gap-1.5 transition-all duration-500 group py-1.5 ${
+              className={`relative flex-1 flex flex-col items-center justify-center gap-1.5 transition-all duration-500 py-1.5 ${
                 isMenuOpen ? 'text-primary' : 'text-gray-light/40'
               }`}
             >
-              <div className={`relative flex items-center justify-center transition-transform duration-500 ${isMenuOpen ? 'scale-110 -translate-y-1 rotate-180' : 'group-active:scale-95'}`}>
+              <div className={`relative flex items-center justify-center transition-transform duration-500 ${isMenuOpen ? 'scale-110 -translate-y-1 rotate-180' : 'active:scale-95'}`}>
                  <Icon 
                    name="ellipsis-h" 
                    size={isMenuOpen ? 'lg' : 'sm'} 

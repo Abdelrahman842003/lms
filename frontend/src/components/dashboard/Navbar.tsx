@@ -402,11 +402,11 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [activeSubMenu, setActiveSubMenu] = useState<string | null>(null);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-  const [mobileExpandedItems, setMobileExpandedItems] = useState<string[]>([]);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [hasAcademies, setHasAcademies] = useState(false);
   const [isAcademyModalOpen, setIsAcademyModalOpen] = useState(false);
   const [isScanAttendanceModalOpen, setIsScanAttendanceModalOpen] = useState(false);
-  const [hasAcademies, setHasAcademies] = useState(false);
+  
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -435,14 +435,6 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
-  const toggleMobileExpand = (id: string, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setMobileExpandedItems((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-    );
-  };
 
   const getInitials = (name: string) => {
     return name
@@ -567,7 +559,7 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
 
                 {/* Profile Dropdown Menu */}
                 {isDropdownOpen && (
-                  <div className="absolute top-full mt-4 left-0 w-64 premium-glass premium-border rounded-[2rem] p-3 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-500 z-[110]">
+                  <div className="absolute top-full mt-4 left-0 w-64 bg-slate-950/95 backdrop-blur-3xl premium-border rounded-[2.5rem] p-4 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-500 z-[110]">
                     <div className="p-4 mb-2 bg-white/5 rounded-2xl border border-white/5">
                       <p className="text-xs font-black text-gray-light/20 uppercase tracking-widest mb-1">الحساب الحالي</p>
                       <p className="text-sm font-black text-white truncate">{user?.name}</p>
@@ -593,6 +585,30 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
                           <Icon name="medal" className="text-amber-400" />
                           <span>إنجازاتي</span>
                         </Link>
+                      )}
+
+                      {role === 'teacher' && (
+                        <Link
+                          href="/teacher/subscription"
+                          className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-gray-light/60 hover:text-white hover:bg-white/5 transition-all"
+                          onClick={() => setIsDropdownOpen(false)}
+                        >
+                          <Icon name="crown" className="text-amber-400" />
+                          <span>اشتراكي</span>
+                        </Link>
+                      )}
+
+                      {hasAcademies && (
+                        <button
+                          onClick={() => {
+                            setIsAcademyModalOpen(true);
+                            setIsDropdownOpen(false);
+                          }}
+                          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-gray-light/60 hover:text-white hover:bg-white/5 transition-all"
+                        >
+                          <Icon name="exchange-alt" className="text-primary" />
+                          <span>تبديل الأكاديمية / مستقل</span>
+                        </button>
                       )}
 
                       <div className="h-px bg-white/5 my-2 mx-2"></div>
@@ -667,33 +683,33 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
                 {item.children ? (
                   <div className="mb-2">
                     <button
-                      onClick={(e) => toggleMobileExpand(item.id, e)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
                       className="w-full flex items-center justify-between p-4 rounded-2xl text-gray-light/60 font-bold hover:bg-white/5 transition-all"
                     >
                       <div className="flex items-center gap-3">
                         <Icon name={item.icon as any} className="text-primary" />
                         <span>{item.label}</span>
                       </div>
-                      <Icon name="chevron-down" size="xs" className={`transition-transform duration-300 ${mobileExpandedItems.includes(item.id) ? 'rotate-180' : ''}`} />
+                      <Icon name="chevron-down" size="xs" />
                     </button>
                     
-                    {mobileExpandedItems.includes(item.id) && (
-                      <div className="mt-1 mr-4 border-r border-white/5 space-y-1 animate-in slide-in-from-right-2 duration-300">
-                        {item.children.map((child) => (
-                          <Link
-                            key={child.id}
-                            href={child.href}
-                            className={`flex items-center gap-3 p-4 rounded-xl text-sm font-bold transition-all ${
-                              pathname === child.href ? 'text-primary bg-primary/5' : 'text-gray-light/40 hover:text-white'
-                            }`}
-                            onClick={() => setIsMobileSidebarOpen(false)}
-                          >
-                            <Icon name={child.icon as any} size="sm" />
-                            <span>{child.label}</span>
-                          </Link>
-                        ))}
-                      </div>
-                    )}
+                    <div className="mt-1 mr-4 border-r border-white/5 space-y-1">
+                      {item.children.map((child) => (
+                        <Link
+                          key={child.id}
+                          href={child.href}
+                          className={`flex items-center gap-3 p-4 rounded-xl text-sm font-bold transition-all ${
+                            pathname === child.href ? 'text-primary bg-primary/5' : 'text-gray-light/40 hover:text-white'
+                          }`}
+                        >
+                          <Icon name={child.icon as any} size="sm" />
+                          <span>{child.label}</span>
+                        </Link>
+                      ))}
+                    </div>
                   </div>
                 ) : (
                   <Link
@@ -701,7 +717,6 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
                     className={`flex items-center gap-3 p-4 rounded-2xl font-bold transition-all ${
                       pathname === item.href ? 'text-white bg-primary shadow-lg shadow-primary/20' : 'text-gray-light/60 hover:text-white hover:bg-white/5'
                     }`}
-                    onClick={() => setIsMobileSidebarOpen(false)}
                   >
                     <Icon name={item.icon as any} />
                     <span>{item.label}</span>
