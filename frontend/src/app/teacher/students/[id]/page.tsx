@@ -89,271 +89,203 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
       role={user?.userType as 'teacher' | 'secretary' || 'teacher'}
       user={user || undefined}
     >
-      {/* Header Section */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
-        <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
-          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary text-xl sm:text-2xl overflow-hidden flex-shrink-0">
-            {student.avatar ? (
-              <img src={student.avatar} alt={student.name} className="w-full h-full object-cover" />
-            ) : (
-              <Icon name="graduationCap" />
-            )}
+      {/* Immersive Header Section */}
+      <div className="relative mb-8 mt-2">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-secondary/20 to-transparent blur-3xl -z-10 rounded-3xl"></div>
+        <div className="premium-glass p-6 sm:p-8 rounded-3xl border border-white/10 relative overflow-hidden group">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
+            <div className="flex items-center gap-6">
+              <div className="relative">
+                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center text-primary text-3xl sm:text-4xl overflow-hidden premium-border shadow-2xl">
+                  {student.avatar ? (
+                    <img src={student.avatar} alt={student.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <Icon name="graduationCap" />
+                  )}
+                </div>
+                <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-success flex items-center justify-center text-white text-xs border-4 border-[#0a0a0a]">
+                  <Icon name="check" size="xs" />
+                </div>
+              </div>
+              
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                   <h1 className="text-2xl sm:text-3xl font-black text-white m-0 tracking-tight">{student.name}</h1>
+                   <span className="px-2 py-0.5 rounded-md bg-primary/20 text-primary-light text-[10px] font-bold uppercase tracking-wider">طالب</span>
+                </div>
+                <div className="flex flex-wrap items-center gap-4 text-gray-light text-sm">
+                  <div className="flex items-center gap-2 bg-white/5 px-3 py-1 rounded-full border border-white/5">
+                    <Icon name="id-card" className="text-primary-light" />
+                    <span className="ltr font-medium opacity-80">{student.phone}</span>
+                  </div>
+                  <div className="flex items-center gap-2 bg-white/5 px-3 py-1 rounded-full border border-white/5">
+                    <Icon name="users" className="text-primary-light" />
+                    <span className="font-medium opacity-80">{student.group_name}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-3 w-full md:w-auto">
+              <Button variant="outline" onClick={() => router.back()} className="flex-1 md:flex-initial premium-glass border-white/10 hover:bg-white/5 text-white">
+                <Icon name="arrowRight" className="ml-2" />
+                <span>عودة</span>
+              </Button>
+              <Link href={`/teacher/students/${student.id}/payment`} className="flex-1 md:flex-initial btn-success flex items-center justify-center px-6 rounded-xl shadow-lg shadow-success/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
+                <Icon name="money-bill-wave" className="ml-2" />
+                <span className="font-bold">تسجيل دفعة</span>
+              </Link>
+              <Link href={`/teacher/students/${student.id}/edit`} className="flex-1 md:flex-initial btn-primary flex items-center justify-center px-6 rounded-xl shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
+                <Icon name="edit" className="ml-2" />
+                <span className="font-bold">تعديل</span>
+              </Link>
+            </div>
           </div>
-          <div className="flex-1 min-w-0">
-            <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-white m-0 truncate">{student.name}</h2>
-            <p className="m-0 text-gray-light text-xs sm:text-sm truncate">{student.phone} | {student.group_name}</p>
-          </div>
-        </div>
-        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
-          <Button variant="outline" onClick={() => router.back()} className="w-full sm:w-auto text-sm sm:text-base px-4 sm:px-5 py-3 sm:py-2.5">
-            <Icon name="arrowRight" className="text-sm sm:text-base" />
-            <span className="whitespace-nowrap">عودة</span>
-          </Button>
-          <Link href={`/teacher/students/${student.id}/payment`} className="btn btn-success w-full sm:w-auto text-sm sm:text-base px-4 sm:px-5 py-3 sm:py-2.5">
-            <Icon name="money-bill-wave" className="text-sm sm:text-base" />
-            <span className="whitespace-nowrap">تسجيل دفعة</span>
-          </Link>
-          <Link href={`/teacher/students/${student.id}/edit`} className="btn btn-primary w-full sm:w-auto text-sm sm:text-base px-4 sm:px-5 py-3 sm:py-2.5">
-            <Icon name="edit" className="text-sm sm:text-base" />
-            <span className="whitespace-nowrap">تعديل الطالب</span>
-          </Link>
+          
+          {/* Decorative background element */}
+          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -mr-32 -mt-32"></div>
         </div>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-1 gap-3 mb-4 sm:mb-6">
+      <div className="grid grid-cols-1 gap-6 mb-8">
         <StatCard
-          title="متوسط الامتحانات"
+          title="متوسط الامتحانات العام"
           value={student.exam_stats?.month_average || 0}
-          icon="fas fa-star"
+          icon="star"
           color="warning"
           suffix="%"
           variant="centered"
         />
       </div>
 
-      {/* Basic Data Section */}
-      <DashboardCard
-        title="البيانات الأساسية"
-        icon="fas fa-info-circle"
-      >
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div className="bg-[#1a1f37] flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 sm:p-5 rounded-xl border border-white/5 hover:border-primary/50 transition-colors gap-2 sm:gap-0">
-            <div className="flex items-center gap-2 text-gray-light order-2 sm:order-1">
-              <Icon name="phone" className="text-sm" />
-              <span className="text-sm">رقم ولي الأمر</span>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* Main Info Column */}
+        <div className="lg:col-span-12">
+          <DashboardCard
+            title="البيانات الأساسية"
+            icon="fas fa-id-badge"
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[
+                { label: 'رقم ولي الأمر', value: student.parent_phone, icon: 'phone', ltr: true },
+                { label: 'النوع', value: student.gender === 'male' ? 'ذكر' : 'أنثى', icon: 'venus-mars' },
+                { label: 'نوع التعليم', value: student.education_type === 'general' ? 'عام' : student.education_type === 'azhar' ? 'أزهري' : '-', icon: 'university' },
+                { label: 'الصف الدراسي', value: student.grade_name, icon: 'layer-group' },
+                { label: 'المجموعة', value: student.group_name, icon: 'users' },
+                { label: 'الموقع', value: student.location, icon: 'map-marker-alt' },
+                { label: 'تاريخ الإضافة', value: new Date(student.created_at).toLocaleDateString('ar-EG'), icon: 'calendar', full: true },
+              ].map((item, idx) => (
+                <div key={idx} className={`premium-glass p-4 rounded-xl border border-white/5 flex items-center gap-4 group ${item.full ? 'sm:col-span-2 lg:col-span-3' : ''}`}>
+                  <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center text-primary-light group-hover:bg-primary/20 transition-colors shrink-0">
+                    <Icon name={item.icon as any} size="sm" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-gray-light uppercase tracking-wider mb-0.5 opacity-60">{item.label}</p>
+                    <p className={`text-white font-bold ${item.ltr ? 'ltr' : ''}`}>{item.value || '-'}</p>
+                  </div>
+                </div>
+              ))}
             </div>
-            <span className="text-white font-semibold ltr text-sm sm:text-base order-1 sm:order-2">{student.parent_phone || '-'}</span>
-          </div>
-
-          <div className="bg-[#1a1f37] flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 sm:p-5 rounded-xl border border-white/5 hover:border-primary/50 transition-colors gap-2 sm:gap-0">
-            <div className="flex items-center gap-2 text-gray-light order-2 sm:order-1">
-              <Icon name="venus-mars" className="text-sm" />
-              <span className="text-sm">النوع</span>
-            </div>
-            <span className="text-white font-semibold text-sm sm:text-base order-1 sm:order-2">{student.gender === 'male' ? 'ذكر' : 'أنثى'}</span>
-          </div>
-
-          <div className="bg-[#1a1f37] flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 sm:p-5 rounded-xl border border-white/5 hover:border-primary/50 transition-colors gap-2 sm:gap-0">
-            <div className="flex items-center gap-2 text-gray-light order-2 sm:order-1">
-              <Icon name="university" className="text-sm" />
-              <span className="text-sm">نوع التعليم</span>
-            </div>
-            <span className="text-white font-semibold text-sm sm:text-base order-1 sm:order-2">{student.education_type === 'general' ? 'عام' : student.education_type === 'azhar' ? 'أزهري' : '-'}</span>
-          </div>
-
-          <div className="bg-[#1a1f37] flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 sm:p-5 rounded-xl border border-white/5 hover:border-primary/50 transition-colors gap-2 sm:gap-0">
-            <div className="flex items-center gap-2 text-gray-light order-2 sm:order-1">
-              <Icon name="layer-group" className="text-sm" />
-              <span className="text-sm">الصف الدراسي</span>
-            </div>
-            <span className="text-white font-semibold text-sm sm:text-base order-1 sm:order-2">{student.grade_name || '-'}</span>
-          </div>
-
-          <div className="bg-[#1a1f37] flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 sm:p-5 rounded-xl border border-white/5 hover:border-primary/50 transition-colors gap-2 sm:gap-0">
-            <div className="flex items-center gap-2 text-gray-light order-2 sm:order-1">
-              <Icon name="users" className="text-sm" />
-              <span className="text-sm">المجموعة</span>
-            </div>
-            <span className="text-white font-semibold text-sm sm:text-base order-1 sm:order-2">{student.group_name || '-'}</span>
-          </div>
-
-          <div className="bg-[#1a1f37] flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 sm:p-5 rounded-xl border border-white/5 hover:border-primary/50 transition-colors gap-2 sm:gap-0">
-            <div className="flex items-center gap-2 text-gray-light order-2 sm:order-1">
-              <Icon name="map-marker-alt" className="text-sm" />
-              <span className="text-sm">الموقع</span>
-            </div>
-            <span className="text-white font-semibold text-sm sm:text-base order-1 sm:order-2">{student.location || '-'}</span>
-          </div>
-
-          <div className="bg-[#1a1f37] flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 sm:p-5 rounded-xl border border-white/5 hover:border-primary/50 transition-colors gap-2 sm:gap-0 sm:col-span-2">
-            <div className="flex items-center gap-2 text-gray-light order-2 sm:order-1">
-              <Icon name="calendar" className="text-sm" />
-              <span className="text-sm">تاريخ الإضافة</span>
-            </div>
-            <span className="text-white font-semibold text-sm sm:text-base order-1 sm:order-2">{new Date(student.created_at).toLocaleDateString('ar-EG')}</span>
-          </div>
+          </DashboardCard>
         </div>
-      </DashboardCard>
 
-
-      {/* Subscription History Section */}
-      <div className="mt-4 sm:mt-6">
-        <DashboardCard
-          title="سجل الاشتراكات"
-          icon="fas fa-history"
-        >
-          {subscriptionHistory.length === 0 ? (
-            <div className="text-center p-6 sm:p-8">
-              <p className="text-gray-light text-sm">لا يوجد سجل اشتراكات</p>
-            </div>
-          ) : (
-            <>
-              {/* Mobile Card Layout */}
-              <div className="block sm:hidden space-y-3">
-                {subscriptionHistory.map((item: any, index: number) => (
-                  <div key={index} className="bg-[#1a1f37] p-3 sm:p-4 rounded-xl border border-white/5">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-white font-bold text-sm">{item.month_name}</span>
-                      <span className={`badge text-xs ${
-                        item.status === 'paid' ? 'badge-success' : 
-                        item.status === 'partial' ? 'badge-warning' : 'badge-danger'
-                      }`}>
-                        {item.status_label}
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2 text-xs">
-                      <div className="text-center">
-                        <div className="text-gray-light mb-1">المستحق</div>
-                        <div className="text-white font-medium">{item.amount_due}</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-gray-light mb-1">المدفوع</div>
-                        <div className="text-success font-medium">{item.amount_paid}</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-gray-light mb-1">المتبقي</div>
-                        <div className="text-danger font-medium">{item.amount_remaining}</div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+        {/* History Column - Subscriptions */}
+        <div className="lg:col-span-12">
+          <DashboardCard
+            title="سجل الاشتراكات"
+            icon="fas fa-wallet"
+          >
+            {subscriptionHistory.length === 0 ? (
+              <div className="text-center py-12 premium-glass rounded-2xl border border-dashed border-white/10">
+                <Icon name="history" className="text-4xl text-gray-light/20 mb-4" />
+                <p className="text-gray-light font-medium">لا يوجد سجل اشتراكات حتى الآن</p>
               </div>
-
-              {/* Desktop Table Layout */}
-              <div className="hidden sm:block overflow-x-auto">
-                <table className="w-full text-right">
-                  <thead>
-                    <tr className="border-b border-white/10 text-gray-light text-sm">
-                      <th className="pb-4 font-medium">الشهر</th>
-                      <th className="pb-4 font-medium">المبلغ المستحق</th>
-                      <th className="pb-4 font-medium">المدفوع</th>
-                      <th className="pb-4 font-medium">المتبقي</th>
-                      <th className="pb-4 font-medium">الحالة</th>
-                    </tr>
-                  </thead>
-                  <tbody className="text-sm">
-                    {subscriptionHistory.map((item: any, index: number) => (
-                      <tr key={index} className="border-b border-white/5 last:border-0 hover:bg-white/[0.02] transition-colors">
-                        <td className="py-4 text-white">{item.month_name}</td>
-                        <td className="py-4 text-white">{item.amount_due} EGP</td>
-                        <td className="py-4 text-success">{item.amount_paid} EGP</td>
-                        <td className="py-4 text-danger">{item.amount_remaining} EGP</td>
-                        <td className="py-4">
-                          <span className={`badge ${
-                            item.status === 'paid' ? 'badge-success' : 
-                            item.status === 'partial' ? 'badge-warning' : 'badge-danger'
-                          }`}>
-                            {item.status_label}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+            ) : (
+              <div className="space-y-4">
+                {/* Modern List Layout for both mobile/desktop */}
+                <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4">
+                  {subscriptionHistory.map((item: any, index: number) => (
+                    <div key={index} className="premium-glass p-5 rounded-2xl border border-white/5 hover:border-primary/30 transition-all group">
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <h4 className="text-white font-black text-lg">{item.month_name}</h4>
+                          <p className="text-xs text-gray-light opacity-60">تاريخ الاستحقاق: {item.month_name}</p>
+                        </div>
+                        <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter ${
+                          item.status === 'paid' ? 'bg-success/20 text-success' : 
+                          item.status === 'partial' ? 'bg-warning/20 text-warning' : 'bg-danger/20 text-danger'
+                        } border border-current/10`}>
+                          {item.status_label}
+                        </span>
+                      </div>
+                      
+                      <div className="grid grid-cols-3 gap-4 pt-4 border-t border-white/5">
+                        <div className="text-center">
+                          <p className="text-[9px] text-gray-light uppercase mb-1 opacity-50">المستحق</p>
+                          <p className="text-white font-bold">{item.amount_due}</p>
+                        </div>
+                        <div className="text-center border-x border-white/5">
+                          <p className="text-[9px] text-gray-light uppercase mb-1 opacity-50">المدفوع</p>
+                          <p className="text-success font-black">{item.amount_paid}</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-[9px] text-gray-light uppercase mb-1 opacity-50">المتبقي</p>
+                          <p className="text-danger font-black">{item.amount_remaining}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </>
-          )}
-        </DashboardCard>
-      </div>
+            )}
+          </DashboardCard>
+        </div>
 
-
-
-      {/* Exams History Section */}
-      <div className="mt-4 sm:mt-6">
-        <DashboardCard
-          title="سجل الامتحانات"
-          icon="fas fa-file-alt"
-        >
-          {(!student.exam_stats?.results || student.exam_stats.results.length === 0) ? (
-            <div className="text-center p-6 sm:p-8">
-              <p className="text-gray-light text-sm">لا توجد امتحانات سابقة</p>
-            </div>
-          ) : (
-            <>
-              {/* Mobile Card Layout */}
-              <div className="block sm:hidden space-y-3">
+        {/* History Column - Exams */}
+        <div className="lg:col-span-12">
+          <DashboardCard
+            title="سجل الامتحانات"
+            icon="fas fa-file-signature"
+          >
+            {(!student.exam_stats?.results || student.exam_stats.results.length === 0) ? (
+              <div className="text-center py-12 premium-glass rounded-2xl border border-dashed border-white/10">
+                <Icon name="file-alt" className="text-4xl text-gray-light/20 mb-4" />
+                <p className="text-gray-light font-medium">لا توجد امتحانات سابقة مسجلة</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                 {student.exam_stats.results.map((exam: any, index: number) => (
-                  <div key={index} className="bg-[#1a1f37] p-3 sm:p-4 rounded-xl border border-white/5">
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex-1">
-                        <div className="text-white font-bold text-sm">{exam.exam_title}</div>
-                        <div className="text-xs text-gray-light mt-1">{new Date(exam.date).toLocaleDateString('ar-EG')}</div>
+                  <div key={index} className="premium-glass p-5 rounded-2xl border border-white/5 hover:border-primary/30 transition-all group overflow-hidden relative">
+                    <div className="flex justify-between items-start relative z-10">
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-white font-bold truncate mb-1">{exam.exam_title}</h4>
+                        <p className="text-xs text-gray-light opacity-60 flex items-center gap-1">
+                          <Icon name="calendar" size="xs" />
+                          {new Date(exam.date).toLocaleDateString('ar-EG')}
+                        </p>
                       </div>
-                      <span className={`badge text-xs ${exam.percentage >= 50 ? 'badge-success' : 'badge-danger'}`}>
-                        {exam.percentage >= 50 ? 'ناجح' : 'راسب'}
-                      </span>
+                      <div className={`w-12 h-12 rounded-xl flex flex-col items-center justify-center shrink-0 border border-white/10 ${exam.percentage >= 50 ? 'bg-success/20 text-success' : 'bg-danger/20 text-danger'}`}>
+                         <span className="text-lg font-black">{exam.percentage}</span>
+                         <span className="text-[8px] font-bold">%</span>
+                      </div>
                     </div>
-                    <div className="flex items-center justify-center mt-2 py-2 bg-white/5 rounded-lg">
-                      <i className="fas fa-percent text-primary text-xs ml-2"></i>
-                      <span className="text-white text-base font-bold">{exam.percentage}%</span>
+                    
+                    <div className="mt-4 flex items-center justify-between relative z-10">
+                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${exam.percentage >= 50 ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'}`}>
+                          {exam.percentage >= 50 ? 'ناجح' : 'راسب'}
+                       </span>
+                       <button className="text-[10px] font-bold text-primary-light hover:underline">التفاصيل</button>
                     </div>
+
+                    {/* Progress Bar Background */}
+                    <div className="absolute bottom-0 left-0 h-1 bg-gradient-to-r from-transparent via-primary/30 to-transparent transition-all duration-1000" style={{ width: `${exam.percentage}%` }}></div>
                   </div>
                 ))}
               </div>
-
-              {/* Desktop Table Layout */}
-              <div className="hidden sm:block overflow-x-auto">
-                <table className="w-full text-right">
-                  <thead>
-                    <tr className="border-b border-white/10 text-gray-light text-sm">
-                      <th className="pb-4 font-medium">الامتحان</th>
-                      <th className="pb-4 font-medium">النسبة</th>
-                      <th className="pb-4 font-medium">التاريخ</th>
-                      <th className="pb-4 font-medium">الحالة</th>
-                    </tr>
-                  </thead>
-                  <tbody className="text-sm">
-                    {student.exam_stats.results.map((exam: any, index: number) => (
-                      <tr key={index} className="border-b border-white/5 last:border-0 hover:bg-white/[0.02] transition-colors">
-                        <td className="py-4 text-white">
-                          <div>
-                            <div className="font-medium">{exam.exam_title}</div>
-                            <div className="text-xs text-gray-light mt-1">{exam.description || 'تفاصيل الامتحانات'}</div>
-                          </div>
-                        </td>
-                        <td className="py-4 text-white">
-                          <div className="flex items-center gap-2">
-                            <i className="fas fa-percent text-primary text-xs"></i>
-                            <span>{exam.percentage}%</span>
-                          </div>
-                        </td>
-                        <td className="py-4 text-gray-300">
-                          {new Date(exam.date).toLocaleDateString('ar-EG')}
-                        </td>
-                        <td className="py-4">
-                          <span className={`badge ${exam.percentage >= 50 ? 'badge-success' : 'badge-danger'}`}>
-                            {exam.percentage >= 50 ? 'ناجح' : 'راسب'}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </>
-          )}
-        </DashboardCard>
+            )}
+          </DashboardCard>
+        </div>
       </div>
     </DashboardLayout>
   );
