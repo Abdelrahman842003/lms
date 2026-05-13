@@ -60,6 +60,7 @@ export default function FormModal({
               <Button
                 type="button"
                 variant="outline"
+                size="sm"
                 onClick={onClose}
                 disabled={isLoading}
               >
@@ -69,6 +70,7 @@ export default function FormModal({
             <Button
               type="submit"
               variant="primary"
+              size="sm"
               loading={isLoading}
             >
               {submitText}

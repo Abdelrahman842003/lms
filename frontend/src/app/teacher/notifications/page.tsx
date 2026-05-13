@@ -340,66 +340,66 @@ function NotificationsContent() {
         isOpen={showModal}
         onClose={handleCloseModal}
         onSubmit={handleSubmit}
-        title={formData.recipient_type === 'admin' ? 'إرسال رسالة للمطور' : 'إرسال إخطار للطلاب'}
+        title={formData.recipient_type === 'admin' ? 'رسالة للمطور' : 'إرسال إخطار'}
         isLoading={isLoading}
-        submitText={isLoading ? 'جاري الإرسال...' : 'إرسال الرسالة'}
-        maxWidth="550px"
+        submitText={isLoading ? 'جاري الإرسال...' : 'إرسال'}
+        maxWidth="440px"
       >
-        <div className="space-y-8 py-2">
-          {/* Choice Box */}
-          <div className="grid grid-cols-2 gap-3 p-1.5 rounded-2xl bg-black/40 border border-white/5">
+        <div className="space-y-6 py-2 scrollbar-none max-h-[75vh] overflow-y-auto px-1">
+          {/* Choice Box - Compact Segmented Control */}
+          <div className="flex p-1 rounded-lg bg-white/5 border border-white/5 shadow-inner">
             <button 
               type="button"
               onClick={() => setNotificationType('text')}
               className={cn(
-                "h-12 rounded-xl flex items-center justify-center gap-3 text-xs font-black uppercase tracking-widest transition-all",
-                notificationType === 'text' ? "bg-primary text-white shadow-xl shadow-primary/20" : "text-gray-light/40 hover:text-white"
+                "flex-1 h-8 rounded-md flex items-center justify-center gap-2 text-[9px] font-black uppercase tracking-widest transition-all",
+                notificationType === 'text' ? "bg-primary text-white shadow-md" : "text-gray-light/30 hover:text-white"
               )}
             >
-              <Icon name="file-alt" /> نصية
+              <Icon name="file-alt" size="xs" /> نصية
             </button>
             <button 
               type="button"
               onClick={() => setNotificationType('voice')}
               disabled={!canSendVoice}
               className={cn(
-                "h-12 rounded-xl flex items-center justify-center gap-3 text-xs font-black uppercase tracking-widest transition-all",
-                notificationType === 'voice' ? "bg-secondary text-white shadow-xl shadow-secondary/20" : canSendVoice ? "text-gray-light/40 hover:text-white" : "opacity-30 cursor-not-allowed"
+                "flex-1 h-8 rounded-md flex items-center justify-center gap-2 text-[9px] font-black uppercase tracking-widest transition-all",
+                notificationType === 'voice' ? "bg-secondary text-white shadow-md" : canSendVoice ? "text-gray-light/30 hover:text-white" : "opacity-20 cursor-not-allowed"
               )}
             >
-              <Icon name="microphone" /> صوتية
-              {!canSendVoice && <Badge variant="danger" size="xs">استهلكت</Badge>}
+              <Icon name="microphone" size="xs" /> صوتية
+              {!canSendVoice && <Badge variant="danger" size="xs" className="scale-75 origin-right">مستخدم</Badge>}
             </button>
           </div>
 
-          <div className="space-y-6">
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-gray-light/40 uppercase tracking-widest px-2">عنوان الإخطار</label>
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-[9px] font-black text-gray-light/30 uppercase tracking-widest px-1">عنوان الإخطار</label>
               <Input 
                 value={formData.title} 
                 onChange={(e) => setFormData({...formData, title: e.target.value})} 
-                placeholder="أدخل عنواناً واضحاً للرسالة..." 
-                className="h-14 bg-white/5 border-white/10 rounded-2xl font-bold"
+                placeholder="أدخل عنواناً..." 
+                className="h-11 bg-white/5 border-white/10 rounded-xl text-xs font-bold"
               />
             </div>
 
             {notificationType === 'text' ? (
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-gray-light/40 uppercase tracking-widest px-2">نص الرسالة</label>
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-black text-gray-light/30 uppercase tracking-widest px-1">نص الرسالة</label>
                 <Textarea 
                   value={formData.message} 
                   onChange={(e) => setFormData({...formData, message: e.target.value})} 
-                  className="min-h-[150px] bg-white/5 border-white/10 rounded-2xl p-5 text-sm leading-relaxed" 
-                  placeholder="اكتب تفاصيل الإخطار هنا..."
+                  className="min-h-[100px] bg-white/5 border-white/10 rounded-xl p-4 text-xs leading-relaxed" 
+                  placeholder="اكتب رسالتك هنا..."
                 />
               </div>
             ) : (
-              <div className="space-y-4 p-8 rounded-[2rem] bg-secondary/5 border border-secondary/10 text-center">
+              <div className="space-y-2 p-4 rounded-2xl bg-secondary/5 border border-secondary/10 text-center">
                 {voiceBlob ? (
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     <VoicePlayer voiceUrl={URL.createObjectURL(voiceBlob)} duration={voiceDuration} />
-                    <button onClick={() => { setVoiceBlob(null); setVoiceDuration(0); }} className="text-[10px] font-black text-danger uppercase tracking-widest flex items-center justify-center gap-2 mx-auto">
-                      <Icon name="redo" /> مسح وإعادة التسجيل
+                    <button onClick={() => { setVoiceBlob(null); setVoiceDuration(0); }} className="text-[8px] font-black text-danger uppercase tracking-widest flex items-center justify-center gap-2 mx-auto">
+                      <Icon name="redo" size="xs" /> إعادة التسجيل
                     </button>
                   </div>
                 ) : (
@@ -409,26 +409,26 @@ function NotificationsContent() {
             )}
 
             {formData.recipient_type !== 'admin' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-gray-light/40 uppercase tracking-widest px-2">الجمهور المستهدف</label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-[9px] font-black text-gray-light/30 uppercase tracking-widest px-1">الجمهور</label>
                   <Filter 
-                    options={[{ value: 'all', label: 'الجميع' }, { value: 'grade', label: 'صف محدد' }, { value: 'group', label: 'مجموعة محددة' }]} 
+                    options={[{ value: 'all', label: 'الجميع' }, { value: 'grade', label: 'صف' }, { value: 'group', label: 'مجموعة' }]} 
                     value={formData.recipient_type} 
                     onChange={(v) => setFormData({...formData, recipient_type: v, grade_id: '', group_id: ''})} 
-                    className="w-full" 
+                    className="w-full h-10" 
                   />
                 </div>
                 {formData.recipient_type === 'grade' && (
-                  <div className="space-y-2 animate-in slide-in-from-right-4">
-                    <label className="text-[10px] font-black text-gray-light/40 uppercase tracking-widest px-2">اختر الصف</label>
-                    <Filter options={[{ value: '', label: 'اختر الصف' }, ...grades.map(g => ({ value: g.id.toString(), label: g.name }))]} value={formData.grade_id} onChange={(v) => setFormData({...formData, grade_id: v})} className="w-full" />
+                  <div className="space-y-1.5 animate-in slide-in-from-right-2">
+                    <label className="text-[9px] font-black text-gray-light/30 uppercase tracking-widest px-1">اختر الصف</label>
+                    <Filter options={[{ value: '', label: 'اختر الصف' }, ...grades.map(g => ({ value: g.id.toString(), label: g.name }))]} value={formData.grade_id} onChange={(v) => setFormData({...formData, grade_id: v})} className="w-full h-10" />
                   </div>
                 )}
                 {formData.recipient_type === 'group' && (
-                  <div className="space-y-2 animate-in slide-in-from-right-4">
-                    <label className="text-[10px] font-black text-gray-light/40 uppercase tracking-widest px-2">اختر المجموعة</label>
-                    <Filter options={[{ value: '', label: 'اختر المجموعة' }, ...groups.map(g => ({ value: g.id.toString(), label: g.name }))]} value={formData.group_id} onChange={(v) => setFormData({...formData, group_id: v})} className="w-full" />
+                  <div className="space-y-1.5 animate-in slide-in-from-right-2">
+                    <label className="text-[9px] font-black text-gray-light/30 uppercase tracking-widest px-1">اختر المجموعة</label>
+                    <Filter options={[{ value: '', label: 'اختر المجموعة' }, ...groups.map(g => ({ value: g.id.toString(), label: g.name }))]} value={formData.group_id} onChange={(v) => setFormData({...formData, group_id: v})} className="w-full h-10" />
                   </div>
                 )}
               </div>
