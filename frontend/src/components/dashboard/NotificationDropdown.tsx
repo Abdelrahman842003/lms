@@ -402,10 +402,10 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
   };
 
   return (
-    <div className="navbar-user notification-dropdown-container" ref={dropdownRef}>
+    <div className="notification-dropdown-container" ref={dropdownRef}>
       <button
         type="button"
-        className="navbar-user-clickable notification-trigger-btn"
+        className="w-10 h-10 md:w-11 md:h-11 rounded-xl flex items-center justify-center text-gray-light/40 hover:text-primary hover:bg-white/10 transition-all relative group"
         aria-haspopup="dialog"
         aria-expanded={isOpen}
         onClick={() => {
@@ -424,9 +424,9 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
           }
         }}
       >
-        <Icon name="bell" className="notification-trigger-icon" />
+        <Icon name="bell" />
         {unreadCount > 0 && (
-          <span className="navbar-badge notification-count-badge">
+          <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-primary text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-slate-900 shadow-lg">
             {unreadCount}
           </span>
         )}
