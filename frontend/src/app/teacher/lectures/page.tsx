@@ -573,7 +573,7 @@ export default function TeacherLecturesPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col md:flex-row gap-4 mb-10">
+      <div className="flex flex-col md:flex-row gap-4 mb-10 relative z-30">
         <div className="flex-1 relative group">
           <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-gray-light group-focus-within:text-primary transition-colors">
             <Icon name="search" size="sm" />

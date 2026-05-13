@@ -356,7 +356,7 @@ export default function ExamsPage() {
       </div>
 
       {/* Filters & Search */}
-      <div className="premium-glass p-4 rounded-[2rem] border-white/5 mb-8">
+      <div className="premium-glass p-4 rounded-[2rem] border-white/5 mb-8 relative z-30">
         <div className="flex flex-col lg:flex-row gap-4">
           <div className="flex-1 relative group">
             <Icon name="search" className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-light/20 group-focus-within:text-primary transition-colors" />
