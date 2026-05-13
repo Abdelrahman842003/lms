@@ -156,7 +156,7 @@ export default function MistakesPage() {
           <div className="flex items-center gap-4">
              <div className="flex flex-col items-center md:items-end">
                 <span className="text-[10px] font-black text-gray-light/30 uppercase tracking-[0.2em] mb-1">المعلم الحالي</span>
-                <span className="text-xl font-black text-white">{selectedTeacher?.name || 'اختر مدرساً'}</span>
+                <span className="text-xl font-black text-white">{selectedTeacher?.teacher_name || 'اختر مدرساً'}</span>
              </div>
           </div>
         </div>

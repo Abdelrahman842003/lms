@@ -10,7 +10,7 @@ import type { VideoItem } from '@/types/video.types';
 import { VideoCard, VideoCardSkeleton } from '@/components/video/VideoCard';
 
 export default function StudentVideosPage() {
-  const { user } = useAuth();
+  const { user, selectedTeacher } = useAuth();
   const [videos, setVideos] = useState<VideoItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -61,7 +61,12 @@ export default function StudentVideosPage() {
             </div>
           </div>
           
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-8">
+             <div className="flex flex-col items-center md:items-end">
+                <span className="text-[10px] font-black text-gray-light/30 uppercase tracking-[0.2em] mb-1">المعلم الحالي</span>
+                <span className="text-xl font-black text-white">{selectedTeacher?.teacher_name || (selectedTeacher as any)?.name || 'اختر مدرساً'}</span>
+             </div>
+             <div className="w-px h-10 bg-white/10 hidden md:block" />
              <div className="flex flex-col items-center md:items-end">
                 <span className="text-[10px] font-black text-gray-light/30 uppercase tracking-[0.2em] mb-1">إجمالي المحتوى</span>
                 <span className="text-xl font-black text-white">{videos.length} فيديو تعليمي</span>
