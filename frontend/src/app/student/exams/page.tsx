@@ -117,147 +117,183 @@ export default function StudentExamsPage() {
         </div>
 
         {/* Available Exams */}
-        <DashboardCard
-          title="الامتحانات المتاحة"
-          icon="fas fa-pen-alt"
-        >
-          <div className="grid grid-cols-1 md:grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-5">
+        {/* Section: Available Exams */}
+        <div className="mb-16">
+          <div className="flex flex-col md:flex-row justify-between items-end gap-6 mb-10 px-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-3 text-primary mb-2">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shadow-lg shadow-primary/5">
+                  <Icon name="pen-nib" className="text-lg" />
+                </div>
+                <h3 className="text-sm font-black uppercase tracking-[0.2em] opacity-50">الاختبارات الحالية</h3>
+              </div>
+              <h2 className="text-3xl font-black text-white">امتحانات بانتظارك</h2>
+            </div>
+            
+            <div className="flex items-center gap-4 bg-white/5 p-1.5 rounded-2xl border border-white/10 premium-glass">
+              <div className="px-5 py-2.5 rounded-xl bg-primary shadow-lg shadow-primary/20 text-white text-xs font-black">الكل ({availableExams.length})</div>
+              <div className="px-5 py-2.5 rounded-xl hover:bg-white/5 text-gray-light/40 text-xs font-black transition-all cursor-pointer">مفعلة</div>
+              <div className="px-5 py-2.5 rounded-xl hover:bg-white/5 text-gray-light/40 text-xs font-black transition-all cursor-pointer">قادمة</div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {loading ? (
               [1, 2, 3].map((i) => (
+                <div key={i} className="h-80 rounded-[2.5rem] premium-glass premium-border animate-pulse" />
+              ))
+            ) : availableExams.length > 0 ? (
+              availableExams.map((exam) => (
                 <div
-                  key={i}
-                  className="p-5 bg-white/5 rounded-xl border border-white/10"
+                  key={exam.id}
+                  className="group relative h-full rounded-[2.5rem] premium-glass premium-border hover:bg-white/5 transition-all duration-700 overflow-hidden flex flex-col"
                 >
-                  <Skeleton width="60%" height="24px" className="mb-3" />
-                  <Skeleton width="100%" height="16px" className="mb-2" />
-                  <Skeleton width="80%" height="16px" className="mb-4" />
-                  <div className="flex flex-col gap-2">
-                    <Skeleton width="40%" height="16px" />
-                    <Skeleton width="40%" height="16px" />
-                    <Skeleton width="40%" height="16px" />
+                  {/* Glass Header with Subject */}
+                  <div className="p-8 pb-4">
+                    <div className="flex justify-between items-center mb-6">
+                      <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-primary text-2xl group-hover:scale-110 group-hover:rotate-6 transition-all duration-700">
+                        <Icon name="scroll" />
+                      </div>
+                      <div className="flex flex-col items-end">
+                        <span className="text-[9px] font-black text-gray-light/30 uppercase tracking-widest mb-1">المادة</span>
+                        <span className="text-sm font-bold text-gray-light/80">{exam.subject}</span>
+                      </div>
+                    </div>
+
+                    <h4 className="text-xl font-black text-white mb-2 leading-tight group-hover:text-primary transition-colors duration-500">{exam.title}</h4>
+                    <p className="text-gray-light/40 text-xs font-medium line-clamp-2 mb-6">اختبار شامل يغطي أهم نقاط المنهج لقياس مدى استيعابك للمعلومات</p>
                   </div>
+
+                  {/* Stats Grid - Inset */}
+                  <div className="mx-6 p-5 rounded-3xl bg-white/[0.03] border border-white/5 grid grid-cols-2 gap-4 mb-8">
+                    <div className="space-y-1">
+                      <span className="block text-[8px] font-black text-gray-light/20 uppercase tracking-widest">الوقت</span>
+                      <div className="flex items-center gap-2 text-white">
+                        <Icon name="clock" className="text-xs text-primary/60" />
+                        <span className="text-xs font-black">{exam.time_per_question || 60} ث/س</span>
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <span className="block text-[8px] font-black text-gray-light/20 uppercase tracking-widest">الأسئلة</span>
+                      <div className="flex items-center gap-2 text-white">
+                        <Icon name="list-ol" className="text-xs text-secondary/60" />
+                        <span className="text-xs font-black">{exam.actual_question_count || 10} سؤال</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Action Button */}
+                  <div className="mt-auto p-6 pt-0">
+                    {exam.is_active ? (
+                      <Button
+                        variant="primary"
+                        className="w-full rounded-[1.5rem] h-14 font-black text-sm shadow-xl shadow-primary/10 hover:shadow-primary/30 group-hover:scale-[1.03] transition-all flex items-center justify-center gap-3 overflow-hidden group/btn"
+                        onClick={() => router.push(`/student/exams/${exam.id}/take`)}
+                      >
+                        <span>دخول الامتحان</span>
+                        <Icon name="arrow-left" className="group-hover/btn:translate-x-[-4px] transition-transform" />
+                      </Button>
+                    ) : (
+                      <div className="w-full h-14 rounded-[1.5rem] bg-white/5 border border-white/10 flex items-center justify-center text-gray-light/30 font-black text-sm gap-3 grayscale">
+                        <Icon name="lock" />
+                        قيد التفعيل
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Decorative element */}
+                  <div className="absolute bottom-0 right-0 w-24 h-24 bg-primary/5 blur-3xl -mr-12 -mb-12 group-hover:bg-primary/10 transition-all duration-700" />
                 </div>
               ))
             ) : (
-              availableExams.map((exam) => (
-              <div
-                key={exam.id}
-                className={`p-4 md:p-5 bg-white/5 rounded-xl border border-white/10 ${
-                  exam.is_completed ? 'border-r-success' : 'border-r-primary'
-                } border-r-4 relative overflow-hidden group hover:border-white/20 transition-all`}
-              >
-                {/* Decorative background element */}
-                <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-
-                <div className="flex justify-between items-start mb-3 relative z-10">
-                  <h3 className="text-[1.05rem] font-bold text-white">
-                    {exam.title}
-                  </h3>
-                  <span className={`px-2 py-1 rounded-md text-xs font-bold border ${
-                    exam.is_completed ? 'bg-success/10 text-success border-success/20' : 'bg-primary/10 text-primary border-primary/20'
-                  }`}>
-                    {exam.is_completed ? 'مكتمل' : 'متاح'}
-                  </span>
+              <div className="col-span-full py-20 premium-glass premium-border rounded-[3rem] text-center">
+                <div className="w-24 h-24 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-6 text-gray-light/20 text-4xl shadow-inner">
+                  <Icon name="wind" />
                 </div>
-                
-                <div className="flex flex-col gap-2 mb-4 text-[0.85rem] relative z-10">
-                <div className="flex gap-2 text-light">
-                  <Icon name="clock" className="w-4 text-primary" />
-                  <span>{exam.time_per_question || 60} ثانية لكل سؤال</span>
-                </div>
-                <div className="flex gap-2 text-light">
-                  <Icon name="list-ol" className="w-4 text-info" />
-                  <span>{exam.actual_question_count || 10} سؤال</span>
-                </div>
-                <div className="flex gap-2 text-light">
-                  <Icon name="star" className="w-4 text-warning" />
-                  <span>{exam.max_score} درجة</span>
-                </div>
-                {exam.student_score !== null && exam.student_score !== undefined && (
-                  <div className="flex gap-2 text-success">
-                    <Icon name="check-circle" className="w-4" />
-                    <span>الدرجة: {exam.student_score}/{exam.max_score} ({exam.student_percentage}%)</span>
-                  </div>
-                )}
-              </div>
-
-              {!exam.is_completed && (
-                exam.is_active ? (
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    className="w-full shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all relative z-10"
-                    onClick={() => router.push(`/student/exams/${exam.id}/take`)}
-                  >
-                    <Icon name="play" className="ml-2" />
-                    بدء الامتحان
-                  </Button>
-                ) : (
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    className="w-full opacity-70 cursor-not-allowed relative z-10"
-                    disabled
-                  >
-                    <Icon name="lock" className="ml-2" />
-                    في انتظار التفعيل
-                  </Button>
-                )
-              )}
-              </div>
-            ))
-            )}
-            {!loading && availableExams.length === 0 && (
-              <div className="col-span-full text-center p-10 text-gray-light">
-                لا توجد امتحانات متاحة
+                <h4 className="text-2xl font-black text-white mb-3">هدوء تام..</h4>
+                <p className="text-gray-light/40 font-medium max-w-sm mx-auto">لا توجد امتحانات مضافة حالياً في جدولك الدراسي، استغل الوقت في المراجعة!</p>
               </div>
             )}
           </div>
-        </DashboardCard>
+        </div>
 
-        {/* Completed Exams */}
-        <DashboardCard
-          title="سجل الامتحانات"
-          icon="fas fa-history"
-        >
-          <div className="flex flex-col gap-4">
-            {completedExams.map((exam) => (
-              <div
-                key={exam.id}
-                className="p-4 bg-white/3 rounded-xl border border-white/5 flex justify-between items-center flex-wrap gap-4"
-              >
-                <div>
-                  <h3 className="text-base font-semibold text-white mb-1.5">
-                    {exam.title}
-                  </h3>
-                  <p className="text-[0.85rem] text-gray-light">
-                    {exam.subject} • {formatDate(exam.date)}
-                  </p>
-                </div>
-                
-                <div className="flex items-center gap-6">
-                  <div className="text-center">
-                    <span className="block text-xs text-gray-light mb-1">الدرجة</span>
-                    <span 
-                      className={`text-[1.2rem] font-bold ${
-                        (exam.student_score || 0) >= (exam.max_score * 0.8) ? 'text-success' : 
-                        (exam.student_score || 0) >= (exam.max_score * 0.5) ? 'text-warning' : 'text-danger'
-                      }`}
+        {/* Section: Completed Exams */}
+        <div className="mb-20">
+          <div className="flex items-center gap-5 mb-10 px-4">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500 text-xl shadow-lg shadow-emerald-500/5">
+              <Icon name="check-double" />
+            </div>
+            <div>
+              <h3 className="text-2xl font-black text-white">سجل الإنجازات</h3>
+              <p className="text-gray-light/40 text-sm font-medium tracking-wide">تاريخك المشرف في الامتحانات السابقة</p>
+            </div>
+          </div>
+
+          <div className="space-y-5">
+            {completedExams.length > 0 ? (
+              completedExams.map((exam) => (
+                <div
+                  key={exam.id}
+                  className="group relative p-6 md:p-8 rounded-[2.5rem] premium-glass premium-border hover:bg-white/5 transition-all duration-500 flex flex-col md:flex-row justify-between items-center gap-8 overflow-hidden"
+                >
+                  <div className="flex items-center gap-8 w-full md:w-auto relative z-10">
+                    <div className={`w-16 h-16 rounded-[1.5rem] flex items-center justify-center text-3xl group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 ${
+                      (exam.student_score / exam.max_score) >= 0.8 ? 'bg-emerald-500/10 text-emerald-500 shadow-lg shadow-emerald-500/5' :
+                      (exam.student_score / exam.max_score) >= 0.5 ? 'bg-amber-500/10 text-amber-500 shadow-lg shadow-amber-500/5' : 'bg-rose-500/10 text-rose-500 shadow-lg shadow-rose-500/5'
+                    }`}>
+                      <Icon name="medal" />
+                    </div>
+                    <div>
+                      <h4 className="text-xl font-black text-white mb-2">{exam.title}</h4>
+                      <div className="flex flex-wrap items-center gap-4 text-gray-light/40 text-[11px] font-black uppercase tracking-widest">
+                        <span className="flex items-center gap-2">
+                           <Icon name="book" className="text-primary/60" />
+                           {exam.subject}
+                        </span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-white/10" />
+                        <span className="flex items-center gap-2">
+                           <Icon name="calendar-alt" className="text-secondary/60" />
+                           {formatDate(exam.date)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-12 w-full md:w-auto justify-between md:justify-end border-t md:border-t-0 border-white/5 pt-6 md:pt-0 relative z-10">
+                    <div className="text-center md:text-right">
+                      <span className="block text-[9px] font-black text-gray-light/20 uppercase tracking-[0.2em] mb-2">الدرجة المحققة</span>
+                      <div className="flex items-baseline justify-center md:justify-end gap-1">
+                        <span className={`text-3xl font-black ${
+                          (exam.student_score / exam.max_score) >= 0.8 ? 'text-emerald-500' :
+                          (exam.student_score / exam.max_score) >= 0.5 ? 'text-amber-500' : 'text-rose-500'
+                        }`}>
+                          {exam.student_score}
+                        </span>
+                        <span className="text-gray-light/20 text-sm font-black">/ {exam.max_score}</span>
+                      </div>
+                    </div>
+
+                    <Button
+                      variant="outline"
+                      className="rounded-2xl border-white/10 hover:border-primary hover:bg-primary/10 px-8 h-12 font-black group-hover:scale-105 transition-all text-xs"
+                      onClick={() => router.push(`/student/exams/${exam.id}/results`)}
                     >
-                      {exam.student_score}/{exam.max_score}
-                    </span>
+                      عرض التفاصيل
+                      <Icon name="chevron-left" className="mr-3 text-[10px]" />
+                    </Button>
                   </div>
-
+                  
+                  {/* Decorative subtle gradient background */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-white/[0.01] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
                 </div>
-              </div>
-            ))}
-            {completedExams.length === 0 && (
-              <div className="text-center p-10 text-gray-light">
-                لم تقم بأداء أي امتحانات بعد
+              ))
+            ) : (
+              <div className="py-16 premium-glass premium-border rounded-[2.5rem] text-center">
+                <p className="text-gray-light/30 font-black uppercase tracking-widest text-xs">سجل الامتحان فارغ تماماً</p>
               </div>
             )}
           </div>
-        </DashboardCard>
+        </div>
       </div>
     </DashboardLayout>
   );

@@ -154,12 +154,10 @@ export default function MistakesPage() {
           </div>
           
           <div className="flex items-center gap-4">
-             <Link href="/student/dashboard">
-               <Button variant="ghost" className="h-14 px-8 rounded-2xl bg-white/5 border border-white/10 font-bold gap-3 text-white hover:bg-white/10 transition-all">
-                 <Icon name="arrow-right" />
-                 <span>العودة للرئيسية</span>
-               </Button>
-             </Link>
+             <div className="flex flex-col items-center md:items-end">
+                <span className="text-[10px] font-black text-gray-light/30 uppercase tracking-[0.2em] mb-1">المعلم الحالي</span>
+                <span className="text-xl font-black text-white">{selectedTeacher?.name || 'اختر مدرساً'}</span>
+             </div>
           </div>
         </div>
       </div>
