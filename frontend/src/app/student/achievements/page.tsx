@@ -253,234 +253,301 @@ export default function StudentAchievementsPage() {
           </div>
         ) : data ? (
           <>
-            {/* Current Level Card */}
-            <div className={`mb-2 sm:mb-3 lg:mb-4 sm:mb-3 sm:mb-2 sm:mb-3 lg:mb-4 lg:mb-6 lg:mb-8 transition-all duration-700 delay-200 ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+            {/* Current Level Hero Card */}
+            <div className={`mb-12 transition-all duration-1000 delay-200 ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'}`}>
               <div 
-                className="relative overflow-hidden backdrop-blur-xl rounded-3xl p-6 md:p-8 border shadow-2xl"
-                style={{ 
-                  background: `linear-gradient(135deg, ${levelColor}20 0%, ${levelColor}08 50%, rgba(139,92,246,0.1) 100%)`,
-                  borderColor: `${levelColor}40`,
-                }}
+                className="relative overflow-hidden premium-glass premium-border rounded-[3rem] p-8 md:p-12 shadow-2xl group"
               >
-                {/* Decorative elements */}
-                <div className="absolute top-0 right-0 w-40 h-40 rounded-full blur-3xl opacity-20" style={{ backgroundColor: levelColor }} />
-                <div className="absolute bottom-0 left-0 w-32 h-32 bg-purple-500/20 rounded-full blur-3xl" />
-                
-                <div className="relative flex flex-col md:flex-row items-center gap-6 md:gap-10">
-                  {/* Level Icon */}
-                  <div className="relative">
+                {/* Advanced Background Effects */}
+                <div 
+                  className="absolute -top-24 -right-24 w-96 h-96 rounded-full blur-[100px] opacity-20 group-hover:opacity-30 transition-opacity duration-500" 
+                  style={{ backgroundColor: levelColor }} 
+                />
+                <div className="absolute -bottom-24 -left-24 w-80 h-80 bg-primary/10 rounded-full blur-[100px]" />
+                <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none" />
+
+                <div className="relative flex flex-col lg:flex-row items-center gap-10 lg:gap-16">
+                  {/* Level Icon - Orbit Effect */}
+                  <div className="relative shrink-0">
+                    <div className="absolute inset-0 bg-white/5 rounded-full blur-2xl animate-pulse" />
                     <div 
-                      className="w-28 h-28 md:w-36 md:h-36 rounded-full flex items-center justify-center text-5xl md:text-6xl shadow-2xl border-4"
+                      className="relative w-40 h-40 md:w-52 md:h-52 rounded-[3rem] flex items-center justify-center text-6xl md:text-8xl shadow-2xl border-2 rotate-3 group-hover:rotate-0 transition-transform duration-700"
                       style={{ 
                         background: `linear-gradient(135deg, ${levelColor}30, ${levelColor}10)`,
-                        borderColor: `${levelColor}60`,
-                        boxShadow: `0 0 40px ${levelColor}30`,
+                        borderColor: `${levelColor}40`,
+                        boxShadow: `0 20px 50px ${levelColor}20`,
                       }}
                     >
-                      {data.current_level?.icon || '🌱'}
+                      <span className="drop-shadow-[0_0_20px_rgba(255,255,255,0.3)]">{data.current_level?.icon || '🌱'}</span>
+                      
+                      {/* Floating Particles */}
+                      <div className="absolute -top-4 -right-4 w-12 h-12 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 flex items-center justify-center text-xl animate-bounce shadow-xl" style={{ animationDuration: '3s' }}>✨</div>
+                      <div className="absolute -bottom-2 -left-6 w-10 h-10 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 flex items-center justify-center text-lg animate-bounce shadow-xl" style={{ animationDuration: '4s', animationDelay: '1s' }}>🔥</div>
                     </div>
-                    {/* Level number badge */}
+                    
+                    {/* Level Badge */}
                     <div 
-                      className="absolute -bottom-2 -right-2 w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-lg"
+                      className="absolute -bottom-4 left-1/2 -translate-x-1/2 px-6 py-2 rounded-2xl text-white font-black text-sm shadow-2xl border border-white/10 backdrop-blur-xl"
                       style={{ backgroundColor: levelColor }}
                     >
-                      {data.current_level?.sort_order || 1}
+                      المستوى {data.current_level?.sort_order || 1}
                     </div>
                   </div>
 
-                  {/* Level Info */}
-                  <div className="flex-1 text-center md:text-right">
-                    <div className="text-sm text-gray-400 mb-1">مستواك الحالي</div>
-                    <h2 className="text-xl sm:text-lg sm:text-xl md:text-2xl lg:text-3xl lg:text-4xl font-bold text-white mb-2">
-                      {data.current_level?.name || 'طالب مبتدئ'}
-                    </h2>
-                    {data.current_level?.description && (
-                      <p className="text-gray-300 text-lg mb-2 sm:mb-3 lg:mb-4">{data.current_level.description}</p>
-                    )}
+                  {/* Level Info & Progress */}
+                  <div className="flex-1 text-center lg:text-right space-y-8">
+                    <div className="space-y-3">
+                      <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-black text-gray-light/40 uppercase tracking-widest">
+                        <Icon name="star" className="text-yellow-500" />
+                        <span>مستواك الحالي</span>
+                      </div>
+                      <h2 className="text-4xl md:text-6xl font-black text-white tracking-tight drop-shadow-2xl">
+                        {data.current_level?.name || 'طالب مبتدئ'}
+                      </h2>
+                      {data.current_level?.description && (
+                        <p className="text-gray-light/60 text-lg md:text-xl font-medium max-w-2xl lg:ml-0 lg:mr-0 mx-auto leading-relaxed">
+                          {data.current_level.description}
+                        </p>
+                      )}
+                    </div>
                     
-                    {/* Progress Bar */}
-                    {data.next_level && (
-                      <div className="mt-4">
-                        <div className="flex justify-between items-center mb-2 text-sm">
-                          <span className="text-gray-400">
-                            التقدم نحو مستوى <span className="text-white font-medium">{data.next_level.name}</span>
-                          </span>
-                          <span className="font-bold" style={{ color: levelColor }}>
-                            {data.progress_percentage}%
-                          </span>
-                        </div>
-                        <div className="w-full h-3 bg-white/10 rounded-full overflow-hidden backdrop-blur-sm">
-                          <div 
-                            className="h-full rounded-full transition-all duration-1000 ease-out relative overflow-hidden"
-                            style={{ 
-                              width: `${data.progress_percentage}%`,
-                              background: `linear-gradient(90deg, ${levelColor}, ${levelColor}cc)`,
-                            }}
-                          >
-                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer" />
+                    {/* Progress Journey */}
+                    {data.next_level ? (
+                      <div className="space-y-6">
+                        <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-lg shadow-lg">
+                              {data.next_level.icon || '🚀'}
+                            </div>
+                            <div className="text-right">
+                              <p className="text-[10px] font-black text-gray-light/30 uppercase tracking-widest">المستوى القادم</p>
+                              <p className="text-lg font-bold text-white">{data.next_level.name}</p>
+                            </div>
+                          </div>
+                          
+                          <div className="flex flex-col items-center md:items-end">
+                            <span className="text-4xl font-black text-white tabular-nums drop-shadow-lg" style={{ color: levelColor }}>
+                              {data.progress_percentage}%
+                            </span>
+                            <span className="text-[10px] font-black text-gray-light/30 uppercase tracking-widest">نسبة الإنجاز</span>
                           </div>
                         </div>
-                        <div className="flex justify-between mt-2 text-xs text-gray-500">
-                          <span>{data.current_level?.min_points} نقطة</span>
-                          <span className="text-gray-400">
-                            باقي <span className="font-bold text-white">{data.points_to_next_level}</span> نقطة
-                          </span>
-                          <span>{data.next_level.min_points} نقطة</span>
+
+                        {/* Premium Progress Bar */}
+                        <div className="relative">
+                          <div className="w-full h-4 bg-white/5 rounded-full border border-white/5 p-1 backdrop-blur-sm">
+                            <div 
+                              className="h-full rounded-full transition-all duration-1000 ease-out relative overflow-hidden group-hover:brightness-110"
+                              style={{ 
+                                width: `${data.progress_percentage}%`,
+                                background: `linear-gradient(90deg, ${levelColor}, ${levelColor}cc)`,
+                                boxShadow: `0 0 20px ${levelColor}40`,
+                              }}
+                            >
+                              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-shimmer" />
+                            </div>
+                          </div>
+                          
+                          <div className="flex justify-between mt-4 text-[10px] font-black text-gray-light/20 uppercase tracking-[0.2em]">
+                            <div className="flex flex-col items-start gap-1">
+                               <span>البداية</span>
+                               <span className="text-white/40">{data.current_level?.min_points} نقطة</span>
+                            </div>
+                            <div className="flex flex-col items-center gap-1 bg-white/5 px-4 py-2 rounded-xl border border-white/5 animate-pulse">
+                               <span className="text-white">باقي {data.points_to_next_level} نقطة</span>
+                            </div>
+                            <div className="flex flex-col items-end gap-1">
+                               <span>الهدف</span>
+                               <span className="text-white/40">{data.next_level.min_points} نقطة</span>
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    )}
-                    {!data.next_level && data.current_level && (
-                      <div className="mt-4 flex items-center gap-2 text-yellow-400">
-                        <span className="text-xl">👑</span>
-                        <span className="font-bold">وصلت لأعلى مستوى! مبروك!</span>
+                    ) : (
+                      <div className="inline-flex items-center gap-4 p-6 rounded-3xl bg-yellow-500/10 border border-yellow-500/20 backdrop-blur-xl animate-bounce">
+                        <div className="text-4xl">👑</div>
+                        <div className="text-right">
+                          <h3 className="text-xl font-black text-yellow-500 uppercase tracking-widest">وصلت للقمة</h3>
+                          <p className="text-sm font-bold text-white/60">أنت الآن في أعلى مستوى ممكن، استمر في التميز!</p>
+                        </div>
                       </div>
                     )}
                   </div>
 
-                  {/* Total Points */}
-                  <div className="text-center bg-white/10 backdrop-blur-sm rounded-2xl px-8 py-5 border border-white/10">
-                    <div className="text-xl sm:text-lg sm:text-xl md:text-2xl lg:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-yellow-300 to-yellow-500 bg-clip-text text-transparent">
+                  {/* Total Points Floating Card */}
+                  <div className="lg:absolute lg:-top-6 lg:-left-6 bg-white/5 backdrop-blur-2xl rounded-3xl p-6 border border-white/10 shadow-2xl flex flex-col items-center justify-center min-w-[160px] hover:scale-105 transition-transform">
+                    <div className="w-12 h-12 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-yellow-500 text-2xl mb-3">
+                      <Icon name="coins" />
+                    </div>
+                    <div className="text-3xl font-black bg-gradient-to-r from-yellow-300 to-yellow-600 bg-clip-text text-transparent">
                       {data.total_points.toLocaleString('ar-EG')}
                     </div>
-                    <div className="text-sm text-gray-400 mt-1">إجمالي النقاط</div>
+                    <div className="text-[10px] font-black text-gray-light/30 uppercase tracking-widest mt-1">نقطة إجمالية</div>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Levels Timeline */}
-              <div className="grid grid-cols-1 gap-6 mb-2 sm:mb-3 lg:mb-4 sm:mb-3 sm:mb-2 sm:mb-3 lg:mb-4 lg:mb-6 lg:mb-8">
-                {/* Levels Timeline */}
-              <div className={`transition-all duration-700 delay-400 ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-                <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-6 border border-white/10 h-full">
-                  <h3 className="text-xl font-bold text-white mb-3 sm:mb-2 sm:mb-3 lg:mb-4 lg:mb-6 flex items-center gap-3">
-                    المستويات
-                  </h3>
-                  <div className="space-y-3 max-h-[400px] overflow-y-auto custom-scrollbar pl-2">
-                    {visibleLevelsTimeline.map((level) => (
-                      <div
-                        key={level.id}
-                        className={`relative flex items-center gap-4 p-3 rounded-xl transition-all duration-300 ${
-                          level.is_current
-                            ? 'bg-white/10 border border-white/20 shadow-lg cursor-pointer hover:bg-white/15'
-                            : level.is_achieved
-                            ? 'bg-white/5 border border-white/5 cursor-pointer hover:bg-white/10'
-                            : 'opacity-50'
-                        }`}
-                        onClick={() => {
-                          if (level.is_achieved && level.history_id) {
-                            handlePreviewCertificate(level.history_id);
-                          }
-                        }}
-                      >
-                        {/* Timeline line removed */}
-                        
-                        {/* Level icon */}
-                        <div 
-                          className={`relative z-10 w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center text-xl border-2 transition-all ${
-                            level.is_achieved ? 'cursor-pointer hover:scale-110 active:scale-95' : 'cursor-not-allowed'
-                          } ${
-                            level.is_current
-                              ? 'shadow-lg'
-                              : level.is_achieved
-                              ? 'border-green-500/50'
-                              : 'border-white/10 bg-white/5'
-                          }`}
-                          title={level.is_achieved ? 'عرض الشهادة' : 'مستوى مقفل'}
-                          style={level.is_current ? {
-                            borderColor: level.color || '#6366f1',
-                            backgroundColor: `${level.color || '#6366f1'}20`,
-                            boxShadow: `0 0 20px ${level.color || '#6366f1'}30`,
-                          } : level.is_achieved ? {
-                            backgroundColor: `${level.color || '#6366f1'}15`,
-                          } : {}}
+            {/* Levels Journey Path */}
+            <div className={`mb-16 transition-all duration-700 delay-400 ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'}`}>
+              <div className="premium-glass premium-border rounded-[3rem] p-8 md:p-12">
+                <div className="flex items-center gap-4 mb-10 px-4">
+                   <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary text-xl">
+                      <Icon name="map-marked-alt" />
+                   </div>
+                   <div className="space-y-1">
+                      <h3 className="text-2xl font-black text-white">رحلة التطوير</h3>
+                      <p className="text-gray-light/40 text-sm font-medium">خارطة طريقك للوصول إلى أعلى المراتب العلمية</p>
+                   </div>
+                </div>
+
+                <div className="relative space-y-4">
+                  {/* Vertical Connector Path */}
+                  <div className="absolute top-0 bottom-0 right-[43px] md:right-[59px] w-1 bg-white/5 rounded-full" />
+                  
+                  <div className="space-y-6">
+                    {visibleLevelsTimeline.map((level, idx) => {
+                      const isAchieved = level.is_achieved;
+                      const isCurrent = level.is_current;
+                      
+                      return (
+                        <div
+                          key={level.id}
+                          className={`relative flex items-center gap-6 p-4 md:p-6 rounded-[2rem] transition-all duration-500
+                            ${isCurrent ? 'bg-white/10 ring-1 ring-white/20 shadow-2xl scale-[1.02] z-10' : 
+                              isAchieved ? 'bg-white/[0.03] hover:bg-white/5 cursor-pointer' : 'opacity-40 grayscale pointer-events-none'}`}
+                          onClick={() => {
+                            if (isAchieved && level.history_id) {
+                              handlePreviewCertificate(level.history_id);
+                            }
+                          }}
                         >
-                          {level.is_achieved ? (
-                            level.icon || '⭐'
-                          ) : (
-                            <span className="text-gray-500">🔒</span>
+                          {/* Step Indicator */}
+                          <div className="relative z-10 shrink-0">
+                             <div 
+                                className={`w-14 h-14 md:w-20 md:h-20 rounded-2xl md:rounded-3xl flex items-center justify-center text-2xl md:text-4xl transition-all duration-500
+                                  ${isCurrent ? 'shadow-[0_0_30px_rgba(255,255,255,0.1)] border-2' : 'border border-white/10'}`}
+                                style={isAchieved ? {
+                                  background: `linear-gradient(135deg, ${level.color || '#6366f1'}30, ${level.color || '#6366f1'}10)`,
+                                  borderColor: isCurrent ? level.color || '#6366f1' : `${level.color || '#6366f1'}30`,
+                                  boxShadow: isCurrent ? `0 0 30px ${level.color || '#6366f1'}40` : 'none',
+                                } : {
+                                  background: 'rgba(255,255,255,0.05)',
+                                }}
+                             >
+                                {isAchieved ? (level.icon || '⭐') : <Icon name="lock" className="text-xl" />}
+                             </div>
+                             
+                             {/* Small connector dot */}
+                             {idx < visibleLevelsTimeline.length - 1 && (
+                               <div className="absolute top-full left-1/2 -translate-x-1/2 w-1 h-6 bg-white/5" />
+                             )}
+                          </div>
+
+                          {/* Level Details */}
+                          <div className="flex-1 min-w-0 text-right">
+                             <div className="flex items-center gap-3 mb-1">
+                                <h4 className={`text-xl md:text-2xl font-black tracking-tight ${isCurrent ? 'text-white' : 'text-white/70'}`}>
+                                   {level.name}
+                                </h4>
+                                {isCurrent && (
+                                   <span className="px-3 py-1 rounded-lg bg-emerald-500/20 text-emerald-500 text-[10px] font-black uppercase tracking-widest animate-pulse">
+                                      المستوى الحالي
+                                   </span>
+                                )}
+                             </div>
+                             <p className="text-sm md:text-base text-gray-light/40 font-medium line-clamp-1">{level.description || 'لم يتم إضافة وصف لهذا المستوى'}</p>
+                          </div>
+
+                          {/* Points Info */}
+                          <div className="hidden sm:flex flex-col items-end gap-1 shrink-0">
+                             <div className="px-4 py-2 rounded-xl bg-white/5 border border-white/5 text-[10px] font-black text-gray-light/30 uppercase tracking-[0.2em]">
+                                {level.min_points.toLocaleString('ar-EG')} نقطة
+                             </div>
+                             {isAchieved && !isCurrent && (
+                                <div className="text-emerald-500 text-[10px] font-black flex items-center gap-1">
+                                   <Icon name="check-double" />
+                                   <span>مكتمل</span>
+                                </div>
+                             )}
+                          </div>
+                          
+                          {/* Action Arrow */}
+                          {isAchieved && level.history_id && (
+                             <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-gray-light/20 group-hover:text-primary transition-colors">
+                                <Icon name="chevron-left" />
+                             </div>
                           )}
                         </div>
-
-                        {/* Level info */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className={`font-bold text-sm ${level.is_current ? 'text-white' : level.is_achieved ? 'text-gray-300' : 'text-gray-500'}`}>
-                              {level.name}
-                            </span>
-                            {level.is_current && (
-                              <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: `${level.color}30`, color: level.color || '#fff' }}>
-                                أنت هنا
-                              </span>
-                            )}
-                          </div>
-                          <div className="text-xs text-gray-500 mt-0.5">
-                            {level.min_points.toLocaleString('ar-EG')} {level.max_points ? `– ${level.max_points.toLocaleString('ar-EG')}` : '+'} نقطة
-                          </div>
-                        </div>
-
-                        {/* Right side info remains, left side icon removed */}
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Certificates History */}
+            {/* Certificates Gallery */}
             {dedupedHistory.length > 0 && (
-              <div className={`mb-2 sm:mb-3 lg:mb-4 sm:mb-3 sm:mb-2 sm:mb-3 lg:mb-4 lg:mb-6 lg:mb-8 transition-all duration-700 delay-500 ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-                <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-6 md:p-8 border border-white/10">
-                  <h3 className="text-xl font-bold text-white mb-3 sm:mb-2 sm:mb-3 lg:mb-4 lg:mb-6 flex items-center gap-3">
-                    الشهادات والإنجازات
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className={`mb-16 transition-all duration-700 delay-500 ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'}`}>
+                <div className="premium-glass premium-border rounded-[3rem] p-8 md:p-12">
+                   <div className="flex items-center gap-4 mb-10 px-4">
+                      <div className="w-12 h-12 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-yellow-500 text-xl">
+                         <Icon name="award" />
+                      </div>
+                      <div className="space-y-1">
+                         <h3 className="text-2xl font-black text-white">معرض الأوسمة</h3>
+                         <p className="text-gray-light/40 text-sm font-medium">الشهادات التي حصلت عليها خلال مسيرتك</p>
+                      </div>
+                   </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {dedupedHistory.map((entry) => (
                       <div
                         key={entry.id}
-                        className="relative overflow-hidden bg-white/5 backdrop-blur-sm rounded-2xl p-5 border border-white/10 transition-all duration-300"
+                        className="group relative overflow-hidden premium-glass premium-border rounded-[2.5rem] p-6 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl"
                       >
-                        <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent opacity-0 transition-opacity duration-300"
-                          style={{ background: `linear-gradient(135deg, ${entry.level_color}10, transparent)` }}
+                        {/* Level Gradient Background */}
+                        <div 
+                          className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-500"
+                          style={{ background: `linear-gradient(135deg, ${entry.level_color}, transparent)` }}
                         />
                         
-                        <div className="relative">
-                          <div className="flex items-center gap-3 mb-3">
+                        <div className="relative flex flex-col items-center text-center space-y-6">
+                          {/* Award Emblem */}
+                          <div className="relative">
                             <div 
-                              className="w-12 h-12 rounded-full flex items-center justify-center text-2xl border-2"
+                              className="w-24 h-24 rounded-[2rem] flex items-center justify-center text-5xl shadow-xl border-2 rotate-3 group-hover:rotate-0 transition-transform duration-500"
                               style={{ 
-                                borderColor: `${entry.level_color}60`,
-                                backgroundColor: `${entry.level_color}15`,
+                                background: `linear-gradient(135deg, ${entry.level_color}30, ${entry.level_color}10)`,
+                                borderColor: `${entry.level_color}40`,
+                                boxShadow: `0 10px 30px ${entry.level_color}20`,
                               }}
                             >
                               {entry.level_icon || '🏅'}
                             </div>
-                            <div>
-                              <h4 className="text-white font-bold">{entry.level_name}</h4>
-                              <p className="text-gray-500 text-xs">
+                            <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-emerald-500 border-2 border-slate-900 flex items-center justify-center text-white text-xs">
+                               <Icon name="check" />
+                            </div>
+                          </div>
+
+                          <div className="space-y-2">
+                             <h4 className="text-xl font-black text-white tracking-tight">{entry.level_name}</h4>
+                             <p className="text-[10px] font-black text-gray-light/30 uppercase tracking-[0.2em]">
                                 {new Date(entry.achieved_at).toLocaleDateString('ar-EG', {
                                   year: 'numeric',
                                   month: 'long',
                                   day: 'numeric',
                                 })}
-                              </p>
-                            </div>
+                             </p>
                           </div>
 
-                          {entry && (
-                            <button
-                              onClick={() => handlePreviewCertificate(entry.id)}
-                              className="w-full mt-2 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-300"
-                              style={{
-                                background: `linear-gradient(135deg, ${entry.level_color}30, ${entry.level_color}15)`,
-                                border: `1px solid ${entry.level_color}40`,
-                                color: entry.level_color || '#fff',
-                              }}
-                            >
-                              <Icon name="download" />
-                              <span>عرض الشهادة</span>
-                            </button>
-                          )}
+                          <button
+                            onClick={() => handlePreviewCertificate(entry.id)}
+                            className="w-full py-4 rounded-2xl bg-white/5 border border-white/10 text-white text-xs font-black uppercase tracking-widest hover:bg-white/10 transition-all flex items-center justify-center gap-3 group/btn"
+                          >
+                            <Icon name="certificate" className="text-lg group-hover/btn:scale-110 transition-transform" />
+                            <span>عرض الشهادة</span>
+                          </button>
                         </div>
                       </div>
                     ))}
