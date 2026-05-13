@@ -102,54 +102,62 @@ export default function TakeExamPage() {
   useEffect(() => {
     if (!waiting || !user?.id) return;
 
+    let echoChannel: any = null;
+    let pollInterval: NodeJS.Timeout | null = null;
+
     const { getEcho } = require('@/lib/echo');
     const echo = getEcho();
 
+    const handleAdmission = (data: any) => {
+      if (data && data.attempt_id) {
+        setAttemptData(data);
+        attemptIdRef.current = data.attempt_id;
+        if (data.exam?.time_per_question) {
+          setTimeLeft(data.exam.time_per_question);
+        }
+        setWaiting(false);
+        setLoading(false);
+        toast.success('تم دخولك للامتحان بنجاح!');
+      }
+    };
+
+    // 1. Setup WebSocket listener
     if (echo) {
-      const channel = echo.private(`notifications.student.${user.id}`);
-      
-      channel.listen('.ExamAttemptReady', (data: any) => {
+      echoChannel = echo.private(`notifications.student.${user.id}`);
+      echoChannel.listen('.ExamAttemptReady', (data: any) => {
         if (data.attemptData && data.attemptData.exam?.id === examId) {
-          setAttemptData(data.attemptData);
-          attemptIdRef.current = data.attemptData.attempt_id;
-          if (data.attemptData.exam?.time_per_question) {
-            setTimeLeft(data.attemptData.exam.time_per_question);
-          }
-          setWaiting(false);
-          setLoading(false);
-          toast.success('تم دخولك للامتحان بنجاح!');
+          handleAdmission(data.attemptData);
         }
       });
-
-      return () => {
-        channel.stopListening('.ExamAttemptReady');
-      };
-    } else {
-      // Fallback: poll status every 5 seconds if Echo is not available
-      const interval = setInterval(async () => {
-        try {
-          const response = await fetchApi(`/student/exams/${examId}/start`, {
-            method: 'POST',
-          });
-          if (response && response.status !== 'waiting') {
-            setAttemptData(response);
-            attemptIdRef.current = response.attempt_id;
-            if (response.exam?.time_per_question) {
-              setTimeLeft(response.exam.time_per_question);
-            }
-            setWaiting(false);
-            setLoading(false);
-            clearInterval(interval);
-          } else if (response) {
-            setQueuePosition(response.position || 0);
-          }
-        } catch (e) {
-          console.error('Polling error:', e);
-        }
-      }, 5000);
-
-      return () => clearInterval(interval);
     }
+
+    // 2. Always setup Polling as a robust fallback
+    pollInterval = setInterval(async () => {
+      try {
+        const response = await fetchApi(`/student/exams/${examId}/start`, {
+          method: 'POST',
+        });
+        
+        // If the response status is no longer 'waiting', it means the attempt is ready
+        if (response && response.status !== 'waiting') {
+          handleAdmission(response);
+          if (pollInterval) clearInterval(pollInterval);
+        } else if (response) {
+          setQueuePosition(response.position || 0);
+        }
+      } catch (e) {
+        console.error('Polling error:', e);
+      }
+    }, 4000); // Poll every 4 seconds for a fast fallback
+
+    return () => {
+      if (echoChannel) {
+        echoChannel.stopListening('.ExamAttemptReady');
+      }
+      if (pollInterval) {
+        clearInterval(pollInterval);
+      }
+    };
   }, [waiting, user?.id, examId]);
 
   // Submit answer

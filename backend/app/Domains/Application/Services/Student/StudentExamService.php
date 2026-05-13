@@ -112,8 +112,8 @@ class StudentExamService
                     // Exam was modified, delete invalid attempt and start over
                     $existingAttempt->delete();
                     
-                    // Dispatch job for processing
-                    ProcessExamEntryJob::dispatch((string) $exam->id, (string) $student->id);
+                    // Dispatch job for processing with position 1 as it's a restart
+                    ProcessExamEntryJob::dispatch((string) $exam->id, (string) $student->id, 1);
 
                     return [
                         'status' => 'waiting',
