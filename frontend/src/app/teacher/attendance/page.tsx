@@ -2,13 +2,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
-import { DashboardCard } from '@/components/dashboard/DashboardCard';
-import { StatCard } from '@/components/dashboard/StatCard';
 import { Button, LoadingSpinner, Icon, Badge } from '@/components/ui';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { useRouter } from 'next/navigation';
 import ScanAttendanceModal from '@/components/dashboard/ScanAttendanceModal';
 import * as teacherService from '@/services/teacherService';
+import { cn } from '@/utils';
 
 export default function TeacherAttendancePage() {
   const { user, isAuthenticated, isLoading: authLoading, selectedAcademy } = useAuth();
@@ -23,7 +22,6 @@ export default function TeacherAttendancePage() {
     }
   }, [isAuthenticated, user, authLoading, router]);
 
-  // Fetch today's attendance status
   const fetchTodayStatus = async () => {
     try {
       setIsLoading(true);
@@ -44,156 +42,154 @@ export default function TeacherAttendancePage() {
     }
   }, [user, selectedAcademy]);
 
-  const handleScanSuccess = () => {
-    // Refresh the attendance logs
-    fetchTodayStatus();
-  };
+  const handleScanSuccess = () => fetchTodayStatus();
 
   if (authLoading || !user || user.userType !== 'teacher') {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <LoadingSpinner size="lg" />
-          <p className="text-gray-400 mt-4">جاري التحميل...</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-dark">
+        <LoadingSpinner size="lg" />
       </div>
     );
   }
 
-  // If teacher is not in Academy Mode
   if (!selectedAcademy?.id) {
     return (
       <DashboardLayout role="teacher" user={user}>
-        <div className="min-h-[60vh] flex items-center justify-center">
-          <div className="text-center max-w-md">
-            <Icon name="university" size="3x" className="text-gray-600 mb-6" />
-            <h2 className="text-2xl font-bold text-white mb-4">
-              هذه الميزة متاحة فقط للمدرسين في الأكاديميات
-            </h2>
-            <p className="text-gray-400 mb-6">
-              يرجى اختيار أكاديمية من القائمة المنسدلة في الأعلى للوصول إلى صفحة الحضور والانصراف
-            </p>
+        <div className="min-h-[60vh] flex flex-col items-center justify-center text-center p-6">
+          <div className="w-24 h-24 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-light/20 text-4xl mb-8">
+            <Icon name="university" />
           </div>
+          <h2 className="text-2xl font-black text-white mb-4 tracking-tight">هذه الميزة متاحة فقط للأكاديميات</h2>
+          <p className="text-gray-light/40 text-sm max-w-md font-medium leading-relaxed">
+            يرجى اختيار أكاديمية من القائمة المنسدلة في الأعلى للوصول إلى نظام تسجيل الحضور والانصراف الذكي.
+          </p>
         </div>
       </DashboardLayout>
     );
   }
 
-  // Calculate stats
   const latestLog = todayLogs.length > 0 ? todayLogs[0] : null;
   const isCheckedIn = latestLog?.status === 'checked_in';
   const totalHours = todayLogs.reduce((sum, log) => {
     if (log.duration_formatted) {
-      const hours = parseInt(log.duration_formatted.split('h')[0] || '0');
-      return sum + hours;
+      const h = parseInt(log.duration_formatted.split('h')[0] || '0');
+      return sum + h;
     }
     return sum;
   }, 0);
 
   return (
     <DashboardLayout role="teacher" user={user}>
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white mb-2">
-          الحضور والانصراف
-        </h1>
-        <p className="text-gray-400">
-          سجل حضورك وانصرافك من خلال مسح رمز QR الخاص بالأكاديمية
-        </p>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <StatCard
-          title="الحالة الحالية"
-          value={isCheckedIn ? 'حاضر' : 'منصرف'}
-          icon={isCheckedIn ? 'fas fa-check-circle' : 'fas fa-times-circle'}
-          color={isCheckedIn ? 'success' : 'danger'}
-        />
-        <StatCard
-          title="عدد مرات الحضور اليوم"
-          value={todayLogs.length}
-          icon="fas fa-calendar-check"
-          color="primary"
-        />
-        <StatCard
-          title="إجمالي الساعات اليوم"
-          value={`${totalHours}h`}
-          icon="fas fa-clock"
-          color="warning"
-        />
-      </div>
-
-      {/* Scan Button */}
-      <div className="mb-8">
-        <Button
-          onClick={() => setIsScanModalOpen(true)}
-          variant="primary"
-          size="lg"
-        >
-          <Icon name="qrcode" className="ml-2" />
-          مسح رمز QR للحضور/الانصراف
-        </Button>
-      </div>
-
-      {/* Today's Attendance Logs */}
-      <DashboardCard title="سجل الحضور اليوم">
-        {isLoading ? (
-            <div className="text-center py-8">
-              <LoadingSpinner size="lg" />
+      <div className="space-y-8 animate-in fade-in duration-700">
+        
+        {/* Immersive Header Section */}
+        <div className="flex flex-col md:flex-row items-center justify-between gap-6 px-2">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-success/10 border border-success/20 flex items-center justify-center text-success text-2xl shadow-[0_0_20px_rgba(34,197,94,0.1)]">
+              <Icon name="fingerprint" />
             </div>
-          ) : todayLogs.length > 0 ? (
-          <div className="space-y-4">
-            {todayLogs.map((log, index) => (
-              <div
-                key={log.id || index}
-                className="flex justify-between items-center p-4 bg-white/5 rounded-lg border border-white/10"
-              >
-                <div>
-                  <div className="flex items-center gap-3 mb-2">
-                    <Badge
-                      variant={log.status === 'checked_in' ? 'success' : 'danger'}
-                    >
-                      {log.status === 'checked_in' ? 'حضور' : 'انصراف'}
-                    </Badge>
-                    <span className="text-white font-semibold">
-                      {log.academy?.name || selectedAcademy.name}
-                    </span>
-                  </div>
-                  <div className="text-sm text-gray-400">
-                    <Icon name="clock" className="mr-2" />
-                    الحضور: {log.checked_in_at ? new Date(log.checked_in_at).toLocaleTimeString('ar-EG') : '-'}
-                    {log.checked_out_at && (
-                      <>
-                        <span className="mx-2">|</span>
-                        الانصراف: {new Date(log.checked_out_at).toLocaleTimeString('ar-EG')}
-                      </>
-                    )}
-                  </div>
-                </div>
-                {log.duration_formatted && (
-                  <div className="text-right">
-                    <div className="text-primary font-bold text-lg">
-                      {log.duration_formatted}
-                    </div>
-                    <div className="text-xs text-gray-400">المدة</div>
-                  </div>
-                )}
-              </div>
-            ))}
+            <div>
+              <h1 className="text-xl font-black text-white uppercase tracking-tight">الحضور والانصراف</h1>
+              <p className="text-[10px] font-bold text-gray-light/20 uppercase tracking-widest">تتبع ساعات العمل والجلسات اليومية</p>
+            </div>
           </div>
-        ) : (
-          <div className="text-center py-12">
-            <Icon name="calendar" size="2x" className="text-gray-600 mb-4" />
-            <p className="text-gray-400">لا يوجد سجل حضور لليوم</p>
-            <p className="text-sm text-gray-500 mt-2">
-              قم بمسح رمز QR لتسجيل حضورك
-            </p>
-          </div>
-        )}
-      </DashboardCard>
 
-      {/* Scan Attendance Modal */}
+          <Button 
+            onClick={() => setIsScanModalOpen(true)}
+            className="w-full md:w-auto h-12 px-8 rounded-2xl bg-primary text-white font-black uppercase tracking-widest shadow-xl shadow-primary/20"
+          >
+            <Icon name="qrcode" className="ml-2" />
+            مسح رمز QR
+          </Button>
+        </div>
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="p-6 rounded-[2rem] premium-glass premium-border relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-success/5 blur-3xl -translate-y-1/2 translate-x-1/2" />
+            <div className="flex items-center gap-4 mb-4">
+               <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center text-lg", isCheckedIn ? "bg-success/10 text-success" : "bg-danger/10 text-danger")}>
+                 <Icon name={isCheckedIn ? "check-circle" : "times-circle"} />
+               </div>
+               <span className="text-[10px] font-black text-gray-light/20 uppercase tracking-widest">الحالة الحالية</span>
+            </div>
+            <div className="text-3xl font-black text-white uppercase tracking-tighter">{isCheckedIn ? 'حاضر الآن' : 'منصرف حالياً'}</div>
+          </div>
+
+          <div className="p-6 rounded-[2rem] premium-glass premium-border relative overflow-hidden group">
+            <div className="flex items-center gap-4 mb-4">
+               <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center text-lg">
+                 <Icon name="calendar-check" />
+               </div>
+               <span className="text-[10px] font-black text-gray-light/20 uppercase tracking-widest">سجلات اليوم</span>
+            </div>
+            <div className="text-3xl font-black text-white uppercase tracking-tighter">{todayLogs.length} <span className="text-sm opacity-20">سجلات</span></div>
+          </div>
+
+          <div className="p-6 rounded-[2rem] premium-glass premium-border relative overflow-hidden group">
+            <div className="flex items-center gap-4 mb-4">
+               <div className="w-10 h-10 rounded-xl bg-warning/10 text-warning flex items-center justify-center text-lg">
+                 <Icon name="clock" />
+               </div>
+               <span className="text-[10px] font-black text-gray-light/20 uppercase tracking-widest">إجمالي الساعات</span>
+            </div>
+            <div className="text-3xl font-black text-white uppercase tracking-tighter">{totalHours} <span className="text-sm opacity-20">ساعات</span></div>
+          </div>
+        </div>
+
+        {/* Logs Section */}
+        <div className="space-y-4">
+           <div className="flex items-center justify-between px-2">
+              <h3 className="text-xs font-black text-gray-light/30 uppercase tracking-widest">سجل نشاط اليوم</h3>
+              {isLoading && <LoadingSpinner size="sm" />}
+           </div>
+
+           {todayLogs.length > 0 ? (
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+               {todayLogs.map((log, index) => (
+                 <div key={log.id || index} className="p-5 rounded-2xl premium-glass premium-border flex items-center justify-between group hover:border-primary/30 transition-all">
+                    <div className="space-y-3">
+                       <div className="flex items-center gap-3">
+                          <Badge variant={log.status === 'checked_in' ? 'success' : 'danger'} size="sm" className="font-black uppercase tracking-widest scale-90">
+                            {log.status === 'checked_in' ? 'حضور' : 'انصراف'}
+                          </Badge>
+                          <span className="text-xs font-black text-white">{log.academy?.name || selectedAcademy?.name}</span>
+                       </div>
+                       <div className="flex items-center gap-4 text-[10px] font-bold text-gray-light/30 uppercase tracking-widest">
+                          <div className="flex items-center gap-1.5">
+                             <Icon name="clock" className="text-primary/50" />
+                             <span>{log.checked_in_at ? new Date(log.checked_in_at).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) : '-'}</span>
+                          </div>
+                          {log.checked_out_at && (
+                            <>
+                              <div className="w-1 h-1 rounded-full bg-white/5" />
+                              <div className="flex items-center gap-1.5">
+                                 <Icon name="sign-out-alt" className="text-danger/50" />
+                                 <span>{new Date(log.checked_out_at).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}</span>
+                              </div>
+                            </>
+                          )}
+                       </div>
+                    </div>
+
+                    {log.duration_formatted && (
+                      <div className="text-left bg-white/5 px-4 py-2 rounded-xl border border-white/5">
+                        <div className="text-lg font-black text-white tracking-tighter">{log.duration_formatted}</div>
+                        <div className="text-[9px] font-black text-gray-light/20 uppercase tracking-widest text-center">المدة</div>
+                      </div>
+                    )}
+                 </div>
+               ))}
+             </div>
+           ) : (
+             <div className="py-20 text-center premium-glass premium-border rounded-[3rem] opacity-30">
+                <Icon name="calendar-times" className="text-4xl mb-4" />
+                <p className="text-sm font-black uppercase tracking-widest">لا توجد سجلات حضور لليوم</p>
+             </div>
+           )}
+        </div>
+      </div>
+
       <ScanAttendanceModal
         isOpen={isScanModalOpen}
         onClose={() => setIsScanModalOpen(false)}
