@@ -750,178 +750,156 @@ export default function TeacherLecturesPage() {
         cancelText="إلغاء"
         maxWidth="600px"
       >
-        <div className="form-group">
-          <label htmlFor="title">عنوان المحاضرة</label>
-          <Input
-            type="text"
-            id="title"
-            className="form-input w-full"
-            value={formData.title}
-            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-            required
-            placeholder="مثال: مراجعة الفصل الأول"
-          />
-        </div>
-        <div className="form-group">
-          <label htmlFor="grade">الصف الدراسي</label>
-          <Filter
-            options={grades.map((grade) => ({ value: String(grade.id), label: grade.name }))}
-            value={String(formData.grade_id || '')}
-            onChange={(value) => setFormData({ ...formData, grade_id: value })}
-            placeholder="اختر الصف"
-            className="w-full"
-          />
-        </div>
-        <div className="form-group">
-          <label htmlFor="group">المجموعة (اختياري)</label>
-          <Filter
-            options={[
-              { value: '', label: 'كل المجموعات' },
-              ...groups
-                .filter(g => !formData.grade_id || String(g.grade_id) === String(formData.grade_id))
-                .map((group) => ({ value: String(group.id), label: group.name }))
-            ]}
-            value={String(formData.group_id || '')}
-            onChange={(value) => setFormData({ ...formData, group_id: value })}
-            placeholder="كل المجموعات"
-            className="w-full"
-          />
-        </div>
-        <div className="form-group">
-          <label htmlFor="description">الوصف (اختياري)</label>
-          <Textarea
-            id="description"
-            className="form-input w-full"
-            value={formData.description || ''}
-            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            placeholder="وصف مختصر للمحاضرة..."
-            rows={3}
-          />
-        </div>
-        <div className="form-group">
-          <label htmlFor="lecture_type">نوع المحاضرة</label>
-          <Filter
-            options={[
-              { value: 'extra', label: 'محاضرة إضافية' },
-              { value: 'basic', label: 'محاضرة أساسية' }
-            ]}
-            value={formData.is_recurring ? 'basic' : 'extra'}
-            onChange={(value) => {
-              const isBasic = value === 'basic';
-              setFormData({
-                ...formData,
-                is_recurring: isBasic,
-                // Reset fields if switching types
-                date: isBasic ? '' : formData.date,
-                recurrence_days: isBasic ? formData.recurrence_days : [],
-              });
-            }}
-            placeholder="اختر نوع المحاضرة"
-            className="w-full"
-          />
-        </div>
-
-        {formData.is_recurring ? (
-          <>
-            <div className="form-group">
-              <label>أيام التكرار</label>
-              <div className="flex flex-wrap gap-2">
-                {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((day) => {
-                  const dayLabels: Record<string, string> = {
-                    'Sunday': 'الأحد',
-                    'Monday': 'الاثنين',
-                    'Tuesday': 'الثلاثاء',
-                    'Wednesday': 'الأربعاء',
-                    'Thursday': 'الخميس',
-                    'Friday': 'الجمعة',
-                    'Saturday': 'السبت',
-                  };
-                  return (
-                    <label key={day} className={`px-3 py-1 rounded-lg border cursor-pointer ${
-                      formData.recurrence_days?.includes(day)
-                        ? 'bg-primary text-white border-primary'
-                        : 'bg-white/5 border-white/10'
-                    }`}>
-                      <Input
-                        type="checkbox"
-                        className="hidden"
-                        checked={formData.recurrence_days?.includes(day)}
-                        onChange={(e) => {
-                          const newDays = e.target.checked
-                            ? [...(formData.recurrence_days || []), day]
-                            : (formData.recurrence_days || []).filter(d => d !== day);
-                          setFormData({ ...formData, recurrence_days: newDays });
-                        }}
-                      />
-                      {dayLabels[day]}
-                    </label>
-                  );
-                })}
+        <div className="space-y-8">
+           {/* Section: Basic Info */}
+           <div className="space-y-4">
+              <label className="text-[10px] font-black text-gray-light/30 uppercase tracking-widest px-2">معلومات المحاضرة الأساسية</label>
+              <div className="p-6 rounded-[2rem] bg-white/5 border border-white/5 space-y-6">
+                 <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-gray-light/20 px-2">عنوان المحاضرة</label>
+                    <Input
+                      type="text"
+                      className="h-12 bg-white/5 border-white/10 rounded-xl font-bold placeholder:text-gray-light/10"
+                      value={formData.title}
+                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                      required
+                      placeholder="مثال: مراجعة الفصل الأول"
+                    />
+                 </div>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-bold text-gray-light/20 px-2">الصف الدراسي</label>
+                       <Filter
+                         options={grades.map((grade) => ({ value: String(grade.id), label: grade.name }))}
+                         value={String(formData.grade_id || '')}
+                         onChange={(value) => setFormData({ ...formData, grade_id: value })}
+                         placeholder="اختر الصف"
+                         className="h-12"
+                       />
+                    </div>
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-bold text-gray-light/20 px-2">المجموعة (اختياري)</label>
+                       <Filter
+                         options={[
+                           { value: '', label: 'كل المجموعات' },
+                           ...groups
+                             .filter(g => !formData.grade_id || String(g.grade_id) === String(formData.grade_id))
+                             .map((group) => ({ value: String(group.id), label: group.name }))
+                         ]}
+                         value={String(formData.group_id || '')}
+                         onChange={(value) => setFormData({ ...formData, group_id: value })}
+                         placeholder="كل المجموعات"
+                         className="h-12"
+                       />
+                    </div>
+                 </div>
               </div>
-            </div>
-            <div className="form-group">
-              <label htmlFor="recurrence_time">وقت المحاضرة</label>
-              <Input
-                type="time"
-                id="recurrence_time"
-                className="form-input w-full"
-                value={formData.recurrence_time}
-                onChange={(e) => setFormData({ ...formData, recurrence_time: e.target.value })}
-                required={formData.is_recurring}
+           </div>
+
+           {/* Section: Schedule & Type */}
+           <div className="space-y-4">
+              <label className="text-[10px] font-black text-gray-light/30 uppercase tracking-widest px-2">الجدولة والنوع</label>
+              <div className="p-6 rounded-[2rem] bg-white/5 border border-white/5 space-y-6">
+                 <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-gray-light/20 px-2">نوع المحاضرة</label>
+                    <Filter
+                      options={[
+                        { value: 'extra', label: 'محاضرة إضافية (مرة واحدة)' },
+                        { value: 'basic', label: 'محاضرة أساسية (متكررة أسبوعياً)' }
+                      ]}
+                      value={formData.is_recurring ? 'basic' : 'extra'}
+                      onChange={(value) => {
+                        const isBasic = value === 'basic';
+                        setFormData({
+                          ...formData,
+                          is_recurring: isBasic,
+                          date: isBasic ? '' : formData.date,
+                          recurrence_days: isBasic ? formData.recurrence_days : [],
+                        });
+                      }}
+                      className="h-12"
+                    />
+                 </div>
+
+                 {formData.is_recurring ? (
+                   <div className="space-y-4">
+                      <label className="text-[10px] font-bold text-gray-light/20 px-2">أيام التكرار الأسبوعي</label>
+                      <div className="flex flex-wrap gap-2">
+                        {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((day) => {
+                          const dayLabels: Record<string, string> = { 'Sunday': 'ح', 'Monday': 'ن', 'Tuesday': 'ث', 'Wednesday': 'ر', 'Thursday': 'خ', 'Friday': 'ج', 'Saturday': 'س' };
+                          const fullLabels: Record<string, string> = { 'Sunday': 'الأحد', 'Monday': 'الاثنين', 'Tuesday': 'الثلاثاء', 'Wednesday': 'الأربعاء', 'Thursday': 'الخميس', 'Friday': 'الجمعة', 'Saturday': 'السبت' };
+                          const isSelected = formData.recurrence_days?.includes(day);
+                          return (
+                            <button 
+                              key={day} type="button" title={fullLabels[day]}
+                              onClick={() => {
+                                const newDays = isSelected 
+                                  ? formData.recurrence_days?.filter(d => d !== day)
+                                  : [...(formData.recurrence_days || []), day];
+                                setFormData({...formData, recurrence_days: newDays});
+                              }}
+                              className={cn(
+                                "w-10 h-10 rounded-xl border font-black transition-all text-xs flex items-center justify-center",
+                                isSelected ? "bg-primary border-primary text-white shadow-lg shadow-primary/20" : "bg-white/5 border-white/5 text-gray-light/20 hover:border-white/10"
+                              )}
+                            >
+                              {dayLabels[day]}
+                            </button>
+                          );
+                        })}
+                      </div>
+                   </div>
+                 ) : (
+                   <div className="space-y-2">
+                      <label className="text-[10px] font-bold text-gray-light/20 px-2">تاريخ المحاضرة</label>
+                      <Input
+                        type="date"
+                        className="h-12 bg-white/5 border-white/10 rounded-xl font-bold"
+                        value={formData.date}
+                        onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                        required
+                      />
+                   </div>
+                 )}
+
+                 <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-bold text-gray-light/20 px-2">وقت البدء</label>
+                       <Input
+                         type="time"
+                         className="h-12 bg-white/5 border-white/10 rounded-xl font-bold"
+                         value={formData.recurrence_time}
+                         onChange={(e) => setFormData({ ...formData, recurrence_time: e.target.value })}
+                         required
+                       />
+                    </div>
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-bold text-gray-light/20 px-2">المدة (بالدقائق)</label>
+                       <Input
+                         type="number"
+                         className="h-12 bg-white/5 border-white/10 rounded-xl font-bold text-center"
+                         value={formData.duration_minutes}
+                         onChange={(e) => setFormData({ ...formData, duration_minutes: parseInt(e.target.value) })}
+                         required
+                       />
+                    </div>
+                 </div>
+              </div>
+           </div>
+
+           {/* Description */}
+           <div className="space-y-2">
+              <label className="text-[10px] font-black text-gray-light/30 uppercase tracking-widest px-2">ملاحظات أو وصف إضافي</label>
+              <Textarea
+                className="min-h-[100px] bg-white/5 border-white/5 rounded-2xl py-4 px-5 font-medium placeholder:text-gray-light/10"
+                value={formData.description || ''}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="وصف مختصر للمحاضرة..."
               />
-            </div>
-            <div className="form-group">
-              <label htmlFor="duration_minutes">مدة المحاضرة (دقيقة)</label>
-              <Input
-                type="number"
-                id="duration_minutes"
-                className="form-input w-full"
-                value={formData.duration_minutes}
-                onChange={(e) => setFormData({ ...formData, duration_minutes: parseInt(e.target.value) })}
-                min="1"
-                required={formData.is_recurring}
-              />
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="form-group">
-              <label htmlFor="date">تاريخ المحاضرة</label>
-              <Input
-                type="date"
-                id="date"
-                className="form-input w-full"
-                value={formData.date}
-                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                required={!formData.is_recurring}
-              />
-            </div>
-            <div className="form-group">
-              <label htmlFor="recurrence_time">وقت المحاضرة</label>
-              <Input
-                type="time"
-                id="recurrence_time"
-                className="form-input w-full"
-                value={formData.recurrence_time}
-                onChange={(e) => setFormData({ ...formData, recurrence_time: e.target.value })}
-                required={!formData.is_recurring}
-              />
-            </div>
-            <div className="form-group">
-              <label htmlFor="duration_minutes">مدة المحاضرة (دقيقة)</label>
-              <Input
-                type="number"
-                id="duration_minutes"
-                className="form-input w-full"
-                value={formData.duration_minutes}
-                onChange={(e) => setFormData({ ...formData, duration_minutes: parseInt(e.target.value) })}
-                min="1"
-                required={!formData.is_recurring}
-              />
-            </div>
-          </>
-        )}
+           </div>
+        </div>
       </FormModal>
+
 
       {/* Delete Confirmation Modal */}
       <ConfirmationModal
