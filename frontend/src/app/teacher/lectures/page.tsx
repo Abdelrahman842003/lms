@@ -546,33 +546,47 @@ export default function TeacherLecturesPage() {
       </div>
 
       {/* Header Section */}
-      <div className="header-section flex justify-between items-center mb-6 max-md:flex-col max-md:items-stretch max-md:gap-4">
-        <div className="header-title flex items-center gap-3 max-md:w-full max-md:justify-center">
-          <div className="w-12 h-12 rounded-xl bg-[rgba(66,99,235,0.1)] flex items-center justify-center text-primary text-2xl">
-            <Icon name="video" />
+      <div className="relative mb-12 p-8 rounded-[2.5rem] premium-glass premium-border overflow-hidden">
+        {/* Background Glow */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 blur-[100px] -translate-y-1/2 translate-x-1/3"></div>
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-secondary/10 blur-[100px] translate-y-1/2 -translate-x-1/3"></div>
+
+        <div className="relative flex flex-col md:flex-row justify-between items-center gap-6">
+          <div className="flex items-center gap-5">
+            <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-primary text-3xl shadow-xl">
+              <Icon name="video" />
+            </div>
+            <div className="flex flex-col">
+              <h2 className="text-3xl font-black text-white tracking-tight">إدارة المحاضرات</h2>
+              <p className="text-gray-light/60 text-sm font-medium">إدارة وتفعيل الحصص المباشرة والجدول الأسبوعي</p>
+            </div>
           </div>
-          <h2 className="text-2xl font-bold text-white m-0">إدارة المحاضرات</h2>
-        </div>
-        <div className="header-actions max-md:w-full">
-          <Button onClick={handleAddClick} variant="primary" className="max-md:w-full max-md:justify-center">
+          
+          <Button 
+            onClick={handleAddClick} 
+            className="w-full md:w-auto h-14 px-8 rounded-2xl bg-gradient-to-r from-primary to-secondary hover:shadow-[0_10px_30px_rgba(66,99,235,0.4)] text-white font-black uppercase tracking-widest gap-3 transition-all border-none"
+          >
             <Icon name="plus" />
-            <span>محاضرة جديدة</span>
+            <span>إضافة محاضرة جديدة</span>
           </Button>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="flex gap-4 mb-6 max-md:flex-col">
-        <div className="flex-1">
+      <div className="flex flex-col md:flex-row gap-4 mb-10">
+        <div className="flex-1 relative group">
+          <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-gray-light group-focus-within:text-primary transition-colors">
+            <Icon name="search" size="sm" />
+          </div>
           <Input
             type="text"
-            placeholder="بحث عن محاضرة..."
+            placeholder="البحث عن محاضرة بالاسم..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="form-input w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white"
+            className="w-full bg-white/5 border border-white/10 focus:border-primary/50 focus:bg-white/10 rounded-2xl py-4 pr-12 pl-4 text-white placeholder:text-gray-light/40 outline-none transition-all"
           />
         </div>
-        <div className="w-64 max-md:w-full">
+        <div className="w-full md:w-64">
           <Filter
             options={[
               { value: '', label: 'كل المجموعات' },
@@ -580,11 +594,11 @@ export default function TeacherLecturesPage() {
             ]}
             value={selectedGroupId}
             onChange={(value) => setSelectedGroupId(value)}
-            placeholder="كل المجموعات"
+            placeholder="المجموعة"
             className="w-full"
           />
         </div>
-        <div className="w-48 max-md:w-full">
+        <div className="w-full md:w-48">
           <Filter
             options={[
               { value: '', label: 'كل الحالات' },
@@ -596,7 +610,7 @@ export default function TeacherLecturesPage() {
             ]}
             value={selectedStatus}
             onChange={(value) => setSelectedStatus(value)}
-            placeholder="الحالة"
+            placeholder="حالة المحاضرة"
             className="w-full"
           />
         </div>
