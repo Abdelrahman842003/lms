@@ -1,94 +1,100 @@
-/**
- * Loading Spinner Component
- * Single source of truth for all loading states across the application
- * Supports: sizes (sm/md/lg/xl), colors (blue/white/gray/primary), overlay, and fullPage modes
- */
-
 import React from 'react';
 import { clsx } from 'clsx';
 
 export interface LoadingSpinnerProps {
-  /** Spinner size - sm: 16px, md: 24px, lg: 32px, xl: 48px */
-  size?: 'sm' | 'md' | 'lg' | 'xl';
-  /** Spinner color */
-  color?: 'blue' | 'white' | 'gray' | 'primary';
-  /** Additional CSS classes */
+  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+  color?: 'blue' | 'white' | 'gray' | 'primary' | 'gradient';
   className?: string;
-  /** Show spinner with overlay background */
   overlay?: boolean;
-  /** Full page spinner with centered overlay */
   fullPage?: boolean;
-  /** Optional loading text to display below spinner */
   text?: string;
-  /** Text position relative to spinner */
   textPosition?: 'right' | 'bottom';
 }
 
 export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
   size = 'md',
-  color = 'blue',
+  color = 'gradient',
   className,
   overlay = false,
   fullPage = false,
   text,
   textPosition = 'bottom',
 }) => {
-  const sizeStyles: Record<NonNullable<LoadingSpinnerProps['size']>, number> = {
-    sm: 16,
-    md: 24,
-    lg: 32,
-    xl: 48,
+  const sizeMap: Record<string, string> = {
+    sm: 'w-5 h-5',
+    md: 'w-8 h-8',
+    lg: 'w-12 h-12',
+    xl: 'w-16 h-16',
+    '2xl': 'w-24 h-24',
   };
 
-  const colorStyles: Record<NonNullable<LoadingSpinnerProps['color']>, string> = {
-    blue: '#2563eb',
-    white: '#ffffff',
-    gray: '#9ca3af',
-    primary: 'var(--primary)',
-  };
+  const spinner = (
+    <div className={clsx('relative flex items-center justify-center', sizeMap[size], className)}>
+      {/* Outer Ring */}
+      <div className={clsx(
+        'absolute inset-0 rounded-full border-2 opacity-20',
+        color === 'gradient' ? 'border-primary' : 'border-current'
+      )}></div>
+      
+      {/* Animated Ring */}
+      <svg
+        className="absolute inset-0 w-full h-full animate-spin"
+        viewBox="0 0 50 50"
+      >
+        <circle
+          className={clsx(
+            'opacity-100',
+            color === 'gradient' ? 'stroke-primary' : 'stroke-current'
+          )}
+          cx="25"
+          cy="25"
+          r="20"
+          fill="none"
+          strokeWidth="4"
+          strokeLinecap="round"
+          strokeDasharray="30, 150"
+          style={{
+            stroke: color === 'gradient' ? 'url(#loading-gradient)' : undefined,
+            filter: 'drop-shadow(0 0 8px currentColor)'
+          }}
+        />
+        {color === 'gradient' && (
+          <defs>
+            <linearGradient id="loading-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="var(--primary)" />
+              <stop offset="100%" stopColor="var(--secondary)" />
+            </linearGradient>
+          </defs>
+        )}
+      </svg>
 
-  const spinnerStyle: React.CSSProperties = {
-    width: sizeStyles[size],
-    height: sizeStyles[size],
-    borderWidth: Math.max(2, Math.round(sizeStyles[size] / 8)),
-    borderStyle: 'solid',
-    borderColor: 'rgba(255, 255, 255, 0.18)',
-    borderTopColor: colorStyles[color],
-  };
+      {/* Inner Glowing Dot */}
+      <div className={clsx(
+        'w-1/4 h-1/4 rounded-full animate-pulse blur-[2px]',
+        color === 'gradient' ? 'bg-primary' : 'bg-current'
+      )}></div>
+    </div>
+  );
 
-  const spinner = <span className={clsx('spinner', className)} style={spinnerStyle} aria-hidden="true" />;
+  const containerClasses = clsx(
+    'flex flex-col items-center justify-center gap-4 transition-all duration-500',
+    fullPage && 'fixed inset-0 z-[9999] bg-dark/80 backdrop-blur-xl',
+    overlay && 'absolute inset-0 z-50 bg-dark/40 backdrop-blur-md rounded-inherit',
+    textPosition === 'right' && 'flex-row'
+  );
 
-  if (fullPage) {
+  if (fullPage || overlay || text) {
     return (
-      <div className="loading-fullpage">
+      <div className={containerClasses}>
         {spinner}
-        {text && <p className="ux-text-white">{text}</p>}
-      </div>
-    );
-  }
-
-  if (overlay) {
-    return (
-      <div className="loading-overlay">
-        {spinner}
-        {text && <p className="ux-text-white">{text}</p>}
-      </div>
-    );
-  }
-
-  if (text) {
-    if (textPosition === 'right') {
-      return (
-        <div className="loading-state loading-state-row">
-          {spinner}
-          <span>{text}</span>
-        </div>
-      );
-    }
-    return (
-      <div className="loading-state">
-        {spinner}
-        <span>{text}</span>
+        {text && (
+          <p className={clsx(
+            'font-black tracking-widest uppercase text-xs sm:text-sm animate-pulse',
+            fullPage ? 'text-white' : 'text-gray-light'
+          )}>
+            {text}
+          </p>
+        )}
       </div>
     );
   }
@@ -96,29 +102,32 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
   return spinner;
 };
 
-/**
- * Loading State Component - For full page/section loading states
- * Combines spinner with centered container
- */
 export interface LoadingStateProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
-  color?: 'blue' | 'white' | 'gray' | 'primary';
+  color?: 'blue' | 'white' | 'gray' | 'primary' | 'gradient';
   text?: string;
   className?: string;
   minHeight?: string;
 }
 
 export const LoadingState: React.FC<LoadingStateProps> = ({
-  size = 'lg',
-  color = 'primary',
+  size = 'xl',
+  color = 'gradient',
   text = 'جاري التحميل...',
   className,
   minHeight = '400px',
 }) => {
   return (
-    <div className={clsx('loading-state', className)} style={{ minHeight }}>
-      <LoadingSpinner size={size} color={color} />
-      {text && <p className="ux-text-gray-light">{text}</p>}
+    <div className={clsx('flex flex-col items-center justify-center animate-fade-in', className)} style={{ minHeight }}>
+      <div className="relative">
+        <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full scale-150 animate-pulse"></div>
+        <LoadingSpinner size={size} color={color} />
+      </div>
+      {text && (
+        <p className="mt-8 text-gray-light font-black text-sm tracking-[0.2em] uppercase opacity-50 animate-pulse text-center">
+          {text}
+        </p>
+      )}
     </div>
   );
 };

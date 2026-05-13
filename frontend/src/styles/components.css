@@ -111,30 +111,33 @@
 
 .pagination-btn {
   padding: 8px 16px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  color: var(--light);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  color: var(--gray-light);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   font-family: "Tajawal", sans-serif;
+  font-weight: 600;
 }
 
 .pagination-btn:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.08);
   border-color: var(--primary);
   color: white;
+  transform: translateY(-1px);
 }
 
 .pagination-btn:disabled {
-  opacity: 0.5;
+  opacity: 0.3;
   cursor: not-allowed;
 }
 
 .pagination-btn.active {
-  background: rgba(66, 99, 235, 0.15);
-  border-color: var(--primary);
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  border-color: transparent;
   color: white;
+  box-shadow: 0 4px 12px rgba(66, 99, 235, 0.3);
 }
 
 /* Actions Dropdown */
@@ -325,29 +328,36 @@
   display: inline-flex;
   align-items: center;
   padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: 600;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border: 1px solid transparent;
 }
 
 .badge-primary {
-  background: rgba(66, 99, 235, 0.15);
-  color: var(--primary);
+  background: rgba(66, 99, 235, 0.1);
+  color: #818cf8;
+  border-color: rgba(66, 99, 235, 0.2);
 }
 
 .badge-success {
-  background: rgba(0, 214, 143, 0.15);
-  color: var(--success);
+  background: rgba(16, 185, 129, 0.1);
+  color: #34d399;
+  border-color: rgba(16, 185, 129, 0.2);
 }
 
 .badge-warning {
-  background: rgba(255, 170, 0, 0.15);
-  color: var(--warning);
+  background: rgba(245, 158, 11, 0.1);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.2);
 }
 
 .badge-danger {
-  background: rgba(255, 91, 91, 0.15);
-  color: var(--danger);
+  background: rgba(239, 68, 68, 0.1);
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.2);
 }
 
 /* Empty State */

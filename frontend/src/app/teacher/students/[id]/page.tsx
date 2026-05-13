@@ -4,7 +4,7 @@ import React, { useState, useEffect, use } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
-import { LoadingSpinner, Button, Icon } from '@/components/ui';
+import { LoadingSpinner, LoadingState, Button, Icon } from '@/components/ui';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { getTeacherStudentDetails } from '@/services/authService';
 import { useRouter } from 'next/navigation';
@@ -56,12 +56,7 @@ export default function StudentDetailsPage({ params }: { params: Promise<{ id: s
         role={user?.userType as 'teacher' | 'secretary' || 'teacher'}
         user={user || undefined}
       >
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center">
-            <LoadingSpinner size="lg" className="mx-auto mb-3" />
-            <p className="text-gray-light">جاري التحميل...</p>
-          </div>
-        </div>
+        <LoadingState />
       </DashboardLayout>
     );
   }

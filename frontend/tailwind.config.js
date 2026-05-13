@@ -41,6 +41,7 @@ export default {
         'slide-in-left': 'slideInLeft 0.6s ease-out',
         'pulse-slow': 'pulse 3s infinite',
         'bounce-slow': 'bounce 2s infinite',
+        'shimmer': 'shimmer 2s infinite linear',
       },
       keyframes: {
         fadeIn: {
@@ -58,6 +59,9 @@ export default {
         slideInLeft: {
           '0%': { opacity: '0', transform: 'translateX(-30px)' },
           '100%': { opacity: '1', transform: 'translateX(0)' },
+        },
+        shimmer: {
+          '100%': { transform: 'translateX(100%)' },
         },
       },
       fontFamily: {
