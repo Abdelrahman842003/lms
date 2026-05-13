@@ -6,6 +6,7 @@ namespace App\Domains\Application\Services\Student;
 
 use App\Domains\Application\Exceptions\DomainException;
 use App\Domains\Exams\Enums\ExamAttemptStatus;
+use App\Domains\Exams\Events\ExamCompleted;
 use App\Domains\Exams\Models\Exam;
 use App\Domains\Exams\Models\ExamAttempt;
 use App\Domains\Exams\Models\ExamResult;
@@ -447,6 +448,9 @@ class StudentExamService
                         ? 'تم إنهاء الامتحان بسبب مخالفة.'
                         : 'تم تسجيل نتيجة الامتحان بنجاح.',
                 ]));
+
+                // Dispatch event to trigger point awarding and other listeners
+                ExamCompleted::dispatch($attempt, (float) $score, $percentage);
             }
 
             return $this->getAttemptData($attempt->fresh());

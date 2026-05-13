@@ -157,6 +157,18 @@ class LevelService
                         'points_at_levelup' => $totalPoints, // Approximate
                         'achieved_at' => now(),
                     ]);
+
+                    // Generate certificate for this auto-created history
+                    try {
+                        $path = $this->generateCertificate($history);
+                        $history->update(['certificate_path' => $path]);
+                    } catch (\Throwable $certError) {
+                        Log::error('Failed to generate certificate for auto-created history', [
+                            'history_id' => $history->id,
+                            'error' => $certError->getMessage()
+                        ]);
+                    }
+
                     $historyId = $history->id;
                     $levelHistoryMap[$level->id] = $historyId;
                 } catch (\Throwable $e) {

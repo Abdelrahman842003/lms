@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Exams\Listeners;
 
 use App\Domains\Exams\Events\ExamCompleted;
+use App\Domains\Gamification\Models\PointTransaction;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
 /**
@@ -31,7 +32,7 @@ class GrantExamXp implements ShouldQueue
                 strategy: new \App\Domains\Gamification\Strategies\ExamXpCalculator(),
                 context: ['percentage' => $percentage],
                 referenceId: (string) $attempt->exam_id,
-                type: 'exam'
+                type: PointTransaction::TYPE_EXAM_SCORE
             );
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error('Failed to grant Exam XP', [

@@ -15,7 +15,7 @@ class XpGranted
     use Dispatchable, SerializesModels;
 
     public function __construct(
-        public readonly int    $studentId,
+        public readonly string $studentId,
         public readonly string $teacherId,
         public readonly int    $xp,
         public readonly string $type,       // 'exam' | 'attendance' | 'mistake_review'
