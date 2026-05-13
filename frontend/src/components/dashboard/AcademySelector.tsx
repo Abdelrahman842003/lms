@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
-
 import { LoadingSpinner, Button, Icon } from '@/components/ui';
+import { cn } from '@/utils';
+
 interface Academy {
   id: string | null;
   name: string;
@@ -22,203 +23,125 @@ interface AcademySelectorProps {
 export function AcademySelector({ isOpen, onClose }: AcademySelectorProps) {
   const { selectedAcademy, selectAcademy, user } = useAuth();
   const [academies, setAcademies] = useState<Academy[]>([]);
-
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (isOpen) {
-      fetchAcademies();
-    }
+    if (isOpen) fetchAcademies();
   }, [isOpen]);
 
   const fetchAcademies = async () => {
     try {
       setIsLoading(true);
       const { getCurrentUser, getTeacherAcademies } = await import('@/services/authService');
-      
-      // Fetch both academies list and user profile to get pivot data
-      const [response, userProfile] = await Promise.all([
-        getTeacherAcademies(),
-        getCurrentUser('teacher')
-      ]);
-
-      // Handle both response formats: direct data or wrapped in data property
+      const [response, userProfile] = await Promise.all([getTeacherAcademies(), getCurrentUser('teacher')]);
       const data = (response as any).data || response;
       let academiesList: Academy[] = data.academies || [];
       
-      
-      // Merge pivot data from user profile if available
       let isIndependentActive = false;
       if (userProfile.user) {
-         isIndependentActive = !!userProfile.user.is_independent_active;
-         
-      if (userProfile.user.academies) {
-            const userAcademies = userProfile.user.academies;
-            academiesList = academiesList.map(academy => {
-              // Loose equality check for ID to handle string/number differences
-              const userAcademy = userAcademies.find((ua: any) => ua.id == academy.id);
-              if (userAcademy) {
-                 if (userAcademy.pivot) {
-                    return {
-                      ...academy,
-                      pivot: userAcademy.pivot
-                    };
-                 }
-              }
-              return academy;
-            });
-         }
-      }
-
-      // Prepend "Independent" option if active (avoid duplicates)
-      if (isIndependentActive) {
-        const hasIndependentOption = academiesList.some((academy) => {
-          const id = String(academy.id ?? '').toLowerCase();
-          return academy.id === null || id === 'independent';
-        });
-
-        if (!hasIndependentOption) {
-        const independentAcademy: Academy = {
-          id: 'independent',
-          name: 'شخصي (مستقل)',
-          logo: null,
-          is_active: true
-        };
-        academiesList.unshift(independentAcademy);
+        isIndependentActive = !!userProfile.user.is_independent_active;
+        if (userProfile.user.academies) {
+          const userAcademies = userProfile.user.academies;
+          academiesList = academiesList.map(academy => {
+            const userAcademy = userAcademies.find((ua: any) => ua.id == academy.id);
+            if (userAcademy && userAcademy.pivot) return { ...academy, pivot: userAcademy.pivot };
+            return academy;
+          });
         }
       }
-      
-      setAcademies(academiesList);
-    } catch (error) {
-      setAcademies([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
-  const handleSelectAcademy = (academy: Academy) => {
-    // If academy.id is null, it means "Independent"
-    selectAcademy(academy);
-    onClose();
+      if (isIndependentActive) {
+        const hasIndependent = academiesList.some(a => a.id === null || String(a.id).toLowerCase() === 'independent');
+        if (!hasIndependent) {
+          academiesList.unshift({ id: 'independent', name: 'شخصي (مستقل)', logo: null, is_active: true });
+        }
+      }
+      setAcademies(academiesList);
+    } catch { setAcademies([]); } finally { setIsLoading(false); }
   };
 
   if (!isOpen) return null;
 
   return (
-    <div 
-      className="ux-fixed ux-inset-0 ux-z-9998 ux-flex ux-items-center ux-justify-center ux-p-4 ux-bg-black-50 ux-backdrop-blur-sm"
-      onClick={onClose}
-    >
-      <div 
-        className="ux-w-full ux-max-w-500px ux-bg-1e1e2d ux-rounded-xl ux-shadow-2xl ux-border ux-border-white-10 ux-animate-scalein"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={onClose} />
+      
+      <div className="relative w-full max-w-lg premium-glass premium-border rounded-[3rem] overflow-hidden animate-in zoom-in-95 duration-300">
         {/* Header */}
-        <div className="ux-flex ux-items-center ux-justify-between ux-p-6 ux-border-b ux-border-white-10">
-          <h3 className="ux-text-xl ux-font-bold ux-text-white ux-m-0">اختر الأكاديمية</h3>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="ux-w-8 ux-h-8 ux-p-0 ux-flex ux-items-center ux-justify-center ux-rounded-lg"
-            onClick={onClose}
-            aria-label="إغلاق"
-          >
-            <Icon name="times" size="sm" />
-          </Button>
+        <div className="p-8 border-b border-white/5 flex items-center justify-between">
+           <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary text-xl">
+                <Icon name="university" />
+              </div>
+              <div>
+                <h3 className="text-xl font-black text-white tracking-tighter">اختر الأكاديمية</h3>
+                <p className="text-[10px] font-bold text-gray-light/20 uppercase tracking-widest">اختر مساحة العمل التي ترغب في دخولها</p>
+              </div>
+           </div>
+           <button onClick={onClose} className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-gray-light/20 hover:text-white transition-all">
+             <Icon name="times" />
+           </button>
         </div>
 
         {/* Body */}
-        <div className="ux-p-6 ux-overflow-y-auto ux-max-h-60vh">
+        <div className="p-8 max-h-[60vh] overflow-y-auto scrollbar-none space-y-4">
           {isLoading ? (
-            <div className="ux-flex ux-flex-col ux-items-center ux-justify-center ux-py-8">
-              <LoadingSpinner size="lg" color="primary" />
-              <p className="ux-text-sm ux-text-gray-400">جاري التحميل...</p>
+            <div className="flex flex-col items-center justify-center py-12 gap-4">
+              <LoadingSpinner size="md" color="primary" />
+              <span className="text-[10px] font-black text-gray-light/20 uppercase tracking-widest">جاري جلب المساحات...</span>
             </div>
           ) : academies.length === 0 ? (
-            <div className="ux-text-center ux-py-8">
-              <i className="fas fa-building ux-text-5xl ux-text-gray-600 ux-mb-4"></i>
-              <p className="ux-text-gray-300 ux-text-lg ux-mb-2">لا توجد أكاديميات متاحة</p>
-              <p className="ux-text-sm ux-text-gray-500">أنت تعمل كمدرس مستقل</p>
+            <div className="text-center py-12 opacity-30">
+               <Icon name="building" className="text-4xl mb-4" />
+               <p className="text-sm font-black uppercase tracking-widest">لا توجد أكاديميات متاحة</p>
             </div>
           ) : (
-            <div className="ux-space-y-3">
+            <div className="grid grid-cols-1 gap-3">
               {academies.map((academy, index) => {
-                // Helper to check if active (handles boolean, string 'true'/'false', 1/0)
-                const isActive = (val: any) => {
-                  if (val === true || val === 1 || val === '1' || val === 'true') return true;
-                  return false;
-                };
-
+                const isActive = (val: any) => val === true || val === 1 || val === '1' || val === 'true';
                 let isSuspended = !isActive(academy.is_active);
-                
-                // Check pivot status if available (for academy-specific suspension)
-                if (academy.pivot && academy.pivot.is_active !== undefined) {
-                  isSuspended = !isActive(academy.pivot.is_active);
+                if (academy.pivot?.is_active !== undefined) isSuspended = !isActive(academy.pivot.is_active);
+                if (academy.id === 'independent' && user && (user as any).is_independent_active !== undefined) {
+                  isSuspended = !(user as any).is_independent_active;
                 }
-                
-                if (academy.id === null || academy.id === 'Independent' || academy.id === 'independent') {
-                  // Check user object for is_independent_active (handling boolean or 0/1)
-                  if (user && (user as any).is_independent_active !== undefined) {
-                    isSuspended = !(user as any).is_independent_active;
-                  }
-                }
+
+                const isSelected = selectedAcademy?.id === academy.id;
+
                 return (
                   <button
-                    key={`${String(academy.id ?? 'independent').toLowerCase()}-${academy.name}-${index}`}
-                    onClick={() => !isSuspended && handleSelectAcademy(academy)}
+                    key={`${academy.id}-${index}`}
+                    onClick={() => !isSuspended && (selectAcademy(academy), onClose())}
                     disabled={isSuspended}
-                    className={`ux-w-full ux-flex ux-items-center ux-gap-4 ux-p-4 ux-rounded-xl ux-border ux-transition-all ${
-                      isSuspended 
-                        ? 'ux-border-red-500-50 ux-bg-red-500-5 ux-cursor-not-allowed ux-opacity-75'
-                        : selectedAcademy?.id === academy.id
-                          ? 'ux-border-primary-600 ux-bg-primary-600-10'
-                          : 'ux-border-white-10 ux-hover-border-primary-600-50 ux-hover-bg-white-5'
-                    }`}
+                    className={cn(
+                      "group relative flex items-center gap-5 p-5 rounded-[2rem] border transition-all duration-500 overflow-hidden",
+                      isSuspended ? "border-danger/20 bg-danger/5 opacity-60 grayscale cursor-not-allowed" : 
+                      isSelected ? "border-primary bg-primary/10 shadow-[0_0_30px_rgba(66,99,235,0.1)]" :
+                      "border-white/5 bg-white/5 hover:border-primary/40 hover:bg-white/10"
+                    )}
                   >
-                    {/* Logo/Icon */}
-                    <div className="ux-flex-shrink-0">
+                    {/* Backdrop Glow for Selected */}
+                    {isSelected && <div className="absolute inset-0 bg-primary/5 blur-3xl rounded-full" />}
+
+                    <div className="relative z-10 w-16 h-16 rounded-3xl overflow-hidden bg-white/5 border border-white/10 flex items-center justify-center text-2xl">
                       {academy.logo ? (
-                        <img
-                          src={academy.logo}
-                          alt={academy.name}
-                          className={`ux-w-12 ux-h-12 ux-rounded-full ux-object-cover ux-border-2 ${isSuspended ? 'ux-border-red-500-30' : 'ux-border-white-10'}`}
-                        />
+                        <img src={academy.logo} alt="" className="w-full h-full object-cover" />
                       ) : (
-                        <div className={`ux-w-12 ux-h-12 ux-rounded-full ux-flex ux-items-center ux-justify-center ux-ring-2 ${
-                          isSuspended 
-                            ? 'ux-bg-red-500-10 ux-ring-red-500-20'
-                            : 'ux-bg-gradient-to-br ux-from-primary-500 ux-to-primary-600 ux-ring-primary-400-20'
-                        }`}>
-                          <i
-                            className={`fas ${
-                              academy.id ? 'fa-building' : 'fa-user-tie'
-                            } ${isSuspended ? 'ux-text-red-400' : 'ux-text-white'} ux-text-lg`}
-                          ></i>
-                        </div>
+                        <Icon name={academy.id === 'independent' ? 'user-tie' : 'building'} className={cn(isSelected ? "text-primary" : "text-white/40")} />
                       )}
                     </div>
 
-                    {/* Academy Info */}
-                    <div className="ux-flex-1 ux-text-right">
-                      <div className={`ux-font-semibold ux-text-base ux-mb-1 ${isSuspended ? 'ux-text-red-400' : 'ux-text-white'}`}>
-                        {academy.name} {isSuspended && '(معطل)'}
-                      </div>
-
-
-                      {isSuspended && (
-                        <div className="ux-text-xs ux-text-red-400-70 ux-flex ux-items-center ux-justify-end ux-gap-1">
-                          <i className="fas fa-ban"></i>
-                          <span>تم تعليق الحساب</span>
-                        </div>
-                      )}
+                    <div className="relative z-10 flex-1 text-right">
+                       <h4 className={cn("text-lg font-black tracking-tight mb-1", isSuspended ? "text-danger" : "text-white")}>
+                         {academy.name}
+                       </h4>
+                       <p className="text-[10px] font-black text-gray-light/20 uppercase tracking-widest">
+                         {isSuspended ? 'تم تعليق الحساب مؤقتاً' : academy.id === 'independent' ? 'نظام التدريس الفردي' : 'أكاديمية شريكة'}
+                       </p>
                     </div>
 
-                    {/* Selected Indicator */}
-                    {selectedAcademy?.id === academy.id && !isSuspended && (
-                      <div className="ux-flex-shrink-0">
-                        <div className="ux-w-6 ux-h-6 ux-rounded-full ux-bg-primary-600 ux-flex ux-items-center ux-justify-center">
-                          <i className="fas fa-check ux-text-white ux-text-xs"></i>
-                        </div>
+                    {isSelected && !isSuspended && (
+                      <div className="relative z-10 w-10 h-10 rounded-2xl bg-primary text-white flex items-center justify-center shadow-lg shadow-primary/20 animate-in zoom-in-50">
+                        <Icon name="check" size="sm" />
                       </div>
                     )}
                   </button>
@@ -229,14 +152,10 @@ export function AcademySelector({ isOpen, onClose }: AcademySelectorProps) {
         </div>
 
         {/* Footer */}
-        <div className="ux-flex ux-items-center ux-justify-end ux-gap-3 ux-p-6 ux-border-t ux-border-white-10">
-          <button
-            onClick={onClose}
-            className="ux-px-5 ux-py-2dot5 ux-text-sm ux-font-medium ux-text-gray-300 ux-hover-text-white ux-hover-bg-white-5 ux-rounded-lg ux-transition-colors"
-            type="button"
-          >
-            إلغاء
-          </button>
+        <div className="p-8 bg-white/2 flex justify-end">
+           <Button onClick={onClose} variant="outline" className="h-11 px-10 rounded-xl border-white/10 text-gray-light hover:text-white font-black uppercase tracking-widest">
+              إغلاق
+           </Button>
         </div>
       </div>
     </div>
