@@ -452,7 +452,7 @@ export function VideoQuizManager({ videoId, role, initialQuiz, onQuizChange }: P
           <div className="rounded-[2.5rem] premium-glass premium-border p-8 md:p-10 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-40 h-40 bg-success/10 blur-[80px] -translate-y-1/2 translate-x-1/2" />
             
-            <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8 text-center md:text-right">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
               <div className="flex flex-col md:flex-row items-center gap-6">
                 <div className="w-16 h-16 rounded-[1.5rem] bg-primary/10 border border-primary/20 flex items-center justify-center text-primary text-3xl shadow-xl">
                   <Icon name="graduation-cap" />
@@ -467,14 +467,14 @@ export function VideoQuizManager({ videoId, role, initialQuiz, onQuizChange }: P
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <Button onClick={openResults} variant="ghost" className="h-12 px-5 rounded-xl bg-white/5 text-gray-light hover:text-white border border-white/5">
+              <div className="flex flex-wrap items-center justify-center gap-2 w-full md:w-auto">
+                <Button onClick={openResults} variant="ghost" className="flex-1 md:flex-none h-12 px-5 rounded-xl bg-white/5 text-gray-light border border-white/5">
                   <Icon name="chart-bar" /> <span>النتائج</span>
                 </Button>
-                <Button onClick={openEdit} variant="ghost" className="h-12 px-5 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 border border-primary/10">
+                <Button onClick={openEdit} variant="ghost" className="flex-1 md:flex-none h-12 px-5 rounded-xl bg-primary/10 text-primary border border-primary/10">
                   <Icon name="edit" /> <span>تعديل</span>
                 </Button>
-                <Button onClick={() => setConfirmDelete(true)} variant="ghost" className="h-12 px-5 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/10">
+                <Button onClick={() => setConfirmDelete(true)} variant="ghost" className="flex-1 md:flex-none h-12 px-5 rounded-xl bg-red-500/10 text-red-400 border border-red-500/10">
                   <Icon name="trash" />
                 </Button>
               </div>

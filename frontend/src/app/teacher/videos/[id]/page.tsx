@@ -436,8 +436,8 @@ export default function TeacherVideoDetailPage() {
                   className={cn(
                     "flex-1 min-w-fit px-4 md:px-6 py-2.5 md:py-3.5 rounded-xl md:rounded-[1.5rem] text-[10px] md:text-xs font-black uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2",
                     activeTab === tab
-                      ? "bg-primary text-white shadow-[0_10px_25px_rgba(66,99,235,0.4)] scale-[1.02]"
-                      : "text-gray-light/40 hover:text-white hover:bg-white/5"
+                      ? "bg-primary text-white shadow-lg"
+                      : "text-gray-light/40"
                   )}
                 >
                   <Icon name={
@@ -445,18 +445,13 @@ export default function TeacherVideoDetailPage() {
                     tab === 'student_activity' ? 'users' :
                     tab === 'attachments' ? 'paperclip' :
                     tab === 'quiz' ? 'graduation-cap' : 'comments'
-                  } size="sm" className={cn("transition-colors", activeTab === tab ? "text-white" : "text-primary/40")} />
+                  } size="sm" className={cn("transition-colors", activeTab === tab ? "text-white" : "text-primary/20")} />
                   <span className="hidden sm:inline">{
                     tab === 'details' ? 'التفاصيل' :
                     tab === 'student_activity' ? 'التفاعل' :
                     tab === 'attachments' ? 'المرفقات' :
                     tab === 'quiz' ? 'التدريب' : 'التعليقات'
                   }</span>
-                  {tab === 'comments' && comments.length > 0 && (
-                    <span className={cn("px-1.5 py-0.5 rounded-md text-[8px] font-black", activeTab === tab ? "bg-white/20" : "bg-primary/10 text-primary")}>
-                      {comments.length}
-                    </span>
-                  )}
                 </button>
               ))}
             </div>
@@ -641,12 +636,12 @@ export default function TeacherVideoDetailPage() {
                   </Button>
                 )}
                 {canRetry && (
-                  <Button onClick={handleRetry} disabled={isProcessing} variant="outline" className="w-full h-14 rounded-2xl border-warning/30 text-warning hover:bg-warning/10">
+                  <Button onClick={handleRetry} disabled={isProcessing} variant="outline" className="w-full h-14 rounded-2xl border-warning text-warning">
                     <Icon name="sync" />
                     <span>إعادة المعالجة</span>
                   </Button>
                 )}
-                <Button onClick={() => setIsDeleteModalOpen(true)} disabled={isProcessing} variant="ghost" className="w-full h-12 rounded-2xl text-red-400 hover:bg-red-500/10 transition-all font-bold">
+                <Button onClick={() => setIsDeleteModalOpen(true)} disabled={isProcessing} variant="ghost" className="w-full h-12 rounded-2xl text-red-500 font-bold bg-red-500/5">
                   <Icon name="trash" />
                   <span>حذف الفيديو نهائياً</span>
                 </Button>
