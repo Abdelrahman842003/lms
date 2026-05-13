@@ -829,7 +829,7 @@
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
-  z-index: 1100;
+  z-index: 9999;
 }
 
 .select-search {

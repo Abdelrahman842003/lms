@@ -86,7 +86,7 @@ export function Select({
 
   return (
     <div
-      className={`select ${isOpen ? 'open z-50' : ''} ${disabled ? 'disabled' : ''} ${className}`}
+      className={`select ${isOpen ? 'open z-[9999]' : ''} ${disabled ? 'disabled' : ''} ${className}`}
       ref={dropdownRef}
     >
       <div

@@ -63,11 +63,35 @@ export default function StudentExamsPage() {
       role="student"
       user={user || undefined}
     >
+      <div className="max-w-[1200px] mx-auto">
+        {/* Premium Page Header */}
+        <div className="relative mb-12 p-8 md:p-10 rounded-[2.5rem] md:rounded-[3rem] premium-glass premium-border overflow-hidden">
+          {/* Background Glows */}
+          <div className="absolute top-0 right-0 w-80 h-80 bg-primary/20 blur-[120px] -translate-y-1/2 translate-x-1/3 animate-pulse"></div>
+          <div className="absolute bottom-0 left-0 w-80 h-80 bg-amber-500/10 blur-[120px] translate-y-1/2 -translate-x-1/3"></div>
 
-        
-      <div className="flex flex-col gap-8">
-        {/* Stats */}
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-6 mb-8">
+          <div className="relative flex flex-col md:flex-row justify-between items-center gap-8 text-center md:text-right">
+            <div className="flex flex-col md:flex-row items-center gap-6">
+              <div className="w-20 h-20 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center text-primary text-4xl shadow-2xl premium-border">
+                <Icon name="file-alt" />
+              </div>
+              <div className="space-y-2">
+                <h2 className="text-3xl md:text-4xl font-black text-white tracking-tight">مركز الامتحانات</h2>
+                <p className="text-gray-light/60 text-lg font-medium">اختبر معلوماتك وتابع نتائجك وتطور مستواك الدراسي</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-4">
+               <div className="flex flex-col items-center md:items-end">
+                  <span className="text-[10px] font-black text-gray-light/30 uppercase tracking-[0.2em] mb-1">المعلم الحالي</span>
+                  <span className="text-xl font-black text-white">{selectedTeacher?.name || 'اختر مدرساً'}</span>
+               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-6 mb-12">
           <StatCard
             title="إجمالي الامتحانات"
             value={exams.length}
@@ -77,14 +101,14 @@ export default function StudentExamsPage() {
           />
           <StatCard
             title="امتحانات مكتملة"
-            value={exams.filter(e => e.score !== undefined).length}
+            value={exams.filter(e => e.score !== undefined || e.is_completed).length}
             icon="fas fa-check-circle"
             color="success"
             variant="centered"
           />
           <StatCard
             title="متوسط الدرجات"
-            value={Math.round(exams.reduce((acc, curr) => acc + (curr.score || 0), 0) / (exams.filter(e => e.score !== undefined).length || 1))}
+            value={exams.filter(e => e.score !== undefined).length > 0 ? Math.round(exams.reduce((acc, curr) => acc + (curr.score || 0), 0) / (exams.filter(e => e.score !== undefined).length || 1)) : 0}
             suffix="%"
             icon="fas fa-star"
             color="warning"
@@ -235,7 +259,6 @@ export default function StudentExamsPage() {
           </div>
         </DashboardCard>
       </div>
-
     </DashboardLayout>
   );
 }
