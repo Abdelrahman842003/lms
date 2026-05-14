@@ -6,12 +6,21 @@ import { fetchApi } from '@/services/api/baseApi';
 import { useRouter } from 'next/navigation';
 import { useSettings } from '@/contexts/SettingsContext';
 
+interface VideoBundle {
+  name_ar: string;
+  name_en: string;
+  storage_minutes: number;
+  delivery_minutes: number;
+  price: number;
+}
+
 interface PricingPackage {
   id: string;
   name_ar: string;
   name_en: string | null;
   max_students: number;
-  storage_limit_gb: number;
+  storage_minutes: number;
+  delivery_minutes: number;
   price: string;
   discount_percentage: string | null;
   half_yearly_price: string;
@@ -19,6 +28,7 @@ interface PricingPackage {
   yearly_price: string;
   yearly_discount_percentage: string | null;
   features: Array<{ feature: string }>;
+  video_bundles: VideoBundle[] | null;
   is_active: boolean;
   is_popular: boolean;
   sort_order: number;
@@ -27,6 +37,7 @@ interface PricingPackage {
 export default function PricingPage() {
   const [packages, setPackages] = useState<PricingPackage[]>([]);
   const [loading, setLoading] = useState(true);
+  const [viewType, setViewType] = useState<'plans' | 'addons'>('plans');
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'semi-annual' | 'yearly'>('monthly');
   const router = useRouter();
   const { settings } = useSettings();
@@ -78,6 +89,21 @@ export default function PricingPage() {
     }
   };
 
+  const handleAddonOrder = (addon: VideoBundle) => {
+    const message = `السلام عليكم، أرغب في طلب باقة فيديوهات إضافية (Add-on):
+- الباقة: ${addon.name_ar}
+- السعر: ${addon.price.toLocaleString()} ج.م
+- التخزين: ${addon.storage_minutes.toLocaleString()} دقيقة
+- المشاهدة: ${addon.delivery_minutes.toLocaleString()} دقيقة`;
+
+    const contactNumber = (settings.whatsappNumber || settings.support_phone || '').trim();
+    const normalizedNumber = contactNumber.replace(/[^0-9]/g, '');
+    
+    if (normalizedNumber) {
+      window.open(`https://wa.me/${normalizedNumber}?text=${encodeURIComponent(message)}`, '_blank');
+    }
+  };
+
   useEffect(() => {
     const loadPackages = async () => {
       try {
@@ -93,9 +119,8 @@ export default function PricingPage() {
     loadPackages();
   }, []);
 
-  const maxMonthlyDiscount = Math.max(...packages.map(pkg => parseFloat(pkg.discount_percentage || '0')), 0);
-  const maxSemiAnnualDiscount = Math.max(...packages.map(pkg => parseFloat(pkg.half_yearly_discount_percentage || '0')), 0);
-  const maxYearlyDiscount = Math.max(...packages.map(pkg => parseFloat(pkg.yearly_discount_percentage || '0')), 0);
+  const plans = packages.filter(pkg => pkg.type === 'plan' || !pkg.type);
+  const addons = packages.filter(pkg => pkg.type === 'addon');
 
   return (
     <LandingLayout>
@@ -106,174 +131,277 @@ export default function PricingPage() {
             اختر الباقة المناسبة لاحتياجاتك التعليمية. جميع الباقات تشمل دعم فني متكامل وتحديثات مستمرة.
           </p>
 
-          {/* Billing Toggle - Restored Original Style */}
-          <div className="flex flex-col items-center gap-4">
-            <div className="relative p-1 bg-[#15192B] border border-white/5 rounded-2xl flex items-center w-fit min-w-[300px] md:min-w-[450px]">
-              {/* Sliding background */}
-              <div 
-                className={`absolute h-[calc(100%-8px)] rounded-xl bg-[#3249A9] shadow-lg shadow-[#3249A9]/20 transition-all duration-300 ease-out ${
-                  billingCycle === 'monthly' 
-                    ? 'w-[32%] translate-x-[2%] rtl:translate-x-[-2%]' 
-                    : billingCycle === 'semi-annual'
-                    ? 'w-[32%] translate-x-[104%] rtl:translate-x-[-104%]'
-                    : 'w-[32%] translate-x-[206%] rtl:translate-x-[-206%]'
-                }`}
-              />
-              
-              <button
-                onClick={() => setBillingCycle('monthly')}
-                className={`relative flex-1 py-3 px-4 text-xs md:text-sm font-black transition-colors duration-300 z-10 flex flex-col items-center justify-center ${
-                  billingCycle === 'monthly' ? 'text-white' : 'text-gray-500 hover:text-gray-300'
-                }`}
-              >
-                <span>1 شهر</span>
-              </button>
-              
-              <button
-                onClick={() => setBillingCycle('semi-annual')}
-                className={`relative flex-1 py-3 px-4 text-xs md:text-sm font-black transition-colors duration-300 z-10 flex flex-col items-center justify-center ${
-                  billingCycle === 'semi-annual' ? 'text-white' : 'text-gray-500 hover:text-gray-300'
-                }`}
-              >
-                <span>6 شهور</span>
-              </button>
+          <div className="flex flex-col items-center gap-8">
+             {/* Main View Toggle (Plans vs Addons) */}
+             <div className="p-1 bg-[#15192B] border border-white/5 rounded-2xl flex items-center w-fit">
+               <button
+                  onClick={() => setViewType('plans')}
+                  className={`px-8 py-3 rounded-xl font-black transition-all duration-300 ${
+                    viewType === 'plans' ? 'bg-[#3249A9] text-white shadow-lg shadow-[#3249A9]/20' : 'text-gray-500 hover:text-gray-300'
+                  }`}
+               >
+                 خطط الاشتراك
+               </button>
+               <button
+                  onClick={() => setViewType('addons')}
+                  className={`px-8 py-3 rounded-xl font-black transition-all duration-300 ${
+                    viewType === 'addons' ? 'bg-[#3249A9] text-white shadow-lg shadow-[#3249A9]/20' : 'text-gray-500 hover:text-gray-300'
+                  }`}
+               >
+                 باقات الفيديوهات
+               </button>
+             </div>
 
-              <button
-                onClick={() => setBillingCycle('yearly')}
-                className={`relative flex-1 py-3 px-4 text-xs md:text-sm font-black transition-colors duration-300 z-10 flex flex-col items-center justify-center ${
-                  billingCycle === 'yearly' ? 'text-white' : 'text-gray-500 hover:text-gray-300'
-                }`}
-              >
-                <span>12 شهر</span>
-              </button>
-            </div>
+            {/* Billing Toggle (Only for Plans) */}
+            {viewType === 'plans' && (
+              <div className="relative p-1 bg-[#15192B] border border-white/5 rounded-2xl flex items-center w-fit min-w-[300px] md:min-w-[450px] animate-in fade-in slide-in-from-top-2 duration-500">
+                <div 
+                  className={`absolute h-[calc(100%-8px)] rounded-xl bg-[#3249A9] shadow-lg shadow-[#3249A9]/20 transition-all duration-300 ease-out ${
+                    billingCycle === 'monthly' 
+                      ? 'w-[32%] translate-x-[2%] rtl:translate-x-[-2%]' 
+                      : billingCycle === 'semi-annual'
+                      ? 'w-[32%] translate-x-[104%] rtl:translate-x-[-104%]'
+                      : 'w-[32%] translate-x-[206%] rtl:translate-x-[-206%]'
+                  }`}
+                />
+                
+                <button
+                  onClick={() => setBillingCycle('monthly')}
+                  className={`relative flex-1 py-3 px-4 text-xs md:text-sm font-black transition-colors duration-300 z-10 flex flex-col items-center justify-center ${
+                    billingCycle === 'monthly' ? 'text-white' : 'text-gray-500 hover:text-gray-300'
+                  }`}
+                >
+                  <span>1 شهر</span>
+                </button>
+                
+                <button
+                  onClick={() => setBillingCycle('semi-annual')}
+                  className={`relative flex-1 py-3 px-4 text-xs md:text-sm font-black transition-colors duration-300 z-10 flex flex-col items-center justify-center ${
+                    billingCycle === 'semi-annual' ? 'text-white' : 'text-gray-500 hover:text-gray-300'
+                  }`}
+                >
+                  <span>6 شهور</span>
+                </button>
+
+                <button
+                  onClick={() => setBillingCycle('yearly')}
+                  className={`relative flex-1 py-3 px-4 text-xs md:text-sm font-black transition-colors duration-300 z-10 flex flex-col items-center justify-center ${
+                    billingCycle === 'yearly' ? 'text-white' : 'text-gray-500 hover:text-gray-300'
+                  }`}
+                >
+                  <span>12 شهر</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
+
         {loading ? (
           <div className="flex justify-center items-center min-h-[400px]">
             <div className="w-12 h-12 border-4 border-[#3249A9] border-t-transparent rounded-full animate-spin"></div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {packages.map((pkg) => {
-              let originalPrice = 0;
-              let discountPercent = 0;
-              let cycleText = '';
+          <div className="min-h-[500px]">
+            {viewType === 'plans' ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 animate-in fade-in zoom-in-95 duration-500">
+                {plans.map((pkg) => {
+                  let originalPrice = 0;
+                  let discountPercent = 0;
+                  let cycleText = '';
 
-              if (billingCycle === 'monthly') {
-                originalPrice = parseFloat(pkg.price);
-                discountPercent = parseFloat(pkg.discount_percentage || '0');
-                cycleText = 'شهر';
-              } else if (billingCycle === 'semi-annual') {
-                originalPrice = parseFloat(pkg.half_yearly_price);
-                discountPercent = parseFloat(pkg.half_yearly_discount_percentage || '0');
-                cycleText = '6 شهور';
-              } else {
-                originalPrice = parseFloat(pkg.yearly_price);
-                discountPercent = parseFloat(pkg.yearly_discount_percentage || '0');
-                cycleText = 'سنة';
-              }
-              
-              const discountedPrice = originalPrice * (1 - discountPercent / 100);
-              const savingsAmount = originalPrice - discountedPrice;
-              const hasPrice = originalPrice > 0;
-              const hasDiscount = discountPercent > 0;
+                  if (billingCycle === 'monthly') {
+                    originalPrice = parseFloat(pkg.price);
+                    discountPercent = parseFloat(pkg.discount_percentage || '0');
+                    cycleText = 'شهر';
+                  } else if (billingCycle === 'semi-annual') {
+                    originalPrice = parseFloat(pkg.half_yearly_price);
+                    discountPercent = parseFloat(pkg.half_yearly_discount_percentage || '0');
+                    cycleText = '6 شهور';
+                  } else {
+                    originalPrice = parseFloat(pkg.yearly_price);
+                    discountPercent = parseFloat(pkg.yearly_discount_percentage || '0');
+                    cycleText = 'سنة';
+                  }
+                  
+                  const discountedPrice = originalPrice * (1 - discountPercent / 100);
+                  const savingsAmount = originalPrice - discountedPrice;
+                  const hasPrice = originalPrice > 0;
+                  const hasDiscount = discountPercent > 0;
 
-              const savingsPeriodText = billingCycle === 'monthly' ? 'شهرياً' : billingCycle === 'semi-annual' ? 'كل 6 شهور' : 'سنوياً';
+                  const savingsPeriodText = billingCycle === 'monthly' ? 'شهرياً' : billingCycle === 'semi-annual' ? 'كل 6 شهور' : 'سنوياً';
 
-              return (
-                <div
-                  key={pkg.id}
-                  className={`relative group bg-[#15192B] rounded-[2.5rem] border transition-all duration-500 hover:-translate-y-2 p-10 flex flex-col ${
-                    pkg.is_popular
-                      ? 'border-[#3249A9] shadow-[0_20px_50px_rgba(50,73,169,0.15)]'
-                      : 'border-white/5 hover:border-[#3249A9]/30'
-                  }`}
-                >
-                  {pkg.is_popular && (
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#3249A9] text-white text-xs font-black px-4 py-1.5 rounded-full uppercase tracking-widest shadow-lg">
-                      الأكثر رواجاً
-                    </div>
-                  )}
-
-                <div className="mb-8">
-                  <h3 className="text-2xl font-black text-white mb-2">{pkg.name_ar}</h3>
-                  <div className="flex flex-col gap-1">
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-4xl font-black text-white">
-                        {!hasPrice ? 'مجاناً' : `${discountedPrice.toLocaleString()} ج.م`}
-                      </span>
-                      {hasPrice && (
-                        <span className="text-gray-500 text-sm font-bold">
-                          / {cycleText}
-                        </span>
+                  return (
+                    <div
+                      key={pkg.id}
+                      className={`relative group bg-[#15192B] rounded-[2.5rem] border transition-all duration-500 hover:-translate-y-2 p-10 flex flex-col ${
+                        pkg.is_popular
+                          ? 'border-[#3249A9] shadow-[0_20px_50px_rgba(50,73,169,0.15)]'
+                          : 'border-white/5 hover:border-[#3249A9]/30'
+                      }`}
+                    >
+                      {pkg.is_popular && (
+                        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#3249A9] text-white text-xs font-black px-4 py-1.5 rounded-full uppercase tracking-widest shadow-lg">
+                          الأكثر رواجاً
+                        </div>
                       )}
-                    </div>
-                    {hasPrice && hasDiscount && (
-                      <div className="flex flex-col gap-1.5 mt-2">
-                        <div className="flex items-center gap-2">
-                          <span className="text-gray-500 line-through text-sm font-medium">
-                            {originalPrice.toLocaleString()} ج.م
-                          </span>
-                          <span className="text-[11px] bg-[#16a34a] text-white px-2 py-0.5 rounded-lg font-black shadow-sm">
-                            وفر {discountPercent}%
-                          </span>
-                        </div>
-                        <div className="text-[#16a34a] text-xs font-black flex items-center gap-1">
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                          </svg>
-                          أنت توفر {savingsAmount.toLocaleString()} ج.م {savingsPeriodText}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
 
-                  <div className="flex flex-col gap-4 mb-10 flex-1">
-                    <div className="flex items-center gap-3">
-                      <div className="w-5 h-5 rounded-full bg-[#3249A9]/20 flex items-center justify-center text-[#3249A9]">
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                        </svg>
-                      </div>
-                      <span className="text-gray-300 font-medium">
-                        {pkg.max_students === 0 ? 'طلاب غير محدودين' : `حتى ${pkg.max_students} طالب`}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="w-5 h-5 rounded-full bg-[#3249A9]/20 flex items-center justify-center text-[#3249A9]">
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                        </svg>
-                      </div>
-                      <span className="text-gray-300 font-medium">مساحة تخزين {pkg.storage_limit_gb} جيجابايت</span>
-                    </div>
-                    {pkg.features?.map((f, i) => (
-                      <div key={i} className="flex items-center gap-3">
-                        <div className="w-5 h-5 rounded-full bg-[#3249A9]/20 flex items-center justify-center text-[#3249A9]">
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                          </svg>
+                      <div className="mb-8">
+                        <h3 className="text-2xl font-black text-white mb-2">{pkg.name_ar}</h3>
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-baseline gap-2">
+                            <span className="text-4xl font-black text-white">
+                              {!hasPrice ? 'مجاناً' : `${discountedPrice.toLocaleString()} ج.م`}
+                            </span>
+                            {hasPrice && (
+                              <span className="text-gray-500 text-sm font-bold">
+                                / {cycleText}
+                              </span>
+                            )}
+                          </div>
+                          {hasPrice && hasDiscount && (
+                            <div className="flex flex-col gap-1.5 mt-2">
+                              <div className="flex items-center gap-2">
+                                <span className="text-gray-500 line-through text-sm font-medium">
+                                  {originalPrice.toLocaleString()} ج.م
+                                </span>
+                                <span className="text-[11px] bg-[#16a34a] text-white px-2 py-0.5 rounded-lg font-black shadow-sm">
+                                  وفر {discountPercent}%
+                                </span>
+                              </div>
+                              <div className="text-[#16a34a] text-xs font-black flex items-center gap-1">
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                                </svg>
+                                أنت توفر {savingsAmount.toLocaleString()} ج.م {savingsPeriodText}
+                              </div>
+                            </div>
+                          )}
                         </div>
-                        <span className="text-gray-300 font-medium">{f.feature}</span>
+                      </div>
+
+                      <div className="flex flex-col gap-4 mb-10 flex-1">
+                        <div className="flex items-center gap-3">
+                          <div className="w-5 h-5 rounded-full bg-[#3249A9]/20 flex items-center justify-center text-[#3249A9]">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                            </svg>
+                          </div>
+                          <span className="text-gray-300 font-medium">
+                            {pkg.max_students === 0 ? 'طلاب غير محدودين' : `حتى ${pkg.max_students} طالب`}
+                          </span>
+                        </div>
+                        {pkg.storage_minutes > 0 && (
+                          <div className="flex items-center gap-3">
+                            <div className="w-5 h-5 rounded-full bg-[#3249A9]/20 flex items-center justify-center text-[#3249A9]">
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                              </svg>
+                            </div>
+                            <span className="text-gray-300 font-medium">تخزين {pkg.storage_minutes.toLocaleString()} دقيقة فيديو</span>
+                          </div>
+                        )}
+                        {pkg.delivery_minutes > 0 && (
+                          <div className="flex items-center gap-3">
+                            <div className="w-5 h-5 rounded-full bg-[#3249A9]/20 flex items-center justify-center text-[#3249A9]">
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                              </svg>
+                            </div>
+                            <span className="text-gray-300 font-medium">مشاهدة {pkg.delivery_minutes.toLocaleString()} دقيقة فيديو</span>
+                          </div>
+                        )}
+                        {pkg.features?.map((f, i) => (
+                          <div key={i} className="flex items-center gap-3">
+                            <div className="w-5 h-5 rounded-full bg-[#3249A9]/20 flex items-center justify-center text-[#3249A9]">
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                              </svg>
+                            </div>
+                            <span className="text-gray-300 font-medium">{f.feature}</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      <button
+                        onClick={() => handleSubscribe(pkg)}
+                        className={`w-full py-4 rounded-2xl font-black transition-all duration-300 ${
+                          pkg.is_popular
+                            ? 'bg-[#3249A9] hover:bg-[#283d8f] text-white shadow-[0_10px_30px_rgba(50,73,169,0.3)]'
+                            : 'bg-white/5 hover:bg-white/10 text-white'
+                        }`}
+                      >
+                        {!hasPrice ? 'ابدأ مجاناً' : 'اشترك الآن'}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="animate-in fade-in zoom-in-95 duration-500">
+                {addons.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {addons.map((addon, idx) => (
+                      <div 
+                        key={idx}
+                        className="relative group bg-[#15192B] rounded-[2.5rem] border border-white/5 hover:border-[#3249A9]/50 transition-all duration-500 hover:-translate-y-2 p-10 flex flex-col"
+                      >
+                        <div className="mb-8">
+                          <h4 className="text-2xl font-black text-white mb-2">{addon.name_ar}</h4>
+                          <div className="flex items-baseline gap-2">
+                            <span className="text-4xl font-black text-white">{parseFloat(addon.price as any).toLocaleString()} ج.م</span>
+                            <span className="text-gray-500 text-sm font-bold">/ دفعة واحدة</span>
+                          </div>
+                        </div>
+
+                        <div className="space-y-4 mb-10 flex-1">
+                          <div className="flex items-center gap-3">
+                            <div className="w-5 h-5 rounded-full bg-[#3249A9]/20 flex items-center justify-center text-[#3249A9]">
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                              </svg>
+                            </div>
+                            <span className="text-gray-300 font-medium">{addon.storage_minutes.toLocaleString()} دقيقة تخزين إضافية</span>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <div className="w-5 h-5 rounded-full bg-[#3249A9]/20 flex items-center justify-center text-[#3249A9]">
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                              </svg>
+                            </div>
+                            <span className="text-gray-300 font-medium">{addon.delivery_minutes.toLocaleString()} دقيقة مشاهدة إضافية</span>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <div className="w-5 h-5 rounded-full bg-[#16a34a]/20 flex items-center justify-center text-[#16a34a]">
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                              </svg>
+                            </div>
+                            <span className="text-gray-300 font-medium">تفعيل فوري</span>
+                          </div>
+                        </div>
+
+                        <button 
+                          onClick={() => handleAddonOrder(addon as any)}
+                          className="w-full py-4 bg-white/5 hover:bg-[#3249A9] text-white rounded-2xl font-black transition-all duration-300"
+                        >
+                          اطلب الباقة الآن
+                        </button>
                       </div>
                     ))}
                   </div>
-
-                  <button
-                    onClick={() => handleSubscribe(pkg)}
-                    className={`w-full py-4 rounded-2xl font-black transition-all duration-300 ${
-                      pkg.is_popular
-                        ? 'bg-[#3249A9] hover:bg-[#283d8f] text-white shadow-[0_10px_30px_rgba(50,73,169,0.3)]'
-                        : 'bg-white/5 hover:bg-white/10 text-white'
-                    }`}
-                  >
-                    {!hasPrice ? 'ابدأ مجاناً' : 'اشترك الآن'}
-                  </button>
-                </div>
-              );
-            })}
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-20 text-center">
+                    <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-6 text-gray-500">
+                       <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                       </svg>
+                    </div>
+                    <h3 className="text-xl font-black text-white mb-2">لا يوجد باقات إضافية حالياً</h3>
+                    <p className="text-gray-500">يرجى العودة لاحقاً أو التواصل مع الدعم الفني لمزيد من المعلومات</p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 

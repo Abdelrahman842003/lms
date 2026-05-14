@@ -42,6 +42,15 @@ class PricingPackageResource extends BaseResource
             ->components([
                 Section::make('المعلومات الأساسية')
                     ->schema([
+                        \Filament\Forms\Components\Select::make('type')
+                            ->label('نوع الباقة')
+                            ->options([
+                                'plan' => 'باقة اشتراك أساسية',
+                                'addon' => 'باقة فيديو إضافية (Add-on)',
+                            ])
+                            ->default('plan')
+                            ->required()
+                            ->reactive(),
                         TextInput::make('name_ar')
                             ->label('اسم الباقة (بالعربي)')
                             ->required()
@@ -49,12 +58,12 @@ class PricingPackageResource extends BaseResource
                         TextInput::make('name_en')
                             ->label('اسم الباقة (بالإنجليزي)')
                             ->maxLength(255),
-                    ])->columns(2),
+                    ])->columns(3),
 
-                Section::make('التسعير الشهري')
+                Section::make('التسعير (باقة أساسية)')
                     ->schema([
                         TextInput::make('price')
-                            ->label('السعر الشهري الأساسي')
+                            ->label('السعر الشهري')
                             ->numeric()
                             ->prefix('ج.م')
                             ->required(),
@@ -63,12 +72,8 @@ class PricingPackageResource extends BaseResource
                             ->numeric()
                             ->suffix('%')
                             ->default(0),
-                    ])->columns(2),
-
-                Section::make('التسعير نصف السنوي')
-                    ->schema([
                         TextInput::make('half_yearly_price')
-                            ->label('السعر نصف السنوي الأساسي')
+                            ->label('السعر نصف السنوي')
                             ->numeric()
                             ->prefix('ج.م')
                             ->required(),
@@ -77,12 +82,8 @@ class PricingPackageResource extends BaseResource
                             ->numeric()
                             ->suffix('%')
                             ->default(0),
-                    ])->columns(2),
-
-                Section::make('التسعير السنوي')
-                    ->schema([
                         TextInput::make('yearly_price')
-                            ->label('السعر السنوي الأساسي')
+                            ->label('السعر السنوي')
                             ->numeric()
                             ->prefix('ج.م')
                             ->required(),
@@ -91,7 +92,19 @@ class PricingPackageResource extends BaseResource
                             ->numeric()
                             ->suffix('%')
                             ->default(0),
-                    ])->columns(2),
+                    ])
+                    ->columns(2)
+                    ->visible(fn ($get) => $get('type') === 'plan'),
+
+                Section::make('التسعير (باقة إضافية)')
+                    ->schema([
+                        TextInput::make('price')
+                            ->label('سعر الباقة')
+                            ->numeric()
+                            ->prefix('ج.م')
+                            ->required(),
+                    ])
+                    ->visible(fn ($get) => $get('type') === 'addon'),
 
                 Section::make('الحدود والمميزات')
                     ->schema([
@@ -100,17 +113,15 @@ class PricingPackageResource extends BaseResource
                             ->numeric()
                             ->default(0)
                             ->helperText('استخدم 0 لعدد غير محدود')
-                            ->required(),
+                            ->visible(fn ($get) => $get('type') === 'plan'),
                         TextInput::make('storage_minutes')
                             ->label('دقائق التخزين (فيديو)')
                             ->numeric()
-                            ->default(0)
-                            ->required(),
+                            ->default(0),
                         TextInput::make('delivery_minutes')
                             ->label('دقائق المشاهدة (فيديو)')
                             ->numeric()
-                            ->default(0)
-                            ->required(),
+                            ->default(0),
                         TextInput::make('overage_storage_price')
                             ->label('سعر الدقيقة الإضافية للتخزين')
                             ->numeric()
@@ -125,8 +136,8 @@ class PricingPackageResource extends BaseResource
                             ->label('المميزات')
                             ->schema([
                                 TextInput::make('feature')
-                                    ->label('الميزة')
-                                    ->required(),
+                                     ->label('الميزة')
+                                     ->required(),
                             ])
                             ->columnSpanFull()
                             ->createItemButtonLabel('إضافة ميزة'),
@@ -152,42 +163,53 @@ class PricingPackageResource extends BaseResource
     {
         return $table
             ->columns([
+                TextColumn::make('type')
+                    ->label('النوع')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'plan' => 'success',
+                        'addon' => 'warning',
+                        default => 'gray',
+                    })
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'plan' => 'أساسية',
+                        'addon' => 'إضافية',
+                        default => $state,
+                    }),
                 TextColumn::make('name_ar')
                     ->label('الاسم (عربي)')
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('price')
-                    ->label('السعر الشهري')
-                    ->money('EGP')
-                    ->sortable(),
-                TextColumn::make('half_yearly_price')
-                    ->label('السعر نصف السنوي')
-                    ->money('EGP')
-                    ->sortable(),
-                TextColumn::make('yearly_price')
-                    ->label('السعر السنوي')
+                    ->label('السعر')
                     ->money('EGP')
                     ->sortable(),
                 TextColumn::make('max_students')
                     ->label('الطلاب')
-                    ->formatStateUsing(fn ($state) => $state == 0 ? 'غير محدود' : $state),
+                    ->formatStateUsing(fn ($state) => $state == 0 ? 'غير محدود' : $state)
+                    ->visible(fn ($record) => $record?->type === 'plan'),
                 TextColumn::make('storage_minutes')
-                    ->label('تخزين (دقيقة)'),
+                    ->label('تخزين (د)')
+                    ->toggleable()
+                    ->formatStateUsing(fn ($state) => $state > 0 ? $state : '-'),
                 TextColumn::make('delivery_minutes')
-                    ->label('مشاهدة (دقيقة)'),
+                    ->label('مشاهدة (د)')
+                    ->toggleable()
+                    ->formatStateUsing(fn ($state) => $state > 0 ? $state : '-'),
                 IconColumn::make('is_active')
                     ->label('نشطة')
-                    ->boolean(),
-                IconColumn::make('is_popular')
-                    ->label('رائجة')
                     ->boolean(),
                 TextColumn::make('sort_order')
                     ->label('الترتيب')
                     ->sortable(),
             ])
             ->filters([
-                Tables\Filters\TernaryFilter::make('is_active')
-                    ->label('الحالة النشطة'),
+                Tables\Filters\SelectFilter::make('type')
+                    ->label('تصفية حسب النوع')
+                    ->options([
+                        'plan' => 'باقات أساسية',
+                        'addon' => 'باقات إضافية',
+                    ]),
             ])
             ->actions([
                 EditAction::make(),

@@ -13,6 +13,7 @@ class PricingPackage extends Model
     use HasFactory, HasUuids;
 
     protected $fillable = [
+        'type',
         'name_ar',
         'name_en',
         'max_students',
@@ -27,6 +28,7 @@ class PricingPackage extends Model
         'yearly_price',
         'yearly_discount_percentage',
         'features',
+        'video_bundles',
         'is_active',
         'is_popular',
         'sort_order',
@@ -34,6 +36,7 @@ class PricingPackage extends Model
 
     protected $casts = [
         'features' => 'array',
+        'video_bundles' => 'array',
         'price' => 'decimal:2',
         'discount_percentage' => 'decimal:2',
         'half_yearly_price' => 'decimal:2',
