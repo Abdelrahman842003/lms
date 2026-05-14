@@ -30,8 +30,12 @@ return new class extends Migration
             $table->boolean('is_unlimited_students')->default(false);
             $table->decimal('subscription_fee', 10, 2)->default(0);
             $table->decimal('paid_amount', 10, 2)->default(0);
-            $table->unsignedInteger('storage_limit_gb')->nullable();
-            $table->unsignedBigInteger('storage_used_bytes')->default(0);
+            // Video quota (minutes-based)
+            $table->unsignedInteger('storage_minutes_limit')->nullable()->comment('Max minutes of video storage allowed');
+            $table->unsignedInteger('storage_minutes_used')->default(0)->comment('Minutes of video currently stored');
+            $table->unsignedInteger('delivery_minutes_limit')->nullable()->comment('Max delivery minutes per month');
+            $table->unsignedInteger('delivery_minutes_used')->default(0)->comment('Delivery minutes used this period');
+            $table->unsignedBigInteger('storage_used_bytes')->default(0)->comment('Legacy: attachments bytes used');
             $table->decimal('discount_percent', 5, 2)->default(0);
             $table->string('discount_type', 20)->default('percent');
             $table->string('discount_scope', 20)->default('general');

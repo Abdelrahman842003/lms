@@ -187,6 +187,7 @@ export const DataTable: React.FC<DataTableProps> = ({
             <tr className="bg-white/5">
               {columns.map((column) => (
                 <th
+                  key={column.key}
                   className={`px-6 py-4 text-xs font-black uppercase tracking-wider text-gray-light border-b border-white/10 ${column.sortable ? 'cursor-pointer hover:text-white' : ''} ${column.className || ''}`}
                   onClick={() => column.sortable && handleSort(column.key)}
                 >

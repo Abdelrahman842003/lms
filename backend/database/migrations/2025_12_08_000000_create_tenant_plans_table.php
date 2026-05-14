@@ -19,9 +19,12 @@ return new class extends Migration
             $table->date('plan_expires_at')->nullable();
             $table->integer('plan_max_students')->nullable()->comment('Maximum number of students allowed');
             
-            // Storage
-            $table->unsignedInteger('storage_limit_gb')->nullable()->comment('Max storage in GB. null = unlimited');
-            $table->unsignedBigInteger('storage_used_bytes')->default(0)->comment('Total used storage in bytes');
+            // Storage & Delivery (Minutes-based)
+            $table->unsignedInteger('storage_minutes_limit')->nullable()->comment('Max minutes of video storage allowed');
+            $table->unsignedInteger('storage_minutes_used')->default(0)->comment('Minutes of video currently stored');
+            $table->unsignedInteger('delivery_minutes_limit')->nullable()->comment('Max delivery minutes per month');
+            $table->unsignedInteger('delivery_minutes_used')->default(0)->comment('Delivery minutes used this period');
+            $table->unsignedBigInteger('storage_used_bytes')->default(0)->comment('Legacy: attachments bytes used');
             
             // Logic Flags
             $table->boolean('is_unlimited_students')->default(false);

@@ -18,7 +18,10 @@ return new class extends Migration
             $table->string('name_ar');
             $table->string('name_en')->nullable();
             $table->integer('max_students')->default(0);
-            $table->integer('storage_limit_gb')->default(0);
+            $table->unsignedInteger('storage_minutes')->nullable()->comment('Included storage minutes per month');
+            $table->unsignedInteger('delivery_minutes')->nullable()->comment('Included delivery minutes per month');
+            $table->decimal('overage_storage_price', 10, 2)->nullable()->comment('Price per extra storage minute (EGP)');
+            $table->decimal('overage_delivery_price', 10, 2)->nullable()->comment('Price per extra delivery minute (EGP)');
             $table->decimal('price', 10, 2)->default(0.00);
             $table->decimal('discount_percentage', 10, 2)->nullable();
             $table->decimal('half_yearly_price', 10, 2)->default(0.00);

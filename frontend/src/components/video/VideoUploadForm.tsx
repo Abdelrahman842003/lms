@@ -317,7 +317,7 @@ export function VideoUploadForm({
                       {PHASE_LABELS[uploadState.phase] ?? 'جاري الرفع...'}
                     </span>
                     <span className="text-xs text-gray-light/60">
-                      جزء {uploadState.currentPart} من {uploadState.totalParts}
+                      {(uploadState.uploadedBytes / 1024 / 1024).toFixed(1)} MB من {(uploadState.totalBytes / 1024 / 1024).toFixed(1)} MB
                     </span>
                   </div>
                   <span className="text-3xl font-black text-white tabular-nums">{uploadState.progress}%</span>

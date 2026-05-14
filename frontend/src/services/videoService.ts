@@ -48,28 +48,7 @@ export async function initiateAcademyUpload(
   });
 }
 
-/**
- * Step 2 — Complete a multipart upload.
- * Tells the server all parts have been PUT to R2; server fetches ETags via ListParts
- * and calls CompleteMultipartUpload directly — no ETags needed from the client.
- */
-export async function completeTeacherUpload(
-  sessionId: string,
-): Promise<CompleteUploadResponse> {
-  return fetchApi<CompleteUploadResponse>('/teacher/videos/complete-upload', {
-    method: 'POST',
-    body: JSON.stringify({ session_id: sessionId }),
-  });
-}
 
-export async function completeAcademyUpload(
-  sessionId: string,
-): Promise<CompleteUploadResponse> {
-  return fetchApi<CompleteUploadResponse>('/academy/videos/complete-upload', {
-    method: 'POST',
-    body: JSON.stringify({ session_id: sessionId }),
-  });
-}
 
 /**
  * Abort — call when user cancels or an unrecoverable error occurs.

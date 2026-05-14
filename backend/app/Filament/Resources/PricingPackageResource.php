@@ -101,11 +101,26 @@ class PricingPackageResource extends BaseResource
                             ->default(0)
                             ->helperText('استخدم 0 لعدد غير محدود')
                             ->required(),
-                        TextInput::make('storage_limit_gb')
-                            ->label('مساحة التخزين (GB)')
+                        TextInput::make('storage_minutes')
+                            ->label('دقائق التخزين (فيديو)')
                             ->numeric()
                             ->default(0)
                             ->required(),
+                        TextInput::make('delivery_minutes')
+                            ->label('دقائق المشاهدة (فيديو)')
+                            ->numeric()
+                            ->default(0)
+                            ->required(),
+                        TextInput::make('overage_storage_price')
+                            ->label('سعر الدقيقة الإضافية للتخزين')
+                            ->numeric()
+                            ->prefix('ج.م')
+                            ->default(0.50),
+                        TextInput::make('overage_delivery_price')
+                            ->label('سعر الدقيقة الإضافية للمشاهدة')
+                            ->numeric()
+                            ->prefix('ج.م')
+                            ->default(0.10),
                         Repeater::make('features')
                             ->label('المميزات')
                             ->schema([
@@ -156,9 +171,10 @@ class PricingPackageResource extends BaseResource
                 TextColumn::make('max_students')
                     ->label('الطلاب')
                     ->formatStateUsing(fn ($state) => $state == 0 ? 'غير محدود' : $state),
-                TextColumn::make('storage_limit_gb')
-                    ->label('المساحة')
-                    ->suffix(' GB'),
+                TextColumn::make('storage_minutes')
+                    ->label('تخزين (دقيقة)'),
+                TextColumn::make('delivery_minutes')
+                    ->label('مشاهدة (دقيقة)'),
                 IconColumn::make('is_active')
                     ->label('نشطة')
                     ->boolean(),

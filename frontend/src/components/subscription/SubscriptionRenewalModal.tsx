@@ -10,9 +10,11 @@ interface SubscriptionRenewalModalProps {
   currentPlanSelection: string;
   currentPlanLabel?: string;
   currentSeatsLimit: number | null;
-  currentStorageLimitGb: number | null;
+  currentStorageLimitMinutes: number;
+  currentDeliveryLimitMinutes: number;
   pricePerSeat: number;
-  pricePerStorageGb: number;
+  pricePerStorageMinute: number;
+  pricePerDeliveryMinute: number;
   isLoading?: boolean;
 }
 
@@ -24,9 +26,11 @@ export default function SubscriptionRenewalModal({
   currentPlanSelection,
   currentPlanLabel,
   currentSeatsLimit,
-  currentStorageLimitGb,
+  currentStorageLimitMinutes,
+  currentDeliveryLimitMinutes,
   pricePerSeat,
-  pricePerStorageGb,
+  pricePerStorageMinute,
+  pricePerDeliveryMinute,
   isLoading = false,
 }: SubscriptionRenewalModalProps) {
   const [selectedPlanCode, setSelectedPlanCode] = useState<string>('');
@@ -35,7 +39,8 @@ export default function SubscriptionRenewalModal({
   const [upgradeSeats, setUpgradeSeats] = useState<boolean>(false);
   const [upgradeStorage, setUpgradeStorage] = useState<boolean>(false);
   const [newSeatsLimit, setNewSeatsLimit] = useState<string>('');
-  const [newStorageLimitGb, setNewStorageLimitGb] = useState<string>('');
+  const [newStorageLimitMinutes, setNewStorageLimitMinutes] = useState<string>('');
+  const [newDeliveryLimitMinutes, setNewDeliveryLimitMinutes] = useState<string>('');
   const [validationError, setValidationError] = useState<string>('');
 
   const activePlanSelection = changePlan ? selectedPlanCode : currentPlanSelection;
@@ -68,12 +73,22 @@ export default function SubscriptionRenewalModal({
   }, [upgradeSeats, currentSeatsLimit, months, newSeatsLimit, pricePerSeat]);
 
   const storagePriceDifference = useMemo(() => {
-    if (!upgradeStorage || !currentStorageLimitGb || currentStorageLimitGb <= 0 || months <= 0) return 0;
-    const nextStorage = parseInt(newStorageLimitGb || '0', 10);
-    if (!Number.isFinite(nextStorage) || nextStorage <= currentStorageLimitGb) return 0;
+    if (!upgradeStorage || months <= 0) return 0;
+    
+    const nextStorage = parseInt(newStorageLimitMinutes || '0', 10);
+    const nextDelivery = parseInt(newDeliveryLimitMinutes || '0', 10);
+    
+    let diff = 0;
+    if (Number.isFinite(nextStorage) && nextStorage > currentStorageLimitMinutes) {
+      diff += (nextStorage - currentStorageLimitMinutes) * pricePerStorageMinute;
+    }
+    
+    if (Number.isFinite(nextDelivery) && nextDelivery > currentDeliveryLimitMinutes) {
+      diff += (nextDelivery - currentDeliveryLimitMinutes) * pricePerDeliveryMinute;
+    }
 
-    return (nextStorage - currentStorageLimitGb) * pricePerStorageGb * months;
-  }, [upgradeStorage, currentStorageLimitGb, months, newStorageLimitGb, pricePerStorageGb]);
+    return diff * months;
+  }, [upgradeStorage, currentStorageLimitMinutes, currentDeliveryLimitMinutes, months, newStorageLimitMinutes, newDeliveryLimitMinutes, pricePerStorageMinute, pricePerDeliveryMinute]);
 
   const totalPriceDifference = useMemo(
     () => Number((seatPriceDifference + storagePriceDifference).toFixed(2)),
@@ -81,7 +96,7 @@ export default function SubscriptionRenewalModal({
   );
 
   const canUpgradeSeats = currentSeatsLimit !== null && currentSeatsLimit > 0;
-  const canUpgradeStorage = currentStorageLimitGb !== null && currentStorageLimitGb > 0;
+  const canUpgradeStorage = true; // Minutes are always upgradable
 
   useEffect(() => {
     if (!isOpen) {
@@ -91,7 +106,8 @@ export default function SubscriptionRenewalModal({
       setUpgradeSeats(false);
       setUpgradeStorage(false);
       setNewSeatsLimit('');
-      setNewStorageLimitGb('');
+      setNewStorageLimitMinutes('');
+      setNewDeliveryLimitMinutes('');
       setValidationError('');
     }
   }, [isOpen]);
@@ -117,14 +133,21 @@ export default function SubscriptionRenewalModal({
     }
 
     if (upgradeStorage) {
-      if (!canUpgradeStorage) {
-        setValidationError('لا يمكن ترقية مساحة التخزين لأن الباقة الحالية غير محدودة.');
+      const nextStorage = parseInt(newStorageLimitMinutes || '0', 10);
+      const nextDelivery = parseInt(newDeliveryLimitMinutes || '0', 10);
+      
+      if (!Number.isFinite(nextStorage) && !Number.isFinite(nextDelivery)) {
+        setValidationError('يجب إدخال عدد الدقائق الجديد.');
         return;
       }
 
-      const nextStorage = parseInt(newStorageLimitGb || '0', 10);
-      if (!Number.isFinite(nextStorage) || nextStorage <= (currentStorageLimitGb ?? 0)) {
+      if (nextStorage > 0 && nextStorage <= currentStorageLimitMinutes) {
         setValidationError('حد التخزين الجديد يجب أن يكون أكبر من الحد الحالي.');
+        return;
+      }
+
+      if (nextDelivery > 0 && nextDelivery <= currentDeliveryLimitMinutes) {
+        setValidationError('حد المشاهدة الجديد يجب أن يكون أكبر من الحد الحالي.');
         return;
       }
     }
@@ -137,7 +160,8 @@ export default function SubscriptionRenewalModal({
       upgrade_seats: upgradeSeats,
       upgrade_storage: upgradeStorage,
       new_seats_limit: upgradeSeats ? parseInt(newSeatsLimit, 10) : null,
-      new_storage_limit_gb: upgradeStorage ? parseInt(newStorageLimitGb, 10) : null,
+      new_storage_minutes_limit: upgradeStorage ? parseInt(newStorageLimitMinutes, 10) : null,
+      new_delivery_minutes_limit: upgradeStorage ? parseInt(newDeliveryLimitMinutes, 10) : null,
     };
 
     await onSubmit(payload);
@@ -163,8 +187,9 @@ export default function SubscriptionRenewalModal({
            </div>
            <div className="flex items-center gap-3">
               <div className="text-right">
-                 <p className="text-[10px] font-bold text-gray-light/40">الكراسي: {currentSeatsLimit ?? '∞'}</p>
-                 <p className="text-[10px] font-bold text-gray-light/40">التخزين: {currentStorageLimitGb ? `${currentStorageLimitGb}GB` : '∞'}</p>
+                  <p className="text-[10px] font-bold text-gray-light/40">الكراسي: {currentSeatsLimit ?? "∞"}</p>
+                  <p className="text-[10px] font-bold text-gray-light/40">تخزين: {currentStorageLimitMinutes} د</p>
+                  <p className="text-[10px] font-bold text-gray-light/40">مشاهدة: {currentDeliveryLimitMinutes} د</p>
               </div>
               <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
                  <Icon name="shield-check" className="text-primary text-lg" />
@@ -242,27 +267,43 @@ export default function SubscriptionRenewalModal({
               )}
            </div>
 
-           {/* Storage */}
+           {/* Storage & Delivery */}
            <div className="space-y-4">
               <div className="flex items-center justify-between">
                  <div className="flex items-center gap-2">
                     <Icon name="cloud-upload-alt" size="sm" className="text-gray-light/40" />
-                    <span className="text-xs font-black text-white">ترقية المساحة</span>
+                    <span className="text-xs font-black text-white">ترقية الدقائق</span>
                  </div>
                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" checked={upgradeStorage} onChange={(e) => setUpgradeStorage(e.target.checked)} disabled={!canUpgradeStorage} className="sr-only peer" />
-                    <div className={`w-10 h-5 bg-white/5 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500 ${!canUpgradeStorage && 'opacity-20'}`}></div>
+                    <input type="checkbox" checked={upgradeStorage} onChange={(e) => setUpgradeStorage(e.target.checked)} className="sr-only peer" />
+                    <div className={`w-10 h-5 bg-white/5 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500`}></div>
                  </label>
               </div>
               {upgradeStorage && (
-                 <input
-                    type="number"
-                    min={(currentStorageLimitGb ?? 0) + 1}
-                    placeholder="المساحة (GB)"
-                    value={newStorageLimitGb}
-                    onChange={(e) => setNewStorageLimitGb(e.target.value)}
-                    className="w-full bg-slate-900 border border-emerald-500/20 rounded-xl px-4 py-3 text-white font-black text-sm focus:border-emerald-500/50 outline-none transition-all placeholder:text-gray-light/10"
-                 />
+                 <div className="space-y-3 animate-in fade-in slide-in-from-top-1 duration-300">
+                    <div className="space-y-1">
+                       <label className="text-[9px] font-black text-gray-light/20 uppercase mr-1">دقائق التخزين الجديدة</label>
+                       <input
+                          type="number"
+                          min={currentStorageLimitMinutes}
+                          placeholder="مثلاً 1000 دقيقة"
+                          value={newStorageLimitMinutes}
+                          onChange={(e) => setNewStorageLimitMinutes(e.target.value)}
+                          className="w-full bg-slate-900 border border-emerald-500/20 rounded-xl px-4 py-3 text-white font-black text-sm focus:border-emerald-500/50 outline-none transition-all placeholder:text-gray-light/10"
+                       />
+                    </div>
+                    <div className="space-y-1">
+                       <label className="text-[9px] font-black text-gray-light/20 uppercase mr-1">دقائق المشاهدة الجديدة</label>
+                       <input
+                          type="number"
+                          min={currentDeliveryLimitMinutes}
+                          placeholder="مثلاً 5000 دقيقة"
+                          value={newDeliveryLimitMinutes}
+                          onChange={(e) => setNewDeliveryLimitMinutes(e.target.value)}
+                          className="w-full bg-slate-900 border border-blue-500/20 rounded-xl px-4 py-3 text-white font-black text-sm focus:border-blue-500/50 outline-none transition-all placeholder:text-gray-light/10"
+                       />
+                    </div>
+                 </div>
               )}
            </div>
         </div>

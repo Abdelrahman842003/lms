@@ -1,11 +1,10 @@
 export interface StorageSnapshot {
-  used_bytes: number;
-  used_gb: number;
-  limit_gb: number | null;
-  remaining_bytes: number | null;
-  remaining_gb: number | null;
-  percentage: number;
-  is_unlimited: boolean;
+  storage_limit_minutes: number;
+  storage_used_minutes: number;
+  delivery_limit_minutes: number;
+  delivery_used_minutes: number;
+  storage_percentage: number;
+  delivery_percentage: number;
 }
 
 export interface PlanOption {
@@ -28,7 +27,8 @@ export interface SubscriptionSnapshot {
   seats_limit: number | null;
   is_unlimited: boolean;
   price_per_seat: number;
-  price_per_storage_gb?: number;
+  price_per_storage_minute: number;
+  price_per_delivery_minute: number;
   amount_due: number;
   amount_paid: number;
   storage?: StorageSnapshot | null;
@@ -43,8 +43,10 @@ export interface PendingRenewalRequest {
   notes?: string | null;
   upgrade_seats_from?: number | null;
   upgrade_seats_to?: number | null;
-  upgrade_storage_from_gb?: number | null;
-  upgrade_storage_to_gb?: number | null;
+  upgrade_storage_minutes_from?: number | null;
+  upgrade_storage_minutes_to?: number | null;
+  upgrade_delivery_minutes_from?: number | null;
+  upgrade_delivery_minutes_to?: number | null;
   upgrade_price_difference?: number;
   created_at?: string | null;
 }
@@ -61,5 +63,6 @@ export interface SubscriptionRenewalRequest {
   upgrade_seats?: boolean;
   upgrade_storage?: boolean;
   new_seats_limit?: number | null;
-  new_storage_limit_gb?: number | null;
+  new_storage_minutes_limit?: number | null;
+  new_delivery_minutes_limit?: number | null;
 }

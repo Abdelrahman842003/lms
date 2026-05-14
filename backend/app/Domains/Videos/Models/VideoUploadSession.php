@@ -19,12 +19,11 @@ class VideoUploadSession extends Model
         'file_fingerprint',
         'uploader_type',
         'uploader_id',
-        'r2_upload_id',
-        'object_key',
+        'stream_uid',
+        'tus_upload_url',
         'declared_filename',
         'declared_mime',
         'declared_size_bytes',
-        'total_parts',
         'initiated_at',
         'completed_at',
         'aborted_at',
@@ -50,10 +49,7 @@ class VideoUploadSession extends Model
         return $this->belongsTo(Video::class);
     }
 
-    public function parts(): \Illuminate\Database\Eloquent\Relations\HasMany
-    {
-        return $this->hasMany(VideoUploadPart::class, 'session_id');
-    }
+
 
     public function uploader(): MorphTo
     {

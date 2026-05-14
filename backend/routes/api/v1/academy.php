@@ -141,14 +141,10 @@ Route::middleware(['auth:sanctum', EnsureActiveSubscription::class])->prefix('ac
     Route::middleware('throttle:video-upload')->group(function () {
         Route::post('videos/initiate-upload', [VideoUploadController::class, 'initiateUpload']);
         Route::post('videos/report-part-success', [VideoUploadController::class, 'reportPartSuccess']);
-        Route::post('videos/pause-upload', [VideoUploadController::class, 'pauseUpload']);
-        Route::post('videos/complete-upload', [VideoUploadController::class, 'completeUpload']);
-        Route::post('videos/resume-upload/{sessionId}', [VideoUploadController::class, 'resumeUpload']);
         Route::post('videos/{video}/attachments/initiate-direct-upload', [VideoUploadController::class, 'initiateAttachmentUploads']);
         Route::post('videos/{video}/attachments/complete-direct-upload', [VideoUploadController::class, 'completeAttachmentUploads']);
     });
     Route::delete('videos/abort-upload', [VideoUploadController::class, 'abortUpload']);
-    Route::get('videos/upload-status/{sessionId}', [VideoUploadController::class, 'uploadStatus']);
     // Videos CRUD (store no longer accepts video bytes — use initiate-upload instead)
     Route::get('videos', [VideoController::class, 'index']);
     Route::get('videos/{video}', [VideoController::class, 'show']);

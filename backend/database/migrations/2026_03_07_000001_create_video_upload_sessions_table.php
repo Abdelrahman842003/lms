@@ -20,19 +20,20 @@ return new class extends Migration
             $table->string('uploader_type', 64);
             $table->uuid('uploader_id');
 
-            // R2 multipart identifiers
-            $table->string('r2_upload_id', 512);       // UploadId from createMultipartUpload
-            $table->string('object_key', 1024);         // The R2 object key (path)
+            // Cloudflare Stream identifiers (TUS protocol)
+            $table->string('stream_uid', 64)->nullable()->index()->comment('Cloudflare Stream video UID');
+            $table->string('tus_upload_url', 2048)->nullable()->comment('TUS direct upload URL from Stream');
+
+            // File fingerprint for deduplication / resume detection
             $table->string('file_fingerprint', 512)->nullable()->index();
 
-            // File metadata declared at initiation (not trusted blindly)
+            // File metadata declared at initiation
             $table->string('declared_filename', 512)->nullable();
             $table->string('declared_mime', 128)->nullable();
             $table->unsignedBigInteger('declared_size_bytes')->nullable();
-            $table->unsignedInteger('total_parts')->nullable();
 
-            // Status lifecycle: draft → uploading → completing → completed | aborted | failed
-            $table->string('status', 32)->default('draft')->index();
+            // Status lifecycle: uploading → completed | aborted | failed
+            $table->string('status', 32)->default('uploading')->index();
 
             // Timestamps for audit
             $table->timestamp('initiated_at')->useCurrent();
@@ -49,27 +50,12 @@ return new class extends Migration
             $table->index(['video_id', 'status']);
             $table->index('created_at');
         });
-
-        Schema::create('video_upload_parts', function (Blueprint $table) {
-            $table->uuid('id')->primary();
-            $table->foreignUuid('session_id')->constrained('video_upload_sessions')->cascadeOnDelete();
-            
-            $table->unsignedInteger('part_number');
-            $table->unsignedBigInteger('size_bytes');
-            $table->string('status', 32)->default('pending'); // pending, uploaded, failed
-            $table->string('etag', 512)->nullable();
-            $table->unsignedTinyInteger('upload_attempts')->default(0);
-
-            $table->timestamps();
-
-            $table->unique(['session_id', 'part_number']);
-            $table->index(['session_id', 'status']);
-        });
+        // Note: video_upload_parts table is intentionally NOT created.
+        // TUS protocol handles chunking internally on Cloudflare Stream.
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('video_upload_parts');
         Schema::dropIfExists('video_upload_sessions');
     }
 };

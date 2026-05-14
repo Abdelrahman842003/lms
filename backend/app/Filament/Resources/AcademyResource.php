@@ -11,6 +11,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Placeholder;
@@ -51,6 +52,7 @@ class AcademyResource extends BaseResource
             ->components([
                 Section::make('المعلومات الأساسية')
                     ->schema([
+                        Hidden::make('id'),
                         TextInput::make('name')
                             ->label('اسم الأكاديمية')
                             ->required()
@@ -147,7 +149,7 @@ class AcademyResource extends BaseResource
                                 'annual' => 'سنوي (1 سنة)',
                                 'custom' => 'مخصص (Custom)',
                             ])
-                            ->default('trial')
+                            ->default(null)
                             ->reactive()
                             ->disabled(fn ($get, string $operation): bool => $operation === 'edit' && ! (bool) ($get('update_subscription_duration') ?? false))
                             ->dehydrated(false)
@@ -208,22 +210,27 @@ class AcademyResource extends BaseResource
                                     // Calculate fee
                                     $students = (int) $get('plan_max_students');
                                     try {
-                                        $pricePerStudent   = (float) Setting::where('key', 'academy_price_per_student')->value('value') ?: 40;
-                                        $storagePricePerGb = (float) Setting::where('key', 'academy_storage_price_per_gb')->value('value') ?: 0;
+                                        $pricePerStudent = \App\Domains\Application\Services\HelperService::getAcademyPricePerStudent();
+                                        $storagePriceMin = \App\Domains\Application\Services\HelperService::getAcademyStoragePricePerMinute();
+                                        $deliveryPriceMin = \App\Domains\Application\Services\HelperService::getAcademyDeliveryPricePerMinute();
                                     } catch (\Exception $e) {
-                                        $pricePerStudent   = 40;
-                                        $storagePricePerGb = 0;
+                                        $pricePerStudent = 40;
+                                        $storagePriceMin = 0.5;
+                                        $deliveryPriceMin = 0.1;
                                     }
-                                    $storageLimitGb = (int) ($get('storage_limit_gb') ?? 0);
+                                    $storageMinutes = (int) ($get('storage_minutes_limit') ?? 0);
+                                    $deliveryMinutes = (int) ($get('delivery_minutes_limit') ?? 0);
+                                    
                                     $seatsAmount    = $students * $months * $pricePerStudent;
-                                    $storageAmount  = $storageLimitGb * $storagePricePerGb * $months;
-                                    $gross          = $seatsAmount + $storageAmount;
+                                    $streamAmount   = ($storageMinutes * $storagePriceMin + $deliveryMinutes * $deliveryPriceMin) * $months;
+                                    $gross          = $seatsAmount + $streamAmount;
+                                    
                                     $discountValue = (float) ($get('discount_percent') ?? 0);
                                     $discountType = (string) ($get('discount_type') ?? 'percent');
                                     $discountScope = (string) ($get('discount_scope') ?? 'general');
                                     $discountableAmount = match ($discountScope) {
                                         'students' => $seatsAmount,
-                                        'storage' => $storageAmount,
+                                        'storage' => $streamAmount,
                                         default => $gross,
                                     };
                                     $discountAmount = $discountType === 'fixed'
@@ -243,7 +250,7 @@ class AcademyResource extends BaseResource
                             }),
 
                         // Hidden fields to store actual model data
-                        TextInput::make('plan_type')->default('trial')->hidden()->dehydrated(),
+                        TextInput::make('plan_type')->hidden()->dehydrated(),
                         TextInput::make('subscription_period')->hidden()->dehydrated(),
 
                         TextInput::make('custom_period_months')
@@ -261,22 +268,27 @@ class AcademyResource extends BaseResource
                                     // Calculate fee
                                     $students = (int) $get('plan_max_students');
                                     try {
-                                        $pricePerStudent   = (float) Setting::where('key', 'academy_price_per_student')->value('value') ?: 40;
-                                        $storagePricePerGb = (float) Setting::where('key', 'academy_storage_price_per_gb')->value('value') ?: 0;
+                                        $pricePerStudent = \App\Domains\Application\Services\HelperService::getAcademyPricePerStudent();
+                                        $storagePriceMin = \App\Domains\Application\Services\HelperService::getAcademyStoragePricePerMinute();
+                                        $deliveryPriceMin = \App\Domains\Application\Services\HelperService::getAcademyDeliveryPricePerMinute();
                                     } catch (\Exception $e) {
-                                        $pricePerStudent   = 40;
-                                        $storagePricePerGb = 0;
+                                        $pricePerStudent = 40;
+                                        $storagePriceMin = 0.5;
+                                        $deliveryPriceMin = 0.1;
                                     }
-                                    $storageLimitGb = (int) ($get('storage_limit_gb') ?? 0);
+                                    $storageMinutes = (int) ($get('storage_minutes_limit') ?? 0);
+                                    $deliveryMinutes = (int) ($get('delivery_minutes_limit') ?? 0);
+                                    
                                     $seatsAmount    = $students * $months * $pricePerStudent;
-                                    $storageAmount  = $storageLimitGb * $storagePricePerGb * $months;
-                                    $gross          = $seatsAmount + $storageAmount;
+                                    $streamAmount   = ($storageMinutes * $storagePriceMin + $deliveryMinutes * $deliveryPriceMin) * $months;
+                                    $gross          = $seatsAmount + $streamAmount;
+                                    
                                     $discountValue = (float) ($get('discount_percent') ?? 0);
                                     $discountType = (string) ($get('discount_type') ?? 'percent');
                                     $discountScope = (string) ($get('discount_scope') ?? 'general');
                                     $discountableAmount = match ($discountScope) {
                                         'students' => $seatsAmount,
-                                        'storage' => $storageAmount,
+                                        'storage' => $streamAmount,
                                         default => $gross,
                                     };
                                     $discountAmount = $discountType === 'fixed'
@@ -357,7 +369,7 @@ class AcademyResource extends BaseResource
                             ->prefix('ج.م')
                             ->default(0)
                             ->reactive()
-                            ->helperText(fn ($get): string => ($get('update_subscription_duration') === false && ! empty($get('plan_expires_at')))
+                            ->helperText(fn ($get, $operation): string => ($operation === 'edit' && $get('update_subscription_duration') === false && ! empty($get('plan_expires_at')))
                                 ? 'الحساب مبني على المدة المتبقية: ' . self::resolveRemainingMonthsFromExpiry($get('plan_expires_at')) . ' شهر.'
                                 : 'الحساب مبني على مدة الاشتراك المحددة حالياً.')
                             ->afterStateUpdated(function ($state, $get, $set) {
@@ -421,8 +433,8 @@ class AcademyResource extends BaseResource
                                 $discountVal = (float) ($record->discount_percent ?? 0);
                                 $discountType = (string) ($record->discount_type ?? 'percent');
                                 $discountScope = (string) ($record->discount_scope ?? 'general');
-                                $storageGb   = $record->storage_limit_gb;
-                                $storage     = self::formatStorageLabel($storageGb);
+                                $storageMin  = $record->storage_minutes_limit ?? 'غير محدود';
+                                $deliveryMin = $record->delivery_minutes_limit ?? 'غير محدود';
                                 $paid        = (float) ($record->paid_amount ?? 0);
                                 $remaining   = round($feeAfter - $paid, 2);
 
@@ -437,62 +449,138 @@ class AcademyResource extends BaseResource
 
                                 $note = "نوع الاشتراك: {$period}\n" .
                                         "الحد الأقصى للطلاب: {$limit}\n" .
-                                        "حد التخزين: {$storage}\n" .
+                                        "تخزين الفيديو: {$storageMin} دقيقة\n" .
+                                        "مشاهدة الفيديو: {$deliveryMin} دقيقة\n" .
                                         ($discountVal > 0 ? "الخصم ({$scopeLabel}): {$discountLabel}\n" : '') .
                                         "الرسوم بعد الخصم: {$feeAfter} ج.م\n" .
                                         "المدفوع: {$paid} ج.م\n" .
-                    "لم يدفع: {$remaining} ج.م\n" .
+                                        "لم يدفع: {$remaining} ج.م\n" .
                                         "المتبقي: {$remaining} ج.م";
                                 $component->state($note);
                             }),
 
-                        TextInput::make('storage_limit_gb')
-                            ->label('حد التخزين (جيجابايت)')
+                        TextInput::make('storage_minutes_limit')
+                            ->label('حد دقائق التخزين (فيديو)')
                             ->numeric()
                             ->minValue(1)
                             ->nullable()
                             ->placeholder('اتركه فارغاً = غير محدود')
-                            ->helperText('الحد الأقصى لمساحة التخزين على R2. اتركه فارغاً لتخزين غير محدود.')
-                            ->suffix('GB')
+                            ->helperText('الحد الأقصى لدقائق تخزين الفيديوهات على Stream.')
+                            ->suffix('دقيقة')
                             ->reactive()
                             ->afterStateUpdated(function ($state, $get, $set) {
                                 $months = self::resolveBillingMonths(fn (string $key) => $get($key));
                                 if ($months > 0) {
                                     try {
-                                        $pricePerStudent   = (float) Setting::where('key', 'academy_price_per_student')->value('value') ?: 40;
-                                        $storagePricePerGb = (float) Setting::where('key', 'academy_storage_price_per_gb')->value('value') ?: 0;
+                                        $pricePerStudent = \App\Domains\Application\Services\HelperService::getAcademyPricePerStudent();
+                                        $storagePriceMin = \App\Domains\Application\Services\HelperService::getAcademyStoragePricePerMinute();
+                                        $deliveryPriceMin = \App\Domains\Application\Services\HelperService::getAcademyDeliveryPricePerMinute();
                                     } catch (\Exception $e) {
-                                        $pricePerStudent   = 40;
-                                        $storagePricePerGb = 0;
+                                        $pricePerStudent = 40;
+                                        $storagePriceMin = 0.5;
+                                        $deliveryPriceMin = 0.1;
                                     }
-                                    $students       = (int) $get('plan_max_students');
-                                    $storageLimitGb = (int) ($state ?? 0);
+                                    
+                                    $students = (int) $get('plan_max_students');
+                                    $storageMinutes = (int) ($state ?? 0);
+                                    $deliveryMinutes = (int) ($get('delivery_minutes_limit') ?? 0);
+                                    
                                     $seatsAmount    = $students * $months * $pricePerStudent;
-                                    $storageAmount  = $storageLimitGb * $storagePricePerGb * $months;
-                                    $gross          = $seatsAmount + $storageAmount;
+                                    $streamAmount   = ($storageMinutes * $storagePriceMin + $deliveryMinutes * $deliveryPriceMin) * $months;
+                                    $gross          = $seatsAmount + $streamAmount;
+                                    
                                     $discountValue = (float) ($get('discount_percent') ?? 0);
                                     $discountType = (string) ($get('discount_type') ?? 'percent');
                                     $discountScope = (string) ($get('discount_scope') ?? 'general');
                                     $discountableAmount = match ($discountScope) {
                                         'students' => $seatsAmount,
-                                        'storage' => $storageAmount,
+                                        'storage' => $streamAmount,
                                         default => $gross,
                                     };
                                     $discountAmount = $discountType === 'fixed'
                                         ? min($discountableAmount, max(0, $discountValue))
                                         : ($discountableAmount * max(0, min(100, $discountValue)) / 100);
-                                    $total          = max(0, round($gross - $discountAmount, 2));
+                                    $total = max(0, round($gross - $discountAmount, 2));
                                     $set('subscription_fee', $total);
                                     self::syncBillingNotes(
                                         fn (string $key) => $get($key),
                                         fn (string $key, mixed $value): mixed => $set($key, $value),
-                                        [
-                                            'storage_limit_gb' => $state,
-                                            'subscription_fee' => $total,
-                                        ]
+                                        ['subscription_fee' => $total]
                                     );
                                 }
                             }),
+
+                        TextInput::make('delivery_minutes_limit')
+                            ->label('حد دقائق المشاهدة (فيديو)')
+                            ->numeric()
+                            ->minValue(1)
+                            ->nullable()
+                            ->placeholder('اتركه فارغاً = غير محدود')
+                            ->helperText('الحد الأقصى لدقائق مشاهدة الفيديوهات المسموح بها.')
+                            ->suffix('دقيقة')
+                            ->reactive()
+                            ->afterStateUpdated(function ($state, $get, $set) {
+                                $months = self::resolveBillingMonths(fn (string $key) => $get($key));
+                                if ($months > 0) {
+                                    try {
+                                        $pricePerStudent = \App\Domains\Application\Services\HelperService::getAcademyPricePerStudent();
+                                        $storagePriceMin = \App\Domains\Application\Services\HelperService::getAcademyStoragePricePerMinute();
+                                        $deliveryPriceMin = \App\Domains\Application\Services\HelperService::getAcademyDeliveryPricePerMinute();
+                                    } catch (\Exception $e) {
+                                        $pricePerStudent = 40;
+                                        $storagePriceMin = 0.5;
+                                        $deliveryPriceMin = 0.1;
+                                    }
+                                    
+                                    $students = (int) $get('plan_max_students');
+                                    $storageMinutes = (int) ($get('storage_minutes_limit') ?? 0);
+                                    $deliveryMinutes = (int) ($state ?? 0);
+                                    
+                                    $seatsAmount    = $students * $months * $pricePerStudent;
+                                    $streamAmount   = ($storageMinutes * $storagePriceMin + $deliveryMinutes * $deliveryPriceMin) * $months;
+                                    $gross          = $seatsAmount + $streamAmount;
+                                    
+                                    $discountValue = (float) ($get('discount_percent') ?? 0);
+                                    $discountType = (string) ($get('discount_type') ?? 'percent');
+                                    $discountScope = (string) ($get('discount_scope') ?? 'general');
+                                    $discountableAmount = match ($discountScope) {
+                                        'students' => $seatsAmount,
+                                        'storage' => $streamAmount,
+                                        default => $gross,
+                                    };
+                                    $discountAmount = $discountType === 'fixed'
+                                        ? min($discountableAmount, max(0, $discountValue))
+                                        : ($discountableAmount * max(0, min(100, $discountValue)) / 100);
+                                    $total = max(0, round($gross - $discountAmount, 2));
+                                    $set('subscription_fee', $total);
+                                    self::syncBillingNotes(
+                                        fn (string $key) => $get($key),
+                                        fn (string $key, mixed $value): mixed => $set($key, $value),
+                                        ['subscription_fee' => $total]
+                                    );
+                                }
+                            }),
+
+                        TextInput::make('storage_minutes_used')
+                            ->label('استهلاك تخزين الفيديو')
+                            ->numeric()
+                            ->disabled()
+                            ->suffix('دقيقة'),
+
+                        TextInput::make('delivery_minutes_limit')
+                            ->label('حد دقائق المشاهدة (فيديو)')
+                            ->numeric()
+                            ->minValue(1)
+                            ->nullable()
+                            ->placeholder('اتركه فارغاً = غير محدود')
+                            ->helperText('الحد الأقصى لدقائق مشاهدة الفيديوهات المسموح بها.')
+                            ->suffix('دقيقة'),
+
+                        TextInput::make('delivery_minutes_used')
+                            ->label('استهلاك مشاهدة الفيديو')
+                            ->numeric()
+                            ->disabled()
+                            ->suffix('دقيقة'),
 
                         Select::make('discount_type')
                             ->label('نوع الخصم')
@@ -509,25 +597,19 @@ class AcademyResource extends BaseResource
                                     return;
                                 }
 
-                                try {
-                                    $pricePerStudent   = (float) Setting::where('key', 'academy_price_per_student')->value('value') ?: 40;
-                                    $storagePricePerGb = (float) Setting::where('key', 'academy_storage_price_per_gb')->value('value') ?: 0;
-                                } catch (\Exception $e) {
-                                    $pricePerStudent   = 40;
-                                    $storagePricePerGb = 0;
-                                }
-
-                                $students       = (int) $get('plan_max_students');
-                                $storageLimitGb = (int) ($get('storage_limit_gb') ?? 0);
+                                $storageMinutes = (int) ($get('storage_minutes_limit') ?? 0);
+                                $deliveryMinutes = (int) ($get('delivery_minutes_limit') ?? 0);
+                                
+                                $students = (int) ($get('plan_max_students') ?? 0);
                                 $seatsAmount    = $students * $months * $pricePerStudent;
-                                $storageAmount  = $storageLimitGb * $storagePricePerGb * $months;
-                                $gross          = $seatsAmount + $storageAmount;
-
+                                $streamAmount   = ($storageMinutes * $storagePriceMin + $deliveryMinutes * $deliveryPriceMin) * $months;
+                                $gross          = $seatsAmount + $streamAmount;
+                                
                                 $discountValue = (float) ($get('discount_percent') ?? 0);
                                 $discountScope = (string) ($get('discount_scope') ?? 'general');
                                 $discountableAmount = match ($discountScope) {
                                     'students' => $seatsAmount,
-                                    'storage' => $storageAmount,
+                                    'storage' => $streamAmount,
                                     default => $gross,
                                 };
                                 $discountAmount = $state === 'fixed'
@@ -562,25 +644,19 @@ class AcademyResource extends BaseResource
                                     return;
                                 }
 
-                                try {
-                                    $pricePerStudent   = (float) Setting::where('key', 'academy_price_per_student')->value('value') ?: 40;
-                                    $storagePricePerGb = (float) Setting::where('key', 'academy_storage_price_per_gb')->value('value') ?: 0;
-                                } catch (\Exception $e) {
-                                    $pricePerStudent   = 40;
-                                    $storagePricePerGb = 0;
-                                }
-
-                                $students       = (int) $get('plan_max_students');
-                                $storageLimitGb = (int) ($get('storage_limit_gb') ?? 0);
+                                $storageMinutes = (int) ($get('storage_minutes_limit') ?? 0);
+                                $deliveryMinutes = (int) ($get('delivery_minutes_limit') ?? 0);
+                                
+                                $students = (int) ($get('plan_max_students') ?? 0);
                                 $seatsAmount    = $students * $months * $pricePerStudent;
-                                $storageAmount  = $storageLimitGb * $storagePricePerGb * $months;
-                                $gross          = $seatsAmount + $storageAmount;
-
+                                $streamAmount   = ($storageMinutes * $storagePriceMin + $deliveryMinutes * $deliveryPriceMin) * $months;
+                                $gross          = $seatsAmount + $streamAmount;
+                                
                                 $discountValue = (float) ($get('discount_percent') ?? 0);
                                 $discountType = (string) ($get('discount_type') ?? 'percent');
                                 $discountableAmount = match ($state) {
                                     'students' => $seatsAmount,
-                                    'storage' => $storageAmount,
+                                    'storage' => $streamAmount,
                                     default => $gross,
                                 };
                                 $discountAmount = $discountType === 'fixed'
@@ -904,7 +980,8 @@ class AcademyResource extends BaseResource
         $discountValue = (float) ($current('discount_percent') ?? 0);
         $discountType = (string) ($current('discount_type') ?? 'percent');
         $discountScope = (string) ($current('discount_scope') ?? 'general');
-        $storage = self::formatStorageLabel($current('storage_limit_gb'));
+        $storageMin = $current('storage_minutes_limit') ?? 'غير محدود';
+        $deliveryMin = $current('delivery_minutes_limit') ?? 'غير محدود';
         $paid = max(0, (float) ($current('paid_amount') ?? 0));
         $remaining = round($feeAfter - $paid, 2);
 
@@ -919,14 +996,43 @@ class AcademyResource extends BaseResource
             ? "{$discountValue} ج.م"
             : "{$discountValue}%";
 
-        $note = "نوع الاشتراك: {$period}\n" .
-            "الحد الأقصى للطلاب: {$limit}\n" .
-            "حد التخزين: {$storage}\n" .
+        $months = self::resolveBillingMonths($current);
+        
+        try {
+            $pricePerStudent = \App\Domains\Application\Services\HelperService::getAcademyPricePerStudent();
+            $storagePriceMin = \App\Domains\Application\Services\HelperService::getAcademyStoragePricePerMinute();
+            $deliveryPriceMin = \App\Domains\Application\Services\HelperService::getAcademyDeliveryPricePerMinute();
+        } catch (\Exception $e) {
+            $pricePerStudent = 40;
+            $storagePriceMin = 0.5;
+            $deliveryPriceMin = 0.08;
+        }
+
+        $students = (int) ($current('plan_max_students') ?? 0);
+        $storageMinutes = (int) ($current('storage_minutes_limit') ?? 0);
+        $deliveryMinutes = (int) ($current('delivery_minutes_limit') ?? 0);
+
+        $seatsAmount    = $students * $months * $pricePerStudent;
+        $storageAmount  = $storageMinutes * $storagePriceMin * $months;
+        $deliveryAmount = $deliveryMinutes * $deliveryPriceMin * $months;
+        $gross          = $seatsAmount + $storageAmount + $deliveryAmount;
+
+        $note = "تفاصيل الاشتراك (أكاديمية):\n" .
+            "- نوع الاشتراك: {$period}\n" .
+            "- مدة الحساب: {$months} شهر\n" .
+            "------------------\n" .
+            "تفاصيل التسعير:\n" .
+            "- تكلفة الطلاب ({$students} طالب × {$pricePerStudent} ج.م): " . number_format($seatsAmount, 2) . " ج.م\n" .
+            "- تكلفة التخزين ({$storageMinutes} دقيقة × {$storagePriceMin} ج.م): " . number_format($storageAmount, 2) . " ج.م\n" .
+            "- تكلفة المشاهدة ({$deliveryMinutes} دقيقة × {$deliveryPriceMin} ج.م): " . number_format($deliveryAmount, 2) . " ج.م\n" .
+            "------------------\n" .
+            "الإجمالي قبل الخصم: " . number_format($gross, 2) . " ج.م\n" .
             ($discountValue > 0 ? "الخصم ({$scopeLabel}): {$discountValueLabel}\n" : '') .
-            "الرسوم بعد الخصم: {$feeAfter} ج.م\n" .
-            "المدفوع: {$paid} ج.م\n" .
-            "لم يدفع: {$remaining} ج.م\n" .
-            "المتبقي: {$remaining} ج.م";
+            "المبلغ المطلوب نهائياً: " . number_format($feeAfter, 2) . " ج.م\n" .
+            "------------------\n" .
+            "الحالة المالية:\n" .
+            "- المدفوع: " . number_format($paid, 2) . " ج.م\n" .
+            "- المتبقي: " . number_format($remaining, 2) . " ج.م";
 
         $set('billing_notes', $note);
     }
@@ -937,7 +1043,8 @@ class AcademyResource extends BaseResource
             return 0;
         }
 
-        if ($get('update_subscription_duration') === false) {
+        // Only use remaining months if we are editing an existing record and didn't toggle duration update
+        if ($get('update_subscription_duration') === false && ! empty($get('id'))) {
             return self::resolveRemainingMonthsFromExpiry($get('plan_expires_at'));
         }
 
@@ -967,23 +1074,5 @@ class AcademyResource extends BaseResource
         }
 
         return max(1, (int) ceil($daysRemaining / 30));
-    }
-
-    private static function formatStorageLabel(mixed $storageLimitGb): string
-    {
-        if (! is_numeric($storageLimitGb)) {
-            return 'غير محدود';
-        }
-
-        $storage = (float) $storageLimitGb;
-        if ($storage <= 0) {
-            return 'غير محدود';
-        }
-
-        $formatted = fmod($storage, 1.0) === 0.0
-            ? (string) (int) $storage
-            : rtrim(rtrim((string) $storage, '0'), '.');
-
-        return $formatted . ' GB';
     }
 }

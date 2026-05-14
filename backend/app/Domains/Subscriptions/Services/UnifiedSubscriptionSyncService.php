@@ -48,7 +48,8 @@ class UnifiedSubscriptionSyncService
                 'amount_paid' => $amountPaid,
                 'status' => $this->resolveStatus($amountDue, $amountPaid),
                 'paid_at' => $amountPaid > 0 ? now()->toDateString() : null,
-                'notes' => $this->buildNotes((string) ($academy->plan_type ?? '')),
+                'notes' => $this->buildDetailedNotes($academy, (string) ($academy->plan_type ?? '')),
+                'request_type' => null,
             ]
         );
     }
@@ -88,7 +89,8 @@ class UnifiedSubscriptionSyncService
                 'amount_paid' => $amountPaid,
                 'status' => $this->resolveStatus($amountDue, $amountPaid),
                 'paid_at' => $amountPaid > 0 ? now()->toDateString() : null,
-                'notes' => $this->buildNotes((string) ($teacher->plan_type ?? '')),
+                'notes' => $this->buildDetailedNotes($teacher, (string) ($teacher->plan_type ?? '')),
+                'request_type' => null,
             ]
         );
     }
@@ -131,23 +133,22 @@ class UnifiedSubscriptionSyncService
         return 'paid';
     }
 
-    private function buildNotes(string $planType): string
+    private function buildDetailedNotes(Teacher|Academy $model, string $planType): string
     {
         $planLabel = match ($planType) {
             'trial' => 'تجريبي',
-            'term' => 'فصلي',
+            'term' => 'دوري',
             'custom' => 'مخصص',
-            'basic' => 'أساسي',
-            'pro' => 'احترافي',
-            'enterprise' => 'مؤسسي',
             default => $planType,
         };
 
-        if ($planLabel !== '') {
-            return "مزامنة تلقائية للاشتراك - الخطة: {$planLabel}";
-        }
+        $notes = [
+            "مزامنة تلقائية - الخطة: {$planLabel}",
+            "تخزين: {$model->storage_minutes_limit} دقيقة",
+            "مشاهدة: {$model->delivery_minutes_limit} دقيقة",
+        ];
 
-        return 'مزامنة تلقائية للاشتراك';
+        return implode("\n", $notes);
     }
 
     private function resolvePricePerStudent(string $subscriptionType): float

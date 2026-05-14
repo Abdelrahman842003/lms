@@ -38,8 +38,11 @@ class AcademyResource extends JsonResource
             'effective_trial_period_days' => $this->trial_period_days !== null
                 ? (int) $this->trial_period_days
                 : (int) \App\Domains\Application\Models\Setting::getValue('trial_period_days', 14),
-            // Storage quota fields
-            'storage_limit_gb' => $this->storage_limit_gb,
+            // Quota fields (Minutes-based for video, bytes for attachments)
+            'storage_minutes_limit' => $this->storage_minutes_limit,
+            'storage_minutes_used' => $this->storage_minutes_used,
+            'delivery_minutes_limit' => $this->delivery_minutes_limit,
+            'delivery_minutes_used' => $this->delivery_minutes_used,
             'storage_used_bytes' => (int) $this->storage_used_bytes,
             
             // Relationships

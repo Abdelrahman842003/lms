@@ -186,6 +186,8 @@ export interface PlaybackTokenPayload {
   expires_at: string;
   stream_url: string;
   stream_endpoint?: string;
+  iframe_url?: string;
+  type?: string;
   watermark: {
     enabled: boolean;
     rotation_interval_seconds: number;
@@ -246,10 +248,11 @@ export interface PresignedPart {
 export interface InitiateUploadResponse {
   session_id: string;
   video_id: string;
+  tus_upload_url?: string;
   presigned_parts?: PresignedPart[];
   missing_parts?: PresignedPart[];
   uploaded_parts?: number[];
-  chunk_size_bytes: number;
+  chunk_size_bytes?: number;
   progress?: number;
   uploaded_count?: number;
   total_parts?: number;

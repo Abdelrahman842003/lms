@@ -62,6 +62,11 @@ class VideoResource extends BaseResource
                             ->label('الوصف')
                             ->rows(4),
 
+                        TextInput::make('stream_uid')
+                            ->label('معرف Stream')
+                            ->disabled()
+                            ->columnSpanFull(),
+
                         Select::make('status')
                             ->label('الحالة')
                             ->options(collect(VideoStatus::cases())->mapWithKeys(fn (VideoStatus $status) => [
@@ -106,6 +111,12 @@ class VideoResource extends BaseResource
                     ->sortable()
                     ->limit(40)
                     ->weight('font-bold'),
+
+                Tables\Columns\TextColumn::make('stream_uid')
+                    ->label('معرف Stream')
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->copyable(),
 
                 Tables\Columns\TextColumn::make('owner_type')
                     ->label('نوع المالك')

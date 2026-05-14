@@ -4,14 +4,11 @@ declare(strict_types=1);
 
 namespace App\Domains\Application\Http\Controllers\Teacher;
 
-use App\Domains\Application\Http\Requests\Teacher\Video\ReportPartSuccessRequest;
 use App\Domains\Application\Http\Controllers\Controller;
 use App\Domains\Application\Http\Requests\Teacher\Video\AbortUploadRequest;
-use App\Domains\Application\Http\Requests\Teacher\Video\CompleteUploadRequest;
 use App\Domains\Application\Http\Requests\Teacher\Video\InitiateUploadRequest;
 use App\Domains\Auth\Models\Teacher;
 use App\Domains\Videos\DTOs\CreateVideoData;
-use App\Domains\Videos\Models\VideoUploadSession;
 use App\Domains\Videos\Policies\VideoPolicy;
 use App\Domains\Videos\Services\VideoActorResolverService;
 use App\Domains\Videos\Services\VideoUploadOrchestrationService;
@@ -30,7 +27,7 @@ class VideoUploadController extends Controller
     /**
      * POST /api/v1/teacher/videos/initiate-upload
      *
-     * Returns presigned part URLs. No video bytes touch the server.
+     * Returns Cloudflare Stream TUS upload URL.
      */
     public function initiateUpload(InitiateUploadRequest $request): JsonResponse
     {
@@ -45,75 +42,17 @@ class VideoUploadController extends Controller
         $data    = CreateVideoData::fromInitiateRequest($request->validated());
 
         $payload = $this->orchestration->initiateUpload(
-            data:         $data,
-            context:      $context,
-            fileDeclaration: $request->only(['file_name', 'file_size', 'file_mime', 'total_parts', 'file_fingerprint']),
-            initiatorIp:  (string) $request->ip(),
+            data:            $data,
+            context:         $context,
+            fileDeclaration: $request->only(['file_name', 'file_size', 'file_mime', 'estimated_duration_minutes', 'file_fingerprint']),
+            initiatorIp:     (string) $request->ip(),
         );
 
-        return $this->successResponse($payload, 'تم تهيئة جلسة الرفع. ارفع الأجزاء مباشرةً إلى R2.', 201);
-    }
-
-    /**
-     * POST /api/v1/teacher/videos/report-part-success
-     */
-    public function reportPartSuccess(ReportPartSuccessRequest $request): JsonResponse
-    {
-        /** @var Teacher $teacher */
-        $teacher = $request->user();
-
-        $this->orchestration->reportPartSuccess(
-            sessionId:    (string) $request->validated('session_id'),
-            partNumber:   (int) $request->validated('part_number'),
-            etag:         (string) $request->validated('etag'),
-            uploaderType: $teacher->getMorphClass(),
-            uploaderId:   (string) $teacher->id,
-        );
-
-        return $this->successResponse([], 'تم تسجيل نجاح الجزء.');
-    }
-
-    /**
-     * POST /api/v1/teacher/videos/pause-upload
-     */
-    public function pauseUpload(Request $request): JsonResponse
-    {
-        /** @var Teacher $teacher */
-        $teacher = $request->user();
-
-        $this->orchestration->pauseUpload(
-            sessionId:    (string) $request->input('session_id'),
-            uploaderType: $teacher->getMorphClass(),
-            uploaderId:   (string) $teacher->id,
-        );
-
-        return $this->successResponse([], 'تم إيقاف الرفع مؤقتاً.');
-    }
-
-    /**
-     * POST /api/v1/teacher/videos/complete-upload
-     *
-     * Finalises the multipart upload on R2 and triggers processing.
-     */
-    public function completeUpload(CompleteUploadRequest $request): JsonResponse
-    {
-        /** @var Teacher $teacher */
-        $teacher = $request->user();
-
-        $result = $this->orchestration->completeUpload(
-            sessionId:    (string) $request->validated('session_id'),
-            parts:        (array) $request->validated('parts'),
-            uploaderType: $teacher->getMorphClass(),
-            uploaderId:   (string) $teacher->id,
-        );
-
-        return $this->successResponse($result, 'تم إكمال الرفع وبدء المعالجة.');
+        return $this->successResponse($payload, 'تم تهيئة جلسة الرفع. استخدم رابط TUS للرفع المباشر.', 201);
     }
 
     /**
      * DELETE /api/v1/teacher/videos/abort-upload
-     *
-     * Aborts the multipart upload and cleans up R2 parts.
      */
     public function abortUpload(AbortUploadRequest $request): JsonResponse
     {
@@ -127,48 +66,7 @@ class VideoUploadController extends Controller
             reason:       (string) ($request->validated('reason') ?? ''),
         );
 
-        return $this->successResponse([], 'تم إلغاء الرفع وتنظيف الأجزاء من R2.');
-    }
-
-    /**
-     * POST /api/v1/teacher/videos/resume-upload/{sessionId}
-     */
-    public function resumeUpload(Request $request, string $sessionId): JsonResponse
-    {
-        /** @var Teacher $teacher */
-        $teacher = $request->user();
-
-        $result = $this->orchestration->resumeUpload(
-            sessionId:    $sessionId,
-            uploaderType: $teacher->getMorphClass(),
-            uploaderId:   (string) $teacher->id,
-        );
-
-        return $this->successResponse($result, 'تم استرداد حالة الرفع. يمكنك الآن استكمال الأجزاء المفقودة.');
-    }
-
-    /**
-     * GET /api/v1/teacher/videos/upload-status/{sessionId}
-     */
-    public function uploadStatus(Request $request, string $sessionId): JsonResponse
-    {
-        /** @var Teacher $teacher */
-        $teacher = $request->user();
-
-        $session = VideoUploadSession::query()->findOrFail($sessionId);
-
-        if (! $session->isOwnedBy($teacher->getMorphClass(), (string) $teacher->id)) {
-            throw new AuthorizationException('غير مصرح بعرض هذه الجلسة.');
-        }
-
-        return $this->successResponse([
-            'session_id' => $session->id,
-            'video_id'   => $session->video_id,
-            'status'     => $session->status->value,
-            'total_parts' => $session->total_parts,
-            'initiated_at' => $session->initiated_at?->toIso8601String(),
-            'completed_at' => $session->completed_at?->toIso8601String(),
-        ]);
+        return $this->successResponse([], 'تم إلغاء الرفع وتنظيف البيانات من Cloudflare.');
     }
 
     /**

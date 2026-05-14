@@ -19,7 +19,8 @@ trait HasTenantPlan
     protected static array $planFields = [
         'trial_period_days', 'plan_type', 'subscription_period', 'plan_expires_at',
         'plan_max_students', 'is_unlimited_students', 'subscription_fee',
-        'paid_amount', 'storage_limit_gb', 'storage_used_bytes',
+        'paid_amount', 'storage_minutes_limit', 'storage_minutes_used',
+        'delivery_minutes_limit', 'delivery_minutes_used', 'storage_used_bytes',
         'discount_percent', 'discount_type', 'discount_scope', 'billing_notes'
     ];
 

@@ -5,6 +5,7 @@ import { updateVideoProgress } from '@/services/videoService';
 import { useVideoPlayback } from '@/hooks/useVideoPlayback';
 import { WatermarkOverlay } from './WatermarkOverlay';
 import type { VideoWatchProgress } from '@/types/video.types';
+import { Stream } from '@cloudflare/stream-react';
 
 interface SecureVideoPlayerProps {
   videoId: string;
@@ -26,6 +27,7 @@ export function SecureVideoPlayer({
   onProgressUpdate,
 }: SecureVideoPlayerProps) {
   const videoRef            = useRef<HTMLVideoElement | null>(null);
+  const streamRef           = useRef<any>(null); // Reference for the Stream component
   const lastSyncRef         = useRef<number>(0);
   const isRefreshingRef     = useRef<boolean>(false);
   const onProgressUpdateRef = useRef(onProgressUpdate);
@@ -48,6 +50,7 @@ export function SecureVideoPlayer({
 
   const streamUrl      = payload?.stream_url ?? null;
   const tokenExpiresAt = payload?.expires_at ?? null;
+  const isCloudflare   = payload?.type === 'cloudflare_stream';
 
   const handleTokenRefreshAndResume = useCallback(async () => {
     if (isRefreshingRef.current) return;
@@ -61,42 +64,52 @@ export function SecureVideoPlayer({
     setPlayerReady(!!node);
   }, []);
 
-  // Register/unregister progress event listeners whenever the player is ready
+  const setStreamRef = useCallback((node: any) => {
+    streamRef.current = node;
+    setPlayerReady(!!node);
+  }, []);
+
+  const handleTimeUpdateCore = useCallback((currentTime: number, duration?: number) => {
+    const prev = lastTimeRef.current;
+    // Accumulate only forward, continuous playback (ignore seeks)
+    if (currentTime > prev && currentTime - prev < 2) {
+      watchedSecondsRef.current += currentTime - prev;
+    }
+    lastTimeRef.current = currentTime;
+
+    const now = Date.now();
+    if (now - lastSyncRef.current < 8_000) return;
+    lastSyncRef.current = now;
+
+    void updateVideoProgress(videoIdRef.current, {
+      watched_seconds:       Math.round(watchedSecondsRef.current),
+      last_position_seconds: Math.floor(currentTime),
+    }).then((updated) => {
+      onProgressUpdateRef.current?.(updated);
+    }).catch(() => { /* non-fatal */ });
+  }, []);
+
+  const syncNow = useCallback((positionOverride?: number) => {
+    const playerTime = isCloudflare ? streamRef.current?.currentTime : videoRef.current?.currentTime;
+    const current = positionOverride ?? (playerTime ?? 0);
+    lastSyncRef.current = Date.now();
+    void updateVideoProgress(videoIdRef.current, {
+      watched_seconds:       Math.round(watchedSecondsRef.current),
+      last_position_seconds: Math.floor(current),
+    }).then((updated) => {
+      onProgressUpdateRef.current?.(updated);
+    }).catch(() => { /* non-fatal */ });
+  }, [isCloudflare]);
+
+  // Register/unregister progress event listeners whenever the native player is ready (Legacy)
   useEffect(() => {
+    if (isCloudflare) return; // CF Stream React component handles its own events
     const player = videoRef.current;
     if (!playerReady || !player) return;
 
     function handleTimeUpdate() {
       if (!player) return;
-      const current = player.currentTime;
-      const prev    = lastTimeRef.current;
-      // Accumulate only forward, continuous playback (ignore seeks)
-      if (current > prev && current - prev < 2) {
-        watchedSecondsRef.current += current - prev;
-      }
-      lastTimeRef.current = current;
-
-      const now = Date.now();
-      if (now - lastSyncRef.current < 8_000) return;
-      lastSyncRef.current = now;
-
-      void updateVideoProgress(videoIdRef.current, {
-        watched_seconds:       Math.round(watchedSecondsRef.current),
-        last_position_seconds: Math.floor(current),
-      }).then((updated) => {
-        onProgressUpdateRef.current?.(updated);
-      }).catch(() => { /* non-fatal */ });
-    }
-
-    function syncNow(positionOverride?: number) {
-      const current = positionOverride ?? (player?.currentTime ?? 0);
-      lastSyncRef.current = Date.now();
-      void updateVideoProgress(videoIdRef.current, {
-        watched_seconds:       Math.round(watchedSecondsRef.current),
-        last_position_seconds: Math.floor(current),
-      }).then((updated) => {
-        onProgressUpdateRef.current?.(updated);
-      }).catch(() => { /* non-fatal */ });
+      handleTimeUpdateCore(player.currentTime, player.duration);
     }
 
     function handleEnded() {
@@ -124,10 +137,11 @@ export function SecureVideoPlayer({
       player.removeEventListener('pause',      handlePause);
       player.removeEventListener('error',      handleError);
     };
-  }, [playerReady, handleTokenRefreshAndResume]);
+  }, [playerReady, handleTokenRefreshAndResume, isCloudflare, handleTimeUpdateCore, syncNow]);
 
-  // Seamlessly update src without re-mounting
+  // Seamlessly update src without re-mounting (Legacy)
   useEffect(() => {
+    if (isCloudflare) return;
     const player = videoRef.current;
     if (!player || !streamUrl) return;
     if (player.src === streamUrl) return;
@@ -143,7 +157,7 @@ export function SecureVideoPlayer({
       player.removeEventListener('canplay', onCanPlay);
     };
     player.addEventListener('canplay', onCanPlay);
-  }, [streamUrl]);
+  }, [streamUrl, isCloudflare]);
 
   // Auto-refresh 30 s before expiry
   useEffect(() => {
@@ -227,17 +241,31 @@ export function SecureVideoPlayer({
       {/* Subtle top glow line */}
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent pointer-events-none z-10" />
 
-      <video
-        ref={setVideoRef}
-        src={streamUrl!}
-        controls
-        controlsList="nodownload noplaybackrate"
-        disablePictureInPicture
-        playsInline
-        onContextMenu={(e) => e.preventDefault()}
-        className="block w-full h-auto max-h-[72vh]"
-        style={{ aspectRatio: '16/9' }}
-      />
+      {isCloudflare ? (
+        <div className="w-full aspect-video" ref={setStreamRef}>
+          <Stream
+            src={streamUrl}
+            controls
+            className="w-full h-full"
+            onTimeUpdate={(e) => handleTimeUpdateCore(e.currentTime, e.duration)}
+            onEnded={() => syncNow(streamRef.current?.duration || streamRef.current?.currentTime)}
+            onPause={() => syncNow()}
+            onError={() => handleTokenRefreshAndResume()}
+          />
+        </div>
+      ) : (
+        <video
+          ref={setVideoRef}
+          src={streamUrl!}
+          controls
+          controlsList="nodownload noplaybackrate"
+          disablePictureInPicture
+          playsInline
+          onContextMenu={(e) => e.preventDefault()}
+          className="block w-full h-auto max-h-[72vh]"
+          style={{ aspectRatio: '16/9' }}
+        />
+      )}
 
       {/* Lock badge — top right corner */}
       <div className="absolute top-3 right-3 z-20 flex items-center gap-1.5 px-2.5 py-1 rounded-lg

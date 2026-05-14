@@ -7,6 +7,7 @@ namespace App\Domains\Videos\Services;
 use App\Domains\Auth\Models\Academy;
 use App\Domains\Auth\Models\Teacher;
 use App\Domains\Subscriptions\Services\StorageQuotaService;
+use App\Domains\Subscriptions\Services\StreamQuotaService;
 use App\Domains\Videos\DTOs\CreateVideoData;
 use App\Domains\Videos\DTOs\UpdateVideoData;
 use App\Domains\Videos\DTOs\VideoActorContext;
@@ -31,6 +32,8 @@ class VideoLifecycleService
         private readonly VideoReminderService $reminders,
         private readonly VideoSettingsService $videoSettings,
         private readonly StorageQuotaService $storageQuota,
+        private readonly StreamQuotaService $streamQuota,
+        private readonly CloudflareStreamService $streamService,
     ) {}
 
     /**
@@ -323,11 +326,16 @@ class VideoLifecycleService
     {
         $this->reminders->stopForVideo($video, 'video_force_deleted');
 
-        // Calculate total bytes being freed before deletion
-        $videoBytes      = (int) ($video->video_size_bytes ?? 0);
+        // Calculate total bytes being freed (attachments only — videos are on Stream)
         $attachmentBytes = (int) $video->attachments->sum('file_size');
-        $totalBytes      = $videoBytes + $attachmentBytes;
+        $durationMinutes = (int) ceil(($video->duration_seconds ?? 0) / 60);
 
+        // Delete from Cloudflare Stream
+        if ($video->stream_uid) {
+            $this->streamService->deleteVideo($video->stream_uid);
+        }
+
+        // Delete legacy R2 files (if any remain from pre-migration)
         $this->storage->deleteIfExists($video->original_path);
         $this->storage->deleteIfExists($video->processed_path);
         $this->storage->deleteIfExists($video->thumbnail_path);
@@ -338,10 +346,17 @@ class VideoLifecycleService
 
         $video->forceDelete();
 
-        // Decrement storage quota after successful deletion
+        // Decrement quotas after successful deletion
         $owner = $this->resolveOwnerModelById($video->owner_type, $video->owner_id);
-        if ($owner !== null && $totalBytes > 0) {
-            $this->storageQuota->decrementUsage($owner, $totalBytes);
+        if ($owner !== null) {
+            // Decrement stream quota (minutes)
+            if ($durationMinutes > 0) {
+                $this->streamQuota->decrementStorageUsage($owner, $durationMinutes);
+            }
+            // Decrement R2 quota (bytes — attachments only)
+            if ($attachmentBytes > 0) {
+                $this->storageQuota->decrementUsage($owner, $attachmentBytes);
+            }
         }
 
         $this->logActivity('video.force_deleted', $video, $actor);

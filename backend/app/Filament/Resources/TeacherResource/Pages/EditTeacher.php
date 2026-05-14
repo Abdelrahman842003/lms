@@ -22,7 +22,7 @@ class EditTeacher extends EditRecord
         $planFields = [
             'trial_period_days', 'plan_type', 'subscription_period', 'plan_expires_at',
             'plan_max_students', 'is_unlimited_students', 'subscription_fee',
-            'paid_amount', 'storage_limit_gb', 'storage_used_bytes',
+            'paid_amount', 'storage_minutes_limit', 'delivery_minutes_limit',
             'discount_percent', 'discount_type', 'discount_scope', 'billing_notes'
         ];
 
@@ -53,7 +53,8 @@ class EditTeacher extends EditRecord
 
         $oldFeeForRemaining = $this->calculateTeacherFeeForMonths([
             'plan_max_students' => $this->record->plan_max_students,
-            'storage_limit_gb' => $this->record->storage_limit_gb,
+            'storage_minutes_limit' => $this->record->storage_minutes_limit,
+            'delivery_minutes_limit' => $this->record->delivery_minutes_limit,
             'discount_percent' => $this->record->discount_percent,
             'discount_type' => $this->record->discount_type,
             'discount_scope' => $this->record->discount_scope,
@@ -168,13 +169,15 @@ class EditTeacher extends EditRecord
 
     private function calculateTeacherFeeForMonths(array $payload, int $months): float
     {
-        [$pricePerStudent, $storagePricePerGb] = $this->resolveTeacherPrices();
+        [$pricePerStudent, $storagePriceMin, $deliveryPriceMin] = $this->resolveTeacherPrices();
 
         $students = (int) ($payload['plan_max_students'] ?? 0);
-        $storageLimitGb = (int) ($payload['storage_limit_gb'] ?? 0);
+        $storageMinutes = (int) ($payload['storage_minutes_limit'] ?? 0);
+        $deliveryMinutes = (int) ($payload['delivery_minutes_limit'] ?? 0);
+        
         $seatsAmount = $students * $months * $pricePerStudent;
-        $storageAmount = $storageLimitGb * $storagePricePerGb * $months;
-        $gross = $seatsAmount + $storageAmount;
+        $streamAmount = ($storageMinutes * $storagePriceMin + $deliveryMinutes * $deliveryPriceMin) * $months;
+        $gross = $seatsAmount + $streamAmount;
 
         $discountValue = (float) ($payload['discount_percent'] ?? 0);
         $discountType = (string) ($payload['discount_type'] ?? 'percent');
@@ -182,7 +185,7 @@ class EditTeacher extends EditRecord
 
         $discountableAmount = match ($discountScope) {
             'students' => $seatsAmount,
-            'storage' => $storageAmount,
+            'storage' => $streamAmount,
             default => $gross,
         };
 
@@ -196,14 +199,16 @@ class EditTeacher extends EditRecord
     private function resolveTeacherPrices(): array
     {
         try {
-            $pricePerStudent = (float) (Setting::where('key', 'teacher_price_per_student')->value('value') ?: 60);
-            $storagePricePerGb = (float) (Setting::where('key', 'teacher_storage_price_per_gb')->value('value') ?: 0);
+            $pricePerStudent = \App\Domains\Application\Services\HelperService::getTeacherPricePerStudent();
+            $storagePriceMin = \App\Domains\Application\Services\HelperService::getTeacherStoragePricePerMinute();
+            $deliveryPriceMin = \App\Domains\Application\Services\HelperService::getTeacherDeliveryPricePerMinute();
         } catch (\Throwable $exception) {
             $pricePerStudent = 60;
-            $storagePricePerGb = 0;
+            $storagePriceMin = 0.5;
+            $deliveryPriceMin = 0.1;
         }
 
-        return [$pricePerStudent, $storagePricePerGb];
+        return [$pricePerStudent, $storagePriceMin, $deliveryPriceMin];
     }
 
     private function normalizeDateString(mixed $value): ?string

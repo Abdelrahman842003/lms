@@ -151,42 +151,41 @@ class ViewTeacher extends ViewRecord
                     ])
                     ->columns(3),
 
-                Section::make('التخزين')
+                Section::make('دقائق الفيديو (Stream)')
                     ->schema([
-                        TextEntry::make('storage_limit_gb')
-                            ->label('حد التخزين')
-                            ->state(fn ($record) => $record->storage_limit_gb !== null
-                                ? $record->storage_limit_gb . ' GB'
+                        TextEntry::make('storage_minutes_limit')
+                            ->label('حد دقائق التخزين')
+                            ->state(fn ($record) => $record->storage_minutes_limit !== null
+                                ? $record->storage_minutes_limit . ' دقيقة'
                                 : 'غير محدود')
-                            ->icon('heroicon-m-server'),
+                            ->icon('heroicon-m-video-camera'),
 
-                        TextEntry::make('storage_used_bytes')
-                            ->label('المساحة المستخدمة')
-                            ->state(fn ($record) => round($record->storage_used_bytes / 1_073_741_824, 3) . ' GB'
-                                . ' (' . number_format($record->storage_used_bytes) . ' bytes)')
-                            ->icon('heroicon-m-circle-stack'),
+                        TextEntry::make('storage_minutes_used')
+                            ->label('المستخدم للتخزين')
+                            ->state(fn ($record) => ($record->storage_minutes_used ?? 0) . ' دقيقة')
+                            ->icon('heroicon-m-arrow-up-on-square'),
 
-                        TextEntry::make('storage_percentage')
-                            ->label('نسبة الاستخدام')
-                            ->state(function ($record) {
-                                $snapshot = app(StorageQuotaService::class)->getStorageSnapshot($record);
-                                return $snapshot['is_unlimited']
-                                    ? 'غير محدود'
-                                    : $snapshot['percentage'] . '%';
-                            })
-                            ->icon('heroicon-m-chart-bar'),
+                        TextEntry::make('delivery_minutes_limit')
+                            ->label('حد دقائق المشاهدة')
+                            ->state(fn ($record) => $record->delivery_minutes_limit !== null
+                                ? $record->delivery_minutes_limit . ' دقيقة'
+                                : 'غير محدود')
+                            ->icon('heroicon-m-play-circle'),
 
-                        TextEntry::make('storage_remaining')
-                            ->label('المتبقي')
-                            ->state(function ($record) {
-                                $snapshot = app(StorageQuotaService::class)->getStorageSnapshot($record);
-                                return $snapshot['is_unlimited']
-                                    ? 'غير محدود'
-                                    : round($snapshot['remaining_gb'], 3) . ' GB';
-                            })
-                            ->icon('heroicon-m-archive-box'),
+                        TextEntry::make('delivery_minutes_used')
+                            ->label('المستخدم للمشاهدة')
+                            ->state(fn ($record) => ($record->delivery_minutes_used ?? 0) . ' دقيقة')
+                            ->icon('heroicon-m-eye'),
                     ])
                     ->columns(4),
+
+                Section::make('المرفقات (R2)')
+                    ->schema([
+                        TextEntry::make('storage_used_bytes')
+                            ->label('مساحة المرفقات')
+                            ->state(fn ($record) => round($record->storage_used_bytes / 1024 / 1024, 2) . ' MB')
+                            ->icon('heroicon-m-paper-clip'),
+                    ]),
 
                 Section::make('معلومات النظام')
                     ->schema([

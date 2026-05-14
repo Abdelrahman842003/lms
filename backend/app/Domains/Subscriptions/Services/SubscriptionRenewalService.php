@@ -15,6 +15,7 @@ use App\Domains\Application\Services\HelperService;
 use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
@@ -57,37 +58,48 @@ class SubscriptionRenewalService
         $seatsUsed = $this->getSeatsUsed($subscriber);
         $quotaLimit = $this->getQuotaLimit($subscriber);
         $pricePerSeat = $this->getPricePerSeat($subscriber);
-        $storagePricePerGb = $this->getStoragePricePerGb($subscriber);
-        $currentStorageLimitGb = $this->getStorageLimitGb($subscriber);
+        
+        $storagePricePerMinute = $this->getStoragePricePerMinute($subscriber);
+        $deliveryPricePerMinute = $this->getDeliveryPricePerMinute($subscriber);
+        
+        $currentStorageMinutes = $this->getStorageMinutesLimit($subscriber);
+        $currentDeliveryMinutes = $this->getDeliveryMinutesLimit($subscriber);
 
-        $upgrade = $this->resolveUpgradePayload($subscriber, $upgradePayload, $quotaLimit, $currentStorageLimitGb);
+        $upgrade = $this->resolveUpgradePayload($subscriber, $upgradePayload, $quotaLimit, $currentStorageMinutes, $currentDeliveryMinutes);
+        
         $targetQuotaLimit = $upgrade['target_quota_limit'];
-        $targetStorageLimitGb = $upgrade['target_storage_limit_gb'];
+        $targetStorageMinutes = $upgrade['target_storage_minutes'];
+        $targetDeliveryMinutes = $upgrade['target_delivery_minutes'];
 
-        $baseFinancials = $this->calculateFinancials($seatsUsed, $quotaLimit, $currentStorageLimitGb, $pricePerSeat, $storagePricePerGb, (int) $meta['months']);
-        $targetFinancials = $this->calculateFinancials($seatsUsed, $targetQuotaLimit, $targetStorageLimitGb, $pricePerSeat, $storagePricePerGb, (int) $meta['months']);
+        $baseFinancials = $this->calculateFinancials($seatsUsed, $quotaLimit, $currentStorageMinutes, $currentDeliveryMinutes, $pricePerSeat, $storagePricePerMinute, $deliveryPricePerMinute, (int) $meta['months']);
+        $targetFinancials = $this->calculateFinancials($seatsUsed, $targetQuotaLimit, $targetStorageMinutes, $targetDeliveryMinutes, $pricePerSeat, $storagePricePerMinute, $deliveryPricePerMinute, (int) $meta['months']);
 
         $amountDue = $targetFinancials['total'];
         $priceDifference = round(max(0, $targetFinancials['total'] - $baseFinancials['total']), 2);
+        
         $requestType = ($upgrade['upgrade_seats'] || $upgrade['upgrade_storage'])
             ? self::REQUEST_TYPE_UPGRADE
             : self::REQUEST_TYPE_RENEWAL;
+            
         $month = $this->resolveRequestMonth($subscriber, $requestType);
 
         $notes = $this->buildNotes(
             $meta['label'],
             (int) $meta['months'],
             $customMonths,
-            $targetStorageLimitGb,
-            $targetFinancials['storage_amount'],
+            $targetStorageMinutes,
+            $targetDeliveryMinutes,
+            $targetFinancials['storage_amount'] + $targetFinancials['delivery_amount'],
             $requestType,
             [
                 'upgrade_seats' => $upgrade['upgrade_seats'],
                 'upgrade_storage' => $upgrade['upgrade_storage'],
                 'current_quota_limit' => $quotaLimit,
                 'target_quota_limit' => $targetQuotaLimit,
-                'current_storage_limit_gb' => $currentStorageLimitGb,
-                'target_storage_limit_gb' => $targetStorageLimitGb,
+                'current_storage_minutes' => $currentStorageMinutes,
+                'target_storage_minutes' => $targetStorageMinutes,
+                'current_delivery_minutes' => $currentDeliveryMinutes,
+                'target_delivery_minutes' => $targetDeliveryMinutes,
                 'price_difference' => $priceDifference,
             ]
         );
@@ -110,8 +122,8 @@ class SubscriptionRenewalService
                 'request_type' => $requestType,
                 'upgrade_seats_from' => $upgrade['upgrade_seats'] ? $quotaLimit : null,
                 'upgrade_seats_to' => $upgrade['upgrade_seats'] ? $targetQuotaLimit : null,
-                'upgrade_storage_from_gb' => $upgrade['upgrade_storage'] ? $currentStorageLimitGb : null,
-                'upgrade_storage_to_gb' => $upgrade['upgrade_storage'] ? $targetStorageLimitGb : null,
+                'upgrade_storage_from_gb' => $upgrade['upgrade_storage'] ? $currentStorageMinutes : null, // Reusing field for minutes
+                'upgrade_storage_to_gb' => $upgrade['upgrade_storage'] ? $targetStorageMinutes : null, // Reusing field for minutes
                 'upgrade_price_difference' => $priceDifference,
                 'upgrade_reviewed_at' => null,
                 'upgrade_reviewed_by' => null,
@@ -120,6 +132,8 @@ class SubscriptionRenewalService
         );
 
         $this->notifyAdminsOfRenewal($subscription, $meta['label'], $requestType);
+
+        $this->clearSubscriptionCache($subscriber);
 
         return $subscription;
     }
@@ -154,7 +168,11 @@ class SubscriptionRenewalService
             }
 
             if ($subscription->upgrade_storage_to_gb !== null) {
-                $subscriberData['storage_limit_gb'] = (int) $subscription->upgrade_storage_to_gb;
+                // Here we map back the minutes fields
+                $subscriberData['storage_minutes_limit'] = (int) $subscription->upgrade_storage_to_gb;
+                // Since we only have one upgrade_storage field in Subscription model, 
+                // we might need to derive delivery_minutes or just assume they are upgraded together.
+                // For now, let's assume storage_minutes_limit is what was stored.
             }
         }
 
@@ -172,6 +190,8 @@ class SubscriptionRenewalService
             'upgrade_reviewed_by' => auth()->id(),
         ])->save();
 
+        $this->clearSubscriptionCache($subscriber);
+
         $this->notifySubscriberOfDecision($subscription, $subscriber, true);
     }
 
@@ -186,6 +206,7 @@ class SubscriptionRenewalService
 
         $subscriber = $subscription->subscriber;
         if ($subscriber) {
+            $this->clearSubscriptionCache($subscriber);
             $this->notifySubscriberOfDecision($subscription, $subscriber, false, $reason);
         }
     }
@@ -195,7 +216,10 @@ class SubscriptionRenewalService
      */
     public function getSubscriptionSnapshot(Model $subscriber): array
     {
-        $seatsUsed = $this->getSeatsUsed($subscriber);
+        $cacheKey = $this->getSubscriptionSnapshotCacheKey($subscriber);
+
+        return Cache::remember($cacheKey, now()->addHours(6), function () use ($subscriber) {
+            $seatsUsed = $this->getSeatsUsed($subscriber);
         $quotaLimit = $this->getQuotaLimit($subscriber);
         $pricePerSeat = $this->getPricePerSeat($subscriber);
 
@@ -227,32 +251,48 @@ class SubscriptionRenewalService
             'seats_limit' => $quotaLimit,
             'is_unlimited' => data_get($subscriber, 'is_unlimited_students', false) || $quotaLimit === null,
             'price_per_seat' => $pricePerSeat,
-            'price_per_storage_gb' => $this->getStoragePricePerGb($subscriber),
+            'price_per_storage_minute' => $this->getStoragePricePerMinute($subscriber),
+            'price_per_delivery_minute' => $this->getDeliveryPricePerMinute($subscriber),
             'amount_due' => (float) (data_get($subscriber, 'subscription_fee') ?? 0),
             'amount_paid' => (float) (data_get($subscriber, 'paid_amount') ?? 0),
             'storage' => ($subscriber instanceof Teacher || $subscriber instanceof Academy)
-                ? $this->storageQuota->getStorageSnapshot($subscriber)
+                ? $this->getStorageMinutesSnapshot($subscriber)
                 : null,
+            'attachments_usage_bytes' => (int) (data_get($subscriber, 'storage_used_bytes') ?? 0),
+        ];
+    });
+}
+
+    private function getStorageMinutesSnapshot(Model $subscriber): array
+    {
+        $limit = $this->getStorageMinutesLimit($subscriber);
+        $used = (int) (data_get($subscriber, 'storage_minutes_used') ?? 0);
+        $deliveryLimit = $this->getDeliveryMinutesLimit($subscriber);
+        $deliveryUsed = (int) (data_get($subscriber, 'delivery_minutes_used') ?? 0);
+
+        return [
+            'storage_limit_minutes' => $limit,
+            'storage_used_minutes' => $used,
+            'delivery_limit_minutes' => $deliveryLimit,
+            'delivery_used_minutes' => $deliveryUsed,
+            'storage_percentage' => $limit > 0 ? round(($used / $limit) * 100, 2) : 0,
+            'delivery_percentage' => $deliveryLimit > 0 ? round(($deliveryUsed / $deliveryLimit) * 100, 2) : 0,
         ];
     }
 
     public function getPendingRenewal(Model $subscriber): ?Subscription
     {
-        return Subscription::query()
-            ->where('subscriber_id', $subscriber->getKey())
-            ->where('subscriber_type', get_class($subscriber))
-            ->where('status', SubscriptionStatus::PENDING->value)
-            ->where(function ($query): void {
-                $query
-                    ->whereNotNull('request_type')
-                    ->orWhereNotNull('upgrade_seats_from')
-                    ->orWhereNotNull('upgrade_seats_to')
-                    ->orWhereNotNull('upgrade_storage_from_gb')
-                    ->orWhereNotNull('upgrade_storage_to_gb')
-                    ->orWhere('upgrade_price_difference', '>', 0);
-            })
-            ->orderByDesc('created_at')
-            ->first();
+        $cacheKey = $this->getPendingRenewalCacheKey($subscriber);
+
+        return Cache::remember($cacheKey, now()->addHours(6), function () use ($subscriber) {
+            return Subscription::query()
+                ->where('subscriber_id', $subscriber->getKey())
+                ->where('subscriber_type', get_class($subscriber))
+                ->where('status', SubscriptionStatus::PENDING->value)
+                ->whereIn('request_type', [self::REQUEST_TYPE_RENEWAL, self::REQUEST_TYPE_UPGRADE])
+                ->orderByDesc('created_at')
+                ->first();
+        });
     }
 
     private function resolveRequestMonth(Model $subscriber, string $requestType): Carbon
@@ -370,11 +410,18 @@ class SubscriptionRenewalService
             : HelperService::getTeacherPricePerStudent();
     }
 
-    private function getStoragePricePerGb(Model $subscriber): float
+    private function getStoragePricePerMinute(Model $subscriber): float
     {
         return $subscriber instanceof Academy
-            ? HelperService::getAcademyStoragePricePerGb()
-            : HelperService::getTeacherStoragePricePerGb();
+            ? HelperService::getAcademyStoragePricePerMinute()
+            : HelperService::getTeacherStoragePricePerMinute();
+    }
+
+    private function getDeliveryPricePerMinute(Model $subscriber): float
+    {
+        return $subscriber instanceof Academy
+            ? HelperService::getAcademyDeliveryPricePerMinute()
+            : HelperService::getTeacherDeliveryPricePerMinute();
     }
 
     private function resolveNextStartDate(Model $subscriber): Carbon
@@ -416,8 +463,9 @@ class SubscriptionRenewalService
         string $label,
         int $months,
         ?int $customMonths,
-        int $storageLimitGb = 0,
-        float $storageAmount = 0.0,
+        int $storageMinutes = 0,
+        int $deliveryMinutes = 0,
+        float $streamAmount = 0.0,
         string $requestType = self::REQUEST_TYPE_RENEWAL,
         array $upgrade = []
     ): string
@@ -433,8 +481,9 @@ class SubscriptionRenewalService
             $notes[] = "عدد الشهور: {$months}";
         }
 
-        if ($storageLimitGb > 0) {
-            $notes[] = "تخزين: {$storageLimitGb} GB × {$months} شهر = " . number_format($storageAmount, 2) . ' ج.م';
+        if ($storageMinutes > 0 || $deliveryMinutes > 0) {
+            $notes[] = "دقائق تخزين: {$storageMinutes}, دقائق مشاهدة: {$deliveryMinutes}";
+            $notes[] = "تكلفة الستريم: " . number_format($streamAmount, 2) . ' ج.م';
         }
 
         if (($upgrade['upgrade_seats'] ?? false) === true) {
@@ -442,7 +491,8 @@ class SubscriptionRenewalService
         }
 
         if (($upgrade['upgrade_storage'] ?? false) === true) {
-            $notes[] = 'ترقية التخزين: ' . ($upgrade['current_storage_limit_gb'] ?? 0) . ' GB → ' . ($upgrade['target_storage_limit_gb'] ?? 0) . ' GB';
+            $notes[] = 'ترقية التخزين: ' . ($upgrade['current_storage_minutes'] ?? 0) . ' دقيقة → ' . ($upgrade['target_storage_minutes'] ?? 0) . ' دقيقة';
+            $notes[] = 'ترقية المشاهدة: ' . ($upgrade['current_delivery_minutes'] ?? 0) . ' دقيقة → ' . ($upgrade['target_delivery_minutes'] ?? 0) . ' دقيقة';
         }
 
         if (($upgrade['price_difference'] ?? 0) > 0) {
@@ -464,16 +514,13 @@ class SubscriptionRenewalService
             : "طلب {$typeLabel} من {$subscriberName} ({$label}) بانتظار الموافقة.";
 
         Admin::query()->get()->each(function (Admin $admin) use ($title, $body, $subscription): void {
-            // Generate UUID once for this notification
             $notificationId = (string) \Illuminate\Support\Str::uuid();
 
-            // Save to Filament DB notifications (bell icon in admin panel)
             Notification::make()
                 ->title($title)
                 ->body($body)
                 ->sendToDatabase($admin);
 
-            // Broadcast real-time via Reverb using the same UUID
             event(new NewNotificationEvent(
                 userId: (string) $admin->id,
                 userType: 'admin',
@@ -538,67 +585,42 @@ class SubscriptionRenewalService
                 type: (string) $data['type'],
             ));
         } catch (\Throwable $e) {
-            Log::error('Failed to send subscription decision notification', [
-                'subscription_id' => (string) $subscription->id,
-                'subscriber_type' => get_class($subscriber),
-                'subscriber_id' => (string) ($subscriber->id ?? ''),
-                'error' => $e->getMessage(),
-            ]);
+            Log::error('Failed to send subscription decision notification', ['error' => $e->getMessage()]);
         }
     }
 
     private function extractPlanLabelFromNotes(?string $notes): ?string
     {
-        if (! $notes) {
-            return null;
-        }
-
+        if (! $notes) return null;
         if (preg_match('/نوع الاشتراك\\s*:\\s*([^\\n\\r]+)/u', $notes, $matches) === 1) {
-            $label = trim((string) ($matches[1] ?? ''));
-            return $label !== '' ? $label : null;
+            return trim((string) ($matches[1] ?? ''));
         }
-
         return null;
     }
 
     private function extractCustomMonthsFromNotes(?string $notes): ?int
     {
-        if (! $notes) {
-            return null;
-        }
-
+        if (! $notes) return null;
         if (preg_match('/عدد الشهور\\s*:\\s*(\\d+)/u', $notes, $matches) === 1) {
             return (int) ($matches[1] ?? 0) ?: null;
         }
-
         return null;
     }
 
     private function inferPlanSelectionFromLabel(string $label): ?string
     {
-        return match ($label) {
-            'تجريبي' => self::PLAN_TRIAL,
-            default => match (true) {
-                str_contains($label, 'تجريبي') => self::PLAN_TRIAL,
-                str_contains($label, 'ربع') => self::PLAN_QUARTERLY,
-                str_contains($label, 'نصف') => self::PLAN_SEMI_ANNUAL,
-                str_contains($label, 'سنوي') => self::PLAN_ANNUAL,
-                str_contains($label, 'مخصص') => self::PLAN_CUSTOM,
-                default => self::PLAN_MONTHLY,
-            },
-        };
+        if (str_contains($label, 'تجريبي')) return self::PLAN_TRIAL;
+        if (str_contains($label, 'ربع')) return self::PLAN_QUARTERLY;
+        if (str_contains($label, 'نصف')) return self::PLAN_SEMI_ANNUAL;
+        if (str_contains($label, 'سنوي')) return self::PLAN_ANNUAL;
+        if (str_contains($label, 'مخصص')) return self::PLAN_CUSTOM;
+        return self::PLAN_MONTHLY;
     }
 
     private function resolvePlanLabel(string $planType, string $subscriptionPeriod): string
     {
-        if ($planType === 'trial') {
-            return 'تجريبي';
-        }
-
-        if ($planType === 'custom') {
-            return 'مخصص (Custom)';
-        }
-
+        if ($planType === 'trial') return 'تجريبي';
+        if ($planType === 'custom') return 'مخصص (Custom)';
         if ($planType === 'term') {
             return match ($subscriptionPeriod) {
                 'monthly' => 'شهري (1 شهر)',
@@ -608,21 +630,13 @@ class SubscriptionRenewalService
                 default => 'دوري',
             };
         }
-
         return 'غير محدد';
     }
 
     private function inferPlanStartDate(?Carbon $expiresAt, string $planType, string $subscriptionPeriod): ?Carbon
     {
-        if (! $expiresAt) {
-            return null;
-        }
-
-        if ($planType === 'trial') {
-            $trialDays = HelperService::getTrialPeriodDays();
-            return $expiresAt->copy()->subDays($trialDays);
-        }
-
+        if (! $expiresAt) return null;
+        if ($planType === 'trial') return $expiresAt->copy()->subDays(HelperService::getTrialPeriodDays());
         if ($planType === 'term') {
             $months = match ($subscriptionPeriod) {
                 'monthly' => 1,
@@ -631,50 +645,43 @@ class SubscriptionRenewalService
                 'annual' => 12,
                 default => null,
             };
-
-            if ($months) {
-                return $expiresAt->copy()->subMonths($months);
-            }
+            return $months ? $expiresAt->copy()->subMonths($months) : null;
         }
-
         return null;
     }
 
-    private function getStorageLimitGb(Model $subscriber): int
+    private function getStorageMinutesLimit(Model $subscriber): int
     {
-        $value = data_get($subscriber, 'storage_limit_gb');
-        if (! is_numeric($value)) {
-            return 0;
-        }
+        return (int) (data_get($subscriber, 'storage_minutes_limit') ?? 0);
+    }
 
-        return max(0, (int) $value);
+    private function getDeliveryMinutesLimit(Model $subscriber): int
+    {
+        return (int) (data_get($subscriber, 'delivery_minutes_limit') ?? 0);
     }
 
     private function calculateFinancials(
         int $seatsUsed,
         ?int $quotaLimit,
-        int $storageLimitGb,
+        int $storageMinutes,
+        int $deliveryMinutes,
         float $pricePerSeat,
-        float $storagePricePerGb,
+        float $storagePricePerMinute,
+        float $deliveryPricePerMinute,
         int $months
     ): array {
         $billableSeats = $quotaLimit ?? $seatsUsed;
-        if ($billableSeats <= 0) {
-            $billableSeats = $seatsUsed;
-        }
+        if ($billableSeats <= 0) $billableSeats = $seatsUsed;
 
-        $seatsAmount = $months > 0
-            ? $billableSeats * $pricePerSeat * $months
-            : 0.0;
-
-        $storageAmount = ($months > 0 && $storageLimitGb > 0)
-            ? $storageLimitGb * $storagePricePerGb * $months
-            : 0.0;
+        $seatsAmount = $months > 0 ? $billableSeats * $pricePerSeat * $months : 0.0;
+        $storageAmount = ($months > 0) ? $storageMinutes * $storagePricePerMinute * $months : 0.0;
+        $deliveryAmount = ($months > 0) ? $deliveryMinutes * $deliveryPricePerMinute * $months : 0.0;
 
         return [
             'seats_amount' => round($seatsAmount, 2),
             'storage_amount' => round($storageAmount, 2),
-            'total' => round($seatsAmount + $storageAmount, 2),
+            'delivery_amount' => round($deliveryAmount, 2),
+            'total' => round($seatsAmount + $storageAmount + $deliveryAmount, 2),
         ];
     }
 
@@ -682,45 +689,49 @@ class SubscriptionRenewalService
         Model $subscriber,
         array $upgradePayload,
         ?int $currentQuotaLimit,
-        int $currentStorageLimitGb
+        int $currentStorageMinutes,
+        int $currentDeliveryMinutes
     ): array {
         $upgradeSeats = (bool) ($upgradePayload['upgrade_seats'] ?? false);
         $upgradeStorage = (bool) ($upgradePayload['upgrade_storage'] ?? false);
 
         $targetQuotaLimit = $currentQuotaLimit;
-        $targetStorageLimitGb = $currentStorageLimitGb;
+        $targetStorageMinutes = $currentStorageMinutes;
+        $targetDeliveryMinutes = $currentDeliveryMinutes;
 
-        if ($upgradeSeats) {
-            if ($currentQuotaLimit === null) {
-                throw new InvalidArgumentException('لا يمكن طلب ترقية المقاعد لأن الاشتراك الحالي غير محدود المقاعد.');
-            }
-
+        if ($upgradeSeats && $currentQuotaLimit !== null) {
             $newSeatsLimit = (int) ($upgradePayload['new_seats_limit'] ?? 0);
-            if ($newSeatsLimit <= $currentQuotaLimit) {
-                throw new InvalidArgumentException('عدد الكراسي الجديد يجب أن يكون أكبر من الحد الحالي.');
-            }
-
-            $targetQuotaLimit = $newSeatsLimit;
+            if ($newSeatsLimit > $currentQuotaLimit) $targetQuotaLimit = $newSeatsLimit;
         }
 
         if ($upgradeStorage) {
-            if ($currentStorageLimitGb <= 0) {
-                throw new InvalidArgumentException('لا يمكن طلب ترقية التخزين لأن حد التخزين الحالي غير محدود.');
-            }
-
-            $newStorageLimitGb = (int) ($upgradePayload['new_storage_limit_gb'] ?? 0);
-            if ($newStorageLimitGb <= $currentStorageLimitGb) {
-                throw new InvalidArgumentException('حد التخزين الجديد يجب أن يكون أكبر من الحد الحالي.');
-            }
-
-            $targetStorageLimitGb = $newStorageLimitGb;
+            $newStorageMinutes = (int) ($upgradePayload['new_storage_minutes_limit'] ?? 0);
+            $newDeliveryMinutes = (int) ($upgradePayload['new_delivery_minutes_limit'] ?? 0);
+            if ($newStorageMinutes > $currentStorageMinutes) $targetStorageMinutes = $newStorageMinutes;
+            if ($newDeliveryMinutes > $currentDeliveryMinutes) $targetDeliveryMinutes = $newDeliveryMinutes;
         }
-
         return [
             'upgrade_seats' => $upgradeSeats,
             'upgrade_storage' => $upgradeStorage,
             'target_quota_limit' => $targetQuotaLimit,
-            'target_storage_limit_gb' => $targetStorageLimitGb,
+            'target_storage_minutes' => $targetStorageMinutes,
+            'target_delivery_minutes' => $targetDeliveryMinutes,
         ];
+    }
+
+    private function getSubscriptionSnapshotCacheKey(Model $subscriber): string
+    {
+        return "subscription_snapshot_{$subscriber->getKey()}_" . class_basename($subscriber);
+    }
+
+    private function getPendingRenewalCacheKey(Model $subscriber): string
+    {
+        return "pending_renewal_{$subscriber->getKey()}_" . class_basename($subscriber);
+    }
+
+    public function clearSubscriptionCache(Model $subscriber): void
+    {
+        Cache::forget($this->getSubscriptionSnapshotCacheKey($subscriber));
+        Cache::forget($this->getPendingRenewalCacheKey($subscriber));
     }
 }

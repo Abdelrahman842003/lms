@@ -252,9 +252,8 @@ class SubscriptionResource extends BaseResource
                             })
                             ->nullable(),
 
-                        TextInput::make('storage_limit_gb')
-                            ->label('الحد الأقصى للتخزين (GB)')
-                            ->helperText('سعة التخزين المتاحة ضمن الباقة')
+                        TextInput::make('storage_minutes_limit')
+                            ->label('حد دقائق التخزين (فيديو)')
                             ->numeric()
                             ->minValue(0)
                             ->default(0)
@@ -263,9 +262,25 @@ class SubscriptionResource extends BaseResource
                                     return;
                                 }
 
-                                $storage = data_get($record->subscriber, 'storage_limit_gb');
-                                if (is_numeric($storage)) {
-                                    $component->state((int) $storage);
+                                $minutes = data_get($record->subscriber, 'storage_minutes_limit');
+                                if (is_numeric($minutes)) {
+                                    $component->state((int) $minutes);
+                                }
+                            }),
+
+                        TextInput::make('delivery_minutes_limit')
+                            ->label('حد دقائق المشاهدة (فيديو)')
+                            ->numeric()
+                            ->minValue(0)
+                            ->default(0)
+                            ->afterStateHydrated(function ($component, $state, ?Subscription $record): void {
+                                if (! $record) {
+                                    return;
+                                }
+
+                                $minutes = data_get($record->subscriber, 'delivery_minutes_limit');
+                                if (is_numeric($minutes)) {
+                                    $component->state((int) $minutes);
                                 }
                             }),
 

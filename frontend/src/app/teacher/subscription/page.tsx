@@ -7,6 +7,7 @@ import { Button, Icon } from '@/components/ui';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { withTeacherAuth } from '@/components/auth/withTeacherAuth';
 import SubscriptionRenewalModal from '@/components/subscription/SubscriptionRenewalModal';
+import { SubscriptionUsageGauges } from '@/components/subscription/SubscriptionUsageGauges';
 import { getTeacherSubscription, requestTeacherRenewal } from '@/services/subscriptionService';
 import type { SubscriptionRenewalRequest, SubscriptionResponse } from '@/types/subscription.types';
 
@@ -73,20 +74,18 @@ function SubscriptionPage() {
   };
 
   const getStoragePercentage = () => {
-    return subscriptionData?.subscription?.storage?.percentage ?? 0;
+    return subscriptionData?.subscription?.storage?.storage_percentage ?? 0;
   };
 
-  const formatBytes = (bytes: number): string => {
-    if (bytes === 0) return '0 B';
-    if (bytes < 1024) return bytes + ' B';
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-    if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
-    return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+  const getDeliveryPercentage = () => {
+    return subscriptionData?.subscription?.storage?.delivery_percentage ?? 0;
   };
+
 
   const daysRemaining = getDaysRemaining();
   const seatsPercentage = getSeatsPercentage();
   const storagePercentage = getStoragePercentage();
+  const deliveryPercentage = getDeliveryPercentage();
   const subscription = subscriptionData?.subscription;
   const storage = subscription?.storage;
   const pendingRequest = subscriptionData?.pending_request;
@@ -201,11 +200,28 @@ function SubscriptionPage() {
                   <span className={`text-xs font-black uppercase tracking-widest ${storagePercentage >= 90 ? 'text-rose-400/40' : 'text-emerald-400/40'}`}>التخزين</span>
                 </div>
                 <div>
-                  <h3 className="text-3xl font-black text-white">{storage?.is_unlimited ? '∞' : `${storagePercentage}%`}</h3>
-                  <p className="text-[10px] font-bold text-gray-light/30 mt-1">مستخدم {formatBytes(storage?.used_bytes ?? 0)} من أصل {storage?.limit_gb ?? 0}GB</p>
+                  <h3 className="text-3xl font-black text-white">{storage?.storage_used_minutes} <span className="text-sm text-gray-light/40">/ {storage?.storage_limit_minutes} د</span></h3>
+                  <p className="text-[10px] font-bold text-gray-light/30 mt-1">تم استخدام {storagePercentage}% من مساحة التخزين</p>
                 </div>
                 <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
                   <div className={`h-full transition-all duration-1000 ${storagePercentage >= 90 ? 'bg-rose-500' : 'bg-emerald-500'}`} style={{ width: `${storagePercentage}%` }}></div>
+                </div>
+              </div>
+
+              {/* Delivery Stat (New) */}
+              <div className="premium-glass premium-border rounded-[2rem] p-6 space-y-4 hover:translate-y-[-4px] transition-all duration-500 group">
+                <div className="flex items-center justify-between">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-colors ${deliveryPercentage >= 90 ? 'bg-rose-500/10 border-rose-500/10 group-hover:bg-rose-500/20' : 'bg-blue-500/10 border-blue-500/10 group-hover:bg-blue-500/20'}`}>
+                    <Icon name="play-circle" className={deliveryPercentage >= 90 ? 'text-rose-400' : 'text-blue-400'} />
+                  </div>
+                  <span className={`text-xs font-black uppercase tracking-widest ${deliveryPercentage >= 90 ? 'text-rose-400/40' : 'text-blue-400/40'}`}>المشاهدة</span>
+                </div>
+                <div>
+                  <h3 className="text-3xl font-black text-white">{storage?.delivery_used_minutes} <span className="text-sm text-gray-light/40">/ {storage?.delivery_limit_minutes} د</span></h3>
+                  <p className="text-[10px] font-bold text-gray-light/30 mt-1">تم استهلاك {deliveryPercentage}% من باقة المشاهدة</p>
+                </div>
+                <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                  <div className={`h-full transition-all duration-1000 ${deliveryPercentage >= 90 ? 'bg-rose-500' : 'bg-blue-500'}`} style={{ width: `${deliveryPercentage}%` }}></div>
                 </div>
               </div>
 
@@ -227,8 +243,28 @@ function SubscriptionPage() {
               </div>
             </div>
 
+            {/* Usage Analysis Gauges */}
+            <SubscriptionUsageGauges 
+              seats={{
+                used: subscription?.seats_used ?? 0,
+                limit: subscription?.seats_limit ?? 0,
+                percentage: seatsPercentage,
+                isUnlimited: subscription?.is_unlimited
+              }}
+              storage={{
+                used: storage?.storage_used_minutes ?? 0,
+                limit: storage?.storage_limit_minutes ?? 0,
+                percentage: storagePercentage
+              }}
+              delivery={{
+                used: storage?.delivery_used_minutes ?? 0,
+                limit: storage?.delivery_limit_minutes ?? 0,
+                percentage: deliveryPercentage
+              }}
+            />
+
             {/* Detailed Info Cards */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {/* Plan Details */}
               <div className="lg:col-span-2 space-y-8">
                 <div className="premium-glass premium-border rounded-[2.5rem] p-8 space-y-6">
@@ -271,26 +307,40 @@ function SubscriptionPage() {
                   <div className="flex items-center justify-between">
                     <h2 className="text-xl font-black text-white flex items-center gap-3">
                       <Icon name="hdd" className="text-emerald-400" />
-                      تحليل مساحة التخزين
+                      تحليل مساحة التخزين والمشاهدة
                     </h2>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="flex flex-col items-center justify-center p-6 bg-white/5 rounded-3xl border border-white/5 text-center space-y-2">
-                       <span className="text-[10px] font-black text-gray-light/20 uppercase tracking-widest">الإجمالي</span>
-                       <span className="text-2xl font-black text-white tracking-tighter">{storage?.is_unlimited ? '∞' : `${storage?.limit_gb}GB`}</span>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                       <h4 className="text-sm font-black text-white/60">تخزين الفيديو</h4>
+                       <div className="p-6 bg-white/5 rounded-3xl border border-white/5 space-y-2">
+                          <div className="flex justify-between items-center">
+                             <span className="text-xs text-gray-light/40">المستخدم</span>
+                             <span className="text-lg font-black text-white">{storage?.storage_used_minutes} دقيقة</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                             <span className="text-xs text-gray-light/40">الإجمالي المسموح</span>
+                             <span className="text-lg font-black text-primary">{storage?.storage_limit_minutes} دقيقة</span>
+                          </div>
+                       </div>
                     </div>
-                    <div className="flex flex-col items-center justify-center p-6 bg-white/5 rounded-3xl border border-white/5 text-center space-y-2">
-                       <span className="text-[10px] font-black text-gray-light/20 uppercase tracking-widest">المستخدم</span>
-                       <span className="text-2xl font-black text-emerald-400 tracking-tighter">{formatBytes(storage?.used_bytes ?? 0)}</span>
-                    </div>
-                    <div className="flex flex-col items-center justify-center p-6 bg-white/5 rounded-3xl border border-white/5 text-center space-y-2">
-                       <span className="text-[10px] font-black text-gray-light/20 uppercase tracking-widest">المتبقي</span>
-                       <span className="text-2xl font-black text-primary tracking-tighter">{storage?.is_unlimited ? '∞' : formatBytes(storage?.remaining_bytes ?? 0)}</span>
+                    <div className="space-y-4">
+                       <h4 className="text-sm font-black text-white/60">باقة المشاهدة</h4>
+                       <div className="p-6 bg-white/5 rounded-3xl border border-white/5 space-y-2">
+                          <div className="flex justify-between items-center">
+                             <span className="text-xs text-gray-light/40">المستهلك</span>
+                             <span className="text-lg font-black text-white">{storage?.delivery_used_minutes} دقيقة</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                             <span className="text-xs text-gray-light/40">الإجمالي المسموح</span>
+                             <span className="text-lg font-black text-primary">{storage?.delivery_limit_minutes} دقيقة</span>
+                          </div>
+                       </div>
                     </div>
                   </div>
 
-                  {!storage?.is_unlimited && storagePercentage >= 70 && (
+                  {((storage?.storage_limit_minutes ?? 0) > 0 && storagePercentage >= 70) && (
                     <div className={`rounded-2xl p-5 border flex items-center gap-4 ${storagePercentage >= 90 ? 'bg-rose-500/10 border-rose-500/20 text-rose-400' : 'bg-amber-500/10 border-amber-500/20 text-amber-400'}`}>
                       <Icon name="exclamation-circle" className="text-2xl" />
                       <p className="text-sm font-bold leading-relaxed">
@@ -324,8 +374,12 @@ function SubscriptionPage() {
                         <span className="font-black text-white">{subscription?.price_per_seat} ج.م</span>
                      </div>
                      <div className="flex items-center justify-between px-6 py-4 bg-white/5 rounded-2xl border border-white/5">
-                        <span className="text-xs font-bold text-gray-light/40">سعر الـ GB</span>
-                        <span className="font-black text-white">{subscription?.price_per_storage_gb} ج.م</span>
+                        <span className="text-xs font-bold text-gray-light/40">سعر دقيقة التخزين</span>
+                        <span className="font-black text-white">{subscription?.price_per_storage_minute} ج.م</span>
+                     </div>
+                     <div className="flex items-center justify-between px-6 py-4 bg-white/5 rounded-2xl border border-white/5">
+                        <span className="text-xs font-bold text-gray-light/40">سعر دقيقة المشاهدة</span>
+                        <span className="font-black text-white">{subscription?.price_per_delivery_minute} ج.م</span>
                      </div>
                   </div>
 
@@ -370,9 +424,11 @@ function SubscriptionPage() {
           currentPlanSelection={currentPlanSelection}
           currentPlanLabel={subscription?.plan_label ?? ''}
           currentSeatsLimit={subscription?.seats_limit ?? null}
-          currentStorageLimitGb={storage?.limit_gb ?? null}
+          currentStorageLimitMinutes={storage?.storage_limit_minutes ?? 0}
+          currentDeliveryLimitMinutes={storage?.delivery_limit_minutes ?? 0}
           pricePerSeat={subscription?.price_per_seat ?? 0}
-          pricePerStorageGb={subscription?.price_per_storage_gb ?? 0}
+          pricePerStorageMinute={subscription?.price_per_storage_minute ?? 0}
+          pricePerDeliveryMinute={subscription?.price_per_delivery_minute ?? 0}
           isLoading={renewalSubmitting}
         />
       </div>

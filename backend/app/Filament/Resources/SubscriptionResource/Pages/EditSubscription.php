@@ -66,13 +66,18 @@ class EditSubscription extends EditRecord
             ? max(0, (int) $data['quota_limit'])
             : (int) ($subscriber->plan_max_students ?? 0);
 
-        $storageLimitGb = is_numeric($data['storage_limit_gb'] ?? null)
-            ? max(0, (int) $data['storage_limit_gb'])
-            : (int) ($subscriber->storage_limit_gb ?? 0);
+        $storageMinutesLimit = is_numeric($data['storage_minutes_limit'] ?? null)
+            ? max(0, (int) $data['storage_minutes_limit'])
+            : (int) ($subscriber->storage_minutes_limit ?? 0);
+
+        $deliveryMinutesLimit = is_numeric($data['delivery_minutes_limit'] ?? null)
+            ? max(0, (int) $data['delivery_minutes_limit'])
+            : (int) ($subscriber->delivery_minutes_limit ?? 0);
 
         $payload = [
             'plan_max_students' => $planMaxStudents,
-            'storage_limit_gb' => $storageLimitGb,
+            'storage_minutes_limit' => $storageMinutesLimit,
+            'delivery_minutes_limit' => $deliveryMinutesLimit,
             'paid_amount' => $effectivePaid,
         ];
 
@@ -86,7 +91,8 @@ class EditSubscription extends EditRecord
                 ? 0.0
                 : $this->calculateFeeForMonths($subscriber, [
                     'plan_max_students' => $planMaxStudents,
-                    'storage_limit_gb' => $storageLimitGb,
+                    'storage_minutes_limit' => $storageMinutesLimit,
+                    'delivery_minutes_limit' => $deliveryMinutesLimit,
                     'discount_percent' => $subscriber->discount_percent,
                     'discount_type' => $subscriber->discount_type,
                     'discount_scope' => $subscriber->discount_scope,
@@ -101,7 +107,8 @@ class EditSubscription extends EditRecord
 
         $oldFeeForRemaining = $this->calculateFeeForMonths($subscriber, [
             'plan_max_students' => $subscriber->plan_max_students,
-            'storage_limit_gb' => $subscriber->storage_limit_gb,
+            'storage_minutes_limit' => $subscriber->storage_minutes_limit,
+            'delivery_minutes_limit' => $subscriber->delivery_minutes_limit,
             'discount_percent' => $subscriber->discount_percent,
             'discount_type' => $subscriber->discount_type,
             'discount_scope' => $subscriber->discount_scope,
@@ -109,7 +116,8 @@ class EditSubscription extends EditRecord
 
         $newFeeForRemaining = $this->calculateFeeForMonths($subscriber, [
             'plan_max_students' => $planMaxStudents,
-            'storage_limit_gb' => $storageLimitGb,
+            'storage_minutes_limit' => $storageMinutesLimit,
+            'delivery_minutes_limit' => $deliveryMinutesLimit,
             'discount_percent' => $subscriber->discount_percent,
             'discount_type' => $subscriber->discount_type,
             'discount_scope' => $subscriber->discount_scope,
@@ -254,13 +262,15 @@ class EditSubscription extends EditRecord
 
     private function calculateFeeForMonths(Teacher|Academy $subscriber, array $payload, int $months): float
     {
-        [$pricePerStudent, $storagePricePerGb] = $this->resolvePricing($subscriber);
+        [$pricePerStudent, $storagePriceMin, $deliveryPriceMin] = $this->resolvePricing($subscriber);
 
         $students = (int) ($payload['plan_max_students'] ?? 0);
-        $storageLimitGb = (int) ($payload['storage_limit_gb'] ?? 0);
+        $storageMinutes = (int) ($payload['storage_minutes_limit'] ?? 0);
+        $deliveryMinutes = (int) ($payload['delivery_minutes_limit'] ?? 0);
+        
         $seatsAmount = $students * $months * $pricePerStudent;
-        $storageAmount = $storageLimitGb * $storagePricePerGb * $months;
-        $gross = $seatsAmount + $storageAmount;
+        $streamAmount = ($storageMinutes * $storagePriceMin + $deliveryMinutes * $deliveryPriceMin) * $months;
+        $gross = $seatsAmount + $streamAmount;
 
         $discountValue = (float) ($payload['discount_percent'] ?? 0);
         $discountType = (string) ($payload['discount_type'] ?? 'percent');
@@ -268,7 +278,7 @@ class EditSubscription extends EditRecord
 
         $discountableAmount = match ($discountScope) {
             'students' => $seatsAmount,
-            'storage' => $storageAmount,
+            'storage' => $streamAmount,
             default => $gross,
         };
 
@@ -282,19 +292,24 @@ class EditSubscription extends EditRecord
     private function resolvePricing(Teacher|Academy $subscriber): array
     {
         $isTeacher = $subscriber instanceof Teacher;
-        $studentKey = $isTeacher ? 'teacher_price_per_student' : 'academy_price_per_student';
-        $storageKey = $isTeacher ? 'teacher_storage_price_per_gb' : 'academy_storage_price_per_gb';
-        $defaultStudent = $isTeacher ? 60 : 40;
-
+        
         try {
-            $pricePerStudent = (float) (Setting::where('key', $studentKey)->value('value') ?: $defaultStudent);
-            $storagePricePerGb = (float) (Setting::where('key', $storageKey)->value('value') ?: 0);
+            if ($isTeacher) {
+                $pricePerStudent = \App\Domains\Application\Services\HelperService::getTeacherPricePerStudent();
+                $storagePriceMin = \App\Domains\Application\Services\HelperService::getTeacherStoragePricePerMinute();
+                $deliveryPriceMin = \App\Domains\Application\Services\HelperService::getTeacherDeliveryPricePerMinute();
+            } else {
+                $pricePerStudent = \App\Domains\Application\Services\HelperService::getAcademyPricePerStudent();
+                $storagePriceMin = \App\Domains\Application\Services\HelperService::getAcademyStoragePricePerMinute();
+                $deliveryPriceMin = \App\Domains\Application\Services\HelperService::getAcademyDeliveryPricePerMinute();
+            }
         } catch (\Throwable $exception) {
-            $pricePerStudent = $defaultStudent;
-            $storagePricePerGb = 0;
+            $pricePerStudent = $isTeacher ? 60 : 40;
+            $storagePriceMin = 0.5;
+            $deliveryPriceMin = 0.1;
         }
 
-        return [$pricePerStudent, $storagePricePerGb];
+        return [$pricePerStudent, $storagePriceMin, $deliveryPriceMin];
     }
 
     private function resolvePricePerStudent(Teacher|Academy $subscriber): float
@@ -331,7 +346,8 @@ class EditSubscription extends EditRecord
     {
         unset(
             $data['update_subscription_duration'],
-            $data['storage_limit_gb'],
+            $data['storage_minutes_limit'],
+            $data['delivery_minutes_limit'],
             $data['custom_period_months'],
             $data['plan_selection']
         );

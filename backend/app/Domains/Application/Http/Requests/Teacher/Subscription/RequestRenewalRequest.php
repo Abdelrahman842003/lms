@@ -21,7 +21,8 @@ class RequestRenewalRequest extends FormRequest
             'upgrade_seats' => ['nullable', 'boolean'],
             'upgrade_storage' => ['nullable', 'boolean'],
             'new_seats_limit' => ['nullable', 'integer', 'min:1', 'required_if:upgrade_seats,true'],
-            'new_storage_limit_gb' => ['nullable', 'integer', 'min:1', 'required_if:upgrade_storage,true'],
+            'new_storage_minutes_limit' => ['nullable', 'integer', 'min:1', 'required_if:upgrade_storage,true'],
+            'new_delivery_minutes_limit' => ['nullable', 'integer', 'min:1', 'required_if:upgrade_storage,true'],
         ];
     }
 }

@@ -38,8 +38,8 @@ class SubscriptionController extends Controller
                 'notes' => $pending->notes,
                 'upgrade_seats_from' => $pending->upgrade_seats_from,
                 'upgrade_seats_to' => $pending->upgrade_seats_to,
-                'upgrade_storage_from_gb' => $pending->upgrade_storage_from_gb,
-                'upgrade_storage_to_gb' => $pending->upgrade_storage_to_gb,
+                'upgrade_storage_minutes_from' => $pending->upgrade_storage_from_gb, // Using field for minutes
+                'upgrade_storage_minutes_to' => $pending->upgrade_storage_to_gb, // Using field for minutes
                 'upgrade_price_difference' => (float) ($pending->upgrade_price_difference ?? 0),
                 'created_at' => $pending->created_at?->format('Y-m-d H:i'),
             ] : null,
@@ -60,7 +60,8 @@ class SubscriptionController extends Controller
             'upgrade_seats' => (bool) ($validated['upgrade_seats'] ?? false),
             'upgrade_storage' => (bool) ($validated['upgrade_storage'] ?? false),
             'new_seats_limit' => isset($validated['new_seats_limit']) ? (int) $validated['new_seats_limit'] : null,
-            'new_storage_limit_gb' => isset($validated['new_storage_limit_gb']) ? (int) $validated['new_storage_limit_gb'] : null,
+            'new_storage_minutes_limit' => isset($validated['new_storage_minutes_limit']) ? (int) $validated['new_storage_minutes_limit'] : null,
+            'new_delivery_minutes_limit' => isset($validated['new_delivery_minutes_limit']) ? (int) $validated['new_delivery_minutes_limit'] : null,
         ];
 
         try {

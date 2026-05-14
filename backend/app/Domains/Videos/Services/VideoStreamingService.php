@@ -14,11 +14,18 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
+/**
+ * Handles video streaming and attachment delivery.
+ *
+ * Videos: served via Cloudflare Stream signed URLs (HLS/iframe).
+ * Attachments: still served via R2 presigned URLs.
+ */
 class VideoStreamingService
 {
     public function __construct(
         private readonly VideoStorageService $storage,
         private readonly VideoAuthorizationService $authorization,
+        private readonly CloudflareStreamService $stream,
     ) {}
 
     /**
@@ -50,72 +57,68 @@ class VideoStreamingService
     }
 
     /**
-     * Get a signed streaming URL for the video.
+     * Get a signed streaming URL for the video via Cloudflare Stream.
      *
-     * @return array{url: string, expires_in: int}
+     * @return array{url: string, iframe_url: string, expires_in: int, type: string}
      * @throws AuthorizationException
      */
     public function getStreamUrl(Video $video, Student $student): array
     {
         $this->authorization->assertStudentCanView($video, $student);
 
-        if (! $video->processed_path || ! $this->storage->exists($video->processed_path)) {
-            abort(404, 'Video file not found');
+        if (! $video->stream_uid) {
+            abort(404, 'Video not available for streaming');
         }
 
-        $expiresAt = Carbon::now()->addHour();
-        $signedUrl = $this->storage->temporaryUrl(
-            $video->processed_path,
-            $expiresAt,
-            [
-                'ResponseContentType' => 'video/mp4',
-                'ResponseContentDisposition' => 'inline',
-            ]
-        );
+        $ttl = (int) config('cloudflare.stream.signed_token_ttl', 3600);
 
         return [
-            'url' => $signedUrl,
-            'expires_in' => 3600,
+            'url'        => $this->stream->getSignedPlaybackUrl($video->stream_uid, $ttl),
+            'iframe_url' => $this->stream->getSignedIframeUrl($video->stream_uid, $ttl),
+            'expires_in' => $ttl,
+            'type'       => 'cloudflare_stream',
         ];
     }
 
     /**
-     * Stream video content directly or redirect to signed URL.
+     * Stream video — returns a redirect to the CF Stream signed URL.
+     *
+     * For Cloudflare Stream, we redirect to the signed HLS manifest.
+     * The frontend player (iframe or HLS.js) handles adaptive bitrate.
      */
     public function streamVideo(Video $video, Student $student): RedirectResponse|StreamedResponse
     {
         $this->authorization->assertStudentCanView($video, $student);
 
-        if (! $video->processed_path || ! $this->storage->exists($video->processed_path)) {
-            abort(404, 'Video file not found');
+        if (! $video->stream_uid) {
+            abort(404, 'Video not available for streaming');
         }
 
-        try {
-            $signedUrl = $this->storage->temporaryUrl(
-                $video->processed_path,
-                Carbon::now()->addSeconds(45),
-                [
-                    'ResponseContentType' => 'video/mp4',
-                    'ResponseContentDisposition' => 'inline',
-                ]
-            );
+        $playbackUrl = $this->stream->getSignedPlaybackUrl($video->stream_uid, 300);
 
-            return redirect()->away($signedUrl, 302, [
-                'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
-                'Pragma' => 'no-cache',
-            ]);
-        } catch (\Throwable) {
-            return $this->streamPrivateFile($video->processed_path, 'video/mp4', false);
-        }
+        return redirect()->away($playbackUrl, 302, [
+            'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+            'Pragma' => 'no-cache',
+        ]);
     }
 
     /**
-     * Get thumbnail URL or stream it directly.
+     * Get thumbnail URL.
+     *
+     * Uses Cloudflare Stream's auto-generated thumbnails.
      */
     public function getThumbnailStream(Video $video, Student $student): RedirectResponse|StreamedResponse
     {
         $this->authorization->assertStudentCanView($video, $student);
 
+        if ($video->stream_uid) {
+            // Use CF Stream thumbnail
+            $thumbnailUrl = $this->stream->getThumbnailUrl($video->stream_uid);
+
+            return redirect()->away($thumbnailUrl);
+        }
+
+        // Fallback: R2 stored thumbnail (legacy videos)
         if (! $video->thumbnail_path || ! $this->storage->exists($video->thumbnail_path)) {
             abort(404, 'Thumbnail not found');
         }
@@ -135,6 +138,8 @@ class VideoStreamingService
 
     /**
      * Get attachment view URL.
+     *
+     * Attachments remain on R2.
      *
      * @return array{url: string, mime_type: string, file_name: string, expires_in: int}
      */

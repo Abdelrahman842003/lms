@@ -8,6 +8,12 @@ use App\Domains\Application\Http\Controllers\Api\RefreshTokenController;
 use App\Domains\Application\Http\Controllers\Api\MediaProxyController;
 
 // ============================================
+// Cloudflare Stream Webhook (no auth — signature verified internally)
+// ============================================
+Route::post('/webhooks/cloudflare-stream', \App\Domains\Videos\Http\Controllers\HandleStreamWebhookController::class)
+    ->middleware('throttle:120,1');
+
+// ============================================
 // API Version 1
 // ============================================
 Route::prefix('v1')->group(function () {

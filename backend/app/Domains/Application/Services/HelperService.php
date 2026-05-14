@@ -69,24 +69,46 @@ class HelperService
     }
 
     /**
-     * Get storage price per GB per month (Teacher)
+     * Get price per storage minute (Teacher)
      */
-    public static function getTeacherStoragePricePerGb(): float
+    public static function getTeacherStoragePricePerMinute(): float
     {
         return (float) CacheService::getSetting(
-            'teacher_storage_price_per_gb',
-            fn() => \App\Domains\Application\Models\Setting::where('key', 'teacher_storage_price_per_gb')->value('value') ?? 0
+            'teacher_storage_price_per_minute',
+            fn() => \App\Domains\Application\Models\Setting::where('key', 'teacher_storage_price_per_minute')->value('value') ?? 0.50
         );
     }
 
     /**
-     * Get storage price per GB per month (Academy)
+     * Get price per storage minute (Academy)
      */
-    public static function getAcademyStoragePricePerGb(): float
+    public static function getAcademyStoragePricePerMinute(): float
     {
         return (float) CacheService::getSetting(
-            'academy_storage_price_per_gb',
-            fn() => \App\Domains\Application\Models\Setting::where('key', 'academy_storage_price_per_gb')->value('value') ?? 0
+            'academy_storage_price_per_minute',
+            fn() => \App\Domains\Application\Models\Setting::where('key', 'academy_storage_price_per_minute')->value('value') ?? 0.40
+        );
+    }
+
+    /**
+     * Get price per delivery minute (Teacher)
+     */
+    public static function getTeacherDeliveryPricePerMinute(): float
+    {
+        return (float) CacheService::getSetting(
+            'teacher_delivery_price_per_minute',
+            fn() => \App\Domains\Application\Models\Setting::where('key', 'teacher_delivery_price_per_minute')->value('value') ?? 0.10
+        );
+    }
+
+    /**
+     * Get price per delivery minute (Academy)
+     */
+    public static function getAcademyDeliveryPricePerMinute(): float
+    {
+        return (float) CacheService::getSetting(
+            'academy_delivery_price_per_minute',
+            fn() => \App\Domains\Application\Models\Setting::where('key', 'academy_delivery_price_per_minute')->value('value') ?? 0.08
         );
     }
 

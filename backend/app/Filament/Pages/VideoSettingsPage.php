@@ -97,8 +97,8 @@ class VideoSettingsPage extends Page implements HasForms
             ->statePath('data')
             ->components([
 
-                Section::make('رفع الفيديو المباشر إلى R2 (Direct Upload)')
-                    ->description('التحكم في آلية الرفع المباشر من المتصفح إلى Cloudflare R2 دون المرور بالسيرفر.')
+                Section::make('الرفع المباشر للفيديوهات والمرفقات (Direct Upload)')
+                    ->description('التحكم في آلية الرفع المباشر للفيديوهات إلى Cloudflare Stream وللمرفقات إلى R2.')
                     ->schema([
                         Toggle::make('video_direct_upload_enabled')
                             ->label('تفعيل الرفع المباشر إلى R2')

@@ -34,6 +34,7 @@ class Video extends Model
     }
 
     protected $fillable = [
+        'stream_uid',
         'owner_type',
         'owner_id',
         'uploader_type',

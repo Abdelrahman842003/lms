@@ -37,10 +37,12 @@ class SubscriptionSettingsPage extends Page implements HasForms
         'trial_period_days',
         'teacher_price_per_student',
         'academy_price_per_student',
-        'default_teacher_storage_gb',
-        'default_academy_storage_gb',
-        'teacher_storage_price_per_gb',
-        'academy_storage_price_per_gb',
+        'default_teacher_storage_minutes',
+        'default_academy_storage_minutes',
+        'teacher_storage_price_per_minute',
+        'academy_storage_price_per_minute',
+        'teacher_delivery_price_per_minute',
+        'academy_delivery_price_per_minute',
     ];
 
     public ?array $data = [];
@@ -48,13 +50,15 @@ class SubscriptionSettingsPage extends Page implements HasForms
     public function mount(): void
     {
         $this->form->fill([
-            'trial_period_days'             => Setting::getValue('trial_period_days', '14'),
-            'teacher_price_per_student'     => Setting::getValue('teacher_price_per_student', '60'),
-            'academy_price_per_student'     => Setting::getValue('academy_price_per_student', '40'),
-            'default_teacher_storage_gb'    => Setting::getValue('default_teacher_storage_gb', ''),
-            'default_academy_storage_gb'    => Setting::getValue('default_academy_storage_gb', ''),
-            'teacher_storage_price_per_gb'  => Setting::getValue('teacher_storage_price_per_gb', '0'),
-            'academy_storage_price_per_gb'  => Setting::getValue('academy_storage_price_per_gb', '0'),
+            'trial_period_days'                 => Setting::getValue('trial_period_days', '14'),
+            'teacher_price_per_student'         => Setting::getValue('teacher_price_per_student', '60'),
+            'academy_price_per_student'         => Setting::getValue('academy_price_per_student', '40'),
+            'default_teacher_storage_minutes'   => Setting::getValue('default_teacher_storage_minutes', '500'),
+            'default_academy_storage_minutes'   => Setting::getValue('default_academy_storage_minutes', '1500'),
+            'teacher_storage_price_per_minute'  => Setting::getValue('teacher_storage_price_per_minute', '0.5'),
+            'academy_storage_price_per_minute'  => Setting::getValue('academy_storage_price_per_minute', '0.5'),
+            'teacher_delivery_price_per_minute' => Setting::getValue('teacher_delivery_price_per_minute', '0.1'),
+            'academy_delivery_price_per_minute' => Setting::getValue('academy_delivery_price_per_minute', '0.1'),
         ]);
     }
 
@@ -91,51 +95,51 @@ class SubscriptionSettingsPage extends Page implements HasForms
                             ->action(fn () => $this->save()),
                     ]),
 
-                Section::make('إعدادات التخزين (R2)')
-                    ->description('تحديد الحد الافتراضي وسعر التخزين على Cloudflare R2. يمكن تجاوز الحد لكل مدرس/أكاديمية بشكل منفرد من صفحة التعديل.')
-                    ->icon('heroicon-o-server')
+                Section::make('إعدادات فيديو Cloudflare Stream')
+                    ->description('تحديد الحد الافتراضي وأسعار التخزين والمشاهدة لدقائق الفيديو. (3x Markup مطبق تلقائياً)')
+                    ->icon('heroicon-o-video-camera')
                     ->schema([
-                        TextInput::make('default_teacher_storage_gb')
-                            ->label('الحد الافتراضي للمدرس (GB)')
+                        TextInput::make('default_teacher_storage_minutes')
+                            ->label('الحد الافتراضي للتخزين للمدرس (دقيقة)')
                             ->numeric()
                             ->minValue(1)
-                            ->nullable()
-                            ->placeholder('اتركه فارغاً = غير محدود')
-                            ->helperText('الحد الافتراضي لمساحة تخزين الفيديوهات والمرفقات للمدرسين المستقلين.')
-                            ->suffix('GB'),
+                            ->default(500),
 
-                        TextInput::make('default_academy_storage_gb')
-                            ->label('الحد الافتراضي للأكاديمية (GB)')
+                        TextInput::make('default_academy_storage_minutes')
+                            ->label('الحد الافتراضي للتخزين للأكاديمية (دقيقة)')
                             ->numeric()
                             ->minValue(1)
-                            ->nullable()
-                            ->placeholder('اتركه فارغاً = غير محدود')
-                            ->helperText('الحد الافتراضي لمساحة تخزين الفيديوهات والمرفقات للأكاديميات.')
-                            ->suffix('GB'),
+                            ->default(1500),
 
-                        TextInput::make('teacher_storage_price_per_gb')
-                            ->label('سعر الجيجا للمدرس (شهرياً)')
+                        TextInput::make('teacher_storage_price_per_minute')
+                            ->label('سعر دقيقة التخزين للمدرس (شهرياً)')
                             ->numeric()
-                            ->minValue(0)
-                            ->step(0.1)
-                            ->default('0')
-                            ->prefix('ج.م')
-                            ->helperText('يُضاف إلى فاتورة الاشتراك: storage_limit_gb × السعر × عدد الشهور.'),
+                            ->step(0.01)
+                            ->prefix('ج.م'),
 
-                        TextInput::make('academy_storage_price_per_gb')
-                            ->label('سعر الجيجا للأكاديمية (شهرياً)')
+                        TextInput::make('academy_storage_price_per_minute')
+                            ->label('سعر دقيقة التخزين للأكاديمية (شهرياً)')
                             ->numeric()
-                            ->minValue(0)
-                            ->step(0.1)
-                            ->default('0')
-                            ->prefix('ج.م')
-                            ->helperText('يُضاف إلى فاتورة الاشتراك: storage_limit_gb × السعر × عدد الشهور.'),
+                            ->step(0.01)
+                            ->prefix('ج.م'),
+
+                        TextInput::make('teacher_delivery_price_per_minute')
+                            ->label('سعر دقيقة المشاهدة للمدرس (شهرياً)')
+                            ->numeric()
+                            ->step(0.01)
+                            ->prefix('ج.م'),
+
+                        TextInput::make('academy_delivery_price_per_minute')
+                            ->label('سعر دقيقة المشاهدة للأكاديمية (شهرياً)')
+                            ->numeric()
+                            ->step(0.01)
+                            ->prefix('ج.م'),
                     ])
                     ->columns(2)
                     ->footerActions([
-                        \Filament\Actions\Action::make('save_storage')
-                            ->label('حفظ إعدادات التخزين')
-                            ->icon('heroicon-m-server')
+                        \Filament\Actions\Action::make('save_stream')
+                            ->label('حفظ إعدادات الفيديو')
+                            ->icon('heroicon-m-video-camera')
                             ->color('primary')
                             ->action(fn () => $this->save()),
                     ]),

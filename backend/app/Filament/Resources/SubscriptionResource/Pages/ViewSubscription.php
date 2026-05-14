@@ -74,17 +74,21 @@ class ViewSubscription extends ViewRecord
                             ->label('المقاعد المتبقية')
                             ->state(fn (): string => $this->getRemainingQuotaLabel()),
 
-                        TextEntry::make('purchased_storage_limit')
-                            ->label('المساحة المشتراة')
-                            ->state(fn (): string => $this->getPurchasedStorageLabel()),
+                        TextEntry::make('storage_minutes_limit')
+                            ->label('دقائق التخزين')
+                            ->state(fn (): string => $this->getStreamStorageLimitLabel()),
 
-                        TextEntry::make('used_storage')
-                            ->label('المساحة المستخدمة')
-                            ->state(fn (): string => $this->getUsedStorageLabel()),
+                        TextEntry::make('storage_minutes_used')
+                            ->label('المستخدم للتخزين')
+                            ->state(fn (): string => $this->getStreamStorageUsedLabel()),
 
-                        TextEntry::make('remaining_storage')
-                            ->label('المساحة المتبقية')
-                            ->state(fn (): string => $this->getRemainingStorageLabel()),
+                        TextEntry::make('delivery_minutes_limit')
+                            ->label('دقائق المشاهدة')
+                            ->state(fn (): string => $this->getStreamDeliveryLimitLabel()),
+
+                        TextEntry::make('delivery_minutes_used')
+                            ->label('المستخدم للمشاهدة')
+                            ->state(fn (): string => $this->getStreamDeliveryUsedLabel()),
 
                         TextEntry::make('plan_expires_at')
                             ->label('تاريخ انتهاء الاشتراك')
@@ -301,41 +305,44 @@ class ViewSubscription extends ViewRecord
         );
     }
 
-    private function getPurchasedStorageLabel(): string
+    private function getStreamStorageLimitLabel(): string
     {
         $subscriber = $this->getRecord()?->subscriber;
-        $limitGb = data_get($subscriber, 'storage_limit_gb');
+        $limit = data_get($subscriber, 'storage_minutes_limit');
 
-        if (! is_numeric($limitGb) || (float) $limitGb <= 0) {
+        if (! is_numeric($limit) || (int) $limit <= 0) {
             return 'غير محدود';
         }
 
-        return rtrim(rtrim(number_format((float) $limitGb, 2, '.', ''), '0'), '.') . ' GB';
+        return "{$limit} دقيقة";
     }
 
-    private function getUsedStorageLabel(): string
+    private function getStreamStorageUsedLabel(): string
     {
         $subscriber = $this->getRecord()?->subscriber;
-        $usedBytes = (int) data_get($subscriber, 'storage_used_bytes', 0);
-        $usedGb = $usedBytes / 1_073_741_824;
+        $used = (int) data_get($subscriber, 'storage_minutes_used', 0);
 
-        return rtrim(rtrim(number_format($usedGb, 2, '.', ''), '0'), '.') . ' GB';
+        return "{$used} دقيقة";
     }
 
-    private function getRemainingStorageLabel(): string
+    private function getStreamDeliveryLimitLabel(): string
     {
         $subscriber = $this->getRecord()?->subscriber;
-        $limitGb = data_get($subscriber, 'storage_limit_gb');
+        $limit = data_get($subscriber, 'delivery_minutes_limit');
 
-        if (! is_numeric($limitGb) || (float) $limitGb <= 0) {
+        if (! is_numeric($limit) || (int) $limit <= 0) {
             return 'غير محدود';
         }
 
-        $usedBytes = (int) data_get($subscriber, 'storage_used_bytes', 0);
-        $usedGb = $usedBytes / 1_073_741_824;
-        $remainingGb = max(0, (float) $limitGb - $usedGb);
+        return "{$limit} دقيقة";
+    }
 
-        return rtrim(rtrim(number_format($remainingGb, 2, '.', ''), '0'), '.') . ' GB';
+    private function getStreamDeliveryUsedLabel(): string
+    {
+        $subscriber = $this->getRecord()?->subscriber;
+        $used = (int) data_get($subscriber, 'delivery_minutes_used', 0);
+
+        return "{$used} دقيقة";
     }
 
     private function getSubscriptionPlanLabel(): string

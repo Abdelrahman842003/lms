@@ -131,6 +131,31 @@ class VideoSettingsService
         );
     }
 
+    // ──────────────────────────────────────────────────────────────
+    // Cloudflare Stream settings
+    // ──────────────────────────────────────────────────────────────
+
+    public function signedTokenTtlSeconds(): int
+    {
+        return max(60, (int) config('cloudflare.stream.signed_token_ttl', 3600));
+    }
+
+    public function streamMaxDurationMinutes(): int
+    {
+        return max(1, (int) ceil((int) config('cloudflare.stream.max_duration_seconds', 7200) / 60));
+    }
+
+    public function streamRequireSignedUrls(): bool
+    {
+        return (bool) config('cloudflare.stream.require_signed_urls', true);
+    }
+
+    /** @return array<int, string> */
+    public function streamAllowedOrigins(): array
+    {
+        return (array) config('cloudflare.stream.allowed_origins', []);
+    }
+
     private function toBool(mixed $value): bool
     {
         if (is_bool($value)) {
