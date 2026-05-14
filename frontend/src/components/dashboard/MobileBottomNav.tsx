@@ -298,13 +298,13 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ role }) => {
             className="absolute bottom-28 left-1/2 -translate-x-1/2 w-[92%] max-w-sm max-h-[70vh] overflow-hidden flex flex-col"
             ref={menuRef}
           >
-            <div className="premium-glass premium-border rounded-[2.5rem] p-4 shadow-2xl animate-in slide-in-from-bottom-8 fade-in duration-500 bg-black/80 backdrop-blur-3xl overflow-y-auto custom-scrollbar flex-1">
+            <div className="bg-black/80 premium-border rounded-[2.5rem] p-4 shadow-2xl animate-in slide-in-from-bottom-8 fade-in duration-500 backdrop-blur-3xl overflow-y-auto custom-scrollbar flex-1">
               <div className="grid grid-cols-2 gap-2 mb-4">
                 {hiddenItems.map((item) => (
                   <Link
                     key={item.id}
                     href={item.href}
-                    className={`flex flex-col items-center justify-center gap-2 p-4 rounded-3xl transition-all border ${
+                    className={`flex flex-col items-center justify-center gap-2 p-4 rounded-3xl border ${
                       pathname === item.href 
                         ? 'bg-primary/20 text-primary border-primary/20 shadow-lg shadow-primary/10' 
                         : 'bg-white/5 text-gray-light/60 border-white/5'
@@ -320,7 +320,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ role }) => {
               <div className="pt-4 border-t border-white/5 space-y-2">
                 <Link
                   href={`/${role}/profile`}
-                  className="flex items-center justify-center gap-3 p-4 rounded-2xl bg-white/10 text-white font-bold text-xs border border-white/10 shadow-lg"
+                  className="flex items-center justify-center gap-3 p-4 rounded-2xl bg-white/10 text-white font-bold text-xs border border-white/10 shadow-lg active:scale-95 transition-transform"
                 >
                   <Icon name="user" size="xs" className="text-primary" />
                   <span>الملف الشخصي</span>
@@ -329,7 +329,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ role }) => {
                 {role === 'teacher' && (
                   <Link
                     href="/teacher/subscription"
-                    className="flex items-center justify-center gap-3 p-4 rounded-2xl bg-amber-500/10 text-amber-400 font-bold text-xs border border-amber-500/10 shadow-lg"
+                    className="flex items-center justify-center gap-3 p-4 rounded-2xl bg-amber-500/10 text-amber-400 font-bold text-xs border border-amber-500/10 shadow-lg active:scale-95 transition-transform"
                   >
                     <Icon name="crown" size="xs" />
                     <span>اشتراكي</span>
@@ -339,7 +339,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ role }) => {
                 {hasAcademies && (
                   <button
                     onClick={() => setIsAcademyModalOpen(true)}
-                    className="w-full flex items-center justify-center gap-3 p-4 rounded-2xl bg-primary/10 text-primary font-bold text-xs border border-primary/10 shadow-lg"
+                    className="w-full flex items-center justify-center gap-3 p-4 rounded-2xl bg-primary/10 text-primary font-bold text-xs border border-primary/10 shadow-lg active:scale-95 transition-transform"
                   >
                     <Icon name="exchange-alt" size="xs" />
                     <span>تبديل الأكاديمية / مستقل</span>
@@ -348,7 +348,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ role }) => {
 
                 <button
                   onClick={handleLogout}
-                  className="w-full flex items-center justify-center gap-3 p-4 rounded-2xl bg-rose-500/20 text-rose-400 font-black text-xs border border-rose-500/20 shadow-lg"
+                  className="w-full flex items-center justify-center gap-3 p-4 rounded-2xl bg-rose-500/20 text-rose-400 font-black text-xs border border-rose-500/20 shadow-lg active:scale-95 transition-transform"
                 >
                   <Icon name="sign-out-alt" size="xs" />
                   <span>تسجيل الخروج</span>
@@ -405,7 +405,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ role }) => {
           {hasMore && (
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className={`relative flex-1 flex flex-col items-center justify-center gap-1.5 transition-all duration-500 py-1.5 ${
+              className={`relative flex-1 flex flex-col items-center justify-center gap-1.5 py-1.5 ${
                 isMenuOpen ? 'text-primary' : 'text-gray-light/40'
               }`}
             >
