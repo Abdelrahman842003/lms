@@ -15,9 +15,10 @@ return new class extends Migration
     {
         Schema::create('pricing_packages', function (Blueprint $table) {
             $table->uuid('id')->primary();
+            $table->string('type')->default('plan');
             $table->string('name_ar');
             $table->string('name_en')->nullable();
-            $table->integer('max_students')->default(0);
+            $table->integer('max_students')->nullable()->default(0);
             $table->unsignedInteger('storage_minutes')->nullable()->comment('Included storage minutes per month');
             $table->unsignedInteger('delivery_minutes')->nullable()->comment('Included delivery minutes per month');
             $table->decimal('overage_storage_price', 10, 2)->nullable()->comment('Price per extra storage minute (EGP)');
@@ -29,6 +30,7 @@ return new class extends Migration
             $table->decimal('yearly_price', 10, 2)->default(0.00);
             $table->decimal('yearly_discount_percentage', 10, 2)->nullable();
             $table->json('features')->nullable();
+            $table->json('video_bundles')->nullable();
             $table->boolean('is_active')->default(true);
             $table->boolean('is_popular')->default(false);
             $table->integer('sort_order')->default(0);

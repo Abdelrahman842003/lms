@@ -349,7 +349,7 @@ export default function PricingPage() {
                           <h4 className="text-2xl font-black text-white mb-2">{addon.name_ar}</h4>
                           <div className="flex items-baseline gap-2">
                             <span className="text-4xl font-black text-white">{parseFloat(addon.price as any).toLocaleString()} ج.م</span>
-                            <span className="text-gray-500 text-sm font-bold">/ دفعة واحدة</span>
+                            <span className="text-gray-500 text-sm font-bold">/ شهرياً</span>
                           </div>
                         </div>
 

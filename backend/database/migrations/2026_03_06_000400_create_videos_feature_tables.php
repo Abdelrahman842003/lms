@@ -10,6 +10,7 @@ return new class extends Migration
     {
         Schema::create('videos', function (Blueprint $table) {
             $table->uuid('id')->primary();
+            $table->string('stream_uid', 64)->nullable()->unique()->comment('Cloudflare Stream video UID');
 
             $table->string('owner_type', 32);
             $table->uuid('owner_id');
