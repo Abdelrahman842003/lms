@@ -48,8 +48,6 @@ class LandingPageSettingsPage extends Page implements HasForms
             'hero_description' => $content['hero']['description'] ?? '',
             'hero_cta_primary' => $content['hero']['cta_primary'] ?? '',
             'hero_cta_secondary' => $content['hero']['cta_secondary'] ?? '',
-            'features' => $content['features'] ?? [],
-            'stats' => $content['stats'] ?? [],
             'testimonials' => $content['testimonials'] ?? [],
             'about_title' => $content['about']['title'] ?? '',
             'about_description' => $content['about']['description'] ?? '',
@@ -144,44 +142,7 @@ class LandingPageSettingsPage extends Page implements HasForms
                     ])
                     ->columns(2),
 
-                Section::make('المميزات (Features)')
-                    ->schema([
-                        Repeater::make('features')
-                            ->label('قائمة المميزات')
-                            ->schema([
-                                TextInput::make('icon')
-                                    ->label('الأيقونة (Heroicon)')
-                                    ->maxLength(50)
-                                    ->placeholder('heroicon-o-rocket-launch'),
-                                TextInput::make('title')
-                                    ->label('العنوان')
-                                    ->maxLength(100)
-                                    ->required(),
-                                Textarea::make('description')
-                                    ->label('الوصف')
-                                    ->maxLength(300)
-                                    ->required(),
-                            ])
-                            ->columns(1)
-                            ->itemLabel(fn (array $state): ?string => $state['title'] ?? null),
-                    ]),
 
-                Section::make('الإحصائيات (Stats)')
-                    ->schema([
-                        Repeater::make('stats')
-                            ->label('قائمة الإحصائيات')
-                            ->schema([
-                                TextInput::make('label')
-                                    ->label('العنوان')
-                                    ->maxLength(50)
-                                    ->required(),
-                                TextInput::make('value')
-                                    ->label('القيمة')
-                                    ->maxLength(20)
-                                    ->required(),
-                            ])
-                            ->columns(2),
-                    ]),
 
                 Section::make('آراء العملاء (Testimonials)')
                     ->schema([
@@ -242,8 +203,6 @@ class LandingPageSettingsPage extends Page implements HasForms
                     'phone' => $state['contact_phone'],
                     'address' => $state['contact_address'],
                 ],
-                'features' => $state['features'],
-                'stats' => $state['stats'],
                 'testimonials' => $state['testimonials'],
             ];
 
