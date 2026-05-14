@@ -196,239 +196,215 @@ export default function ExamDetailsPage({ params }: { params: Promise<{ id: stri
       role={user?.userType as 'teacher' | 'secretary' || 'teacher'}
       user={user || undefined}
     >
-      {/* Stats Grid */}
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-6 mb-8">
-        <StatCard
-          title="عدد الأسئلة"
-          value={exam.questions?.length || 0}
-          icon="fas fa-question-circle"
-          color="primary"
-          variant="centered"
-        />
-
-        <StatCard
-          title="عدد المحاولات"
-          value={exam.stats?.total_attempts || 0}
-          icon="fas fa-users"
-          color="success"
-          variant="centered"
-        />
-
-        <StatCard
-          title="متوسط الدرجات"
-          value={exam.stats?.average_score || 0}
-          icon="fas fa-chart-line"
-          color="warning"
-          suffix="%"
-          variant="centered"
-        />
-
-        <StatCard
-          title="الدرجة الكلية"
-          value={exam.max_score}
-          icon="fas fa-star"
-          color="danger"
-          variant="centered"
-        />
-      </div>
-
-      {/* Header Section */}
-      <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary text-2xl">
-            <Icon name="file-alt" />
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold text-white m-0">{exam.title}</h2>
-            <p className="m-0 text-gray-light text-sm">{exam.subject} | {exam.grade?.name || '-'}</p>
-          </div>
-          {getStatusBadge()}
-        </div>
-        <div className="flex flex-wrap gap-2 items-center">
-          <Button variant="outline" onClick={() => router.back()}>
+      {/* Page Header */}
+      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 mb-10">
+        <div className="space-y-4 flex-1">
+          <Button
+            onClick={() => router.back()}
+            variant="ghost"
+            className="w-10 h-10 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center hover:bg-white/10 transition-all"
+          >
             <Icon name="arrow-right" />
-            <span>عودة</span>
           </Button>
           
-          {/* Toggle Status Button */}
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center gap-3">
+               <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary premium-border">
+                  <Icon name="file-alt" size="xl" />
+               </div>
+               <div>
+                  <h2 className="text-3xl font-black text-white tracking-tight">{exam.title}</h2>
+                  <div className="flex items-center gap-2 mt-1">
+                     <p className="text-gray-light/40 font-bold uppercase tracking-widest text-[11px]">{exam.subject} | {exam.grade?.name || '-'}</p>
+                     <div className="w-1 h-1 rounded-full bg-white/10" />
+                     {getStatusBadge()}
+                  </div>
+               </div>
+            </div>
+          </div>
+        </div>
+        
+        <div className="flex flex-wrap items-center gap-3">
           {!exam.ended_at && (
             <Button
               onClick={handleToggleStatus}
               disabled={isProcessing}
               variant={exam.is_active ? 'secondary' : 'primary'}
+              className="h-12 px-6 rounded-2xl font-bold gap-2"
             >
               <Icon name={exam.is_active ? 'toggle-on' : 'toggle-off'} />
-              <span>{exam.is_active ? 'إلغاء التفعيل' : 'تفعيل'}</span>
+              <span>{exam.is_active ? 'إلغاء التفعيل' : 'تفعيل الآن'}</span>
             </Button>
           )}
           
-          {/* End Exam Button */}
           {exam.is_active && !exam.ended_at && (
             <Button
               onClick={() => setIsEndModalOpen(true)}
               disabled={isProcessing}
               variant="secondary"
+              className="h-12 px-6 rounded-2xl font-bold gap-2 border-amber-500/20 text-amber-500 bg-amber-500/5 hover:bg-amber-500/10"
             >
-              <Icon name="stop" />
+              <Icon name="stop-circle" />
               <span>إنهاء الامتحان</span>
             </Button>
           )}
-          
-          {/* Edit Button */}
-          <Link href={`/teacher/exams/${exam.id}/edit`} className="btn btn-primary">
-            <Icon name="edit" />
-            <span>تعديل</span>
-          </Link>
-          
-          {/* Delete Button */}
-          <Button
-            onClick={() => setIsDeleteModalOpen(true)}
-            disabled={isProcessing}
-            variant="secondary"
-          >
-            <Icon name="trash" />
-            <span>حذف</span>
-          </Button>
+
+          <div className="flex items-center gap-2">
+             <Link href={`/teacher/exams/${exam.id}/edit`} className="h-12 w-12 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center text-gray-light hover:text-white hover:bg-white/10 transition-all">
+                <Icon name="edit" />
+             </Link>
+             <Button
+               onClick={() => setIsDeleteModalOpen(true)}
+               disabled={isProcessing}
+               variant="ghost"
+               className="h-12 w-12 rounded-2xl bg-rose-500/5 border border-rose-500/5 flex items-center justify-center text-rose-500 hover:bg-rose-500/10 hover:border-rose-500/20 transition-all"
+             >
+               <Icon name="trash" />
+             </Button>
+          </div>
         </div>
       </div>
 
-      {/* Basic Data Section */}
-      <DashboardCard
-        title="البيانات الأساسية"
-        icon="info-circle"
-      >
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-4">
-          <div className="bg-[#1a1f37] flex justify-between items-center p-5 rounded-xl border border-white/5 hover:border-primary/50 transition-colors">
-            <span className="text-white font-semibold">{exam.title}</span>
-            <div className="flex items-center gap-2 text-gray-light">
-              <span>عنوان الامتحان</span>
-              <Icon name="heading" />
-            </div>
-          </div>
+      {/* Stats Grid */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+        <StatCard title="الأسئلة" value={exam.questions?.length || 0} icon="question-circle" color="primary" />
+        <StatCard title="المحاولات" value={exam.stats?.total_attempts || 0} icon="users" color="success" />
+        <StatCard title="المتوسط" value={exam.stats?.average_score || 0} icon="chart-line" color="warning" suffix="%" />
+        <StatCard title="الدرجة الكلية" value={exam.max_score} icon="star" color="danger" />
+      </div>
 
-          <div className="bg-[#1a1f37] flex justify-between items-center p-5 rounded-xl border border-white/5 hover:border-primary/50 transition-colors">
-            <span className="text-white font-semibold">{exam.subject}</span>
-            <div className="flex items-center gap-2 text-gray-light">
-              <span>المادة</span>
-              <Icon name="book" />
-            </div>
-          </div>
-
-          <div className="bg-[#1a1f37] flex justify-between items-center p-5 rounded-xl border border-white/5 hover:border-primary/50 transition-colors">
-            <span className="text-white font-semibold">{exam.grade?.name || '-'}</span>
-            <div className="flex items-center gap-2 text-gray-light">
-              <span>الصف الدراسي</span>
-              <Icon name="layer-group" />
-            </div>
-          </div>
-
-          <div className="bg-[#1a1f37] flex justify-between items-center p-5 rounded-xl border border-white/5 hover:border-primary/50 transition-colors">
-            <span className="text-white font-semibold">{new Date(exam.date).toLocaleDateString('ar-EG')}</span>
-            <div className="flex items-center gap-2 text-gray-light">
-              <span>تاريخ الامتحان</span>
-              <Icon name="calendar-alt" />
-            </div>
-          </div>
-
-          <div className="bg-[#1a1f37] flex justify-between items-center p-5 rounded-xl border border-white/5 hover:border-primary/50 transition-colors">
-            <span className="text-white font-semibold">{exam.duration} دقيقة</span>
-            <div className="flex items-center gap-2 text-gray-light">
-              <span>المدة</span>
-              <Icon name="clock" />
-            </div>
-          </div>
-
-          <div className="bg-[#1a1f37] flex justify-between items-center p-5 rounded-xl border border-white/5 hover:border-primary/50 transition-colors">
-            <span className="text-white font-semibold">{exam.max_score}</span>
-            <div className="flex items-center gap-2 text-gray-light">
-              <span>الدرجة الكلية</span>
-              <Icon name="star" />
-            </div>
-          </div>
-
-          {exam.actual_question_count && (
-            <div className="bg-[#1a1f37] flex justify-between items-center p-5 rounded-xl border border-white/5 hover:border-primary/50 transition-colors">
-              <span className="text-white font-semibold">{exam.actual_question_count}</span>
-              <div className="flex items-center gap-2 text-gray-light">
-                <span>عدد الأسئلة الفعلية</span>
-                <Icon name="list-ol" />
+      {/* Details & Questions Sections */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+        
+        {/* Left Column: Details */}
+        <div className="xl:col-span-1 space-y-6">
+           <div className="premium-glass p-6 rounded-[2.5rem] border-white/5 space-y-6">
+              <div className="flex items-center gap-3 mb-2 px-2">
+                 <Icon name="info-circle" className="text-primary" />
+                 <h3 className="text-xs font-black text-white uppercase tracking-[0.2em]">البيانات الأساسية</h3>
               </div>
-            </div>
-          )}
 
-          {exam.time_per_question && (
-            <div className="bg-[#1a1f37] flex justify-between items-center p-5 rounded-xl border border-white/5 hover:border-primary/50 transition-colors">
-              <span className="text-white font-semibold">{exam.time_per_question} ثانية</span>
-              <div className="flex items-center gap-2 text-gray-light">
-                <span>وقت كل سؤال</span>
-                <Icon name="stopwatch" />
+              <div className="space-y-3">
+                 {[
+                    { label: 'عنوان الامتحان', value: exam.title, icon: 'heading', color: 'primary' },
+                    { label: 'المادة الدراسية', value: exam.subject, icon: 'book', color: 'amber' },
+                    { label: 'الصف الدراسي', value: exam.grade?.name || '-', icon: 'layer-group', color: 'indigo' },
+                    { label: 'تاريخ الامتحان', value: new Date(exam.date).toLocaleDateString('ar-EG'), icon: 'calendar-alt', color: 'emerald' },
+                    { label: 'مدة الامتحان', value: `${exam.duration} دقيقة`, icon: 'clock', color: 'rose' },
+                    { label: 'الدرجة الكلية', value: `${exam.max_score} درجة`, icon: 'star', color: 'warning' },
+                    { label: 'وقت كل سؤال', value: exam.time_per_question ? `${exam.time_per_question} ثانية` : 'تلقائي', icon: 'stopwatch', color: 'sky' }
+                 ].map((item, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.03] border border-white/5 group hover:border-white/10 transition-all">
+                       <div className="flex items-center gap-3">
+                          <div className={`w-8 h-8 rounded-lg bg-${item.color}-500/10 flex items-center justify-center text-${item.color}-500`}>
+                             <Icon name={item.icon} size="sm" />
+                          </div>
+                          <span className="text-[10px] font-bold text-gray-light/30 uppercase tracking-wider">{item.label}</span>
+                       </div>
+                       <span className="text-sm font-black text-white">{item.value}</span>
+                    </div>
+                 ))}
               </div>
-            </div>
-          )}
+           </div>
+
+           {/* Quick Stats/Progress Card */}
+           <div className="premium-glass p-8 rounded-[2.5rem] border-white/5 relative overflow-hidden">
+              <div className="absolute -top-12 -right-12 w-32 h-32 bg-primary/10 rounded-full blur-3xl" />
+              <div className="relative z-10 space-y-6">
+                 <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-black text-white uppercase tracking-widest">تغطية الأسئلة</h4>
+                    <span className="text-primary font-black">{exam.questions?.length || 0} سؤال</span>
+                 </div>
+                 <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                    <div className="h-full bg-primary rounded-full shadow-[0_0_15px_rgba(66,99,235,0.4)]" style={{ width: '100%' }} />
+                 </div>
+                 <p className="text-[11px] font-medium text-gray-light/30 leading-relaxed">هذا الامتحان يحتوي على {exam.questions?.length} أسئلة مضافة مسبقاً، يمكنك تعديلها أو إضافة أسئلة جديدة من خلال محرر الامتحانات.</p>
+              </div>
+           </div>
         </div>
-      </DashboardCard>
 
-      {/* Questions Section */}
-      {exam.questions && exam.questions.length > 0 && (
-        <div className="mt-8">
-          <DashboardCard
-            title="الأسئلة"
-            icon="question-circle"
-            action={
-              <Button
-                onClick={() => setShowQuestions(!showQuestions)}
-                variant="outline"
-                size="sm"
-              >
-                <Icon name={showQuestions ? 'eye-slash' : 'eye'} />
-                <span>{showQuestions ? 'إخفاء' : 'عرض'}</span>
-              </Button>
-            }
-          >
-            {showQuestions ? (
-              <div className="space-y-4">
-                {exam.questions.map((question, index) => {
-                  const options = parseOptions(question.options);
-                  return (
-                    <div key={question.id || index} className="bg-[#1a1f37] p-5 rounded-xl border border-white/5">
-                      <div className="flex items-start gap-3 mb-4">
-                        <span className="w-8 h-8 rounded-lg bg-primary/20 text-primary flex items-center justify-center font-bold shrink-0">
-                          {index + 1}
-                        </span>
-                        <p className="text-white font-medium text-lg m-0">{question.text}</p>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pr-11">
-                        {options.map((option, oIndex) => (
-                          <div
-                            key={oIndex}
-                            className={`p-3 rounded-lg border ${
-                              option === question.correct_answer
-                                ? 'border-green-500/50 bg-green-500/10 text-green-400'
-                                : 'border-white/10 bg-white/5 text-gray-300'
-                            }`}
-                          >
-                            <div className="flex items-center gap-2">
-                              {option === question.correct_answer && (
-                                <Icon name="check-circle" className="text-green-400" />
-                              )}
-                              <span>{option}</span>
+        {/* Right Column: Questions */}
+        <div className="xl:col-span-2 space-y-6">
+           <div className="premium-glass p-8 rounded-[2.5rem] border-white/5">
+              <div className="flex items-center justify-between mb-10">
+                 <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-primary premium-border">
+                       <Icon name="question-circle" size="xl" />
+                    </div>
+                    <div>
+                       <h3 className="text-xl font-black text-white">الأسئلة المضافة</h3>
+                       <p className="text-xs font-bold text-gray-light/30 uppercase tracking-widest mt-1">مراجعة محتوى الامتحان العلمي</p>
+                    </div>
+                 </div>
+
+                 <Button
+                   onClick={() => setShowQuestions(!showQuestions)}
+                   variant="outline"
+                   className="h-11 px-5 rounded-xl font-bold gap-2"
+                 >
+                   <Icon name={showQuestions ? 'eye-slash' : 'eye'} />
+                   <span>{showQuestions ? 'إخفاء الأسئلة' : 'عرض الأسئلة'}</span>
+                 </Button>
+              </div>
+
+              {exam.questions && exam.questions.length > 0 ? (
+                <>
+                  {showQuestions ? (
+                    <div className="space-y-6">
+                      {exam.questions.map((question, index) => {
+                        const options = parseOptions(question.options);
+                        return (
+                          <div key={question.id || index} className="group/q p-6 rounded-3xl bg-white/[0.03] border border-white/5 hover:border-primary/20 transition-all">
+                            <div className="flex items-start gap-4 mb-6">
+                              <span className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center text-sm font-black shrink-0 border border-primary/20">
+                                {index + 1}
+                              </span>
+                              <p className="text-lg font-bold text-white leading-relaxed pt-1">{question.text}</p>
+                            </div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pl-0 md:pl-14">
+                              {options.map((option, oIndex) => (
+                                <div
+                                  key={oIndex}
+                                  className={`p-4 rounded-2xl border transition-all flex items-center gap-3
+                                    ${option === question.correct_answer
+                                      ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.1)]'
+                                      : 'border-white/5 bg-white/5 text-gray-light/60 hover:bg-white/[0.08]'
+                                    }`}
+                                >
+                                  <div className={`w-5 h-5 rounded-lg flex items-center justify-center shrink-0 border
+                                    ${option === question.correct_answer ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-white/5 border-white/10'}`}>
+                                    {option === question.correct_answer ? <Icon name="check" size="xs" /> : <span className="text-[10px] font-black">{String.fromCharCode(65 + oIndex)}</span>}
+                                  </div>
+                                  <span className="text-sm font-medium">{option}</span>
+                                </div>
+                              ))}
                             </div>
                           </div>
-                        ))}
-                      </div>
+                        );
+                      })}
                     </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-gray-light">
-                <Icon name="eye-slash" size="2x" className="mb-3 opacity-50" />
-                <p>اضغط على "عرض" لرؤية الأسئلة</p>
-              </div>
-            )}
-          </DashboardCard>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-20 text-center space-y-6 bg-white/[0.02] rounded-[2rem] border border-dashed border-white/10">
+                       <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center text-gray-light/20">
+                          <Icon name="lock" size="2x" />
+                       </div>
+                       <div className="space-y-2">
+                          <h4 className="text-lg font-bold text-white">الأسئلة مخفية حالياً</h4>
+                          <p className="text-sm text-gray-light/30 font-medium">اضغط على زر "عرض الأسئلة" لمراجعة المحتوى العلمي للامتحان</p>
+                       </div>
+                       <Button onClick={() => setShowQuestions(true)} variant="primary" className="h-11 px-8 rounded-xl font-bold">عرض الآن</Button>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="text-center py-12">
+                   <p className="text-gray-light/40 font-bold">لا توجد أسئلة مضافة لهذا الامتحان بعد.</p>
+                </div>
+              )}
+           </div>
         </div>
-      )}
+      </div>
 
       {/* End Exam Modal */}
       <ConfirmationModal

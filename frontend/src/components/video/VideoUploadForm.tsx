@@ -5,6 +5,7 @@ import { Filter } from '@/components/Filter';
 import { Button, FilePicker, Icon, Input, Textarea } from '@/components/ui';
 import { useVideoUploadContext } from '@/contexts/VideoUploadContext';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
+import { cn } from '@/utils';
 
 import type { VideoItem } from '@/types/video.types';
 
@@ -105,12 +106,12 @@ export function VideoUploadForm({
     event.preventDefault();
 
     if (!videoFile) {
-      setFormError('يجب اختيار ملف الفيديو.');
+      setFormError('يجب اختيار ملف الفيديو أولاً.');
       return;
     }
 
     if (!title.trim() || !gradeId) {
-      setFormError('يجب إدخال العنوان واختيار الصف الدراسي.');
+      setFormError('يرجى ملء البيانات الأساسية (العنوان والصف الدراسي).');
       return;
     }
 
@@ -136,215 +137,258 @@ export function VideoUploadForm({
 
   const handleCancel = () => {
     if (isUploading) {
-      cancelUpload('cancelled by user');
+      cancelUpload(mode, 'cancelled by user');
     } else {
       window.history.back();
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-gray-900/50 backdrop-blur-md border border-white/5 rounded-2xl p-6">
-      <div className="space-y-6">
-        {mode === 'academy' && (
-          <div className="form-group">
-            <label className="block text-white mb-2">المدرس</label>
-            {teachers.length > 0 ? (
-              <Filter
-                options={teachers.map((teacher) => ({ value: teacher.id, label: teacher.name }))}
-                value={teacherReferenceId}
-                onChange={setTeacherReferenceId}
-                placeholder="اختر المدرس"
-                className="w-full"
-              />
-            ) : (
+    <form onSubmit={handleSubmit} className="space-y-8 animate-in fade-in duration-700">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        {/* Left Column: Video & Files */}
+        <div className="lg:col-span-2 space-y-8">
+          {/* Main Content Section */}
+          <div className="p-6 md:p-8 rounded-[1.5rem] md:rounded-[2.5rem] premium-glass premium-border space-y-6">
+            <div className="flex items-center gap-3 mb-2">
+              <Icon name="info-circle" className="text-primary" />
+              <h3 className="text-lg md:text-xl font-bold text-white">بيانات الفيديو</h3>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="title" className="block text-[10px] md:text-sm font-black uppercase tracking-widest text-gray-light/40 mb-2 md:mb-3 mr-1">عنوان الفيديو</label>
               <Input
-                value={teacherReferenceId}
-                onChange={(event) => setTeacherReferenceId(event.target.value)}
-                placeholder="Teacher Reference ID"
+                id="title"
+                value={title}
+                onChange={(event) => setTitle(event.target.value)}
+                placeholder="مثال: شرح مبسط للجزء الأول"
+                required
+                className="w-full bg-white/5 border-white/10 focus:border-primary/50 h-12 md:h-14 rounded-xl md:rounded-2xl px-5 md:px-6 text-base md:text-lg"
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="description" className="block text-[10px] md:text-sm font-black uppercase tracking-widest text-gray-light/40 mb-2 md:mb-3 mr-1">وصف الفيديو (اختياري)</label>
+              <Textarea
+                id="description"
+                value={description}
+                onChange={(event) => setDescription(event.target.value)}
+                placeholder="اكتب تفاصيل المحتوى التعليمي..."
+                rows={4}
+                className="w-full bg-white/5 border-white/10 focus:border-primary/50 rounded-xl md:rounded-2xl p-5 md:p-6 min-h-[100px] md:min-h-[120px] text-sm md:text-base"
+              />
+            </div>
+          </div>
+
+          {/* Upload Section */}
+          <div className="p-6 md:p-8 rounded-[1.5rem] md:rounded-[2.5rem] premium-glass premium-border space-y-8">
+            <div className="flex items-center gap-3 mb-2">
+              <Icon name="cloud-upload-alt" className="text-secondary" />
+              <h3 className="text-lg md:text-xl font-bold text-white">ملفات الميديا</h3>
+            </div>
+
+            <div className="space-y-6">
+              <div className="form-group">
+                <label className="block text-[10px] md:text-sm font-black uppercase tracking-widest text-gray-light/40 mb-4 mr-1">ملف الفيديو الرئيسي</label>
+                <FilePicker
+                  accept="video/mp4,video/quicktime,video/x-matroska,video/webm"
+                  files={videoFile ? [videoFile] : []}
+                  onFilesChange={(files) => setVideoFile(files[0] || null)}
+                  buttonText="اختيار ملف الفيديو"
+                  emptyText="اسحب الملف هنا أو اضغط للاختيار"
+                  helperText="MP4 / MOV / MKV / WEBM"
+                  disabled={isUploading}
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="block text-[10px] md:text-sm font-black uppercase tracking-widest text-gray-light/40 mb-4 mr-1">المرفقات الإضافية (PDF/Images)</label>
+                <FilePicker
+                  accept="application/pdf,image/*"
+                  multiple
+                  files={attachments}
+                  onFilesChange={setAttachments}
+                  buttonText="إضافة مرفقات"
+                  emptyText="يمكنك إضافة ملازم أو صور توضيحية"
+                  helperText="اختياري: ملفات PDF أو صور"
+                  disabled={isUploading}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column: Settings & Submit */}
+        <div className="space-y-8">
+          {/* Settings Section */}
+          <div className="p-6 md:p-8 rounded-[1.5rem] md:rounded-[2.5rem] premium-glass premium-border space-y-6">
+            <div className="flex items-center gap-3 mb-2">
+              <Icon name="cog" className="text-warning" />
+              <h3 className="text-lg md:text-xl font-bold text-white">إعدادات النشر</h3>
+            </div>
+
+            {mode === 'academy' && (
+              <div className="form-group">
+                <label className="block text-[10px] md:text-sm font-black uppercase tracking-widest text-gray-light/40 mb-3 mr-1">المدرس المرجعي</label>
+                <Filter
+                  options={teachers.map((t) => ({ value: t.id, label: t.name }))}
+                  value={teacherReferenceId}
+                  onChange={setTeacherReferenceId}
+                  placeholder="اختر المدرس"
+                  className="w-full"
+                />
+              </div>
+            )}
+
+            <div className="form-group">
+              <label className="block text-[10px] md:text-sm font-black uppercase tracking-widest text-gray-light/40 mb-3 mr-1">الصف الدراسي</label>
+              <Filter
+                options={grades.map((g) => ({ value: g.id, label: g.name }))}
+                value={gradeId}
+                onChange={(value) => {
+                  setGradeId(value);
+                  setGroupIds([]);
+                }}
+                placeholder="اختر الصف"
                 className="w-full"
               />
-            )}
-          </div>
-        )}
+            </div>
 
-        <Input
-          label="عنوان الفيديو"
-          value={title}
-          onChange={(event) => setTitle(event.target.value)}
-          placeholder="مثال: مراجعة الفصل الأول"
-          required
-          className="w-full"
-        />
+            <div className="form-group">
+              <label className="block text-[10px] md:text-sm font-black uppercase tracking-widest text-gray-light/40 mb-3 mr-1">المجموعات المحددة</label>
+              {!gradeId ? (
+                <div className="p-4 rounded-xl bg-white/5 border border-white/5 text-[10px] text-gray-light/40 text-center">
+                  اختر الصف الدراسي أولاً
+                </div>
+              ) : filteredGroups.length === 0 ? (
+                <div className="p-4 rounded-xl bg-white/5 border border-white/5 text-[10px] text-gray-light/40 text-center">
+                  لا توجد مجموعات لهذا الصف
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {filteredGroups.map((group) => {
+                    const selected = groupIds.includes(group.id);
+                    return (
+                      <button
+                        key={group.id}
+                        type="button"
+                        onClick={() => toggleGroup(group.id)}
+                        className={cn(
+                          "px-3 py-1.5 rounded-lg border text-[10px] font-bold transition-all",
+                          selected 
+                            ? "bg-primary text-white border-primary shadow-lg" 
+                            : "bg-white/5 border-white/10 text-gray-light/60 hover:border-white/30"
+                        )}
+                      >
+                        {group.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
 
-        <div className="form-group">
-          <label className="block text-white mb-2">الصف الدراسي</label>
-          <Filter
-            options={grades.map((grade) => ({ value: grade.id, label: grade.name }))}
-            value={gradeId}
-            onChange={(value) => {
-              setGradeId(value);
-              setGroupIds([]);
-            }}
-            placeholder="اختر الصف"
-            className="w-full"
-          />
-        </div>
-
-        <div className="form-group">
-          <div className="flex items-center justify-between mb-2">
-            <label className="block text-white">المجموعات (متعدد - اختياري)</label>
-            <span className="text-xs text-gray-400">{groupIds.length} محددة</span>
-          </div>
-
-          {!gradeId ? (
-            <p className="text-sm text-gray-400">اختر الصف أولًا لعرض المجموعات المتاحة.</p>
-          ) : filteredGroups.length === 0 ? (
-            <p className="text-sm text-gray-400">لا توجد مجموعات متاحة لهذا الصف. سيتم تطبيق الفيديو على الصف بالكامل.</p>
-          ) : (
-            <>
-              <div className="flex flex-wrap gap-2">
-                {filteredGroups.map((group) => {
-                  const selected = groupIds.includes(group.id);
-                  return (
-                    <Button
-                      key={group.id}
-                      type="button"
-                      variant={selected ? 'primary' : 'outline'}
-                      size="sm"
-                      onClick={() => toggleGroup(group.id)}
-                    >
-                      {selected && <Icon name="check" size="xs" />}
-                      <span>{group.name}</span>
-                    </Button>
-                  );
-                })}
+            <div className="form-group">
+              <label htmlFor="scheduled" className="block text-[10px] md:text-sm font-black uppercase tracking-widest text-gray-light/40 mb-3 mr-1">موقت النشر (اختياري)</label>
+              <div className="relative">
+                <Icon name="clock" className="absolute right-5 top-1/2 -translate-y-1/2 text-primary" />
+                <Input
+                  id="scheduled"
+                  type="datetime-local"
+                  value={scheduledAt}
+                  onChange={(event) => setScheduledAt(event.target.value)}
+                  disabled={isUploading}
+                  className="w-full bg-white/5 border-white/10 focus:border-primary/50 h-12 md:h-14 rounded-xl md:rounded-2xl pr-12 pl-5 text-white"
+                />
               </div>
-              <p className="mt-2 text-xs text-gray-400">
-                لو لم تختَر أي مجموعة، سيتم نشر الفيديو على كل طلاب الصف المختار.
-              </p>
-            </>
-          )}
-        </div>
-
-        <Textarea
-          label="الوصف (اختياري)"
-          value={description}
-          onChange={(event) => setDescription(event.target.value)}
-          placeholder="وصف مختصر للفيديو..."
-          rows={4}
-          className="w-full"
-        />
-
-        <Input
-          label="وقت النشر المجدول (اختياري)"
-          type="datetime-local"
-          value={scheduledAt}
-          onChange={(event) => setScheduledAt(event.target.value)}
-          disabled={isUploading}
-          className="w-full"
-        />
-
-        <FilePicker
-          label="ملف الفيديو"
-          accept="video/mp4,video/quicktime,video/x-matroska,video/webm"
-          files={videoFile ? [videoFile] : []}
-          onFilesChange={(files) => setVideoFile(files[0] || null)}
-          buttonText="اختيار فيديو"
-          emptyText="لم يتم اختيار ملف فيديو بعد"
-          helperText="الصيغ المدعومة: MP4 / MOV / MKV / WEBM"
-          disabled={isUploading}
-        />
-
-        <FilePicker
-          label="المرفقات (PDF/Image)"
-          accept="application/pdf,image/*"
-          multiple
-          files={attachments}
-          onFilesChange={setAttachments}
-          buttonText="اختيار مرفقات"
-          emptyText="لا توجد مرفقات مضافة"
-          helperText="اختياري: يمكنك إضافة أكثر من ملف."
-          disabled={isUploading}
-        />
-      </div>
-
-      {/* ── Upload progress ── */}
-      {isUploading && (
-        <div className="mt-6 rounded-xl border border-primary/40 bg-primary/10 p-5 space-y-3">
-          {/* Header row */}
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-medium text-white">{PHASE_LABELS[uploadState.phase] ?? 'جاري الرفع...'}</p>
-            <span className="text-lg font-bold text-primary tabular-nums">{uploadState.progress}%</span>
+            </div>
           </div>
 
-          {/* Progress bar */}
-          <div className="relative h-3 w-full rounded-full bg-white/10 overflow-hidden">
-            <div
-              className={`absolute inset-y-0 left-0 rounded-full transition-all duration-200 ${uploadState.phase === 'paused' ? 'bg-orange-500' : 'bg-gradient-to-r from-primary to-primary/70'}`}
-              style={{ width: `${uploadState.progress}%` }}
-            />
-          </div>
-
-          {/* Part counter */}
-          {uploadState.totalParts > 1 && (
-            <p className="text-xs text-gray-400 text-start">
-              الجزء <span className="text-white font-semibold">{uploadState.currentPart}</span> من{' '}
-              <span className="text-white font-semibold">{uploadState.totalParts}</span>
-            </p>
-          )}
-
-          {/* Cancel/Pause buttons */}
-          <div className="flex justify-end gap-2 pt-1">
+          {/* Status & Action Block */}
+          <div className="p-5 md:p-6 rounded-[2rem] bg-white/5 border border-white/5 space-y-4">
+            
+            {/* Progress Visualization */}
             {isUploading && (
-               <Button type="button" variant="outline" size="sm" onClick={pauseUpload}>
-               إيقاف مؤقت
-             </Button>
+              <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4">
+                <div className="flex justify-between items-end">
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] font-black uppercase text-primary tracking-widest animate-pulse">
+                      {PHASE_LABELS[uploadState.phase] ?? 'جاري الرفع...'}
+                    </span>
+                    <span className="text-xs text-gray-light/60">
+                      جزء {uploadState.currentPart} من {uploadState.totalParts}
+                    </span>
+                  </div>
+                  <span className="text-3xl font-black text-white tabular-nums">{uploadState.progress}%</span>
+                </div>
+                
+                <div className="h-3 w-full bg-white/10 rounded-full overflow-hidden">
+                  <div 
+                    className={cn(
+                      "h-full rounded-full transition-all duration-500 shadow-[0_0_15px_rgba(66,99,235,0.5)]",
+                      uploadState.phase === 'paused' ? 'bg-orange-500' : 'bg-primary'
+                    )}
+                    style={{ width: `${uploadState.progress}%` }}
+                  />
+                </div>
+
+                <div className="flex gap-2">
+                  <Button type="button" variant="outline" size="sm" onClick={pauseUpload} className="flex-1 text-[10px] h-9 rounded-lg">
+                    {uploadState.phase === 'paused' ? 'استئناف' : 'إيقاف مؤقت'}
+                  </Button>
+                  <Button type="button" variant="destructive" size="sm" onClick={() => cancelUpload(mode, 'cancelled by user')} className="flex-1 text-[10px] h-9 rounded-lg">
+                    إلغاء تماماً
+                  </Button>
+                </div>
+              </div>
             )}
-            <Button type="button" variant="destructive" size="sm" onClick={() => cancelUpload(mode, 'cancelled by user')}>
-              إلغاء الرفع
+
+            {/* Error Message */}
+            {(formError || uploadState.error) && (
+              <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 flex items-start gap-2 animate-in shake duration-500">
+                <Icon name="exclamation-triangle" className="text-red-500 mt-1" size="sm" />
+                <span className="text-xs text-red-400 leading-tight">{formError ?? uploadState.error}</span>
+              </div>
+            )}
+
+            {/* Main Action Button */}
+            <Button
+              type="submit"
+              disabled={isUploading || uploadState.phase === 'completed'}
+              className={cn(
+                "w-full h-16 rounded-[1.5rem] font-black uppercase tracking-widest border-none gap-3 transition-all text-sm md:text-base",
+                uploadState.phase === 'completed' 
+                  ? "bg-success/20 text-success" 
+                  : "bg-gradient-to-r from-primary to-secondary text-white hover:shadow-[0_10px_30px_rgba(66,99,235,0.4)]"
+              )}
+            >
+              {uploadState.phase === 'completed' ? (
+                <>
+                  <Icon name="check-circle" />
+                  <span>اكتمل الرفع بنجاح</span>
+                </>
+              ) : (
+                <>
+                  <Icon name="cloud-upload-alt" />
+                  <span>بدء عملية الرفع الآن</span>
+                </>
+              )}
             </Button>
+            
+            {!isUploading && (
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={handleCancel}
+                className="w-full h-12 rounded-[1.5rem] text-gray-light hover:text-white transition-all text-xs"
+              >
+                إلغاء والرجوع
+              </Button>
+            )}
           </div>
         </div>
-      )}
-
-      {/* ── Completion ── */}
-      {uploadState.phase === 'completed' && (
-        <div className="mt-6 rounded-xl border border-green-500/30 bg-green-500/10 p-4">
-          <p className="text-sm text-green-300">تم رفع الفيديو بنجاح! جاري معالجته...</p>
-        </div>
-      )}
-
-      {/* ── Errors ── */}
-      {(formError || uploadState.error) && (
-        <p className="mt-4 text-sm text-red-300">{formError ?? uploadState.error}</p>
-      )}
-
-      {uploadState.phase === 'aborted' && !uploadState.error && (
-        <p className="mt-4 text-sm text-yellow-400">تم إلغاء الرفع. يمكنك البدء من جديد.</p>
-      )}
-
-      <div className="flex gap-4 mt-8 pt-6 border-t border-white/10">
-        <Button
-          type="button"
-          variant="outline"
-          className="flex-1"
-          onClick={handleCancel}
-          disabled={uploadState.phase === 'completing'}
-        >
-          {isUploading ? 'إلغاء الرفع' : 'إلغاء'}
-        </Button>
-        <Button
-          type="submit"
-          variant="primary"
-          className="flex-1"
-          loading={isUploading}
-          disabled={isUploading || uploadState.phase === 'completed'}
-        >
-          <Icon name="upload" />
-          <span>رفع الفيديو</span>
-        </Button>
       </div>
     </form>
   );
 }
-

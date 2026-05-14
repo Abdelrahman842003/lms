@@ -1,7 +1,8 @@
+'use client';
 import React, { useEffect, useRef } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
 import toast from 'react-hot-toast';
-import { Button, Icon } from '@/components/ui';
+import { Icon } from '@/components/ui';
 
 interface QRScannerModalProps {
   isOpen: boolean;
@@ -22,108 +23,30 @@ const QRScannerModal: React.FC<QRScannerModalProps> = ({ isOpen, onClose, onScan
     return { width: bounded, height: bounded };
   };
 
-  const getCameraSupportMessage = () => {
-    if (typeof window === 'undefined') return null;
-    if (!window.isSecureContext) {
-      return 'تشغيل الكاميرا يتطلب HTTPS أو localhost.';
-    }
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      return 'الكاميرا غير مدعومة في هذا المتصفح.';
-    }
-    return null;
-  };
-
-  const getCameraErrorMessage = (error: any) => {
-    if (typeof window !== 'undefined' && !window.isSecureContext) {
-      return 'تشغيل الكاميرا يتطلب HTTPS أو localhost.';
-    }
-
-    const name = String(error?.name || '').toLowerCase();
-    const message = String(error?.message || '').toLowerCase();
-
-    if (name.includes('notallowed') || message.includes('permission') || message.includes('denied')) {
-      return 'تم رفض إذن الكاميرا. فعّل الإذن من إعدادات المتصفح.';
-    }
-    if (name.includes('notfound') || message.includes('not found') || message.includes('no camera')) {
-      return 'لم يتم العثور على كاميرا على هذا الجهاز.';
-    }
-    if (name.includes('notreadable') || message.includes('device in use')) {
-      return 'الكاميرا مستخدمة حالياً بواسطة تطبيق آخر.';
-    }
-    if (name.includes('overconstrained') || message.includes('constraints')) {
-      return 'تعذر تهيئة الكاميرا بالإعدادات المطلوبة.';
-    }
-    return 'فشل الوصول إلى الكاميرا. يرجى التحقق من الأذونات.';
-  };
-
   useEffect(() => {
     let mounted = true;
 
     const startScanner = async () => {
       if (isOpen && !scannerRef.current && mounted) {
         try {
-          // Small delay to ensure DOM is ready
-          await new Promise(resolve => setTimeout(resolve, 100));
-          
+          await new Promise(resolve => setTimeout(resolve, 300));
           if (!mounted) return;
-
-          const supportMessage = getCameraSupportMessage();
-          if (supportMessage) {
-            toast.error(supportMessage);
-            return;
-          }
 
           const scanner = new Html5Qrcode("reader");
           scannerRef.current = scanner;
 
-          const config = {
-            fps: 10,
-            qrbox: getQrBox,
-            aspectRatio: 1.0
-          };
-
-          const onSuccess = (decodedText: string) => {
-            if (mounted) {
-              onScanSuccess(decodedText);
-            }
-          };
-
-          let lastError: any = null;
+          const config = { fps: 15, qrbox: getQrBox, aspectRatio: 1.0 };
+          const onSuccess = (text: string) => { if (mounted) onScanSuccess(text); };
 
           try {
-            // Attempt 1: Back Camera (Environment)
             await scanner.start({ facingMode: "environment" }, config, onSuccess, () => {});
             isScanningRef.current = true;
-            return;
           } catch (err) {
-            lastError = err;
-          }
-
-          try {
-            // Attempt 2: User Camera (Front/Webcam)
             await scanner.start({ facingMode: "user" }, config, onSuccess, () => {});
             isScanningRef.current = true;
-            return;
-          } catch (err2) {
-            lastError = err2;
           }
-
-          try {
-            // Attempt 3: First available camera ID
-            const devices = await Html5Qrcode.getCameras();
-            if (devices && devices.length > 0) {
-              await scanner.start(devices[0].id, config, onSuccess, () => {});
-              isScanningRef.current = true;
-              return;
-            }
-            lastError = new Error("No cameras found");
-          } catch (err3) {
-            lastError = err3;
-          }
-
-          toast.error(getCameraErrorMessage(lastError));
         } catch (err) {
-          toast.error('حدث خطأ في تشغيل الماسح الضوئي');
+          toast.error('تعذر الوصول للكاميرا. تأكد من إعطاء الصلاحية.');
         }
       }
     };
@@ -137,8 +60,7 @@ const QRScannerModal: React.FC<QRScannerModalProps> = ({ isOpen, onClose, onScan
           scannerRef.current?.clear();
           scannerRef.current = null;
           isScanningRef.current = false;
-        }).catch(() => {
-        });
+        }).catch(() => {});
       }
     };
   }, [isOpen, onScanSuccess]);
@@ -146,35 +68,89 @@ const QRScannerModal: React.FC<QRScannerModalProps> = ({ isOpen, onClose, onScan
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content qr-scanner-modal">
-        <div className="modal-body">
-          <div className="qr-scanner-header">
-            <h3 className="qr-scanner-title">تسجيل حضور: {lectureTitle}</h3>
-            <button onClick={onClose} className="modal-close" type="button" aria-label="إغلاق">
-              <Icon name="times" />
-            </button>
-          </div>
-          
-          <div className="qr-scanner-reader-wrap">
-            <div id="reader" className="ux-w-full ux-h-full"></div>
-          </div>
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
+      {/* Immersive Backdrop */}
+      <div className="absolute inset-0 bg-black/90 backdrop-blur-2xl animate-in fade-in duration-500" onClick={onClose} />
 
-          <p className="qr-scanner-instructions">
-            {instructions || "وجه الكاميرا نحو رمز QR للطالب لتسجيل الحضور"}
-          </p>
-
-          <Button
-            variant="secondary"
-            onClick={onClose}
-            className="qr-scanner-cancel"
+      {/* Premium Scanner Card */}
+      <div className="relative w-full max-w-md bg-slate-950/90 border border-white/10 rounded-[3rem] shadow-2xl shadow-primary/10 overflow-hidden animate-in zoom-in-95 duration-500">
+        
+        {/* Header Section */}
+        <div className="px-8 pt-8 pb-6 flex items-center justify-between">
+          <div>
+            <h3 className="text-xl font-black text-white tracking-tight">مسح الحضور</h3>
+            <p className="text-[10px] font-bold text-primary uppercase tracking-widest mt-1">{lectureTitle}</p>
+          </div>
+          <button 
+            onClick={onClose} 
+            className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white/40 hover:text-white transition-colors"
           >
-            إلغاء
-          </Button>
-
-
+            <Icon name="times" className="text-sm" />
+          </button>
         </div>
+
+        {/* Camera & Scanner Interface */}
+        <div className="px-6 pb-6">
+          <div className="relative aspect-square bg-black rounded-[2rem] overflow-hidden border border-white/5 group">
+            {/* The actual camera feed */}
+            <div id="reader" className="w-full h-full scale-110" />
+
+            {/* Scanning Overlay (UI Decoration) */}
+            <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+              {/* Corner Brackets */}
+              <div className="absolute top-10 left-10 w-12 h-12 border-t-4 border-l-4 border-primary rounded-tl-2xl opacity-80" />
+              <div className="absolute top-10 right-10 w-12 h-12 border-t-4 border-r-4 border-primary rounded-tr-2xl opacity-80" />
+              <div className="absolute bottom-10 left-10 w-12 h-12 border-b-4 border-l-4 border-primary rounded-bl-2xl opacity-80" />
+              <div className="absolute bottom-10 right-10 w-12 h-12 border-b-4 border-r-4 border-primary rounded-br-2xl opacity-80" />
+
+              {/* Animated Scanning Beam */}
+              <div className="w-[80%] h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent animate-scan shadow-[0_0_15px_rgba(50,73,169,0.8)]" />
+            </div>
+
+            {/* Instructions Overlay (Subtle) */}
+            <div className="absolute bottom-6 left-0 right-0 text-center px-4">
+              <span className="px-3 py-1 bg-black/40 backdrop-blur-md rounded-full text-[9px] font-bold text-white/60 uppercase tracking-widest border border-white/5">
+                Focusing...
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer Info */}
+        <div className="px-8 pb-8 space-y-6">
+          <div className="text-center">
+            <p className="text-sm font-bold text-gray-light/60 leading-relaxed">
+              {instructions || "وجه الكاميرا نحو رمز QR للطالب لتسجيل الحضور"}
+            </p>
+          </div>
+
+          <button
+            onClick={onClose}
+            className="w-full py-4 rounded-2xl bg-white/5 hover:bg-rose-500/10 text-gray-light/40 hover:text-rose-400 font-bold text-xs border border-white/5 hover:border-rose-500/20 transition-all active:scale-95 uppercase tracking-widest"
+          >
+            إلغاء العملية
+          </button>
+        </div>
+
+        {/* Decorative elements */}
+        <div className="absolute -top-10 -left-10 w-32 h-32 bg-primary/20 blur-[80px] rounded-full pointer-events-none" />
       </div>
+
+      <style jsx global>{`
+        #reader { border: none !important; }
+        #reader video { 
+          object-fit: cover !important; 
+          border-radius: 2rem !important;
+        }
+        @keyframes scan {
+          0%, 100% { transform: translateY(-100px); opacity: 0; }
+          50% { opacity: 1; }
+          90% { transform: translateY(100px); opacity: 0; }
+        }
+        .animate-scan {
+          animation: scan 3s ease-in-out infinite;
+        }
+      `}</style>
     </div>
   );
 };

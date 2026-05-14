@@ -198,7 +198,7 @@ const getNavItems = (role: string): SidebarItem[] => {
       },
       {
         id: 'notifications',
-        label: 'الإخطارات',
+        label: 'الإخطارات والدعم',
         icon: 'bell',
         href: '/teacher/notifications',
       },
@@ -375,23 +375,11 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
     // No permissions = only dashboard
     items = items.filter(item => item.id === 'dashboard');
   }
-
-  // Filter items for Academy mode (Teacher only)
-  // If selectedAcademy has an ID, it means the teacher is in "Academy Dashboard" mode
-  // OR if we are still loading (isLoading is true), we default to "Restricted" mode to prevent flicker
-  // In this mode, they should NOT see: Secretary, Grades (Classes), Reports
-  // They SHOULD see: Attendance (only in Academy Mode)
-  // Filter items for Academy mode (Teacher only)
-  // If selectedAcademy has an ID, it means the teacher is in "Academy Dashboard" mode
-  // OR if we are still loading (isLoading is true), we default to "Restricted" mode to prevent flicker
   
   if (role === 'teacher') {
     const isAcademyMode = (selectedAcademy?.id && selectedAcademy.id !== 'independent') || isLoading;
     
     if (isAcademyMode) {
-      // Academy Teacher Mode (or loading)
-      // They should NOT see: Secretary, Grades (Classes), Reports
-      // They SHOULD see: Attendance, Videos
       items = items
         .filter(item => item.id !== 'reports') // Remove Reports
         .map(item => {
@@ -407,8 +395,6 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
           return item;
         });
     } else {
-      // Independent Teacher Mode (selectedAcademy.id === 'independent' OR null)
-      // Remove Attendance (not needed for independent)
       items = items.filter(item => item.id !== 'attendance');
     }
   }
@@ -416,11 +402,11 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [activeSubMenu, setActiveSubMenu] = useState<string | null>(null);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-  const [mobileExpandedItems, setMobileExpandedItems] = useState<string[]>([]);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [hasAcademies, setHasAcademies] = useState(false);
   const [isAcademyModalOpen, setIsAcademyModalOpen] = useState(false);
   const [isScanAttendanceModalOpen, setIsScanAttendanceModalOpen] = useState(false);
-  const [hasAcademies, setHasAcademies] = useState(false);
+  
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -450,14 +436,6 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const toggleMobileExpand = (id: string, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setMobileExpandedItems((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-    );
-  };
-
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -467,7 +445,6 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
       .slice(0, 2);
   };
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -503,217 +480,161 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
 
   return (
     <>
-      <nav className={`navbar ${isScrolled ? 'scrolled' : ''}`}>
-        <div className="navbar-container">
-          {/* Logo */}
-          <div className="navbar-logo">
-            <img src="/logo.png" alt="منصة التعليم" className="ux-h-12 ux-w-auto ux-object-contain" />
-            <div className="navbar-logo-text">
-              <span>{getRoleLabel(role)}</span>
-            </div>
-          </div>
+      <nav className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-500 ${isScrolled ? 'py-2' : 'py-4'}`}>
+        <div className="max-w-[1400px] mx-auto px-4 md:px-8">
+          <div className={`relative premium-glass premium-border rounded-[1.5rem] md:rounded-[2rem] px-4 md:px-8 h-16 md:h-20 flex items-center justify-between shadow-2xl transition-all duration-500 ${isScrolled ? 'bg-black/60 backdrop-blur-3xl' : 'bg-black/20'}`}>
+            
+            {/* Background Glow (Desktop Only) */}
+            <div className="absolute top-0 left-1/4 w-64 h-full bg-primary/5 blur-3xl rounded-full -translate-y-1/2 pointer-events-none hidden md:block"></div>
 
-          {/* Navigation Links */}
-          <div className="navbar-links" ref={navDropdownRef}>
-            {items.map((item) => (
-              item.children ? (
-                <div key={item.id} className="navbar-item-dropdown-container">
-                  <Button
-                    variant="ghost"
-                    className={`navbar-link navbar-link-button ${pathname.startsWith(item.href) ? 'active' : ''}`}
-                    onClick={() => setActiveSubMenu(activeSubMenu === item.id ? null : item.id)}
-                  >
-                    <Icon name={item.icon as any} size="sm" />
-                    <span>{item.label}</span>
-                    <Icon 
-                      name="chevron-down" 
-                      size="sm" 
-                      className={`navbar-chevron ${activeSubMenu === item.id ? 'rotate-180' : ''}`}
-                    />
-                  </Button>
-                  
-                  {activeSubMenu === item.id && (
-                    <div className="navbar-dropdown navbar-dropdown-menu">
-                      {item.children.map((child) => (
-                        <Link
-                          key={child.id}
-                          href={child.href}
-                          className={`navbar-dropdown-item ${pathname === child.href ? 'active' : ''}`}
-                          onClick={() => setActiveSubMenu(null)}
-                        >
-                          <Icon name={child.icon as any} size="sm" />
-                          <span>{child.label}</span>
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <Link
-                  key={item.id}
-                  href={item.href}
-                  className={`navbar-link ${pathname === item.href ? 'active' : ''}`}
-                >
-                  <Icon name={item.icon as any} size="sm" />
-                  <span>{item.label}</span>
-                  {item.badge && (
-                    <span className="navbar-badge">{item.badge}</span>
-                  )}
-                </Link>
-              )
-            ))}
-          </div>
-
-          {/* Right Side Group: Notifications + User + Mobile Toggle */}
-          <div className="navbar-right-group">
-
-            {/* Teacher Selector (Student Only) */}
-            {role === 'student' && (
-              <TeacherSelectionDropdown />
-            )}
-
-            {/* Scan Attendance Button (Teacher in Academy Mode Only) */}
-            {role === 'teacher' && selectedAcademy?.id && selectedAcademy.id !== 'independent' && (
-              <Button
-                variant="ghost"
-                onClick={() => setIsScanAttendanceModalOpen(true)}
-                className="navbar-scan-btn"
-                title="تسجيل الحضور والانصراف"
-              >
-                <Icon name="qrcode" size="lg" className="navbar-scan-icon" />
-                <span className="navbar-scan-label ux-hidden ux-lg-inline">تسجيل الحضور</span>
-              </Button>
-            )}
-
-            {/* Global Print Button */}
-            <div className="navbar-user print-btn-container ux-hidden ux-sm-block">
-              <button
-                type="button"
-                className="navbar-user-clickable notification-trigger-btn"
-                onClick={() => window.print()}
-                title="طباعة الصفحة"
-              >
-                <Icon name="print" className="notification-trigger-icon" />
-              </button>
-            </div>
-
-            {/* Upload Manager */}
-            <NavbarUploadManager />
-
-            {/* Notification Dropdown */}
-            <NotificationDropdown role={role} />
-
-            {/* User Menu */}
-            <div className="navbar-user" ref={dropdownRef}>
+            {/* Logo Section */}
+            <div className="flex items-center gap-4">
               <div 
-                className="navbar-user-clickable"
-                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className="relative cursor-pointer group"
+                onClick={() => router.push(`/${role}/dashboard`)}
               >
-                <div className="navbar-user-avatar">
-                  {user?.avatar ? (
-                    <img src={user.avatar} alt={user.name} />
-                  ) : (
-                    user ? getInitials(user.name) : 'U'
-                  )}
-                </div>
-                <div className="navbar-user-info">
-                  <p className="navbar-user-name">{user?.name || ''}</p>
-                  {role === 'teacher' && selectedAcademy && (
-                    <p className="ux-text-xs ux-text-gray-500 ux-dark-text-gray-400">
-                      {selectedAcademy.name}
-                    </p>
-                  )}
-                </div>
-                <span
-                  className={`navbar-user-chevron ${isDropdownOpen ? 'open' : ''}`}
+                <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <img src="/logo.png" alt="Logo" className="relative h-10 md:h-12 w-auto object-contain transition-transform group-hover:scale-105" />
+              </div>
+            </div>
+
+            {/* Desktop Navigation Links - REMOVED per user request to use sidebar only */}
+            
+            {/* Right Side Actions */}
+            <div className="flex items-center gap-2 md:gap-4">
+              
+              {/* Teacher Selector (Student Only) */}
+              {role === 'student' && (
+                <TeacherSelectionDropdown />
+              )}
+
+              {/* Action Buttons Group */}
+              <div className="flex items-center gap-1 md:gap-2 bg-white/5 p-1 rounded-2xl border border-white/5">
+                {/* Print Button (Desktop Only) */}
+                <button
+                  onClick={() => window.print()}
+                  className="w-10 h-10 md:w-11 md:h-11 rounded-xl flex items-center justify-center text-gray-light/40 hover:text-primary hover:bg-white/10 transition-all hidden sm:flex relative group"
+                  title="طباعة"
                 >
-                  <Icon name="chevron-down" size="sm" />
-                </span>
+                  <Icon name="print" />
+                </button>
+
+                {/* Upload Manager & Notifications */}
+                <NavbarUploadManager />
+                <NotificationDropdown role={role} />
               </div>
 
-              {/* Dropdown Menu */}
-              {isDropdownOpen && (
-                <div className="navbar-dropdown">
-                  <Link 
-                    href={`/${role}/profile`}
-                    className="navbar-dropdown-item"
-                    onClick={() => setIsDropdownOpen(false)}
-                  >
-                    <Icon name="user" size="sm" />
-                    <span>الملف الشخصي</span>
-                  </Link>
+              {/* User Profile */}
+              <div className="relative" ref={dropdownRef}>
+                <button 
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  className={`flex items-center gap-3 p-1.5 md:p-2 rounded-2xl transition-all border ${
+                    isDropdownOpen ? 'bg-primary/10 border-primary/20' : 'bg-white/5 border-white/5 hover:border-white/10'
+                  }`}
+                >
+                  <div className="relative">
+                    <div className="w-9 h-9 md:w-11 md:h-11 rounded-xl bg-gradient-to-br from-primary to-purple-600 p-0.5 shadow-lg">
+                      <div className="w-full h-full rounded-[0.6rem] bg-slate-900 overflow-hidden flex items-center justify-center text-xs font-black text-white">
+                        {user?.avatar ? (
+                          <img src={user.avatar} alt="User" className="w-full h-full object-cover" />
+                        ) : (
+                          user ? getInitials(user.name) : 'U'
+                        )}
+                      </div>
+                    </div>
+                    <div className="absolute -bottom-1 -left-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-slate-900 rounded-full shadow-lg"></div>
+                  </div>
+                  
+                  <div className="hidden sm:flex flex-col items-start pr-1">
+                    <span className="text-sm font-black text-white leading-tight truncate max-w-[120px]">{user?.name?.split(' ')[0]}</span>
+                    <span className="text-[10px] font-bold text-gray-light/30">نشط الآن</span>
+                  </div>
+                  
+                  <Icon 
+                    name="chevron-down" 
+                    size="xs" 
+                    className={`text-gray-light/30 transition-transform duration-300 hidden sm:block ${isDropdownOpen ? 'rotate-180' : ''}`} 
+                  />
+                </button>
 
-                  {role === 'student' && (
-                    <Link
-                      href="/student/achievements"
-                      className="navbar-dropdown-item"
-                      onClick={() => setIsDropdownOpen(false)}
-                    >
-                      <Icon name="medal" size="sm" />
-                      <span>إنجازاتي</span>
-                    </Link>
-                  )}
-                  
-                  {/* Subscription Link - Only for academy role or independent teachers */}
-                  {(role === 'academy' || (role === 'teacher' && (!selectedAcademy?.id || selectedAcademy.id === 'independent'))) && (
-                    <Link
-                      href={
-                        role === 'academy' ? '/academy/subscription' :
-                        '/teacher/subscription'
-                      }
-                      className="navbar-dropdown-item"
-                      onClick={() => setIsDropdownOpen(false)}
-                    >
-                      <Icon name="id-card" size="sm" />
-                      <span>
-                        {role === 'academy' ? 'الاشتراك' : 'اشتراكي'}
-                      </span>
-                    </Link>
-                  )}
-                  
-                  {/* Academy Selector for Teachers */}
-                  {role === 'teacher' && hasAcademies && (
-                    <>
-                      <div className="navbar-dropdown-divider"></div>
-                      <Button 
-                        variant="ghost"
-                        className="navbar-dropdown-item ux-w-full ux-justify-start"
-                        onClick={() => {
-                          console.log('Opening academy modal');
-                          setIsAcademyModalOpen(true);
-                          setIsDropdownOpen(false);
-                        }}
+                {/* Profile Dropdown Menu */}
+                {isDropdownOpen && (
+                  <div className="absolute top-full mt-4 left-0 w-64 bg-slate-950/95 backdrop-blur-3xl premium-border rounded-[2.5rem] p-4 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-500 z-[110]">
+                    <div className="p-4 mb-2 bg-white/5 rounded-2xl border border-white/5">
+                      <p className="text-xs font-black text-gray-light/20 uppercase tracking-widest mb-1">الحساب الحالي</p>
+                      <p className="text-sm font-black text-white truncate">{user?.name}</p>
+                      <p className="text-[10px] font-bold text-primary/60">{user?.email || getRoleLabel(role)}</p>
+                    </div>
+
+                    <div className="space-y-1">
+                      <Link 
+                        href={`/${role}/profile`}
+                        className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-gray-light/60 hover:text-white hover:bg-white/5 transition-all"
+                        onClick={() => setIsDropdownOpen(false)}
                       >
-                        <Icon name="building" size="sm" />
-                        <span>تغيير الأكاديمية</span>
-                      </Button>
-                    </>
-                  )}
-                  
-                  <div className="navbar-dropdown-divider"></div>
-                  <Button 
-                    variant="ghost"
-                    className="navbar-dropdown-item logout-item navbar-logout-btn ux-w-full ux-justify-start"
-                    onClick={handleLogout}
-                  >
-                    <Icon name="sign-out-alt" size="sm" />
-                    <span>تسجيل الخروج</span>
-                  </Button>
-                </div>
+                        <Icon name="user" className="text-primary" />
+                        <span>الملف الشخصي</span>
+                      </Link>
+
+                      {role === 'student' && (
+                        <Link
+                          href="/student/achievements"
+                          className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-gray-light/60 hover:text-white hover:bg-white/5 transition-all"
+                          onClick={() => setIsDropdownOpen(false)}
+                        >
+                          <Icon name="medal" className="text-amber-400" />
+                          <span>إنجازاتي</span>
+                        </Link>
+                      )}
+
+                      {role === 'teacher' && (
+                        <Link
+                          href="/teacher/subscription"
+                          className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-gray-light/60 hover:text-white hover:bg-white/5 transition-all"
+                          onClick={() => setIsDropdownOpen(false)}
+                        >
+                          <Icon name="crown" className="text-amber-400" />
+                          <span>اشتراكي</span>
+                        </Link>
+                      )}
+
+                      {hasAcademies && (
+                        <button
+                          onClick={() => {
+                            setIsAcademyModalOpen(true);
+                            setIsDropdownOpen(false);
+                          }}
+                          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-gray-light/60 hover:text-white hover:bg-white/5 transition-all"
+                        >
+                          <Icon name="exchange-alt" className="text-primary" />
+                          <span>تبديل الأكاديمية / مستقل</span>
+                        </button>
+                      )}
+
+                      <div className="h-px bg-white/5 my-2 mx-2"></div>
+
+                      <button 
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-black text-rose-400 hover:bg-rose-500/10 transition-all"
+                      >
+                        <Icon name="sign-out-alt" />
+                        <span>تسجيل الخروج</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Sidebar Toggle - Hidden on mobile, as navigation is now in Bottom Nav */}
+              {role !== 'parent' && (
+                <button 
+                  onClick={toggleMobileSidebar}
+                  className="w-10 h-10 md:w-11 md:h-11 rounded-xl items-center justify-center bg-white/5 border border-white/5 text-gray-light/40 hover:text-primary transition-all hidden lg:flex"
+                >
+                  <Icon name="bars" />
+                </button>
               )}
             </div>
-
-            {/* Mobile Menu Toggle */}
-            {role !== 'parent' && (
-              <Button 
-                variant="ghost"
-                size="sm"
-                className="navbar-menu-toggle"
-                onClick={toggleMobileSidebar}
-              >
-                <Icon name="bars" />
-              </Button>
-            )}
           </div>
         </div>
       </nav>
@@ -726,133 +647,94 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
         />
       )}
 
-      {/* Mobile Sidebar */}
-      <div className={`mobile-sidebar ${isMobileSidebarOpen ? 'open' : ''}`}>
-        <div className="mobile-sidebar-header">
-          <div className="mobile-sidebar-user">
-            <div className="mobile-sidebar-user-avatar">
-              {user?.avatar ? (
-                <img src={user.avatar} alt={user.name} />
-              ) : (
-                user ? getInitials(user.name) : 'U'
-              )}
-            </div>
-            <div className="mobile-sidebar-user-info">
-              <p className="mobile-sidebar-user-name">{user?.name || ''}</p>
-            </div>
-          </div>
-          <div className="ux-flex ux-items-center ux-gap-2">
-            <Button 
-              variant="ghost"
-              size="sm"
-              onClick={() => window.print()}
-              className="mobile-print-btn"
-              title="طباعة"
-            >
-              <Icon name="print" />
-            </Button>
-            <Button 
-              variant="ghost"
-              size="sm"
-              className="mobile-sidebar-close"
-              onClick={() => setIsMobileSidebarOpen(false)}
-            >
-              <Icon name="times" />
-            </Button>
-          </div>
-        </div>
-
-        <div className="mobile-sidebar-nav">
-          {role === 'teacher' && selectedAcademy?.id && selectedAcademy.id !== 'independent' && (
-            <button
-              type="button"
-              className="mobile-sidebar-link mobile-sidebar-action"
-              onClick={() => {
-                setIsScanAttendanceModalOpen(true);
-                setIsMobileSidebarOpen(false);
-              }}
-            >
-              <Icon name="qrcode" size="sm" />
-              <span>تسجيل الحضور والانصراف</span>
-            </button>
-          )}
-          {items.map((item) => (
-            <React.Fragment key={item.id}>
-              {item.children ? (
-                <div className={`mobile-sidebar-group ${mobileExpandedItems.includes(item.id) ? 'expanded' : ''}`}>
-                  <div 
-                    className="mobile-sidebar-group-title" 
-                    onClick={(e) => toggleMobileExpand(item.id, e)}
-                  >
-                    <div className="group-content">
-                      <Icon name={item.icon as any} size="sm" />
-                      <span>{item.label}</span>
-                    </div>
-                    <Icon name="chevron-down" size="sm" className="chevron" />
-                  </div>
-                  <div className="mobile-sidebar-group-children">
-                    {item.children.map((child) => (
-                      <Link
-                        key={child.id}
-                        href={child.href}
-                        className={`mobile-sidebar-sublink ${pathname === child.href ? 'active' : ''}`}
-                        onClick={() => setIsMobileSidebarOpen(false)}
-                      >
-                        <Icon name={child.icon as any} size="sm" />
-                        <span>{child.label}</span>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <Link
-                  key={item.id}
-                  href={item.href}
-                  className={`mobile-sidebar-link ${pathname === item.href ? 'active' : ''}`}
-                  onClick={() => setIsMobileSidebarOpen(false)}
-                >
-                  <Icon name={item.icon as any} size="sm" />
-                  <span>{item.label}</span>
-                  {item.badge && (
-                    <span className="mobile-sidebar-badge">{item.badge}</span>
+      {/* Universal Sidebar */}
+      <div className={`fixed inset-y-0 right-0 w-[300px] bg-black/60 backdrop-blur-3xl border-r border-white/10 z-[200] transition-transform duration-500 ease-out ${isMobileSidebarOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+        
+        {/* Sidebar Header */}
+        <div className="p-6 border-bottom border-white/5 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-purple-600 p-0.5 shadow-lg">
+                <div className="w-full h-full rounded-[0.6rem] bg-slate-900 overflow-hidden flex items-center justify-center text-xs font-black text-white">
+                  {user?.avatar ? (
+                    <img src={user.avatar} alt="User" className="w-full h-full object-cover" />
+                  ) : (
+                    user ? getInitials(user.name) : 'U'
                   )}
-                </Link>
-              )}
-            </React.Fragment>
-          ))}
+                </div>
+             </div>
+             <div>
+                <p className="text-sm font-black text-white leading-tight">{user?.name?.split(' ')[0]}</p>
+                <p className="text-[10px] font-bold text-gray-light/30">{getRoleLabel(role)}</p>
+             </div>
+          </div>
+          <button 
+            onClick={() => setIsMobileSidebarOpen(false)}
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-light/40 hover:text-rose-400 transition-colors"
+          >
+            <Icon name="times" />
+          </button>
         </div>
 
-        <div className="mobile-sidebar-footer">
-          <Link 
-            href={`/${role}/profile`}
-            className="mobile-sidebar-link"
-            onClick={() => setIsMobileSidebarOpen(false)}
-          >
-            <Icon name="user" size="sm" />
-            <span>الملف الشخصي</span>
-          </Link>
+        {/* Sidebar Nav */}
+        <div className="p-4 overflow-y-auto max-h-[calc(100vh-100px)] custom-scrollbar">
+          <div className="space-y-1">
+            {items.map((item) => (
+              <div key={item.id}>
+                {item.children ? (
+                  <div className="mb-2">
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
+                      className="w-full flex items-center justify-between p-4 rounded-2xl text-gray-light/60 font-bold hover:bg-white/5 transition-all"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Icon name={item.icon as any} className="text-primary" />
+                        <span>{item.label}</span>
+                      </div>
+                      <Icon name="chevron-down" size="xs" />
+                    </button>
+                    
+                    <div className="mt-1 mr-4 border-r border-white/5 space-y-1">
+                      {item.children.map((child) => (
+                        <Link
+                          key={child.id}
+                          href={child.href}
+                          className={`flex items-center gap-3 p-4 rounded-xl text-sm font-bold transition-all ${
+                            pathname === child.href ? 'text-primary bg-primary/5' : 'text-gray-light/40 hover:text-white'
+                          }`}
+                        >
+                          <Icon name={child.icon as any} size="sm" />
+                          <span>{child.label}</span>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <Link
+                    href={item.href}
+                    className={`flex items-center gap-3 p-4 rounded-2xl font-bold transition-all ${
+                      pathname === item.href ? 'text-white bg-primary shadow-lg shadow-primary/20' : 'text-gray-light/60 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    <Icon name={item.icon as any} />
+                    <span>{item.label}</span>
+                  </Link>
+                )}
+              </div>
+            ))}
+          </div>
 
-          {role === 'student' && (
-            <Link
-              href="/student/achievements"
-              className="mobile-sidebar-link"
-              onClick={() => setIsMobileSidebarOpen(false)}
-            >
-              <Icon name="medal" size="sm" />
-              <span>إنجازاتي</span>
-            </Link>
-          )}
-          <Button 
-            variant="ghost"
-            className="mobile-sidebar-link ux-w-full ux-justify-start"
-            onClick={() => {
-              setIsMobileSidebarOpen(false);
-              handleLogout();
-            }}
-          >
-            <Icon name="sign-out-alt" size="sm" />
-            <span>تسجيل الخروج</span>
-          </Button>
+          <div className="mt-8 pt-8 border-t border-white/5">
+             <button 
+               onClick={handleLogout}
+               className="w-full flex items-center gap-3 p-4 rounded-2xl font-black text-rose-400 hover:bg-rose-500/10 transition-all"
+             >
+               <Icon name="sign-out-alt" />
+               <span>تسجيل الخروج</span>
+             </button>
+          </div>
         </div>
       </div>
 

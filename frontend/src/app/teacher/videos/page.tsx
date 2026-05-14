@@ -18,6 +18,7 @@ import {
 } from '@/services/videoService';
 import type { VideoItem } from '@/types/video.types';
 import { VideoCard, VideoCardSkeleton } from '@/components/video/VideoCard';
+
 export default function TeacherVideosPage() {
   const { user, selectedAcademy, isLoading: authLoading } = useAuth();
   const router = useRouter();
@@ -42,10 +43,10 @@ export default function TeacherVideosPage() {
     try {
       setLoading(true);
       const list = await getTeacherVideos();
-      setVideos(list);
+      setVideos(list || []);
     } catch (error) {
       console.error('Failed to load videos:', error);
-      toast.error('فشل تحميل الفيديوهات');
+      toast.error('فشل تحميل الفيديوهات التعليمية');
     } finally {
       setLoading(false);
     }
@@ -95,9 +96,9 @@ export default function TeacherVideosPage() {
   const stats = useMemo(() => {
     return {
       total: videos.length,
-      published: videos.filter((video) => video.status === 'published').length,
-      processing: videos.filter((video) => ['uploading', 'uploaded', 'processing'].includes(video.status)).length,
-      ready: videos.filter((video) => ['ready', 'scheduled'].includes(video.status)).length,
+      published: videos.filter((v) => v.status === 'published').length,
+      processing: videos.filter((v) => ['uploading', 'uploaded', 'processing'].includes(v.status)).length,
+      ready: videos.filter((v) => ['ready', 'scheduled'].includes(v.status)).length,
     };
   }, [videos]);
 
@@ -105,7 +106,7 @@ export default function TeacherVideosPage() {
     try {
       setIsProcessing(true);
       await publishTeacherVideo(video.id);
-      toast.success('تم نشر الفيديو بنجاح');
+      toast.success('تم نشر الفيديو بنجاح للطلاب');
       await fetchVideos();
     } catch (error: unknown) {
       toast.error(getErrorMessage(error, 'فشل نشر الفيديو'));
@@ -119,10 +120,10 @@ export default function TeacherVideosPage() {
     try {
       setIsProcessing(true);
       await retryTeacherVideoProcessing(video.id);
-      toast.success('تمت جدولة إعادة المعالجة');
+      toast.success('تمت جدولة إعادة معالجة الفيديو');
       await fetchVideos();
     } catch (error: unknown) {
-      toast.error(getErrorMessage(error, 'فشل إعادة المعالجة'));
+      toast.error(getErrorMessage(error, 'فشل إعادة معالجة الفيديو'));
     } finally {
       setIsProcessing(false);
       setOpenMenuId(null);
@@ -135,7 +136,7 @@ export default function TeacherVideosPage() {
     try {
       setIsProcessing(true);
       await deleteTeacherVideo(videoToDelete.id);
-      toast.success('تم حذف الفيديو');
+      toast.success('تم حذف الفيديو نهائياً');
       await fetchVideos();
       setIsDeleteModalOpen(false);
       setVideoToDelete(null);
@@ -148,10 +149,10 @@ export default function TeacherVideosPage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-[#0a0c1b]">
         <div className="text-center">
           <LoadingSpinner size="lg" />
-          <p className="text-gray-400 mt-4">جاري التحميل...</p>
+          <p className="text-gray-light/60 mt-4 animate-pulse">جاري تحميل مكتبة الفيديوهات...</p>
         </div>
       </div>
     );
@@ -172,129 +173,161 @@ export default function TeacherVideosPage() {
     <DashboardLayout
       role="teacher"
       user={{ name: user?.name || 'المدرس', avatar: user?.avatar || '' }}
-      headerActions={null}
     >
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-6 mb-8">
-        <StatCard title="إجمالي الفيديوهات" value={stats.total} icon="film" color="primary" variant="centered" />
-        <StatCard title="فيديوهات منشورة" value={stats.published} icon="check-circle" color="success" variant="centered" />
-        <StatCard title="قيد المعالجة" value={stats.processing} icon="sync" color="warning" variant="centered" />
-        <StatCard title="جاهزة للنشر" value={stats.ready} icon="upload" color="info" variant="centered" />
-      </div>
-
-      <div className="header-section flex justify-between items-center mb-6 max-md:flex-col max-md:items-stretch max-md:gap-4">
-        <div className="header-title flex items-center gap-3 max-md:w-full max-md:justify-center">
-          <div className="w-12 h-12 rounded-xl bg-[rgba(66,99,235,0.1)] flex items-center justify-center text-primary text-2xl">
-            <Icon name="film" />
+      <div className="space-y-8 pb-12 animate-in fade-in duration-700">
+        
+        {/* Header Section */}
+        <div className="relative p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] premium-glass premium-border overflow-hidden">
+          <div className="absolute top-0 right-0 w-80 h-80 bg-primary/20 blur-[120px] -translate-y-1/2 translate-x-1/3"></div>
+          <div className="absolute bottom-0 left-0 w-64 h-64 bg-secondary/10 blur-[100px] translate-y-1/2 -translate-x-1/3"></div>
+          
+          <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-8 text-center lg:text-right">
+            <div className="flex flex-col md:flex-row items-center gap-6 md:gap-8">
+              <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl md:rounded-3xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary text-3xl md:text-4xl shadow-2xl">
+                <Icon name="film" />
+              </div>
+              <div className="flex flex-col">
+                <h1 className="text-2xl md:text-4xl font-black text-white tracking-tight">إدارة الفيديوهات</h1>
+                <p className="text-gray-light/60 text-sm md:text-lg font-medium mt-2">تحكم في مكتبتك التعليمية، ارفع فيديوهات جديدة وتابع حالات المعالجة.</p>
+              </div>
+            </div>
+            
+            <Button 
+              onClick={() => router.push('/teacher/videos/create')} 
+              variant="primary" 
+              className="h-14 md:h-16 px-8 rounded-2xl md:rounded-[1.5rem] bg-gradient-to-r from-primary to-secondary hover:shadow-[0_10px_30px_rgba(66,99,235,0.4)] text-white font-black uppercase tracking-widest border-none gap-3 transition-all w-full lg:w-auto"
+            >
+              <Icon name="plus" />
+              <span>إضافة فيديو جديد</span>
+            </Button>
           </div>
-          <h2 className="text-2xl font-bold text-white m-0">إدارة الفيديوهات التعليمية</h2>
         </div>
-        <div className="header-actions max-md:w-full">
-          <Button onClick={() => router.push('/teacher/videos/create')} variant="primary" className="max-md:w-full max-md:justify-center">
-            <Icon name="plus" />
-            <span>إضافة فيديو</span>
-          </Button>
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+          <StatCard title="إجمالي المحتوى" value={stats.total} icon="film" color="primary" variant="premium" />
+          <StatCard title="منشور للطلاب" value={stats.published} icon="check-circle" color="success" variant="premium" />
+          <StatCard title="قيد المعالجة" value={stats.processing} icon="sync" color="warning" variant="premium" />
+          <StatCard title="جاهز للنشر" value={stats.ready} icon="cloud-upload-alt" color="info" variant="premium" />
         </div>
+
+        {/* Filters Section */}
+        <div className="p-6 md:p-8 rounded-[1.5rem] md:rounded-[2.5rem] premium-glass premium-border space-y-6">
+          <div className="flex flex-col xl:flex-row gap-4">
+            <div className="flex-1 relative">
+              <Icon name="search" className="absolute right-5 top-1/2 -translate-y-1/2 text-primary/40" />
+              <Input
+                type="text"
+                placeholder="ابحث بالعنوان أو الوصف..."
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                className="w-full bg-white/5 border-white/10 focus:border-primary/50 h-14 rounded-2xl pr-14 pl-6 text-white text-lg placeholder:text-gray-light/20"
+              />
+            </div>
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="w-full md:w-56">
+                <Filter
+                  options={[
+                    { value: '', label: 'كل الحالات' },
+                    { value: 'draft', label: 'مسودة' },
+                    { value: 'uploading', label: 'قيد الرفع' },
+                    { value: 'processing', label: 'قيد المعالجة' },
+                    { value: 'ready', label: 'جاهز' },
+                    { value: 'scheduled', label: 'مجدول' },
+                    { value: 'published', label: 'منشور' },
+                    { value: 'failed', label: 'فشل' },
+                  ]}
+                  value={selectedStatus}
+                  onChange={setSelectedStatus}
+                  placeholder="الحالة العامة"
+                  className="w-full h-14"
+                />
+              </div>
+              <div className="w-full md:w-56">
+                <Filter
+                  options={[
+                    { value: '', label: 'حالة المعالجة' },
+                    { value: 'pending', label: 'في الانتظار' },
+                    { value: 'running', label: 'جارية الآن' },
+                    { value: 'succeeded', label: 'مكتملة' },
+                    { value: 'failed', label: 'فاشلة' },
+                  ]}
+                  value={selectedProcessingStatus}
+                  onChange={setSelectedProcessingStatus}
+                  placeholder="المعالجة التقنية"
+                  className="w-full h-14"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Videos Grid */}
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+            {[1, 2, 3, 4, 5, 6].map((item) => <VideoCardSkeleton key={item} />)}
+          </div>
+        ) : filteredVideos.length === 0 ? (
+          <div className="text-center py-24 rounded-[3rem] premium-glass premium-border relative overflow-hidden">
+            <div className="absolute inset-0 bg-primary/5 opacity-20"></div>
+            <div className="relative z-10 flex flex-col items-center">
+              <div className="w-24 h-24 rounded-full bg-white/5 flex items-center justify-center mb-6 border border-white/10">
+                <Icon name="film" className="text-5xl text-primary/20" />
+              </div>
+              <h3 className="text-2xl font-black text-white mb-2">لا توجد فيديوهات</h3>
+              <p className="text-gray-light/40 font-medium mb-8">لم نتمكن من العثور على أي محتوى يطابق بحثك حالياً.</p>
+              <Button 
+                onClick={() => router.push('/teacher/videos/create')} 
+                variant="primary"
+                className="px-8 h-14 rounded-2xl bg-primary text-white font-black uppercase tracking-widest"
+              >
+                <Icon name="plus" />
+                <span>إضافة أول فيديو لك</span>
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+            {filteredVideos.map((video) => (
+              <VideoCard
+                key={video.id}
+                video={video}
+                href={`/teacher/videos/${video.id}`}
+                role="teacher"
+                teacherActions={{
+                  isMenuOpen: openMenuId === video.id,
+                  onMenuToggle: (event: React.MouseEvent) => {
+                    event.stopPropagation();
+                    setOpenMenuId(openMenuId === video.id ? null : video.id);
+                  },
+                  onPublish: () => void handlePublish(video),
+                  onRetryProcessing: () => void handleRetry(video),
+                  onDelete: () => {
+                    setVideoToDelete(video);
+                    setIsDeleteModalOpen(true);
+                    setOpenMenuId(null);
+                  },
+                }}
+              />
+            ))}
+          </div>
+        )}
+
+        <ConfirmationModal
+          isOpen={isDeleteModalOpen}
+          title="تأكيد حذف الفيديو"
+          message={`أنت على وشك حذف فيديو "${videoToDelete?.title || ''}" بشكل نهائي. سيؤدي هذا إلى مسح جميع البيانات والإحصائيات المرتبطة به. هل أنت متأكد؟`}
+          confirmText="نعم، احذف الفيديو"
+          cancelText="تراجع عن الإجراء"
+          onConfirm={confirmDelete}
+          onCancel={() => {
+            setIsDeleteModalOpen(false);
+            setVideoToDelete(null);
+          }}
+          isProcessing={isProcessing}
+          variant="danger"
+        />
       </div>
-
-      <div className="flex gap-4 mb-6 max-md:flex-col">
-        <div className="flex-1">
-          <Input
-            type="text"
-            placeholder="بحث عن فيديو..."
-            value={searchQuery}
-            onChange={(event) => setSearchQuery(event.target.value)}
-            className="w-full"
-          />
-        </div>
-        <div className="w-56 max-md:w-full">
-          <Filter
-            options={[
-              { value: '', label: 'كل الحالات' },
-              { value: 'draft', label: 'مسودة' },
-              { value: 'uploading', label: 'قيد الرفع' },
-              { value: 'processing', label: 'قيد المعالجة' },
-              { value: 'ready', label: 'جاهز' },
-              { value: 'scheduled', label: 'مجدول' },
-              { value: 'published', label: 'منشور' },
-              { value: 'failed', label: 'فشل' },
-            ]}
-            value={selectedStatus}
-            onChange={setSelectedStatus}
-            placeholder="الحالة"
-            className="w-full"
-          />
-        </div>
-        <div className="w-56 max-md:w-full">
-          <Filter
-            options={[
-              { value: '', label: 'كل المعالجات' },
-              { value: 'pending', label: 'في الانتظار' },
-              { value: 'running', label: 'جارية' },
-              { value: 'succeeded', label: 'نجحت' },
-              { value: 'failed', label: 'فشلت' },
-            ]}
-            value={selectedProcessingStatus}
-            onChange={setSelectedProcessingStatus}
-            placeholder="حالة المعالجة"
-            className="w-full"
-          />
-        </div>
-      </div>
-
-      {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[1, 2, 3, 4, 5, 6].map((item) => <VideoCardSkeleton key={item} />)}
-        </div>
-      ) : filteredVideos.length === 0 ? (
-        <div className="text-center p-12 bg-white/2 rounded-2xl">
-          <Icon name="film" size="2x" className="text-gray-light mb-4 opacity-50" />
-          <p className="text-gray-light text-lg">لا توجد فيديوهات مطابقة</p>
-          <Button onClick={() => router.push('/teacher/videos/create')} variant="primary" className="mt-4">
-            <Icon name="plus" />
-            <span>إضافة فيديو جديد</span>
-          </Button>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredVideos.map((video) => (
-            <VideoCard
-              key={video.id}
-              video={video}
-              href={`/teacher/videos/${video.id}`}
-              role="teacher"
-              teacherActions={{
-                isMenuOpen: openMenuId === video.id,
-                onMenuToggle: (event: React.MouseEvent) => {
-                  event.stopPropagation();
-                  setOpenMenuId(openMenuId === video.id ? null : video.id);
-                },
-                onPublish: () => void handlePublish(video),
-                onRetryProcessing: () => void handleRetry(video),
-                onDelete: () => {
-                  setVideoToDelete(video);
-                  setIsDeleteModalOpen(true);
-                  setOpenMenuId(null);
-                },
-              }}
-            />
-          ))}
-        </div>
-      )}
-
-      <ConfirmationModal
-        isOpen={isDeleteModalOpen}
-        title="حذف الفيديو"
-        message={`هل أنت متأكد من حذف فيديو "${videoToDelete?.title || ''}"؟ لا يمكن التراجع عن هذا الإجراء.`}
-        confirmText="نعم، حذف"
-        cancelText="إلغاء"
-        onConfirm={confirmDelete}
-        onCancel={() => {
-          setIsDeleteModalOpen(false);
-          setVideoToDelete(null);
-        }}
-        isProcessing={isProcessing}
-        variant="danger"
-      />
     </DashboardLayout>
   );
 }

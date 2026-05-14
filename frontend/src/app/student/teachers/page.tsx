@@ -64,13 +64,31 @@ export default function StudentTeachersPage() {
       user={{ name: user?.name || 'الطالب', avatar: user?.avatar || '' }}
     >
       <div className="p-5">
-        <div className="text-center mb-10">
-          <h1 className="text-[2rem] text-white flex items-center justify-center gap-3 mb-2">
-            <Icon name="chalkboard-teacher" className="text-primary" />
-            اختر المدرس
-          </h1>
-          <p className="text-gray-light text-base">اختر المدرس الذي تريد عرض بياناته</p>
+      {/* Page Header */}
+      <div className="relative mb-12 p-8 md:p-10 rounded-[2.5rem] md:rounded-[3rem] premium-glass premium-border overflow-hidden">
+        {/* Background Glows */}
+        <div className="absolute top-0 right-0 w-80 h-80 bg-primary/20 blur-[120px] -translate-y-1/2 translate-x-1/3 animate-pulse"></div>
+        <div className="absolute bottom-0 left-0 w-80 h-80 bg-secondary/10 blur-[120px] translate-y-1/2 -translate-x-1/3"></div>
+
+        <div className="relative flex flex-col md:flex-row justify-between items-center gap-8 text-center md:text-right">
+          <div className="flex flex-col md:flex-row items-center gap-6">
+            <div className="w-20 h-20 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center text-primary text-4xl shadow-2xl premium-border">
+              <Icon name="chalkboard-teacher" />
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-3xl md:text-4xl font-black text-white tracking-tight">قائمة المعلمين</h2>
+              <p className="text-gray-light/60 text-lg font-medium">اختر المعلم الذي ترغب في متابعة محاضراته وامتحاناته</p>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-4">
+             <div className="flex flex-col items-center md:items-end">
+                <span className="text-[10px] font-black text-gray-light/30 uppercase tracking-[0.2em] mb-1">عدد الاشتراكات</span>
+                <span className="text-xl font-black text-white">{teachers.length} معلم</span>
+             </div>
+          </div>
         </div>
+      </div>
 
         {teachers.length === 0 ? (
           <div className="text-center p-[60px_20px] bg-white/3 rounded-2xl border border-white/5">

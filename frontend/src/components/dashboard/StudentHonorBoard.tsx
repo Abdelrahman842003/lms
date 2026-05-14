@@ -103,70 +103,117 @@ export function StudentHonorBoard() {
   ];
 
   return (
-    <div className={`mt-8 bg-white/5 backdrop-blur-xl rounded-3xl p-6 md:p-8 border border-white/10 transition-all duration-700 ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-      <div className="flex flex-col sm:flex-row items-center justify-between mb-8 gap-4">
-        <h3 className="text-xl font-bold text-white flex items-center gap-3">
-          لوحة الشرف البطل ({selectedTeacher.teacher_name})
-        </h3>
-        <div className="flex gap-2 p-1 bg-white/5 rounded-xl border border-white/10">
-          <button onClick={() => setActiveTab('weekly')} className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${activeTab === 'weekly' ? 'bg-primary text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}>هذا الأسبوع</button>
-          <button onClick={() => setActiveTab('allTime')} className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${activeTab === 'allTime' ? 'bg-primary text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}>على الإطلاق</button>
-        </div>
-      </div>
+    <div className={`mt-12 transition-all duration-1000 ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'}`}>
+      <div className="relative overflow-hidden premium-glass premium-border rounded-[3rem] p-8 md:p-12 shadow-2xl">
+        {/* Decorative Background Glows */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 blur-[100px] -translate-y-1/2 translate-x-1/3 animate-pulse"></div>
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-purple-500/10 blur-[100px] translate-y-1/2 -translate-x-1/3"></div>
 
-      {myStats && (
-        <div className="mb-8 flex items-center justify-between bg-primary/10 rounded-2xl p-4 border border-primary/20">
+        <div className="relative flex flex-col sm:flex-row items-center justify-between mb-12 gap-6">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-purple-500 flex items-center justify-center text-xl font-bold text-white shadow-lg">
-              #{activeTab === 'weekly' ? myStats.weekly_rank : myStats.rank}
-            </div>
-            <div>
-              <p className="text-white font-bold">ترتيبك الحالي</p>
-              <p className="text-sm text-primary">استمر في التقدم المذهل!</p>
-            </div>
+             <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary text-2xl shadow-lg">
+                <Icon name="crown" />
+             </div>
+             <div className="space-y-1">
+                <h3 className="text-2xl md:text-3xl font-black text-white tracking-tight">لوحة الشرف</h3>
+                <p className="text-gray-light/40 text-sm font-medium">أفضل الطلاب لدى ({selectedTeacher.teacher_name})</p>
+             </div>
           </div>
-          <div className="text-center px-4">
-            <div className="text-xl font-bold text-white">{activeTab === 'weekly' ? myStats.weekly_points : myStats.total_points}</div>
-            <div className="text-xs text-gray-400">نقطة</div>
+
+          <div className="flex items-center gap-2 p-1.5 bg-white/5 rounded-2xl border border-white/10 backdrop-blur-xl">
+            <button 
+              onClick={() => setActiveTab('weekly')} 
+              className={`px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 
+                ${activeTab === 'weekly' ? 'bg-primary text-white shadow-xl shadow-primary/20' : 'text-gray-light/40 hover:text-white hover:bg-white/5'}`}
+            >
+              هذا الأسبوع
+            </button>
+            <button 
+              onClick={() => setActiveTab('allTime')} 
+              className={`px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 
+                ${activeTab === 'allTime' ? 'bg-primary text-white shadow-xl shadow-primary/20' : 'text-gray-light/40 hover:text-white hover:bg-white/5'}`}
+            >
+              على الإطلاق
+            </button>
           </div>
         </div>
-      )}
-
-      {top3.length > 0 ? (
-        <div className="flex items-end justify-center gap-2 sm:gap-4 md:gap-6 mt-8">
-          {podiumConfig.map((config) => {
-            const entry = top3.find(e => e.rank === config.position);
-            if (!entry) return null;
-            return (
-              <div key={config.position} className={`${config.order} flex flex-col items-center transition-all duration-500 hover:scale-105`}>
-                <div className={`text-3xl sm:text-4xl md:text-5xl drop-shadow-lg mb-2 animate-bounce`}>{config.badge}</div>
-                <div className="relative mb-3">
-                  <div className={`w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full border-4 ${config.borderColor} overflow-hidden shadow-xl bg-white/10 backdrop-blur-sm`}>
-                    {entry.student.avatar_key ? (
-                      <img src={entry.student.avatar_key} alt={entry.student.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-600 to-gray-800">
-                        <Icon name="user" className="text-gray-400 text-lg md:text-2xl" />
-                      </div>
-                    )}
+  
+        {myStats && (
+          <div className="mb-12 relative overflow-hidden group">
+            <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            <div className="relative flex flex-col md:flex-row items-center justify-between gap-6 bg-white/5 backdrop-blur-xl rounded-[2rem] p-6 md:p-8 border border-white/10 shadow-2xl transition-transform duration-500 group-hover:scale-[1.01]">
+              <div className="flex items-center gap-6">
+                <div className="relative">
+                   <div className="absolute inset-0 bg-primary/30 rounded-full blur-xl animate-pulse"></div>
+                   <div className="relative w-16 h-16 md:w-20 md:h-20 rounded-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center text-2xl md:text-3xl font-black text-white shadow-2xl ring-4 ring-white/10">
+                    #{activeTab === 'weekly' ? myStats.weekly_rank : myStats.rank}
                   </div>
                 </div>
-                <h3 className="text-white font-bold text-xs sm:text-sm md:text-base text-center mb-1 max-w-[80px] md:max-w-[120px] truncate">{entry.student.name}</h3>
-                <div className={`px-2 md:px-4 py-1 rounded-full ${config.bgGradient} border ${config.borderColor} mb-3`}>
-                  <span className="text-white font-bold text-xs md:text-sm">{getPoints(entry)} نقطة</span>
-                </div>
-                <div className={`w-20 sm:w-24 md:w-32 ${config.height} ${config.bgGradient} border-t-4 ${config.borderColor} rounded-t-2xl flex items-center justify-center backdrop-blur-xl shadow-2xl`}>
-                  <span className={`text-3xl md:text-5xl font-bold ${config.crownColor} drop-shadow-lg`}>{config.position}</span>
+                <div className="text-right">
+                  <h4 className="text-xl md:text-2xl font-black text-white mb-1">مركزك في لوحة الشرف</h4>
+                  <p className="text-primary/60 font-black text-[10px] uppercase tracking-widest">أنت تقوم بعمل رائع، استمر في التقدم!</p>
                 </div>
               </div>
-            );
-          })}
-        </div>
-      ) : (
-        <div className="text-center py-10">
-          <p className="text-gray-400">لا يوجد بيانات للوحة الشرف حالياً.</p>
-        </div>
-      )}
+              <div className="flex items-center gap-8 px-8 py-4 rounded-2xl bg-white/5 border border-white/5">
+                <div className="text-center">
+                  <div className="text-2xl font-black text-white tabular-nums">{activeTab === 'weekly' ? myStats.weekly_points : myStats.total_points}</div>
+                  <div className="text-[10px] font-black text-gray-light/30 uppercase tracking-widest">نقطة</div>
+                </div>
+                <div className="w-px h-10 bg-white/10"></div>
+                <div className="text-center">
+                  <div className="text-2xl font-black text-white tabular-nums">{myStats.attendance_streak}</div>
+                  <div className="text-[10px] font-black text-gray-light/30 uppercase tracking-widest">يوم حضور</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+  
+        {top3.length > 0 ? (
+          <div className="flex items-end justify-center gap-4 md:gap-12 mt-12 pb-4">
+            {podiumConfig.map((config) => {
+              const entry = top3.find(e => e.rank === config.position);
+              if (!entry) return null;
+              return (
+                <div key={config.position} className={`${config.order} flex flex-col items-center transition-all duration-700 hover:-translate-y-3 group/podium`}>
+                  <div className={`text-4xl md:text-6xl drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)] mb-4 transition-transform duration-500 group-hover/podium:scale-125`}>{config.badge}</div>
+                  <div className="relative mb-6">
+                    <div className="absolute inset-0 bg-white/10 rounded-full blur-2xl opacity-0 group-hover/podium:opacity-100 transition-opacity"></div>
+                    <div className={`relative w-20 h-20 md:w-32 md:h-32 rounded-full border-4 ${config.borderColor} overflow-hidden shadow-2xl bg-slate-900/50 ring-8 ring-white/5`}>
+                      {entry.student.avatar_key ? (
+                        <img src={entry.student.avatar_key} alt={entry.student.name} className="w-full h-full object-cover transition-transform duration-700 group-hover/podium:scale-110" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-800 to-slate-950">
+                          <Icon name="user" className="text-gray-light/20 text-3xl md:text-5xl" />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="text-center space-y-3 mb-6">
+                     <h3 className="text-white font-black text-sm md:text-lg max-w-[120px] md:max-w-[180px] truncate drop-shadow-lg">{entry.student.name}</h3>
+                     <div className={`inline-flex px-4 py-1.5 rounded-full ${config.bgGradient} border ${config.borderColor} shadow-lg backdrop-blur-md`}>
+                        <span className="text-white font-black text-[10px] md:text-xs tabular-nums uppercase tracking-widest">{getPoints(entry)} نقطة</span>
+                     </div>
+                  </div>
+
+                  <div className={`w-24 md:w-44 ${config.height} ${config.bgGradient} border-t-4 ${config.borderColor} rounded-t-[2.5rem] flex items-center justify-center premium-glass shadow-[0_-20px_50px_rgba(0,0,0,0.3)] relative overflow-hidden group/box`}>
+                    <div className="absolute inset-0 bg-white/[0.02] transition-colors group-hover/podium:bg-white/[0.05]"></div>
+                    <span className={`text-5xl md:text-8xl font-black ${config.crownColor} drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)] transition-transform duration-500 group-hover/podium:scale-110`}>{config.position}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="text-center py-20 bg-white/3 rounded-[2rem] border border-white/5">
+            <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-light/20 text-2xl mx-auto mb-4">
+               <Icon name="users-slash" />
+            </div>
+            <p className="text-gray-light/30 font-black uppercase tracking-widest text-xs">لا يوجد بيانات للوحة الشرف حالياً</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -1,26 +1,14 @@
 'use client';
 
 /**
- * VideoQuizManager
- * ─────────────────────────────────────────────────────────────────────────────
- * Teacher / Academy component for managing a video's quiz.
- *
- * Features:
- *  • View existing quiz (title, questions, passing score, active/required flags)
- *  • Create / Edit quiz inline (add/remove questions, 4 options each, mark correct)
- *  • Delete quiz with confirmation
- *  • View student attempt results
- *
- * Props:
- *  videoId    — the video UUID
- *  role       — 'teacher' | 'academy'  (selects the correct API set)
- *  initialQuiz — quiz data already loaded by the parent (or null)
- *  onQuizChange — callback so the parent can refresh its VideoItem state
+ * VideoQuizManager — modern, high-end UI for managing video quizzes.
  */
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { Icon } from '@/components/ui/Icon';
+import { Button, LoadingSpinner, Input } from '@/components/ui';
+import { Badge } from '@/components/ui/Badge';
 import {
   getTeacherVideoQuiz,
   saveTeacherVideoQuiz,
@@ -39,6 +27,7 @@ import type {
   VideoQuizForm,
   VideoQuizQuestionForm,
 } from '@/types/video.types';
+import { cn } from '@/utils';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -51,7 +40,7 @@ interface Props {
 
 type ViewMode = 'view' | 'edit' | 'results';
 
-// ─── Empty builders ───────────────────────────────────────────────────────────
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function emptyQuestion(index: number): VideoQuizQuestionForm {
   return {
@@ -64,7 +53,7 @@ function emptyQuestion(index: number): VideoQuizQuestionForm {
 
 function emptyForm(): VideoQuizForm {
   return {
-    title: 'اختبار الفيديو',
+    title: 'اختبار قياس الاستيعاب',
     passing_score: 60,
     is_required: true,
     is_active: true,
@@ -72,37 +61,42 @@ function emptyForm(): VideoQuizForm {
   };
 }
 
-// ─── Small UI helpers ─────────────────────────────────────────────────────────
+// ─── Toggle Component ────────────────────────────────────────────────────────
 
-function QuestionBadge({ status }: { status: 'passed' | 'failed' }) {
+function ModernToggle({ label, enabled, onChange, color = 'primary' }: { label: string; enabled: boolean; onChange: () => void; color?: 'primary' | 'success' }) {
   return (
-    <span
-      className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-        status === 'passed'
-          ? 'bg-emerald-400/15 text-emerald-400 border border-emerald-400/25'
-          : 'bg-red-400/15 text-red-400 border border-red-400/25'
-      }`}
-    >
-      {status === 'passed' ? 'نجح' : 'رسب'}
-    </span>
+    <label className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-white/10 transition-all cursor-pointer group">
+      <span className="text-xs font-black text-gray-light/40 uppercase tracking-widest group-hover:text-white transition-colors">{label}</span>
+      <div
+        onClick={(e) => { e.preventDefault(); onChange(); }}
+        className={cn(
+          "w-12 h-6 rounded-full relative transition-all duration-500",
+          enabled 
+            ? (color === 'primary' ? 'bg-primary shadow-[0_0_15px_rgba(66,99,235,0.4)]' : 'bg-success shadow-[0_0_15px_rgba(52,211,153,0.4)]') 
+            : 'bg-white/10'
+        )}
+      >
+        <div className={cn(
+          "absolute top-1 w-4 h-4 rounded-full bg-white shadow-lg transition-all duration-500",
+          enabled ? "right-1" : "left-1"
+        )} />
+      </div>
+    </label>
   );
 }
 
-// ─── Main component ───────────────────────────────────────────────────────────
+// ─── Main Component ───────────────────────────────────────────────────────────
 
 export function VideoQuizManager({ videoId, role, initialQuiz, onQuizChange }: Props) {
   const [quiz, setQuiz] = useState<VideoQuiz | null>(initialQuiz ?? null);
   const [mode, setMode] = useState<ViewMode>('view');
   const [form, setForm] = useState<VideoQuizForm>(emptyForm());
   const [results, setResults] = useState<VideoQuizAttempt[]>([]);
-  // Always fetch on mount so we get questions too (initialQuiz from VideoItem may lack questions)
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [loadingResults, setLoadingResults] = useState(false);
-
-  // ── API helpers ─────────────────────────────────────────────────────────────
 
   const api = {
     getQuiz: role === 'teacher' ? getTeacherVideoQuiz : getAcademyVideoQuiz,
@@ -112,8 +106,6 @@ export function VideoQuizManager({ videoId, role, initialQuiz, onQuizChange }: P
     getResults: role === 'teacher' ? getTeacherVideoQuizResults : getAcademyVideoQuizResults,
   };
 
-  // ── Load quiz if not passed as prop ─────────────────────────────────────────
-
   const loadQuiz = useCallback(async () => {
     setLoading(true);
     try {
@@ -121,7 +113,7 @@ export function VideoQuizManager({ videoId, role, initialQuiz, onQuizChange }: P
       setQuiz(q);
       onQuizChange?.(q);
     } catch {
-      // silently ignore — quiz may not exist yet
+      // ignore
     } finally {
       setLoading(false);
     }
@@ -130,8 +122,6 @@ export function VideoQuizManager({ videoId, role, initialQuiz, onQuizChange }: P
   useEffect(() => {
     void loadQuiz();
   }, [loadQuiz]);
-
-  // ── Open edit mode (pre-fill form from existing quiz) ────────────────────────
 
   const openEdit = () => {
     if (quiz) {
@@ -153,8 +143,6 @@ export function VideoQuizManager({ videoId, role, initialQuiz, onQuizChange }: P
     setMode('edit');
   };
 
-  // ── Load results ─────────────────────────────────────────────────────────────
-
   const openResults = async () => {
     setLoadingResults(true);
     setMode('results');
@@ -162,26 +150,22 @@ export function VideoQuizManager({ videoId, role, initialQuiz, onQuizChange }: P
       const r = await api.getResults(videoId);
       setResults(r);
     } catch {
-      toast.error('فشل تحميل النتائج');
+      toast.error('فشل تحميل نتائج الطلاب');
     } finally {
       setLoadingResults(false);
     }
   };
 
-  // ── Save ─────────────────────────────────────────────────────────────────────
-
   const handleSave = async () => {
-    // Basic validation
-    if (!form.title.trim()) { toast.error('يرجى إدخال عنوان الاختبار'); return; }
-    if (form.questions.length === 0) { toast.error('أضف سؤالاً واحداً على الأقل'); return; }
+    if (!form.title.trim()) { toast.error('يرجى إدخال عنوان للاختبار'); return; }
+    if (form.questions.length === 0) { toast.error('يرجى إضافة سؤال واحد على الأقل'); return; }
 
     for (let i = 0; i < form.questions.length; i++) {
       const q = form.questions[i];
-      if (!q.text.trim()) { toast.error(`نص السؤال ${i + 1} فارغ`); return; }
+      if (!q.text.trim()) { toast.error(`نص السؤال رقم ${i + 1} فارغ`); return; }
       const filledOptions = q.options.filter((o) => o.trim());
-      if (filledOptions.length < 2) { toast.error(`السؤال ${i + 1} يحتاج خيارين على الأقل`); return; }
-      if (!q.correct_answer) { toast.error(`حدد الإجابة الصحيحة للسؤال ${i + 1}`); return; }
-      if (!q.options.includes(q.correct_answer)) { toast.error(`الإجابة الصحيحة للسؤال ${i + 1} يجب أن تكون أحد الخيارات`); return; }
+      if (filledOptions.length < 2) { toast.error(`السؤال رقم ${i + 1} يحتاج لخيارين على الأقل`); return; }
+      if (!q.correct_answer) { toast.error(`يرجى تحديد الإجابة الصحيحة للسؤال رقم ${i + 1}`); return; }
     }
 
     setSaving(true);
@@ -202,15 +186,13 @@ export function VideoQuizManager({ videoId, role, initialQuiz, onQuizChange }: P
       setQuiz(saved);
       onQuizChange?.(saved);
       setMode('view');
-      toast.success(quiz ? 'تم تحديث الاختبار' : 'تم إنشاء الاختبار');
+      toast.success(quiz ? 'تم تحديث الاختبار بنجاح' : 'تم إنشاء الاختبار بنجاح');
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : 'فشل حفظ الاختبار');
+      toast.error(e instanceof Error ? e.message : 'فشل في حفظ الاختبار');
     } finally {
       setSaving(false);
     }
   };
-
-  // ── Delete ────────────────────────────────────────────────────────────────────
 
   const handleDelete = async () => {
     setDeleting(true);
@@ -220,21 +202,19 @@ export function VideoQuizManager({ videoId, role, initialQuiz, onQuizChange }: P
       onQuizChange?.(null);
       setConfirmDelete(false);
       setMode('view');
-      toast.success('تم حذف الاختبار');
+      toast.success('تم حذف الاختبار نهائياً');
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : 'فشل حذف الاختبار');
+      toast.error(e instanceof Error ? e.message : 'فشل في حذف الاختبار');
     } finally {
       setDeleting(false);
     }
   };
 
-  // ─────────────────────────────────────────────────────────────────────────────
-
   if (loading) {
     return (
-      <div className="rounded-2xl border border-white/10 bg-[#101426]/40 p-8 flex items-center justify-center gap-3 text-gray-400">
-        <div className="w-5 h-5 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
-        <span className="text-sm">جاري التحميل…</span>
+      <div className="py-12 flex flex-col items-center justify-center gap-4 text-gray-light/20">
+        <LoadingSpinner size="md" color="primary" />
+        <span className="text-[10px] font-black uppercase tracking-widest">جاري تحميل البيانات...</span>
       </div>
     );
   }
@@ -243,52 +223,42 @@ export function VideoQuizManager({ videoId, role, initialQuiz, onQuizChange }: P
 
   if (mode === 'results') {
     return (
-      <div className="space-y-4">
+      <div className="space-y-6 animate-in fade-in duration-500">
         <div className="flex items-center justify-between">
-          <h3 className="text-white font-bold flex items-center gap-2 text-sm">
-            <Icon name="chart-bar" className="text-primary" size="sm" />
-            نتائج الطلاب
+          <h3 className="text-lg font-black text-white flex items-center gap-3">
+            <Icon name="chart-bar" className="text-secondary" />
+            <span>سجل نتائج الطلاب</span>
           </h3>
-          <button
-            type="button"
-            onClick={() => setMode('view')}
-            className="text-xs text-gray-400 hover:text-white flex items-center gap-1 transition-colors"
-          >
-            <Icon name="arrow-right" size="sm" /> رجوع
-          </button>
+          <Button variant="ghost" size="sm" onClick={() => setMode('view')} className="text-gray-light/40 hover:text-white">
+            <Icon name="arrow-right" /> رجوع
+          </Button>
         </div>
 
         {loadingResults ? (
-          <div className="py-8 flex justify-center">
-            <div className="w-6 h-6 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
-          </div>
+          <div className="py-12 flex justify-center"><LoadingSpinner size="md" /></div>
         ) : results.length === 0 ? (
-          <div className="rounded-2xl border border-white/10 bg-[#101426]/40 p-8 text-center text-gray-500 text-sm">
-            <Icon name="chart-bar" className="text-3xl opacity-30 mb-2" />
-            <p>لا توجد محاولات حتى الآن</p>
+          <div className="rounded-[2rem] premium-glass premium-border p-12 text-center opacity-40">
+            <Icon name="poll-h" className="text-4xl mb-4" />
+            <p className="text-sm font-bold">لا توجد محاولات مسجلة بعد.</p>
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[500px] overflow-y-auto pr-2 scrollbar-premium">
             {results.map((attempt) => (
-              <div
-                key={attempt.id}
-                className="rounded-xl border border-white/10 bg-white/5 p-4 flex items-center gap-4"
-              >
-                <QuestionBadge status={attempt.status} />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className="text-white font-medium">{attempt.correct_count}/{attempt.total_count}</span>
-                    <span className="text-gray-500">إجابة صحيحة</span>
-                  </div>
-                  <div className="text-xs text-gray-500 mt-0.5">
-                    {new Date(attempt.completed_at).toLocaleDateString('ar-EG', {
-                      year: 'numeric', month: 'short', day: 'numeric',
-                      hour: '2-digit', minute: '2-digit',
-                    })}
-                  </div>
+              <div key={attempt.id} className="rounded-2xl premium-glass premium-border p-5 flex items-center gap-4 group hover:border-primary/30 transition-all">
+                <div className={cn(
+                  "w-12 h-12 rounded-xl flex items-center justify-center text-xl shadow-lg",
+                  attempt.status === 'passed' ? "bg-success/10 text-success" : "bg-danger/10 text-danger"
+                )}>
+                  <Icon name={attempt.status === 'passed' ? 'check-circle' : 'times-circle'} />
                 </div>
-                <div className={`text-lg font-bold ${attempt.status === 'passed' ? 'text-emerald-400' : 'text-red-400'}`}>
-                  {attempt.percentage}%
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm font-black text-white">{attempt.correct_count}/{attempt.total_count} إجابة</span>
+                    <span className={cn("text-lg font-black", attempt.status === 'passed' ? "text-success" : "text-danger")}>{attempt.percentage}%</span>
+                  </div>
+                  <p className="text-[10px] font-bold text-gray-light/20 tracking-widest uppercase">
+                    {new Date(attempt.completed_at).toLocaleString('ar-EG')}
+                  </p>
                 </div>
               </div>
             ))}
@@ -302,225 +272,157 @@ export function VideoQuizManager({ videoId, role, initialQuiz, onQuizChange }: P
 
   if (mode === 'edit') {
     return (
-      <div className="space-y-5">
-        {/* ── Header ── */}
+      <div className="space-y-8 animate-in fade-in slide-in-from-top-4 duration-500">
         <div className="flex items-center justify-between">
-          <h3 className="text-white font-bold flex items-center gap-2 text-sm">
-            <Icon name={quiz ? 'edit' : 'plus-circle'} className="text-primary" size="sm" />
-            {quiz ? 'تعديل الاختبار' : 'إنشاء اختبار جديد'}
-          </h3>
-          <button
-            type="button"
-            onClick={() => setMode('view')}
-            className="text-xs text-gray-400 hover:text-white flex items-center gap-1 transition-colors"
-          >
-            <Icon name="times" size="sm" /> إلغاء
-          </button>
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary text-xl">
+              <Icon name={quiz ? 'edit' : 'plus'} />
+            </div>
+            <h3 className="text-xl font-black text-white">{quiz ? 'تعديل الاختبار الحالي' : 'تصميم اختبار جديد'}</h3>
+          </div>
+          <Button variant="ghost" onClick={() => setMode('view')} className="text-red-400 hover:bg-red-500/10">
+            <Icon name="times" /> إلغاء
+          </Button>
         </div>
 
-        {/* ── Basic settings ── */}
-        <div className="rounded-2xl border border-white/10 bg-[#101426]/40 p-5 space-y-4">
-          {/* Title */}
-          <div>
-            <label className="block text-xs text-gray-400 mb-1.5">عنوان الاختبار</label>
-            <input
-              type="text"
+        {/* Basic Settings Card */}
+        <div className="p-6 md:p-8 rounded-[2rem] premium-glass premium-border space-y-8">
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-gray-light/40 uppercase tracking-[0.2em] px-1">عنوان الاختبار الرئيسي</label>
+            <Input
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
-              placeholder="اختبار الفيديو"
-              className="w-full rounded-xl bg-white/5 border border-white/10 text-white px-4 py-2.5 text-sm focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/30 placeholder:text-gray-600"
+              placeholder="مثال: مراجعة الوحدة الأولى"
+              className="h-14 bg-white/5 border-white/10 rounded-2xl text-white font-bold"
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {/* Passing score */}
-            <div>
-              <label className="block text-xs text-gray-400 mb-1.5">درجة النجاح (%)</label>
-              <input
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-gray-light/40 uppercase tracking-[0.2em] px-1">درجة النجاح (%)</label>
+              <Input
                 type="number"
-                min={1}
-                max={100}
                 value={form.passing_score}
                 onChange={(e) => setForm({ ...form, passing_score: Number(e.target.value) })}
-                className="w-full rounded-xl bg-white/5 border border-white/10 text-white px-4 py-2.5 text-sm focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/30"
+                className="h-14 bg-white/5 border-white/10 rounded-2xl text-white font-bold text-center"
               />
             </div>
-
-            {/* Is required */}
-            <div className="flex flex-col justify-end">
-              <label className="flex items-center gap-3 cursor-pointer group">
-                <div
-                  className={`w-10 h-5 rounded-full relative transition-colors ${
-                    form.is_required ? 'bg-primary' : 'bg-white/10'
-                  }`}
-                  onClick={() => setForm({ ...form, is_required: !form.is_required })}
-                >
-                  <div
-                    className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${
-                      form.is_required ? 'right-0.5' : 'left-0.5'
-                    }`}
-                  />
-                </div>
-                <span className="text-xs text-gray-300 group-hover:text-white">إلزامي للإتمام</span>
-              </label>
+            <div className="md:pt-6">
+              <ModernToggle label="إلزامي للمشاهدة" enabled={form.is_required} onChange={() => setForm({ ...form, is_required: !form.is_required })} />
             </div>
-
-            {/* Is active */}
-            <div className="flex flex-col justify-end">
-              <label className="flex items-center gap-3 cursor-pointer group">
-                <div
-                  className={`w-10 h-5 rounded-full relative transition-colors ${
-                    form.is_active ? 'bg-emerald-500' : 'bg-white/10'
-                  }`}
-                  onClick={() => setForm({ ...form, is_active: !form.is_active })}
-                >
-                  <div
-                    className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${
-                      form.is_active ? 'right-0.5' : 'left-0.5'
-                    }`}
-                  />
-                </div>
-                <span className="text-xs text-gray-300 group-hover:text-white">مفعّل</span>
-              </label>
+            <div className="md:pt-6">
+              <ModernToggle label="تفعيل الآن" enabled={form.is_active} onChange={() => setForm({ ...form, is_active: !form.is_active })} color="success" />
             </div>
           </div>
         </div>
 
-        {/* ── Questions ── */}
-        <div className="space-y-4">
+        {/* Questions Studio */}
+        <div className="space-y-6">
+          <h4 className="text-[10px] font-black text-gray-light/40 uppercase tracking-[0.2em] px-1">استوديو الأسئلة ({form.questions.length})</h4>
+          
           {form.questions.map((q, qi) => (
-            <div
-              key={qi}
-              className="rounded-2xl border border-white/10 bg-[#101426]/40 p-5 space-y-4"
-            >
-              {/* Question header */}
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-primary">السؤال {qi + 1}</span>
+            <article key={qi} className="p-6 md:p-8 rounded-[2.5rem] premium-glass premium-border relative group">
+              <div className="absolute -top-4 -right-4 w-12 h-12 rounded-2xl bg-primary/20 border border-primary/40 backdrop-blur-xl flex items-center justify-center text-primary font-black shadow-2xl">
+                {qi + 1}
+              </div>
+              
+              <div className="flex items-start justify-between gap-4 mb-6">
+                <div className="flex-1 space-y-2">
+                  <label className="text-[10px] font-black text-gray-light/20 uppercase tracking-widest">نص السؤال</label>
+                  <Input
+                    value={q.text}
+                    onChange={(e) => {
+                      const qs = [...form.questions];
+                      qs[qi] = { ...qs[qi], text: e.target.value };
+                      setForm({ ...form, questions: qs });
+                    }}
+                    placeholder="اكتب سؤالك هنا..."
+                    className="h-14 bg-white/5 border-white/10 rounded-2xl text-white font-bold"
+                  />
+                </div>
                 {form.questions.length > 1 && (
                   <button
-                    type="button"
                     onClick={() => {
                       const qs = form.questions.filter((_, i) => i !== qi);
                       setForm({ ...form, questions: qs });
                     }}
-                    className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1 transition-colors"
+                    className="w-12 h-12 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500 hover:text-white transition-all flex items-center justify-center mt-6"
                   >
-                    <Icon name="trash" size="sm" /> حذف
+                    <Icon name="trash" />
                   </button>
                 )}
               </div>
 
-              {/* Question text */}
-              <input
-                type="text"
-                value={q.text}
-                onChange={(e) => {
-                  const qs = [...form.questions];
-                  qs[qi] = { ...qs[qi], text: e.target.value };
-                  setForm({ ...form, questions: qs });
-                }}
-                placeholder="نص السؤال"
-                className="w-full rounded-xl bg-white/5 border border-white/10 text-white px-4 py-2.5 text-sm focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/30 placeholder:text-gray-600"
-              />
-
-              {/* Options */}
-              <div className="space-y-2">
-                <p className="text-xs text-gray-500">الخيارات (اختر الإجابة الصحيحة بالنقر على ✓)</p>
-                {q.options.map((opt, oi) => (
-                  <div key={oi} className="flex items-center gap-2">
-                    {/* Correct answer radio */}
-                    <button
-                      type="button"
-                      title="تعيين كإجابة صحيحة"
-                      onClick={() => {
-                        if (!opt.trim()) return;
-                        const qs = [...form.questions];
-                        qs[qi] = { ...qs[qi], correct_answer: opt };
-                        setForm({ ...form, questions: qs });
-                      }}
-                      className={`w-7 h-7 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
-                        q.correct_answer === opt && opt.trim()
-                          ? 'border-emerald-400 bg-emerald-400/20 text-emerald-400'
-                          : 'border-white/20 text-gray-600 hover:border-white/40'
-                      }`}
-                    >
-                      <Icon name={q.correct_answer === opt && opt.trim() ? 'check' : 'circle'} size="sm" />
-                    </button>
-
-                    {/* Option text input */}
-                    <input
-                      type="text"
-                      value={opt}
-                      placeholder={`الخيار ${oi + 1}`}
-                      onChange={(e) => {
-                        const qs = [...form.questions];
-                        const newOptions = [...qs[qi].options];
-                        const oldOpt = newOptions[oi];
-                        newOptions[oi] = e.target.value;
-                        // if this was the correct answer, update it
-                        const wasCorrect = qs[qi].correct_answer === oldOpt;
-                        qs[qi] = {
-                          ...qs[qi],
-                          options: newOptions,
-                          correct_answer: wasCorrect ? e.target.value : qs[qi].correct_answer,
-                        };
-                        setForm({ ...form, questions: qs });
-                      }}
-                      className="flex-1 rounded-xl bg-white/5 border border-white/10 text-white px-3 py-2 text-sm focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/30 placeholder:text-gray-600"
-                    />
-                  </div>
-                ))}
-              </div>
-
-              {/* Show correct answer hint */}
-              {q.correct_answer && (
-                <div className="flex items-center gap-2 text-xs text-emerald-400 bg-emerald-400/8 border border-emerald-400/15 rounded-lg px-3 py-2">
-                  <Icon name="check-circle" size="sm" />
-                  الإجابة الصحيحة: {q.correct_answer}
+              <div className="space-y-4">
+                <p className="text-[10px] font-black text-gray-light/20 uppercase tracking-widest">الخيارات المتاحة (حدد الصحيح بالنقر على الدائرة)</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {q.options.map((opt, oi) => (
+                    <div key={oi} className="flex items-center gap-3 group/opt">
+                      <button
+                        onClick={() => {
+                          if (!opt.trim()) return;
+                          const qs = [...form.questions];
+                          qs[qi] = { ...qs[qi], correct_answer: opt };
+                          setForm({ ...form, questions: qs });
+                        }}
+                        className={cn(
+                          "w-10 h-10 rounded-xl border-2 flex items-center justify-center transition-all",
+                          q.correct_answer === opt && opt.trim()
+                            ? "bg-success border-success text-white shadow-[0_0_15px_rgba(52,211,153,0.5)]"
+                            : "bg-white/5 border-white/10 text-gray-light/20 hover:border-primary/50"
+                        )}
+                      >
+                        <Icon name={q.correct_answer === opt && opt.trim() ? 'check' : 'circle'} size="sm" />
+                      </button>
+                      <Input
+                        value={opt}
+                        onChange={(e) => {
+                          const qs = [...form.questions];
+                          const newOpts = [...qs[qi].options];
+                          const oldVal = newOpts[oi];
+                          newOpts[oi] = e.target.value;
+                          const wasCorrect = qs[qi].correct_answer === oldVal;
+                          qs[qi] = { ...qs[qi], options: newOpts, correct_answer: wasCorrect ? e.target.value : qs[qi].correct_answer };
+                          setForm({ ...form, questions: qs });
+                        }}
+                        placeholder={`الخيار ${oi + 1}`}
+                        className={cn(
+                          "h-12 bg-white/2 border-white/5 rounded-xl text-xs font-bold transition-all",
+                          q.correct_answer === opt && opt.trim() ? "border-success/40 text-success" : "focus:border-primary"
+                        )}
+                      />
+                    </div>
+                  ))}
                 </div>
-              )}
-            </div>
+              </div>
+            </article>
           ))}
 
-          {/* Add question button */}
-          <button
-            type="button"
+          <Button
+            variant="outline"
             onClick={() => setForm({ ...form, questions: [...form.questions, emptyQuestion(form.questions.length)] })}
-            className="w-full rounded-2xl border border-dashed border-white/20 hover:border-primary/40 bg-white/3 hover:bg-primary/5 text-gray-400 hover:text-primary py-3 text-sm flex items-center justify-center gap-2 transition-all"
+            className="w-full h-16 rounded-[2rem] border-dashed border-primary/40 text-primary hover:bg-primary/5 font-black text-sm uppercase tracking-[0.2em]"
           >
-            <Icon name="plus" size="sm" />
-            إضافة سؤال
-          </button>
+            <Icon name="plus" /> إضافة سؤال جديد
+          </Button>
         </div>
 
-        {/* ── Save / Cancel ── */}
-        <div className="flex gap-3">
-          <button
-            type="button"
-            onClick={() => void handleSave()}
+        {/* Actions Bar */}
+        <div className="flex gap-4 pt-8 border-t border-white/5">
+          <Button
+            onClick={handleSave}
             disabled={saving}
-            className="flex-1 rounded-xl bg-primary hover:bg-primary/90 text-white font-semibold py-2.5 text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+            className="flex-1 h-16 rounded-[1.5rem] bg-primary text-white font-black uppercase tracking-widest shadow-2xl"
           >
-            {saving ? (
-              <>
-                <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-                جاري الحفظ…
-              </>
-            ) : (
-              <>
-                <Icon name="save" size="sm" />
-                حفظ الاختبار
-              </>
-            )}
-          </button>
-          <button
-            type="button"
+            {saving ? <LoadingSpinner /> : <><Icon name="save" /> <span>حفظ الاختبار والتفعيل</span></>}
+          </Button>
+          <Button
             onClick={() => setMode('view')}
-            disabled={saving}
-            className="px-5 rounded-xl border border-white/10 text-gray-400 hover:text-white hover:border-white/20 text-sm transition-all disabled:opacity-50"
+            variant="ghost"
+            className="px-8 h-16 rounded-[1.5rem] text-gray-light/40 font-bold"
           >
             إلغاء
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -529,154 +431,98 @@ export function VideoQuizManager({ videoId, role, initialQuiz, onQuizChange }: P
   // ══ VIEW MODE (default) ══════════════════════════════════════════════════════
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6 animate-in fade-in duration-700">
+      {!quiz ? (
+        <div className="rounded-[3rem] premium-glass premium-border p-12 text-center relative overflow-hidden group">
+          <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+          <div className="relative z-10 flex flex-col items-center">
+            <div className="w-20 h-20 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary text-3xl mb-6 shadow-2xl">
+              <Icon name="graduation-cap" />
+            </div>
+            <h3 className="text-2xl font-black text-white mb-2">لا يوجد اختبار مرتبط</h3>
+            <p className="text-gray-light/40 font-medium mb-8 max-w-sm">أضف اختباراً تقييمياً لقياس مدى استيعاب الطلاب للمحتوى التعليمي بشكل فوري.</p>
+            <Button onClick={openEdit} className="h-14 px-10 rounded-2xl bg-primary text-white font-black uppercase tracking-widest shadow-xl">
+              <Icon name="plus" /> إنشاء أول اختبار
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {/* Active Quiz Card */}
+          <div className="rounded-[2.5rem] premium-glass premium-border p-8 md:p-10 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-40 h-40 bg-success/10 blur-[80px] -translate-y-1/2 translate-x-1/2" />
+            
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
+              <div className="flex flex-col md:flex-row items-center gap-6">
+                <div className="w-16 h-16 rounded-[1.5rem] bg-primary/10 border border-primary/20 flex items-center justify-center text-primary text-3xl shadow-xl">
+                  <Icon name="graduation-cap" />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-2xl font-black text-white leading-tight">{quiz.title}</h3>
+                  <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
+                    <Badge variant="info" size="sm" className="font-black uppercase">{quiz.questions_count} أسئلة</Badge>
+                    <Badge variant="success" size="sm" className="font-black uppercase">درجة النجاح: {quiz.passing_score}%</Badge>
+                    {quiz.is_required && <Badge variant="warning" size="sm" className="font-black uppercase tracking-tighter">إلزامي</Badge>}
+                  </div>
+                </div>
+              </div>
 
-      {/* ── No quiz yet ── */}
-      {!quiz && (
-        <div className="rounded-2xl border border-dashed border-white/15 bg-[#101426]/30 p-8 text-center space-y-4">
-          <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto">
-            <Icon name="question-circle" className="text-primary text-2xl" />
+              <div className="flex flex-wrap items-center justify-center gap-2 w-full md:w-auto">
+                <Button onClick={openResults} variant="ghost" className="flex-1 md:flex-none h-12 px-5 rounded-xl bg-white/5 text-gray-light border border-white/5">
+                  <Icon name="chart-bar" /> <span>النتائج</span>
+                </Button>
+                <Button onClick={openEdit} variant="ghost" className="flex-1 md:flex-none h-12 px-5 rounded-xl bg-primary/10 text-primary border border-primary/10">
+                  <Icon name="edit" /> <span>تعديل</span>
+                </Button>
+                <Button onClick={() => setConfirmDelete(true)} variant="ghost" className="flex-1 md:flex-none h-12 px-5 rounded-xl bg-red-500/10 text-red-400 border border-red-500/10">
+                  <Icon name="trash" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Questions Preview */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-10">
+              {quiz.questions?.map((q, i) => (
+                <div key={q.id} className="p-5 rounded-2xl bg-white/3 border border-white/5 hover:border-primary/20 transition-all group">
+                  <p className="text-xs font-black text-white flex gap-3 mb-4">
+                    <span className="text-primary opacity-40 font-mono tracking-tighter">#{i+1}</span>
+                    <span className="line-clamp-2 leading-relaxed">{q.text}</span>
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {q.options.slice(0, 4).map((opt, oi) => (
+                      <div key={oi} className={cn(
+                        "px-3 py-2 rounded-lg text-[10px] font-bold truncate border transition-all",
+                        opt === q.correct_answer 
+                          ? "bg-success/10 border-success/30 text-success" 
+                          : "bg-white/2 border-white/5 text-gray-light/20"
+                      )}>
+                        {opt}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-          <div>
-            <p className="text-white font-semibold">لا يوجد اختبار لهذا الفيديو</p>
-            <p className="text-gray-500 text-sm mt-1">أضف اختباراً لتشجيع الطلاب على المتابعة وكسب النقاط</p>
-          </div>
-          <button
-            type="button"
-            onClick={openEdit}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-all shadow-[0_0_20px_rgba(66,99,235,0.3)]"
-          >
-            <Icon name="plus-circle" size="sm" />
-            إنشاء اختبار
-          </button>
         </div>
       )}
 
-      {/* ── Quiz exists ── */}
-      {quiz && (
-        <>
-          {/* Header bar */}
-          <div className="flex items-center justify-between">
-            <h3 className="text-white font-bold flex items-center gap-2 text-sm">
-              <Icon name="graduation-cap" className="text-primary" size="sm" />
-              {quiz.title}
-            </h3>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => void openResults()}
-                className="text-xs text-gray-400 hover:text-primary flex items-center gap-1 transition-colors px-2 py-1 rounded-lg hover:bg-primary/10"
-              >
-                <Icon name="chart-bar" size="sm" /> النتائج
-              </button>
-              <button
-                type="button"
-                onClick={openEdit}
-                className="text-xs text-gray-400 hover:text-white flex items-center gap-1 transition-colors px-2 py-1 rounded-lg hover:bg-white/5"
-              >
-                <Icon name="edit" size="sm" /> تعديل
-              </button>
-              <button
-                type="button"
-                onClick={() => setConfirmDelete(true)}
-                className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1 transition-colors px-2 py-1 rounded-lg hover:bg-red-400/10"
-              >
-                <Icon name="trash" size="sm" /> حذف
-              </button>
-            </div>
-          </div>
-
-          {/* Quiz summary */}
-          <div className="rounded-2xl border border-white/10 bg-[#101426]/40 p-5 space-y-4">
-            {/* Badges row */}
-            <div className="flex flex-wrap gap-2">
-              <span className="text-xs px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
-                درجة النجاح: {quiz.passing_score}%
-              </span>
-              <span className="text-xs px-2.5 py-1 rounded-full bg-white/5 text-gray-300 border border-white/10">
-                {quiz.questions_count} سؤال
-              </span>
-              {quiz.is_required && (
-                <span className="text-xs px-2.5 py-1 rounded-full bg-amber-400/10 text-amber-400 border border-amber-400/20">
-                  إلزامي
-                </span>
-              )}
-              {quiz.is_active ? (
-                <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-400/10 text-emerald-400 border border-emerald-400/20">
-                  مفعّل
-                </span>
-              ) : (
-                <span className="text-xs px-2.5 py-1 rounded-full bg-red-400/10 text-red-400 border border-red-400/20">
-                  معطّل
-                </span>
-              )}
-            </div>
-
-            {/* Question list */}
-            {quiz.questions && quiz.questions.length > 0 && (
-              <div className="space-y-3">
-                {quiz.questions.map((q, i) => (
-                  <div key={q.id} className="rounded-xl bg-white/3 border border-white/8 p-4 space-y-2">
-                    <p className="text-white text-sm font-medium">{i + 1}. {q.text}</p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                      {q.options.map((opt, oi) => (
-                        <div
-                          key={oi}
-                          className={`text-xs px-3 py-1.5 rounded-lg border ${
-                            opt === q.correct_answer
-                              ? 'bg-emerald-400/10 border-emerald-400/25 text-emerald-400'
-                              : 'bg-white/3 border-white/8 text-gray-400'
-                          }`}
-                        >
-                          {opt === q.correct_answer && <Icon name="check" size="sm" className="inline ml-1" />}
-                          {opt}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </>
-      )}
-
-      {/* ── Delete confirmation ── */}
+      {/* Delete Confirmation Overlay */}
       {confirmDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="rounded-2xl border border-red-500/30 bg-[#0f1320] p-6 max-w-sm w-full space-y-4 shadow-2xl">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center flex-shrink-0">
-                <Icon name="exclamation-triangle" className="text-red-400" />
-              </div>
-              <div>
-                <p className="text-white font-bold">حذف الاختبار</p>
-                <p className="text-gray-400 text-sm mt-0.5">سيتم حذف الاختبار وجميع نتائج الطلاب. لا يمكن التراجع.</p>
-              </div>
+        <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/80 backdrop-blur-md p-6 animate-in fade-in duration-300">
+          <div className="max-w-md w-full rounded-[2.5rem] premium-glass premium-border p-8 md:p-10 space-y-8 shadow-[0_0_100px_rgba(239,68,68,0.15)] text-center">
+            <div className="w-20 h-20 rounded-[1.5rem] bg-red-500/20 border border-red-500/30 flex items-center justify-center text-red-500 text-4xl mx-auto shadow-2xl">
+              <Icon name="exclamation-triangle" />
             </div>
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={() => void handleDelete()}
-                disabled={deleting}
-                className="flex-1 rounded-xl bg-red-500 hover:bg-red-400 text-white font-semibold py-2.5 text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-50"
-              >
-                {deleting ? (
-                  <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-                ) : (
-                  <>
-                    <Icon name="trash" size="sm" /> نعم، احذف
-                  </>
-                )}
-              </button>
-              <button
-                type="button"
-                onClick={() => setConfirmDelete(false)}
-                disabled={deleting}
-                className="flex-1 rounded-xl border border-white/10 text-gray-400 hover:text-white py-2.5 text-sm transition-all"
-              >
-                إلغاء
-              </button>
+            <div className="space-y-2">
+              <h3 className="text-2xl font-black text-white">حذف الاختبار التعليمي؟</h3>
+              <p className="text-gray-light/40 font-medium">سيتم مسح الاختبار وجميع نتائج محاولات الطلاب المرتبطة به نهائياً من قاعدة البيانات.</p>
+            </div>
+            <div className="flex flex-col md:flex-row gap-4">
+              <Button onClick={handleDelete} disabled={deleting} className="flex-1 h-14 rounded-2xl bg-red-500 text-white font-black uppercase tracking-widest shadow-xl">
+                {deleting ? <LoadingSpinner /> : 'نعم، حذف نهائي'}
+              </Button>
+              <Button onClick={() => setConfirmDelete(false)} disabled={deleting} variant="ghost" className="flex-1 h-14 rounded-2xl text-gray-light font-bold">إلغاء</Button>
             </div>
           </div>
         </div>

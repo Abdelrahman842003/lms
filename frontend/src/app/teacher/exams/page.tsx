@@ -332,90 +332,116 @@ export default function ExamsPage() {
       </div>
 
       {/* Header Section */}
-      <div className="header-section flex justify-between items-center mb-6 max-md:flex-col max-md:items-stretch max-md:gap-4">
-        <div className="header-title flex items-center gap-3 max-md:w-full max-md:justify-center">
-          <div className="w-12 h-12 rounded-xl bg-[rgba(66,99,235,0.1)] flex items-center justify-center text-primary text-2xl">
-            <Icon name="file-alt" />
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+        <div className="space-y-2">
+          <div className="flex items-center gap-3">
+             <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary premium-border">
+                <Icon name="file-alt" size="xl" />
+             </div>
+             <h2 className="text-3xl font-black text-white tracking-tight">إدارة الامتحانات</h2>
           </div>
-          <h2 className="text-2xl font-bold text-white m-0">إدارة الامتحانات</h2>
+          <p className="text-gray-light/40 font-medium px-1">قم بإنشاء وتتبع الامتحانات والنتائج لطلابك</p>
         </div>
-        <div className="header-actions max-md:w-full">
-          <Button onClick={() => router.push('/teacher/exams/add')} variant="primary" className="max-md:w-full max-md:justify-center">
+        
+        <div className="flex items-center gap-3">
+          <Button 
+            onClick={() => router.push('/teacher/exams/add')} 
+            variant="primary" 
+            className="h-12 px-6 rounded-2xl font-bold gap-2 shadow-[0_0_30px_rgba(66,99,235,0.2)] hover:shadow-[0_0_40px_rgba(66,99,235,0.4)] transition-all"
+          >
             <Icon name="plus" />
-            <span>امتحان جديد</span>
+            <span>إضافة امتحان جديد</span>
           </Button>
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="flex gap-4 mb-6 max-md:flex-col">
-        <div className="flex-1">
-          <Input
-            type="text"
-            placeholder="بحث عن امتحان..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full"
-          />
-        </div>
-        <div className="w-64 max-md:w-full">
-          <Filter
-            options={[
-              { value: '', label: 'كل المجموعات' },
-              ...groups.map(group => ({ value: String(group.id), label: group.name }))
-            ]}
-            value={selectedGroupId}
-            onChange={(value) => setSelectedGroupId(value)}
-            placeholder="كل المجموعات"
-            className="w-full"
-          />
-        </div>
-        <div className="w-48 max-md:w-full">
-          <Filter
-            options={[
-              { value: '', label: 'كل الحالات' },
-              { value: 'active', label: 'نشط' },
-              { value: 'upcoming', label: 'قادم' },
-              { value: 'ended', label: 'منتهي' },
-            ]}
-            value={selectedStatus}
-            onChange={(value) => setSelectedStatus(value)}
-            placeholder="الحالة"
-            className="w-full"
-          />
+      {/* Filters & Search */}
+      <div className="premium-glass p-4 rounded-[2rem] border-white/5 mb-8 relative z-30">
+        <div className="flex flex-col lg:flex-row gap-4">
+          <div className="flex-1 relative group">
+            <Icon name="search" className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-light/20 group-focus-within:text-primary transition-colors" />
+            <Input
+              type="text"
+              placeholder="بحث عن اسم الامتحان أو المادة..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full h-14 bg-white/5 border-white/5 group-hover:border-white/10 rounded-2xl pr-12 font-bold placeholder:text-gray-light/10 transition-all focus:bg-white/10"
+            />
+          </div>
+          
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="w-full sm:w-64">
+              <Filter
+                options={[
+                  { value: '', label: 'كل المجموعات' },
+                  ...groups.map(group => ({ value: String(group.id), label: group.name }))
+                ]}
+                value={selectedGroupId}
+                onChange={(value) => setSelectedGroupId(value)}
+                placeholder="تصفية حسب المجموعة"
+                className="h-14 bg-white/5 border-white/5 rounded-2xl font-bold"
+              />
+            </div>
+            <div className="w-full sm:w-48">
+              <Filter
+                options={[
+                  { value: '', label: 'كل الحالات' },
+                  { value: 'active', label: 'نشط الآن' },
+                  { value: 'upcoming', label: 'قادم قريباً' },
+                  { value: 'ended', label: 'منتهي' },
+                ]}
+                value={selectedStatus}
+                onChange={(value) => setSelectedStatus(value)}
+                placeholder="الحالة"
+                className="h-14 bg-white/5 border-white/5 rounded-2xl font-bold"
+              />
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Exams Grid */}
       {loading ? (
-        <div className="exams-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="rounded-2xl bg-[#101426]/15 border border-white/10 h-[280px] flex flex-col gap-4 p-6">
-              <div className="flex justify-between items-start">
-                <div className="skeleton-item w-[60%] h-6"></div>
-                <div className="skeleton-item w-[20%] h-6 rounded-xl"></div>
-              </div>
-              <div className="skeleton-item w-full h-10"></div>
-              <div className="flex flex-col gap-3 mt-auto">
-                <div className="skeleton-item w-[40%] h-4"></div>
-                <div className="skeleton-item w-[50%] h-4"></div>
-                <div className="skeleton-item w-[30%] h-4"></div>
-              </div>
-              <div className="flex gap-2 mt-4">
-                <div className="skeleton-item flex-1 h-9 rounded-lg"></div>
-                <div className="skeleton-item flex-1 h-9 rounded-lg"></div>
-              </div>
+            <div key={i} className="h-[340px] rounded-[2rem] bg-white/5 border border-white/5 relative overflow-hidden animate-pulse">
+               <div className="p-7 space-y-6">
+                  <div className="flex justify-between items-start">
+                     <div className="w-24 h-6 bg-white/5 rounded-full" />
+                     <div className="w-10 h-10 bg-white/5 rounded-xl" />
+                  </div>
+                  <div className="space-y-3">
+                     <div className="w-3/4 h-8 bg-white/10 rounded-lg" />
+                     <div className="w-1/2 h-4 bg-white/5 rounded-lg" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                     <div className="h-14 bg-white/5 rounded-2xl" />
+                     <div className="h-14 bg-white/5 rounded-2xl" />
+                  </div>
+                  <div className="h-11 bg-white/10 rounded-xl mt-auto" />
+               </div>
             </div>
           ))}
         </div>
       ) : filteredExams.length === 0 ? (
-        <div className="text-center p-12 bg-white/2 rounded-2xl">
-          <Icon name="file-alt" size="2x" className="text-gray-light mb-4 opacity-50" />
-          <p className="text-gray-light text-lg">لا توجد امتحانات</p>
-          <Button onClick={() => router.push('/teacher/exams/add')} variant="primary" className="mt-4">
-            <Icon name="plus" />
-            <span>إضافة امتحان جديد</span>
-          </Button>
+        <div className="premium-glass p-20 rounded-[3rem] border-white/5 flex flex-col items-center justify-center text-center">
+           <div className="w-24 h-24 rounded-[2rem] bg-white/5 flex items-center justify-center text-gray-light/10 mb-8 premium-border">
+              <Icon name="file-invoice" size="3x" />
+           </div>
+           <h3 className="text-2xl font-black text-white mb-3">لا توجد امتحانات حالياً</h3>
+           <p className="text-gray-light/30 max-w-md mb-10 font-medium">
+              {searchQuery || selectedGroupId || selectedStatus 
+                ? 'لم نجد أي امتحانات تطابق خيارات التصفية التي اخترتها. جرب تغيير كلمات البحث أو الفلاتر.' 
+                : 'ابدأ بإنشاء أول امتحان لطلابك الآن لمتابعة مستواهم الدراسي.'}
+           </p>
+           <Button 
+             onClick={() => router.push('/teacher/exams/add')} 
+             variant="primary" 
+             className="h-12 px-8 rounded-2xl font-bold gap-2"
+           >
+             <Icon name="plus" />
+             <span>إضافة أول امتحان</span>
+           </Button>
         </div>
       ) : (
         <div className="exams-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -527,21 +553,34 @@ export default function ExamsPage() {
         }}
         title="نسخ الامتحان"
         isLoading={isProcessing}
-        submitText={isProcessing ? 'جاري النسخ...' : 'نسخ'}
+        submitText={isProcessing ? 'جاري النسخ...' : 'تأكيد النسخ'}
         cancelText="إلغاء"
         maxWidth="500px"
       >
-        <div className="form-group">
-          <label htmlFor="newExamTitle">اسم النسخة الجديدة</label>
-          <Input
-            type="text"
-            id="newExamTitle"
-            value={newExamTitle}
-            onChange={(e) => setNewExamTitle(e.target.value)}
-            placeholder="أدخل اسم النسخة"
-            autoFocus
-            required
-          />
+        <div className="space-y-6 py-2">
+          <div className="p-4 rounded-2xl bg-primary/5 border border-primary/10 flex items-start gap-4">
+             <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                <Icon name="info-circle" />
+             </div>
+             <div className="space-y-1">
+                <p className="text-xs font-black text-primary uppercase tracking-widest leading-none">تنبيه</p>
+                <p className="text-[11px] font-bold text-gray-light/60 leading-relaxed">سيتم نسخ كافة الأسئلة والإعدادات، ولكن لن يتم نسخ نتائج الطلاب أو بيانات الحضور من النسخة الأصلية.</p>
+             </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-gray-light/30 uppercase tracking-widest px-2">اسم النسخة الجديدة</label>
+            <Input
+              type="text"
+              id="newExamTitle"
+              value={newExamTitle}
+              onChange={(e) => setNewExamTitle(e.target.value)}
+              placeholder="أدخل اسم النسخة الجديدة هنا..."
+              className="h-14 bg-white/5 border-white/5 rounded-2xl px-5 font-bold focus:bg-white/10 transition-all"
+              autoFocus
+              required
+            />
+          </div>
         </div>
       </FormModal>
     </DashboardLayout>

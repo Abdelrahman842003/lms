@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
-import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { withAcademyAuth } from '@/components/auth/withAcademyAuth';
 import { Button, Icon } from '@/components/ui';
@@ -36,6 +35,8 @@ function SubscriptionPage() {
     try {
       const data = await getAcademySubscription();
       setSubscriptionData(data);
+    } catch (error) {
+      console.error('Failed to load academy subscription:', error);
     } finally {
       setLoading(false);
     }
@@ -78,21 +79,14 @@ function SubscriptionPage() {
   const pendingRequest = subscriptionData?.pending_request;
   const currentPlanSelection = resolvePlanSelection(subscription?.plan_type, subscription?.subscription_period);
 
-  const getStatusColor = () => {
-    if (subscription?.is_trial) return 'blue';
-    if (daysRemaining < 7) return 'red';
-    if (daysRemaining < 30) return 'warning';
-    return 'green';
+  const getStatusConfig = () => {
+    if (subscription?.is_trial) return { color: 'text-blue-400', bg: 'bg-blue-400/10', border: 'border-blue-400/20', label: 'تجريبي', icon: 'flask' };
+    if (daysRemaining < 7) return { color: 'text-rose-400', bg: 'bg-rose-400/10', border: 'border-rose-400/20', label: 'منتهي قريباً', icon: 'exclamation-triangle' };
+    if (subscription?.status === 'active') return { color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-400/20', label: 'نشط', icon: 'check-circle' };
+    return { color: 'text-gray-400', bg: 'bg-gray-400/10', border: 'border-gray-400/20', label: 'غير نشط', icon: 'times-circle' };
   };
 
-  const getSeatsColor = () => {
-    if (seatsPercentage >= 90) return 'red';
-    if (seatsPercentage >= 70) return 'warning';
-    return 'primary';
-  };
-
-  const statusColor = getStatusColor();
-  const seatsColor = getSeatsColor();
+  const statusConfig = getStatusConfig();
 
   const handleRenewalSubmit = async (payload: SubscriptionRenewalRequest) => {
     setRenewalSubmitting(true);
@@ -107,345 +101,223 @@ function SubscriptionPage() {
 
   return (
     <DashboardLayout role="academy" user={user || undefined}>
-      <div className="max-w-4xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-            <Icon name="id-card" className="text-primary" />
-            اشتراك الأكاديمية
-          </h1>
-        </div>
-
-        {loading && (
-          <div className="bg-white/5 border border-white/10 rounded-xl p-4 text-gray-300">
-            جاري تحميل بيانات الاشتراك...
-          </div>
-        )}
-
-        {pendingRequest && (
-          <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 flex items-start gap-3">
-            <Icon name="hourglass-half" className="text-yellow-400 text-xl mt-1" />
-            <div className="flex-1">
-              <h3 className="text-yellow-400 font-bold mb-1">
-                {pendingRequest.request_type === 'upgrade' ? 'طلب الترقية قيد المراجعة' : 'طلب التجديد قيد المراجعة'}
-              </h3>
-              <p className="text-gray-300 text-sm">
-                {pendingRequest.request_type === 'upgrade'
-                  ? 'تم إرسال طلب الترقية وسيظهر في لوحة الإدارة للموافقة أو الرفض.'
-                  : 'تم إرسال طلب التجديد وسيظهر في لوحة الإدارة للموافقة.'}
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className={`p-4 rounded-xl border ${
-            subscription?.is_trial 
-              ? 'bg-blue-500/10 border-blue-500/20' 
-              : subscription?.status === 'active'
-                ? 'bg-green-500/10 border-green-500/20'
-                : 'bg-red-500/10 border-red-500/20'
-          }`}>
-            <div className="flex items-center justify-between mb-2">
-              <span className={`text-sm font-medium ${
-                subscription?.is_trial ? 'text-blue-400' : subscription?.status === 'active' ? 'text-green-400' : 'text-red-400'
-              }`}>حالة الاشتراك</span>
-              <Icon name={
-                subscription?.is_trial ? 'flask' : subscription?.status === 'active' ? 'check-circle' : 'times-circle'
-              } className={
-                subscription?.is_trial ? 'text-blue-400' : subscription?.status === 'active' ? 'text-green-400' : 'text-red-400'
-              } />
-            </div>
-            <div className={`text-2xl font-bold ${
-              subscription?.is_trial ? 'text-blue-400' : subscription?.status === 'active' ? 'text-green-400' : 'text-red-400'
-            }`}>
-              {subscription?.is_trial ? 'تجريبي' : subscription?.status === 'active' ? 'نشط' : 'منتهي'}
-            </div>
+      <div className="max-w-6xl mx-auto space-y-8 px-4 py-6">
+        {/* Page Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-1">
+            <h1 className="text-3xl md:text-4xl font-black text-white flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-primary/20 flex items-center justify-center border border-primary/20">
+                <Icon name="school" className="text-primary text-2xl" />
+              </div>
+              اشتراك الأكاديمية
+            </h1>
+            <p className="text-gray-light/40 font-bold mr-16">إدارة الحصص الاستيعابية والموارد التعليمية لمنظومتكم</p>
           </div>
 
-          <div className="p-4 rounded-xl bg-purple-500/10 border border-purple-500/20">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-purple-400">الأيام المتبقية</span>
-              <Icon name="clock" className="text-purple-400" />
-            </div>
-            <div className="text-2xl font-bold text-purple-400">{daysRemaining} يوم</div>
-          </div>
-
-          <div className={`p-4 rounded-xl border ${
-             seatsPercentage >= 90 ? 'bg-red-500/10 border-red-500/20' : 'bg-primary/10 border-primary/20'
-          }`}>
-            <div className="flex items-center justify-between mb-2">
-              <span className={`text-sm font-medium ${seatsPercentage >= 90 ? 'text-red-400' : 'text-primary'}`}>استهلاك الكراسي</span>
-              <Icon name="chair" className={seatsPercentage >= 90 ? 'text-red-400' : 'text-primary'} />
-            </div>
-            <div className={`text-2xl font-bold ${seatsPercentage >= 90 ? 'text-red-400' : 'text-primary'}`}>
-              {seatsPercentage}%
-            </div>
-          </div>
-
-          <div className={`p-4 rounded-xl border ${
-             storagePercentage >= 90 ? 'bg-red-500/10 border-red-500/20' :
-             storagePercentage >= 70 ? 'bg-orange-500/10 border-orange-500/20' :
-             'bg-teal-500/10 border-teal-500/20'
-          }`}>
-            <div className="flex items-center justify-between mb-2">
-              <span className={`text-sm font-medium ${
-                storagePercentage >= 90 ? 'text-red-400' :
-                storagePercentage >= 70 ? 'text-orange-400' : 'text-teal-400'
-              }`}>استهلاك التخزين</span>
-              <Icon name="hdd" className={
-                storagePercentage >= 90 ? 'text-red-400' :
-                storagePercentage >= 70 ? 'text-orange-400' : 'text-teal-400'
-              } />
-            </div>
-            <div className={`text-2xl font-bold ${
-              storagePercentage >= 90 ? 'text-red-400' :
-              storagePercentage >= 70 ? 'text-orange-400' : 'text-teal-400'
-            }`}>
-              {storage?.is_unlimited ? '∞' : `${storagePercentage}%`}
-            </div>
+          <div className={`px-6 py-3 rounded-2xl border ${statusConfig.bg} ${statusConfig.border} ${statusConfig.color} flex items-center gap-3 backdrop-blur-xl shadow-xl shadow-black/20`}>
+            <Icon name={statusConfig.icon as any} className="text-xl" />
+            <span className="font-black tracking-wide uppercase text-sm">{statusConfig.label}</span>
           </div>
         </div>
 
-        {/* Status Alert */}
-        {subscription?.is_trial && (
-          <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 flex items-start gap-3">
-            <Icon name="flask" className="text-blue-400 text-xl mt-1" />
-            <div className="flex-1">
-              <h3 className="text-blue-400 font-bold mb-1">أنتم في الفترة التجريبية</h3>
-              <p className="text-gray-300 text-sm">
-                يمكنكم إضافة عدد غير محدود من الطلاب حتى {subscription?.ends_at ? new Date(subscription.ends_at).toLocaleDateString('ar-EG') : 'غير محدد'}
-              </p>
-            </div>
+        {loading ? (
+          <div className="premium-glass premium-border rounded-[2.5rem] p-12 flex flex-col items-center justify-center gap-4 text-center">
+             <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+             <p className="text-gray-light/60 font-bold text-lg">جاري تحميل بيانات اشتراك الأكاديمية...</p>
           </div>
-        )}
+        ) : (
+          <>
+            {pendingRequest && (
+              <div className="premium-glass border-amber-500/20 rounded-[2rem] p-6 flex items-start gap-5 shadow-2xl shadow-amber-500/5 animate-pulse">
+                <div className="w-12 h-12 rounded-xl bg-amber-500/20 flex items-center justify-center border border-amber-500/20">
+                  <Icon name="hourglass-half" className="text-amber-400 text-xl" />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-amber-400 font-black text-lg">
+                    {pendingRequest.request_type === 'upgrade' ? 'طلب الترقية قيد المراجعة' : 'طلب التجديد قيد المراجعة'}
+                  </h3>
+                  <p className="text-gray-light/60 text-sm font-medium leading-relaxed">
+                    تم إرسال طلبكم للإدارة وهو الآن قيد المراجعة. سيتم تطبيق التغييرات فور الموافقة عليها.
+                  </p>
+                </div>
+              </div>
+            )}
 
-        {daysRemaining < 30 && !subscription?.is_trial && (
-          <div className={`bg-${statusColor}-500/10 border border-${statusColor}-500/20 rounded-xl p-4 flex items-start gap-3`}>
-            <Icon name="exclamation-triangle" className={`text-${statusColor}-400 text-xl mt-1`} />
-            <div className="flex-1">
-              <h3 className={`text-${statusColor}-400 font-bold mb-1`}>
-                {daysRemaining < 7 ? 'اشتراككم على وشك الانتهاء!' : 'تنبيه: اقتراب انتهاء الاشتراك'}
-              </h3>
-              <p className="text-gray-300 text-sm">
-                متبقي {daysRemaining} يوم على انتهاء اشتراككم. يرجى التجديد قريباً.
-              </p>
+            {/* Quick Stats Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {/* Days Left */}
+              <div className="premium-glass premium-border rounded-[2rem] p-6 space-y-4 hover:translate-y-[-4px] transition-all duration-500 group">
+                <div className="flex items-center justify-between">
+                  <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center border border-purple-500/10 group-hover:bg-purple-500/20 transition-colors">
+                    <Icon name="calendar-alt" className="text-purple-400" />
+                  </div>
+                  <span className="text-xs font-black text-purple-400/40 uppercase tracking-widest">الصلاحية</span>
+                </div>
+                <div>
+                  <h3 className="text-3xl font-black text-white">{daysRemaining} <span className="text-sm text-gray-light/40">يوم</span></h3>
+                  <p className="text-[10px] font-bold text-gray-light/30 mt-1">حتى تاريخ {subscription?.ends_at ? new Date(subscription.ends_at).toLocaleDateString('ar-EG') : '---'}</p>
+                </div>
+                <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-purple-600 to-purple-400 transition-all duration-1000" style={{ width: `${Math.min(100, (daysRemaining / 365) * 100)}%` }}></div>
+                </div>
+              </div>
+
+              {/* Seats Stat */}
+              <div className="premium-glass premium-border rounded-[2rem] p-6 space-y-4 hover:translate-y-[-4px] transition-all duration-500 group">
+                <div className="flex items-center justify-between">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-colors ${seatsPercentage >= 90 ? 'bg-rose-500/10 border-rose-500/10 group-hover:bg-rose-500/20' : 'bg-primary/10 border-primary/10 group-hover:bg-primary/20'}`}>
+                    <Icon name="users" className={seatsPercentage >= 90 ? 'text-rose-400' : 'text-primary'} />
+                  </div>
+                  <span className={`text-xs font-black uppercase tracking-widest ${seatsPercentage >= 90 ? 'text-rose-400/40' : 'text-primary/40'}`}>كراسي الطلاب</span>
+                </div>
+                <div>
+                  <h3 className="text-3xl font-black text-white">{subscription?.seats_used} <span className="text-sm text-gray-light/40">/ {subscription?.is_unlimited ? '∞' : subscription?.seats_limit}</span></h3>
+                  <p className="text-[10px] font-bold text-gray-light/30 mt-1">تم استهلاك {seatsPercentage}% من إجمالي السعة</p>
+                </div>
+                <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                  <div className={`h-full transition-all duration-1000 ${seatsPercentage >= 90 ? 'bg-rose-500' : 'bg-primary'}`} style={{ width: `${seatsPercentage}%` }}></div>
+                </div>
+              </div>
+
+              {/* Storage Stat */}
+              <div className="premium-glass premium-border rounded-[2rem] p-6 space-y-4 hover:translate-y-[-4px] transition-all duration-500 group">
+                <div className="flex items-center justify-between">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-colors ${storagePercentage >= 90 ? 'bg-rose-500/10 border-rose-500/10 group-hover:bg-rose-500/20' : 'bg-emerald-500/10 border-emerald-500/10 group-hover:bg-emerald-500/20'}`}>
+                    <Icon name="database" className={storagePercentage >= 90 ? 'text-rose-400' : 'text-emerald-400'} />
+                  </div>
+                  <span className={`text-xs font-black uppercase tracking-widest ${storagePercentage >= 90 ? 'text-rose-400/40' : 'text-emerald-400/40'}`}>سعة التخزين</span>
+                </div>
+                <div>
+                  <h3 className="text-3xl font-black text-white">{storage?.is_unlimited ? '∞' : `${storagePercentage}%`}</h3>
+                  <p className="text-[10px] font-bold text-gray-light/30 mt-1">{formatBytes(storage?.used_bytes ?? 0)} مستخدم حالياً</p>
+                </div>
+                <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                  <div className={`h-full transition-all duration-1000 ${storagePercentage >= 90 ? 'bg-rose-500' : 'bg-emerald-500'}`} style={{ width: `${storagePercentage}%` }}></div>
+                </div>
+              </div>
+
+              {/* Amount Paid */}
+              <div className="premium-glass premium-border rounded-[2rem] p-6 space-y-4 hover:translate-y-[-4px] transition-all duration-500 group">
+                <div className="flex items-center justify-between">
+                  <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center border border-amber-500/10 group-hover:bg-amber-500/20 transition-colors">
+                    <Icon name="file-invoice-dollar" className="text-amber-400" />
+                  </div>
+                  <span className="text-xs font-black text-amber-400/40 uppercase tracking-widest">الاستثمار</span>
+                </div>
+                <div>
+                  <h3 className="text-3xl font-black text-white">{subscription?.amount_paid ?? 0} <span className="text-sm text-gray-light/40">ج.م</span></h3>
+                  <p className="text-[10px] font-bold text-gray-light/30 mt-1">بناءً على {subscription?.seats_limit} كرسي مفعل</p>
+                </div>
+                <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-amber-600 to-amber-400" style={{ width: '100%' }}></div>
+                </div>
+              </div>
             </div>
-          </div>
-        )}
 
-        {/* Subscription Details */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Main Info Card */}
-          <DashboardCard title="تفاصيل الاشتراك" icon="info-circle">
-            <div className="space-y-4">
-              <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
-                <span className="text-gray-400">الباقة</span>
-                <span className="text-white font-bold">{subscription?.plan_label || 'غير محدد'}</span>
-              </div>
+            {/* Detailed Info Cards */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="lg:col-span-2 space-y-8">
+                {/* Plan Info */}
+                <div className="premium-glass premium-border rounded-[2.5rem] p-8 space-y-6">
+                  <div className="flex items-center justify-between border-b border-white/5 pb-6">
+                    <h2 className="text-xl font-black text-white flex items-center gap-3">
+                      <Icon name="info-circle" className="text-primary" />
+                      تفاصيل خطة الأكاديمية
+                    </h2>
+                  </div>
 
-              <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
-                <span className="text-gray-400">تاريخ البداية</span>
-                <span className="text-white font-bold">
-                  {subscription?.starts_at ? new Date(subscription.starts_at).toLocaleDateString('ar-EG') : 'غير محدد'}
-                </span>
-              </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="p-5 bg-white/5 rounded-3xl border border-white/5 space-y-1 hover:bg-white/10 transition-colors">
+                      <span className="text-[10px] font-black text-gray-light/20 uppercase">نوع الباقة</span>
+                      <p className="text-lg font-bold text-white leading-tight">{subscription?.plan_label || '---'}</p>
+                    </div>
+                    <div className="p-5 bg-white/5 rounded-3xl border border-white/5 space-y-1 hover:bg-white/10 transition-colors">
+                      <span className="text-[10px] font-black text-gray-light/20 uppercase">تاريخ تفعيل الاشتراك</span>
+                      <p className="text-lg font-bold text-white leading-tight">{subscription?.starts_at ? new Date(subscription.starts_at).toLocaleDateString('ar-EG', { day: 'numeric', month: 'long', year: 'numeric' }) : '---'}</p>
+                    </div>
+                    <div className="p-5 bg-white/5 rounded-3xl border border-white/5 space-y-1 hover:bg-white/10 transition-colors">
+                      <span className="text-[10px] font-black text-gray-light/20 uppercase">تاريخ التجديد القادم</span>
+                      <p className="text-lg font-bold text-rose-400 leading-tight">{subscription?.ends_at ? new Date(subscription.ends_at).toLocaleDateString('ar-EG', { day: 'numeric', month: 'long', year: 'numeric' }) : '---'}</p>
+                    </div>
+                    <div className="p-5 bg-white/5 rounded-3xl border border-white/5 space-y-1 hover:bg-white/10 transition-colors">
+                      <span className="text-[10px] font-black text-gray-light/20 uppercase">النظام المالي</span>
+                      <p className="text-lg font-bold text-primary leading-tight">
+                        {subscription?.subscription_period === 'monthly' ? 'دفع شهري' : 
+                         subscription?.subscription_period === 'quarterly' ? 'دفع ربع سنوي' :
+                         subscription?.subscription_period === 'annual' ? 'دفع سنوي' : 'باقة مخصصة'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
 
-              <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
-                <span className="text-gray-400">تاريخ الانتهاء</span>
-                <span className="text-white font-bold">
-                  {subscription?.ends_at ? new Date(subscription.ends_at).toLocaleDateString('ar-EG') : 'غير محدد'}
-                </span>
-              </div>
-            </div>
-          </DashboardCard>
-
-          {/* Seats Card */}
-          <DashboardCard title="الكراسي المتاحة" icon="chair">
-            <div className="space-y-6">
-              {/* Seats Progress */}
-              <div className="text-center">
-                <div className="relative inline-block">
-                  <svg className="w-32 h-32 transform -rotate-90">
-                    <circle
-                      cx="64"
-                      cy="64"
-                      r="56"
-                      stroke="currentColor"
-                      strokeWidth="8"
-                      fill="none"
-                      className="text-white/10"
-                    />
-                    <circle
-                      cx="64"
-                      cy="64"
-                      r="56"
-                      stroke="currentColor"
-                      strokeWidth="8"
-                      fill="none"
-                      strokeDasharray={`${2 * Math.PI * 56}`}
-                      strokeDashoffset={`${2 * Math.PI * 56 * (1 - seatsPercentage / 100)}`}
-                      className={`text-${seatsColor} transition-all duration-1000`}
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-3xl font-bold text-white">{seatsPercentage}%</span>
-                    <span className="text-xs text-gray-400">مستخدم</span>
+                {/* Info Note */}
+                <div className="premium-glass premium-border rounded-[2.5rem] p-8 flex items-start gap-6 bg-gradient-to-br from-primary/5 to-purple-500/5">
+                  <div className="w-14 h-14 rounded-2xl bg-primary/20 flex items-center justify-center border border-primary/20 shrink-0">
+                    <Icon name="lightbulb" className="text-primary text-2xl" />
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="text-lg font-black text-white">كيف تعمل كراسي الأكاديمية؟</h3>
+                    <p className="text-sm text-gray-light/60 font-medium leading-relaxed">
+                      الكراسي المشتراة تُمثل الطاقة الاستيعابية الإجمالية للأكاديمية. عند قيام أي مدرس تابع للأكاديمية بإضافة طالب جديد، يتم حجز كرسي من رصيد الأكاديمية الموحد. هذا يمنحكم مرونة كاملة في توزيع الموارد بين مدرسيكم.
+                    </p>
                   </div>
                 </div>
               </div>
 
-              {/* Seats Details */}
-              <div className="space-y-3">
-                <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
-                  <span className="text-gray-400">إجمالي الكراسي</span>
-                  <span className="text-white font-bold text-xl">
-                    {subscription?.is_unlimited ? '∞' : subscription?.seats_limit ?? 0}
-                  </span>
+              {/* Action Sidebar */}
+              <div className="space-y-6">
+                <div className="premium-glass premium-border rounded-[2.5rem] p-8 text-center space-y-8 relative overflow-hidden group">
+                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-purple-600"></div>
+                  
+                  <div className="space-y-4">
+                    <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center border-4 border-primary/5 mx-auto group-hover:scale-110 transition-transform duration-500">
+                      <Icon name="rocket" className="text-primary text-3xl" />
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-black text-white">توسيع المنظومة</h3>
+                      <p className="text-gray-light/40 text-sm font-bold mt-2">قم بزيادة الكراسي أو مساحة التخزين لدعم نمو أكاديميتك</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                     <div className="flex items-center justify-between px-6 py-4 bg-white/5 rounded-2xl border border-white/5">
+                        <span className="text-xs font-bold text-gray-light/40">سعر الكرسي</span>
+                        <span className="font-black text-white">{subscription?.price_per_seat} ج.م</span>
+                     </div>
+                  </div>
+
+                  <Button
+                    size="lg"
+                    className="w-full py-6 rounded-2xl text-lg font-black shadow-2xl shadow-primary/40 relative overflow-hidden group/btn"
+                    onClick={() => setRenewalOpen(true)}
+                    disabled={!!pendingRequest || loading}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-primary to-purple-600 group-hover/btn:scale-105 transition-transform duration-500"></div>
+                    <div className="relative flex items-center justify-center gap-3 text-white">
+                      <Icon name="plus-circle" />
+                      <span>{pendingRequest ? 'الطلب قيد المعالجة' : 'تطوير الأكاديمية'}</span>
+                    </div>
+                  </Button>
+
+                  <p className="text-[10px] text-gray-light/20 font-bold leading-relaxed px-4">
+                    * سيتم مراجعة طلب الترقية وإرسال إشعار لكم فور تفعيل الموارد الجديدة.
+                  </p>
                 </div>
 
-                <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
-                  <span className="text-gray-400">الكراسي المستخدمة</span>
-                  <span className="text-primary font-bold text-xl">{subscription?.seats_used ?? 0}</span>
-                </div>
-              </div>
-
-              {/* Warning if low seats */}
-              {!subscription?.is_trial && seatsPercentage >= 70 && (
-                <div className={`bg-${seatsColor}-500/10 border border-${seatsColor}-500/20 rounded-lg p-3 text-center`}>
-                  <Icon name="exclamation-circle" className={`text-${seatsColor}-400 mr-2`} />
-                  <span className={`text-${seatsColor}-400 text-sm`}>
-                    {seatsPercentage >= 90 ? 'الكراسي على وشك النفاد!' : 'اقتراب نفاد الكراسي'}
-                  </span>
-                </div>
-              )}
-            </div>
-          </DashboardCard>
-        </div>
-
-        {/* Storage Card */}
-        <DashboardCard title="مساحة التخزين" icon="hdd">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-            {/* Storage Progress Circle */}
-            <div className="text-center">
-              <div className="relative inline-block">
-                <svg className="w-32 h-32 transform -rotate-90">
-                  <circle cx="64" cy="64" r="56" stroke="currentColor" strokeWidth="8" fill="none" className="text-white/10" />
-                  {!storage?.is_unlimited && (
-                    <circle
-                      cx="64" cy="64" r="56"
-                      stroke="currentColor" strokeWidth="8" fill="none"
-                      strokeDasharray={`${2 * Math.PI * 56}`}
-                      strokeDashoffset={`${2 * Math.PI * 56 * (1 - (storagePercentage / 100))}`}
-                      className={`${
-                        storagePercentage >= 90 ? 'text-red-400' :
-                        storagePercentage >= 70 ? 'text-orange-400' : 'text-teal-400'
-                      } transition-all duration-1000`}
-                      strokeLinecap="round"
-                    />
-                  )}
-                </svg>
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className={`text-3xl font-bold ${
-                    storagePercentage >= 90 ? 'text-red-400' :
-                    storagePercentage >= 70 ? 'text-orange-400' : 'text-teal-400'
-                  }`}>
-                    {storage?.is_unlimited ? '∞' : `${storagePercentage}%`}
-                  </span>
-                  <span className="text-xs text-gray-400">مستخدم</span>
+                {/* Support Contact */}
+                <div className="premium-glass premium-border rounded-[2.5rem] p-6 flex flex-col items-center text-center gap-4 hover:bg-white/5 transition-all cursor-pointer group">
+                  <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 group-hover:bg-primary/20 transition-all">
+                    <Icon name="headset" className="text-gray-light/60 group-hover:text-primary" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-black text-white">دعم الأكاديميات المخصص</h4>
+                    <p className="text-[10px] font-bold text-gray-light/40 mt-1">هل تحتاج لباقة مخصصة لأكثر من 5000 طالب؟ تواصل معنا مباشرة.</p>
+                  </div>
                 </div>
               </div>
             </div>
-
-            {/* Storage Details */}
-            <div className="space-y-3">
-              <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
-                <span className="text-gray-400">الحد الأقصى</span>
-                <span className="text-white font-bold" dir="ltr">
-                  {storage?.is_unlimited ? 'غير محدود ∞' : `${storage?.limit_gb ?? 0} GB`}
-                </span>
-              </div>
-
-              <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
-                <span className="text-gray-400">المستخدم</span>
-                <span className="text-teal-400 font-bold" dir="ltr">
-                  {formatBytes(storage?.used_bytes ?? 0)}
-                </span>
-              </div>
-
-              {!storage?.is_unlimited && (
-                <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
-                  <span className="text-gray-400">المتبقي</span>
-                  <span className="text-green-400 font-bold" dir="ltr">
-                    {formatBytes(storage?.remaining_bytes ?? 0)}
-                  </span>
-                </div>
-              )}
-
-              {!storage?.is_unlimited && storagePercentage >= 70 && (
-                <div className={`rounded-lg p-3 text-center ${
-                  storagePercentage >= 90 ? 'bg-red-500/10 border border-red-500/20' : 'bg-orange-500/10 border border-orange-500/20'
-                }`}>
-                  <Icon name="exclamation-circle" className={`${storagePercentage >= 90 ? 'text-red-400' : 'text-orange-400'} mr-2 inline`} />
-                  <span className={`text-sm ${storagePercentage >= 90 ? 'text-red-400' : 'text-orange-400'}`}>
-                    {storagePercentage >= 90 ? 'مساحة التخزين على وشك النفاد!' : 'اقتراب نفاد مساحة التخزين'}
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-        </DashboardCard>
-
-        {/* Payment Info */}
-        {!subscription?.is_trial && (
-          <DashboardCard title="معلومات الدفع" icon="money-bill-wave">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="p-4 bg-white/5 rounded-lg text-center">
-                <p className="text-gray-400 text-sm mb-2">سعر الكرسي</p>
-                <p className="text-2xl font-bold text-white">{subscription?.price_per_seat ?? 0} ج.م</p>
-              </div>
-
-              <div className="p-4 bg-white/5 rounded-lg text-center">
-                <p className="text-gray-400 text-sm mb-2">عدد الكراسي</p>
-                <p className="text-2xl font-bold text-white">{subscription?.seats_limit ?? 0}</p>
-              </div>
-
-              <div className="p-4 bg-primary/10 rounded-lg text-center border border-primary/20">
-                <p className="text-gray-400 text-sm mb-2">المبلغ المدفوع</p>
-                <p className="text-2xl font-bold text-primary">{subscription?.amount_paid ?? 0} ج.م</p>
-              </div>
-            </div>
-          </DashboardCard>
+          </>
         )}
-
-        {/* Info Note */}
-        <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 flex items-start gap-3">
-          <Icon name="info-circle" className="text-blue-400 text-xl mt-1" />
-          <div className="flex-1">
-            <h3 className="text-blue-400 font-bold mb-1">ملاحظة</h3>
-            <p className="text-gray-300 text-sm">
-              الكراسي المشتراة تُستخدم لجميع المدرسين في الأكاديمية. عند إضافة طالب لأي مدرس، سيتم استهلاك كرسي من إجمالي كراسي الأكاديمية.
-            </p>
-          </div>
-        </div>
-
-        {/* Renew Button */}
-        <div className="flex justify-center">
-          <Button
-            variant="primary"
-            size="lg"
-            className="px-8 py-4 bg-primary hover:bg-primary/80 text-white rounded-xl font-bold text-lg shadow-lg shadow-primary/20 transition-all flex items-center gap-3"
-            onClick={() => setRenewalOpen(true)}
-            disabled={!!pendingRequest || loading}
-          >
-            <Icon name="sync" />
-            {pendingRequest
-              ? (pendingRequest.request_type === 'upgrade' ? 'طلب الترقية قيد المراجعة' : 'طلب التجديد قيد المراجعة')
-              : 'تجديد الاشتراك'}
-          </Button>
-        </div>
 
         <SubscriptionRenewalModal
           isOpen={renewalOpen}

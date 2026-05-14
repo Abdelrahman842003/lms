@@ -1,8 +1,6 @@
 import React from 'react';
-import { Card } from '@/components/ui';
 import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/ui/Icon';
-import { Badge } from '@/components/ui/Badge';
 
 interface Exam {
   id: number | string;
@@ -114,199 +112,183 @@ export const ExamCard: React.FC<ExamCardProps> = ({
   };
 
   return (
-    <Card
-      hover={!isActive}
-      className={`stat-card ux-relative ux-rounded-2xl ux-p-6 ux-transition-all ux-duration-500 ux-ease-in-out ux-flex ux-flex-col ${isMenuOpen ? 'ux-z-10' : ''} ${
-        isActive
-          ? 'ux-border-2 ux-border-primary ux-shadow-0-0-30px-rgba-66-99-235-0dot3'
-          : 'ux-hover-shadow-0-12px-40px-rgba-0-0-0-0dot3 ux-hover-translate-y-1px ux-hover-backdrop-blur-20px ux-hover-border-1bc5f8-50'
-      }`}
+    <div 
+      className={`group relative transition-all duration-500 ease-out ${isMenuOpen ? 'z-[100]' : 'z-10 hover:z-20'}`}
+      style={{ perspective: '1000px' }}
     >
-      {/* Top Section: Menu and Status */}
-      <div className="ux-flex ux-justify-between ux-items-start ux-mb-6">
-        {/* Status Badge */}
-        <div className="ux-flex ux-gap-2 ux-flex-wrap">
-          <Badge variant={getStatusVariant()} size="sm">
-            {getStatusText()}
-          </Badge>
+      {/* Visual Background Layer - Handles clipping and glass effects */}
+      <div className={`absolute inset-0 rounded-[2rem] overflow-hidden pointer-events-none transition-all duration-500 
+        ${isActive 
+          ? 'bg-gradient-to-br from-primary/20 via-primary/5 to-transparent border-2 border-primary/30 shadow-[0_0_40px_rgba(66,99,235,0.15)]' 
+          : 'bg-[#101426]/40 backdrop-blur-md border border-white/5 group-hover:border-white/20 shadow-2xl'
+        }`}
+      >
+        {/* Animated Glow Effect */}
+        <div className="absolute -top-[50%] -left-[50%] w-[200%] h-[200%] bg-[radial-gradient(circle,rgba(66,99,235,0.08)_0%,transparent_70%)] opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
+      </div>
 
-          {exam.teacher && (
-            <Badge variant="info" size="sm" icon="chalkboard-teacher">
-              {exam.teacher.name}
-            </Badge>
-          )}
-          
-          {isActive && timeLeft && (
-            <Badge variant="danger" size="sm" pulse>
-              {timeLeft}
-            </Badge>
-          )}
-        </div>
-
-        {/* Three-dot Menu */}
-        <div className="ux-relative">
-          <Button 
-            variant="ghost"
-            size="sm"
-            className="ux-w-10 ux-h-10 ux-rounded-xl ux-bg-rgba-16-20-38-0dot8 ux-hover-bg-rgba-66-99-235-0dot2 ux-border ux-border-white-10 ux-hover-border-primary-50 ux-flex ux-items-center ux-justify-center ux-transition-all ux-p-0"
-            onClick={onMenuToggle}
-          >
-            <Icon name="ellipsis-v" color="inherit" />
-          </Button>
-          
-          {/* Dropdown Menu */}
-          {isMenuOpen && (
-            <div className="actions-menu show actions-menu-card">
-              <button
-                className="actions-menu-item ux-w-full"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onViewDetails();
-                }}
-              >
-                <Icon name="eye" size="sm" />
-                <span>عرض التفاصيل</span>
-              </button>
-              
-              <button
-                className="actions-menu-item ux-w-full"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onViewResults();
-                }}
-              >
-                <Icon name="chart-bar" size="sm" />
-                <span>نتائج الطلاب</span>
-              </button>
-
-              {!isEnded && (
-                <button
-                  className="actions-menu-item ux-w-full"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onEdit();
-                  }}
-                >
-                  <Icon name="edit" size="sm" />
-                  <span>تعديل</span>
-                </button>
-              )}
-              
-              <button
-                className="actions-menu-item ux-w-full"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onCopy();
-                }}
-              >
-                <Icon name="copy" size="sm" />
-                <span>نسخ الامتحان</span>
-              </button>
-              
-              <button
-                className="actions-menu-item danger ux-w-full"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete();
-                }}
-              >
-                <Icon name="trash" size="sm" />
-                <span>حذف</span>
-              </button>
+      {/* Content Layer - No overflow hidden to allow menu to pop out */}
+      <div className="relative p-7 flex flex-col h-full min-h-[320px]">
+        {/* Top Header: Badge & Menu */}
+        <div className="flex justify-between items-start mb-6">
+          <div className="flex flex-wrap gap-2">
+            <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 backdrop-blur-md border
+              ${isEnded ? 'bg-white/5 text-gray-400 border-white/5' : 
+                isActive ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.2)]' : 
+                'bg-primary/10 text-primary border-primary/20'}`}
+            >
+              <div className={`w-1.5 h-1.5 rounded-full ${isEnded ? 'bg-gray-400' : isActive ? 'bg-emerald-400 animate-pulse' : 'bg-primary'}`} />
+              {getStatusText()}
             </div>
-          )}
-        </div>
-      </div>
 
-      {/* Title */}
-      <h3 className="ux-text-2xl ux-font-bold ux-text-white ux-mb-3 ux-leading-tight">
-        {exam.title}
-      </h3>
+            {isActive && timeLeft && (
+              <div className="px-3 py-1 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20 text-[10px] font-black font-mono tracking-tighter animate-pulse shadow-[0_0_15px_rgba(244,63,94,0.2)]">
+                {timeLeft}
+              </div>
+            )}
+          </div>
 
-      {/* Subject */}
-      <p className="ux-text-sm ux-text-gray-light-80 ux-mb-6 ux-line-clamp-2 ux-min-h-40px">
-        {exam.subject || 'مادة الامتحان'}
-      </p>
+          <div className="relative">
+            <Button 
+              variant="ghost"
+              size="sm"
+              className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 border
+                ${isMenuOpen 
+                  ? 'bg-primary text-white border-primary shadow-[0_0_20px_rgba(66,99,235,0.4)] rotate-90' 
+                  : 'bg-white/5 text-gray-light border-white/10 hover:border-white/30 hover:bg-white/10'
+                }`}
+              onClick={onMenuToggle}
+            >
+              <Icon name="ellipsis-v" />
+            </Button>
+            
+            {isMenuOpen && (
+              <div className="actions-menu show actions-menu-card !bg-[#0f1121] !opacity-100 !visible !translate-y-0 !z-[999] !shadow-2xl">
+                <button className="actions-menu-item ux-w-full" onClick={(e) => { e.stopPropagation(); onViewDetails(); }}>
+                  <Icon name="eye" size="sm" /> <span>عرض التفاصيل</span>
+                </button>
+                <button className="actions-menu-item ux-w-full" onClick={(e) => { e.stopPropagation(); onViewResults(); }}>
+                  <Icon name="chart-bar" size="sm" /> <span>نتائج الطلاب</span>
+                </button>
+                {!isEnded && (
+                  <button className="actions-menu-item ux-w-full" onClick={(e) => { e.stopPropagation(); onEdit(); }}>
+                    <Icon name="edit" size="sm" /> <span>تعديل الامتحان</span>
+                  </button>
+                )}
+                <button className="actions-menu-item ux-w-full" onClick={(e) => { e.stopPropagation(); onCopy(); }}>
+                  <Icon name="copy" size="sm" /> <span>نسخ الامتحان</span>
+                </button>
+                <div className="h-px bg-white/5 my-2"></div>
+                <button className="actions-menu-item danger ux-w-full" onClick={(e) => { e.stopPropagation(); onDelete(); }}>
+                  <Icon name="trash" size="sm" /> <span>حذف الامتحان</span>
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
 
-      {/* Exam Info */}
-      <div className="ux-grid ux-gap-3dot5 ux-mb-6">
-        <div className="ux-flex ux-items-center ux-gap-3 ux-text-sm ux-text-gray-light">
-          <Icon name="calendar" className="ux-w-5 ux-text-primary ux-text-base" />
-          <span>{examDate.toLocaleDateString('ar-EG')}</span>
+        {/* Exam Title & Subject */}
+        <div className="mb-6">
+          <h3 className="text-xl font-black text-white mb-2 leading-tight group-hover:text-primary transition-colors line-clamp-1">
+            {exam.title}
+          </h3>
+          <div className="flex items-center gap-2 text-gray-light/40">
+             <div className="w-4 h-[1px] bg-primary/30" />
+             <p className="text-[11px] font-bold uppercase tracking-widest">{exam.subject || 'مادة الامتحان'}</p>
+          </div>
         </div>
-        <div className="ux-flex ux-items-center ux-gap-3 ux-text-sm ux-text-gray-light">
-          <Icon name="clock" className="ux-w-5 ux-text-primary ux-text-base" />
-          <span>{examDate.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })} ({exam.duration} دقيقة)</span>
-        </div>
-        {exam.teacher && (
-          <div className="ux-flex ux-items-center ux-gap-3 ux-text-sm ux-text-gray-light">
-            <Icon name="chalkboard-teacher" className="ux-w-5 ux-text-primary ux-text-base" />
-            <span>{exam.teacher.name}</span>
-          </div>
-        )}
-        {exam.grade && (
-          <div className="ux-flex ux-items-center ux-gap-3 ux-text-sm ux-text-gray-light">
-            <Icon name="graduation-cap" className="ux-w-5 ux-text-primary ux-text-base" />
-            <span>{exam.grade.name}</span>
-          </div>
-        )}
-        {exam.group && (
-          <div className="ux-flex ux-items-center ux-gap-3 ux-text-sm ux-text-gray-light">
-            <Icon name="users" className="ux-w-5 ux-text-primary ux-text-base" />
-            <span>{exam.group.name}</span>
-          </div>
-        )}
-        <div className="ux-flex ux-items-center ux-gap-3 ux-text-sm ux-text-gray-light">
-          <Icon name="star" className="ux-w-5 ux-text-primary ux-text-base" />
-          <span>الدرجة الكلية: {exam.max_score}</span>
-        </div>
-        {exam.attended_students && exam.attended_students.length > 0 && (
-          <div className="ux-flex ux-items-center ux-gap-3 ux-text-sm ux-text-gray-light">
-            <Icon name="user-check" className="ux-w-5 ux-text-primary ux-text-base" />
-            <span>{exam.attended_students.length} طالب حضر</span>
-          </div>
-        )}
-      </div>
 
-      {/* Action Buttons */}
-      {!isEnded && (
-        <div className="ux-mt-auto ux-grid ux-gap-3">
-          {!isActive ? (
-            <div className="ux-flex ux-items-center ux-gap-3">
+        {/* Details Grid */}
+        <div className="grid grid-cols-2 gap-3 mb-8">
+           <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/5 border border-white/5 group-hover:bg-white/[0.08] transition-colors">
+              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                 <Icon name="calendar" size="sm" />
+              </div>
+              <div className="flex flex-col">
+                 <span className="text-[10px] font-bold text-gray-light/40 uppercase leading-none mb-1">التاريخ</span>
+                 <span className="text-[11px] font-bold text-white whitespace-nowrap">{examDate.toLocaleDateString('ar-EG')}</span>
+              </div>
+           </div>
+
+           <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/5 border border-white/5 group-hover:bg-white/[0.08] transition-colors">
+              <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-500">
+                 <Icon name="clock" size="sm" />
+              </div>
+              <div className="flex flex-col">
+                 <span className="text-[10px] font-bold text-gray-light/40 uppercase leading-none mb-1">الوقت</span>
+                 <span className="text-[11px] font-bold text-white whitespace-nowrap">{exam.duration} دقيقة</span>
+              </div>
+           </div>
+
+           <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/5 border border-white/5 group-hover:bg-white/[0.08] transition-colors">
+              <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+                 <Icon name="star" size="sm" />
+              </div>
+              <div className="flex flex-col">
+                 <span className="text-[10px] font-bold text-gray-light/40 uppercase leading-none mb-1">الدرجة</span>
+                 <span className="text-[11px] font-bold text-white whitespace-nowrap">{exam.max_score} درجة</span>
+              </div>
+           </div>
+
+           <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/5 border border-white/5 group-hover:bg-white/[0.08] transition-colors">
+              <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-500">
+                 <Icon name="users" size="sm" />
+              </div>
+              <div className="flex flex-col">
+                 <span className="text-[10px] font-bold text-gray-light/40 uppercase leading-none mb-1">المجموعة</span>
+                 <span className="text-[11px] font-bold text-white line-clamp-1">{exam.group?.name || 'عام'}</span>
+              </div>
+           </div>
+        </div>
+
+        {/* Footer Actions */}
+        {!isEnded && (
+          <div className="mt-auto pt-4 border-t border-white/5">
+            {!isActive ? (
               <Button 
-                variant="ghost"
-                className="ux-flex-1 ux-py-3 ux-rounded-xl ux-text-gray-light ux-hover-text-white ux-hover-bg-white-5 ux-transition-all ux-flex ux-items-center ux-justify-center ux-gap-2"
-                onClick={(e: React.MouseEvent) => {
-                  e.stopPropagation();
-                  onToggleStatus();
-                }}
+                variant="primary"
+                className="w-full h-11 rounded-xl font-bold gap-2 shadow-[0_0_20px_rgba(66,99,235,0.2)] hover:shadow-[0_0_30px_rgba(66,99,235,0.4)] transition-all"
+                onClick={(e) => { e.stopPropagation(); onToggleStatus(); }}
               >
                 <Icon name="power-off" size="sm" />
-                <span>تفعيل الامتحان</span>
+                <span>تفعيل الامتحان الآن</span>
               </Button>
-            </div>
-          ) : (
-            <div className="ux-flex ux-items-center ux-gap-2">
-              <Button 
-                variant="outline"
-                className="ux-flex-1 ux-py-3 ux-rounded-xl ux-bg-rgba-66-99-235-0dot15 ux-hover-bg-rgba-66-99-235-0dot25 ux-text-primary ux-border-primary-30 ux-hover-border-primary-50 ux-font-medium ux-text-xs ux-flex ux-flex-col ux-items-center ux-justify-center ux-gap-1dot5 ux-transition-all ux-h-auto"
-                onClick={onViewResults}
-              >
-                <Icon name="chart-bar" size="sm" />
-                <span>النتائج</span>
-              </Button>
-              <Button 
-                variant="destructive"
-                className="ux-flex-1 ux-py-3 ux-rounded-xl ux-bg-red-500-10 ux-hover-bg-red-500-20 ux-text-red-500 ux-border-red-500-30 ux-hover-border-red-500-50 ux-font-medium ux-text-xs ux-flex ux-flex-col ux-items-center ux-justify-center ux-gap-1dot5 ux-transition-all ux-h-auto"
-                onClick={onEnd}
-              >
-                <Icon name="stop-circle" size="sm" />
-                <span>إنهاء</span>
-              </Button>
-            </div>
-          )}
-        </div>
-      )}
-    </Card>
+            ) : (
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline"
+                  className="flex-1 h-11 rounded-xl bg-white/5 border-white/10 hover:bg-white/10 font-bold gap-2"
+                  onClick={(e) => { e.stopPropagation(); onViewResults(); }}
+                >
+                  <Icon name="chart-bar" size="sm" />
+                  <span>النتائج</span>
+                </Button>
+                <Button 
+                  variant="destructive"
+                  className="flex-1 h-11 rounded-xl font-bold gap-2"
+                  onClick={(e) => { e.stopPropagation(); onEnd(); }}
+                >
+                  <Icon name="stop-circle" size="sm" />
+                  <span>إنهاء</span>
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {isEnded && (
+          <div className="mt-auto">
+             <Button 
+               variant="outline"
+               className="w-full h-11 rounded-xl bg-white/5 border-white/10 hover:bg-white/10 font-bold gap-2 text-gray-light"
+               onClick={(e) => { e.stopPropagation(); onViewResults(); }}
+             >
+               <Icon name="chart-bar" size="sm" />
+               <span>عرض النتائج النهائية</span>
+             </Button>
+          </div>
+        )}
+      </div>
+    </div>
   );
 };

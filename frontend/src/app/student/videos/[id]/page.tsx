@@ -47,12 +47,12 @@ function formatBytes(bytes: number): string {
 // ─── Stat chip ────────────────────────────────────────────────────────────────
 function Stat({ icon, value, label, glow }: { icon: string; value: string | number; label: string; glow?: string }) {
   return (
-    <div className={`flex flex-col items-center gap-1.5 px-4 py-3 rounded-2xl border bg-white/5 border-white/10 ${glow ?? ''}`}>
-      <div className="w-7 h-7 rounded-lg bg-primary/15 border border-primary/20 flex items-center justify-center">
-        <Icon name={icon} className="text-primary" size="xs" />
+    <div className={`flex flex-col items-center gap-1.5 px-4 py-4 rounded-[1.5rem] border bg-white/5 border-white/5 group transition-all hover:bg-white/[0.08] ${glow ?? ''}`}>
+      <div className="w-9 h-9 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+        <Icon name={icon} size="sm" />
       </div>
-      <span className="text-white font-bold text-lg leading-none">{value}</span>
-      <span className="text-gray-500 text-xs">{label}</span>
+      <span className="text-white font-black text-lg leading-none mt-1">{value}</span>
+      <span className="text-[10px] font-black text-gray-light/30 uppercase tracking-widest">{label}</span>
     </div>
   );
 }
@@ -103,20 +103,17 @@ export default function StudentVideoDetailsPage() {
 
   const handleProgressUpdate = useCallback((updated: VideoWatchProgress) => {
     setProgress(updated);
-    // Auto-switch to quiz tab when the video triggers watched_pending_quiz
     if (updated.status === 'watched_pending_quiz') {
       setActiveTab('quiz');
     }
   }, []);
 
-  // Reload just the progress (after quiz pass) without re-fetching everything
   const reloadProgress = useCallback(async () => {
     if (!params.id) return;
     try {
       const res = await getStudentVideo(params.id);
       setProgress(res.progress);
       setVideo(res.video);
-      // بعد اجتياز الاختبار، انتقل لتاب التفاصيل
       if (res.progress?.quiz_passed_at) {
         setActiveTab('details');
       }
@@ -152,7 +149,6 @@ export default function StudentVideoDetailsPage() {
     });
   }, [attachments]);
 
-  // ── Loading ────────────────────────────────────────────────────────────────
   if (loading) {
     return (
       <DashboardLayout role="student" user={user || undefined} title="الفيديو التعليمي">
@@ -170,12 +166,14 @@ export default function StudentVideoDetailsPage() {
     return (
       <DashboardLayout role="student" user={user || undefined} title="الفيديو التعليمي">
         <div className="flex flex-col items-center justify-center h-64 gap-4 text-center">
-          <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center">
-            <Icon name="exclamation-triangle" className="text-red-400 text-2xl" />
+          <div className="w-16 h-16 rounded-full bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-500">
+            <Icon name="exclamation-triangle" size="xl" />
           </div>
-          <p className="text-red-300 font-medium">الفيديو غير متاح حالياً</p>
-          <Link href="/student/videos" className="text-sm text-primary hover:underline flex items-center gap-1">
-            <Icon name="arrow-right" size="sm" /> العودة للقائمة
+          <p className="text-white font-bold">الفيديو غير متاح حالياً</p>
+          <Link href="/student/videos">
+            <Button variant="ghost" className="text-sm text-primary hover:bg-primary/5 gap-2">
+              <Icon name="arrow-right" /> العودة للقائمة
+            </Button>
           </Link>
         </div>
       </DashboardLayout>
@@ -189,7 +187,6 @@ export default function StudentVideoDetailsPage() {
   const hasQuiz             = !!video.quiz;
   const quizAlreadyPassed   = !!progress?.quiz_passed_at;
 
-  // Show quiz tab only when video is fully watched, has an active quiz, and not yet passed
   const showQuizTab = (isPendingQuiz || isCompleted) && hasQuiz && !quizAlreadyPassed;
 
   const tabs = [
@@ -207,107 +204,99 @@ export default function StudentVideoDetailsPage() {
 
   return (
     <DashboardLayout role="student" user={user || undefined} title={video.title}>
-
-      {/* ── Breadcrumb ── */}
-      <nav className="flex items-center gap-2 text-xs text-gray-500 mb-6">
-        <Link href="/student/videos" className="hover:text-primary flex items-center gap-1 transition-colors">
-          <Icon name="film" size="sm" /> الفيديوهات
+      {/* Breadcrumb */}
+      <nav className="flex items-center gap-3 text-[10px] font-black text-gray-light/20 mb-8 uppercase tracking-[0.2em]">
+        <Link href="/student/videos" className="hover:text-primary transition-colors flex items-center gap-2">
+          <Icon name="film" size="xs" /> مكتبة الفيديو
         </Link>
-        <Icon name="chevron-left" size="sm" className="text-gray-700" />
-        <span className="text-gray-300 truncate max-w-[200px]">{video.title}</span>
+        <Icon name="chevron-left" size="xs" />
+        <span className="text-gray-light/40 truncate max-w-[200px]">{video.title}</span>
       </nav>
 
-      {/* ── Main two-column grid (ltr so player stays left in RTL) ── */}
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_320px]" dir="ltr">
+      <div className="grid gap-8 lg:grid-cols-[1fr_350px]" dir="ltr">
+        {/* LEFT COLUMN: Player & Tabs */}
+        <div dir="rtl" className="space-y-6 min-w-0">
+          <div className="relative group">
+             <div className="absolute inset-0 bg-primary/10 rounded-[2.5rem] blur-3xl opacity-20" />
+             <div className="relative premium-glass p-3 rounded-[2.5rem] border-white/10 shadow-2xl">
+                <SecureVideoPlayer
+                  videoId={video.id}
+                  studentName={user?.name || ''}
+                  studentPhone={user?.phone || ''}
+                  watermarkEnabled
+                  watermarkRotationIntervalSeconds={8}
+                  initialWatchedSeconds={progress?.watched_seconds ?? 0}
+                  onProgressUpdate={handleProgressUpdate}
+                />
+             </div>
+          </div>
 
-        {/* ════ LEFT COLUMN ════ */}
-        <div dir="rtl" className="space-y-5 min-w-0">
-
-          {/* Player */}
-          <SecureVideoPlayer
-            videoId={video.id}
-            studentName={user?.name || ''}
-            studentPhone={user?.phone || ''}
-            watermarkEnabled
-            watermarkRotationIntervalSeconds={8}
-            initialWatchedSeconds={progress?.watched_seconds ?? 0}
-            onProgressUpdate={handleProgressUpdate}
-          />
-
-          {/* ── Action bar under player ── */}
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Like button */}
+          <div className="flex flex-wrap items-center gap-4 px-2">
             <button
               type="button"
               disabled={liking}
               onClick={() => void handleLike()}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-medium transition-all
+              className={`flex items-center gap-3 h-12 px-6 rounded-2xl border font-bold transition-all
                 ${liked
-                  ? 'bg-primary/20 border-primary/50 text-primary shadow-[0_0_16px_rgba(66,99,235,0.2)]'
-                  : 'bg-white/5 border-white/10 text-gray-300 hover:border-primary/30 hover:text-primary'}`}
+                  ? 'bg-rose-500/10 border-rose-500/30 text-rose-500 shadow-[0_0_20px_rgba(244,63,94,0.15)]'
+                  : 'bg-white/5 border-white/5 text-gray-light/60 hover:border-rose-500/30 hover:text-rose-500'}`}
             >
-              <Icon name="thumbs-up" size="sm" className={liking ? 'animate-pulse' : ''} />
-              {liked ? 'أعجبني' : 'إعجاب'}
-              <span className={`px-1.5 py-0.5 rounded-full text-xs ${liked ? 'bg-primary/20' : 'bg-white/10'}`}>
+              <Icon name="thumbs-up" className={liking ? 'animate-pulse' : ''} />
+              <span>{liked ? 'أعجبني' : 'إعجاب'}</span>
+              <span className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black ${liked ? 'bg-rose-500/20' : 'bg-white/5'}`}>
                 {likesCount}
               </span>
             </button>
 
-            {/* Stats chips */}
-            <span className="flex items-center gap-1.5 text-gray-500 text-sm">
-              <Icon name="comments" size="sm" className="text-primary/60" />
-              {video.comments_count ?? comments.length} تعليق
-            </span>
+            <div className="h-8 w-px bg-white/5 hidden sm:block" />
 
-            {watchedPct > 0 && (
-              <span className={`flex items-center gap-1.5 text-sm font-medium ${
-                isCompleted ? 'text-emerald-400'
-                : isPendingQuiz ? 'text-amber-400'
-                : 'text-primary'
-              }`}>
-                <Icon name={
-                  isCompleted ? 'check-circle'
-                  : isPendingQuiz ? 'graduation-cap'
-                  : 'play-circle'
-                } size="sm" />
-                {isCompleted ? 'مكتمل' : isPendingQuiz ? 'يحتاج تدريب' : `${watchedPct}% شاهدت`}
-              </span>
-            )}
+            <div className="flex items-center gap-6 text-gray-light/30">
+               <div className="flex items-center gap-2">
+                  <Icon name="comments" size="sm" className="text-primary/40" />
+                  <span className="text-xs font-bold">{video.comments_count ?? comments.length} تعليق</span>
+               </div>
+               
+               {watchedPct > 0 && (
+                 <div className={`flex items-center gap-2 text-xs font-bold ${
+                   isCompleted ? 'text-emerald-500' : isPendingQuiz ? 'text-amber-500' : 'text-primary'
+                 }`}>
+                   <Icon name={isCompleted ? 'check-circle' : isPendingQuiz ? 'graduation-cap' : 'play-circle'} />
+                   <span>{isCompleted ? 'مكتمل' : isPendingQuiz ? 'يحتاج تدريب' : `${watchedPct}% شاهدت`}</span>
+                 </div>
+               )}
+            </div>
 
-            {/* Grade + Teacher chips */}
-            {video.grade && (
-              <span className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
-                <Icon name="graduation-cap" size="sm" /> {video.grade.name}
-              </span>
-            )}
-            {video.teacher_reference?.name && (
-              <span className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full bg-white/5 text-gray-300 border border-white/10">
-                <Icon name="chalkboard-teacher" size="sm" /> {video.teacher_reference.name}
-              </span>
-            )}
+            <div className="mr-auto hidden lg:flex items-center gap-3">
+               {video.grade && (
+                 <div className="px-4 py-2 rounded-xl bg-primary/5 text-primary border border-primary/10 text-[10px] font-black uppercase tracking-widest">
+                    {video.grade.name}
+                 </div>
+               )}
+               {video.teacher_reference?.name && (
+                 <div className="px-4 py-2 rounded-xl bg-white/5 text-gray-light/40 border border-white/5 text-[10px] font-black uppercase tracking-widest">
+                    {video.teacher_reference.name}
+                 </div>
+               )}
+            </div>
           </div>
 
-          {/* ── Tabs ── */}
-          <div className="w-full overflow-x-auto scrollbar-none -mx-1 px-1">
-            <div className="flex gap-0.5 p-1 rounded-2xl bg-white/5 border border-white/10 w-full">
+          <div className="premium-glass p-2 rounded-[2rem] border-white/5">
+            <div className="flex gap-2 w-full overflow-x-auto scrollbar-none">
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
-                  type="button"
-                  title={tab.label}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center justify-center gap-1 px-3 sm:px-4 py-2 rounded-xl transition-all flex-1 ${
-                    activeTab === tab.id
-                      ? 'bg-primary text-white shadow-[0_0_20px_rgba(66,99,235,0.4)]'
+                  className={`flex items-center justify-center gap-3 h-12 px-6 rounded-[1.25rem] font-bold transition-all flex-1 whitespace-nowrap
+                    ${activeTab === tab.id
+                      ? 'bg-primary text-white shadow-xl shadow-primary/20'
                       : 'highlight' in tab && tab.highlight
-                      ? 'text-amber-400 hover:text-white bg-amber-400/10 hover:bg-primary/20 border border-amber-400/30 animate-pulse'
-                      : 'text-gray-400 hover:text-white hover:bg-white/5'
-                  }`}
+                      ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20 animate-pulse'
+                      : 'text-gray-light/40 hover:bg-white/5 hover:text-white'}`}
                 >
                   <Icon name={tab.icon} size="sm" />
-                  <span className="hidden sm:inline text-sm font-medium">{tab.label}</span>
+                  <span className="text-sm">{tab.label}</span>
                   {'badge' in tab && tab.badge != null && tab.badge > 0 && (
-                    <span className={`text-xs rounded-full px-1 sm:px-1.5 ${activeTab === tab.id ? 'bg-white/20 text-white' : 'bg-primary/20 text-primary'}`}>
+                    <span className={`w-5 h-5 rounded-lg flex items-center justify-center text-[10px] font-black ${activeTab === tab.id ? 'bg-white/20' : 'bg-primary/10'}`}>
                       {tab.badge}
                     </span>
                   )}
@@ -316,257 +305,201 @@ export default function StudentVideoDetailsPage() {
             </div>
           </div>
 
-          {/* ── Tab: Details ── */}
-          {activeTab === 'details' && (
-            <div className="rounded-2xl border border-white/10 bg-gradient-to-b from-[#101426]/80 to-[#0a0f1e]/60 backdrop-blur-sm p-6 space-y-6">
-              <div>
-                <h1 className="text-xl font-bold text-white leading-snug">{video.title}</h1>
-                {video.description
-                  ? <p className="text-gray-400 mt-2 leading-relaxed text-sm">{video.description}</p>
-                  : <p className="text-gray-600 mt-2 italic text-xs">بدون وصف</p>
-                }
-              </div>
-
-              {/* Stats row */}
-              <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
-                <Stat icon="clock"     value={formatDuration(video.duration_seconds)} label="المدة" />
-                <Stat icon="thumbs-up" value={likesCount}                             label="إعجاب" />
-                <Stat icon="comments"  value={video.comments_count ?? 0}              label="تعليق" />
-                <Stat icon="paperclip" value={video.attachments_count ?? 0}           label="مرفق" />
-                <Stat icon="eye"       value={`${watchedPct}%`}                       label="مشاهدة"
-                  glow={watchedPct >= 80 ? 'border-emerald-400/30 shadow-[0_0_12px_rgba(52,211,153,0.15)]' : ''} />
-              </div>
-
-              {/* Progress bar */}
-              {watchedPct > 0 && (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-gray-400">تقدم المشاهدة</span>
-                    <span className={watchedPct >= 80 ? 'text-emerald-400 font-semibold' : 'text-primary font-semibold'}>
-                      {watchedPct}%
-                    </span>
-                  </div>
-                  <div className="h-2.5 rounded-full bg-white/10 overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all duration-700 ${
-                        watchedPct >= 80
-                          ? 'bg-gradient-to-r from-emerald-500 to-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]'
-                          : 'bg-gradient-to-r from-primary to-blue-400 shadow-[0_0_8px_rgba(66,99,235,0.5)]'
-                      }`}
-                      style={{ width: `${watchedPct}%` }}
-                    />
-                  </div>
-                  {watchedPct >= 80 && !isPendingQuiz && (
-                    <div className="flex items-center gap-2 text-emerald-400 text-xs bg-emerald-400/8 border border-emerald-400/20 rounded-xl p-3">
-                      <Icon name="check-circle" size="sm" />
-                      أتممت مشاهدة الفيديو — عمل ممتاز! 🎉
-                    </div>
-                  )}
-                  {isPendingQuiz && !quizAlreadyPassed && (
-                    <div
-                      className="flex items-center gap-2 text-amber-400 text-xs bg-amber-400/8 border border-amber-400/25 rounded-xl p-3 cursor-pointer hover:bg-amber-400/12 transition-colors"
-                      onClick={() => setActiveTab('quiz')}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => e.key === 'Enter' && setActiveTab('quiz')}
-                    >
-                      <Icon name="graduation-cap" size="sm" />
-                      أتممت المشاهدة! أجب على التدريب لتسجيل الإتمام وكسب النقاط →
-                    </div>
+          <div className="animate-in fade-in slide-in-from-top-4 duration-500">
+            {activeTab === 'details' && (
+              <div className="premium-glass p-8 rounded-[2.5rem] border-white/5 space-y-8">
+                <div>
+                  <h1 className="text-2xl font-black text-white leading-tight mb-4">{video.title}</h1>
+                  {video.description ? (
+                    <p className="text-gray-light/40 font-medium leading-relaxed">{video.description}</p>
+                  ) : (
+                    <p className="text-gray-light/20 italic text-sm">لا يوجد وصف متاح لهذا الفيديو</p>
                   )}
                 </div>
-              )}
-            </div>
-          )}
 
-          {/* ── Tab: Comments ── */}
-          {activeTab === 'comments' && (
-            <div className="rounded-2xl border border-white/10 bg-gradient-to-b from-[#101426]/80 to-[#0a0f1e]/60 backdrop-blur-sm p-4">
-              <VideoCommentsSection
-                videoId={video.id}
-                comments={comments}
-                canDeleteOwn
-                currentUserId={user?.id ? String(user.id) : undefined}
-                onRefresh={reloadComments}
-              />
-            </div>
-          )}
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                  <Stat icon="clock" value={formatDuration(video.duration_seconds)} label="المدة" />
+                  <Stat icon="thumbs-up" value={likesCount} label="إعجاب" />
+                  <Stat icon="comments" value={video.comments_count ?? 0} label="تعليق" />
+                  <Stat icon="paperclip" value={video.attachments_count ?? 0} label="مرفق" />
+                  <Stat icon="eye" value={`${watchedPct}%`} label="مشاهدة"
+                    glow={watchedPct >= 80 ? 'border-emerald-500/30 ring-1 ring-emerald-500/20' : ''} />
+                </div>
 
-          {/* ── Tab: Files ── */}
-          {activeTab === 'files' && hasFiles && (
-            <div className="rounded-2xl border border-white/10 bg-gradient-to-b from-[#101426]/80 to-[#0a0f1e]/60 backdrop-blur-sm p-5 space-y-3">
-              <h2 className="text-white font-bold flex items-center gap-2 text-sm">
-                <Icon name="paperclip" className="text-primary" size="sm" />
-                المرفقات ({sortedAttachments.length})
-              </h2>
-              <div className="space-y-2">
-                {sortedAttachments.map((att) => {
-                  const isPdf = att.mime_type === 'application/pdf';
-                  const isImage = att.mime_type.startsWith('image/');
-
-                  return (
-                    <div
-                      key={att.id}
-                      className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 hover:bg-primary/10 hover:border-primary/30 p-3 transition-all"
-                    >
-                      {/* Icon */}
-                      <div className="w-9 h-9 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
-                        <Icon name={fileIcon(att.mime_type)} className="text-primary" size="sm" />
+                {watchedPct > 0 && (
+                  <div className="space-y-4 pt-6 border-t border-white/5">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-[10px] font-black text-gray-light/20 uppercase tracking-widest px-2">تقدم المشاهدة</h4>
+                      <span className={`text-xs font-black ${watchedPct >= 80 ? 'text-emerald-500' : 'text-primary'}`}>{watchedPct}%</span>
+                    </div>
+                    <div className="h-3 rounded-full bg-white/5 border border-white/5 overflow-hidden p-0.5">
+                      <div
+                        className={`h-full rounded-full transition-all duration-1000 ${
+                          watchedPct >= 80 ? 'bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.4)]' : 'bg-primary shadow-[0_0_15px_rgba(66,99,235,0.4)]'
+                        }`}
+                        style={{ width: `${watchedPct}%` }}
+                      />
+                    </div>
+                    {watchedPct >= 80 && !isPendingQuiz && (
+                      <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-4 flex items-center gap-3 text-emerald-500 text-sm font-bold">
+                        <Icon name="check-double" />
+                        <span>رائع! لقد أتممت مشاهدة المحتوى التعليمي بالكامل 🎉</span>
                       </div>
+                    )}
+                    {isPendingQuiz && !quizAlreadyPassed && (
+                      <div
+                        className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-4 flex items-center justify-between cursor-pointer group hover:bg-amber-500/20 transition-all"
+                        onClick={() => setActiveTab('quiz')}
+                      >
+                        <div className="flex items-center gap-3 text-amber-500 text-sm font-bold">
+                           <Icon name="graduation-cap" />
+                           <span>أتممت المشاهدة! بانتظارك اختبار قصير لتأكيد الفهم</span>
+                        </div>
+                        <Icon name="arrow-left" className="text-amber-500 group-hover:-translate-x-2 transition-transform" />
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
 
-                      {/* Name + size */}
+            {activeTab === 'comments' && (
+              <div className="premium-glass p-6 rounded-[2.5rem] border-white/5">
+                <VideoCommentsSection
+                  videoId={video.id}
+                  comments={comments}
+                  canDeleteOwn
+                  currentUserId={user?.id ? String(user.id) : undefined}
+                  onRefresh={reloadComments}
+                />
+              </div>
+            )}
+
+            {activeTab === 'files' && hasFiles && (
+              <div className="premium-glass p-8 rounded-[2.5rem] border-white/5 space-y-6">
+                <div className="flex items-center gap-3">
+                  <Icon name="paperclip" className="text-primary" />
+                  <h3 className="text-[10px] font-black text-white uppercase tracking-[0.3em]">المرفقات التعليمية ({sortedAttachments.length})</h3>
+                </div>
+                <div className="grid grid-cols-1 gap-3">
+                  {sortedAttachments.map((att) => (
+                    <div key={att.id} className="flex items-center gap-4 p-4 rounded-[1.5rem] border border-white/5 bg-white/5 hover:bg-white/[0.08] hover:border-primary/30 transition-all group">
+                      <div className="w-12 h-12 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                        <Icon name={fileIcon(att.mime_type)} size="xl" />
+                      </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-white text-sm font-medium truncate">{att.file_name}</p>
-                        <p className="text-gray-500 text-xs mt-0.5">{formatBytes(att.file_size)}</p>
+                        <p className="text-white font-bold truncate">{att.file_name}</p>
+                        <p className="text-[10px] font-black text-gray-light/20 uppercase tracking-widest mt-1">{formatBytes(att.file_size)}</p>
                       </div>
-
-                      {/* Actions */}
-                      <div className="flex items-center gap-2 shrink-0">
-                        {/* Open in viewer (PDF & images) */}
-                        {(isPdf || isImage) && (
+                      <div className="flex items-center gap-2">
+                        {(att.mime_type === 'application/pdf' || att.mime_type.startsWith('image/')) && (
                           <button
-                            type="button"
                             onClick={() => openAttachment(att, video.id)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/20 hover:bg-primary/30 border border-primary/30 text-primary text-xs font-medium transition-all disabled:opacity-50"
-                            title={isPdf ? 'فتح وقراءة' : 'عرض الصورة'}
+                            className="h-10 px-4 rounded-xl bg-primary/20 text-primary hover:bg-primary text-white transition-all font-bold text-xs"
                           >
-                            <Icon name={isPdf ? 'book-open' : 'image'} size="sm" />
-                            {isPdf ? 'قراءة' : 'عرض'}
+                            عرض
                           </button>
                         )}
-
-                        {/* Download */}
                         <a
                           href={`/api/v1/student/videos/${video.id}/attachments/${att.id}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-gray-400 hover:text-white text-xs transition-all"
-                          title="تنزيل"
+                          className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-light hover:text-white transition-all"
                         >
                           <Icon name="download" size="sm" />
-                          تنزيل
                         </a>
                       </div>
                     </div>
-                  );
-                })}
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* ── Tab: Quiz ── */}
-          {activeTab === 'quiz' && showQuizTab && (
-            <VideoQuizStudent
-              videoId={video.id}
-              watchStatus={progress?.status ?? ''}
-              alreadyPassed={quizAlreadyPassed}
-              onQuizPassed={() => void reloadProgress()}
-            />
-          )}
+            {activeTab === 'quiz' && showQuizTab && (
+              <VideoQuizStudent
+                videoId={video.id}
+                watchStatus={progress?.status ?? ''}
+                alreadyPassed={quizAlreadyPassed}
+                onQuizPassed={() => void reloadProgress()}
+              />
+            )}
+          </div>
         </div>
 
-        {/* ════ RIGHT SIDEBAR ════ */}
-        <aside dir="rtl" className="space-y-4">
-
-          {/* ── Watch progress card ── */}
-          <div className="rounded-2xl border border-white/10 bg-gradient-to-b from-[#101426]/90 to-[#0a0f1e]/70 backdrop-blur-sm overflow-hidden">
-            {/* Header */}
-            <div className="px-5 pt-5 pb-3 flex items-center gap-2 border-b border-white/5">
-              <div className="w-8 h-8 rounded-xl bg-primary/15 border border-primary/20 flex items-center justify-center">
-                <Icon name="chart-bar" className="text-primary" size="sm" />
+        {/* RIGHT COLUMN: Sidebar */}
+        <aside dir="rtl" className="space-y-6">
+          <div className="premium-glass p-6 rounded-[2.5rem] border-white/5 space-y-6">
+            <div className="flex items-center gap-3 pb-4 border-b border-white/5">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
+                <Icon name="chart-pie" />
               </div>
               <div>
-                <p className="text-white font-bold text-sm">تقدمك</p>
-                <p className="text-gray-500 text-xs">سجل المشاهدة</p>
+                <p className="text-white font-black text-sm">معدل الإنجاز</p>
+                <p className="text-[10px] font-black text-gray-light/20 uppercase tracking-widest">تتبع تقدمك</p>
               </div>
-              {watchedPct >= 80 && isCompleted && (
-                <span className="mr-auto text-xs px-2 py-0.5 rounded-full bg-emerald-400/15 text-emerald-400 border border-emerald-400/25">
-                  مكتمل ✓
-                </span>
-              )}
-              {isPendingQuiz && !quizAlreadyPassed && (
-                <span className="mr-auto text-xs px-2 py-0.5 rounded-full bg-amber-400/15 text-amber-400 border border-amber-400/25 animate-pulse">
-                  اختبار معلق
-                </span>
-              )}
             </div>
-            <div className="px-5 py-4 space-y-4">
-              {/* Circular-look progress */}
-              <div className="flex items-center gap-4">
-                <div className="relative w-16 h-16 flex-shrink-0">
-                  <svg className="w-16 h-16 -rotate-90" viewBox="0 0 64 64">
-                    <circle cx="32" cy="32" r="26" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="6" />
-                    <circle
-                      cx="32" cy="32" r="26"
-                      fill="none"
-                      stroke={watchedPct >= 80 ? '#34d399' : '#4263eb'}
-                      strokeWidth="6"
-                      strokeLinecap="round"
-                      strokeDasharray={`${(watchedPct / 100) * 163.4} 163.4`}
-                      className="transition-all duration-700"
-                      style={{ filter: `drop-shadow(0 0 4px ${watchedPct >= 80 ? '#34d399' : '#4263eb'})` }}
-                    />
-                  </svg>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span className={`text-sm font-bold ${watchedPct >= 80 ? 'text-emerald-400' : 'text-white'}`}>
-                      {watchedPct}%
-                    </span>
-                  </div>
-                </div>
-                <div className="space-y-1 text-sm">
-                  <div className="text-gray-400">المدة الكلية</div>
-                  <div className="text-white font-medium">{formatDuration(video.duration_seconds)}</div>
-                  {progress?.last_position_seconds != null && progress.last_position_seconds > 0 && (
-                    <>
-                      <div className="text-gray-400 text-xs mt-2">آخر موضع</div>
-                      <div className="text-primary text-xs font-medium">{formatDuration(progress.last_position_seconds)}</div>
-                    </>
-                  )}
+            
+            <div className="flex flex-col items-center gap-6 py-4">
+              <div className="relative w-32 h-32">
+                <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth="8" />
+                  <circle
+                    cx="50" cy="50" r="45"
+                    fill="none"
+                    stroke={watchedPct >= 80 ? '#10b981' : '#4263eb'}
+                    strokeWidth="8"
+                    strokeLinecap="round"
+                    strokeDasharray={`${(watchedPct / 100) * 282.7} 282.7`}
+                    className="transition-all duration-[1500ms] ease-out"
+                    style={{ filter: `drop-shadow(0 0 8px ${watchedPct >= 80 ? 'rgba(16,185,129,0.5)' : 'rgba(66,99,235,0.5)'})` }}
+                  />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className={`text-2xl font-black ${watchedPct >= 80 ? 'text-emerald-500' : 'text-white'}`}>{watchedPct}%</span>
+                  <span className="text-[8px] font-black text-gray-light/20 uppercase tracking-widest mt-1">من المحتوى</span>
                 </div>
               </div>
-              {/* Status badge */}
-              {(() => {
-                // quiz_passed_at يعني مكتمل بغض النظر عن قيمة status
-                const effectiveStatus = progress?.quiz_passed_at
-                  ? 'completed'
-                  : progress?.status;
-                return (
-                  <div className={`text-xs rounded-xl px-3 py-2 border flex items-center gap-2
-                    ${effectiveStatus === 'completed'
-                      ? 'bg-emerald-400/10 border-emerald-400/20 text-emerald-400'
-                      : effectiveStatus === 'watched_pending_quiz'
-                      ? 'bg-amber-400/10 border-amber-400/20 text-amber-400'
-                      : effectiveStatus === 'in_progress' || effectiveStatus === 'started'
-                      ? 'bg-primary/10 border-primary/20 text-primary'
-                      : 'bg-white/5 border-white/10 text-gray-500'}`}>
-                    <Icon
-                      name={
-                        effectiveStatus === 'completed' ? 'check-circle'
-                        : effectiveStatus === 'watched_pending_quiz' ? 'graduation-cap'
-                        : 'play-circle'
-                      }
-                      size="sm"
-                    />
-                    {effectiveStatus === 'completed' ? 'اكتملت المشاهدة'
-                      : effectiveStatus === 'watched_pending_quiz' ? 'في انتظار اجتياز التدريب'
-                      : effectiveStatus === 'in_progress' ? 'جاري المشاهدة'
-                      : effectiveStatus === 'started' ? 'بدأت المشاهدة'
-                      : 'لم تبدأ بعد'}
-                  </div>
-                );
-              })()}
+
+              <div className="w-full space-y-3">
+                 <div className="flex justify-between items-center px-4 py-3 rounded-2xl bg-white/5 border border-white/5">
+                    <span className="text-[10px] font-black text-gray-light/30 uppercase tracking-widest">المدة الكلية</span>
+                    <span className="text-sm font-black text-white">{formatDuration(video.duration_seconds)}</span>
+                 </div>
+                 {progress?.last_position_seconds != null && progress.last_position_seconds > 0 && (
+                   <div className="flex justify-between items-center px-4 py-3 rounded-2xl bg-white/5 border border-white/5">
+                      <span className="text-[10px] font-black text-gray-light/30 uppercase tracking-widest">توقفت عند</span>
+                      <span className="text-sm font-black text-primary">{formatDuration(progress.last_position_seconds)}</span>
+                   </div>
+                 )}
+              </div>
             </div>
+
+            {(() => {
+              const effectiveStatus = progress?.quiz_passed_at ? 'completed' : progress?.status;
+              return (
+                <div className={`p-4 rounded-2xl border text-center text-[10px] font-black uppercase tracking-widest transition-all
+                  ${effectiveStatus === 'completed'
+                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500'
+                    : effectiveStatus === 'watched_pending_quiz'
+                    ? 'bg-amber-500/10 border-amber-500/30 text-amber-500 animate-pulse'
+                    : 'bg-white/5 border-white/10 text-gray-light/40'}`}>
+                  {effectiveStatus === 'completed' ? 'تم إتقان المحاضرة بنجاح ✓'
+                    : effectiveStatus === 'watched_pending_quiz' ? 'بانتظار إتمام الاختبار النهائي'
+                    : effectiveStatus === 'in_progress' ? 'جاري متابعة المحتوى'
+                    : 'لم يبدأ المشاهدة بعد'}
+                </div>
+              );
+            })()}
           </div>
 
-          {/* ── Groups card (if any) ── */}
           {groups.length > 0 && (
-            <div className="rounded-2xl border border-white/10 bg-gradient-to-b from-[#101426]/90 to-[#0a0f1e]/70 backdrop-blur-sm p-5 space-y-3">
-              <p className="text-white font-bold text-sm flex items-center gap-2">
-                <Icon name="users" className="text-primary" size="sm" /> المجموعات
+            <div className="premium-glass p-6 rounded-[2.5rem] border-white/5 space-y-4">
+              <p className="text-white font-black text-xs flex items-center gap-2">
+                <Icon name="users" className="text-primary" /> المجموعات المستهدفة
               </p>
               <div className="flex flex-wrap gap-2">
                 {groups.map((g) => (
-                  <span key={g.id} className="px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs border border-primary/20 font-medium">
+                  <span key={g.id} className="px-4 py-2 rounded-xl bg-primary/5 text-primary text-[10px] font-black border border-primary/10">
                     {g.name}
                   </span>
                 ))}
@@ -574,44 +507,38 @@ export default function StudentVideoDetailsPage() {
             </div>
           )}
 
-          {/* ── Files quick-list (if any) ── */}
           {hasFiles && (
-            <div className="rounded-2xl border border-white/10 bg-gradient-to-b from-[#101426]/90 to-[#0a0f1e]/70 backdrop-blur-sm p-5 space-y-3">
-              <p className="text-white font-bold text-sm flex items-center gap-2">
-                <Icon name="paperclip" className="text-primary" size="sm" /> المرفقات
-                <span className="mr-auto text-xs text-gray-500">{sortedAttachments.length} ملف</span>
-              </p>
+            <div className="premium-glass p-6 rounded-[2.5rem] border-white/5 space-y-4">
+              <div className="flex items-center justify-between pb-2">
+                <p className="text-white font-black text-xs flex items-center gap-2">
+                  <Icon name="paperclip" className="text-primary" /> الملفات الملحقة
+                </p>
+                <span className="text-[10px] font-black text-gray-light/20">{sortedAttachments.length} ملف</span>
+              </div>
               <div className="space-y-2">
-                {sortedAttachments.slice(0, 4).map((att) => (
+                {sortedAttachments.slice(0, 3).map((att) => (
                   <a
                     key={att.id}
                     href={`/api/v1/student/videos/${video.id}/attachments/${att.id}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-xs text-gray-400 hover:text-primary transition-colors group"
+                    className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5 hover:border-primary/30 group transition-all"
                   >
-                    <Icon name={fileIcon(att.mime_type)} size="sm" className="text-primary/60 flex-shrink-0 group-hover:text-primary" />
-                    <span className="truncate">{att.file_name}</span>
-                    <Icon name="download" size="sm" className="flex-shrink-0 mr-auto text-gray-600 group-hover:text-primary" />
+                    <Icon name={fileIcon(att.mime_type)} size="sm" className="text-primary/60 group-hover:text-primary transition-colors" />
+                    <span className="text-xs font-bold text-gray-light/60 group-hover:text-white truncate transition-colors">{att.file_name}</span>
                   </a>
                 ))}
-                {sortedAttachments.length > 4 && (
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('files')}
-                    className="text-xs text-primary hover:underline w-full text-start mt-1"
-                  >
-                    + {sortedAttachments.length - 4} مرفق آخر
+                {sortedAttachments.length > 3 && (
+                  <button onClick={() => setActiveTab('files')} className="w-full text-center text-[10px] font-black text-primary py-2 hover:underline">
+                    عرض جميع الملفات المرفقة
                   </button>
                 )}
               </div>
             </div>
           )}
-
         </aside>
       </div>
 
-      {/* ── PDF Viewer Modal ── */}
       <PdfViewerModal
         open={pdfModal.open}
         url={pdfModal.url}

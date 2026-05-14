@@ -7,8 +7,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Badge } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
-import { Icon } from '@/components/ui/Icon';
+import { Button, Icon, LoadingSpinner, Input } from '@/components/ui';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import {
@@ -24,6 +23,7 @@ import type { VideoAttachment, VideoComment, VideoItem, VideoQuiz } from '@/type
 import { fetchApi } from '@/services/api/baseApi';
 import { VideoQuizManager } from '@/components/video/VideoQuizManager';
 import { VideoStudentActivityDetails } from '@/components/video/VideoStudentActivityDetails';
+import { cn } from '@/utils';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -59,7 +59,7 @@ function statusVariant(status: VideoItem['status']): 'success' | 'warning' | 'da
   return 'secondary';
 }
 
-// ─── Video Player for Teacher (no token needed) ──────────────────────────────
+// ─── Video Player for Teacher ───────────────────────────────────────────────
 
 interface TeacherVideoPlayerProps {
   videoId: string;
@@ -74,15 +74,14 @@ function TeacherVideoPlayer({ videoId, thumbnailUrl }: TeacherVideoPlayerProps) 
   const [playing, setPlaying] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch the actual signed thumbnail URL from JSON endpoint on mount
   useEffect(() => {
-    if (!thumbnailUrl) return; // no thumbnail_path in DB
+    if (!thumbnailUrl) return;
     fetchApi<{ url?: string | null }>(`/teacher/videos/${videoId}/thumbnail-url`)
       .then((payload) => {
         const url = payload?.url;
         if (url) setResolvedThumbnail(url);
       })
-      .catch(() => {/* silently ignore thumbnail errors */});
+      .catch(() => {});
   }, [videoId, thumbnailUrl]);
 
   const loadStream = useCallback(async () => {
@@ -93,7 +92,6 @@ function TeacherVideoPlayer({ videoId, thumbnailUrl }: TeacherVideoPlayerProps) 
     setLoading(true);
     setError(null);
     try {
-      // Fetch the signed R2 URL as JSON — avoids browser redirect issues with <video src>
       const payload = await fetchApi<{ url?: string }>(`/teacher/videos/${videoId}/stream-url`);
       const url = payload?.url;
       if (!url) throw new Error('لم يُعثر على رابط الفيديو');
@@ -107,7 +105,7 @@ function TeacherVideoPlayer({ videoId, thumbnailUrl }: TeacherVideoPlayerProps) 
   }, [videoId, streamUrl]);
 
   return (
-    <div className="relative rounded-2xl overflow-hidden bg-black aspect-video border border-white/10">
+    <div className="relative rounded-[2rem] overflow-hidden bg-[#050714] aspect-video premium-border shadow-2xl group">
       {playing && streamUrl ? (
         <video
           ref={videoRef}
@@ -121,7 +119,7 @@ function TeacherVideoPlayer({ videoId, thumbnailUrl }: TeacherVideoPlayerProps) 
       ) : (
         <button
           type="button"
-          className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/60 hover:bg-black/40 transition-colors cursor-pointer w-full"
+          className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/40 hover:bg-black/20 transition-all cursor-pointer w-full group"
           onClick={() => {
             if (error) setError(null);
             void loadStream();
@@ -131,34 +129,37 @@ function TeacherVideoPlayer({ videoId, thumbnailUrl }: TeacherVideoPlayerProps) 
           {resolvedThumbnail && (
             <Image
               src={resolvedThumbnail}
-              alt="صورة مصغرة"
+              alt="Preview"
               fill
-              sizes="(max-width: 1024px) 100vw, 66vw"
-              className="absolute inset-0 w-full h-full object-cover opacity-50"
+              className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-1000"
               unoptimized
             />
           )}
-          <div className="relative z-10 flex flex-col items-center gap-3">
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-40" />
+          
+          <div className="relative z-10 flex flex-col items-center gap-4">
             {loading ? (
-              <div className="w-16 h-16 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center">
-                <Icon name="sync" className="text-primary text-2xl animate-spin" />
+              <div className="w-20 h-20 rounded-full bg-primary/10 backdrop-blur-md border border-primary/20 flex items-center justify-center">
+                <LoadingSpinner size="md" color="primary" />
               </div>
             ) : error ? (
-              <>
-                <div className="w-16 h-16 rounded-full bg-red-500/20 border border-red-500/40 flex items-center justify-center">
+              <div className="flex flex-col items-center gap-3 animate-in shake duration-500">
+                <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center">
                   <Icon name="exclamation-triangle" className="text-red-400 text-2xl" />
                 </div>
-                <span className="text-red-400 text-sm font-medium drop-shadow text-center px-4">{error}</span>
-                <span className="text-gray-400 text-xs">اضغط للمحاولة مجدداً</span>
-              </>
+                <span className="text-red-400 text-xs font-bold bg-black/60 px-4 py-1 rounded-full backdrop-blur-md">{error}</span>
+                <span className="text-gray-light/40 text-[10px] font-black uppercase tracking-widest">اضغط للمحاولة مجدداً</span>
+              </div>
             ) : (
-              <div className="w-20 h-20 rounded-full bg-primary/20 border-2 border-primary/60 flex items-center justify-center hover:bg-primary/30 transition-all">
-                <Icon name="play" className="text-primary text-3xl mr-1" />
+              <div className="w-20 h-20 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center shadow-2xl scale-90 group-hover:scale-100 transition-all duration-500">
+                <div className="w-14 h-14 rounded-full bg-primary flex items-center justify-center shadow-[0_0_30px_rgba(66,99,235,0.6)]">
+                  <Icon name="play" className="text-white text-2xl ml-1.5" />
+                </div>
               </div>
             )}
             {!loading && !error && (
-              <span className="text-white text-sm font-medium drop-shadow">
-                معاينة الفيديو
+              <span className="text-white text-sm font-black tracking-widest drop-shadow-lg uppercase">
+                معاينة محتوى الفيديو
               </span>
             )}
           </div>
@@ -168,30 +169,57 @@ function TeacherVideoPlayer({ videoId, thumbnailUrl }: TeacherVideoPlayerProps) 
   );
 }
 
-// ─── Comment Component ───────────────────────────────────────────────────────
+// ─── Comment Item ────────────────────────────────────────────────────────────
 
 function CommentItem({ comment }: { comment: VideoComment }) {
   return (
-    <div className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-2">
-      <div className="flex items-center gap-2">
-        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-sm font-bold">
-          {(comment.author?.name || 'م').charAt(0)}
+    <div className="rounded-2xl premium-glass premium-border p-5 space-y-4 animate-in fade-in slide-in-from-bottom-2">
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-black shadow-lg overflow-hidden">
+          {comment.author?.avatar ? (
+            <img src={comment.author.avatar} alt="" className="w-full h-full object-cover" />
+          ) : (
+            (comment.author?.name || 'م').charAt(0)
+          )}
         </div>
-        <div>
-          <span className="text-sm font-semibold text-white">{comment.author?.name || 'مجهول'}</span>
-          <span className="text-xs text-gray-400 mr-2">
-            {new Date(comment.created_at).toLocaleDateString('ar-EG')}
+        <div className="flex flex-col">
+          <span className="text-sm font-black text-white">{comment.author?.name || 'مجهول'}</span>
+          <span className="text-[10px] font-bold text-gray-light/30">
+            {new Date(comment.created_at).toLocaleDateString('ar-EG', { day: 'numeric', month: 'long', year: 'numeric' })}
           </span>
         </div>
       </div>
-      <p className="text-sm text-gray-300 pr-10">{comment.body}</p>
+      <p className="text-sm text-gray-light/70 leading-relaxed pr-1 md:pr-13">{comment.body}</p>
+      
       {comment.replies && comment.replies.length > 0 && (
-        <div className="pr-8 space-y-2 border-r border-white/10 mr-4 pt-2">
+        <div className="pr-6 md:pr-13 space-y-4 border-r-2 border-white/5 mr-4 md:mr-11 pt-2">
           {comment.replies.map((reply) => (
             <CommentItem key={reply.id} comment={reply} />
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+// ─── Info Tile ──────────────────────────────────────────────────────────────
+
+function InfoTile({ icon, label, value, color = 'primary' }: { icon: string; label: string; value: string; color?: string }) {
+  const colorMap: Record<string, string> = {
+    primary: 'text-primary bg-primary/5 border-primary/10',
+    secondary: 'text-secondary bg-secondary/5 border-secondary/10',
+    warning: 'text-warning bg-warning/5 border-warning/10',
+    info: 'text-info bg-info/5 border-info/10',
+    success: 'text-success bg-success/5 border-success/10',
+  };
+
+  return (
+    <div className={cn("flex flex-col gap-2 p-4 rounded-2xl border transition-all hover:bg-white/5", colorMap[color] || colorMap.primary)}>
+      <div className="flex items-center gap-2">
+        <Icon name={icon} size="xs" />
+        <span className="text-[10px] font-black uppercase tracking-widest opacity-60">{label}</span>
+      </div>
+      <span className="text-sm font-black text-white truncate">{value}</span>
     </div>
   );
 }
@@ -210,7 +238,6 @@ export default function TeacherVideoDetailPage() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'details' | 'student_activity' | 'comments' | 'quiz' | 'attachments'>('details');
 
-  // ── Attachments state ────────────────────────────────────────────────────
   const [attachmentFiles, setAttachmentFiles] = useState<File[]>([]);
   const [isUploadingAttachments, setIsUploadingAttachments] = useState(false);
   const [deletingAttachmentId, setDeletingAttachmentId] = useState<string | null>(null);
@@ -224,7 +251,6 @@ export default function TeacherVideoDetailPage() {
         getTeacherVideo(params.id),
         getTeacherVideoComments(params.id),
       ]);
-      console.debug('[TeacherVideo] likes_count:', vid.likes_count, 'comments_count:', vid.comments_count);
       setVideo(vid);
       setComments(coms);
     } catch {
@@ -286,7 +312,6 @@ export default function TeacherVideoDetailPage() {
   const isPublished = video?.status === 'published';
   const isReady = video?.status === 'ready' || isPublished;
 
-  // ── Attachment handlers ──────────────────────────────────────────────────
   const handleUploadAttachments = async () => {
     if (!video || attachmentFiles.length === 0) return;
     setIsUploadingAttachments(true);
@@ -322,24 +347,14 @@ export default function TeacherVideoDetailPage() {
     }
   };
 
-  // ── Loading skeleton ──────────────────────────────────────────────────────
   if (loading) {
     return (
       <DashboardLayout
         role="teacher"
         user={{ name: user?.name || 'المدرس', avatar: user?.avatar || '' }}
-        headerActions={null}
       >
-        <div className="space-y-6">
-          <div className="skeleton-item h-8 w-64 rounded-xl" />
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-            <div className="skeleton-item aspect-video rounded-2xl" />
-            <div className="space-y-4">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="skeleton-item h-12 rounded-xl" />
-              ))}
-            </div>
-          </div>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <LoadingSpinner size="lg" color="primary" />
         </div>
       </DashboardLayout>
     );
@@ -350,14 +365,15 @@ export default function TeacherVideoDetailPage() {
       <DashboardLayout
         role="teacher"
         user={{ name: user?.name || 'المدرس', avatar: user?.avatar || '' }}
-        headerActions={null}
       >
-        <div className="text-center py-20">
-          <Icon name="film" className="text-6xl text-gray-500 mb-4" />
-          <p className="text-gray-300 text-lg">الفيديو غير موجود أو تم حذفه.</p>
-          <Link href="/teacher/videos" className="mt-6 inline-block text-primary hover:underline">
-            ← العودة إلى قائمة الفيديوهات
-          </Link>
+        <div className="text-center py-24">
+          <Icon name="film" className="text-6xl text-gray-light/10 mb-6" />
+          <h2 className="text-2xl font-black text-white">الفيديو غير متاح</h2>
+          <p className="text-gray-light/40 mt-2">ربما تم حذف الفيديو أو أنك لا تملك صلاحية الوصول إليه.</p>
+          <Button onClick={() => router.push('/teacher/videos')} variant="ghost" className="mt-8 text-primary font-bold">
+            <Icon name="arrow-right" size="sm" />
+            <span>العودة لمكتبة الفيديوهات</span>
+          </Button>
         </div>
       </DashboardLayout>
     );
@@ -367,429 +383,310 @@ export default function TeacherVideoDetailPage() {
     <DashboardLayout
       role="teacher"
       user={{ name: user?.name || 'المدرس', avatar: user?.avatar || '' }}
-      headerActions={null}
     >
-      {/* ── Breadcrumb ── */}
-      <div className="flex items-center gap-2 text-sm text-gray-400 mb-6">
-        <Link href="/teacher/videos" className="hover:text-primary transition-colors flex items-center gap-1">
-          <Icon name="film" size="sm" />
-          <span>إدارة الفيديوهات</span>
-        </Link>
-        <Icon name="chevron-left" size="sm" className="text-gray-600" />
-        <span className="text-white truncate max-w-xs">{video.title}</span>
-      </div>
-
-      {/* ── Main grid ── */}
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-
-        {/* LEFT: Player + Tabs */}
-        <div className="space-y-6">
-
-          {/* Video player / preview */}
-          {isReady ? (
-            <TeacherVideoPlayer videoId={video.id} thumbnailUrl={video.thumbnail_url} />
-          ) : (
-            <div className="aspect-video rounded-2xl border border-white/10 bg-[#101426]/60 flex flex-col items-center justify-center gap-4 text-gray-400">
-              <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center">
-                <Icon name={video.status === 'failed' ? 'exclamation-triangle' : 'clock'} className="text-4xl" />
-              </div>
-              <div className="text-center">
-                <p className="text-white font-medium">
-                  {video.status === 'failed'
-                    ? 'فشل في معالجة الفيديو'
-                    : 'الفيديو قيد المعالجة'}
-                </p>
-                <p className="text-sm mt-1">
-                  {video.status === 'failed'
-                    ? video.processing_error || 'حدث خطأ أثناء المعالجة'
-                    : 'سيكون الفيديو متاحاً للمعاينة بعد اكتمال المعالجة'}
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Tab navigation */}
-          <div className="flex gap-1 border-b border-white/10 pb-0">
-            {(['details', 'student_activity', 'attachments', 'comments', 'quiz'] as const).map((tab) => (
-              <button
-                key={tab}
-                type="button"
-                onClick={() => setActiveTab(tab)}
-                className={`px-5 py-3 text-sm font-medium rounded-t-xl transition-all ${
-                  activeTab === tab
-                    ? 'bg-primary/10 text-primary border-b-2 border-primary'
-                    : 'text-gray-400 hover:text-white hover:bg-white/5'
-                }`}
-              >
-                {tab === 'details' ? (
-                  <span className="flex items-center gap-2"><Icon name="info-circle" size="sm" /> التفاصيل</span>
-                ) : tab === 'student_activity' ? (
-                  <span className="flex items-center gap-2">
-                    <Icon name="users" size="sm" /> الحضور والتفاعل
-                    {(video?.student_activity_summary?.target_students_count ?? 0) > 0 && (
-                      <span className="bg-primary/20 text-primary text-xs rounded-full px-2">
-                        {video?.student_activity_summary?.target_students_count}
-                      </span>
-                    )}
-                  </span>
-                ) : tab === 'attachments' ? (
-                  <span className="flex items-center gap-2">
-                    <Icon name="paperclip" size="sm" /> المرفقات
-                    {(video?.attachments?.length ?? 0) > 0 && (
-                      <span className="bg-primary/20 text-primary text-xs rounded-full px-2">{video?.attachments?.length}</span>
-                    )}
-                  </span>
-                ) : tab === 'quiz' ? (
-                  <span className="flex items-center gap-2">
-                    <Icon name="graduation-cap" size="sm" /> التدريب
-                    {video?.quiz && (
-                      <span className="bg-primary/20 text-primary text-xs rounded-full px-2">1</span>
-                    )}
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-2">
-                    <Icon name="comments" size="sm" /> التعليقات
-                    {comments.length > 0 && (
-                      <span className="bg-primary/20 text-primary text-xs rounded-full px-2">{comments.length}</span>
-                    )}
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
-
-          {/* Tab content */}
-          {activeTab === 'details' && (
-            <div className="rounded-2xl border border-white/10 bg-[#101426]/40 p-6 space-y-5">
-              <div>
-                <h1 className="text-2xl font-bold text-white">{video.title}</h1>
-                {video.description && (
-                  <p className="text-gray-400 mt-2 leading-relaxed">{video.description}</p>
-                )}
-              </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                <StatCard icon="graduation-cap" label="الصف"        value={video.grade?.name || '—'} />
-                <StatCard icon="users"          label="المجموعات"   value={`${video.groups?.length || 0} مجموعة`} />
-                <StatCard icon="clock"          label="المدة"        value={formatDuration(video.duration_seconds)} />
-                <StatCard icon="film"           label="الترميز"     value={video.codec?.toUpperCase() || '—'} />
-                <StatCard icon="thumbs-up" label="الإعجابات"  value={String(video.likes_count ?? 0)} />
-                <StatCard icon="comments"  label="التعليقات"  value={String(comments.length)} />
-                <StatCard
-                  icon="calendar"
-                  label="تاريخ الإضافة"
-                  value={video.created_at ? new Date(video.created_at).toLocaleDateString('ar-EG') : '—'}
-                />
-                {video.published_at && (
-                  <StatCard
-                    icon="check-circle"
-                    label="تاريخ النشر"
-                    value={new Date(video.published_at).toLocaleDateString('ar-EG')}
-                  />
-                )}
-                {video.scheduled_at && (
-                  <StatCard
-                    icon="calendar-alt"
-                    label="موعد النشر"
-                    value={new Date(video.scheduled_at).toLocaleDateString('ar-EG')}
-                  />
-                )}
-              </div>
-
-              {video.processing_error && (
-                <div className="rounded-xl bg-red-500/10 border border-red-500/30 p-4 text-sm text-red-300">
-                  <div className="flex items-center gap-2 font-semibold text-red-400 mb-1">
-                    <Icon name="exclamation-triangle" size="sm" />
-                    خطأ في المعالجة
-                  </div>
-                  {video.processing_error}
-                </div>
-              )}
-            </div>
-          )}
-
-          {activeTab === 'student_activity' && (
-            <VideoStudentActivityDetails video={video} defaultCollapsed={false} />
-          )}
-
-          {activeTab === 'attachments' && (
-            <div className="space-y-5">
-              {/* Upload new attachments */}
-              <div className="rounded-2xl border border-white/10 bg-[#101426]/40 p-5 space-y-4">
-                <h3 className="text-white font-bold flex items-center gap-2">
-                  <Icon name="upload" className="text-primary" />
-                  رفع مرفقات جديدة
-                </h3>
-                <div
-                  className="border-2 border-dashed border-white/20 rounded-xl p-6 text-center cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-all"
-                  onClick={() => attachmentInputRef.current?.click()}
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    const files = Array.from(e.dataTransfer.files);
-                    setAttachmentFiles((prev) => [...prev, ...files].slice(0, 10));
-                  }}
-                >
-                  <Icon name="paperclip" className="text-3xl text-gray-500 mb-2" />
-                  <p className="text-gray-400 text-sm">اسحب الملفات هنا أو <span className="text-primary">اضغط للاختيار</span></p>
-                  <p className="text-gray-600 text-xs mt-1">PDF, صور (حتى 25MB لكل ملف، 10 مرفقات كحد أقصى)</p>
-                  <input
-                    ref={attachmentInputRef}
-                    type="file"
-                    multiple
-                    accept=".pdf,.jpg,.jpeg,.png,.webp"
-                    className="hidden"
-                    onChange={(e) => {
-                      const files = Array.from(e.target.files ?? []);
-                      setAttachmentFiles((prev) => [...prev, ...files].slice(0, 10));
-                    }}
-                  />
-                </div>
-
-                {attachmentFiles.length > 0 && (
-                  <div className="space-y-2">
-                    {attachmentFiles.map((file, i) => (
-                      <div key={i} className="flex items-center justify-between bg-white/5 rounded-xl px-4 py-2 text-sm">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <Icon name="file" className="text-primary shrink-0" size="sm" />
-                          <span className="text-white truncate">{file.name}</span>
-                          <span className="text-gray-500 text-xs shrink-0">({(file.size / 1024).toFixed(0)} KB)</span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setAttachmentFiles((prev) => prev.filter((_, idx) => idx !== i))}
-                          className="text-gray-500 hover:text-red-400 transition-colors shrink-0 mr-2"
-                        >
-                          <Icon name="times" size="sm" />
-                        </button>
-                      </div>
-                    ))}
-                    <Button
-                      variant="primary"
-                      className="w-full justify-center mt-2"
-                      onClick={handleUploadAttachments}
-                      disabled={isUploadingAttachments}
-                    >
-                      {isUploadingAttachments ? (
-                        <><Icon name="sync" className="animate-spin" size="sm" /><span>جاري الرفع...</span></>
-                      ) : (
-                        <><Icon name="upload" size="sm" /><span>رفع {attachmentFiles.length} مرفق</span></>
-                      )}
-                    </Button>
-                  </div>
-                )}
-              </div>
-
-              {/* Existing attachments */}
-              <div className="rounded-2xl border border-white/10 bg-[#101426]/40 p-5 space-y-3">
-                <h3 className="text-white font-bold flex items-center gap-2">
-                  <Icon name="paperclip" className="text-primary" />
-                  المرفقات الحالية
-                  <span className="text-gray-400 text-sm font-normal">({video.attachments?.length ?? 0})</span>
-                </h3>
-                {!video.attachments || video.attachments.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    <Icon name="paperclip" className="text-3xl mb-2 opacity-40" />
-                    <p className="text-sm">لا توجد مرفقات بعد</p>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {video.attachments.map((att) => (
-                      <div key={att.id} className="flex items-center justify-between bg-white/5 hover:bg-white/8 rounded-xl px-4 py-3 transition-colors">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className="w-9 h-9 rounded-lg bg-primary/15 border border-primary/20 flex items-center justify-center shrink-0">
-                            <Icon
-                              name={att.mime_type === 'application/pdf' ? 'file-pdf' : 'file-image'}
-                              className="text-primary"
-                              size="sm"
-                            />
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-white text-sm font-medium truncate">{att.title || att.file_name}</p>
-                            <p className="text-gray-500 text-xs">{(att.file_size / 1024).toFixed(0)} KB &bull; {att.mime_type}</p>
-                          </div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteAttachment(att)}
-                          disabled={deletingAttachmentId === att.id}
-                          className="shrink-0 mr-2 text-gray-500 hover:text-red-400 transition-colors disabled:opacity-50"
-                          title="حذف المرفق"
-                        >
-                          {deletingAttachmentId === att.id ? (
-                            <Icon name="sync" className="animate-spin" size="sm" />
-                          ) : (
-                            <Icon name="trash" size="sm" />
-                          )}
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'comments' && (
-            <div className="space-y-4">
-              {comments.length === 0 ? (
-                <div className="rounded-2xl border border-white/10 bg-[#101426]/40 p-12 text-center text-gray-400">
-                  <Icon name="comments" className="text-4xl mb-3 opacity-40" />
-                  <p>لا توجد تعليقات بعد</p>
-                </div>
-              ) : (
-                comments.map((c) => <CommentItem key={c.id} comment={c} />)
-              )}
-            </div>
-          )}
-
-          {activeTab === 'quiz' && (
-            <VideoQuizManager
-              videoId={video.id}
-              role="teacher"
-              initialQuiz={video.quiz}
-              onQuizChange={(q: VideoQuiz | null) => setVideo((prev) => prev ? { ...prev, quiz: q } : prev)}
-            />
-          )}
+      <div className="space-y-6 md:space-y-8 animate-in fade-in duration-700">
+        
+        {/* Breadcrumb Navigation */}
+        <div className="flex items-center gap-3 text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-gray-light/30">
+          <Link href="/teacher/videos" className="hover:text-primary transition-colors flex items-center gap-2">
+            <Icon name="film" size="sm" />
+            <span>الاستوديو</span>
+          </Link>
+          <Icon name="chevron-left" className="opacity-50" size="xs" />
+          <span className="text-primary truncate max-w-xs">{video.title}</span>
         </div>
 
-        {/* RIGHT: Status card + Actions */}
-        <aside className="space-y-4">
+        {/* Main Content Grid */}
+        <div className="grid gap-8 lg:grid-cols-3">
 
-          {/* Status card */}
-          <div className="rounded-2xl border border-white/10 bg-[#101426]/60 p-5 space-y-4">
-            <h3 className="text-white font-bold flex items-center gap-2">
-              <Icon name="info-circle" className="text-primary" />
-              حالة الفيديو
-            </h3>
-
-            <div className="flex flex-wrap gap-2">
-              <Badge variant={statusVariant(video.status)} size="sm">
-                {statusLabel(video.status)}
-              </Badge>
-              {video.processing_status === 'succeeded' && (
-                <Badge variant="success" size="sm">المعالجة مكتملة</Badge>
-              )}
-              {video.processing_status === 'running' && (
-                <Badge variant="info" size="sm">
-                  <Icon name="sync" className="animate-spin ml-1" size="sm" />
-                  المعالجة جارية
-                </Badge>
-              )}
-              {video.processing_status === 'failed' && (
-                <Badge variant="danger" size="sm">فشل المعالجة</Badge>
-              )}
-            </div>
-
-            {isPublished && (
-              <div className="flex items-center gap-2 text-sm text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 rounded-xl p-3">
-                <Icon name="check-circle" />
-                <span>الفيديو منشور ومتاح للطلاب</span>
+          {/* LEFT: Player & Detailed Content */}
+          <div className="lg:col-span-2 space-y-8">
+            
+            {/* Player Container */}
+            {isReady ? (
+              <TeacherVideoPlayer videoId={video.id} thumbnailUrl={video.thumbnail_url} />
+            ) : (
+              <div className="aspect-video rounded-[2rem] premium-glass premium-border flex flex-col items-center justify-center gap-6 text-center p-8">
+                <div className="w-24 h-24 rounded-full bg-white/5 border border-white/10 flex items-center justify-center shadow-2xl">
+                  <Icon name={video.status === 'failed' ? 'exclamation-triangle' : 'sync'} className={cn("text-4xl", video.status === 'failed' ? 'text-red-500' : 'text-primary animate-spin-slow')} />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-xl font-black text-white">
+                    {video.status === 'failed' ? 'فشل معالجة المحتوى' : 'جاري تحضير الفيديو...'}
+                  </h3>
+                  <p className="text-gray-light/40 text-sm font-medium max-w-sm mx-auto">
+                    {video.status === 'failed'
+                      ? video.processing_error || 'حدث خطأ غير متوقع أثناء معالجة ملف الفيديو.'
+                      : 'نقوم الآن بضغط الفيديو وتجهيزه للمشاهدة بأعلى جودة ممكنة. يرجى الانتظار.'}
+                  </p>
+                </div>
+                {video.status === 'failed' && (
+                  <Button onClick={handleRetry} variant="primary" className="rounded-xl px-8">إعادة المحاولة</Button>
+                )}
               </div>
             )}
+
+            {/* Tab navigation */}
+            <div className="p-2 rounded-2xl md:rounded-[2rem] premium-glass premium-border flex overflow-x-auto scrollbar-none gap-1 md:gap-2">
+              {(['details', 'student_activity', 'attachments', 'comments', 'quiz'] as const).map((tab) => (
+                <button
+                  key={tab}
+                  type="button"
+                  onClick={() => setActiveTab(tab)}
+                  className={cn(
+                    "flex-1 min-w-fit px-4 md:px-6 py-2.5 md:py-3.5 rounded-xl md:rounded-[1.5rem] text-[10px] md:text-xs font-black uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2",
+                    activeTab === tab
+                      ? "bg-primary text-white shadow-lg"
+                      : "text-gray-light/40"
+                  )}
+                >
+                  <Icon name={
+                    tab === 'details' ? 'info-circle' :
+                    tab === 'student_activity' ? 'users' :
+                    tab === 'attachments' ? 'paperclip' :
+                    tab === 'quiz' ? 'graduation-cap' : 'comments'
+                  } size="sm" className={cn("transition-colors", activeTab === tab ? "text-white" : "text-primary/20")} />
+                  <span className="hidden sm:inline">{
+                    tab === 'details' ? 'التفاصيل' :
+                    tab === 'student_activity' ? 'التفاعل' :
+                    tab === 'attachments' ? 'المرفقات' :
+                    tab === 'quiz' ? 'التدريب' : 'التعليقات'
+                  }</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Tab Panels */}
+            <div className="animate-in fade-in slide-in-from-top-4 duration-500">
+              {activeTab === 'details' && (
+                <div className="space-y-8">
+                  <div className="p-6 md:p-10 rounded-[2.5rem] premium-glass premium-border space-y-6 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 blur-3xl -translate-y-1/2 translate-x-1/2" />
+                    <div className="relative z-10 space-y-6">
+                      <div className="flex flex-col gap-2">
+                        <h1 className="text-2xl md:text-3xl font-black text-white leading-tight">{video.title}</h1>
+                        <p className="text-gray-light/50 leading-relaxed text-sm md:text-base">
+                          {video.description || 'لا يوجد وصف مضاف لهذا الفيديو التعليمي.'}
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+                        <InfoTile icon="graduation-cap" label="الصف الدراسي" value={video.grade?.name || '—'} color="primary" />
+                        <InfoTile icon="clock" label="مدة الفيديو" value={formatDuration(video.duration_seconds)} color="secondary" />
+                        <InfoTile icon="calendar" label="تاريخ الإضافة" value={new Date(video.created_at).toLocaleDateString('ar-EG')} color="info" />
+                        <InfoTile icon="thumbs-up" label="الإعجابات" value={String(video.likes_count ?? 0)} color="success" />
+                        <InfoTile icon="comments" label="إجمالي التعليقات" value={String(comments.length)} color="warning" />
+                        <InfoTile icon="paperclip" label="المرفقات" value={String(video.attachments?.length ?? 0)} color="primary" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'student_activity' && (
+                <VideoStudentActivityDetails video={video} defaultCollapsed={false} />
+              )}
+
+              {activeTab === 'attachments' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Upload Card */}
+                  <div className="p-6 md:p-8 rounded-[2rem] premium-glass premium-border space-y-6">
+                    <h3 className="text-lg font-black text-white flex items-center gap-2">
+                      <Icon name="upload" className="text-primary" />
+                      رفع مرفقات
+                    </h3>
+                    <div
+                      className="border-2 border-dashed border-white/10 rounded-2xl p-8 text-center cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-all group"
+                      onClick={() => attachmentInputRef.current?.click()}
+                    >
+                      <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
+                        <Icon name="paperclip" className="text-2xl text-gray-light/30" />
+                      </div>
+                      <p className="text-sm text-gray-light/60 font-bold mb-1">اضغط لاختيار ملفات</p>
+                      <p className="text-[10px] text-gray-light/20 uppercase font-black">PDF, JPG, PNG (Max 25MB)</p>
+                      <input
+                        ref={attachmentInputRef}
+                        type="file"
+                        multiple
+                        accept=".pdf,.jpg,.jpeg,.png,.webp"
+                        className="hidden"
+                        onChange={(e) => {
+                          const files = Array.from(e.target.files ?? []);
+                          setAttachmentFiles((prev) => [...prev, ...files].slice(0, 10));
+                        }}
+                      />
+                    </div>
+
+                    {attachmentFiles.length > 0 && (
+                      <div className="space-y-3">
+                        {attachmentFiles.map((file, i) => (
+                          <div key={i} className="flex items-center justify-between bg-white/5 rounded-xl p-3 border border-white/5">
+                            <span className="text-xs text-white truncate max-w-[150px]">{file.name}</span>
+                            <button onClick={() => setAttachmentFiles(p => p.filter((_, idx) => idx !== i))} className="text-red-400 p-1"><Icon name="times" size="xs" /></button>
+                          </div>
+                        ))}
+                        <Button
+                          variant="primary"
+                          className="w-full h-12 rounded-xl"
+                          onClick={handleUploadAttachments}
+                          disabled={isUploadingAttachments}
+                        >
+                          {isUploadingAttachments ? <LoadingSpinner size="sm" /> : <span>بدء الرفع ({attachmentFiles.length})</span>}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Existing List */}
+                  <div className="p-6 md:p-8 rounded-[2rem] premium-glass premium-border space-y-6">
+                    <h3 className="text-lg font-black text-white flex items-center gap-2">
+                      <Icon name="paperclip" className="text-secondary" />
+                      المرفقات المتاحة
+                    </h3>
+                    <div className="space-y-3">
+                      {video.attachments?.map((att) => (
+                        <div key={att.id} className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 group hover:border-white/20 transition-all">
+                          <div className="flex items-center gap-3 overflow-hidden">
+                            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                              <Icon name={att.mime_type?.includes('pdf') ? 'file-pdf' : 'file-image'} />
+                            </div>
+                            <div className="truncate min-w-0">
+                              <p className="text-xs font-black text-white truncate">{att.title || att.file_name}</p>
+                              <p className="text-[10px] text-gray-light/30">{(att.file_size / 1024).toFixed(0)} KB</p>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => handleDeleteAttachment(att)}
+                            disabled={deletingAttachmentId === att.id}
+                            className="text-gray-light/40 hover:text-red-400 p-2 transition-colors"
+                          >
+                            {deletingAttachmentId === att.id ? <LoadingSpinner size="xs" /> : <Icon name="trash" size="sm" />}
+                          </button>
+                        </div>
+                      ))}
+                      {!video.attachments?.length && (
+                        <div className="py-12 text-center text-gray-light/20 italic text-sm">لا توجد مرفقات حالياً</div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'comments' && (
+                <div className="space-y-6">
+                  {comments.length === 0 ? (
+                    <div className="py-24 text-center premium-glass rounded-[2rem] premium-border opacity-60">
+                      <Icon name="comments" className="text-5xl text-primary/20 mb-4" />
+                      <p className="text-gray-light/40 font-bold tracking-widest uppercase text-xs">كن أول من يضيف تعليقاً</p>
+                    </div>
+                  ) : (
+                    comments.map((c) => <CommentItem key={c.id} comment={c} />)
+                  )}
+                </div>
+              )}
+
+              {activeTab === 'quiz' && (
+                <VideoQuizManager
+                  videoId={video.id}
+                  role="teacher"
+                  initialQuiz={video.quiz}
+                  onQuizChange={(q: VideoQuiz | null) => setVideo((prev) => prev ? { ...prev, quiz: q } : prev)}
+                />
+              )}
+            </div>
           </div>
 
-          {/* Action buttons */}
-          <div className="rounded-2xl border border-white/10 bg-[#101426]/60 p-5 space-y-3">
-            <h3 className="text-white font-bold flex items-center gap-2 mb-4">
-              <Icon name="cog" className="text-primary" />
-              الإجراءات
-            </h3>
+          {/* RIGHT: Actions & Status Aside */}
+          <aside className="space-y-6">
+            
+            {/* Status Panel */}
+            <div className="p-6 md:p-8 rounded-[2rem] premium-glass premium-border space-y-6">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-lg font-black text-white uppercase tracking-widest text-[10px]">حالة المحتوى</h3>
+                <Badge variant={statusVariant(video.status)}>{statusLabel(video.status)}</Badge>
+              </div>
 
-            {canPublish && (
-              <Button
-                variant="primary"
-                className="w-full justify-center"
-                onClick={handlePublish}
-                disabled={isProcessing}
-              >
-                <Icon name="upload" size="sm" />
-                <span>نشر الفيديو</span>
-              </Button>
-            )}
+              {isPublished ? (
+                <div className="p-4 rounded-2xl bg-success/10 border border-success/20 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-success/20 flex items-center justify-center text-success shrink-0">
+                    <Icon name="check-circle" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-xs font-black text-white">منشور بنجاح</span>
+                    <span className="text-[10px] text-success/80">الفيديو الآن متاح لجميع الطلاب المستهدفين.</span>
+                  </div>
+                </div>
+              ) : video.status === 'ready' ? (
+                <div className="p-4 rounded-2xl bg-warning/10 border border-warning/20 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-warning/20 flex items-center justify-center text-warning shrink-0">
+                    <Icon name="clock" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-xs font-black text-white">جاهز للنشر</span>
+                    <span className="text-[10px] text-warning/80">اكتملت المعالجة، يمكنك نشره الآن ليراه الطلاب.</span>
+                  </div>
+                </div>
+              ) : null}
 
-            {canRetry && (
-              <Button
-                variant="outline"
-                className="w-full justify-center"
-                onClick={handleRetry}
-                disabled={isProcessing}
-              >
-                <Icon name="sync" size="sm" />
-                <span>إعادة المعالجة</span>
-              </Button>
-            )}
-
-            <Button
-              variant="ghost"
-              className="w-full justify-center text-gray-300 hover:text-white"
-              onClick={() => router.push(`/teacher/videos`)}
-            >
-              <Icon name="arrow-right" size="sm" />
-              <span>العودة للقائمة</span>
-            </Button>
-
-            <hr className="border-white/10" />
-
-            <Button
-              variant="ghost"
-              className="w-full justify-center !text-red-400 hover:!text-red-300 hover:!bg-red-400/10"
-              onClick={() => setIsDeleteModalOpen(true)}
-              disabled={isProcessing}
-            >
-              <Icon name="trash" size="sm" />
-              <span>حذف الفيديو</span>
-            </Button>
-          </div>
-
-          {/* Groups */}
-          {video.groups && video.groups.length > 0 && (
-            <div className="rounded-2xl border border-white/10 bg-[#101426]/60 p-5 space-y-3">
-              <h3 className="text-white font-bold flex items-center gap-2">
-                <Icon name="users" className="text-primary" />
-                المجموعات المستهدفة
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                {video.groups.map((g) => (
-                  <span
-                    key={g.id}
-                    className="px-3 py-1 rounded-full bg-primary/10 text-primary text-xs border border-primary/20"
-                  >
-                    {g.name}
-                  </span>
-                ))}
+              <div className="space-y-3 pt-2">
+                {canPublish && (
+                  <Button onClick={handlePublish} disabled={isProcessing} className="w-full h-14 rounded-2xl bg-primary text-white font-black uppercase tracking-widest shadow-xl">
+                    <Icon name="upload" />
+                    <span>نشر الفيديو الآن</span>
+                  </Button>
+                )}
+                {canRetry && (
+                  <Button onClick={handleRetry} disabled={isProcessing} variant="outline" className="w-full h-14 rounded-2xl border-warning text-warning">
+                    <Icon name="sync" />
+                    <span>إعادة المعالجة</span>
+                  </Button>
+                )}
+                <Button onClick={() => setIsDeleteModalOpen(true)} disabled={isProcessing} variant="ghost" className="w-full h-12 rounded-2xl text-red-500 font-bold bg-red-500/5">
+                  <Icon name="trash" />
+                  <span>حذف الفيديو نهائياً</span>
+                </Button>
               </div>
             </div>
-          )}
-        </aside>
+
+            {/* Targeting Details */}
+            {video.groups && video.groups.length > 0 && (
+              <div className="p-6 md:p-8 rounded-[2rem] premium-glass premium-border space-y-6">
+                <h3 className="text-[10px] font-black text-white uppercase tracking-widest flex items-center gap-2">
+                  <Icon name="users" className="text-info" />
+                  المجموعات المستهدفة
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {video.groups.map((g) => (
+                    <div key={g.id} className="px-4 py-2 rounded-xl bg-white/5 border border-white/5 text-[10px] font-black text-gray-light/60">
+                      {g.name}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* Quick Tips/Info */}
+            <div className="p-6 md:p-8 rounded-[2rem] bg-gradient-to-br from-primary/10 to-transparent border border-white/5 space-y-4">
+              <Icon name="lightbulb" className="text-primary text-2xl" />
+              <p className="text-xs text-gray-light/40 leading-relaxed">
+                تأكد من مراجعة المرفقات والتدريبات المرتبطة بالفيديو قبل نشره لضمان حصول الطالب على تجربة تعليمية كاملة.
+              </p>
+            </div>
+          </aside>
+        </div>
       </div>
 
-      {/* Delete confirmation modal */}
       <ConfirmationModal
         isOpen={isDeleteModalOpen}
-        title="حذف الفيديو"
-        message={`هل أنت متأكد من حذف فيديو "${video.title}"؟ لا يمكن التراجع عن هذا الإجراء.`}
-        confirmText="نعم، حذف"
-        cancelText="إلغاء"
+        title="حذف المحتوى التعليمي"
+        message={`هل أنت متأكد من حذف فيديو "${video.title}"؟ هذا الإجراء سيؤدي لحذف الفيديو وجميع التعليقات والمرفقات المرتبطة به ولا يمكن التراجع عنه.`}
+        confirmText="نعم، حذف نهائي"
+        cancelText="تراجع"
         onConfirm={handleDelete}
         onCancel={() => setIsDeleteModalOpen(false)}
         isProcessing={isProcessing}
         variant="danger"
       />
     </DashboardLayout>
-  );
-}
-
-// ─── Stat card ────────────────────────────────────────────────────────────────
-
-function StatCard({ icon, label, value }: { icon: string; label: string; value: string }) {
-  return (
-    <div className="flex flex-col items-center gap-1.5 px-4 py-3 rounded-2xl border bg-white/5 border-white/10 text-center">
-      <div className="w-7 h-7 rounded-lg bg-primary/15 border border-primary/20 flex items-center justify-center">
-        <Icon name={icon} className="text-primary" size="xs" />
-      </div>
-      <span className="text-white font-bold text-base leading-none">{value}</span>
-      <span className="text-gray-500 text-xs">{label}</span>
-    </div>
   );
 }

@@ -2,7 +2,6 @@
 
 import React from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
-import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { Button, Icon, Input } from '@/components/ui';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -13,6 +12,7 @@ import { getVersionedApiUrl } from '@/config/api-config';
 import ImageCropModal from '@/components/ui/ImageCropModal';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import { toast } from 'react-hot-toast';
+import { cn } from '@/utils';
 
 export default function TeacherProfile() {
   const { user, isLoading, updateUser } = useAuth();
@@ -22,11 +22,8 @@ export default function TeacherProfile() {
   const [isUploadingAvatar, setIsUploadingAvatar] = React.useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   
-  // Crop modal state
   const [showCropModal, setShowCropModal] = React.useState(false);
   const [selectedImage, setSelectedImage] = React.useState<string | null>(null);
-
-  // Delete confirmation modal state
   const [showDeleteModal, setShowDeleteModal] = React.useState(false);
   
   const [formData, setFormData] = React.useState({
@@ -38,7 +35,6 @@ export default function TeacherProfile() {
   });
 
   const [errors, setErrors] = React.useState<Record<string, string>>({});
-
   const [passwordStrength, setPasswordStrength] = React.useState(0);
 
   const calculatePasswordStrength = (password: string) => {
@@ -54,7 +50,6 @@ export default function TeacherProfile() {
     setPasswordStrength(calculatePasswordStrength(formData.newPassword));
   }, [formData.newPassword]);
 
-  // Update form data when user data is available
   React.useEffect(() => {
     if (user) {
       setFormData(prev => ({
@@ -62,109 +57,42 @@ export default function TeacherProfile() {
         name: user.name || '',
         trialPeriodDays: String(user.trial_period_days ?? user.effective_trial_period_days ?? 4),
       }));
+      if (user.avatar) setAvatarUrl(user.avatar);
     }
   }, [user]);
-
-  // Load avatar on mount and when user changes
-  React.useEffect(() => {
-    // If user has avatar in context, use it
-    if (user?.avatar) {
-      setAvatarUrl(user.avatar);
-    } else {
-      // Otherwise, try to load from API
-      loadAvatar();
-    }
-  }, [user?.avatar]);
-
-  const loadAvatar = async () => {
-    try {
-      // Check if user is authenticated first
-      const token = getAuthToken();
-      if (!token) {
-        return; // No token, skip loading avatar
-      }
-
-      const response = await getAvatarUrl();
-      if (response.success && response.data?.url) {
-        setAvatarUrl(response.data.url);
-      }
-    } catch (err) {
-      // Silently handle - it's ok if no avatar exists
-    }
-  };
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    // Validate
-    if (!file.type.startsWith('image/')) {
-      toast.error('يرجى اختيار صورة صحيحة');
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('حجم الصورة يجب أن لا يتجاوز 5 ميغابايت');
-      return;
-    }
-
-    // Read file and show crop modal
     const reader = new FileReader();
-    reader.onload = () => {
-      setSelectedImage(reader.result as string);
-      setShowCropModal(true);
-    };
+    reader.onload = () => { setSelectedImage(reader.result as string); setShowCropModal(true); };
     reader.readAsDataURL(file);
-
-    // Reset file input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const handleCropComplete = async (croppedBlob: Blob) => {
     setShowCropModal(false);
-    setSelectedImage(null);
-    
-    // Show preview immediately
     const previewUrl = URL.createObjectURL(croppedBlob);
     setAvatarPreview(previewUrl);
-    
-    // Update navbar immediately with preview
     updateUser({ avatar: previewUrl });
     setIsUploadingAvatar(true);
 
     try {
-      // Convert blob to file
       const file = new File([croppedBlob], 'avatar.jpg', { type: 'image/jpeg' });
-      
       const response = await uploadAvatar(file);
       if (response.success && response.data?.url) {
-        // Clear preview and set actual URL
         setAvatarPreview(null);
         setAvatarUrl(response.data.url);
-        // Update user avatar in AuthContext with actual URL
         updateUser({ avatar: response.data.url });
-        toast.success('تم تحديث الصورة الشخصية بنجاح');
+        toast.success('تم تحديث الصورة بنجاح');
       }
     } catch (err: any) {
-      // Clear preview on error
       setAvatarPreview(null);
-      // Revert to previous avatar on error
       updateUser({ avatar: avatarUrl || undefined });
       toast.error(err.message || 'فشل رفع الصورة');
     } finally {
       setIsUploadingAvatar(false);
     }
-  };
-
-  const handleCropCancel = () => {
-    setShowCropModal(false);
-    setSelectedImage(null);
-  };
-
-  const handleAvatarDelete = () => {
-    setShowDeleteModal(true);
   };
 
   const confirmDelete = async () => {
@@ -173,12 +101,11 @@ export default function TeacherProfile() {
       await deleteAvatar();
       setAvatarUrl(null);
       setAvatarPreview(null);
-      // Update user avatar in AuthContext so it clears from navbar
       updateUser({ avatar: undefined });
       setShowDeleteModal(false);
-      toast.success('تم حذف الصورة الشخصية بنجاح');
+      toast.success('تم حذف الصورة بنجاح');
     } catch (err: any) {
-      toast.error(err.message || 'فشل حذف الصورة');
+      toast.error(err.message || 'فشل الحذف');
     } finally {
       setIsUploadingAvatar(false);
     }
@@ -186,395 +113,244 @@ export default function TeacherProfile() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     try {
       const token = getAuthToken();
       const API_URL = getVersionedApiUrl();
-
       const response = await fetch(`${API_URL}/teacher/profile`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify({
-          name: formData.name,
-          trial_period_days: Number(formData.trialPeriodDays || 4),
-        }),
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ name: formData.name, trial_period_days: Number(formData.trialPeriodDays) }),
       });
-
       const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'فشل تحديث الملف الشخصي');
-      }
-
-      toast.success('تم تحديث الملف الشخصي بنجاح');
+      if (!response.ok) throw new Error(data.message);
+      toast.success('تم التحديث بنجاح');
       setIsEditing(false);
-      
-      if (data.data?.user) {
-        updateUser(data.data.user);
-      }
-    } catch (err: any) {
-      toast.error(err.message || 'فشل تحديث الملف الشخصي');
-    }
-  };
-
-  const validatePasswordForm = () => {
-    const newErrors: Record<string, string> = {};
-    let isValid = true;
-
-    if (!formData.currentPassword) {
-      newErrors.currentPassword = 'يرجى إدخال كلمة المرور الحالية';
-      isValid = false;
-    }
-    if (!formData.newPassword) {
-      newErrors.newPassword = 'يرجى إدخال كلمة المرور الجديدة';
-      isValid = false;
-    } else if (formData.newPassword.length < 8) {
-      newErrors.newPassword = 'كلمة المرور الجديدة يجب أن تكون 8 أحرف على الأقل';
-      isValid = false;
-    }
-    if (formData.newPassword !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'كلمات المرور غير متطابقة';
-      isValid = false;
-    }
-
-    setErrors(newErrors);
-    return isValid;
+      if (data.data?.user) updateUser(data.data.user);
+    } catch (err: any) { toast.error(err.message); }
   };
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!validatePasswordForm()) {
+    if (formData.newPassword !== formData.confirmPassword) {
+      toast.error('كلمات المرور غير متطابقة');
       return;
     }
-
     try {
       const token = getAuthToken();
       const API_URL = getVersionedApiUrl();
-
       const response = await fetch(`${API_URL}/teacher/change-password`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({
           current_password: formData.currentPassword,
           new_password: formData.newPassword,
           new_password_confirmation: formData.confirmPassword,
         }),
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'فشل تغيير كلمة المرور');
-      }
-
+      if (!response.ok) throw new Error('فشل تغيير كلمة المرور');
       toast.success('تم تغيير كلمة المرور بنجاح');
-      setFormData(prev => ({
-        ...prev,
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: '',
-      }));
-      setErrors({});
-    } catch (err: any) {
-      toast.error(err.message || 'حدث خطأ أثناء تغيير كلمة المرور');
-    }
+      setFormData(prev => ({ ...prev, currentPassword: '', newPassword: '', confirmPassword: '' }));
+    } catch (err: any) { toast.error(err.message); }
   };
 
   if (isLoading) {
     return (
-      <DashboardLayout
-        role={user?.userType as 'teacher' | 'secretary' || 'teacher'}
-        user={user || undefined}
-      >
-        <div className="max-w-[1200px] mx-auto">
-          {/* Profile Info Card Skeleton */}
-          <div className="dashboard-card mb-6 p-6">
-            <div className="flex justify-between items-center mb-6">
-              <Skeleton className="h-8 w-40" />
-              <Skeleton className="h-8 w-20" />
-            </div>
-            <div className="flex items-center gap-6 mb-8">
-              <Skeleton className="h-32 w-32 rounded-full" />
-              <div className="flex flex-col gap-2">
-                <Skeleton className="h-8 w-48" />
-                <Skeleton className="h-6 w-24" />
-              </div>
-            </div>
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-6">
-              <div>
-                <Skeleton className="h-5 w-24 mb-2" />
-                <Skeleton className="h-12 w-full rounded-lg" />
-              </div>
-              <div>
-                <Skeleton className="h-5 w-24 mb-2" />
-                <Skeleton className="h-12 w-full rounded-lg" />
-              </div>
-            </div>
-          </div>
+      <DashboardLayout role={user?.userType as any} user={user || undefined}>
+        <div className="space-y-6 animate-pulse">
+           <Skeleton className="h-48 w-full rounded-[2.5rem]" />
+           <Skeleton className="h-64 w-full rounded-[2.5rem]" />
         </div>
       </DashboardLayout>
     );
   }
 
   return (
-    <DashboardLayout
-      role={user?.userType as 'teacher' | 'secretary' || 'teacher'}
-      user={user || undefined}
-    >
-      <div className="max-w-[1200px] mx-auto">
-        {/* Profile Info Card */}
-        <DashboardCard
-          title="المعلومات الشخصية"
-          icon="fas fa-user"
-          action={
-            <Button onClick={() => setIsEditing(!isEditing)}>
-              <Icon name={isEditing ? 'times' : 'edit'} className="ml-2" />
-              <span>{isEditing ? 'إلغاء' : 'تعديل'}</span>
-            </Button>
-          }
-        >
-          <div className="py-6">
-            {/* Profile Avatar */}
-            <div className="flex items-center gap-6 mb-8">
-              <div
-                className={`w-[120px] h-[120px] rounded-full flex items-center justify-center text-5xl font-bold text-white relative overflow-hidden ${(avatarPreview || avatarUrl) ? '' : 'bg-gradient-to-br from-primary to-secondary'}`}
-              >
-                {(avatarPreview || avatarUrl) ? (
-                  <img
-                    src={avatarPreview || avatarUrl || ''}
-                    alt="Avatar"
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  user?.name?.charAt(0) || 'U'
-                )}
-                {isUploadingAvatar && (
-                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                    <LoadingSpinner size="md" color="white" />
+    <DashboardLayout role={user?.userType as any} user={user || undefined}>
+      <div className="space-y-8 animate-in fade-in duration-700">
+        
+        {/* Immersive Profile Hero Card */}
+        <div className="relative rounded-[2.5rem] premium-glass premium-border p-8 md:p-12 overflow-hidden">
+          {/* Backdrop Glow */}
+          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 blur-[100px] -translate-y-1/2 translate-x-1/2" />
+          <div className="absolute bottom-0 left-0 w-64 h-64 bg-secondary/10 blur-[100px] translate-y-1/2 -translate-x-1/2" />
+
+          <div className="relative z-10 flex flex-col md:flex-row items-center gap-8 md:gap-12">
+             {/* Avatar Section */}
+             <div className="relative group">
+                <div className={cn(
+                  "w-32 h-32 md:w-40 md:h-40 rounded-[2.5rem] p-1.5 border-2 transition-all duration-500",
+                  isUploadingAvatar ? "border-primary animate-pulse" : "border-white/10 group-hover:border-primary/50"
+                )}>
+                  <div className="w-full h-full rounded-[2rem] overflow-hidden bg-white/5 flex items-center justify-center text-4xl font-black text-white">
+                    {(avatarPreview || avatarUrl) ? (
+                      <img src={avatarPreview || avatarUrl || ''} alt="Profile" className="w-full h-full object-cover" />
+                    ) : (
+                      user?.name?.charAt(0).toUpperCase() || '?'
+                    )}
+                    {isUploadingAvatar && (
+                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center rounded-[2rem]">
+                        <LoadingSpinner size="sm" color="primary" />
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-              <div>
-                <h3 className="text-2xl font-bold text-white mb-2">
-                  {user?.name || 'مستخدم'}
-                </h3>
-                <p className="text-base text-gray-light mb-2">
-                  {user?.userType === 'teacher' ? 'مدرس' : (user?.userType === 'secretary' ? 'سكرتير' : user?.userType || '')}
-                </p>
+                </div>
+                
                 {isEditing && (
-                  <div className="flex gap-2 mt-3">
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={handleAvatarChange}
-                      className="hidden"
-                    />
-                    <Button
-                      variant="outline"
-                      size="sm"
+                  <div className="absolute -bottom-2 -right-2 flex gap-2">
+                    <button 
                       onClick={() => fileInputRef.current?.click()}
-                      disabled={isUploadingAvatar}
+                      className="w-10 h-10 rounded-xl bg-primary text-white shadow-xl shadow-primary/30 flex items-center justify-center"
                     >
-                      <Icon name="camera" className="ml-2" />
-                      <span>{avatarUrl ? 'تغيير الصورة' : 'رفع صورة'}</span>
-                    </Button>
+                      <Icon name="camera" size="sm" />
+                    </button>
                     {avatarUrl && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="bg-red-500/10 border-red-500 text-red-500 hover:bg-red-500/20"
-                        onClick={handleAvatarDelete}
-                        disabled={isUploadingAvatar}
+                      <button 
+                        onClick={() => setShowDeleteModal(true)}
+                        className="w-10 h-10 rounded-xl bg-red-500 text-white shadow-xl shadow-red-500/30 flex items-center justify-center"
                       >
-                        <Icon name="trash" />
-                      </Button>
+                        <Icon name="trash" size="sm" />
+                      </button>
                     )}
                   </div>
                 )}
-              </div>
-            </div>
+                <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
+             </div>
 
-            {/* Profile Form */}
-            <form onSubmit={handleSubmit}>
-              <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-6">
+             {/* User Info Section */}
+             <div className="flex-1 text-center md:text-right space-y-4">
                 <div>
-                  <label className="block text-gray-light text-sm mb-2 font-semibold">
-                    الاسم
-                  </label>
-                  <Input
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    disabled={!isEditing}
-                    className={`w-full ${isEditing ? 'bg-white/5' : 'bg-white/2'}`}
-                  />
+                  <div className="flex items-center justify-center md:justify-start gap-3 mb-2">
+                    <h2 className="text-3xl md:text-4xl font-black text-white tracking-tighter">{user?.name}</h2>
+                    <span className="px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-black uppercase tracking-widest">
+                      {user?.userType === 'teacher' ? 'مدرس' : 'سكرتارية'}
+                    </span>
+                  </div>
+                  <p className="text-gray-light/40 font-bold uppercase tracking-widest text-[10px]">الملف الشخصي وإعدادات الحساب</p>
                 </div>
 
-                <div>
-                  <label className="block text-gray-light text-sm mb-2 font-semibold">
-                    مدة الفترة التجريبية (بالأيام)
-                  </label>
-                  <Input
-                    type="number"
-                    min={1}
-                    max={365}
-                    value={formData.trialPeriodDays}
-                    onChange={(e) => setFormData({ ...formData, trialPeriodDays: e.target.value })}
-                    disabled={!isEditing}
-                    className={`w-full ${isEditing ? 'bg-white/5' : 'bg-white/2'}`}
-                  />
-                </div>
-
-
-              </div>
-
-              {isEditing && (
-                <div className="mt-6 flex gap-3 justify-end">
-                  <Button type="button" variant="outline" onClick={() => setIsEditing(false)}>
-                    إلغاء
-                  </Button>
-                  <Button type="submit">
-                    <Icon name="save" className="ml-2" />
-                    <span>حفظ التغييرات</span>
-                  </Button>
-                </div>
-              )}
-            </form>
-          </div>
-        </DashboardCard>
-
-        {/* Change Password Card */}
-        <DashboardCard
-          title="تغيير كلمة المرور"
-          icon="fas fa-lock"
-        >
-
-          <div className="py-6">
-            <form onSubmit={handlePasswordChange}>
-              <div className="grid gap-6 max-w-[600px]">
-                <div>
-                  <label className="block text-gray-light text-sm mb-2 font-semibold">
-                    كلمة المرور الحالية
-                  </label>
-                  <Input
-                    type="password"
-                    value={formData.currentPassword}
-                    onChange={(e) => setFormData({ ...formData, currentPassword: e.target.value })}
-                    className={errors.currentPassword ? 'border-red-500/50' : ''}
-                  />
-                  {errors.currentPassword && (
-                    <p className="text-red-500 text-xs mt-1">{errors.currentPassword}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-gray-light text-sm mb-2 font-semibold">
-                    كلمة المرور الجديدة
-                  </label>
-                  <Input
-                    type="password"
-                    value={formData.newPassword}
-                    onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
-                    className={errors.newPassword ? 'border-red-500/50' : ''}
-                  />
-                  {errors.newPassword && (
-                    <p className="text-red-500 text-xs mt-1">{errors.newPassword}</p>
-                  )}
-                  {formData.newPassword && (
-                    <div className="mt-2 flex gap-1 h-1">
-                      {[...Array(4)].map((_, i) => (
-                        <div
-                          key={i}
-                          className={`h-full flex-1 rounded-full transition-all duration-300 ${
-                            i < passwordStrength
-                              ? passwordStrength <= 2
-                                ? 'bg-red-500'
-                                : passwordStrength === 3
-                                ? 'bg-yellow-500'
-                                : 'bg-green-500'
-                              : 'bg-white/10'
-                          }`}
-                        />
-                      ))}
-                    </div>
-                  )}
-                  <div className="text-xs text-gray-400 mt-1 flex justify-between">
-                    <span>ضعيف</span>
-                    <span>قوي</span>
+                <div className="flex flex-wrap items-center justify-center md:justify-start gap-4">
+                  <div className="flex items-center gap-2 text-xs text-gray-light/60">
+                    <Icon name="envelope" className="text-primary" />
+                    <span>{user?.email || 'لا يوجد بريد'}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-gray-light/60">
+                    <Icon name="phone" className="text-primary" />
+                    <span>{user?.phone || 'لا يوجد هاتف'}</span>
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-gray-light text-sm mb-2 font-semibold">
-                    تأكيد كلمة المرور الجديدة
-                  </label>
-                  <Input
-                    type="password"
-                    value={formData.confirmPassword}
-                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                    className={
-                      errors.confirmPassword || (formData.confirmPassword && formData.newPassword !== formData.confirmPassword)
-                        ? 'border-red-500/50'
-                        : formData.confirmPassword && formData.newPassword === formData.confirmPassword
-                        ? 'border-green-500/50'
-                        : ''
-                    }
-                  />
-                  {errors.confirmPassword && (
-                    <p className="text-red-500 text-xs mt-1">{errors.confirmPassword}</p>
-                  )}
-                  {formData.confirmPassword && (
-                    <p className={`text-xs mt-1 ${
-                      formData.newPassword === formData.confirmPassword ? 'text-green-500' : 'text-red-500'
-                    }`}>
-                      {formData.newPassword === formData.confirmPassword ? 'كلمات المرور متطابقة' : 'كلمات المرور غير متطابقة'}
-                    </p>
-                  )}
+                <div className="pt-2">
+                   <Button 
+                    onClick={() => setIsEditing(!isEditing)} 
+                    variant={isEditing ? "outline" : "primary"}
+                    className="h-11 px-8 rounded-xl font-black uppercase tracking-widest"
+                   >
+                     <Icon name={isEditing ? 'times' : 'edit'} className="ml-2" />
+                     {isEditing ? 'إلغاء التعديل' : 'تعديل البيانات'}
+                   </Button>
                 </div>
+             </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+           {/* General Settings */}
+           <div className="rounded-[2.5rem] premium-glass premium-border p-8 space-y-8">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center text-primary">
+                  <Icon name="cog" />
+                </div>
+                <h3 className="text-lg font-black text-white uppercase tracking-widest">الإعدادات العامة</h3>
               </div>
 
-              <div className="mt-6">
-                <Button type="submit">
-                  <Icon name="key" className="ml-2" />
-                  <span>تغيير كلمة المرور</span>
-                </Button>
+              <form onSubmit={handleSubmit} className="space-y-6">
+                 <div className="space-y-1.5">
+                   <label className="text-[10px] font-black text-gray-light/20 uppercase tracking-widest px-2">الاسم الكامل</label>
+                   <Input 
+                     value={formData.name} 
+                     onChange={(e) => setFormData({...formData, name: e.target.value})} 
+                     disabled={!isEditing}
+                     className="h-12 bg-white/5 border-white/10 rounded-xl text-sm font-bold"
+                   />
+                 </div>
+                 <div className="space-y-1.5">
+                   <label className="text-[10px] font-black text-gray-light/20 uppercase tracking-widest px-2">الفترة التجريبية (أيام)</label>
+                   <Input 
+                     type="number"
+                     value={formData.trialPeriodDays} 
+                     onChange={(e) => setFormData({...formData, trialPeriodDays: e.target.value})} 
+                     disabled={!isEditing}
+                     className="h-12 bg-white/5 border-white/10 rounded-xl text-sm font-bold"
+                   />
+                 </div>
+                 {isEditing && (
+                   <Button type="submit" className="w-full h-12 rounded-xl bg-success text-white font-black uppercase tracking-widest shadow-xl shadow-success/20">
+                     <Icon name="save" /> حفظ التغييرات
+                   </Button>
+                 )}
+              </form>
+           </div>
+
+           {/* Security Settings */}
+           <div className="rounded-[2.5rem] premium-glass premium-border p-8 space-y-8">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center text-secondary">
+                  <Icon name="shield-alt" />
+                </div>
+                <h3 className="text-lg font-black text-white uppercase tracking-widest">تأمين الحساب</h3>
               </div>
-            </form>
-          </div>
-        </DashboardCard>
-        {/* Notification Settings Card */}
-        
+
+              <form onSubmit={handlePasswordChange} className="space-y-6">
+                 <div className="space-y-1.5">
+                   <label className="text-[10px] font-black text-gray-light/20 uppercase tracking-widest px-2">كلمة المرور الحالية</label>
+                   <Input 
+                     type="password"
+                     value={formData.currentPassword} 
+                     onChange={(e) => setFormData({...formData, currentPassword: e.target.value})} 
+                     className="h-12 bg-white/5 border-white/10 rounded-xl"
+                   />
+                 </div>
+                 <div className="space-y-1.5">
+                   <label className="text-[10px] font-black text-gray-light/20 uppercase tracking-widest px-2">كلمة المرور الجديدة</label>
+                   <Input 
+                     type="password"
+                     value={formData.newPassword} 
+                     onChange={(e) => setFormData({...formData, newPassword: e.target.value})} 
+                     className="h-12 bg-white/5 border-white/10 rounded-xl"
+                   />
+                   {formData.newPassword && (
+                     <div className="flex gap-1 h-1 mt-2">
+                        {[1, 2, 3, 4].map((i) => (
+                          <div key={i} className={cn("flex-1 rounded-full transition-all", i <= passwordStrength ? "bg-primary shadow-[0_0_8px_rgba(66,99,235,0.5)]" : "bg-white/5")} />
+                        ))}
+                     </div>
+                   )}
+                 </div>
+                 <div className="space-y-1.5">
+                   <label className="text-[10px] font-black text-gray-light/20 uppercase tracking-widest px-2">تأكيد كلمة المرور</label>
+                   <Input 
+                     type="password"
+                     value={formData.confirmPassword} 
+                     onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})} 
+                     className="h-12 bg-white/5 border-white/10 rounded-xl"
+                   />
+                 </div>
+                 <Button type="submit" className="w-full h-12 rounded-xl bg-secondary text-white font-black uppercase tracking-widest shadow-xl shadow-secondary/20">
+                   <Icon name="key" /> تحديث كلمة المرور
+                 </Button>
+              </form>
+           </div>
+        </div>
       </div>
 
-      {/* Image Crop Modal */}
       {showCropModal && selectedImage && (
-        <ImageCropModal
-          image={selectedImage}
-          onCropComplete={handleCropComplete}
-          onCancel={handleCropCancel}
+        <ImageCropModal 
+          image={selectedImage} 
+          onCropComplete={handleCropComplete} 
+          onCancel={() => setShowCropModal(false)} 
         />
       )}
-
-      {/* Delete Confirmation Modal */}
-      <ConfirmationModal
-        isOpen={showDeleteModal}
-        title="حذف الصورة الشخصية"
-        message="هل أنت متأكد من رغبتك في حذف الصورة الشخصية؟ لا يمكن التراجع عن هذا الإجراء."
-        confirmText="حذف"
-        cancelText="إلغاء"
-        onConfirm={confirmDelete}
-        onCancel={() => setShowDeleteModal(false)}
-        isProcessing={isUploadingAvatar}
-      />
+      <ConfirmationModal isOpen={showDeleteModal} title="حذف الصورة" message="هل أنت متأكد من حذف صورتك الشخصية؟" confirmText="حذف" cancelText="إلغاء" onConfirm={confirmDelete} onCancel={() => setShowDeleteModal(false)} isProcessing={isUploadingAvatar} />
     </DashboardLayout>
   );
 }

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
+import { StatCard } from '@/components/dashboard/StatCard';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { fetchApi } from '@/services/authService';
 import Link from 'next/link';
@@ -135,165 +136,196 @@ export default function MistakesPage() {
 
   return (
     <DashboardLayout role="student" user={mockUser}>
-      <div className="max-w-[1200px] mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-white mb-2 flex items-center gap-3">
-              <Icon name="book-open" className="text-danger" />
-              أخطائي
-            </h1>
-            <p className="text-gray-400">راجع أخطاءك وقواها قبل الامتحان 💪</p>
-          </div>
-          <div className="flex gap-3">
+      {/* Page Header */}
+      <div className="relative mb-12 p-8 md:p-10 rounded-[2.5rem] md:rounded-[3rem] premium-glass premium-border overflow-hidden">
+        {/* Background Glows */}
+        <div className="absolute top-0 right-0 w-80 h-80 bg-rose-500/20 blur-[120px] -translate-y-1/2 translate-x-1/3 animate-pulse"></div>
+        <div className="absolute bottom-0 left-0 w-80 h-80 bg-primary/10 blur-[120px] translate-y-1/2 -translate-x-1/3"></div>
 
-            <Link href="/student/dashboard" className="inline-flex">
-              <Button variant="outline">
-                <Icon name="arrow-right" className="ml-2" />
-                العودة
-              </Button>
-            </Link>
+        <div className="relative flex flex-col md:flex-row justify-between items-center gap-8 text-center md:text-right">
+          <div className="flex flex-col md:flex-row items-center gap-6">
+            <div className="w-20 h-20 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center text-rose-500 text-4xl shadow-2xl premium-border">
+              <Icon name="book-open" />
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-3xl md:text-4xl font-black text-white tracking-tight">أخطائي العلمية</h2>
+              <p className="text-gray-light/60 text-lg font-medium">راجع أخطاءك في الامتحانات السابقة وقم بتقويتها 💪</p>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-4">
+             <div className="flex flex-col items-center md:items-end">
+                <span className="text-[10px] font-black text-gray-light/30 uppercase tracking-[0.2em] mb-1">المعلم الحالي</span>
+                <span className="text-xl font-black text-white">{selectedTeacher?.teacher_name || 'اختر مدرساً'}</span>
+             </div>
           </div>
         </div>
+      </div>
 
-        {/* Stats Cards */}
-        {stats && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <div className="bg-white/5 rounded-xl p-4 text-center border border-white/10">
-              <div className="text-3xl font-bold text-danger">{stats.pending}</div>
-              <div className="text-sm text-gray-400">أخطاء للمراجعة</div>
-            </div>
-            <div className="bg-white/5 rounded-xl p-4 text-center border border-white/10">
-              <div className="text-3xl font-bold text-success">{stats.mastered}</div>
-              <div className="text-sm text-gray-400">تم إتقانها</div>
-            </div>
-            <div className="bg-white/5 rounded-xl p-4 text-center border border-white/10">
-              <div className="text-3xl font-bold text-white">{stats.total_mistakes}</div>
-              <div className="text-sm text-gray-400">إجمالي الأخطاء</div>
-            </div>
-            <div className="bg-white/5 rounded-xl p-4 text-center border border-white/10">
-              <div className="text-3xl font-bold text-primary">{stats.mastery_rate}%</div>
-              <div className="text-sm text-gray-400">نسبة الإتقان</div>
-            </div>
-          </div>
-        )}
+      {/* Stats Grid */}
+      {stats && (
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-6 mb-10">
+          <StatCard
+            title="أخطاء للمراجعة"
+            value={stats.pending}
+            icon="fas fa-exclamation-circle"
+            color="danger"
+            variant="centered"
+          />
+          <StatCard
+            title="تم إتقانها"
+            value={stats.mastered}
+            icon="fas fa-check-circle"
+            color="success"
+            variant="centered"
+          />
+          <StatCard
+            title="نسبة الإتقان"
+            value={stats.mastery_rate}
+            suffix="%"
+            icon="fas fa-graduation-cap"
+            color="warning"
+            variant="centered"
+          />
+          <StatCard
+            title="إجمالي الأخطاء"
+            value={stats.total_mistakes}
+            icon="fas fa-history"
+            color="info"
+            variant="centered"
+          />
+        </div>
+      )}
+
+      {/* Main Content */}
+      <div className="max-w-4xl mx-auto">
         {!selectedTeacher ? (
-          <div className="text-center py-16 bg-white/5 rounded-2xl border border-white/10">
-            <Icon name="user-graduate" size="2x" className="text-gray-500 mb-4" />
-            <p className="text-gray-400">اختر مدرس لعرض أخطاءك</p>
+          <div className="premium-glass py-24 rounded-[3rem] border-white/5 flex flex-col items-center justify-center text-center space-y-6">
+            <div className="w-24 h-24 rounded-full bg-white/5 flex items-center justify-center text-gray-light/20">
+              <Icon name="user-graduate" size="3x" />
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-xl font-black text-white">اختر مدرساً للمتابعة</h3>
+              <p className="text-sm text-gray-light/30 font-medium max-w-xs">يرجى اختيار المدرس من القائمة الجانبية لعرض قائمة أخطائك العلمية</p>
+            </div>
           </div>
         ) : error ? (
-          <div className="text-center py-16 bg-red-500/10 rounded-2xl border border-red-500/30">
-            <Icon name="exclamation-circle" size="2x" className="text-red-500 mb-4" />
-            <h3 className="text-xl font-bold text-white mb-2">عفواً</h3>
-            <p className="text-gray-400">{error}</p>
-            <Button
-              variant="primary"
-              onClick={loadMistakes}
-              className="mt-4"
-            >
-              إعادة المحاولة
-            </Button>
+          <div className="premium-glass py-20 rounded-[3rem] border-white/5 flex flex-col items-center justify-center text-center space-y-8">
+            <div className="w-20 h-20 rounded-full bg-rose-500/10 flex items-center justify-center text-rose-500">
+              <Icon name="exclamation-triangle" size="2x" />
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-xl font-black text-white">عفواً، حدث خطأ ما</h3>
+              <p className="text-sm text-rose-500/60 font-medium">{error}</p>
+            </div>
+            <Button variant="primary" onClick={loadMistakes} className="h-12 px-8 rounded-2xl font-black">إعادة المحاولة</Button>
           </div>
-        ) : loading ? null : mistakes.length === 0 ? (
-          <div className="text-center py-16 bg-gradient-to-br from-success/10 to-success/5 rounded-2xl border border-success/30">
-            <div className="text-6xl mb-4">🎉</div>
-            <h3 className="text-xl font-bold text-white mb-2">
-              أحسنت! ما عندكش أخطاء للمراجعة
-            </h3>
-            <p className="text-gray-400">استمر في التفوق!</p>
+        ) : loading ? (
+           <div className="space-y-4">
+              {[1, 2, 3].map(i => (
+                 <div key={i} className="h-24 rounded-3xl bg-white/5 border border-white/5 animate-pulse" />
+              ))}
+           </div>
+        ) : mistakes.length === 0 ? (
+          <div className="premium-glass py-24 rounded-[3rem] border-emerald-500/10 bg-emerald-500/[0.02] flex flex-col items-center justify-center text-center space-y-6 relative overflow-hidden">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(16,185,129,0.05)_0%,transparent_70%)]" />
+            <div className="relative z-10 w-24 h-24 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 shadow-[0_0_50px_rgba(16,185,129,0.1)]">
+              <Icon name="award" size="3x" />
+            </div>
+            <div className="relative z-10 space-y-2">
+              <h3 className="text-2xl font-black text-white">أنت بطل! لا توجد أخطاء</h3>
+              <p className="text-sm text-emerald-500/60 font-medium max-w-xs">لقد قمت بإتقان جميع المواد العلمية، استمر في هذا التفوق الرائع 🚀</p>
+            </div>
           </div>
         ) : (
-          <div className="space-y-4">
-            {mistakes.map((mistake) => (
-              <div
-                key={mistake.id}
-                className={`bg-white/5 rounded-xl border transition-all ${
-                  mistake.is_mastered
-                    ? 'border-success/30 opacity-60'
-                    : 'border-white/10 hover:border-primary/30'
-                }`}
-              >
-                {/* Question Header */}
+          <div className="space-y-6">
+            <div className="flex items-center gap-3 px-6 mb-4">
+               <Icon name="list-ul" className="text-primary" />
+               <h3 className="text-[10px] font-black text-white uppercase tracking-[0.3em]">قائمة الأخطاء قيد المراجعة</h3>
+            </div>
+
+            <div className="space-y-4">
+              {mistakes.map((mistake) => (
                 <div
-                  className="p-4 cursor-pointer flex items-center justify-between"
-                  onClick={() => setExpandedId(expandedId === mistake.id ? null : mistake.id)}
+                  key={mistake.id}
+                  className={`premium-glass rounded-[2rem] border transition-all duration-300
+                    ${expandedId === mistake.id ? 'border-primary/30 ring-1 ring-primary/20' : 'border-white/5 hover:border-white/10'}`}
                 >
-                  <div className="flex items-center gap-3 flex-1">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                      mistake.is_mastered ? 'bg-success/20 text-success' : 'bg-danger/20 text-danger'
-                    }`}>
-                      {mistake.is_mastered ? (
-                        <Icon name="check" />
-                      ) : (
-                        <span className="font-bold">{mistake.times_failed}x</span>
-                      )}
+                  <div
+                    className="p-6 cursor-pointer flex items-center justify-between gap-6"
+                    onClick={() => setExpandedId(expandedId === mistake.id ? null : mistake.id)}
+                  >
+                    <div className="flex items-center gap-5 flex-1 min-w-0">
+                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 premium-border transition-all
+                        ${mistake.is_mastered ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`}>
+                        {mistake.is_mastered ? <Icon name="check-double" size="xl" /> : <span className="text-xl font-black">{mistake.times_failed}x</span>}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-white font-bold text-lg line-clamp-1 group-hover:text-primary transition-colors">{mistake.question?.text || 'سؤال غير متاح'}</h4>
+                        <div className="flex items-center gap-2 mt-1">
+                           <span className="text-[10px] font-black text-gray-light/20 uppercase tracking-widest">{mistake.exam?.title}</span>
+                           <div className="w-1 h-1 rounded-full bg-white/5" />
+                           <span className="text-[10px] font-black text-rose-500/60 uppercase tracking-widest">تكرار الخطأ: {mistake.times_failed} مرّات</span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <p className="text-white font-medium line-clamp-1">{mistake.question?.text || 'سؤال غير متاح'}</p>
-                      <p className="text-sm text-gray-500">{mistake.exam?.title}</p>
+                    <div className={`w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-gray-light/30 transition-all
+                      ${expandedId === mistake.id ? 'rotate-180 bg-primary/10 text-primary' : ''}`}>
+                       <Icon name="chevron-down" size="sm" />
                     </div>
                   </div>
-                  <Icon name="chevron-down" className={`text-gray-400 transition-transform ${
-                    expandedId === mistake.id ? 'rotate-180' : ''
-                  }`} />
-                </div>
 
-                {/* Expanded Content */}
-                {expandedId === mistake.id && (
-                  <div className="px-4 pb-4 border-t border-white/10">
-                    <div className="pt-4 space-y-3">
-                      {/* Options */}
-                      <div className="space-y-2">
-                        {Array.isArray(mistake.question?.options) && mistake.question.options.length > 0 ? (
-                          mistake.question.options.map((option, idx) => {
-                            const isCorrect = option === mistake.question?.correct_answer;
-                            const isStudentAnswer = option === mistake.student_answer;
-                            return (
-                              <div
-                                key={idx}
-                                className={`p-3 rounded-lg border ${
-                                  isCorrect
-                                    ? 'bg-success/10 border-success/30 text-success'
-                                    : isStudentAnswer
-                                    ? 'bg-danger/10 border-danger/30 text-danger'
-                                    : 'bg-white/5 border-white/10 text-gray-400'
-                                }`}
-                              >
-                                <div className="flex items-center gap-2">
-                                  {isCorrect && <Icon name="check-circle" />}
-                                  {isStudentAnswer && !isCorrect && <Icon name="times-circle" />}
-                                  <span>{option}</span>
-                                  {isCorrect && <span className="text-xs mr-auto">(الإجابة الصحيحة)</span>}
-                                  {isStudentAnswer && !isCorrect && <span className="text-xs mr-auto">(إجابتك)</span>}
+                  {expandedId === mistake.id && (
+                    <div className="px-8 pb-8 animate-in fade-in slide-in-from-top-4 duration-300">
+                      <div className="pt-6 border-t border-white/5 space-y-6">
+                        <div className="space-y-4">
+                          <label className="text-[10px] font-black text-gray-light/20 uppercase tracking-widest px-2">مراجعة الخيارات والحل الصحيح</label>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {Array.isArray(mistake.question?.options) && mistake.question.options.map((option, idx) => {
+                              const isCorrect = option === mistake.question?.correct_answer;
+                              const isStudentAnswer = option === mistake.student_answer;
+                              return (
+                                <div
+                                  key={idx}
+                                  className={`p-4 rounded-2xl border flex items-center gap-4 transition-all
+                                    ${isCorrect
+                                      ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                                      : isStudentAnswer
+                                      ? 'bg-rose-500/10 border-rose-500/30 text-rose-400'
+                                      : 'bg-white/5 border-white/5 text-gray-light/40 opacity-60'
+                                    }`}
+                                >
+                                  <div className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 border
+                                    ${isCorrect ? 'bg-emerald-500 text-white border-emerald-500' : isStudentAnswer ? 'bg-rose-500 text-white border-rose-500' : 'bg-white/5 border-white/10'}`}>
+                                    {isCorrect ? <Icon name="check" size="xs" /> : isStudentAnswer ? <Icon name="times" size="xs" /> : <span className="text-[10px] font-black">{String.fromCharCode(65 + idx)}</span>}
+                                  </div>
+                                  <span className="text-sm font-bold">{option}</span>
+                                  {isCorrect && <span className="mr-auto text-[8px] font-black uppercase bg-emerald-500/20 px-2 py-1 rounded-full">الحل الصحيح</span>}
+                                  {isStudentAnswer && !isCorrect && <span className="mr-auto text-[8px] font-black uppercase bg-rose-500/20 px-2 py-1 rounded-full">إجابتك</span>}
                                 </div>
-                              </div>
-                            );
-                          })
-                        ) : (
-                          <div className="text-center py-4 text-gray-500">
-                            لا توجد خيارات متاحة لهذا السؤال
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {!mistake.is_mastered && (
+                          <div className="flex justify-end pt-4">
+                            <Button
+                              variant="primary"
+                              onClick={() => markAsMastered(mistake.id)}
+                              className="h-12 px-10 rounded-2xl font-black gap-3 shadow-xl shadow-primary/20"
+                            >
+                              <Icon name="check-circle" />
+                              <span>فهمت الخطأ وأتقنته ✓</span>
+                            </Button>
                           </div>
                         )}
                       </div>
-
-                      {/* Actions */}
-                      {!mistake.is_mastered && (
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          onClick={() => markAsMastered(mistake.id)}
-                          className="w-full mt-4"
-                        >
-                          <Icon name="check" className="ml-2" />
-                          فهمتها ✓
-                        </Button>
-                      )}
                     </div>
-                  </div>
-                )}
-              </div>
-            ))}
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>

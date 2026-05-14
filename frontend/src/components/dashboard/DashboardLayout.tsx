@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Navbar } from './Navbar';
+import { MobileBottomNav } from './MobileBottomNav';
 import { NotificationPermissionModal } from './NotificationPermissionModal';
 
 
@@ -37,7 +38,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       />
 
       {/* Main Content */}
-      <main className="dashboard-main-navbar">
+      <main className={`dashboard-main-navbar ${role !== 'parent' ? 'pb-32 md:pb-0' : ''}`}>
         {/* Header */}
         {(title || headerActions) && (
           <div className="dashboard-header">
@@ -56,6 +57,9 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         {/* Content */}
         <div className="dashboard-content">{children}</div>
       </main>
+
+      {/* Mobile Bottom Nav */}
+      {role !== 'parent' && <MobileBottomNav role={role} />}
 
       {/* Mobile Menu Overlay */}
       {mobileMenuOpen && (

@@ -128,334 +128,289 @@ export default function ExamResultsPage() {
       role={user?.userType as 'teacher' | 'secretary' || 'teacher'}
       user={{ name: user?.name || 'المدرس', avatar: user?.avatar || '' }}
     >
-      <div className="mb-6">
-        <Button
-          onClick={() => router.back()}
-          variant="ghost"
-          className="w-10 h-10 rounded-full !p-0 flex items-center justify-center"
-        >
-          <Icon name="arrow-right" />
-        </Button>
+      {/* Page Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+        <div className="space-y-4">
+          <Button
+            onClick={() => router.back()}
+            variant="ghost"
+            className="w-10 h-10 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center hover:bg-white/10 transition-all"
+          >
+            <Icon name="arrow-right" />
+          </Button>
+          
+          <div className="space-y-2">
+            <div className="flex items-center gap-3">
+               <div className="w-12 h-12 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-500 premium-border">
+                  <Icon name="chart-bar" size="xl" />
+               </div>
+               <div>
+                  <h2 className="text-3xl font-black text-white tracking-tight">نتائج الطلاب</h2>
+                  <p className="text-gray-light/40 font-medium px-1">{exam?.title || 'جاري تحميل البيانات...'}</p>
+               </div>
+            </div>
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-4 bg-white/5 backdrop-blur-md border border-white/5 p-4 rounded-2xl">
+           <div className="text-left">
+              <p className="text-[10px] font-black text-gray-light/30 uppercase tracking-widest leading-none mb-1">أعلى درجة</p>
+              <p className="text-xl font-black text-primary leading-none">{highestScore}%</p>
+           </div>
+           <div className="w-px h-8 bg-white/10" />
+           <div className="text-left">
+              <p className="text-[10px] font-black text-gray-light/30 uppercase tracking-widest leading-none mb-1">المادة</p>
+              <p className="text-sm font-bold text-white leading-none">{exam?.subject || '---'}</p>
+           </div>
+        </div>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6">
-        <StatCard
-          title="عدد الطلاب"
-          value={totalStudents}
-          icon="users"
-          color="primary"
-        />
-        <StatCard
-          title="المتوسط"
-          value={avgScore}
-          suffix="%"
-          icon="chart-line"
-          color="warning"
-        />
-        <StatCard
-          title="الناجحين"
-          value={passedStudents}
-          icon="check-circle"
-          color="success"
-        />
-        <StatCard
-          title="الراسبين"
-          value={failedStudents}
-          icon="times-circle"
-          color="danger"
-        />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <StatCard title="عدد الطلاب" value={totalStudents} icon="users" color="primary" />
+        <StatCard title="المتوسط" value={avgScore} suffix="%" icon="chart-line" color="warning" />
+        <StatCard title="الناجحين" value={passedStudents} icon="check-circle" color="success" />
+        <StatCard title="الراسبين" value={failedStudents} icon="times-circle" color="danger" />
       </div>
 
-      {loading && (
-        <div className="flex items-center justify-center py-6 text-gray-400">
-          <LoadingSpinner size="sm" className="mx-2" />
-          جاري تحديث النتائج...
+      {/* Results Section */}
+      <div className="space-y-6">
+        {/* Filter & Search Bar */}
+        <div className="premium-glass p-4 rounded-[2rem] border-white/5">
+           <div className="relative group">
+              <Icon name="search" className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-light/20 group-focus-within:text-primary transition-colors" />
+              <Input
+                type="text"
+                placeholder="ابحث عن طالب بالاسم أو رقم الهاتف..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full h-14 bg-white/5 border-white/5 group-hover:border-white/10 rounded-2xl pr-12 font-bold placeholder:text-gray-light/10 transition-all focus:bg-white/10"
+              />
+           </div>
         </div>
-      )}
 
-      {/* Results Card */}
-      <DashboardCard 
-        title="نتائج الطلاب" 
-        icon="list-alt"
-        action={
-          <div className="text-sm text-gray-400">
-            أعلى نتيجة: <span className="text-primary font-bold">{highestScore}%</span>
+        {loading && results.length === 0 ? (
+          <div className="grid grid-cols-1 gap-4">
+             {[1,2,3,4].map(i => (
+                <div key={i} className="h-24 bg-white/5 rounded-2xl border border-white/5 animate-pulse" />
+             ))}
           </div>
-        }
-      >
-        {results.length === 0 ? (
-          // Empty State
-          <div className="text-center py-12">
-            <div className="w-20 h-20 rounded-full bg-gray-800 flex items-center justify-center mx-auto mb-4">
-              <Icon name="inbox" size="3x" className="text-gray-600" />
-            </div>
-            <h3 className="text-xl font-bold text-white mb-2">لا توجد نتائج</h3>
-            <p className="text-gray-400">لم يحضر أي طالب هذا الامتحان بعد</p>
+        ) : filteredResults.length === 0 ? (
+          <div className="premium-glass p-20 rounded-[3rem] border-white/5 flex flex-col items-center justify-center text-center">
+             <div className="w-24 h-24 rounded-[2rem] bg-white/5 flex items-center justify-center text-gray-light/10 mb-8 premium-border">
+                <Icon name="user-slash" size="3x" />
+             </div>
+             <h3 className="text-2xl font-black text-white mb-3">لا توجد نتائج مطابقة</h3>
+             <p className="text-gray-light/30 max-w-md font-medium">لم نجد أي طلاب يطابقون بحثك. تأكد من كتابة الاسم أو الرقم بشكل صحيح.</p>
           </div>
         ) : (
-          <>
-            {/* Search */}
-            <div className="mb-4">
-              <div className="relative">
-                <Input
-                  type="text"
-                  placeholder="بحث بالاسم أو رقم الهاتف..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pr-10"
-                />
-                <Icon name="search" className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              </div>
-            </div>
+          <div className="grid grid-cols-1 gap-4">
+            {filteredResults.map((result, index) => {
+               const rank = getStudentRank(result.id);
+               const isTop3 = rank <= 3;
+               return (
+                 <div
+                   key={result.id}
+                   onClick={() => setSelectedStudent(result)}
+                   className="group relative transition-all duration-300"
+                 >
+                   <div className={`absolute inset-0 rounded-3xl transition-all duration-300 pointer-events-none 
+                     ${isTop3 ? 'bg-primary/5 border-2 border-primary/20 shadow-[0_0_30px_rgba(66,99,235,0.1)]' : 'bg-[#101426]/40 border border-white/5 group-hover:border-white/20'}`}
+                   />
+                   
+                   <div className="relative p-5 flex flex-col md:flex-row md:items-center justify-between gap-6 cursor-pointer">
+                     {/* Left: Rank & Info */}
+                     <div className="flex items-center gap-5">
+                       <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-xl shrink-0 border
+                         ${rank === 1 ? 'bg-amber-500/20 text-amber-500 border-amber-500/30 shadow-[0_0_20px_rgba(245,158,11,0.2)]' : 
+                           rank === 2 ? 'bg-slate-300/20 text-slate-300 border-slate-300/30' : 
+                           rank === 3 ? 'bg-orange-400/20 text-orange-400 border-orange-400/30' : 
+                           'bg-white/5 text-gray-light/20 border-white/5'}`}
+                       >
+                         {rank}
+                       </div>
+                       
+                       <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                             <h4 className="text-lg font-black text-white group-hover:text-primary transition-colors">{result.student.name}</h4>
+                             {isTop3 && <Icon name="crown" size="xs" className="text-amber-500" />}
+                          </div>
+                          <div className="flex items-center gap-4 text-[11px] font-bold text-gray-light/40 uppercase tracking-widest">
+                             <span className="flex items-center gap-1.5"><Icon name="phone" className="text-[10px]" /> {result.student.phone}</span>
+                             <span className="flex items-center gap-1.5"><Icon name="question-circle" className="text-[10px]" /> {result.failed_questions.length} أخطاء</span>
+                          </div>
+                       </div>
+                     </div>
 
-            {/* Results List */}
-            <div className="space-y-3">
-              {filteredResults.map((result) => (
-                <div
-                  key={result.id}
-                  onClick={() => setSelectedStudent(result)}
-                  className="bg-white/5 rounded-xl p-4 border border-gray-800 hover:border-primary/50 cursor-pointer transition-all active:scale-[0.99]"
-                >
-                  <div className="flex items-center justify-between">
-                    {/* Student Info */}
-                    <div className="flex items-center gap-3">
-                      <div className={`w-12 h-12 rounded-full flex items-center justify-center ${getScoreBgColor(Number(result.percentage))}/20`}>
-                        <Icon name="user" className={getScoreColor(Number(result.percentage))} />
-                      </div>
-                      <div>
-                        <div className="font-medium text-white">{result.student.name}</div>
-                        <div className="text-xs text-gray-500 flex items-center gap-1">
-                          <Icon name="phone" className="text-[10px]" />
-                          {result.student.phone}
-                        </div>
-                      </div>
-                    </div>
+                     {/* Right: Scores */}
+                     <div className="flex items-center justify-between md:justify-end gap-8 border-t md:border-t-0 border-white/5 pt-4 md:pt-0">
+                       <div className="flex flex-col md:items-end">
+                          <span className="text-[10px] font-black text-gray-light/20 uppercase tracking-widest mb-1">الدرجة</span>
+                          <div className="flex items-baseline gap-1">
+                             <span className="text-2xl font-black text-white">{result.score}</span>
+                             <span className="text-sm font-bold text-gray-light/30">/ {exam?.max_score}</span>
+                          </div>
+                       </div>
 
-                    {/* Score */}
-                    <div className="text-left">
-                      <div className={`text-xl font-bold ${getScoreColor(Number(result.percentage))}`}>
-                        {result.percentage}%
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {result.score}/{exam?.max_score}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Progress Bar */}
-                  <div className="mt-3">
-                    <div className="w-full bg-gray-700 rounded-full h-2">
-                      <div 
-                        className={`h-full rounded-full transition-all duration-500 ${getScoreBgColor(Number(result.percentage))}`}
-                        style={{ width: `${result.percentage}%` }}
-                      ></div>
-                    </div>
-                  </div>
-
-                  {/* Quick Info */}
-                  <div className="mt-3 flex items-center justify-between text-xs">
-                    <Badge variant={Number(result.percentage) >= 50 ? 'success' : 'danger'}>
-                      {Number(result.percentage) >= 50 ? 'ناجح' : 'راسب'}
-                    </Badge>
-                    <span className="text-gray-500 flex items-center gap-1">
-                      {result.failed_questions.length > 0 ? (
-                        <>
-                          <Icon name="times-circle" className="text-warning" />
-                          {result.failed_questions.length} أخطاء
-                        </>
-                      ) : (
-                        <>
-                          <Icon name="check-circle" className="text-green-500" />
-                          بدون أخطاء
-                        </>
-                      )}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Summary Footer */}
-            <div className="mt-4 pt-4 border-t border-gray-800 flex flex-wrap items-center justify-between gap-2 text-sm text-gray-400">
-              <div className="flex items-center gap-4">
-                <span>الإجمالي: <strong className="text-white">{totalStudents}</strong></span>
-                <span className="text-green-500">✓ {passedStudents}</span>
-                <span className="text-red-500">✗ {failedStudents}</span>
-              </div>
-              <div>
-                نسبة النجاح: <strong className="text-primary">{totalStudents > 0 ? ((passedStudents / totalStudents) * 100).toFixed(0) : 0}%</strong>
-              </div>
-            </div>
-          </>
+                       <div className="flex flex-col md:items-end min-w-[100px]">
+                          <span className="text-[10px] font-black text-gray-light/20 uppercase tracking-widest mb-1">النسبة</span>
+                          <div className={`text-2xl font-black ${getScoreColor(Number(result.percentage))}`}>
+                             {result.percentage}%
+                          </div>
+                       </div>
+                       
+                       <div className="hidden md:flex w-12 h-12 rounded-xl bg-white/5 items-center justify-center text-gray-light/20 group-hover:text-primary group-hover:bg-primary/10 transition-all border border-white/5">
+                          <Icon name="chevron-left" />
+                       </div>
+                     </div>
+                   </div>
+                 </div>
+               );
+            })}
+          </div>
         )}
-      </DashboardCard>
+      </div>
 
       {/* Student Details Modal */}
       <FormModal
         isOpen={!!selectedStudent}
         onClose={() => setSelectedStudent(null)}
         onSubmit={(e) => { e.preventDefault(); setSelectedStudent(null); }}
-        title="تفاصيل الطالب"
-        cancelText="إغلاق"
-        maxWidth="600px"
+        title="تحليل نتيجة الطالب"
+        cancelText="إغلاق النافذة"
+        maxWidth="700px"
       >
         {selectedStudent && (
-          <div className="space-y-6">
-            {/* Header Info */}
-            <div className="flex items-center justify-between mb-4">
-              <span className={`badge ${Number(selectedStudent.percentage) >= 50 ? 'badge-success' : 'badge-danger'}`}>
-                {Number(selectedStudent.percentage) >= 50 ? 'ناجح' : 'راسب'}
-              </span>
-            </div>
-            
-            <div className="flex items-center gap-4">
-              <div className={`w-16 h-16 rounded-full flex items-center justify-center ${getScoreBgColor(Number(selectedStudent.percentage))}/20 border-2 border-current`}>
-                <i className={`fas fa-user-graduate text-2xl ${getScoreColor(Number(selectedStudent.percentage))}`}></i>
-              </div>
-              <div>
-                <h2 className="text-xl font-bold text-white">{selectedStudent.student.name}</h2>
-                <p className="text-gray-400 flex items-center gap-2">
-                  <i className="fas fa-phone text-xs"></i>
-                  {selectedStudent.student.phone}
-                </p>
-              </div>
-            </div>
+          <div className="space-y-8 py-2">
+            {/* Header Analysis */}
+            <div className="flex flex-col sm:flex-row items-center gap-6 p-6 rounded-[2rem] bg-white/5 border border-white/5 relative overflow-hidden">
+               <div className={`absolute -top-24 -right-24 w-48 h-48 rounded-full blur-3xl opacity-20 ${getScoreBgColor(Number(selectedStudent.percentage))}`} />
+               
+               <div className={`w-20 h-20 rounded-3xl flex items-center justify-center shrink-0 border-2 relative z-10
+                 ${getScoreBgColor(Number(selectedStudent.percentage))}/20 border-${getScoreColor(Number(selectedStudent.percentage)).split('-')[1]}-500/30 shadow-2xl`}>
+                 <Icon name="user-graduate" size="2x" className={getScoreColor(Number(selectedStudent.percentage))} />
+               </div>
+               
+               <div className="flex-1 text-center sm:text-right space-y-1 relative z-10">
+                 <div className="flex items-center justify-center sm:justify-start gap-3">
+                    <h2 className="text-2xl font-black text-white">{selectedStudent.student.name}</h2>
+                    <Badge variant={Number(selectedStudent.percentage) >= 50 ? 'success' : 'danger'} size="sm" className="font-black">
+                       {Number(selectedStudent.percentage) >= 50 ? 'ناجح' : 'راسب'}
+                    </Badge>
+                 </div>
+                 <p className="text-gray-light/40 font-bold flex items-center justify-center sm:justify-start gap-2">
+                   <Icon name="phone" size="xs" />
+                   {selectedStudent.student.phone}
+                 </p>
+               </div>
 
-            {/* Score Section */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-white/5 rounded-xl p-4 text-center border border-gray-800">
-                <div className={`text-3xl font-bold ${getScoreColor(Number(selectedStudent.percentage))}`}>
-                  {selectedStudent.percentage}%
-                </div>
-                <div className="text-xs text-gray-500 mt-1">النسبة المئوية</div>
-              </div>
-              <div className="bg-white/5 rounded-xl p-4 text-center border border-gray-800">
-                <div className="text-3xl font-bold text-primary">
-                  {selectedStudent.score}<span className="text-lg text-gray-500">/{exam?.max_score}</span>
-                </div>
-                <div className="text-xs text-gray-500 mt-1">الدرجة</div>
-              </div>
-            </div>
-
-            {/* Comparison with Average */}
-            <div className="bg-white/5 rounded-xl p-4 border border-gray-800">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-sm text-gray-400">مقارنة بالمتوسط</span>
-                <span className="text-sm font-medium">
-                  {Number(selectedStudent.percentage) > Number(avgScore) ? (
-                    <span className="text-green-500">
-                      <i className="fas fa-arrow-up ml-1"></i>
-                      أعلى من المتوسط
-                    </span>
-                  ) : Number(selectedStudent.percentage) < Number(avgScore) ? (
-                    <span className="text-red-500">
-                      <i className="fas fa-arrow-down ml-1"></i>
-                      أقل من المتوسط
-                    </span>
-                  ) : (
-                    <span className="text-yellow-500">
-                      <i className="fas fa-equals ml-1"></i>
-                      يساوي المتوسط
-                    </span>
-                  )}
-                </span>
-              </div>
-              
-              {/* Student Score Bar */}
-              <div className="flex items-center gap-4 mb-2">
-                <div className="flex-1">
-                  <div className="text-xs text-gray-500 mb-1">درجة الطالب</div>
-                  <div className="w-full bg-gray-700 rounded-full h-2">
-                    <div
-                      className={`h-full rounded-full ${getScoreBgColor(Number(selectedStudent.percentage))}`}
-                      style={{ width: `${selectedStudent.percentage}%` }}
-                    ></div>
+               <div className="text-center sm:text-left relative z-10">
+                  <div className={`text-4xl font-black ${getScoreColor(Number(selectedStudent.percentage))} tracking-tighter`}>
+                    {selectedStudent.percentage}%
                   </div>
-                </div>
-                <div className={`text-lg font-bold w-12 text-left ${getScoreColor(Number(selectedStudent.percentage))}`}>
-                  {selectedStudent.percentage}%
-                </div>
-              </div>
-              
-              {/* Average Bar */}
-              <div className="flex items-center gap-4">
-                <div className="flex-1">
-                  <div className="text-xs text-gray-500 mb-1">متوسط الفصل</div>
-                  <div className="w-full bg-gray-700 rounded-full h-2">
-                    <div
-                      className="h-full rounded-full bg-primary"
-                      style={{ width: `${avgScore}%` }}
-                    ></div>
+                  <p className="text-[10px] font-black text-gray-light/30 uppercase tracking-[0.2em]">النسبة النهائية</p>
+               </div>
+            </div>
+
+            {/* Performance Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+               <div className="p-4 rounded-2xl bg-white/5 border border-white/5 flex flex-col items-center text-center">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary mb-3">
+                     <Icon name="award" />
                   </div>
-                </div>
-                <div className="text-lg font-bold text-primary w-12 text-left">
-                  {avgScore}%
-                </div>
-              </div>
+                  <span className="text-[10px] font-bold text-gray-light/30 uppercase mb-1">الترتيب</span>
+                  <span className="text-lg font-black text-white">{getStudentRank(selectedStudent.id)} / {totalStudents}</span>
+               </div>
+
+               <div className="p-4 rounded-2xl bg-white/5 border border-white/5 flex flex-col items-center text-center">
+                  <div className="w-10 h-10 rounded-xl bg-rose-500/10 flex items-center justify-center text-rose-500 mb-3">
+                     <Icon name="times-circle" />
+                  </div>
+                  <span className="text-[10px] font-bold text-gray-light/30 uppercase mb-1">الأخطاء</span>
+                  <span className="text-lg font-black text-white">{selectedStudent.failed_questions.length} أسئلة</span>
+               </div>
+
+               <div className="col-span-2 md:col-span-1 p-4 rounded-2xl bg-white/5 border border-white/5 flex flex-col items-center text-center">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500 mb-3">
+                     <Icon name="check-double" />
+                  </div>
+                  <span className="text-[10px] font-bold text-gray-light/30 uppercase mb-1">الدرجة</span>
+                  <span className="text-lg font-black text-white">{selectedStudent.score} / {exam?.max_score}</span>
+               </div>
             </div>
 
-            {/* Info Grid */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-white/5 rounded-lg p-3 border border-gray-800">
-                <div className="text-xs text-gray-500">الامتحان</div>
-                <div className="text-sm font-medium text-white mt-1">{exam?.title}</div>
-              </div>
-              <div className="bg-white/5 rounded-lg p-3 border border-gray-800">
-                <div className="text-xs text-gray-500">المادة</div>
-                <div className="text-sm font-medium text-white mt-1">{exam?.subject}</div>
-              </div>
-              <div className="bg-white/5 rounded-lg p-3 border border-gray-800">
-                <div className="text-xs text-gray-500">عدد الأخطاء</div>
-                <div className={`text-sm font-medium mt-1 ${selectedStudent.failed_questions.length > 0 ? 'text-warning' : 'text-green-500'}`}>
-                  {selectedStudent.failed_questions.length > 0 ? `${selectedStudent.failed_questions.length} أسئلة` : 'لا توجد أخطاء'}
-                </div>
-              </div>
-              <div className="bg-white/5 rounded-lg p-3 border border-gray-800">
-                <div className="text-xs text-gray-500">الترتيب</div>
-                <div className="text-sm font-medium text-white mt-1">
-                  {getStudentRank(selectedStudent.id)} / {totalStudents}
-                </div>
-              </div>
+            {/* Comparison Analysis */}
+            <div className="space-y-4">
+               <h3 className="text-xs font-black text-gray-light/30 uppercase tracking-widest px-2">تحليل الأداء مقارنة بالمتوسط</h3>
+               <div className="p-6 rounded-[2rem] bg-white/5 border border-white/5 space-y-6">
+                  <div className="flex items-center justify-between">
+                     <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs
+                          ${Number(selectedStudent.percentage) >= Number(avgScore) ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`}>
+                           <Icon name={Number(selectedStudent.percentage) >= Number(avgScore) ? 'trending-up' : 'trending-down'} />
+                        </div>
+                        <span className="text-sm font-bold text-white">
+                           {Number(selectedStudent.percentage) > Number(avgScore) ? 'أداء أعلى من متوسط الطلاب' : 
+                             Number(selectedStudent.percentage) < Number(avgScore) ? 'أداء أقل من متوسط الطلاب' : 'أداء مساوٍ للمتوسط'}
+                        </span>
+                     </div>
+                     <span className={`text-sm font-black ${Number(selectedStudent.percentage) >= Number(avgScore) ? 'text-emerald-500' : 'text-rose-500'}`}>
+                        {Math.abs(Number(selectedStudent.percentage) - Number(avgScore)).toFixed(1)}% {Number(selectedStudent.percentage) >= Number(avgScore) ? 'فارق إيجابي' : 'فارق سلبي'}
+                     </span>
+                  </div>
+                  
+                  <div className="space-y-4">
+                     <div className="space-y-2">
+                        <div className="flex justify-between text-[10px] font-black text-gray-light/40 uppercase tracking-widest">
+                           <span>مستوى الطالب</span>
+                           <span>{selectedStudent.percentage}%</span>
+                        </div>
+                        <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                           <div className={`h-full rounded-full transition-all duration-1000 ${getScoreBgColor(Number(selectedStudent.percentage))}`} style={{ width: `${selectedStudent.percentage}%` }} />
+                        </div>
+                     </div>
+                     <div className="space-y-2">
+                        <div className="flex justify-between text-[10px] font-black text-gray-light/40 uppercase tracking-widest">
+                           <span>متوسط الفصل</span>
+                           <span>{avgScore}%</span>
+                        </div>
+                        <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                           <div className="h-full rounded-full bg-primary/40 transition-all duration-1000" style={{ width: `${avgScore}%` }} />
+                        </div>
+                     </div>
+                  </div>
+               </div>
             </div>
 
-            {/* Failed Questions */}
+            {/* Failed Questions Breakdown */}
             {selectedStudent.failed_questions.length > 0 && (
-              <div>
-                <h3 className="text-sm font-bold text-warning mb-3 flex items-center gap-2">
-                  <i className="fas fa-exclamation-triangle"></i>
-                  الأسئلة التي أخطأ فيها
+              <div className="space-y-4">
+                <h3 className="text-xs font-black text-rose-500/50 uppercase tracking-widest px-2 flex items-center gap-2">
+                  <Icon name="exclamation-triangle" />
+                  مراجعة الأخطاء العلمية
                 </h3>
-                <div className="space-y-3 max-h-[40vh] overflow-y-auto">
+                <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                   {selectedStudent.failed_questions.map((failed, idx) => (
                     <div
                       key={failed.id}
-                      className="bg-white/5 rounded-xl p-4 border border-gray-800"
+                      className="group/q p-5 rounded-2xl bg-[#0f1121]/50 border border-white/5 hover:border-rose-500/20 transition-all"
                     >
-                      <div className="flex items-start gap-3 mb-3">
-                        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-warning/20 text-warning flex items-center justify-center text-xs font-bold">
+                      <div className="flex items-start gap-4 mb-4">
+                        <span className="w-8 h-8 rounded-xl bg-rose-500/10 text-rose-500 flex items-center justify-center text-xs font-black shrink-0 border border-rose-500/20">
                           {idx + 1}
                         </span>
-                        <p className="text-sm text-white">{failed.question_text}</p>
+                        <p className="text-sm font-bold text-white leading-relaxed pt-1">{failed.question_text}</p>
                       </div>
                       
-                      <div className="grid grid-cols-1 gap-2 mr-9">
-                        <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/30">
-                          <div className="flex items-center gap-1 mb-1">
-                            <i className="fas fa-check-circle text-green-500 text-xs"></i>
-                            <span className="text-xs text-green-500">الإجابة الصحيحة</span>
-                          </div>
-                          <span className="text-sm text-white">{failed.correct_answer}</span>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pl-12">
+                        <div className="p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
+                          <p className="text-[10px] font-black text-emerald-500/40 uppercase mb-1">الإجابة الصحيحة</p>
+                          <p className="text-xs font-bold text-emerald-400">{failed.correct_answer}</p>
                         </div>
                         
-                        <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30">
-                          <div className="flex items-center gap-1 mb-1">
-                            <i className="fas fa-times-circle text-red-500 text-xs"></i>
-                            <span className="text-xs text-red-500">إجابة الطالب</span>
-                          </div>
-                          <span className="text-sm text-white">
-                            {failed.student_answer || 'لم يجب'}
-                          </span>
+                        <div className="p-3 rounded-xl bg-rose-500/5 border border-rose-500/10">
+                          <p className="text-[10px] font-black text-rose-500/40 uppercase mb-1">إجابة الطالب</p>
+                          <p className="text-xs font-bold text-rose-400">{failed.student_answer || 'لم يتم الإجابة'}</p>
                         </div>
                       </div>
                     </div>

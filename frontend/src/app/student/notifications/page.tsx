@@ -239,21 +239,50 @@ function StudentNotificationsContent() {
       role="student"
       user={user || undefined}
     >
-      {/* Stats Grid */}
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-6 mb-8">
-        <StatCard
-          title={stats.card1.title}
-          value={stats.card1.value}
-          icon={stats.card1.icon}
-          color={stats.card1.color}
-        />
-        <StatCard
-          title={stats.card2.title}
-          value={stats.card2.value}
-          icon={stats.card2.icon}
-          color={stats.card2.color}
-        />
-      </div>
+      <div className="max-w-[1200px] mx-auto">
+        {/* Premium Page Header */}
+        <div className="relative mb-12 p-8 md:p-10 rounded-[2.5rem] md:rounded-[3rem] premium-glass premium-border overflow-hidden">
+          {/* Background Glows */}
+          <div className="absolute top-0 right-0 w-80 h-80 bg-primary/20 blur-[120px] -translate-y-1/2 translate-x-1/3 animate-pulse"></div>
+          <div className="absolute bottom-0 left-0 w-80 h-80 bg-secondary/10 blur-[120px] translate-y-1/2 -translate-x-1/3"></div>
+
+          <div className="relative flex flex-col md:flex-row justify-between items-center gap-8 text-center md:text-right">
+            <div className="flex flex-col md:flex-row items-center gap-6">
+              <div className="w-20 h-20 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center text-primary text-4xl shadow-2xl premium-border">
+                <Icon name="bell" />
+              </div>
+              <div className="space-y-2">
+                <h2 className="text-3xl md:text-4xl font-black text-white tracking-tight">الإخطارات والدعم</h2>
+                <p className="text-gray-light/60 text-lg font-medium">تابع آخر التحديثات وتواصل مع الدعم الفني بكل سهولة</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-4">
+               <div className="flex flex-col items-center md:items-end">
+                  <span className="text-[10px] font-black text-gray-light/30 uppercase tracking-[0.2em] mb-1">حالة الحساب</span>
+                  <span className="text-xl font-black text-emerald-500">نشط ومتصل</span>
+               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-6 mb-12">
+          <StatCard
+            title={stats.card1.title}
+            value={stats.card1.value}
+            icon={stats.card1.icon}
+            color={stats.card1.color}
+            variant="centered"
+          />
+          <StatCard
+            title={stats.card2.title}
+            value={stats.card2.value}
+            icon={stats.card2.icon}
+            color={stats.card2.color}
+            variant="centered"
+          />
+        </div>
 
       {/* Notifications Table */}
       <DashboardCard
@@ -376,6 +405,7 @@ function StudentNotificationsContent() {
         onClose={() => setShowDetailsModal(false)}
         notification={selectedNotification}
       />
+      </div>
     </DashboardLayout>
   );
 }

@@ -122,10 +122,13 @@ export const DataTable: React.FC<DataTableProps> = ({
       {(searchable || headerActions) && (
         <div className="table-search ux-flex ux-flex-col ux-sm-flex-row ux-justify-between ux-items-center ux-gap-4 ux-mb-4">
           {searchable && (
-            <div className="table-search-wrapper ux-flex-1">
+            <div className="table-search-wrapper flex-1 relative group">
+              <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-gray-light group-focus-within:text-primary transition-colors">
+                <Icon name="search" size="sm" />
+              </div>
               <input
                 type="text"
-                className="table-search-input ux-w-full"
+                className="w-full bg-white/5 border border-white/10 focus:border-primary/50 focus:bg-white/10 rounded-xl py-3 pr-11 pl-4 text-white placeholder:text-gray-light/50 outline-none transition-all"
                 placeholder="بحث..."
                 value={onSearch ? undefined : searchQuery}
                 onChange={(e) => {
@@ -178,27 +181,28 @@ export const DataTable: React.FC<DataTableProps> = ({
       )}
 
       {/* Desktop Table */}
-      <div className="ux-overflow-x-auto">
-        <table className={`data-table ${mobileRenderer ? currentBreakpoint.table : ''}`}>
+      <div className="overflow-x-auto rounded-xl border border-white/5 bg-white/[0.02] backdrop-blur-md">
+        <table className={`w-full text-right border-separate border-spacing-0 ${mobileRenderer ? currentBreakpoint.table : ''}`}>
           <thead>
-            <tr>
+            <tr className="bg-white/5">
               {columns.map((column) => (
                 <th
-                  key={column.key}
-                  className={`${column.sortable ? 'sortable' : ''} ${column.className || ''}`}
+                  className={`px-6 py-4 text-xs font-black uppercase tracking-wider text-gray-light border-b border-white/10 ${column.sortable ? 'cursor-pointer hover:text-white' : ''} ${column.className || ''}`}
                   onClick={() => column.sortable && handleSort(column.key)}
                 >
-                  {column.label}
-                  {column.sortable && sortColumn === column.key && (
-                    <Icon
-                      name={sortDirection === 'asc' ? 'sort-up' : 'sort-down'}
-                      size="xs"
-                      className="sort-icon ux-ml-1"
-                    />
-                  )}
+                  <div className="flex items-center gap-2">
+                    {column.label}
+                    {column.sortable && sortColumn === column.key && (
+                      <Icon
+                        name={sortDirection === 'asc' ? 'sort-up' : 'sort-down'}
+                        size="xs"
+                        className="text-primary"
+                      />
+                    )}
+                  </div>
                 </th>
               ))}
-              {actions && actions.length > 0 && <th>الإجراءات</th>}
+              {actions && actions.length > 0 && <th className="px-6 py-4 text-xs font-black uppercase tracking-wider text-gray-light border-b border-white/10">الإجراءات</th>}
             </tr>
           </thead>
           <tbody>
@@ -225,19 +229,19 @@ export const DataTable: React.FC<DataTableProps> = ({
                   onClick={() => onRowClick && onRowClick(row)}
                 >
                   {columns.map((column) => (
-                    <td key={column.key} className={column.className || ''}>
+                    <td key={column.key} className={`px-6 py-4 text-sm text-white border-b border-white/5 group-hover:bg-white/[0.02] transition-colors ${column.className || ''}`}>
                       {column.render
                         ? column.render(row[column.key], row, rowIndex)
                         : row[column.key]}
                     </td>
                   ))}
                   {actions && actions.length > 0 && (
-                    <td>
+                    <td className="px-6 py-4 border-b border-white/5 group-hover:bg-white/[0.02] transition-colors">
                       <div className="actions-dropdown">
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="actions-trigger"
+                          className="w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-gray-light hover:text-white hover:border-primary/50 transition-all"
                           onClick={(e) => {
                             e.stopPropagation();
                             const rect = e.currentTarget.getBoundingClientRect();
