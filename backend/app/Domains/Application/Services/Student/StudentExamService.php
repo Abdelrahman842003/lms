@@ -155,16 +155,18 @@ class StudentExamService
             return $this->finalizeAttempt($attempt, ExamAttemptStatus::COMPLETED->value);
         }
 
-        $normalizedAnswer = trim((string) $answer);
+        $normalizedAnswer = is_array($answer) ? implode('|||', $answer) : trim((string) ($answer ?? ''));
         if ($normalizedAnswer === '') {
             throw new DomainException('الرجاء اختيار إجابة قبل المتابعة.', 422);
         }
 
-        $correctAnswer = trim((string) ($question->correct_answer ?? ''));
+        $correctAnswerRaw = $question->correct_answer;
+        $correctAnswer = is_array($correctAnswerRaw) ? implode('|||', $correctAnswerRaw) : trim((string) ($correctAnswerRaw ?? ''));
         $options = is_array($question->options) ? $question->options : [];
 
         if ($correctAnswer !== '' && ! array_is_list($options) && array_key_exists($correctAnswer, $options)) {
-            $correctAnswer = trim((string) $options[$correctAnswer]);
+            $optionVal = $options[$correctAnswer];
+            $correctAnswer = is_array($optionVal) ? implode('|||', $optionVal) : trim((string) $optionVal);
         }
 
         $isCorrect = mb_strtolower($normalizedAnswer) === mb_strtolower($correctAnswer);
@@ -302,6 +304,7 @@ class StudentExamService
                 $question = [
                     'id' => $currentQuestion->id,
                     'text' => $currentQuestion->text,
+                    'type' => $this->enumValue($currentQuestion->type),
                     'options' => $this->normalizeOptions($currentQuestion->options),
                 ];
             }
@@ -344,11 +347,9 @@ class StudentExamService
             return [];
         }
 
-        if (array_is_list($rawOptions)) {
-            return array_values(array_map(static fn ($option): string => (string) $option, $rawOptions));
-        }
-
-        return array_values(array_map(static fn ($option): string => (string) $option, $rawOptions));
+        return array_values(array_map(static function ($option) {
+            return is_array($option) ? $option : (string) $option;
+        }, $rawOptions));
     }
 
     private function ensureAttemptInProgress(ExamAttempt $attempt): void
@@ -358,14 +359,18 @@ class StudentExamService
         }
     }
 
-    private function getStatusValue(ExamAttempt $attempt): string
+    private function enumValue(mixed $enum): string
     {
-        $status = $attempt->status;
-        if ($status instanceof ExamAttemptStatus) {
-            return $status->value;
+        if ($enum instanceof \BackedEnum) {
+            return (string) $enum->value;
         }
 
-        return (string) $status;
+        return (string) $enum;
+    }
+
+    private function getStatusValue(ExamAttempt $attempt): string
+    {
+        return $this->enumValue($attempt->status);
     }
 
     private function buildResultData(ExamAttempt $attempt): array
