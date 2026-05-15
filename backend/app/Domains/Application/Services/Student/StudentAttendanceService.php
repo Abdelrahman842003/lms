@@ -179,11 +179,3 @@ class StudentAttendanceService
         return false;
     }
 }
-eck expiration from DB
-        if ($lecture->qr_code === $token && $lecture->qr_code_expires_at) {
-            return Carbon::now()->greaterThan($lecture->qr_code_expires_at);
-        }
-
-        return false;
-    }
-}
