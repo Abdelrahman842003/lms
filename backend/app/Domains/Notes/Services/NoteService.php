@@ -40,7 +40,8 @@ class NoteService
             $command = $client->getCommand('PutObject', [
                 'Bucket' => config("filesystems.disks.{$this->disk}.bucket"),
                 'Key' => $path,
-                'ContentType' => 'application/octet-stream',
+                'ContentType' => $mimeType,
+                'ContentDisposition' => 'inline',
             ]);
 
             $presignedRequest = $client->createPresignedRequest($command, $expiry);

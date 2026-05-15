@@ -16,7 +16,6 @@ import {
   type ViewerProps,
   type WorkerProps,
 } from '@react-pdf-viewer/core';
-import { defaultLayoutPlugin } from '@react-pdf-viewer/default-layout';
 import { highlightPlugin, Trigger } from '@react-pdf-viewer/highlight';
 import { searchPlugin } from '@react-pdf-viewer/search';
 
@@ -31,9 +30,8 @@ import '@react-pdf-viewer/highlight/lib/styles/index.css';
 import '@react-pdf-viewer/search/lib/styles/index.css';
 
 // ─── pdfjs worker ─────────────────────────────────────────────────────────────
-// We use the CDN worker that matches pdfjs-dist version to avoid bundling it.
-const PDFJS_VERSION = '3.11.174';
-const WORKER_URL = `https://unpkg.com/pdfjs-dist@${PDFJS_VERSION}/build/pdf.worker.min.js`;
+// We use the local worker hosted in our public directory to avoid any CDN/CORS/VPN issues.
+const WORKER_URL = '/pdf.worker.min.js';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 interface PdfViewerCoreProps {
@@ -107,13 +105,8 @@ export function PdfViewerCore({ url, hideDownload = false }: PdfViewerCoreProps)
     ),
   });
 
-  // ── Default layout plugin (toolbar + sidebar) ──
-  const defaultLayoutPluginInstance = defaultLayoutPlugin({
-    sidebarTabs: (defaultTabs) => defaultTabs,
-  });
-
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-[#0d1120]">
       {/* ── Search bar ── */}
       <div className="flex items-center gap-2 px-4 py-2 border-b border-white/10 bg-[#0d1120]/70 shrink-0">
         <div className="flex-1 flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3 py-1.5">
@@ -164,7 +157,6 @@ export function PdfViewerCore({ url, hideDownload = false }: PdfViewerCoreProps)
               fileUrl={url}
               defaultScale={SpecialZoomLevel.PageWidth}
               plugins={[
-                defaultLayoutPluginInstance,
                 highlightPluginInstance,
                 searchPluginInstance,
               ]}

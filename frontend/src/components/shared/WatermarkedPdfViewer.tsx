@@ -16,20 +16,23 @@ export function WatermarkedPdfViewer({ url, fileName }: WatermarkedPdfViewerProp
   const watermarkText = user ? `${user.name} - ${user.phone}` : 'محمي بحقوق الطبع والنشر';
 
   return (
-    <div className="relative h-full w-full overflow-hidden select-none">
+    <div 
+      className="relative h-full w-full overflow-hidden select-none"
+      onContextMenu={(e) => e.preventDefault()}
+    >
       {/* ── PDF Viewer Core ── */}
       <PdfViewerCore url={url} fileName={fileName} hideDownload={true} />
 
       {/* ── Watermark Overlay ── */}
       {/* pointer-events-none ensures user can still interact with the PDF viewer underneath */}
       <div 
-        className="absolute inset-0 pointer-events-none z-[100] overflow-hidden flex flex-wrap gap-x-20 gap-y-24 items-center justify-center content-center opacity-[0.05] rotate-[-25deg]"
+        className="absolute inset-0 pointer-events-none z-[100] overflow-hidden flex flex-wrap gap-x-20 gap-y-24 items-center justify-center content-center opacity-[0.20] rotate-[-25deg]"
         style={{ width: '150%', height: '150%', left: '-25%', top: '-25%' }}
       >
         {Array.from({ length: 120 }).map((_, i) => (
           <span 
             key={i} 
-            className="text-lg font-bold text-gray-400 whitespace-nowrap"
+            className="text-2xl font-bold text-gray-800 whitespace-nowrap drop-shadow-md"
           >
             {watermarkText}
           </span>

@@ -107,7 +107,8 @@ export function NoteUploadForm({
           method: 'PUT',
           body: file,
           headers: {
-            'Content-Type': 'application/octet-stream',
+            'Content-Type': file.type || 'application/pdf',
+            'Content-Disposition': 'inline',
           },
           mode: 'cors',
         });
