@@ -30,7 +30,7 @@ class StoreExamRequest extends FormRequest
             'questions' => 'required|array|min:1',
             'questions.*.text' => 'required|string',
             'questions.*.type' => ['required', new Enum(QuestionType::class)],
-            'questions.*.options' => 'required|array|min:2|max:4',
+            'questions.*.options' => 'required|array|min:2',
             'questions.*.correct_answer' => 'required|string',
             'questions.*.duration' => 'required|integer|min:10|max:600',
         ];

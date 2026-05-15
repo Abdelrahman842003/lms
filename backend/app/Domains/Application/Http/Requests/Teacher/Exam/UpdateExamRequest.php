@@ -30,7 +30,7 @@ class UpdateExamRequest extends FormRequest
             'questions' => 'nullable|array',
             'questions.*.text' => 'required_with:questions|string',
             'questions.*.type' => ['required_with:questions', new Enum(QuestionType::class)],
-            'questions.*.options' => 'required_with:questions|array|min:2|max:4',
+            'questions.*.options' => 'required_with:questions|array|min:2',
             'questions.*.correct_answer' => 'required_with:questions|string',
             'questions.*.duration' => 'required_with:questions|integer|min:10|max:600',
         ];

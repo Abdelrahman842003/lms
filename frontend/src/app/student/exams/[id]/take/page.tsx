@@ -8,10 +8,29 @@ import { fetchApi } from '@/services/authService';
 import { toast } from 'react-hot-toast';
 import { Button, LoadingSpinner, Icon } from '@/components/ui/index';
 
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+
 interface Question {
   id: string;
   text: string;
-  options: string[];
+  type?: 'mcq' | 'true_false' | 'ordering' | 'matching';
+  options: any[];
 }
 
 interface ExamData {
@@ -49,6 +68,34 @@ interface AttemptData {
   };
 }
 
+function SortableItem({ id, text }: { id: string; text: string }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+  } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className="p-4 mb-2 bg-white/5 border border-white/10 rounded-xl flex items-center gap-3 cursor-move touch-none text-white font-bold"
+    >
+      <Icon name="grip-vertical" className="text-gray-400" />
+      <span>{text}</span>
+    </div>
+  );
+}
+
 export default function TakeExamPage() {
   const { user } = useAuth();
   const router = useRouter();
@@ -63,6 +110,67 @@ export default function TakeExamPage() {
   const [submitting, setSubmitting] = useState(false);
   const [waiting, setWaiting] = useState(false);
   const [queuePosition, setQueuePosition] = useState(0);
+
+  // States for new question types
+  const [shuffledOptions, setShuffledOptions] = useState<any[]>([]);
+  const [matchingAnswers, setMatchingAnswers] = useState<Record<string, string>>({});
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  useEffect(() => {
+    if (attemptData?.question) {
+      const q = attemptData.question;
+      if (q.type === 'ordering') {
+        const shuffled = [...q.options].sort(() => Math.random() - 0.5);
+        setShuffledOptions(shuffled);
+        setSelectedAnswer(shuffled.join('|||'));
+      } else if (q.type === 'matching') {
+        const colA = q.options.map((p: any) => p.a);
+        const colB = q.options.map((p: any) => p.b).sort(() => Math.random() - 0.5);
+        setShuffledOptions(colB);
+        setMatchingAnswers({});
+        setSelectedAnswer(null);
+      } else {
+        setShuffledOptions([]);
+        setSelectedAnswer(null);
+      }
+    }
+  }, [attemptData?.question]);
+
+  const handleOrderingDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      setShuffledOptions((items) => {
+        const oldIndex = items.indexOf(active.id);
+        const newIndex = items.indexOf(over.id);
+        const newItems = arrayMove(items, oldIndex, newIndex);
+        setSelectedAnswer(newItems.join('|||'));
+        return newItems;
+      });
+    }
+  };
+
+  const handleMatchingChange = (valA: string, valB: string) => {
+    const newAnswers = { ...matchingAnswers, [valA]: valB };
+    setMatchingAnswers(newAnswers);
+    
+    // Generate selectedAnswer string based on ORIGINAL options order to match backend's correct_answer
+    const currentQ = attemptData?.question;
+    if (currentQ?.type === 'matching') {
+      const answerStr = currentQ.options
+        .map((p: any) => `${p.a}===${newAnswers[p.a] || ''}`)
+        .join('|||');
+      
+      // If all items in colA have a match, enable submit
+      const allMatched = currentQ.options.every((p: any) => newAnswers[p.a]);
+      setSelectedAnswer(allMatched ? answerStr : null);
+    }
+  };
 
   
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -586,32 +694,75 @@ export default function TakeExamPage() {
             {attemptData?.question?.text}
           </h3>
 
-          {/* Options */}
+          {/* Options Rendering */}
           <div className="flex flex-col gap-3">
-            {attemptData?.question?.options.map((option, index) => (
-            <Button
-              key={index}
-              variant={selectedAnswer === option ? 'primary' : 'outline'}
-              onClick={() => setSelectedAnswer(option)}
-              disabled={submitting}
-              className={`w-full justify-start text-right mb-2 ${
-                selectedAnswer === option
-                  ? 'border-[#4263EB] bg-[#4263EB]/20'
-                  : 'border-white/10 bg-white/5 hover:bg-white/10'
-              }`}
-            >
-              <span className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 ml-3 ${
-                selectedAnswer === option
-                  ? 'border-[#4263EB] bg-[#4263EB]'
-                  : 'border-white/30 bg-transparent'
-              }`}>
-                {selectedAnswer === option && (
-                  <Icon name="check" size="xs" className="text-white" />
-                )}
-              </span>
-              {option}
-            </Button>
-          ))}
+            {(!attemptData?.question?.type || attemptData.question.type === 'mcq' || attemptData.question.type === 'true_false') && (
+              attemptData?.question?.options.map((option: any, index: number) => (
+                <Button
+                  key={index}
+                  variant={selectedAnswer === option ? 'primary' : 'outline'}
+                  onClick={() => setSelectedAnswer(option)}
+                  disabled={submitting}
+                  className={`w-full justify-start text-right mb-2 ${
+                    selectedAnswer === option
+                      ? 'border-[#4263EB] bg-[#4263EB]/20'
+                      : 'border-white/10 bg-white/5 hover:bg-white/10'
+                  }`}
+                >
+                  <span className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 ml-3 ${
+                    selectedAnswer === option
+                      ? 'border-[#4263EB] bg-[#4263EB]'
+                      : 'border-white/30 bg-transparent'
+                  }`}>
+                    {selectedAnswer === option && (
+                      <Icon name="check" size="xs" className="text-white" />
+                    )}
+                  </span>
+                  {option}
+                </Button>
+              ))
+            )}
+
+            {attemptData?.question?.type === 'ordering' && (
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleOrderingDragEnd}
+              >
+                <SortableContext
+                  items={shuffledOptions}
+                  strategy={verticalListSortingStrategy}
+                >
+                  {shuffledOptions.map((option) => (
+                    <SortableItem key={option} id={option} text={option} />
+                  ))}
+                </SortableContext>
+              </DndContext>
+            )}
+
+            {attemptData?.question?.type === 'matching' && (
+              <div className="space-y-4">
+                {attemptData.question.options.map((pair: any, index: number) => (
+                  <div key={index} className="flex flex-col sm:flex-row items-center gap-4 p-4 bg-white/5 rounded-xl border border-white/5">
+                    <div className="flex-1 text-white font-bold text-lg">{pair.a}</div>
+                    <div className="text-primary flex items-center justify-center">
+                       <Icon name="link" className="hidden sm:block" />
+                       <Icon name="chevron-down" className="block sm:hidden" />
+                    </div>
+                    <select
+                      className="flex-1 bg-white/10 border-white/10 rounded-lg p-3 text-white font-bold focus:ring-primary focus:border-primary outline-none"
+                      value={matchingAnswers[pair.a] || ''}
+                      onChange={(e) => handleMatchingChange(pair.a, e.target.value)}
+                    >
+                      <option value="" className="bg-[#1e1e2d]">اختر الإجابة المناسبة...</option>
+                      {shuffledOptions.map((opt, i) => (
+                        <option key={i} value={opt} className="bg-[#1e1e2d]">{opt}</option>
+                      ))}
+                    </select>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Submit Button */}

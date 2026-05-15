@@ -29,8 +29,8 @@ import { CSS } from '@dnd-kit/utilities';
 interface Question {
   id: string;
   text: string;
-  type: 'mcq' | 'true_false';
-  options: string[];
+  type: 'mcq' | 'true_false' | 'ordering' | 'matching';
+  options: any[];
   correct_answer: string;
   duration: number;
 }
@@ -313,10 +313,16 @@ export default function EditAcademyExamPage({ params }: { params: Promise<{ id: 
     const newQuestions = [...questions];
     
     if (field === 'type') {
+      let options: any[] = [];
+      if (value === 'mcq') options = ['', '', '', ''];
+      else if (value === 'true_false') options = ['صح', 'خطأ'];
+      else if (value === 'ordering') options = ['', ''];
+      else if (value === 'matching') options = [{ a: '', b: '' }, { a: '', b: '' }];
+
       newQuestions[currentQuestionIndex] = { 
         ...newQuestions[currentQuestionIndex], 
         [field]: value,
-        options: value === 'true_false' ? ['صح', 'خطأ'] : ['', '', '', ''],
+        options,
         correct_answer: ''
       };
     } else {
@@ -591,6 +597,20 @@ export default function EditAcademyExamPage({ params }: { params: Promise<{ id: 
                           >
                             صح وخطأ
                           </button>
+                          <button
+                            type="button"
+                            onClick={() => handleQuestionChange('type', 'ordering')}
+                            className={`px-3 py-1 rounded-md text-[10px] font-bold transition-all ${questions[currentQuestionIndex]?.type === 'ordering' ? 'bg-primary text-white shadow-sm' : 'text-gray-400 hover:text-white'}`}
+                          >
+                            ترتيب
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleQuestionChange('type', 'matching')}
+                            className={`px-3 py-1 rounded-md text-[10px] font-bold transition-all ${questions[currentQuestionIndex]?.type === 'matching' ? 'bg-primary text-white shadow-sm' : 'text-gray-400 hover:text-white'}`}
+                          >
+                            توصيل
+                          </button>
                         </div>
                       </div>
                       
@@ -618,40 +638,155 @@ export default function EditAcademyExamPage({ params }: { params: Promise<{ id: 
 
                   <div className="space-y-4">
                     <label className="block text-sm font-medium mb-2">
-                      {questions[currentQuestionIndex]?.type === 'true_false' ? 'حدد الإجابة الصحيحة' : 'الخيارات (اختر الإجابة الصحيحة)'}
+                      {questions[currentQuestionIndex]?.type === 'true_false' ? 'حدد الإجابة الصحيحة' : 
+                       questions[currentQuestionIndex]?.type === 'ordering' ? 'اكتب العناصر بالترتيب الصحيح' :
+                       questions[currentQuestionIndex]?.type === 'matching' ? 'أضف أزواج التوصيل الصحيحة' :
+                       'الخيارات (اختر الإجابة الصحيحة)'}
                     </label>
-                    <div className="grid grid-cols-1 gap-4">
-                      {questions[currentQuestionIndex]?.options?.map((option, oIndex) => {
-                        const isTrueFalse = questions[currentQuestionIndex]?.type === 'true_false';
-                        return (
-                          <div key={oIndex} className={`flex items-center gap-3 p-3 rounded-lg ${questions[currentQuestionIndex].correct_answer === option && option !== '' ? 'border border-primary bg-primary/10' : ''}`}>
-                            <div 
-                              className="relative flex items-center justify-center cursor-pointer"
-                              onClick={() => handleQuestionChange('correct_answer', option)}
-                            >
-                              <div className={`w-6 h-6 rounded-full border-2 transition-all duration-200 flex items-center justify-center ${
-                                questions[currentQuestionIndex].correct_answer === option && option !== ''
-                                  ? 'bg-primary border-primary' 
-                                  : 'bg-white border-gray-300 hover:border-primary'
-                              }`}>
-                                {questions[currentQuestionIndex].correct_answer === option && option !== '' && (
-                                  <Icon name="check" className="text-white text-xs" />
-                                )}
+
+                    {(questions[currentQuestionIndex]?.type === 'mcq' || questions[currentQuestionIndex]?.type === 'true_false') && (
+                      <div className="grid grid-cols-1 gap-4">
+                        {questions[currentQuestionIndex]?.options?.map((option: string, oIndex: number) => {
+                          const isTrueFalse = questions[currentQuestionIndex]?.type === 'true_false';
+                          return (
+                            <div key={oIndex} className={`flex items-center gap-3 p-3 rounded-lg ${questions[currentQuestionIndex].correct_answer === option && option !== '' ? 'border border-primary bg-primary/10' : ''}`}>
+                              <div 
+                                className="relative flex items-center justify-center cursor-pointer"
+                                onClick={() => handleQuestionChange('correct_answer', option)}
+                              >
+                                <div className={`w-6 h-6 rounded-full border-2 transition-all duration-200 flex items-center justify-center ${
+                                  questions[currentQuestionIndex].correct_answer === option && option !== ''
+                                    ? 'bg-primary border-primary' 
+                                    : 'bg-white border-gray-300 hover:border-primary'
+                                }`}>
+                                  {questions[currentQuestionIndex].correct_answer === option && option !== '' && (
+                                    <Icon name="check" className="text-white text-xs" />
+                                  )}
+                                </div>
                               </div>
+                              <Input
+                                type="text"
+                                readOnly={isTrueFalse}
+                                className={`border-none shadow-none focus:ring-0 ${isTrueFalse ? 'cursor-pointer' : ''}`}
+                                value={option}
+                                onChange={(e) => handleOptionChange(oIndex, e.target.value)}
+                                required
+                                placeholder={`الخيار ${oIndex + 1}`}
+                              />
                             </div>
-                            <Input
-                              type="text"
-                              readOnly={isTrueFalse}
-                              className={`border-none shadow-none focus:ring-0 ${isTrueFalse ? 'cursor-pointer' : ''}`}
-                              value={option}
-                              onChange={(e) => handleOptionChange(oIndex, e.target.value)}
-                              required
-                              placeholder={`الخيار ${oIndex + 1}`}
-                            />
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {questions[currentQuestionIndex]?.type === 'ordering' && (
+                      <div className="space-y-3">
+                        {questions[currentQuestionIndex].options.map((option: string, oIndex: number) => (
+                          <div key={oIndex} className="flex items-center gap-4 p-3 bg-white/5 border border-white/10 rounded-xl">
+                             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
+                               {oIndex + 1}
+                             </div>
+                             <Input
+                               type="text"
+                               className="flex-1 bg-transparent border-none p-0 font-bold text-white shadow-none focus:ring-0"
+                               value={option}
+                               onChange={(e) => {
+                                 const newOptions = [...questions[currentQuestionIndex].options];
+                                 newOptions[oIndex] = e.target.value;
+                                 handleQuestionChange('options', newOptions);
+                                 handleQuestionChange('correct_answer', newOptions.join('|||'));
+                               }}
+                               placeholder={`العنصر رقم ${oIndex + 1}`}
+                             />
+                             {questions[currentQuestionIndex].options.length > 2 && (
+                               <button 
+                                 type="button"
+                                 onClick={() => {
+                                   const newOptions = questions[currentQuestionIndex].options.filter((_: any, i: number) => i !== oIndex);
+                                   handleQuestionChange('options', newOptions);
+                                   handleQuestionChange('correct_answer', newOptions.join('|||'));
+                                 }}
+                                 className="text-red-400 hover:text-red-300"
+                               >
+                                 <Icon name="trash" />
+                               </button>
+                             )}
                           </div>
-                        );
-                      })}
-                    </div>
+                        ))}
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          onClick={() => {
+                            const newOptions = [...questions[currentQuestionIndex].options, ''];
+                            handleQuestionChange('options', newOptions);
+                          }}
+                          className="w-full h-10 border-dashed border-2 bg-transparent"
+                        >
+                          <Icon name="plus" className="ml-2" />
+                          إضافة عنصر جديد
+                        </Button>
+                      </div>
+                    )}
+
+                    {questions[currentQuestionIndex]?.type === 'matching' && (
+                      <div className="space-y-4">
+                        {questions[currentQuestionIndex].options.map((pair: {a: string, b: string}, oIndex: number) => (
+                          <div key={oIndex} className="flex items-center gap-4">
+                             <div className="flex-1 grid grid-cols-2 gap-4 p-3 bg-white/5 border border-white/10 rounded-xl">
+                               <Input
+                                 type="text"
+                                 className="bg-transparent border-none p-0 font-bold text-white shadow-none focus:ring-0"
+                                 value={pair.a}
+                                 onChange={(e) => {
+                                   const newOptions = [...questions[currentQuestionIndex].options];
+                                   newOptions[oIndex] = { ...newOptions[oIndex], a: e.target.value };
+                                   handleQuestionChange('options', newOptions);
+                                   handleQuestionChange('correct_answer', newOptions.map(p => `${p.a}===${p.b}`).join('|||'));
+                                 }}
+                                 placeholder="العنصر أ"
+                               />
+                               <Input
+                                 type="text"
+                                 className="bg-transparent border-none p-0 font-bold text-white shadow-none focus:ring-0"
+                                 value={pair.b}
+                                 onChange={(e) => {
+                                   const newOptions = [...questions[currentQuestionIndex].options];
+                                   newOptions[oIndex] = { ...newOptions[oIndex], b: e.target.value };
+                                   handleQuestionChange('options', newOptions);
+                                   handleQuestionChange('correct_answer', newOptions.map(p => `${p.a}===${p.b}`).join('|||'));
+                                 }}
+                                 placeholder="العنصر ب المقابل"
+                               />
+                             </div>
+                             {questions[currentQuestionIndex].options.length > 2 && (
+                               <button 
+                                 type="button"
+                                 onClick={() => {
+                                   const newOptions = questions[currentQuestionIndex].options.filter((_: any, i: number) => i !== oIndex);
+                                   handleQuestionChange('options', newOptions);
+                                   handleQuestionChange('correct_answer', newOptions.map(p => `${p.a}===${p.b}`).join('|||'));
+                                 }}
+                                 className="text-red-400 hover:text-red-300"
+                               >
+                                 <Icon name="trash" />
+                               </button>
+                             )}
+                          </div>
+                        ))}
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          onClick={() => {
+                            const newOptions = [...questions[currentQuestionIndex].options, { a: '', b: '' }];
+                            handleQuestionChange('options', newOptions);
+                          }}
+                          className="w-full h-10 border-dashed border-2 bg-transparent"
+                        >
+                          <Icon name="plus" className="ml-2" />
+                          إضافة زوج توصيل جديد
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
