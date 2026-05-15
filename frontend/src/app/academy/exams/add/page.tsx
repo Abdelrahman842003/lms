@@ -31,6 +31,7 @@ import { CSS } from '@dnd-kit/utilities';
 interface Question {
   id: string;
   text: string;
+  type: 'mcq' | 'true_false';
   options: string[];
   correct_answer: string;
   duration: number;
@@ -215,6 +216,7 @@ export default function AddAcademyExamPage() {
       setQuestions([{
         id: crypto.randomUUID(),
         text: '',
+        type: 'mcq',
         options: ['', '', '', ''],
         correct_answer: '',
         duration: 60
@@ -225,7 +227,18 @@ export default function AddAcademyExamPage() {
 
   const handleQuestionChange = (field: keyof Question, value: any) => {
     const newQuestions = [...questions];
-    newQuestions[currentQuestionIndex] = { ...newQuestions[currentQuestionIndex], [field]: value };
+    
+    if (field === 'type') {
+      newQuestions[currentQuestionIndex] = { 
+        ...newQuestions[currentQuestionIndex], 
+        [field]: value,
+        options: value === 'true_false' ? ['صح', 'خطأ'] : ['', '', '', ''],
+        correct_answer: ''
+      };
+    } else {
+      newQuestions[currentQuestionIndex] = { ...newQuestions[currentQuestionIndex], [field]: value };
+    }
+    
     setQuestions(newQuestions);
   };
 
@@ -251,6 +264,7 @@ export default function AddAcademyExamPage() {
       setQuestions([...questions, {
         id: crypto.randomUUID(),
         text: '',
+        type: 'mcq',
         options: ['', '', '', ''],
         correct_answer: '',
         duration: 60
@@ -458,8 +472,27 @@ export default function AddAcademyExamPage() {
                 
                 <div>
                   <div className="form-group mb-6">
-                    <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-2 gap-2 md:gap-0">
-                      <label className="block text-sm font-medium">نص السؤال</label>
+                    <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-2 gap-4">
+                      <div className="flex items-center gap-4">
+                        <label className="block text-sm font-medium">نص السؤال</label>
+                        <div className="flex items-center gap-1 bg-white/5 rounded-lg p-1 border border-white/5">
+                          <button
+                            type="button"
+                            onClick={() => handleQuestionChange('type', 'mcq')}
+                            className={`px-3 py-1 rounded-md text-[10px] font-bold transition-all ${questions[currentQuestionIndex].type === 'mcq' ? 'bg-primary text-white shadow-sm' : 'text-gray-400 hover:text-white'}`}
+                          >
+                            اختياري
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleQuestionChange('type', 'true_false')}
+                            className={`px-3 py-1 rounded-md text-[10px] font-bold transition-all ${questions[currentQuestionIndex].type === 'true_false' ? 'bg-primary text-white shadow-sm' : 'text-gray-400 hover:text-white'}`}
+                          >
+                            صح وخطأ
+                          </button>
+                        </div>
+                      </div>
+                      
                       <div className="flex items-center gap-2">
                         <label className="text-xs text-gray-400">مدة السؤال (ثانية):</label>
                         <Input
@@ -483,34 +516,40 @@ export default function AddAcademyExamPage() {
                   </div>
 
                   <div className="space-y-4">
-                    <label className="block text-sm font-medium mb-2">الخيارات (اختر الإجابة الصحيحة)</label>
+                    <label className="block text-sm font-medium mb-2">
+                      {questions[currentQuestionIndex].type === 'true_false' ? 'حدد الإجابة الصحيحة' : 'الخيارات (اختر الإجابة الصحيحة)'}
+                    </label>
                     <div className="grid grid-cols-1 gap-4">
-                      {questions[currentQuestionIndex].options.map((option, oIndex) => (
-                        <div key={oIndex} className={`flex items-center gap-3 p-3 rounded-lg ${questions[currentQuestionIndex].correct_answer === option && option !== '' ? 'border border-primary bg-primary/10' : ''}`}>
-                          <div 
-                            className="relative flex items-center justify-center cursor-pointer"
-                            onClick={() => handleQuestionChange('correct_answer', option)}
-                          >
-                            <div className={`w-6 h-6 rounded-full border-2 transition-all duration-200 flex items-center justify-center ${
-                              questions[currentQuestionIndex].correct_answer === option && option !== ''
-                                ? 'bg-primary border-primary' 
-                                : 'bg-white border-gray-300 hover:border-primary'
-                            }`}>
-                              {questions[currentQuestionIndex].correct_answer === option && option !== '' && (
-                                <Icon name="check" className="text-white text-xs" />
-                              )}
+                      {questions[currentQuestionIndex].options.map((option, oIndex) => {
+                        const isTrueFalse = questions[currentQuestionIndex].type === 'true_false';
+                        return (
+                          <div key={oIndex} className={`flex items-center gap-3 p-3 rounded-lg ${questions[currentQuestionIndex].correct_answer === option && option !== '' ? 'border border-primary bg-primary/10' : ''}`}>
+                            <div 
+                              className="relative flex items-center justify-center cursor-pointer"
+                              onClick={() => handleQuestionChange('correct_answer', option)}
+                            >
+                              <div className={`w-6 h-6 rounded-full border-2 transition-all duration-200 flex items-center justify-center ${
+                                questions[currentQuestionIndex].correct_answer === option && option !== ''
+                                  ? 'bg-primary border-primary' 
+                                  : 'bg-white border-gray-300 hover:border-primary'
+                              }`}>
+                                {questions[currentQuestionIndex].correct_answer === option && option !== '' && (
+                                  <Icon name="check" className="text-white text-xs" />
+                                )}
+                              </div>
                             </div>
+                            <Input
+                              type="text"
+                              readOnly={isTrueFalse}
+                              className={`border-none shadow-none focus:ring-0 ${isTrueFalse ? 'cursor-pointer' : ''}`}
+                              value={option}
+                              onChange={(e) => handleOptionChange(oIndex, e.target.value)}
+                              required
+                              placeholder={`الخيار ${oIndex + 1}`}
+                            />
                           </div>
-                          <Input
-                            type="text"
-                            className="border-none shadow-none focus:ring-0"
-                            value={option}
-                            onChange={(e) => handleOptionChange(oIndex, e.target.value)}
-                            required
-                            placeholder={`الخيار ${oIndex + 1}`}
-                          />
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 </div>

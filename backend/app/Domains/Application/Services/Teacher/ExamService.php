@@ -113,7 +113,8 @@ class ExamService
                 'id' => \Illuminate\Support\Str::uuid()->toString(),
                 'exam_id' => $newExam->id,
                 'text' => $q->text,
-                'options' => $q->options,
+                'type' => $q->type->value ?? $q->type ?? 'mcq',
+                'options' => json_encode($q->options),
                 'correct_answer' => $q->correct_answer,
                 'duration' => $q->duration,
                 'created_at' => $now,
@@ -133,6 +134,7 @@ class ExamService
             'id' => \Illuminate\Support\Str::uuid()->toString(),
             'exam_id' => $exam->id,
             'text' => $q['text'],
+            'type' => $q['type'] ?? 'mcq',
             'options' => json_encode($q['options']), // Must encode to JSON since insert() bypasses model casts
             'correct_answer' => $q['correct_answer'],
             'duration' => $q['duration'] ?? 60,
@@ -159,6 +161,7 @@ class ExamService
                 // Update existing question
                 Question::where('id', $questionId)->update([
                     'text' => $q['text'],
+                    'type' => $q['type'] ?? 'mcq',
                     'options' => json_encode($q['options']), // Must encode to JSON since update() bypasses model casts
                     'correct_answer' => $q['correct_answer'],
                     'duration' => $q['duration'] ?? 60,
@@ -171,6 +174,7 @@ class ExamService
                     'id' => \Illuminate\Support\Str::uuid()->toString(),
                     'exam_id' => $exam->id,
                     'text' => $q['text'],
+                    'type' => $q['type'] ?? 'mcq',
                     'options' => $q['options'],
                     'correct_answer' => $q['correct_answer'],
                     'duration' => $q['duration'] ?? 60,

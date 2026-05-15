@@ -31,6 +31,7 @@ import { CSS } from '@dnd-kit/utilities';
 interface Question {
   id: string;
   text: string;
+  type: 'mcq' | 'true_false';
   options: string[];
   correct_answer: string;
   duration: number;
@@ -171,6 +172,7 @@ export default function AddExamPage() {
       setQuestions([{
         id: crypto.randomUUID(),
         text: '',
+        type: 'mcq',
         options: ['', '', '', ''],
         correct_answer: '',
         duration: 60
@@ -180,11 +182,24 @@ export default function AddExamPage() {
   };
 
   const handleQuestionChange = (field: keyof Question, value: any) => {
-    const newQuestions = [...questions];
-    newQuestions[currentQuestionIndex] = { ...newQuestions[currentQuestionIndex], [field]: value };
-    setQuestions(newQuestions);
-  };
+    const updatedQuestions = [...questions];
 
+    if (field === 'type') {
+      updatedQuestions[currentQuestionIndex] = {
+        ...updatedQuestions[currentQuestionIndex],
+        [field]: value,
+        options: value === 'true_false' ? ['صح', 'خطأ'] : ['', '', '', ''],
+        correct_answer: ''
+      };
+    } else {
+      updatedQuestions[currentQuestionIndex] = {
+        ...updatedQuestions[currentQuestionIndex],
+        [field]: value
+      };
+    }
+
+    setQuestions(updatedQuestions);
+  };
   const handleOptionChange = (oIndex: number, value: string) => {
     const newQuestions = [...questions];
     const newOptions = [...newQuestions[currentQuestionIndex].options];
@@ -207,6 +222,7 @@ export default function AddExamPage() {
       setQuestions([...questions, {
         id: crypto.randomUUID(),
         text: '',
+        type: 'mcq',
         options: ['', '', '', ''],
         correct_answer: '',
         duration: 60
@@ -449,7 +465,26 @@ export default function AddExamPage() {
                      </div>
                   </div>
                   
-                  <div className="flex items-center gap-2 bg-white/5 p-2 rounded-2xl border border-white/5">
+                  <div className="flex items-center gap-4 bg-white/5 p-2 rounded-2xl border border-white/5">
+                    <div className="flex items-center gap-1 bg-white/5 rounded-xl p-1">
+                      <button
+                        type="button"
+                        onClick={() => handleQuestionChange('type', 'mcq')}
+                        className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${questions[currentQuestionIndex].type === 'mcq' ? 'bg-primary text-white shadow-lg' : 'text-gray-light/30 hover:text-white'}`}
+                      >
+                        اختياري
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleQuestionChange('type', 'true_false')}
+                        className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${questions[currentQuestionIndex].type === 'true_false' ? 'bg-primary text-white shadow-lg' : 'text-gray-light/30 hover:text-white'}`}
+                      >
+                        صح وخطأ
+                      </button>
+                    </div>
+                    
+                    <div className="w-px h-6 bg-white/10 mx-1" />
+
                     <label className="text-[10px] font-black text-gray-light/30 uppercase tracking-widest px-2">وقت السؤال (ث)</label>
                     <Input
                       type="number"
@@ -473,10 +508,13 @@ export default function AddExamPage() {
                   </div>
 
                   <div className="space-y-4">
-                    <label className="text-[10px] font-black text-gray-light/30 uppercase tracking-widest px-2">خيارات الإجابة (اضغط لتحديد الإجابة الصحيحة)</label>
+                    <label className="text-[10px] font-black text-gray-light/30 uppercase tracking-widest px-2">
+                      {questions[currentQuestionIndex].type === 'true_false' ? 'حدد الإجابة الصحيحة' : 'خيارات الإجابة (اضغط لتحديد الإجابة الصحيحة)'}
+                    </label>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {questions[currentQuestionIndex].options.map((option, oIndex) => {
                         const isCorrect = questions[currentQuestionIndex].correct_answer === option && option !== '';
+                        const isTrueFalse = questions[currentQuestionIndex].type === 'true_false';
                         return (
                           <div 
                             key={oIndex} 
@@ -493,7 +531,8 @@ export default function AddExamPage() {
                              
                              <Input
                                type="text"
-                               className="flex-1 bg-transparent border-none p-0 font-bold text-white shadow-none focus:ring-0 placeholder:text-gray-light/5"
+                               readOnly={isTrueFalse}
+                               className={`flex-1 bg-transparent border-none p-0 font-bold text-white shadow-none focus:ring-0 placeholder:text-gray-light/5 ${isTrueFalse ? 'cursor-pointer' : ''}`}
                                value={option}
                                onChange={(e) => {
                                  e.stopPropagation();

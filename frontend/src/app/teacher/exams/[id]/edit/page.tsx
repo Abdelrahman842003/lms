@@ -11,8 +11,9 @@ import { getGrades } from '@/services/authService';
 import { toast } from 'react-hot-toast';
 
 interface Question {
-  id?: number;
+  id?: number | string;
   text: string;
+  type: 'mcq' | 'true_false';
   options: string[];
   correct_answer: string;
   duration?: number;
@@ -84,8 +85,10 @@ export default function EditExamPage() {
         const parsedQuestions = data.questions.map((q: any) => ({
           id: q.id,
           text: q.text || '',
+          type: q.type || 'mcq',
           options: parseOptions(q.options),
           correct_answer: q.correct_answer || '',
+          duration: q.duration,
         }));
         setQuestions(parsedQuestions);
       }
@@ -154,7 +157,18 @@ export default function EditExamPage() {
 
   const handleQuestionChange = (field: keyof Question, value: any) => {
     const newQuestions = [...questions];
-    newQuestions[currentQuestionIndex] = { ...newQuestions[currentQuestionIndex], [field]: value };
+    
+    if (field === 'type') {
+      newQuestions[currentQuestionIndex] = { 
+        ...newQuestions[currentQuestionIndex], 
+        [field]: value,
+        options: value === 'true_false' ? ['صح', 'خطأ'] : ['', '', '', ''],
+        correct_answer: ''
+      };
+    } else {
+      newQuestions[currentQuestionIndex] = { ...newQuestions[currentQuestionIndex], [field]: value };
+    }
+    
     setQuestions(newQuestions);
   };
 
@@ -452,11 +466,30 @@ export default function EditExamPage() {
 
                   {/* Current Question Editor */}
                   <div className="bg-[#1a1f37] p-6 rounded-xl border border-white/5">
-                    <div className="flex items-center gap-2 mb-4">
-                      <span className="w-8 h-8 rounded-lg bg-primary/20 text-primary flex items-center justify-center font-bold">
-                        {currentQuestionIndex + 1}
-                      </span>
-                      <h4 className="text-white font-medium">السؤال {currentQuestionIndex + 1} من {questions.length}</h4>
+                    <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-4 gap-3">
+                      <div className="flex items-center gap-2">
+                        <span className="w-8 h-8 rounded-lg bg-primary/20 text-primary flex items-center justify-center font-bold">
+                          {currentQuestionIndex + 1}
+                        </span>
+                        <h4 className="text-white font-medium">السؤال {currentQuestionIndex + 1} من {questions.length}</h4>
+                      </div>
+
+                      <div className="flex items-center gap-1 bg-white/5 rounded-lg p-1 border border-white/5">
+                        <button
+                          type="button"
+                          onClick={() => handleQuestionChange('type', 'mcq')}
+                          className={`px-3 py-1 rounded-md text-[10px] font-bold transition-all ${questions[currentQuestionIndex].type === 'mcq' ? 'bg-primary text-white shadow-sm' : 'text-gray-400 hover:text-white'}`}
+                        >
+                          اختياري
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleQuestionChange('type', 'true_false')}
+                          className={`px-3 py-1 rounded-md text-[10px] font-bold transition-all ${questions[currentQuestionIndex].type === 'true_false' ? 'bg-primary text-white shadow-sm' : 'text-gray-400 hover:text-white'}`}
+                        >
+                          صح وخطأ
+                        </button>
+                      </div>
                     </div>
 
                     <div className="form-group mb-6">
@@ -471,41 +504,47 @@ export default function EditExamPage() {
                     </div>
 
                     <div className="space-y-4">
-                      <label className="block text-gray-light mb-2 text-[0.95rem]">الخيارات (اختر الإجابة الصحيحة)</label>
+                      <label className="block text-gray-light mb-2 text-[0.95rem]">
+                        {questions[currentQuestionIndex]?.type === 'true_false' ? 'حدد الإجابة الصحيحة' : 'الخيارات (اختر الإجابة الصحيحة)'}
+                      </label>
                       <div className="grid grid-cols-1 gap-3">
-                        {questions[currentQuestionIndex]?.options.map((option, oIndex) => (
-                          <div 
-                            key={oIndex} 
-                            className={`flex items-center gap-3 p-3 rounded-lg border ${
-                              questions[currentQuestionIndex].correct_answer === option && option !== '' 
-                                ? 'border-green-500/50 bg-green-500/10' 
-                                : 'border-white/10 bg-white/5'
-                            }`}
-                          >
+                        {questions[currentQuestionIndex]?.options.map((option, oIndex) => {
+                          const isTrueFalse = questions[currentQuestionIndex]?.type === 'true_false';
+                          return (
                             <div 
-                              className="relative flex items-center justify-center cursor-pointer"
-                              onClick={() => handleQuestionChange('correct_answer', option)}
+                              key={oIndex} 
+                              className={`flex items-center gap-3 p-3 rounded-lg border ${
+                                questions[currentQuestionIndex].correct_answer === option && option !== '' 
+                                  ? 'border-green-500/50 bg-green-500/10' 
+                                  : 'border-white/10 bg-white/5'
+                              }`}
                             >
-                              <div className={`w-6 h-6 rounded-full border-2 transition-all duration-200 flex items-center justify-center ${
-                                questions[currentQuestionIndex].correct_answer === option && option !== ''
-                                  ? 'bg-green-500 border-green-500' 
-                                  : 'bg-white/5 border-gray-500 hover:border-green-500'
-                              }`}>
-                                {questions[currentQuestionIndex].correct_answer === option && option !== '' && (
-                                  <Icon name="check" className="text-white text-xs" />
-                                )}
+                              <div 
+                                className="relative flex items-center justify-center cursor-pointer"
+                                onClick={() => handleQuestionChange('correct_answer', option)}
+                              >
+                                <div className={`w-6 h-6 rounded-full border-2 transition-all duration-200 flex items-center justify-center ${
+                                  questions[currentQuestionIndex].correct_answer === option && option !== ''
+                                    ? 'bg-green-500 border-green-500' 
+                                    : 'bg-white/5 border-gray-500 hover:border-green-500'
+                                }`}>
+                                  {questions[currentQuestionIndex].correct_answer === option && option !== '' && (
+                                    <Icon name="check" className="text-white text-xs" />
+                                  )}
+                                </div>
                               </div>
+                              <Input
+                                type="text"
+                                readOnly={isTrueFalse}
+                                className={`flex-1 ${isTrueFalse ? 'cursor-pointer' : ''}`}
+                                value={option}
+                                onChange={(e) => handleOptionChange(oIndex, e.target.value)}
+                                placeholder={`الخيار ${oIndex + 1}`}
+                                disabled={isSubmitting}
+                              />
                             </div>
-                            <Input
-                              type="text"
-                              value={option}
-                              onChange={(e) => handleOptionChange(oIndex, e.target.value)}
-                              placeholder={`الخيار ${oIndex + 1}`}
-                              disabled={isSubmitting}
-                              className="flex-1"
-                            />
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
 

@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Domains\Application\Http\Requests\Teacher\Exam;
 
+use App\Domains\Exams\Enums\QuestionType;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rules\Enum;
 
 class StoreExamRequest extends FormRequest
 {
@@ -27,7 +29,8 @@ class StoreExamRequest extends FormRequest
             'time_per_question' => 'nullable|integer|min:10|max:600', // 10 seconds to 10 minutes
             'questions' => 'required|array|min:1',
             'questions.*.text' => 'required|string',
-            'questions.*.options' => 'required|array|min:4|max:4',
+            'questions.*.type' => ['required', new Enum(QuestionType::class)],
+            'questions.*.options' => 'required|array|min:2|max:4',
             'questions.*.correct_answer' => 'required|string',
             'questions.*.duration' => 'required|integer|min:10|max:600',
         ];
