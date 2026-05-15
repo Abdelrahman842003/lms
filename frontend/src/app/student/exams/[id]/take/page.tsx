@@ -15,7 +15,8 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
-  DragEndEvent
+  DragEndEvent,
+  TouchSensor
 } from '@dnd-kit/core';
 import {
   arrayMove,
@@ -25,6 +26,8 @@ import {
   useSortable
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface Question {
   id: string;
@@ -68,18 +71,22 @@ interface AttemptData {
   };
 }
 
-function SortableItem({ id, text }: { id: string; text: string }) {
+// ─── Components ───────────────────────────────────────────────────────────────
+
+function SortableItem({ id, text, index }: { id: string; text: string; index: number }) {
   const {
     attributes,
     listeners,
     setNodeRef,
     transform,
     transition,
+    isDragging
   } = useSortable({ id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
+    zIndex: isDragging ? 50 : 'auto',
   };
 
   return (
@@ -88,13 +95,22 @@ function SortableItem({ id, text }: { id: string; text: string }) {
       style={style}
       {...attributes}
       {...listeners}
-      className="p-4 mb-2 bg-white/5 border border-white/10 rounded-xl flex items-center gap-3 cursor-move touch-none text-white font-bold"
+      className={`relative group p-4 mb-3 rounded-2xl border transition-all duration-200 cursor-move touch-none flex items-center gap-4 ${
+        isDragging 
+          ? 'bg-primary/20 border-primary shadow-2xl scale-[1.02]' 
+          : 'bg-white/5 border-white/10 hover:border-white/20 hover:bg-white/10'
+      }`}
     >
-      <Icon name="grip-vertical" className="text-gray-400" />
-      <span>{text}</span>
+      <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-sm font-bold text-gray-400 group-hover:text-primary-light transition-colors">
+        {index + 1}
+      </div>
+      <span className="flex-1 text-white font-medium">{text}</span>
+      <Icon name="grip-vertical" className="text-gray-500 group-hover:text-gray-300 transition-colors" />
     </div>
   );
 }
+
+// ─── Main Page Component ───────────────────────────────────────────────────────
 
 export default function TakeExamPage() {
   const { user } = useAuth();
@@ -111,12 +127,14 @@ export default function TakeExamPage() {
   const [waiting, setWaiting] = useState(false);
   const [queuePosition, setQueuePosition] = useState(0);
 
-  // States for new question types
+  // States for question types
   const [shuffledOptions, setShuffledOptions] = useState<any[]>([]);
   const [matchingAnswers, setMatchingAnswers] = useState<Record<string, string>>({});
+  const [activeMatchingSide, setActiveMatchingSide] = useState<{ id: string; val: string } | null>(null);
 
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
@@ -130,11 +148,11 @@ export default function TakeExamPage() {
         setShuffledOptions(shuffled);
         setSelectedAnswer(shuffled.join('|||'));
       } else if (q.type === 'matching') {
-        const colA = q.options.map((p: any) => p.a);
         const colB = q.options.map((p: any) => p.b).sort(() => Math.random() - 0.5);
         setShuffledOptions(colB);
         setMatchingAnswers({});
         setSelectedAnswer(null);
+        setActiveMatchingSide(null);
       } else {
         setShuffledOptions([]);
         setSelectedAnswer(null);
@@ -155,29 +173,35 @@ export default function TakeExamPage() {
     }
   };
 
-  const handleMatchingChange = (valA: string, valB: string) => {
-    const newAnswers = { ...matchingAnswers, [valA]: valB };
-    setMatchingAnswers(newAnswers);
-    
-    // Generate selectedAnswer string based on ORIGINAL options order to match backend's correct_answer
-    const currentQ = attemptData?.question;
-    if (currentQ?.type === 'matching') {
-      const answerStr = currentQ.options
-        .map((p: any) => `${p.a}===${newAnswers[p.a] || ''}`)
-        .join('|||');
+  const handleMatchingClick = (val: string, side: 'left' | 'right') => {
+    if (side === 'left') {
+      setActiveMatchingSide({ id: val, val });
+    } else {
+      if (!activeMatchingSide) {
+        toast.error('اختر عنصراً من القائمة اليمنى أولاً');
+        return;
+      }
       
-      // If all items in colA have a match, enable submit
-      const allMatched = currentQ.options.every((p: any) => newAnswers[p.a]);
-      setSelectedAnswer(allMatched ? answerStr : null);
+      const newAnswers = { ...matchingAnswers, [activeMatchingSide.id]: val };
+      setMatchingAnswers(newAnswers);
+      setActiveMatchingSide(null);
+      
+      const currentQ = attemptData?.question;
+      if (currentQ?.type === 'matching') {
+        const answerStr = currentQ.options
+          .map((p: any) => `${p.a}===${newAnswers[p.a] || ''}`)
+          .join('|||');
+        
+        const allMatched = currentQ.options.every((p: any) => newAnswers[p.a]);
+        setSelectedAnswer(allMatched ? answerStr : null);
+      }
     }
   };
 
-  
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const attemptIdRef = useRef<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Start the exam
   const startExam = useCallback(async () => {
     try {
       setLoading(true);
@@ -189,7 +213,6 @@ export default function TakeExamPage() {
         if (response.status === 'waiting') {
           setWaiting(true);
           setQueuePosition(response.position || 0);
-          // Don't set loading to false yet, we want to show the waiting room
         } else {
           setAttemptData(response);
           attemptIdRef.current = response.attempt_id;
@@ -206,13 +229,11 @@ export default function TakeExamPage() {
     }
   }, [examId, router]);
 
-  // WebSocket Listener for Queue Admission
+  // WebSocket / Polling logic (Preserved)
   useEffect(() => {
     if (!waiting || !user?.id) return;
-
     let echoChannel: any = null;
     let pollInterval: NodeJS.Timeout | null = null;
-
     const { getEcho } = require('@/lib/echo');
     const echo = getEcho();
 
@@ -220,78 +241,53 @@ export default function TakeExamPage() {
       if (data && data.attempt_id) {
         setAttemptData(data);
         attemptIdRef.current = data.attempt_id;
-        if (data.exam?.time_per_question) {
-          setTimeLeft(data.exam.time_per_question);
-        }
+        if (data.exam?.time_per_question) setTimeLeft(data.exam.time_per_question);
         setWaiting(false);
         setLoading(false);
         toast.success('تم دخولك للامتحان بنجاح!');
       }
     };
 
-    // 1. Setup WebSocket listener
     if (echo) {
       echoChannel = echo.private(`notifications.student.${user.id}`);
       echoChannel.listen('.ExamAttemptReady', (data: any) => {
-        if (data.attemptData && data.attemptData.exam?.id === examId) {
-          handleAdmission(data.attemptData);
-        }
+        if (data.attemptData && data.attemptData.exam?.id === examId) handleAdmission(data.attemptData);
       });
     }
 
-    // 2. Always setup Polling as a robust fallback
     pollInterval = setInterval(async () => {
       try {
-        const response = await fetchApi(`/student/exams/${examId}/start`, {
-          method: 'POST',
-        });
-        
-        // If the response status is no longer 'waiting', it means the attempt is ready
+        const response = await fetchApi(`/student/exams/${examId}/start`, { method: 'POST' });
         if (response && response.status !== 'waiting') {
           handleAdmission(response);
           if (pollInterval) clearInterval(pollInterval);
-        } else if (response) {
-          setQueuePosition(response.position || 0);
-        }
-      } catch (e) {
-        console.error('Polling error:', e);
-      }
-    }, 4000); // Poll every 4 seconds for a fast fallback
+        } else if (response) setQueuePosition(response.position || 0);
+      } catch (e) { console.error('Polling error:', e); }
+    }, 4000);
 
     return () => {
-      if (echoChannel) {
-        echoChannel.stopListening('.ExamAttemptReady');
-      }
-      if (pollInterval) {
-        clearInterval(pollInterval);
-      }
+      if (echoChannel) echoChannel.stopListening('.ExamAttemptReady');
+      if (pollInterval) clearInterval(pollInterval);
     };
   }, [waiting, user?.id, examId]);
 
-  // Submit answer
   const submitAnswer = useCallback(async (answer: string | null) => {
     if (!attemptIdRef.current || submitting) return;
-    
     setSubmitting(true);
     try {
       let response;
-      
       if (answer) {
         response = await fetchApi(`/student/exams/attempts/${attemptIdRef.current}/answer`, {
           method: 'POST',
           body: JSON.stringify({ answer }),
         });
       } else {
-        // Skip question (time expired)
-        response = await fetchApi(`/student/exams/attempts/${attemptIdRef.current}/skip`, {
-          method: 'POST',
-        });
+        response = await fetchApi(`/student/exams/attempts/${attemptIdRef.current}/skip`, { method: 'POST' });
       }
       
       if (response) {
         setAttemptData(response);
         setSelectedAnswer(null);
-        
         if (response.status === 'in_progress' && response.exam?.time_per_question) {
           setTimeLeft(response.exam.time_per_question);
         }
@@ -303,81 +299,45 @@ export default function TakeExamPage() {
     }
   }, [submitting]);
 
-  // Terminate exam (violation)
   const terminateExam = useCallback(async (reason: string) => {
     if (!attemptIdRef.current) return;
-    
     try {
       const response = await fetchApi(`/student/exams/attempts/${attemptIdRef.current}/terminate`, {
         method: 'POST',
         body: JSON.stringify({ reason }),
       });
-      
       if (response) {
         setAttemptData(response);
         toast.error('تم إنهاء الامتحان بسبب مخالفة');
       }
-    } catch (error: any) {
-      console.error('Failed to terminate exam:', error);
-    }
+    } catch (error: any) { console.error('Failed to terminate exam:', error); }
   }, []);
 
-  // Timer effect
   useEffect(() => {
-    if (attemptData?.status !== 'in_progress' || showWarning) {
-      return;
-    }
-
+    if (attemptData?.status !== 'in_progress' || showWarning) return;
     timerRef.current = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
-          // Time expired, skip question
           submitAnswer(null);
           return 0;
         }
         return prev - 1;
       });
     }, 1000);
-
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
-    };
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [attemptData?.status, attemptData?.progress?.current, showWarning, submitAnswer]);
 
-  // Anti-cheating: Strict Full Screen & Visibility
+  // Anti-cheating (Preserved)
   useEffect(() => {
     if (attemptData?.status !== 'in_progress' || showWarning) return;
-
-    // Force full screen
     const enterFullScreen = async () => {
-      try {
-        if (!document.fullscreenElement) {
-          await document.documentElement.requestFullscreen();
-        }
-      } catch (err) {
-        console.error('Error attempting to enable full-screen mode:', err);
-      }
+      try { if (!document.fullscreenElement) await document.documentElement.requestFullscreen(); }
+      catch (err) { console.error('Error attempting to enable full-screen mode:', err); }
     };
-
     enterFullScreen();
-
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
-        terminateExam('visibility_change');
-      }
-    };
-
-    const handleFullScreenChange = () => {
-      if (!document.fullscreenElement) {
-        terminateExam('screen_resize'); // Using screen_resize as generic "left exam environment" reason
-      }
-    };
-
-    // Disable context menu and copy/paste
+    const handleVisibilityChange = () => { if (document.hidden) terminateExam('visibility_change'); };
+    const handleFullScreenChange = () => { if (!document.fullscreenElement) terminateExam('screen_resize'); };
     const preventDefault = (e: Event) => e.preventDefault();
-    
     document.addEventListener('visibilitychange', handleVisibilityChange);
     document.addEventListener('fullscreenchange', handleFullScreenChange);
     document.addEventListener('contextmenu', preventDefault);
@@ -385,7 +345,6 @@ export default function TakeExamPage() {
     document.addEventListener('paste', preventDefault);
     document.addEventListener('cut', preventDefault);
     document.addEventListener('selectstart', preventDefault);
-
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       document.removeEventListener('fullscreenchange', handleFullScreenChange);
@@ -397,126 +356,78 @@ export default function TakeExamPage() {
     };
   }, [attemptData?.status, showWarning, terminateExam]);
 
-  // Exit full screen on completion
   useEffect(() => {
     if (attemptData?.status === 'completed' || attemptData?.status === 'terminated') {
-      if (document.fullscreenElement) {
-        document.exitFullscreen().catch(err => console.error('Error exiting full screen:', err));
-      }
+      if (document.fullscreenElement) document.exitFullscreen().catch(e => console.error(e));
     }
   }, [attemptData?.status]);
 
-  // Anti-cheating: Window resize detection (Backup for full screen exit)
-  useEffect(() => {
-    if (attemptData?.status !== 'in_progress' || showWarning) return;
-
-    const handleResize = () => {
-      // If we are in full screen, resize events might happen legitimately (e.g. browser UI hiding)
-      // But if we are NOT in full screen, we should terminate
-      if (!document.fullscreenElement) {
-         terminateExam('screen_resize');
-      }
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => {
-      window.removeEventListener('resize', handleResize);
-    };
-  }, [attemptData?.status, showWarning, terminateExam]);
-
-  // Prevent back navigation
-  useEffect(() => {
-    if (attemptData?.status !== 'in_progress') return;
-
-    const handlePopState = (e: PopStateEvent) => {
-      e.preventDefault();
-      window.history.pushState(null, '', window.location.href);
-      toast.error('لا يمكنك الرجوع أثناء الامتحان');
-    };
-
-    window.history.pushState(null, '', window.location.href);
-    window.addEventListener('popstate', handlePopState);
-
-    return () => {
-      window.removeEventListener('popstate', handlePopState);
-    };
-  }, [attemptData?.status]);
-
-  // Handle warning acceptance
-  const handleAcceptWarning = () => {
-    setShowWarning(false);
-    startExam();
-  };
-
-  // Format time
+  // Format & Styles
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Get timer color
-  const getTimerColor = () => {
-    if (timeLeft <= 10) return '#FF5B5B';
-    if (timeLeft <= 30) return '#FFAA00';
-    return '#00D68F';
+  const getTimerColorClass = () => {
+    if (timeLeft <= 10) return 'text-danger shadow-[0_0_15px_rgba(255,91,91,0.4)] border-danger/40 bg-danger/10';
+    if (timeLeft <= 30) return 'text-warning border-warning/40 bg-warning/10';
+    return 'text-success border-success/40 bg-success/10';
   };
 
-  // Progress indicator
   const getProgressPercentage = () => {
     if (!attemptData?.progress) return 0;
     return (attemptData.progress.current / attemptData.progress.total) * 100;
   };
 
-  // Warning Modal
+  // ── Views ───────────────────────────────────────────────────────────────────
+
+  // 1. Warning View
   if (showWarning) {
     return (
       <DashboardLayout role="student" user={user || undefined}>
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[1000] p-5">
-          <div className="bg-gradient-to-br from-[#1a1a2e] to-[#16213e] rounded-[20px] p-10 max-w-[500px] w-full text-center border-2 border-danger/30 shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#FF5B5B] to-[#E74C3C] flex items-center justify-center mx-auto mb-6">
-              <Icon name="exclamation-triangle" size="2x" className="text-white" />
+        <div className="fixed inset-0 bg-[#050811]/90 backdrop-blur-xl flex items-center justify-center z-[1000] p-5">
+          <div className="bg-[#101426] rounded-[32px] p-8 md:p-12 max-w-[550px] w-full text-center border border-white/10 shadow-[0_32px_80px_rgba(0,0,0,0.6)] relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-danger via-warning to-danger"></div>
+            
+            <div className="w-20 h-20 rounded-2xl bg-danger/10 border border-danger/20 flex items-center justify-center mx-auto mb-8 rotate-3 transition-transform hover:rotate-0 duration-300">
+              <Icon name="exclamation-triangle" size="2x" className="text-danger" />
             </div>
             
-            <h2 className="text-white text-2xl mb-4 font-bold">
-              تحذير هام قبل بدء الامتحان
+            <h2 className="text-white text-3xl mb-6 font-black tracking-tight">
+              تحذير هام قبل البدء
             </h2>
             
-            <div className="bg-danger/10 rounded-xl p-5 mb-6 text-right">
-              <ul className="text-gray-light text-[0.95rem] leading-8 list-none p-0">
-                <li className="mb-2">
-                  <Icon name="times-circle" className="text-[#FF5B5B] ml-2" />
-                  لا يمكنك الرجوع للأسئلة السابقة بعد الإجابة عليها
-                </li>
-                <li className="mb-2">
-                  <Icon name="times-circle" className="text-[#FF5B5B] ml-2" />
-                  سيتم تفعيل وضع ملء الشاشة تلقائياً
-                </li>
-                <li className="mb-2">
-                  <Icon name="times-circle" className="text-[#FF5B5B] ml-2" />
-                  الخروج من ملء الشاشة أو تغيير التبويب سينهي الامتحان فوراً
-                </li>
-                <li>
-                  <Icon name="times-circle" className="text-[#FF5B5B] ml-2" />
-                  تم تعطيل النسخ واللصق والقائمة المختصرة
-                </li>
-              </ul>
+            <div className="space-y-4 mb-10 text-right">
+              {[
+                { text: 'لا يمكنك العودة للأسئلة السابقة بعد الإجابة', icon: 'undo-alt' },
+                { text: 'سيتم تفعيل وضع ملء الشاشة تلقائياً لمنع التشتت', icon: 'expand' },
+                { text: 'الخروج من الصفحة أو تغيير حجمها ينهي الامتحان فوراً', icon: 'times-circle' },
+                { text: 'تم تعطيل النسخ واللصق والقوائم الجانبية', icon: 'lock' },
+              ].map((item, idx) => (
+                <div key={idx} className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-white/10 transition-colors">
+                  <div className="w-10 h-10 rounded-xl bg-danger/10 flex items-center justify-center flex-shrink-0">
+                    <Icon name={item.icon} className="text-danger" />
+                  </div>
+                  <p className="text-gray-300 font-medium text-sm leading-relaxed">{item.text}</p>
+                </div>
+              ))}
             </div>
             
-            <div className="flex gap-4">
+            <div className="flex flex-col sm:flex-row gap-4">
               <Button
                 variant="outline"
                 onClick={() => router.push('/student/exams')}
-                className="flex-1"
+                className="flex-1 rounded-2xl border-white/10 hover:bg-white/5 text-gray-400 h-14"
               >
-                إلغاء
+                إلغاء الأمر
               </Button>
               <Button
                 variant="primary"
-                onClick={handleAcceptWarning}
-                className="flex-1"
+                onClick={() => { setShowWarning(false); startExam(); }}
+                className="flex-1 rounded-2xl h-14 font-bold shadow-[0_8px_25px_rgba(66,99,235,0.4)]"
               >
-                فهمت، ابدأ الامتحان
+                فهمت، ابدأ الآن
               </Button>
             </div>
           </div>
@@ -525,110 +436,111 @@ export default function TakeExamPage() {
     );
   }
 
-  // Loading state
+  // 2. Loading / Waiting View
   if (loading) {
     return (
       <DashboardLayout role="student" user={user || undefined}>
-        <div className="flex flex-col items-center justify-center min-h-[60vh] text-white text-center p-5">
+        <div className="flex flex-col items-center justify-center min-h-[70vh] p-5 text-center">
           {waiting ? (
-            <>
-              <div className="w-24 h-24 mb-8 relative">
+            <div className="max-w-lg w-full p-10 rounded-[40px] bg-white/5 border border-white/10 backdrop-blur-md">
+              <div className="relative w-32 h-32 mx-auto mb-10">
                 <div className="absolute inset-0 rounded-full border-4 border-primary/20 animate-ping"></div>
                 <div className="absolute inset-0 rounded-full border-4 border-t-primary animate-spin"></div>
-                <div className="absolute inset-0 flex items-center justify-center text-primary font-bold text-2xl">
+                <div className="absolute inset-0 flex items-center justify-center text-primary font-black text-3xl">
                   {queuePosition}
                 </div>
               </div>
-              <h2 className="text-2xl font-bold mb-4">أنت في غرفة الانتظار</h2>
-              <p className="text-gray-light max-w-md mx-auto leading-relaxed">
-                هناك ضغط كبير على السيرفر حالياً. ترتيبك في الطابور هو <span className="text-primary font-bold">#{queuePosition}</span>.
+              <h2 className="text-3xl font-black text-white mb-6">أنت في قائمة الانتظار</h2>
+              <p className="text-gray-400 leading-relaxed text-lg">
+                هناك ضغط كبير على السيرفر حالياً. ترتيبك هو <span className="text-primary font-bold">#{queuePosition}</span>.
                 <br />
-                سيتم دخولك للامتحان تلقائياً فور جاهزية دورك، لا تغلق هذه الصفحة.
+                لا تغلق الصفحة، سيتم دخولك تلقائياً فور جاهزية دورك.
               </p>
-            </>
+            </div>
           ) : (
-            <>
-              <LoadingSpinner size="lg" className="mb-4" />
-              <p className="text-xl">جاري تحميل الامتحان...</p>
-            </>
+            <div className="space-y-6">
+              <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin mx-auto"></div>
+              <p className="text-xl text-gray-400 font-medium animate-pulse">جاري تحضير أسئلة الامتحان...</p>
+            </div>
           )}
         </div>
       </DashboardLayout>
     );
   }
 
-  // Results screen
+  // 3. Results / Completed View
   if (attemptData?.status === 'completed' || attemptData?.status === 'terminated') {
     const result = attemptData.result;
     const progress = attemptData.progress_comparison;
+    const isPassed = (result?.percentage || 0) >= 60;
     
     return (
       <DashboardLayout role="student" user={user || undefined}>
-        <div className="max-w-[600px] mx-auto py-10 px-5">
-          <div className="bg-[#1e1e2d] rounded-xl shadow-lg border border-white/5 text-center p-10">
-            {/* Status Icon */}
-            <div
-              className="w-[100px] h-[100px] rounded-full flex items-center justify-center mx-auto mb-6"
-              style={{
-                background: result?.terminated
-                  ? 'linear-gradient(135deg, #FF5B5B, #E74C3C)'
-                  : (result?.percentage || 0) >= 60
-                    ? 'linear-gradient(135deg, #00D68F, #00B074)'
-                    : 'linear-gradient(135deg, #FFAA00, #FF8C00)',
-              }}
-            >
-              <Icon name={result?.terminated ? 'ban' : 'trophy'} size="2x" className="text-white" />
+        <div className="max-w-2xl mx-auto py-12 px-6">
+          <div className="bg-[#101426] rounded-[40px] border border-white/10 p-10 text-center shadow-2xl relative overflow-hidden">
+            <div className={`absolute top-0 left-0 w-full h-1.5 ${result?.terminated ? 'bg-danger' : isPassed ? 'bg-success' : 'bg-warning'}`}></div>
+            
+            <div className={`w-28 h-28 rounded-3xl flex items-center justify-center mx-auto mb-8 rotate-6 ${
+              result?.terminated ? 'bg-danger/10 text-danger border-danger/20' : 
+              isPassed ? 'bg-success/10 text-success border-success/20' : 'bg-warning/10 text-warning border-warning/20'
+            } border shadow-xl`}>
+              <Icon name={result?.terminated ? 'ban' : isPassed ? 'trophy' : 'medal'} size="3x" />
             </div>
 
-            <h2 className="text-white text-2xl mb-2">
-              {result?.terminated ? 'تم إنهاء الامتحان' : 'نتيجة الامتحان'}
+            <h2 className="text-white text-3xl font-black mb-3">
+              {result?.terminated ? 'تم إنهاء الامتحان' : isPassed ? 'تهانينا! لقد اجتزت' : 'حظاً أوفر في المرة القادمة'}
             </h2>
             
             {result?.terminated && (
-              <p className="text-[#FF5B5B] mb-6 text-sm">
-                السبب: {result.terminated_reason === 'visibility_change' ? 'الخروج من الصفحة' : 'تغيير حجم الشاشة'}
-              </p>
+              <div className="px-4 py-2 rounded-full bg-danger/10 text-danger text-sm font-bold inline-block mb-8">
+                السبب: {result.terminated_reason === 'visibility_change' ? 'محاولة الخروج من الصفحة' : 'تغيير حجم الشاشة'}
+              </div>
             )}
 
-            {/* Score Display */}
-            <div className="bg-white/5 rounded-2xl p-6 mb-6">
-              <div className="text-5xl font-bold text-white mb-2">
-                {result?.score} / {result?.max_score}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-10">
+              <div className="p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-sm group hover:border-primary/30 transition-all">
+                <p className="text-gray-500 text-sm font-bold uppercase tracking-widest mb-2">النتيجة النهائية</p>
+                <div className="text-5xl font-black text-white mb-2 group-hover:scale-110 transition-transform">
+                  {result?.score}<span className="text-gray-600 text-2xl font-medium"> / {result?.max_score}</span>
+                </div>
+                <div className={`text-2xl font-bold ${isPassed ? 'text-success' : 'text-danger'}`}>
+                  {result?.percentage}%
+                </div>
               </div>
-              <div 
-                className="text-2xl font-semibold"
-                style={{ 
-                  color: (result?.percentage || 0) >= 60 ? '#00D68F' : '#FF5B5B',
-                }}
-              >
-                {result?.percentage}%
-              </div>
-              <div className="text-gray-light mt-2">
-                {result?.correct_answers} إجابة صحيحة من {result?.total_questions} سؤال
+              
+              <div className="p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-sm">
+                <p className="text-gray-500 text-sm font-bold uppercase tracking-widest mb-4">تفاصيل الإجابات</p>
+                <div className="flex items-center justify-center gap-4">
+                  <div className="text-center">
+                    <div className="text-3xl font-black text-success">{result?.correct_answers}</div>
+                    <p className="text-gray-500 text-xs">صحيحة</p>
+                  </div>
+                  <div className="w-px h-10 bg-white/10"></div>
+                  <div className="text-center">
+                    <div className="text-3xl font-black text-danger">{(result?.total_questions || 0) - (result?.correct_answers || 0)}</div>
+                    <p className="text-gray-500 text-xs">خاطئة</p>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Progress Comparison */}
             {progress?.has_previous && (
-              <div className="bg-white/5 rounded-xl p-4 mb-6 flex items-center justify-center gap-3">
-                <span
-                  className="text-xl"
-                  style={{
-                    color: progress.trend === 'up' ? '#00D68F' : progress.trend === 'down' ? '#FF5B5B' : '#FFAA00',
-                  }}
-                >
+              <div className="mb-10 p-5 rounded-2xl bg-primary/5 border border-primary/10 flex items-center justify-center gap-4 group">
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                   progress.trend === 'up' ? 'bg-success/10 text-success' : progress.trend === 'down' ? 'bg-danger/10 text-danger' : 'bg-warning/10 text-warning'
+                }`}>
                   <Icon name={progress.trend === 'up' ? 'arrow-up' : progress.trend === 'down' ? 'arrow-down' : 'minus'} size="lg" />
-                </span>
-                <span className="text-gray-light">{progress.message}</span>
+                </div>
+                <p className="text-gray-300 font-medium text-lg leading-tight text-right">{progress.message}</p>
               </div>
             )}
 
             <Button
               variant="primary"
               onClick={() => router.push('/student/exams')}
-              className="w-full"
+              className="w-full h-16 rounded-[24px] text-lg font-black shadow-2xl hover:translate-y-[-2px] active:translate-y-[1px] transition-all"
             >
-              العودة للامتحانات
+              العودة للرئيسية
             </Button>
           </div>
         </div>
@@ -636,149 +548,193 @@ export default function TakeExamPage() {
     );
   }
 
-  // Exam in progress
+  // 4. Active Exam View
+  const currentQuestion = attemptData?.question;
+  const isQuestionType = (type: string) => currentQuestion?.type === type;
+
   return (
     <DashboardLayout role="student" user={user || undefined}>
-      <div 
-        ref={containerRef}
-        className="max-w-[800px] mx-auto p-5 select-none"
-      >
-        {/* Watermark */}
+      <div ref={containerRef} className="max-w-4xl mx-auto p-6 md:p-10 select-none min-h-screen">
+        {/* Watermark (Preserved) */}
         <div className="fixed inset-0 pointer-events-none z-[9999] flex flex-wrap justify-around content-around opacity-[0.03] overflow-hidden">
-          {Array.from({ length: 12 }).map((_, i) => (
-            <div key={i} className="rotate-[-45deg] text-[2rem] font-bold text-white whitespace-nowrap m-[50px]">
+          {Array.from({ length: 15 }).map((_, i) => (
+            <div key={i} className="rotate-[-45deg] text-[2rem] font-bold text-white whitespace-nowrap m-[60px]">
               {user?.name} - {user?.phone}
             </div>
           ))}
         </div>
 
-        {/* Header with timer and progress */}
-        <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
-          <div>
-            <h2 className="text-white text-xl mb-1">
-              {attemptData?.exam?.title}
-            </h2>
-            <p className="text-gray-light text-sm">
-              سؤال {attemptData?.progress?.current} من {attemptData?.progress?.total}
-            </p>
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
+          <div className="space-y-1">
+            <h1 className="text-white text-3xl font-black tracking-tight">{attemptData?.exam?.title}</h1>
+            <div className="flex items-center gap-3">
+              <span className="px-3 py-1 rounded-lg bg-primary/10 border border-primary/20 text-primary-light text-xs font-bold uppercase tracking-wider">
+                سؤال {attemptData?.progress?.current} / {attemptData?.progress?.total}
+              </span>
+              <span className="text-gray-500 text-sm font-medium">القسم الحالي: {attemptData?.exam?.subject}</span>
+            </div>
           </div>
           
-          {/* Timer */}
-          <div 
-            className="py-3 px-6 rounded-xl border-2"
-            style={{
-              background: `rgba(${getTimerColor() === '#FF5B5B' ? '255, 91, 91' : getTimerColor() === '#FFAA00' ? '255, 170, 0' : '0, 214, 143'}, 0.2)`,
-              borderColor: getTimerColor(),
-            }}
-          >
-            <div 
-              className="text-2xl font-bold font-mono"
-              style={{ color: getTimerColor() }}
-            >
-              {formatTime(timeLeft)}
-            </div>
+          {/* Circular Timer Inspired Component */}
+          <div className={`relative flex items-center justify-center p-4 rounded-[24px] border-2 transition-all duration-500 min-w-[140px] ${getTimerColorClass()}`}>
+            <Icon name="clock" className="mr-3 animate-pulse" />
+            <span className="text-3xl font-black font-mono tracking-tighter">{formatTime(timeLeft)}</span>
           </div>
         </div>
 
-        {/* Progress bar */}
-        <div className="h-2 bg-white/10 rounded-full mb-8 overflow-hidden">
+        {/* Elegant Progress Bar */}
+        <div className="relative h-2.5 bg-white/5 rounded-full mb-12 overflow-hidden border border-white/5 p-[1px]">
           <div 
-            className="h-full bg-gradient-to-r from-[#4263EB] to-[#00D68F] rounded-full transition-all duration-300"
+            className="h-full bg-gradient-to-r from-primary via-primary-light to-secondary rounded-full transition-all duration-700 ease-out shadow-[0_0_15px_rgba(66,99,235,0.3)]"
             style={{ width: `${getProgressPercentage()}%` }}
           ></div>
         </div>
 
-        {/* Question Card */}
-        <div className="bg-[#1e1e2d] rounded-xl shadow-lg border border-white/5 p-8">
-          <h3 className="text-white text-xl mb-6 leading-relaxed">
-            {attemptData?.question?.text}
-          </h3>
+        {/* Main Content Area */}
+        <div className="relative group">
+          <div className="absolute inset-0 bg-primary/5 blur-[80px] rounded-full -z-10 group-hover:bg-primary/10 transition-all duration-500"></div>
+          
+          <div className="bg-[#101426]/80 backdrop-blur-2xl rounded-[40px] border border-white/10 p-8 md:p-12 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+            <div className="mb-10">
+              <span className="text-primary-light font-bold text-sm tracking-widest uppercase mb-4 block">السؤال {attemptData?.progress?.current}</span>
+              <h3 className="text-white text-2xl md:text-3xl font-bold leading-[1.6] text-right">
+                {currentQuestion?.text}
+              </h3>
+            </div>
 
-          {/* Options Rendering */}
-          <div className="flex flex-col gap-3">
-            {(!attemptData?.question?.type || attemptData.question.type === 'mcq' || attemptData.question.type === 'true_false') && (
-              attemptData?.question?.options.map((option: any, index: number) => (
-                <Button
-                  key={index}
-                  variant={selectedAnswer === option ? 'primary' : 'outline'}
-                  onClick={() => setSelectedAnswer(option)}
-                  disabled={submitting}
-                  className={`w-full justify-start text-right mb-2 ${
-                    selectedAnswer === option
-                      ? 'border-[#4263EB] bg-[#4263EB]/20'
-                      : 'border-white/10 bg-white/5 hover:bg-white/10'
-                  }`}
-                >
-                  <span className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 ml-3 ${
-                    selectedAnswer === option
-                      ? 'border-[#4263EB] bg-[#4263EB]'
-                      : 'border-white/30 bg-transparent'
-                  }`}>
-                    {selectedAnswer === option && (
-                      <Icon name="check" size="xs" className="text-white" />
-                    )}
-                  </span>
-                  {option}
-                </Button>
-              ))
-            )}
+            {/* Specialized Question Renderers */}
+            <div className="space-y-4">
+              
+              {/* MCQ & True/False */}
+              {(!currentQuestion?.type || isQuestionType('mcq') || isQuestionType('true_false')) && (
+                <div className={`grid gap-4 ${isQuestionType('true_false') ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'}`}>
+                  {currentQuestion?.options.map((option: any, index: number) => {
+                    const isSelected = selectedAnswer === option;
+                    const letter = String.fromCharCode(65 + index);
+                    
+                    return (
+                      <button
+                        key={index}
+                        disabled={submitting}
+                        onClick={() => setSelectedAnswer(option)}
+                        className={`group relative flex items-center gap-4 p-5 rounded-3xl border transition-all duration-300 text-right ${
+                          isSelected 
+                            ? 'bg-primary/20 border-primary shadow-[0_0_25px_rgba(66,99,235,0.25)]' 
+                            : 'bg-white/5 border-white/10 hover:border-white/25 hover:bg-white/10'
+                        }`}
+                      >
+                        <div className={`w-12 h-12 rounded-2xl border flex items-center justify-center font-black text-lg transition-all duration-300 ${
+                          isSelected ? 'bg-primary border-primary text-white scale-110' : 'bg-white/5 border-white/10 text-gray-400 group-hover:text-white'
+                        }`}>
+                          {isQuestionType('true_false') ? (
+                            <Icon name={option === 'صح' || option === 'True' || index === 0 ? 'check' : 'times'} />
+                          ) : letter}
+                        </div>
+                        <span className={`text-lg font-bold transition-all ${isSelected ? 'text-white' : 'text-gray-300 group-hover:text-white'}`}>
+                          {option}
+                        </span>
+                        {isSelected && (
+                          <div className="mr-auto w-6 h-6 rounded-full bg-primary flex items-center justify-center animate-bounce-in">
+                            <Icon name="check" size="xs" className="text-white" />
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
 
-            {attemptData?.question?.type === 'ordering' && (
-              <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={handleOrderingDragEnd}
-              >
-                <SortableContext
-                  items={shuffledOptions}
-                  strategy={verticalListSortingStrategy}
-                >
-                  {shuffledOptions.map((option) => (
-                    <SortableItem key={option} id={option} text={option} />
-                  ))}
-                </SortableContext>
-              </DndContext>
-            )}
-
-            {attemptData?.question?.type === 'matching' && (
-              <div className="space-y-4">
-                {attemptData.question.options.map((pair: any, index: number) => (
-                  <div key={index} className="flex flex-col sm:flex-row items-center gap-4 p-4 bg-white/5 rounded-xl border border-white/5">
-                    <div className="flex-1 text-white font-bold text-lg">{pair.a}</div>
-                    <div className="text-primary flex items-center justify-center">
-                       <Icon name="link" className="hidden sm:block" />
-                       <Icon name="chevron-down" className="block sm:hidden" />
-                    </div>
-                    <select
-                      className="flex-1 bg-white/10 border-white/10 rounded-lg p-3 text-white font-bold focus:ring-primary focus:border-primary outline-none"
-                      value={matchingAnswers[pair.a] || ''}
-                      onChange={(e) => handleMatchingChange(pair.a, e.target.value)}
-                    >
-                      <option value="" className="bg-[#1e1e2d]">اختر الإجابة المناسبة...</option>
-                      {shuffledOptions.map((opt, i) => (
-                        <option key={i} value={opt} className="bg-[#1e1e2d]">{opt}</option>
+              {/* Ordering */}
+              {isQuestionType('ordering') && (
+                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleOrderingDragEnd}>
+                  <SortableContext items={shuffledOptions} strategy={verticalListSortingStrategy}>
+                    <div className="space-y-1">
+                      {shuffledOptions.map((option, idx) => (
+                        <SortableItem key={option} id={option} text={option} index={idx} />
                       ))}
-                    </select>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+                    </div>
+                  </SortableContext>
+                </DndContext>
+              )}
 
-          {/* Submit Button */}
-          <Button
-            variant="primary"
-            onClick={() => submitAnswer(selectedAnswer)}
-            disabled={!selectedAnswer || submitting}
-            loading={submitting}
-            className="mt-8 w-full"
-            size="lg"
-          >
-            {submitting ? 'جاري الإرسال...' : 'التالي'}
-          </Button>
+              {/* Matching */}
+              {isQuestionType('matching') && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-10 mt-6 relative">
+                  <div className="absolute left-1/2 top-0 bottom-0 w-px bg-white/5 hidden md:block"></div>
+                  
+                  {/* Right Side (Questions) */}
+                  <div className="space-y-3">
+                    <p className="text-gray-500 text-xs font-black uppercase tracking-widest mb-4 pr-2">القائمة اليمنى</p>
+                    {currentQuestion?.options.map((pair: any, index: number) => {
+                      const hasMatch = !!matchingAnswers[pair.a];
+                      const isActive = activeMatchingSide?.id === pair.a;
+                      
+                      return (
+                        <button
+                          key={index}
+                          onClick={() => handleMatchingClick(pair.a, 'left')}
+                          className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all ${
+                            isActive ? 'bg-primary border-primary shadow-lg ring-2 ring-primary/20 scale-[1.02]' : 
+                            hasMatch ? 'bg-success/10 border-success/30' : 'bg-white/5 border-white/10 hover:border-white/20'
+                          }`}
+                        >
+                          <span className={`font-bold ${isActive ? 'text-white' : hasMatch ? 'text-success' : 'text-gray-300'}`}>{pair.a}</span>
+                          <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${isActive ? 'bg-white/20 text-white' : hasMatch ? 'bg-success text-white' : 'bg-white/5 text-gray-500'}`}>
+                            <Icon name={hasMatch ? 'check' : 'link'} size="sm" />
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Left Side (Answers) */}
+                  <div className="space-y-3">
+                    <p className="text-gray-500 text-xs font-black uppercase tracking-widest mb-4 pr-2">القائمة اليسرى</p>
+                    {shuffledOptions.map((opt, i) => {
+                      const matchedWith = Object.keys(matchingAnswers).find(k => matchingAnswers[k] === opt);
+                      
+                      return (
+                        <button
+                          key={i}
+                          onClick={() => handleMatchingClick(opt, 'right')}
+                          className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all ${
+                            matchedWith ? 'bg-success/20 border-success shadow-lg' : 'bg-white/5 border-white/10 hover:border-white/20'
+                          }`}
+                        >
+                          <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${matchedWith ? 'bg-success text-white' : 'bg-white/5 text-gray-500'}`}>
+                            <Icon name={matchedWith ? 'link' : 'circle'} size="xs" />
+                          </div>
+                          <div className="text-right">
+                            <span className={`font-bold block ${matchedWith ? 'text-white' : 'text-gray-300'}`}>{opt}</span>
+                            {matchedWith && <span className="text-[10px] text-success font-black uppercase tracking-tighter">متصل بـ: {matchedWith}</span>}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Navigation / Submit */}
+            <div className="mt-12">
+              <Button
+                variant="primary"
+                onClick={() => submitAnswer(selectedAnswer)}
+                disabled={!selectedAnswer || submitting}
+                loading={submitting}
+                className={`w-full h-16 rounded-[24px] text-lg font-black transition-all duration-500 ${
+                  !selectedAnswer ? 'opacity-40 grayscale pointer-events-none' : 'shadow-[0_12px_40px_rgba(66,99,235,0.4)]'
+                }`}
+              >
+                {submitting ? 'جاري الحفظ...' : (attemptData?.progress?.current === attemptData?.progress?.total ? 'إنهاء وتسليم' : 'تأكيد الانتقال للسؤال التالي')}
+              </Button>
+              <p className="text-center text-gray-500 text-xs mt-4 font-medium">يرجى التأكد من الإجابة قبل الضغط على الزر، لا يمكن التراجع</p>
+            </div>
+          </div>
         </div>
       </div>
     </DashboardLayout>
   );
 }
-
