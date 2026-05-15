@@ -88,7 +88,8 @@ class TokenService
         $refreshTtlDays = $this->resolveRefreshTokenTtlDays();
 
         return DB::transaction(function () use ($user, $tokenName, $refreshTtlDays) {
-            $user->tokens()->where('name', $tokenName)->lockForUpdate()->delete();
+            // REMOVED: $user->tokens()->where('name', $tokenName)->lockForUpdate()->delete();
+            // We now allow multiple tokens with same deviceName; DeviceLimitService will manage overall limits.
 
             $refreshToken = $user->createToken(
                 $tokenName,
@@ -105,7 +106,7 @@ class TokenService
 
     /**
      * Rotate tokens using a valid refresh token.
-     * Implements token rotation: old refresh token is revoked, new pair is issued.
+     * Implements non-destructive rotation: old refresh token stays valid.
      *
      * @param string $refreshToken The refresh token string
      * @return array{access: array{access_token: string, expires_at: string, token_type: string}, refresh: array{refresh_token: string, expires_at: string}}
@@ -134,11 +135,18 @@ class TokenService
                 throw new TokenUserNotFoundException();
             }
 
-            $deviceName = str_replace('refresh-token-', '', $token->name);
+            // Generate new access token
+            $accessData = $this->createAccessToken($user);
 
-            $token->delete();
-
-            return $this->generateTokenPair($user, $deviceName);
+            // Instead of deleting and creating a new refresh token (which causes race conditions in multi-tab apps),
+            // we return the existing refresh token.
+            return [
+                'access' => $accessData,
+                'refresh' => [
+                    'refresh_token' => $refreshToken,
+                    'expires_at' => $token->expires_at ? $token->expires_at->toIso8601String() : null,
+                ]
+            ];
         });
     }
 

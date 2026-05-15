@@ -60,7 +60,7 @@ class DeviceLimitService
     {
         return PersonalAccessToken::where('tokenable_type', get_class($user))
             ->where('tokenable_id', $user->id)
-            ->where('name', 'access_token')
+            ->whereIn('name', ['access_token', 'access-token'])
             ->where(function ($query) {
                 $query->whereNull('expires_at')
                     ->orWhere('expires_at', '>', now());
