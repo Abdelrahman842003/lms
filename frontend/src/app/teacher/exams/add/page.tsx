@@ -209,11 +209,13 @@ export default function AddExamPage() {
     });
   };
   const handleOptionChange = (oIndex: number, value: string) => {
-    const newQuestions = [...questions];
-    const newOptions = [...newQuestions[currentQuestionIndex].options];
-    newOptions[oIndex] = value;
-    newQuestions[currentQuestionIndex].options = newOptions;
-    setQuestions(newQuestions);
+    setQuestions(prev => {
+      const newQuestions = [...prev];
+      const newOptions = [...newQuestions[currentQuestionIndex].options];
+      newOptions[oIndex] = value;
+      newQuestions[currentQuestionIndex] = { ...newQuestions[currentQuestionIndex], options: newOptions };
+      return newQuestions;
+    });
   };
 
   const handleNextQuestion = () => {
@@ -592,10 +594,18 @@ export default function AddExamPage() {
                                className="flex-1 bg-transparent border-none p-0 font-bold text-white shadow-none focus:ring-0 placeholder:text-gray-light/5"
                                value={option}
                                onChange={(e) => {
-                                 const newOptions = [...questions[currentQuestionIndex].options];
-                                 newOptions[oIndex] = e.target.value;
-                                 handleQuestionChange('options', newOptions);
-                                 handleQuestionChange('correct_answer', newOptions.join('|||'));
+                                 const val = e.target.value;
+                                 setQuestions(prev => {
+                                   const newQuestions = [...prev];
+                                   const newOptions = [...newQuestions[currentQuestionIndex].options];
+                                   newOptions[oIndex] = val;
+                                   newQuestions[currentQuestionIndex] = {
+                                     ...newQuestions[currentQuestionIndex],
+                                     options: newOptions,
+                                     correct_answer: newOptions.join('|||')
+                                   };
+                                   return newQuestions;
+                                 });
                                }}
                                placeholder={`العنصر رقم ${oIndex + 1}`}
                              />
@@ -643,26 +653,41 @@ export default function AddExamPage() {
                                  className="bg-transparent border-none p-0 font-bold text-white shadow-none focus:ring-0 placeholder:text-gray-light/5 border-l border-white/10 rounded-none"
                                  value={pair.a}
                                  onChange={(e) => {
-                                   const newOptions = [...questions[currentQuestionIndex].options];
-                                   newOptions[oIndex] = { ...newOptions[oIndex], a: e.target.value };
-                                   handleQuestionChange('options', newOptions);
-                                   handleQuestionChange('correct_answer', newOptions.map(p => `${p.a}===${p.b}`).join('|||'));
+                                   const val = e.target.value;
+                                   setQuestions(prev => {
+                                     const newQuestions = [...prev];
+                                     const newOptions = [...newQuestions[currentQuestionIndex].options];
+                                     newOptions[oIndex] = { ...newOptions[oIndex], a: val };
+                                     newQuestions[currentQuestionIndex] = {
+                                       ...newQuestions[currentQuestionIndex],
+                                       options: newOptions,
+                                       correct_answer: newOptions.map((p: any) => `${p.a}===${p.b}`).join('|||')
+                                     };
+                                     return newQuestions;
+                                   });
                                  }}
                                  placeholder="العنصر أ"
-                               />
-                               <Input
+                                 />
+                                 <Input
                                  type="text"
                                  className="bg-transparent border-none p-0 font-bold text-white shadow-none focus:ring-0 placeholder:text-gray-light/5"
                                  value={pair.b}
                                  onChange={(e) => {
-                                   const newOptions = [...questions[currentQuestionIndex].options];
-                                   newOptions[oIndex] = { ...newOptions[oIndex], b: e.target.value };
-                                   handleQuestionChange('options', newOptions);
-                                   handleQuestionChange('correct_answer', newOptions.map(p => `${p.a}===${p.b}`).join('|||'));
+                                   const val = e.target.value;
+                                   setQuestions(prev => {
+                                     const newQuestions = [...prev];
+                                     const newOptions = [...newQuestions[currentQuestionIndex].options];
+                                     newOptions[oIndex] = { ...newOptions[oIndex], b: val };
+                                     newQuestions[currentQuestionIndex] = {
+                                       ...newQuestions[currentQuestionIndex],
+                                       options: newOptions,
+                                       correct_answer: newOptions.map((p: any) => `${p.a}===${p.b}`).join('|||')
+                                     };
+                                     return newQuestions;
+                                   });
                                  }}
                                  placeholder="العنصر ب المقابل"
-                               />
-                             </div>
+                                 />                             </div>
                              {questions[currentQuestionIndex].options.length > 2 && (
                                <button 
                                  type="button"

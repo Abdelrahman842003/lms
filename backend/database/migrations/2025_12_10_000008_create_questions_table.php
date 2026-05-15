@@ -12,8 +12,9 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->foreignUuid('exam_id')->constrained()->cascadeOnDelete();
             $table->text('text');
+            $table->string('type')->default('mcq')->after('text');
             $table->json('options');
-            $table->string('correct_answer');
+            $table->text('correct_answer');
             $table->integer('duration')->default(60); // Duration in seconds
             $table->timestamps();
         });

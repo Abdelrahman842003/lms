@@ -27,6 +27,8 @@ return new class extends Migration
             $table->boolean('is_unlimited_students')->default(false);
             $table->decimal('subscription_fee', 10, 2)->default(0);
             $table->decimal('paid_amount', 10, 2)->default(0);
+            $table->boolean('has_videos_addon')->default(false)->comment('Indicates if the teacher is subscribed to the online videos add-on');
+
             // Video quota (minutes-based)
             $table->unsignedInteger('storage_minutes_limit')->nullable()->comment('Max minutes of video storage allowed');
             $table->unsignedInteger('storage_minutes_used')->default(0)->comment('Minutes of video currently stored');

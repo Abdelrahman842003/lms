@@ -156,34 +156,38 @@ export default function EditExamPage() {
   };
 
   const handleQuestionChange = (field: keyof Question, value: any) => {
-    const newQuestions = [...questions];
-    
-    if (field === 'type') {
-      let options: any[] = [];
-      if (value === 'mcq') options = ['', '', '', ''];
-      else if (value === 'true_false') options = ['صح', 'خطأ'];
-      else if (value === 'ordering') options = ['', ''];
-      else if (value === 'matching') options = [{ a: '', b: '' }, { a: '', b: '' }];
+    setQuestions(prev => {
+      const newQuestions = [...prev];
+      
+      if (field === 'type') {
+        let options: any[] = [];
+        if (value === 'mcq') options = ['', '', '', ''];
+        else if (value === 'true_false') options = ['صح', 'خطأ'];
+        else if (value === 'ordering') options = ['', ''];
+        else if (value === 'matching') options = [{ a: '', b: '' }, { a: '', b: '' }];
 
-      newQuestions[currentQuestionIndex] = { 
-        ...newQuestions[currentQuestionIndex], 
-        [field]: value,
-        options,
-        correct_answer: ''
-      };
-    } else {
-      newQuestions[currentQuestionIndex] = { ...newQuestions[currentQuestionIndex], [field]: value };
-    }
-    
-    setQuestions(newQuestions);
+        newQuestions[currentQuestionIndex] = { 
+          ...newQuestions[currentQuestionIndex], 
+          [field]: value,
+          options,
+          correct_answer: ''
+        };
+      } else {
+        newQuestions[currentQuestionIndex] = { ...newQuestions[currentQuestionIndex], [field]: value };
+      }
+      
+      return newQuestions;
+    });
   };
 
   const handleOptionChange = (oIndex: number, value: string) => {
-    const newQuestions = [...questions];
-    const newOptions = [...newQuestions[currentQuestionIndex].options];
-    newOptions[oIndex] = value;
-    newQuestions[currentQuestionIndex].options = newOptions;
-    setQuestions(newQuestions);
+    setQuestions(prev => {
+      const newQuestions = [...prev];
+      const newOptions = [...newQuestions[currentQuestionIndex].options];
+      newOptions[oIndex] = value;
+      newQuestions[currentQuestionIndex] = { ...newQuestions[currentQuestionIndex], options: newOptions };
+      return newQuestions;
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -585,12 +589,19 @@ export default function EditExamPage() {
                                  className="flex-1 bg-transparent border-none p-0 font-bold text-white shadow-none focus:ring-0"
                                  value={option}
                                  onChange={(e) => {
-                                   const newOptions = [...questions[currentQuestionIndex].options];
-                                   newOptions[oIndex] = e.target.value;
-                                   handleQuestionChange('options', newOptions);
-                                   handleQuestionChange('correct_answer', newOptions.join('|||'));
-                                 }}
-                                 placeholder={`العنصر رقم ${oIndex + 1}`}
+                                   const val = e.target.value;
+                                   setQuestions(prev => {
+                                     const newOptions = [...prev[currentQuestionIndex].options];
+                                     newOptions[oIndex] = val;
+                                     const updatedQuestions = [...prev];
+                                     updatedQuestions[currentQuestionIndex] = {
+                                       ...updatedQuestions[currentQuestionIndex],
+                                       options: newOptions,
+                                       correct_answer: newOptions.join('|||')
+                                     };
+                                     return updatedQuestions;
+                                   });
+                                 }}                                 placeholder={`العنصر رقم ${oIndex + 1}`}
                                  disabled={isSubmitting}
                                />
                                {questions[currentQuestionIndex].options.length > 2 && (
@@ -633,28 +644,43 @@ export default function EditExamPage() {
                                    className="bg-transparent border-none p-0 font-bold text-white shadow-none focus:ring-0"
                                    value={pair.a}
                                    onChange={(e) => {
-                                     const newOptions = [...questions[currentQuestionIndex].options];
-                                     newOptions[oIndex] = { ...newOptions[oIndex], a: e.target.value };
-                                     handleQuestionChange('options', newOptions);
-                                     handleQuestionChange('correct_answer', newOptions.map(p => `${p.a}===${p.b}`).join('|||'));
+                                     const val = e.target.value;
+                                     setQuestions(prev => {
+                                       const newOptions = [...prev[currentQuestionIndex].options];
+                                       newOptions[oIndex] = { ...newOptions[oIndex], a: val };
+                                       const updatedQuestions = [...prev];
+                                       updatedQuestions[currentQuestionIndex] = {
+                                         ...updatedQuestions[currentQuestionIndex],
+                                         options: newOptions,
+                                         correct_answer: newOptions.map((p: any) => `${p.a}===${p.b}`).join('|||')
+                                       };
+                                       return updatedQuestions;
+                                     });
                                    }}
                                    placeholder="العنصر أ"
                                    disabled={isSubmitting}
-                                 />
-                                 <Input
+                                   />
+                                   <Input
                                    type="text"
                                    className="bg-transparent border-none p-0 font-bold text-white shadow-none focus:ring-0"
                                    value={pair.b}
                                    onChange={(e) => {
-                                     const newOptions = [...questions[currentQuestionIndex].options];
-                                     newOptions[oIndex] = { ...newOptions[oIndex], b: e.target.value };
-                                     handleQuestionChange('options', newOptions);
-                                     handleQuestionChange('correct_answer', newOptions.map(p => `${p.a}===${p.b}`).join('|||'));
+                                     const val = e.target.value;
+                                     setQuestions(prev => {
+                                       const newOptions = [...prev[currentQuestionIndex].options];
+                                       newOptions[oIndex] = { ...newOptions[oIndex], b: val };
+                                       const updatedQuestions = [...prev];
+                                       updatedQuestions[currentQuestionIndex] = {
+                                         ...updatedQuestions[currentQuestionIndex],
+                                         options: newOptions,
+                                         correct_answer: newOptions.map((p: any) => `${p.a}===${p.b}`).join('|||')
+                                       };
+                                       return updatedQuestions;
+                                     });
                                    }}
                                    placeholder="العنصر ب المقابل"
                                    disabled={isSubmitting}
-                                 />
-                               </div>
+                                   />                               </div>
                                {questions[currentQuestionIndex].options.length > 2 && (
                                  <button 
                                    type="button"
