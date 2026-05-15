@@ -9,6 +9,7 @@ use App\Domains\Auth\Models\Academy;
 use App\Domains\Auth\Models\Teacher;
 use App\Domains\Subscriptions\Enums\SubscriptionType;
 use App\Domains\Subscriptions\Models\Subscription;
+use App\Domains\Subscriptions\Services\SubscriptionRenewalService;
 use Carbon\Carbon;
 
 class UnifiedSubscriptionSyncService
@@ -49,7 +50,7 @@ class UnifiedSubscriptionSyncService
                 'status' => $this->resolveStatus($amountDue, $amountPaid),
                 'paid_at' => $amountPaid > 0 ? now()->toDateString() : null,
                 'notes' => $this->buildDetailedNotes($academy, (string) ($academy->plan_type ?? '')),
-                'request_type' => null,
+                'request_type' => SubscriptionRenewalService::REQUEST_TYPE_RENEWAL,
             ]
         );
     }
@@ -90,7 +91,7 @@ class UnifiedSubscriptionSyncService
                 'status' => $this->resolveStatus($amountDue, $amountPaid),
                 'paid_at' => $amountPaid > 0 ? now()->toDateString() : null,
                 'notes' => $this->buildDetailedNotes($teacher, (string) ($teacher->plan_type ?? '')),
-                'request_type' => null,
+                'request_type' => SubscriptionRenewalService::REQUEST_TYPE_RENEWAL,
             ]
         );
     }
