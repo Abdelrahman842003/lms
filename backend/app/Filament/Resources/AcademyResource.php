@@ -319,6 +319,11 @@ class AcademyResource extends BaseResource
                             ->default(false)
                             ->reactive(),
 
+                        Toggle::make('has_videos_addon')
+                            ->label('باقة الفيديوهات الأونلاين (إضافة)')
+                            ->default(false)
+                            ->helperText('تفعيل ميزة الفيديوهات التعليمية للأكاديمية ومدرسيها وطلابهم'),
+
                         TextInput::make('plan_max_students')
                             ->label('الحد الأقصى للطلاب')
                             ->numeric()

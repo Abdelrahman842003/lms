@@ -31,24 +31,54 @@ class VideoUploadController extends Controller
      */
     public function initiateUpload(InitiateUploadRequest $request): JsonResponse
     {
+        try {
+            /** @var Teacher $teacher */
+            $teacher = $request->user();
+
+            if (! $this->policy->createIndependent($teacher)) {
+                throw new AuthorizationException('غير مصرح لك برفع فيديوهات مستقلة.');
+            }
+
+            $context = $this->actorResolver->resolveIndependentTeacher($teacher);
+            $data    = CreateVideoData::fromInitiateRequest($request->validated());
+
+            $payload = $this->orchestration->initiateUpload(
+                data:            $data,
+                context:         $context,
+                fileDeclaration: $request->only(['file_name', 'file_size', 'file_mime', 'estimated_duration_minutes', 'file_fingerprint']),
+                initiatorIp:     (string) $request->ip(),
+            );
+
+            return $this->successResponse($payload, 'تم تهيئة جلسة الرفع. استخدم رابط TUS للرفع المباشر.', 201);
+        } catch (\RuntimeException $e) {
+            return $this->errorResponse($e->getMessage(), 400);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Upload Initiation Error: ' . $e->getMessage(), [
+                'exception' => $e
+            ]);
+            return $this->errorResponse('حدث خطأ أثناء تهيئة عملية الرفع: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * POST /api/v1/teacher/videos/complete-upload
+     */
+    public function completeUpload(Request $request): JsonResponse
+    {
+        $request->validate([
+            'session_id' => ['required', 'string'],
+        ]);
+
         /** @var Teacher $teacher */
         $teacher = $request->user();
 
-        if (! $this->policy->createIndependent($teacher)) {
-            throw new AuthorizationException('غير مصرح لك برفع فيديوهات مستقلة.');
-        }
-
-        $context = $this->actorResolver->resolveIndependentTeacher($teacher);
-        $data    = CreateVideoData::fromInitiateRequest($request->validated());
-
-        $payload = $this->orchestration->initiateUpload(
-            data:            $data,
-            context:         $context,
-            fileDeclaration: $request->only(['file_name', 'file_size', 'file_mime', 'estimated_duration_minutes', 'file_fingerprint']),
-            initiatorIp:     (string) $request->ip(),
+        $payload = $this->orchestration->completeUpload(
+            sessionId:    (string) $request->input('session_id'),
+            uploaderType: $teacher->getMorphClass(),
+            uploaderId:   (string) $teacher->id,
         );
 
-        return $this->successResponse($payload, 'تم تهيئة جلسة الرفع. استخدم رابط TUS للرفع المباشر.', 201);
+        return $this->successResponse($payload, 'تم إكمال الرفع بنجاح.');
     }
 
     /**

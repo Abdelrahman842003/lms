@@ -132,6 +132,23 @@ function SubscriptionPage() {
           </div>
         </div>
 
+        {/* Video Addon Warning */}
+        {user && !(user as any).has_videos_addon && (
+          <div className="premium-glass border-primary/20 rounded-[2rem] p-6 flex items-start gap-5 shadow-2xl shadow-primary/5">
+            <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center border border-primary/20">
+              <Icon name="film" className="text-primary text-xl" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-primary font-black text-lg">
+                باقة الفيديوهات الأونلاين (إضافة)
+              </h3>
+              <p className="text-gray-light/60 text-sm font-medium leading-relaxed">
+                أنت غير مشترك حالياً في باقة الفيديوهات الأونلاين. هذه الميزة تسمح لك برفع فيديوهات تعليمية محمية لطلابك. يرجى التواصل مع الإدارة لتفعيل هذه الإضافة.
+              </p>
+            </div>
+          </div>
+        )}
+
         {loading ? (
           <div className="premium-glass premium-border rounded-[2.5rem] p-12 flex flex-col items-center justify-center gap-4 text-center">
              <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>

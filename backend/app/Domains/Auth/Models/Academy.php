@@ -45,6 +45,7 @@ class Academy extends Model implements AuthenticatableContract, AuthorizableCont
         'is_active',
         'status',
         'max_enrollments_limit',
+        'has_videos_addon',
         // Plan fields handled by HasTenantPlan trait
         'trial_period_days', 'plan_type', 'subscription_period', 'plan_expires_at',
         'plan_max_students', 'is_unlimited_students', 'subscription_fee',
@@ -59,6 +60,7 @@ class Academy extends Model implements AuthenticatableContract, AuthorizableCont
     {
         return [
             'is_active' => 'boolean',
+            'has_videos_addon' => 'boolean',
             'password' => 'hashed',
             'plan_expires_at' => 'date',
             'is_unlimited_students' => 'boolean',

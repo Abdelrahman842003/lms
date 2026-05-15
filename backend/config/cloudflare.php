@@ -15,10 +15,10 @@ return [
 
     'stream' => [
         // Cloudflare Account ID (visible in the dashboard URL)
-        'account_id'  => env('CLOUDFLARE_STREAM_ACCOUNT_ID'),
+        'account_id'  => env('CLOUDFLARE_STREAM_ACCOUNT_ID', env('CLOUDFLARE_R2_ACCOUNT_ID', env('CLOUDFLARE_KV_ACCOUNT_ID'))),
 
         // API Token with Stream:Edit permissions
-        'api_token'   => env('CLOUDFLARE_STREAM_API_TOKEN'),
+        'api_token'   => env('CLOUDFLARE_STREAM_API_TOKEN', env('CLOUDFLARE_R2_API_TOKEN', env('CLOUDFLARE_KV_API_TOKEN'))),
 
         // RSA signing key for generating Signed URLs (PEM format)
         // Generate via: POST /accounts/{account_id}/stream/keys

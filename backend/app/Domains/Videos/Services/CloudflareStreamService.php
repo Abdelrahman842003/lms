@@ -80,11 +80,16 @@ class CloudflareStreamService
             ->post("{$this->baseUrl}/direct_upload", $body);
 
         if (! $response->successful()) {
+            $errorData = $response->json();
+            $errorMessage = $errorData['errors'][0]['message'] ?? 'فشل إنشاء رابط الرفع من Cloudflare Stream.';
+            
             Log::error('Cloudflare Stream: createDirectUploadUrl failed', [
                 'status' => $response->status(),
+                'errors' => $errorData['errors'] ?? [],
                 'body'   => $response->body(),
             ]);
-            throw new \RuntimeException('فشل إنشاء رابط الرفع من Cloudflare Stream.');
+
+            throw new \RuntimeException($errorMessage);
         }
 
         $result = $response->json('result', []);

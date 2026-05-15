@@ -55,6 +55,7 @@ class Teacher extends Authenticatable
         'password',
         'status',
         'is_independent_active',
+        'has_videos_addon',
         // Plan fields handled by HasTenantPlan trait
         'trial_period_days', 'plan_type', 'subscription_period', 'plan_expires_at',
         'plan_max_students', 'is_unlimited_students', 'subscription_fee',
@@ -73,6 +74,7 @@ class Teacher extends Authenticatable
         return [
             'password' => 'hashed',
             'is_independent_active' => 'boolean',
+            'has_videos_addon' => 'boolean',
             'custom_expires_at' => 'date',
             'status' => \App\Domains\Auth\Enums\TeacherStatus::class,
             'plan_expires_at' => 'date',

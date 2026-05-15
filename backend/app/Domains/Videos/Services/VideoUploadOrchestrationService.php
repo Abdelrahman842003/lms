@@ -142,6 +142,42 @@ class VideoUploadOrchestrationService
     }
 
     // ─────────────────────────────────────────────────────────────────
+    // STEP 2  –  Complete
+    // ─────────────────────────────────────────────────────────────────
+
+    public function completeUpload(string $sessionId, string $uploaderType, string $uploaderId): array
+    {
+        $session = VideoUploadSession::query()->findOrFail($sessionId);
+
+        if (! $session->isOwnedBy($uploaderType, $uploaderId)) {
+            throw new AuthorizationException('غير مصرح بإكمال هذا الرفع.');
+        }
+
+        if ($session->status === VideoUploadSessionStatus::COMPLETED) {
+            return [
+                'video_id' => $session->video_id,
+                'status'   => 'already_completed',
+            ];
+        }
+
+        $session->update([
+            'status'       => VideoUploadSessionStatus::COMPLETED,
+            'completed_at' => now(),
+        ]);
+
+        $video = $session->video;
+        if ($video) {
+            $video->update(['status' => VideoStatus::UPLOADED]);
+            $this->logAudit('upload.completed', $video, null, ['session_id' => $sessionId]);
+        }
+
+        return [
+            'video_id' => $session->video_id,
+            'status'   => 'completed',
+        ];
+    }
+
+    // ─────────────────────────────────────────────────────────────────
     // STEP 2  –  Abort
     // ─────────────────────────────────────────────────────────────────
 

@@ -108,6 +108,12 @@ const getNavItems = (role: string): SidebarItem[] => {
         href: '/academy/exams',
       },
       {
+        id: 'notes',
+        label: 'المذكرات',
+        icon: 'file-pdf',
+        href: '/academy/notes',
+      },
+      {
         id: 'notifications_academy',
         label: 'الإشعارات',
         icon: 'bell',
@@ -197,6 +203,12 @@ const getNavItems = (role: string): SidebarItem[] => {
         href: '/teacher/exams',
       },
       {
+        id: 'notes',
+        label: 'المذكرات',
+        icon: 'file-pdf',
+        href: '/teacher/notes',
+      },
+      {
         id: 'notifications',
         label: 'الإخطارات والدعم',
         icon: 'bell',
@@ -244,6 +256,12 @@ const getNavItems = (role: string): SidebarItem[] => {
       label: 'الامتحانات',
       icon: 'file-alt',
       href: '/student/exams',
+    },
+    {
+      id: 'notes',
+      label: 'مذكراتي',
+      icon: 'file-pdf',
+      href: '/student/notes',
     },
     {
       id: 'notifications',
@@ -366,9 +384,47 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
   
   // Use authUser from context if available, otherwise fall back to prop
   const user = authUser || userProp;
+  const { selectedTeacher } = useAuth();
   
   // Get nav items and filter for secretary
   let items = role === 'parent' ? getParentNavItems() : getNavItems(role);
+
+  // Filter items for Video Addon
+  const hasVideosAddon = (function() {
+    if (role === 'academy') {
+      return (user as any)?.has_videos_addon;
+    }
+    
+    if (role === 'teacher') {
+      const isIndependent = selectedAcademy?.id === 'independent' || (!selectedAcademy?.id && !isLoading);
+      if (isIndependent) {
+        return (user as any)?.has_videos_addon;
+      }
+      return selectedAcademy?.has_videos_addon;
+    }
+    
+    if (role === 'secretary') {
+      const isIndependent = selectedAcademy?.id === 'independent' || (!selectedAcademy?.id && !isLoading);
+      if (isIndependent) {
+          if (selectedAcademy?.id && selectedAcademy.id !== 'independent') {
+              return selectedAcademy.has_videos_addon;
+          }
+          return (user as any)?.has_videos_addon ?? true;
+      }
+      return selectedAcademy?.has_videos_addon;
+    }
+
+    if (role === 'student') {
+      return selectedTeacher?.has_videos_addon;
+    }
+
+    return true;
+  })();
+
+  if (!hasVideosAddon) {
+    items = items.filter(item => item.id !== 'videos');
+  }
+
   if (role === 'secretary' && authUser?.permissions) {
     items = filterNavItemsByPermissions(items, authUser.permissions);
   } else if (role === 'secretary') {

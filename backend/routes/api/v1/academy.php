@@ -140,6 +140,7 @@ Route::middleware(['auth:sanctum', EnsureActiveSubscription::class])->prefix('ac
     // Videos Management (New: Direct-to-R2 multipart upload)
     Route::middleware('throttle:video-upload')->group(function () {
         Route::post('videos/initiate-upload', [VideoUploadController::class, 'initiateUpload']);
+        Route::post('videos/complete-upload', [VideoUploadController::class, 'completeUpload']);
         Route::post('videos/report-part-success', [VideoUploadController::class, 'reportPartSuccess']);
         Route::post('videos/{video}/attachments/initiate-direct-upload', [VideoUploadController::class, 'initiateAttachmentUploads']);
         Route::post('videos/{video}/attachments/complete-direct-upload', [VideoUploadController::class, 'completeAttachmentUploads']);
@@ -164,4 +165,11 @@ Route::middleware(['auth:sanctum', EnsureActiveSubscription::class])->prefix('ac
     Route::put('videos/{video}/quiz', [VideoQuizController::class, 'update']);
     Route::delete('videos/{video}/quiz', [VideoQuizController::class, 'destroy']);
     Route::get('videos/{video}/quiz/results', [VideoQuizController::class, 'results']);
+
+    // Notes Management (Academy)
+    Route::get('notes', [\App\Domains\Notes\Http\Controllers\Academy\NoteController::class, 'index']);
+    Route::post('notes/initiate', [\App\Domains\Notes\Http\Controllers\Academy\NoteController::class, 'initiate']);
+    Route::post('notes/{note}/complete', [\App\Domains\Notes\Http\Controllers\Academy\NoteController::class, 'complete']);
+    Route::get('notes/{note}', [\App\Domains\Notes\Http\Controllers\Academy\NoteController::class, 'show']);
+    Route::delete('notes/{note}', [\App\Domains\Notes\Http\Controllers\Academy\NoteController::class, 'destroy']);
 });

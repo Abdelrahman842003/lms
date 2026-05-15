@@ -246,6 +246,7 @@ export function SecureVideoPlayer({
           <Stream
             src={streamUrl}
             controls
+            primaryColor="#4263eb"
             className="w-full h-full"
             onTimeUpdate={(e) => handleTimeUpdateCore(e.currentTime, e.duration)}
             onEnded={() => syncNow(streamRef.current?.duration || streamRef.current?.currentTime)}

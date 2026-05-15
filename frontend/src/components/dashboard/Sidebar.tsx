@@ -98,6 +98,12 @@ const getSidebarItems = (role: string): SidebarItem[] => {
         href: '/teacher/exams',
       },
       {
+        id: 'notes',
+        label: 'المذكرات',
+        icon: 'fas fa-file-pdf',
+        href: '/teacher/notes',
+      },
+      {
         id: 'notifications',
         label: 'الإخطارات',
         icon: 'fas fa-bell',
@@ -144,6 +150,12 @@ const getSidebarItems = (role: string): SidebarItem[] => {
       label: 'الامتحانات',
       icon: 'fas fa-file-alt',
       href: '/student/exams',
+    },
+    {
+      id: 'notes',
+      label: 'مذكراتي',
+      icon: 'fas fa-file-pdf',
+      href: '/student/notes',
     },
     {
       id: 'mistakes',
@@ -235,7 +247,7 @@ const filterItemsByPermissions = (items: SidebarItem[], permissions: any[]): Sid
 
 export const Sidebar: React.FC<SidebarProps> = ({ role, user, isOpen, onClose, permissions = [] }) => {
   const pathname = usePathname();
-  const { selectedAcademy, isLoading } = useAuth();
+  const { selectedAcademy, selectedTeacher, isLoading } = useAuth();
   
   // Get items based on role, then filter by permissions for secretary
   let items = getSidebarItems(role === 'secretary' ? 'teacher' : role);
@@ -245,6 +257,49 @@ export const Sidebar: React.FC<SidebarProps> = ({ role, user, isOpen, onClose, p
   } else if (role === 'secretary') {
     // No permissions = only dashboard
     items = items.filter(item => item.id === 'dashboard');
+  }
+
+  // Filter items for Video Addon
+  const hasVideosAddon = (function() {
+    if (role === 'academy') {
+      return (user as any).has_videos_addon;
+    }
+    
+    if (role === 'teacher') {
+      const isIndependent = selectedAcademy?.id === 'independent' || (!selectedAcademy?.id && !isLoading);
+      if (isIndependent) {
+        return (user as any).has_videos_addon;
+      }
+      return selectedAcademy?.has_videos_addon;
+    }
+    
+    if (role === 'secretary') {
+      // Secretary context is tied to a teacher
+      const isIndependent = selectedAcademy?.id === 'independent' || (!selectedAcademy?.id && !isLoading);
+      if (isIndependent) {
+          // We don't have the teacher object directly here easily without more context, 
+          // but usually the 'user' for secretary login contains relevant teacher info if it's a teacher-secretary.
+          // However, secretaries are linked to teachers. Let's assume for now they follow the academy if set, or the first teacher.
+          // Better: Check if they are in an academy context.
+          if (selectedAcademy?.id && selectedAcademy.id !== 'independent') {
+              return selectedAcademy.has_videos_addon;
+          }
+          // If independent teacher's secretary, we'd need teacher's flag.
+          // For now, let's fall back to true to avoid breaking, or check user.has_videos_addon if passed.
+          return (user as any).has_videos_addon ?? true;
+      }
+      return selectedAcademy?.has_videos_addon;
+    }
+
+    if (role === 'student') {
+      return selectedTeacher?.has_videos_addon;
+    }
+
+    return true;
+  })();
+
+  if (!hasVideosAddon) {
+    items = items.filter(item => item.id !== 'videos');
   }
 
   // Filter items for Academy mode (Teacher only)

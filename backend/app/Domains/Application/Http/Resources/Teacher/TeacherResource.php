@@ -77,6 +77,14 @@ class TeacherResource extends JsonResource
             'plan_expires_at' => $this->plan_expires_at ? $this->plan_expires_at->toISOString() : null,
             'plan_max_students' => $this->plan_max_students,
             'is_unlimited_students' => (bool) $this->is_unlimited_students,
+            'has_videos_addon' => (function() {
+                // If this resource is loaded in the context of a student enrollment (pivot exists)
+                if ($this->pivot && !empty($this->pivot->academy_id)) {
+                    $academy = \App\Domains\Auth\Models\Academy::find($this->pivot->academy_id);
+                    return (bool) ($academy?->has_videos_addon ?? false);
+                }
+                return (bool) $this->has_videos_addon;
+            })(),
             // Quota fields (Minutes-based for video, bytes for attachments)
             'storage_minutes_limit' => $this->storage_minutes_limit,
             'storage_minutes_used' => $this->storage_minutes_used,

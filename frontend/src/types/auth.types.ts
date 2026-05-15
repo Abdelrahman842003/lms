@@ -23,6 +23,7 @@ export interface BaseUser {
   teachers?: any[];
   permissions?: string[];
   is_independent_active?: boolean;
+  has_videos_addon?: boolean;
   academies?: any[];
   trial_period_days?: number | null;
   effective_trial_period_days?: number;
@@ -117,6 +118,7 @@ export interface TeacherInfo {
   is_suspended?: boolean;
   is_teacher_suspended?: boolean;
   is_subscription_blocked?: boolean;
+  has_videos_addon?: boolean;
   academy_id?: string | null;
   academy_name?: string | null;
 }
@@ -129,6 +131,7 @@ export interface AcademyInfo {
   name: string;
   logo: string | null;
   is_active: boolean;
+  has_videos_addon?: boolean;
 }
 
 /**

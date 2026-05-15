@@ -39,10 +39,11 @@ const WORKER_URL = `https://unpkg.com/pdfjs-dist@${PDFJS_VERSION}/build/pdf.work
 interface PdfViewerCoreProps {
   url: string;
   fileName?: string;
+  hideDownload?: boolean;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
-export function PdfViewerCore({ url }: PdfViewerCoreProps) {
+export function PdfViewerCore({ url, hideDownload = false }: PdfViewerCoreProps) {
   const [searchKeyword, setSearchKeyword] = useState('');
 
   // ── Search plugin ──
@@ -149,7 +150,7 @@ export function PdfViewerCore({ url }: PdfViewerCoreProps) {
 
       {/* ── PDF Viewer ── */}
       <div
-        className="flex-1 overflow-hidden"
+        className={`flex-1 overflow-hidden ${hideDownload ? 'hide-pdf-actions' : ''}`}
         style={{ direction: 'ltr' }}
       >
         <PdfWorker workerUrl={WORKER_URL}>
@@ -200,6 +201,15 @@ export function PdfViewerCore({ url }: PdfViewerCoreProps) {
           </div>
         </PdfWorker>
       </div>
+
+      <style jsx global>{`
+        .hide-pdf-actions [data-testid="toolbar__download"],
+        .hide-pdf-actions [data-testid="toolbar__print"],
+        .hide-pdf-actions [data-testid="toolbar__open-file"],
+        .hide-pdf-actions [data-testid="sidebar__tab-attachment"] {
+          display: none !important;
+        }
+      `}</style>
     </div>
   );
 }

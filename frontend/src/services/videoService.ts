@@ -46,10 +46,27 @@ export async function initiateAcademyUpload(
     method: 'POST',
     body: JSON.stringify(payload),
   });
+}/**
+ * Step 2 — Complete the upload session.
+ * Finalizes the video record and marks the session as COMPLETED.
+ */
+export async function completeTeacherUpload(
+  sessionId: string
+): Promise<CompleteUploadResponse> {
+  return fetchApi<CompleteUploadResponse>('/teacher/videos/complete-upload', {
+    method: 'POST',
+    body: JSON.stringify({ session_id: sessionId }),
+  });
 }
 
-
-
+export async function completeAcademyUpload(
+  sessionId: string
+): Promise<CompleteUploadResponse> {
+  return fetchApi<CompleteUploadResponse>('/academy/videos/complete-upload', {
+    method: 'POST',
+    body: JSON.stringify({ session_id: sessionId }),
+  });
+}
 /**
  * Abort — call when user cancels or an unrecoverable error occurs.
  * Server will AbortMultipartUpload on R2 and mark the session ABORTED.

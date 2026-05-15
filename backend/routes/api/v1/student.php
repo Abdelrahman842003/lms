@@ -89,4 +89,9 @@ Route::middleware(['auth:sanctum', EnsureTeacherNotSuspendedForStudent::class])-
     Route::get('/videos/{video}/quiz', [StudentVideoQuizController::class, 'show']);
     Route::post('/videos/{video}/quiz/submit', [StudentVideoQuizController::class, 'submit']);
     Route::get('/videos/{video}/quiz/attempts', [StudentVideoQuizController::class, 'attempts']);
+
+    // Notes (مذكراتي)
+    Route::get('/notes', [\App\Domains\Notes\Http\Controllers\Student\NoteController::class, 'index']);
+    Route::get('/notes/{note}', [\App\Domains\Notes\Http\Controllers\Student\NoteController::class, 'show']);
+    Route::get('/notes/{note}/attachments/{attachment}/url', [\App\Domains\Notes\Http\Controllers\Student\NoteController::class, 'getAttachmentUrl']);
 });

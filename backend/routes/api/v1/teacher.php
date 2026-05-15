@@ -134,6 +134,7 @@ Route::middleware(['auth:sanctum', EnsureUserNotSuspended::class . ':teacher', E
     // Videos Management - Upload rate limited
     Route::middleware('throttle:video-upload')->group(function () {
         Route::post('videos/initiate-upload', [VideoUploadController::class, 'initiateUpload']);
+        Route::post('videos/complete-upload', [VideoUploadController::class, 'completeUpload']);
         Route::post('videos/{video}/attachments/initiate-direct-upload', [VideoUploadController::class, 'initiateAttachmentUploads']);
         Route::post('videos/{video}/attachments/complete-direct-upload', [VideoUploadController::class, 'completeAttachmentUploads']);
     });
@@ -179,4 +180,11 @@ Route::middleware(['auth:sanctum', EnsureUserNotSuspended::class . ':teacher', E
     Route::post('exams/{exam}/copy', [ExamController::class, 'copy']);
     Route::put('exams/{exam}/end', [ExamController::class, 'endExam']);
     Route::apiResource('exams', ExamController::class);
+
+    // Notes Management (Teacher)
+    Route::get('notes', [\App\Domains\Notes\Http\Controllers\Teacher\NoteController::class, 'index']);
+    Route::post('notes/initiate', [\App\Domains\Notes\Http\Controllers\Teacher\NoteController::class, 'initiate']);
+    Route::post('notes/{note}/complete', [\App\Domains\Notes\Http\Controllers\Teacher\NoteController::class, 'complete']);
+    Route::get('notes/{note}', [\App\Domains\Notes\Http\Controllers\Teacher\NoteController::class, 'show']);
+    Route::delete('notes/{note}', [\App\Domains\Notes\Http\Controllers\Teacher\NoteController::class, 'destroy']);
 });

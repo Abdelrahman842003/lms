@@ -14,6 +14,7 @@ import {
 import { fetchApi } from '@/services/api/baseApi';
 import type { InitiateUploadPayload, VideoItem } from '@/types/video.types';
 import toast from 'react-hot-toast';
+import * as tus from 'tus-js-client';
 
 const STORAGE_KEY = 'neetaq_pending_video_v2';
 
@@ -350,6 +351,8 @@ export function VideoUploadProvider({ children }: { children: React.ReactNode })
     return `${file.name}-${file.size}-${file.lastModified}`;
   };
 
+  const tusUploadRef = useRef<tus.Upload | null>(null);
+
   const startUpload = useCallback(
     async (
       file: File,
@@ -368,22 +371,16 @@ export function VideoUploadProvider({ children }: { children: React.ReactNode })
 
       patch({ phase: 'initiating', progress: 0, currentPart: 0, totalParts: 0, videoId: null, sessionId: null, error: null });
 
-      let chunkSizeBytes: number;
-      let sessionId: string;
-      let videoId: string;
-      let presignedParts: Array<{ part_number: number; url: string }>;
-
       try {
-        const defaultChunkBytes = 10 * 1024 * 1024;
-        const estimatedParts = Math.max(1, Math.ceil(file.size / defaultChunkBytes));
         const fileFingerprint = generateFingerprint(file);
 
+        // We still call our backend to create the Video record and get the TUS URL from Cloudflare
         const initiatePayload: InitiateUploadPayload = {
           ...metadata,
           file_name: file.name,
           file_size: file.size,
           file_mime: file.type || 'application/octet-stream',
-          total_parts: estimatedParts,
+          total_parts: 1, // TUS handles parts internally
           file_fingerprint: fileFingerprint,
         };
 
@@ -392,60 +389,69 @@ export function VideoUploadProvider({ children }: { children: React.ReactNode })
             ? await initiateTeacherUpload(initiatePayload)
             : await initiateAcademyUpload(initiatePayload);
 
-        sessionId = response.session_id;
-        videoId = response.video_id;
-        chunkSizeBytes = response.chunk_size_bytes ?? defaultChunkBytes;
-        presignedParts = response.presigned_parts || response.missing_parts; // Might be a resume from backend
+        const { session_id: sessionId, video_id: videoId, upload_url: uploadUrl } = response;
+
+        if (!uploadUrl) {
+          throw new Error('فشل الحصول على رابط الرفع من الخادم.');
+        }
 
         sessionIdRef.current = sessionId;
         
-        const sessionToSave: SavedSession = {
-          sessionId,
-          videoId,
-          metadata,
-          mode,
-          fileFingerprint,
-          fileInfo: { 
-            name: file.name, 
-            size: file.size, 
-            type: file.type,
-            lastModified: file.lastModified 
-          }
-        };
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(sessionToSave));
+        patch({ sessionId, videoId, phase: 'uploading' });
 
-        // Handle resume or new upload with uploaded_parts knowledge
-        const uploadedParts = response.uploaded_parts || [];
-        const totalParts = response.total_parts || estimatedParts;
-        
-        // Calculate initial bytes from parts the server already has
-        completedBytesRef.current = uploadedParts.reduce((acc, partNum) => {
-          const isLast = partNum === totalParts;
-          const size = isLast ? (file.size - (totalParts - 1) * chunkSizeBytes) : chunkSizeBytes;
-          return acc + size;
-        }, 0);
+        // Initialize TUS upload
+        const upload = new tus.Upload(file, {
+          endpoint: uploadUrl, // This is the TUS upload URL from Cloudflare
+          retryDelays: [0, 3000, 5000, 10000, 20000],
+          metadata: {
+            filename: file.name,
+            filetype: file.type,
+          },
+          onError: (error) => {
+            console.error('TUS Upload Error:', error);
+            patch({ phase: 'failed', error: 'فشل الرفع: ' + error.message });
+            toast.error('فشل الرفع: ' + error.message);
+          },
+          onProgress: (bytesUploaded, bytesTotal) => {
+            const percentage = Math.round((bytesUploaded / bytesTotal) * 100);
+            patch({ progress: percentage });
+          },
+          onSuccess: async () => {
+            patch({ phase: 'completing', progress: 100 });
+            try {
+              // Call complete on our backend to finalize the session
+              const completeRes = mode === 'teacher' 
+                ? await completeTeacherUpload(sessionId)
+                : await completeAcademyUpload(sessionId);
+              
+              const finalVideoId = completeRes.video_id || videoId;
+              patch({ phase: 'completed', videoId: finalVideoId });
+              toast.success('تم رفع الفيديو بنجاح!');
 
-        patch({ 
-          sessionId, 
-          videoId, 
-          totalParts, 
-          progress: response.progress ?? Math.round((completedBytesRef.current / file.size) * 100) 
+              // Handle attachments if any
+              if (attachments && attachments.length > 0) {
+                const attachPrefix = mode === 'teacher' ? '/teacher/videos' : '/academy/videos';
+                const { promise } = uploadAttachments(attachPrefix, attachments, finalVideoId);
+                await promise;
+              }
+            } catch (err: any) {
+              patch({ phase: 'failed', error: 'فشل تأكيد الرفع: ' + err.message });
+            }
+          },
         });
 
-        // Filter: only upload parts that are NOT in uploaded_parts
-        const allParts = response.presigned_parts || response.missing_parts || [];
-        const pendingParts = allParts.filter(p => !uploadedParts.includes(p.part_number));
+        tusUploadRef.current = upload;
+        upload.start();
 
-        await performUpload(file, pendingParts, chunkSizeBytes, mode, videoId, attachments);
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : 'فشل بدء الرفع.';
         patch({ phase: 'failed', error: message });
         toast.error(message);
-        return;
       }
     },
-    [patch, uploadPart, runPool]
+    [patch]
   );
+
 
   const resumeUpload = useCallback(async (file: File) => {
     if (!savedSession) return;
@@ -506,6 +512,11 @@ export function VideoUploadProvider({ children }: { children: React.ReactNode })
 
   const pauseUpload = useCallback(async () => {
     pausedRef.current = true;
+    
+    if (tusUploadRef.current) {
+      tusUploadRef.current.abort(); // tus abort() is used for pausing
+    }
+
     const sid = sessionIdRef.current;
     const mode = currentModeRef.current;
     
@@ -528,10 +539,15 @@ export function VideoUploadProvider({ children }: { children: React.ReactNode })
   const cancelUpload = useCallback(
     async (mode: 'teacher' | 'academy', reason = 'cancelled by user') => {
       abortedRef.current = true;
-      localStorage.removeItem(STORAGE_KEY);
-      setSavedSession(null);
+    localStorage.removeItem(STORAGE_KEY);
+    setSavedSession(null);
 
-      const sid = sessionIdRef.current;
+    if (tusUploadRef.current) {
+      tusUploadRef.current.abort(true); // true = shouldTerminate
+      tusUploadRef.current = null;
+    }
+
+    const sid = sessionIdRef.current;
       if (sid) {
         try {
           if (mode === 'teacher') await abortTeacherUpload(sid, reason);

@@ -32,6 +32,7 @@ class AcademyResource extends JsonResource
             'plan_expires_at' => $this->plan_expires_at,
             'plan_max_students' => $this->plan_max_students,
             'is_unlimited_students' => (bool) $this->is_unlimited_students,
+            'has_videos_addon' => (bool) $this->has_videos_addon,
             'subscription_fee' => $this->subscription_fee ?? 0,
             'paid_amount' => $this->paid_amount ?? 0,
             'trial_period_days' => $this->trial_period_days !== null ? (int) $this->trial_period_days : null,
