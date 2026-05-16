@@ -1186,4 +1186,17 @@ class TeacherResource extends BaseResource
         return max(1, (int) ceil($daysRemaining / 30));
     }
 
+    private static function formatStorageLabel(?int $gb): string
+    {
+        if ($gb === null || $gb <= 0) {
+            return 'غير محدود';
+        }
+
+        if ($gb >= 1024) {
+            return round($gb / 1024, 2) . ' تيرا بايت';
+        }
+
+        return $gb . ' جيجا بايت';
+    }
+
 }

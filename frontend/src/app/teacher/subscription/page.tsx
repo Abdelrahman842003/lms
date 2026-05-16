@@ -126,9 +126,18 @@ function SubscriptionPage() {
             <p className="text-gray-light/40 font-bold mr-16">تحكم في باقتك، الكراسي، ومساحة التخزين الخاصة بك</p>
           </div>
 
-          <div className={`px-6 py-3 rounded-2xl border ${statusConfig.bg} ${statusConfig.border} ${statusConfig.color} flex items-center gap-3 backdrop-blur-xl shadow-xl shadow-black/20`}>
-            <Icon name={statusConfig.icon as any} className="text-xl" />
-            <span className="font-black tracking-wide uppercase text-sm">{statusConfig.label}</span>
+          <div className="flex flex-wrap items-center gap-3">
+            {subscription?.plan_label && (
+              <div className="px-6 py-3 rounded-2xl border border-primary/20 bg-primary/10 text-primary flex items-center gap-3 backdrop-blur-xl shadow-xl shadow-black/10">
+                <Icon name="star" className="text-xl" />
+                <span className="font-black tracking-wide uppercase text-sm">{subscription.plan_label}</span>
+              </div>
+            )}
+            
+            <div className={`px-6 py-3 rounded-2xl border ${statusConfig.bg} ${statusConfig.border} ${statusConfig.color} flex items-center gap-3 backdrop-blur-xl shadow-xl shadow-black/20`}>
+              <Icon name={statusConfig.icon as any} className="text-xl" />
+              <span className="font-black tracking-wide uppercase text-sm">{statusConfig.label}</span>
+            </div>
           </div>
         </div>
 

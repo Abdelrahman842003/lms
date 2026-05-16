@@ -44,6 +44,12 @@ class SanitizeInput
             return $next($request);
         }
 
+        // Skip sanitization for Livewire requests to prevent checksum corruption
+        // which causes CorruptComponentPayloadException
+        if ($request->hasHeader('X-Livewire') || $request->is('livewire/*')) {
+            return $next($request);
+        }
+
         if ($request->isJson()) {
             $this->sanitizeJson($request);
         } else {

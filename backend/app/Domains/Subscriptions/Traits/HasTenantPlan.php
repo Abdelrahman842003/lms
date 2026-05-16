@@ -67,6 +67,16 @@ trait HasTenantPlan
                     $planData
                 );
             }
+
+            // Clear subscription cache
+            try {
+                app(\App\Domains\Subscriptions\Services\SubscriptionRenewalService::class)->clearSubscriptionCache($model);
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error("Failed to clear subscription cache for {$model->getMorphClass()}: " . $e->getMessage());
+            }
+            
+            // Clear temporal attributes
+            $model->planAttributes = [];
         });
     }
 
