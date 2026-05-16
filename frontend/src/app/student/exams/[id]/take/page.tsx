@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { fetchApi } from '@/services/authService';
 import { toast } from 'react-hot-toast';
 import { Button, Icon } from '@/components/ui/index';
+import { InteractiveMatching } from '@/components/exam/InteractiveMatching';
 
 import {
   DndContext,
@@ -715,44 +716,13 @@ export default function TakeExamPage() {
 
               {/* Matching */}
               {isQuestionType('matching') && (
-                <div className="grid gap-4 mt-4">
-                  {currentQuestion?.options.map((pair: any, index: number) => {
-                    const currentMatch = matchingAnswers[pair.a] || '';
-                    
-                    return (
-                      <div 
-                        key={index} 
-                        className={`flex flex-col md:flex-row items-center gap-6 p-6 rounded-[32px] border-2 transition-all duration-300 ${
-                          currentMatch !== '' ? 'bg-primary/5 border-primary/30' : 'bg-white/[0.03] border-white/5'
-                        }`}
-                      >
-                        <div className="flex-1 w-full md:w-auto">
-                          <div className="text-gray-500 text-[10px] font-black uppercase tracking-widest mb-1">العنصر</div>
-                          <div className="text-white text-xl font-bold pr-2">{pair.a}</div>
-                        </div>
-                        
-                        <div className="hidden md:flex items-center text-primary/30">
-                          <Icon name="long-arrow-alt-left" size="lg" />
-                        </div>
-
-                        <div className="flex-1 w-full md:w-auto">
-                          <div className="text-gray-500 text-[10px] font-black uppercase tracking-widest mb-1">اختر المطابق</div>
-                          <select
-                            value={currentMatch}
-                            onChange={(e) => handleMatchingSelect(pair.a, e.target.value)}
-                            className="w-full bg-[#1a1f35] border-2 border-white/10 rounded-2xl p-4 text-white font-bold outline-none focus:border-primary transition-all appearance-none cursor-pointer"
-                            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'left 1rem center', backgroundSize: '1.5rem' }}
-                          >
-                            <option value="">اختر الإجابة...</option>
-                            {shuffledOptions.map((opt, i) => (
-                              <option key={i} value={opt}>{opt}</option>
-                            ))}
-                          </select>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                <InteractiveMatching
+                  keys={currentQuestion?.options.map((p: any) => p.a) || []}
+                  values={shuffledOptions}
+                  matches={matchingAnswers}
+                  onMatch={handleMatchingSelect}
+                  disabled={submitting}
+                />
               )}
             </div>
 
