@@ -50,21 +50,21 @@ class EnsureUserNotSuspended
             ];
         });
 
-        if ($suspensionStatus['is_suspended']) {
+        if ($suspensionStatus['is_suspended'] ?? false) {
             return response()->json([
                 'message' => 'Your account is suspended.',
                 'error' => 'ACCOUNT_SUSPENDED'
             ], 403);
         }
 
-        if (!$suspensionStatus['is_approved']) {
+        if (!($suspensionStatus['is_approved'] ?? true)) {
             return response()->json([
                 'message' => 'حسابك قيد المراجعة ولم تتم الموافقة عليه بعد.',
                 'error' => 'ACCOUNT_NOT_APPROVED'
             ], 403);
         }
 
-        if ($suspensionStatus['is_access_restricted']) {
+        if ($suspensionStatus['is_access_restricted'] ?? false) {
             return response()->json([
                 'message' => 'عذراً، حسابك معلق حالياً حيث لا يوجد نشاط مستقل أو انتماء لأكاديمية نشطة.',
                 'error' => 'ACCOUNT_RESTRICTED'
