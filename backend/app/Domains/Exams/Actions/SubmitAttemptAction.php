@@ -20,10 +20,10 @@ final class SubmitAttemptAction
      *
      * @throws DomainException
      */
-    public function execute(ExamAttempt $attempt, int $studentId, array $answers): ExamResult
+    public function execute(ExamAttempt $attempt, string $studentId, array $answers): ExamResult
     {
         // 1. التحقق من أن المحاولة تخص الطالب
-        if ((int) $attempt->student_id !== $studentId) {
+        if ($attempt->student_id !== $studentId) {
             throw new DomainException('هذه المحاولة لا تخصك.', 403);
         }
 

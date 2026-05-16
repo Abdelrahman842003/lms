@@ -43,15 +43,31 @@ class MistakesService
             return $failedQuestion;
         }
 
-        // New failed question
-        $created = FailedQuestion::create([
-            'student_id' => $student->id,
-            'teacher_id' => $teacherId,
-            'question_id' => $question->id,
-            'exam_id' => $exam->id,
-            'student_answer' => $studentAnswer,
-            'times_failed' => 1,
-        ]);
+        // New failed question - using try-catch to handle rare race conditions
+        try {
+            $created = FailedQuestion::create([
+                'student_id' => $student->id,
+                'teacher_id' => $teacherId,
+                'question_id' => $question->id,
+                'exam_id' => $exam->id,
+                'student_answer' => $studentAnswer,
+                'times_failed' => 1,
+            ]);
+        } catch (\Illuminate\Database\QueryException $e) {
+            // If another process created it just now, retry the increment logic
+            if ($e->getCode() === '23000') {
+                $failedQuestion = FailedQuestion::where('student_id', $student->id)
+                    ->where('question_id', $question->id)
+                    ->first();
+                
+                if ($failedQuestion) {
+                    $failedQuestion->incrementFailed($studentAnswer);
+                    \App\Domains\Application\Services\CacheService::forgetMistakesStats($student->id, $teacherId);
+                    return $failedQuestion;
+                }
+            }
+            throw $e;
+        }
 
         \App\Domains\Application\Services\CacheService::forgetMistakesStats($student->id, $teacherId);
 

@@ -6,7 +6,7 @@ import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { fetchApi } from '@/services/authService';
 import { toast } from 'react-hot-toast';
-import { Button, LoadingSpinner, Icon } from '@/components/ui/index';
+import { Button, Icon } from '@/components/ui/index';
 
 import {
   DndContext,
@@ -73,7 +73,15 @@ interface AttemptData {
 
 // ─── Components ───────────────────────────────────────────────────────────────
 
-function SortableItem({ id, text, index }: { id: string; text: string; index: number }) {
+function SortableItem({ id, text, index, onMoveUp, onMoveDown, isFirst, isLast }: { 
+  id: string; 
+  text: string; 
+  index: number;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  isFirst: boolean;
+  isLast: boolean;
+}) {
   const {
     attributes,
     listeners,
@@ -93,19 +101,46 @@ function SortableItem({ id, text, index }: { id: string; text: string; index: nu
     <div
       ref={setNodeRef}
       style={style}
-      {...attributes}
-      {...listeners}
-      className={`relative group p-4 mb-3 rounded-2xl border transition-all duration-200 cursor-move touch-none flex items-center gap-4 ${
+      className={`relative group p-4 mb-3 rounded-2xl border transition-all duration-300 flex items-center gap-4 ${
         isDragging 
-          ? 'bg-primary/20 border-primary shadow-2xl scale-[1.02]' 
-          : 'bg-white/5 border-white/10 hover:border-white/20 hover:bg-white/10'
+          ? 'bg-primary/20 border-primary shadow-[0_0_30px_rgba(66,99,235,0.3)] scale-[1.02] z-50' 
+          : 'bg-white/[0.03] border-white/10 hover:border-white/20 hover:bg-white/[0.06]'
       }`}
     >
-      <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-sm font-bold text-gray-400 group-hover:text-primary-light transition-colors">
+      <div 
+        {...attributes} 
+        {...listeners}
+        className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center cursor-grab active:cursor-grabbing hover:bg-white/10 transition-colors group/handle"
+      >
+        <Icon name="grip-vertical" className="text-gray-500 group-hover/handle:text-primary-light" />
+      </div>
+
+      <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-sm font-bold text-primary-light">
         {index + 1}
       </div>
-      <span className="flex-1 text-white font-medium">{text}</span>
-      <Icon name="grip-vertical" className="text-gray-500 group-hover:text-gray-300 transition-colors" />
+      
+      <span className="flex-1 text-white font-medium text-lg pr-2">{text}</span>
+
+      <div className="flex flex-col gap-1">
+        <button
+          onClick={(e) => { e.stopPropagation(); onMoveUp(); }}
+          disabled={isFirst}
+          className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
+            isFirst ? 'opacity-20 cursor-not-allowed' : 'bg-white/5 hover:bg-primary/20 hover:text-primary-light text-gray-400'
+          }`}
+        >
+          <Icon name="chevron-up" size="xs" />
+        </button>
+        <button
+          onClick={(e) => { e.stopPropagation(); onMoveDown(); }}
+          disabled={isLast}
+          className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
+            isLast ? 'opacity-20 cursor-not-allowed' : 'bg-white/5 hover:bg-primary/20 hover:text-primary-light text-gray-400'
+          }`}
+        >
+          <Icon name="chevron-down" size="xs" />
+        </button>
+      </div>
     </div>
   );
 }
@@ -130,7 +165,6 @@ export default function TakeExamPage() {
   // States for question types
   const [shuffledOptions, setShuffledOptions] = useState<any[]>([]);
   const [matchingAnswers, setMatchingAnswers] = useState<Record<string, string>>({});
-  const [activeMatchingSide, setActiveMatchingSide] = useState<{ id: string; val: string } | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -152,7 +186,6 @@ export default function TakeExamPage() {
         setShuffledOptions(colB);
         setMatchingAnswers({});
         setSelectedAnswer(null);
-        setActiveMatchingSide(null);
       } else {
         setShuffledOptions([]);
         setSelectedAnswer(null);
@@ -173,28 +206,27 @@ export default function TakeExamPage() {
     }
   };
 
-  const handleMatchingClick = (val: string, side: 'left' | 'right') => {
-    if (side === 'left') {
-      setActiveMatchingSide({ id: val, val });
-    } else {
-      if (!activeMatchingSide) {
-        toast.error('اختر عنصراً من القائمة اليمنى أولاً');
-        return;
-      }
+  const moveOrderingItem = (index: number, direction: 'up' | 'down') => {
+    const newIndex = direction === 'up' ? index - 1 : index + 1;
+    if (newIndex < 0 || newIndex >= shuffledOptions.length) return;
+    
+    const newItems = arrayMove(shuffledOptions, index, newIndex);
+    setShuffledOptions(newItems);
+    setSelectedAnswer(newItems.join('|||'));
+  };
+
+  const handleMatchingSelect = (questionVal: string, selectedAnswerVal: string) => {
+    const newAnswers = { ...matchingAnswers, [questionVal]: selectedAnswerVal };
+    setMatchingAnswers(newAnswers);
+    
+    const currentQ = attemptData?.question;
+    if (currentQ?.type === 'matching') {
+      const answerStr = currentQ.options
+        .map((p: any) => `${p.a}===${newAnswers[p.a] || ''}`)
+        .join('|||');
       
-      const newAnswers = { ...matchingAnswers, [activeMatchingSide.id]: val };
-      setMatchingAnswers(newAnswers);
-      setActiveMatchingSide(null);
-      
-      const currentQ = attemptData?.question;
-      if (currentQ?.type === 'matching') {
-        const answerStr = currentQ.options
-          .map((p: any) => `${p.a}===${newAnswers[p.a] || ''}`)
-          .join('|||');
-        
-        const allMatched = currentQ.options.every((p: any) => newAnswers[p.a]);
-        setSelectedAnswer(allMatched ? answerStr : null);
-      }
+      const allMatched = currentQ.options.every((p: any) => newAnswers[p.a] && newAnswers[p.a] !== '');
+      setSelectedAnswer(allMatched ? answerStr : null);
     }
   };
 
@@ -207,7 +239,7 @@ export default function TakeExamPage() {
       setLoading(true);
       const response = await fetchApi(`/student/exams/${examId}/start`, {
         method: 'POST',
-      });
+      }) as any;
       
       if (response) {
         if (response.status === 'waiting') {
@@ -257,7 +289,7 @@ export default function TakeExamPage() {
 
     pollInterval = setInterval(async () => {
       try {
-        const response = await fetchApi(`/student/exams/${examId}/start`, { method: 'POST' });
+        const response = await fetchApi(`/student/exams/${examId}/start`, { method: 'POST' }) as any;
         if (response && response.status !== 'waiting') {
           handleAdmission(response);
           if (pollInterval) clearInterval(pollInterval);
@@ -280,9 +312,9 @@ export default function TakeExamPage() {
         response = await fetchApi(`/student/exams/attempts/${attemptIdRef.current}/answer`, {
           method: 'POST',
           body: JSON.stringify({ answer }),
-        });
+        }) as any;
       } else {
-        response = await fetchApi(`/student/exams/attempts/${attemptIdRef.current}/skip`, { method: 'POST' });
+        response = await fetchApi(`/student/exams/attempts/${attemptIdRef.current}/skip`, { method: 'POST' }) as any;
       }
       
       if (response) {
@@ -305,7 +337,7 @@ export default function TakeExamPage() {
       const response = await fetchApi(`/student/exams/attempts/${attemptIdRef.current}/terminate`, {
         method: 'POST',
         body: JSON.stringify({ reason }),
-      });
+      }) as any;
       if (response) {
         setAttemptData(response);
         toast.error('تم إنهاء الامتحان بسبب مخالفة');
@@ -386,46 +418,47 @@ export default function TakeExamPage() {
   if (showWarning) {
     return (
       <DashboardLayout role="student" user={user || undefined}>
-        <div className="fixed inset-0 bg-[#050811]/90 backdrop-blur-xl flex items-center justify-center z-[1000] p-5">
-          <div className="bg-[#101426] rounded-[32px] p-8 md:p-12 max-w-[550px] w-full text-center border border-white/10 shadow-[0_32px_80px_rgba(0,0,0,0.6)] relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-danger via-warning to-danger"></div>
+        <div className="fixed inset-0 bg-[#050811]/95 backdrop-blur-2xl flex items-center justify-center z-[1000] p-5 overflow-y-auto">
+          <div className="bg-[#101426]/80 rounded-[48px] p-8 md:p-14 max-w-[650px] w-full text-center border border-white/10 shadow-[0_32px_100px_rgba(0,0,0,0.8)] relative overflow-hidden my-auto">
+            <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-danger via-warning to-danger"></div>
+            <div className="absolute -top-24 -left-24 w-48 h-48 bg-danger/10 blur-[80px] rounded-full"></div>
             
-            <div className="w-20 h-20 rounded-2xl bg-danger/10 border border-danger/20 flex items-center justify-center mx-auto mb-8 rotate-3 transition-transform hover:rotate-0 duration-300">
+            <div className="w-24 h-24 rounded-3xl bg-danger/10 border-2 border-danger/20 flex items-center justify-center mx-auto mb-10 rotate-3 shadow-[0_0_30px_rgba(255,91,91,0.2)]">
               <Icon name="exclamation-triangle" size="2x" className="text-danger" />
             </div>
             
-            <h2 className="text-white text-3xl mb-6 font-black tracking-tight">
-              تحذير هام قبل البدء
+            <h2 className="text-white text-4xl mb-8 font-black tracking-tight drop-shadow-lg">
+              تنبيهات هامة قبل البدء
             </h2>
             
-            <div className="space-y-4 mb-10 text-right">
+            <div className="space-y-4 mb-12 text-right">
               {[
-                { text: 'لا يمكنك العودة للأسئلة السابقة بعد الإجابة', icon: 'undo-alt' },
-                { text: 'سيتم تفعيل وضع ملء الشاشة تلقائياً لمنع التشتت', icon: 'expand' },
-                { text: 'الخروج من الصفحة أو تغيير حجمها ينهي الامتحان فوراً', icon: 'times-circle' },
-                { text: 'تم تعطيل النسخ واللصق والقوائم الجانبية', icon: 'lock' },
+                { text: 'بمجرد الإجابة، لا يمكنك العودة للسؤال السابق', icon: 'undo-alt', color: 'text-danger' },
+                { text: 'سيتم قفل المتصفح على وضع ملء الشاشة تلقائياً', icon: 'expand', color: 'text-primary-light' },
+                { text: 'الخروج من الصفحة أو تصغيرها ينهي محاولتك فوراً', icon: 'times-circle', color: 'text-warning' },
+                { text: 'تم تعطيل كافة اختصارات النسخ واللصق والبحث', icon: 'lock', color: 'text-success' },
               ].map((item, idx) => (
-                <div key={idx} className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-white/10 transition-colors">
-                  <div className="w-10 h-10 rounded-xl bg-danger/10 flex items-center justify-center flex-shrink-0">
-                    <Icon name={item.icon} className="text-danger" />
+                <div key={idx} className="flex items-center gap-5 p-5 rounded-3xl bg-white/[0.03] border border-white/5 hover:border-white/10 transition-all group">
+                  <div className={`w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform`}>
+                    <Icon name={item.icon} className={item.color} />
                   </div>
-                  <p className="text-gray-300 font-medium text-sm leading-relaxed">{item.text}</p>
+                  <p className="text-gray-300 font-bold text-base leading-relaxed">{item.text}</p>
                 </div>
               ))}
             </div>
             
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex flex-col sm:flex-row gap-5">
               <Button
-                variant="outline"
+                variant="ghost"
                 onClick={() => router.push('/student/exams')}
-                className="flex-1 rounded-2xl border-white/10 hover:bg-white/5 text-gray-400 h-14"
+                className="flex-1 rounded-3xl border-white/10 hover:bg-white/5 text-gray-400 h-16 text-lg font-bold"
               >
-                إلغاء الأمر
+                رجوع
               </Button>
               <Button
                 variant="primary"
                 onClick={() => { setShowWarning(false); startExam(); }}
-                className="flex-1 rounded-2xl h-14 font-bold shadow-[0_8px_25px_rgba(66,99,235,0.4)]"
+                className="flex-1 rounded-3xl h-16 text-lg font-black shadow-[0_12px_30px_rgba(66,99,235,0.4)] hover:scale-[1.02] transition-transform"
               >
                 فهمت، ابدأ الآن
               </Button>
@@ -442,25 +475,29 @@ export default function TakeExamPage() {
       <DashboardLayout role="student" user={user || undefined}>
         <div className="flex flex-col items-center justify-center min-h-[70vh] p-5 text-center">
           {waiting ? (
-            <div className="max-w-lg w-full p-10 rounded-[40px] bg-white/5 border border-white/10 backdrop-blur-md">
-              <div className="relative w-32 h-32 mx-auto mb-10">
-                <div className="absolute inset-0 rounded-full border-4 border-primary/20 animate-ping"></div>
+            <div className="max-w-xl w-full p-12 rounded-[56px] bg-[#101426]/60 border border-white/10 backdrop-blur-3xl shadow-2xl relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-1.5 bg-primary animate-pulse"></div>
+              <div className="relative w-40 h-40 mx-auto mb-10">
+                <div className="absolute inset-0 rounded-full border-4 border-primary/10 animate-ping"></div>
                 <div className="absolute inset-0 rounded-full border-4 border-t-primary animate-spin"></div>
-                <div className="absolute inset-0 flex items-center justify-center text-primary font-black text-3xl">
+                <div className="absolute inset-0 flex items-center justify-center text-primary font-black text-5xl drop-shadow-[0_0_15px_rgba(66,99,235,0.5)]">
                   {queuePosition}
                 </div>
               </div>
-              <h2 className="text-3xl font-black text-white mb-6">أنت في قائمة الانتظار</h2>
-              <p className="text-gray-400 leading-relaxed text-lg">
-                هناك ضغط كبير على السيرفر حالياً. ترتيبك هو <span className="text-primary font-bold">#{queuePosition}</span>.
+              <h2 className="text-4xl font-black text-white mb-6 tracking-tight">قائمة الانتظار</h2>
+              <p className="text-gray-400 leading-relaxed text-xl font-medium">
+                هناك ضغط حالي، ترتيبك في الدخول هو <span className="text-primary-light font-black underline underline-offset-8">#{queuePosition}</span>.
                 <br />
-                لا تغلق الصفحة، سيتم دخولك تلقائياً فور جاهزية دورك.
+                <span className="text-gray-500 text-base block mt-4">لا تغلق الصفحة، سيتم توجيهك تلقائياً...</span>
               </p>
             </div>
           ) : (
-            <div className="space-y-6">
-              <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin mx-auto"></div>
-              <p className="text-xl text-gray-400 font-medium animate-pulse">جاري تحضير أسئلة الامتحان...</p>
+            <div className="space-y-8">
+              <div className="relative w-24 h-24 mx-auto">
+                <div className="absolute inset-0 border-4 border-primary/20 rounded-full"></div>
+                <div className="absolute inset-0 border-4 border-t-primary rounded-full animate-spin"></div>
+              </div>
+              <p className="text-2xl text-gray-400 font-black tracking-widest animate-pulse uppercase">جاري تجهيز الأسئلة...</p>
             </div>
           )}
         </div>
@@ -476,71 +513,72 @@ export default function TakeExamPage() {
     
     return (
       <DashboardLayout role="student" user={user || undefined}>
-        <div className="max-w-2xl mx-auto py-12 px-6">
-          <div className="bg-[#101426] rounded-[40px] border border-white/10 p-10 text-center shadow-2xl relative overflow-hidden">
-            <div className={`absolute top-0 left-0 w-full h-1.5 ${result?.terminated ? 'bg-danger' : isPassed ? 'bg-success' : 'bg-warning'}`}></div>
+        <div className="max-w-3xl mx-auto py-16 px-6">
+          <div className="bg-[#101426]/60 backdrop-blur-3xl rounded-[56px] border border-white/10 p-10 md:p-16 text-center shadow-[0_40px_100px_rgba(0,0,0,0.6)] relative overflow-hidden">
+            <div className={`absolute top-0 left-0 w-full h-2 ${result?.terminated ? 'bg-danger' : isPassed ? 'bg-success shadow-[0_0_20px_rgba(16,185,129,0.5)]' : 'bg-warning shadow-[0_0_20px_rgba(245,158,11,0.5)]'}`}></div>
             
-            <div className={`w-28 h-28 rounded-3xl flex items-center justify-center mx-auto mb-8 rotate-6 ${
+            <div className={`w-32 h-32 rounded-[40px] flex items-center justify-center mx-auto mb-10 rotate-6 transition-transform hover:rotate-0 duration-500 shadow-2xl border-2 ${
               result?.terminated ? 'bg-danger/10 text-danger border-danger/20' : 
               isPassed ? 'bg-success/10 text-success border-success/20' : 'bg-warning/10 text-warning border-warning/20'
-            } border shadow-xl`}>
-              <Icon name={result?.terminated ? 'ban' : isPassed ? 'trophy' : 'medal'} size="3x" />
+            }`}>
+              <Icon name={result?.terminated ? 'ban' : isPassed ? 'trophy' : 'medal'} size="4x" className="drop-shadow-lg" />
             </div>
 
-            <h2 className="text-white text-3xl font-black mb-3">
-              {result?.terminated ? 'تم إنهاء الامتحان' : isPassed ? 'تهانينا! لقد اجتزت' : 'حظاً أوفر في المرة القادمة'}
+            <h2 className="text-white text-4xl font-black mb-4 tracking-tight drop-shadow-md">
+              {result?.terminated ? 'توقف الامتحان!' : isPassed ? 'أحسنت! لقد نجحت' : 'نتيجة الامتحان'}
             </h2>
             
             {result?.terminated && (
-              <div className="px-4 py-2 rounded-full bg-danger/10 text-danger text-sm font-bold inline-block mb-8">
-                السبب: {result.terminated_reason === 'visibility_change' ? 'محاولة الخروج من الصفحة' : 'تغيير حجم الشاشة'}
+              <div className="px-6 py-3 rounded-2xl bg-danger/10 text-danger text-sm font-black inline-block mb-10 border border-danger/20 animate-bounce">
+                السبب: {result.terminated_reason === 'visibility_change' ? 'محاولة تبديل التبويب' : 'الخروج من وضع ملء الشاشة'}
               </div>
             )}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-10">
-              <div className="p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-sm group hover:border-primary/30 transition-all">
-                <p className="text-gray-500 text-sm font-bold uppercase tracking-widest mb-2">النتيجة النهائية</p>
-                <div className="text-5xl font-black text-white mb-2 group-hover:scale-110 transition-transform">
-                  {result?.score}<span className="text-gray-600 text-2xl font-medium"> / {result?.max_score}</span>
-                </div>
-                <div className={`text-2xl font-bold ${isPassed ? 'text-success' : 'text-danger'}`}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+              <div className="p-10 rounded-[40px] bg-white/[0.03] border border-white/10 backdrop-blur-sm group hover:border-primary/30 transition-all hover:bg-white/[0.05]">
+                <p className="text-gray-500 text-[10px] font-black uppercase tracking-[0.3em] mb-4">النسبة المئوية</p>
+                <div className={`text-6xl font-black mb-2 transition-transform group-hover:scale-110 ${isPassed ? 'text-success' : 'text-danger'} drop-shadow-glow`}>
                   {result?.percentage}%
+                </div>
+                <div className="text-gray-400 font-bold text-xl">
+                  {result?.score} / {result?.max_score} نقطة
                 </div>
               </div>
               
-              <div className="p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-sm">
-                <p className="text-gray-500 text-sm font-bold uppercase tracking-widest mb-4">تفاصيل الإجابات</p>
-                <div className="flex items-center justify-center gap-4">
-                  <div className="text-center">
-                    <div className="text-3xl font-black text-success">{result?.correct_answers}</div>
-                    <p className="text-gray-500 text-xs">صحيحة</p>
+              <div className="p-10 rounded-[40px] bg-white/[0.03] border border-white/10 backdrop-blur-sm">
+                <p className="text-gray-500 text-[10px] font-black uppercase tracking-[0.3em] mb-6">تحليل الإجابات</p>
+                <div className="flex items-center justify-around">
+                  <div className="text-center group">
+                    <div className="text-4xl font-black text-success group-hover:scale-125 transition-transform">{result?.correct_answers}</div>
+                    <p className="text-gray-500 text-[10px] font-black mt-2">صحيحة</p>
                   </div>
-                  <div className="w-px h-10 bg-white/10"></div>
-                  <div className="text-center">
-                    <div className="text-3xl font-black text-danger">{(result?.total_questions || 0) - (result?.correct_answers || 0)}</div>
-                    <p className="text-gray-500 text-xs">خاطئة</p>
+                  <div className="w-px h-12 bg-white/10"></div>
+                  <div className="text-center group">
+                    <div className="text-4xl font-black text-danger group-hover:scale-125 transition-transform">{(result?.total_questions || 0) - (result?.correct_answers || 0)}</div>
+                    <p className="text-gray-500 text-[10px] font-black mt-2">خاطئة</p>
                   </div>
                 </div>
               </div>
             </div>
 
             {progress?.has_previous && (
-              <div className="mb-10 p-5 rounded-2xl bg-primary/5 border border-primary/10 flex items-center justify-center gap-4 group">
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                   progress.trend === 'up' ? 'bg-success/10 text-success' : progress.trend === 'down' ? 'bg-danger/10 text-danger' : 'bg-warning/10 text-warning'
+              <div className="mb-12 p-6 rounded-[32px] bg-primary/5 border border-primary/10 flex items-center justify-center gap-6 group hover:bg-primary/10 transition-colors">
+                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg transition-transform group-hover:rotate-12 ${
+                   progress.trend === 'up' ? 'bg-success/20 text-success' : progress.trend === 'down' ? 'bg-danger/20 text-danger' : 'bg-warning/20 text-warning'
                 }`}>
-                  <Icon name={progress.trend === 'up' ? 'arrow-up' : progress.trend === 'down' ? 'arrow-down' : 'minus'} size="lg" />
+                  <Icon name={progress.trend === 'up' ? 'trending-up' : progress.trend === 'down' ? 'trending-down' : 'minus'} size="xl" />
                 </div>
-                <p className="text-gray-300 font-medium text-lg leading-tight text-right">{progress.message}</p>
+                <p className="text-gray-300 font-bold text-xl leading-snug text-right">{progress.message}</p>
               </div>
             )}
 
             <Button
               variant="primary"
               onClick={() => router.push('/student/exams')}
-              className="w-full h-16 rounded-[24px] text-lg font-black shadow-2xl hover:translate-y-[-2px] active:translate-y-[1px] transition-all"
+              className="w-full h-20 rounded-[32px] text-xl font-black shadow-2xl hover:translate-y-[-4px] active:translate-y-[2px] transition-all relative overflow-hidden group/btn"
             >
-              العودة للرئيسية
+              <span className="relative z-10">العودة للرئيسية</span>
+              <div className="absolute inset-0 bg-gradient-to-r from-primary to-primary-light opacity-0 group-hover/btn:opacity-100 transition-opacity"></div>
             </Button>
           </div>
         </div>
@@ -565,46 +603,53 @@ export default function TakeExamPage() {
         </div>
 
         {/* Header Section */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
-          <div className="space-y-1">
-            <h1 className="text-white text-3xl font-black tracking-tight">{attemptData?.exam?.title}</h1>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
+          <div className="space-y-2">
+            <h1 className="text-white text-3xl font-black tracking-tight drop-shadow-lg">{attemptData?.exam?.title}</h1>
             <div className="flex items-center gap-3">
-              <span className="px-3 py-1 rounded-lg bg-primary/10 border border-primary/20 text-primary-light text-xs font-bold uppercase tracking-wider">
-                سؤال {attemptData?.progress?.current} / {attemptData?.progress?.total}
+              <span className="px-3 py-1.5 rounded-xl bg-primary/10 border border-primary/20 text-primary-light text-[10px] font-black uppercase tracking-widest shadow-sm">
+                سؤال {attemptData?.progress?.current} من {attemptData?.progress?.total}
               </span>
-              <span className="text-gray-500 text-sm font-medium">القسم الحالي: {attemptData?.exam?.subject}</span>
+              <span className="text-gray-400 text-xs font-bold bg-white/5 px-3 py-1.5 rounded-xl border border-white/5">{attemptData?.exam?.subject}</span>
             </div>
           </div>
           
-          {/* Circular Timer Inspired Component */}
-          <div className={`relative flex items-center justify-center p-4 rounded-[24px] border-2 transition-all duration-500 min-w-[140px] ${getTimerColorClass()}`}>
-            <Icon name="clock" className="mr-3 animate-pulse" />
+          <div className={`relative flex items-center justify-center px-6 py-4 rounded-[28px] border-2 transition-all duration-500 min-w-[160px] shadow-2xl backdrop-blur-md ${getTimerColorClass()}`}>
+            <Icon name="clock" className={`mr-3 ${timeLeft <= 10 ? 'animate-bounce' : 'animate-pulse'}`} />
             <span className="text-3xl font-black font-mono tracking-tighter">{formatTime(timeLeft)}</span>
           </div>
         </div>
 
         {/* Elegant Progress Bar */}
-        <div className="relative h-2.5 bg-white/5 rounded-full mb-12 overflow-hidden border border-white/5 p-[1px]">
+        <div className="relative h-3 bg-white/5 rounded-full mb-10 overflow-hidden border border-white/5 p-[1px] shadow-inner">
           <div 
-            className="h-full bg-gradient-to-r from-primary via-primary-light to-secondary rounded-full transition-all duration-700 ease-out shadow-[0_0_15px_rgba(66,99,235,0.3)]"
+            className="h-full bg-gradient-to-r from-primary via-primary-light to-secondary rounded-full transition-all duration-700 ease-out shadow-[0_0_20px_rgba(66,99,235,0.4)] relative"
             style={{ width: `${getProgressPercentage()}%` }}
-          ></div>
+          >
+            <div className="absolute inset-0 bg-white/20 animate-shimmer"></div>
+          </div>
         </div>
 
         {/* Main Content Area */}
-        <div className="relative group">
-          <div className="absolute inset-0 bg-primary/5 blur-[80px] rounded-full -z-10 group-hover:bg-primary/10 transition-all duration-500"></div>
+        <div className="relative">
+          <div className="absolute -top-20 -left-20 w-64 h-64 bg-primary/10 blur-[100px] rounded-full -z-10 animate-pulse-slow"></div>
+          <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-secondary/10 blur-[100px] rounded-full -z-10 animate-pulse-slow"></div>
           
-          <div className="bg-[#101426]/80 backdrop-blur-2xl rounded-[40px] border border-white/10 p-8 md:p-12 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
-            <div className="mb-10">
-              <span className="text-primary-light font-bold text-sm tracking-widest uppercase mb-4 block">السؤال {attemptData?.progress?.current}</span>
-              <h3 className="text-white text-2xl md:text-3xl font-bold leading-[1.6] text-right">
+          <div className="bg-[#101426]/60 backdrop-blur-3xl rounded-[48px] border border-white/10 p-8 md:p-14 shadow-[0_32px_80px_rgba(0,0,0,0.5)] relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-3xl"></div>
+            
+            <div className="mb-12 relative">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="h-1 w-12 bg-primary rounded-full"></div>
+                <span className="text-primary-light font-black text-xs tracking-[0.2em] uppercase">السؤال {attemptData?.progress?.current}</span>
+              </div>
+              <h3 className="text-white text-2xl md:text-4xl font-black leading-[1.5] text-right drop-shadow-md">
                 {currentQuestion?.text}
               </h3>
             </div>
 
             {/* Specialized Question Renderers */}
-            <div className="space-y-4">
+            <div className="space-y-6">
               
               {/* MCQ & True/False */}
               {(!currentQuestion?.type || isQuestionType('mcq') || isQuestionType('true_false')) && (
@@ -618,27 +663,28 @@ export default function TakeExamPage() {
                         key={index}
                         disabled={submitting}
                         onClick={() => setSelectedAnswer(option)}
-                        className={`group relative flex items-center gap-4 p-5 rounded-3xl border transition-all duration-300 text-right ${
+                        className={`group relative flex items-center gap-5 p-6 rounded-[32px] border-2 transition-all duration-300 text-right overflow-hidden ${
                           isSelected 
-                            ? 'bg-primary/20 border-primary shadow-[0_0_25px_rgba(66,99,235,0.25)]' 
-                            : 'bg-white/5 border-white/10 hover:border-white/25 hover:bg-white/10'
+                            ? 'bg-primary/10 border-primary shadow-[0_12px_40px_rgba(66,99,235,0.2)] scale-[1.01]' 
+                            : 'bg-white/[0.03] border-white/5 hover:border-white/20 hover:bg-white/[0.08]'
                         }`}
                       >
-                        <div className={`w-12 h-12 rounded-2xl border flex items-center justify-center font-black text-lg transition-all duration-300 ${
-                          isSelected ? 'bg-primary border-primary text-white scale-110' : 'bg-white/5 border-white/10 text-gray-400 group-hover:text-white'
+                        <div className={`w-14 h-14 rounded-2xl border-2 flex items-center justify-center font-black text-xl transition-all duration-300 ${
+                          isSelected ? 'bg-primary border-primary text-white shadow-lg' : 'bg-white/5 border-white/10 text-gray-500 group-hover:text-white'
                         }`}>
                           {isQuestionType('true_false') ? (
                             <Icon name={option === 'صح' || option === 'True' || index === 0 ? 'check' : 'times'} />
                           ) : letter}
                         </div>
-                        <span className={`text-lg font-bold transition-all ${isSelected ? 'text-white' : 'text-gray-300 group-hover:text-white'}`}>
+                        <span className={`text-xl font-bold transition-all ${isSelected ? 'text-white' : 'text-gray-300 group-hover:text-white'}`}>
                           {option}
                         </span>
-                        {isSelected && (
-                          <div className="mr-auto w-6 h-6 rounded-full bg-primary flex items-center justify-center animate-bounce-in">
-                            <Icon name="check" size="xs" className="text-white" />
-                          </div>
-                        )}
+                        
+                        <div className={`absolute left-8 w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
+                          isSelected ? 'bg-primary border-primary scale-110' : 'border-white/10 opacity-0 group-hover:opacity-100'
+                        }`}>
+                          {isSelected && <Icon name="check" size="sm" className="text-white" />}
+                        </div>
                       </button>
                     );
                   })}
@@ -649,9 +695,18 @@ export default function TakeExamPage() {
               {isQuestionType('ordering') && (
                 <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleOrderingDragEnd}>
                   <SortableContext items={shuffledOptions} strategy={verticalListSortingStrategy}>
-                    <div className="space-y-1">
+                    <div className="space-y-2">
                       {shuffledOptions.map((option, idx) => (
-                        <SortableItem key={option} id={option} text={option} index={idx} />
+                        <SortableItem 
+                          key={option} 
+                          id={option} 
+                          text={option} 
+                          index={idx}
+                          onMoveUp={() => moveOrderingItem(idx, 'up')}
+                          onMoveDown={() => moveOrderingItem(idx, 'down')}
+                          isFirst={idx === 0}
+                          isLast={idx === shuffledOptions.length - 1}
+                        />
                       ))}
                     </div>
                   </SortableContext>
@@ -660,77 +715,67 @@ export default function TakeExamPage() {
 
               {/* Matching */}
               {isQuestionType('matching') && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-10 mt-6 relative">
-                  <div className="absolute left-1/2 top-0 bottom-0 w-px bg-white/5 hidden md:block"></div>
-                  
-                  {/* Right Side (Questions) */}
-                  <div className="space-y-3">
-                    <p className="text-gray-500 text-xs font-black uppercase tracking-widest mb-4 pr-2">القائمة اليمنى</p>
-                    {currentQuestion?.options.map((pair: any, index: number) => {
-                      const hasMatch = !!matchingAnswers[pair.a];
-                      const isActive = activeMatchingSide?.id === pair.a;
-                      
-                      return (
-                        <button
-                          key={index}
-                          onClick={() => handleMatchingClick(pair.a, 'left')}
-                          className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all ${
-                            isActive ? 'bg-primary border-primary shadow-lg ring-2 ring-primary/20 scale-[1.02]' : 
-                            hasMatch ? 'bg-success/10 border-success/30' : 'bg-white/5 border-white/10 hover:border-white/20'
-                          }`}
-                        >
-                          <span className={`font-bold ${isActive ? 'text-white' : hasMatch ? 'text-success' : 'text-gray-300'}`}>{pair.a}</span>
-                          <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${isActive ? 'bg-white/20 text-white' : hasMatch ? 'bg-success text-white' : 'bg-white/5 text-gray-500'}`}>
-                            <Icon name={hasMatch ? 'check' : 'link'} size="sm" />
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
+                <div className="grid gap-4 mt-4">
+                  {currentQuestion?.options.map((pair: any, index: number) => {
+                    const currentMatch = matchingAnswers[pair.a] || '';
+                    
+                    return (
+                      <div 
+                        key={index} 
+                        className={`flex flex-col md:flex-row items-center gap-6 p-6 rounded-[32px] border-2 transition-all duration-300 ${
+                          currentMatch !== '' ? 'bg-primary/5 border-primary/30' : 'bg-white/[0.03] border-white/5'
+                        }`}
+                      >
+                        <div className="flex-1 w-full md:w-auto">
+                          <div className="text-gray-500 text-[10px] font-black uppercase tracking-widest mb-1">العنصر</div>
+                          <div className="text-white text-xl font-bold pr-2">{pair.a}</div>
+                        </div>
+                        
+                        <div className="hidden md:flex items-center text-primary/30">
+                          <Icon name="long-arrow-alt-left" size="lg" />
+                        </div>
 
-                  {/* Left Side (Answers) */}
-                  <div className="space-y-3">
-                    <p className="text-gray-500 text-xs font-black uppercase tracking-widest mb-4 pr-2">القائمة اليسرى</p>
-                    {shuffledOptions.map((opt, i) => {
-                      const matchedWith = Object.keys(matchingAnswers).find(k => matchingAnswers[k] === opt);
-                      
-                      return (
-                        <button
-                          key={i}
-                          onClick={() => handleMatchingClick(opt, 'right')}
-                          className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all ${
-                            matchedWith ? 'bg-success/20 border-success shadow-lg' : 'bg-white/5 border-white/10 hover:border-white/20'
-                          }`}
-                        >
-                          <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${matchedWith ? 'bg-success text-white' : 'bg-white/5 text-gray-500'}`}>
-                            <Icon name={matchedWith ? 'link' : 'circle'} size="xs" />
-                          </div>
-                          <div className="text-right">
-                            <span className={`font-bold block ${matchedWith ? 'text-white' : 'text-gray-300'}`}>{opt}</span>
-                            {matchedWith && <span className="text-[10px] text-success font-black uppercase tracking-tighter">متصل بـ: {matchedWith}</span>}
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
+                        <div className="flex-1 w-full md:w-auto">
+                          <div className="text-gray-500 text-[10px] font-black uppercase tracking-widest mb-1">اختر المطابق</div>
+                          <select
+                            value={currentMatch}
+                            onChange={(e) => handleMatchingSelect(pair.a, e.target.value)}
+                            className="w-full bg-[#1a1f35] border-2 border-white/10 rounded-2xl p-4 text-white font-bold outline-none focus:border-primary transition-all appearance-none cursor-pointer"
+                            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'left 1rem center', backgroundSize: '1.5rem' }}
+                          >
+                            <option value="">اختر الإجابة...</option>
+                            {shuffledOptions.map((opt, i) => (
+                              <option key={i} value={opt}>{opt}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
 
             {/* Navigation / Submit */}
-            <div className="mt-12">
+            <div className="mt-16">
               <Button
                 variant="primary"
                 onClick={() => submitAnswer(selectedAnswer)}
                 disabled={!selectedAnswer || submitting}
                 loading={submitting}
-                className={`w-full h-16 rounded-[24px] text-lg font-black transition-all duration-500 ${
-                  !selectedAnswer ? 'opacity-40 grayscale pointer-events-none' : 'shadow-[0_12px_40px_rgba(66,99,235,0.4)]'
+                className={`w-full h-20 rounded-[32px] text-xl font-black transition-all duration-500 relative overflow-hidden group/btn ${
+                  !selectedAnswer ? 'opacity-30 grayscale pointer-events-none' : 'shadow-[0_20px_50px_rgba(66,99,235,0.4)] hover:scale-[1.02] active:scale-[0.98]'
                 }`}
               >
-                {submitting ? 'جاري الحفظ...' : (attemptData?.progress?.current === attemptData?.progress?.total ? 'إنهاء وتسليم' : 'تأكيد الانتقال للسؤال التالي')}
+                <span className="relative z-10">
+                  {submitting ? 'جاري الحفظ...' : (attemptData?.progress?.current === attemptData?.progress?.total ? 'إنهاء وتسليم الامتحان' : 'تأكيد الإجابة والانتقال التالي')}
+                </span>
+                <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary-light to-primary opacity-0 group-hover/btn:opacity-100 transition-opacity"></div>
               </Button>
-              <p className="text-center text-gray-500 text-xs mt-4 font-medium">يرجى التأكد من الإجابة قبل الضغط على الزر، لا يمكن التراجع</p>
+              <div className="flex items-center justify-center gap-2 mt-6 text-gray-500">
+                <Icon name="info-circle" size="xs" />
+                <p className="text-center text-xs font-bold tracking-wide uppercase">يرجى التأكد من الإجابة، لا يمكن العودة للأسئلة السابقة</p>
+              </div>
             </div>
           </div>
         </div>

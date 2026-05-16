@@ -19,7 +19,7 @@ class RecordMistakes implements ShouldQueue
     public function handle(ExamCompleted $event): void
     {
         $attempt   = $event->attempt;
-        $studentId = (int) $attempt->student_id;
+        $studentId = $attempt->student_id;
         $examId    = $attempt->exam_id;
 
         // جلب الإجابات الخاطئة فقط
@@ -47,15 +47,29 @@ class RecordMistakes implements ShouldQueue
                 $failed->increment('times_failed');
                 $failed->update(['student_answer' => $answer->answer]);
             } else {
-                FailedQuestion::create([
-                    'student_id'     => $studentId,
-                    'teacher_id'     => $teacherId,
-                    'question_id'    => $question->id,
-                    'exam_id'        => $examId,
-                    'student_answer' => $answer->answer,
-                    'times_failed'   => 1,
-                    'is_mastered'    => false,
-                ]);
+                try {
+                    FailedQuestion::create([
+                        'student_id'     => $studentId,
+                        'teacher_id'     => $teacherId,
+                        'question_id'    => $question->id,
+                        'exam_id'        => $examId,
+                        'student_answer' => $answer->answer,
+                        'times_failed'   => 1,
+                        'is_mastered'    => false,
+                    ]);
+                } catch (\Illuminate\Database\QueryException $e) {
+                    if ($e->getCode() === '23000') {
+                        $failed = FailedQuestion::where('student_id', $studentId)
+                            ->where('question_id', $question->id)
+                            ->first();
+                        if ($failed) {
+                            $failed->increment('times_failed');
+                            $failed->update(['student_answer' => $answer->answer]);
+                        }
+                    } else {
+                        throw $e;
+                    }
+                }
             }
         }
     }

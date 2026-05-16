@@ -146,7 +146,7 @@ class StudentExamService
      *
      * @throws DomainException
      */
-    public function submitAnswer(ExamAttempt $attempt, ?string $answer): array
+    public function submitAnswer(ExamAttempt $attempt, mixed $answer): array
     {
         $this->ensureAttemptInProgress($attempt);
 
@@ -164,6 +164,7 @@ class StudentExamService
         $correctAnswer = is_array($correctAnswerRaw) ? implode('|||', $correctAnswerRaw) : trim((string) ($correctAnswerRaw ?? ''));
         $options = is_array($question->options) ? $question->options : [];
 
+        // If it's an MCQ and the answer is a key (e.g. 'A', 'B'), get the value from options
         if ($correctAnswer !== '' && ! array_is_list($options) && array_key_exists($correctAnswer, $options)) {
             $optionVal = $options[$correctAnswer];
             $correctAnswer = is_array($optionVal) ? implode('|||', $optionVal) : trim((string) $optionVal);
