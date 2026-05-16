@@ -79,4 +79,29 @@ class Guardian extends Authenticatable
     {
         return $this->deviceTokens()->pluck('token')->toArray();
     }
+
+    /**
+     * Check if all students associated with this guardian are inactive or suspended
+     */
+    public function hasOnlyInactiveStudents(): bool
+    {
+        $students = $this->students;
+        
+        if ($students->isEmpty()) {
+            return true;
+        }
+
+        foreach ($students as $student) {
+            // If at least one student is active and has an active enrollment, guardian is NOT blocked
+            $hasActiveEnrollment = \App\Domains\Enrollments\Models\Enrollment::where('student_id', $student->id)
+                ->where('status', 'active')
+                ->exists();
+            
+            if ($student->status === 'active' && $hasActiveEnrollment) {
+                return false;
+            }
+        }
+
+        return true;
+    }
 }

@@ -154,6 +154,8 @@ export function CoreAuthProvider({ children }: { children: ReactNode }) {
         if (apiError.status === 401) {
           console.error("Session invalid, clearing auth");
           clearAuth();
+        } else if (apiError.status === 403 && apiError.data?.error === 'ACCOUNT_RESTRICTED') {
+          router.push("/suspended");
         }
       } finally {
         setIsLoading(false);
@@ -198,7 +200,19 @@ export function CoreAuthProvider({ children }: { children: ReactNode }) {
     };
 
     window.addEventListener("auth:unauthorized", handleUnauthorized);
-    return () => window.removeEventListener("auth:unauthorized", handleUnauthorized);
+    
+    const handleRedirectToSuspended = () => {
+      router.push("/suspended");
+    };
+    
+    window.addEventListener("auth:suspended", handleRedirectToSuspended);
+    window.addEventListener("auth:restricted", handleRedirectToSuspended);
+
+    return () => {
+      window.removeEventListener("auth:unauthorized", handleUnauthorized);
+      window.removeEventListener("auth:suspended", handleRedirectToSuspended);
+      window.removeEventListener("auth:restricted", handleRedirectToSuspended);
+    };
   }, []);
 
   const clearAuth = () => {
@@ -309,6 +323,8 @@ export function CoreAuthProvider({ children }: { children: ReactNode }) {
       if ((error as any).status === 401) {
         clearAuth();
         router.push("/login");
+      } else if ((error as any).status === 403 && (error as any).data?.error === 'ACCOUNT_RESTRICTED') {
+        router.push("/suspended");
       }
     }
   };

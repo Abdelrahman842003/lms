@@ -372,13 +372,24 @@ export async function fetchApi<T = unknown>(
 
     if (response.status === 403 && !skipAuthEvent) {
       const isTeacherSuspended = error?.error === 'TEACHER_SUSPENDED';
-      if (isTeacherSuspended && typeof window !== 'undefined') {
-        window.dispatchEvent(new Event('auth:teacher_suspended'));
+      const isAccountRestricted = error?.error === 'ACCOUNT_RESTRICTED';
+      const isEnrollmentInactive = error?.error === 'ENROLLMENT_INACTIVE';
+      const isAccountSuspended = error?.error === 'ACCOUNT_SUSPENDED';
+      
+      if (typeof window !== 'undefined') {
+        if (isTeacherSuspended || isAccountSuspended) {
+          window.dispatchEvent(new Event('auth:suspended'));
+        } else if (isAccountRestricted || isEnrollmentInactive) {
+          window.dispatchEvent(new Event('auth:restricted'));
+        }
       }
     }
 
-    // Show error toast
-    showErrorToast(apiError);
+    // Show error toast (skip for restricted or unapproved accounts as they are handled by global logic/redirection)
+    const skipToast = (response.status === 403 && (error?.error === 'ACCOUNT_RESTRICTED' || error?.error === 'ACCOUNT_NOT_APPROVED'));
+    if (!skipToast) {
+      showErrorToast(apiError);
+    }
 
     throw apiError;
   }

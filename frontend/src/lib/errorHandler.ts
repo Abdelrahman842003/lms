@@ -111,6 +111,7 @@ const DEFAULT_ERROR_MESSAGES: Record<number, string> = {
  */
 const SPECIAL_ERROR_MESSAGES: Record<string, string> = {
   'TEACHER_SUSPENDED': 'تم تعليق حساب المعلم. يرجى التواصل مع الإدارة.',
+  'ACCOUNT_RESTRICTED': 'عذراً، حسابك معلق حالياً لعدم وجود نشاط مستقل أو انتماء لأكاديمية نشطة.',
   'ACADEMY_EXPIRED': 'انتهت صلاحية اشتراك الأكاديمي.',
   'LECTURE_ENDED': 'انتهت المحاضرة.',
   'EXAM_TERMINATED': 'تم إنهاء الامتحان.',

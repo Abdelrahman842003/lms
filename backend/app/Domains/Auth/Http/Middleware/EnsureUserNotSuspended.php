@@ -33,10 +33,20 @@ class EnsureUserNotSuspended
         // 1. Global Suspension Check (with Cache)
         $cacheKey = "user:{$user->id}:suspension_status";
         $suspensionStatus = Cache::remember($cacheKey, self::TTL, function () use ($user) {
+            $isAccessRestricted = false;
+            if ($user instanceof \App\Domains\Auth\Models\Teacher) {
+                $isAccessRestricted = $user->isAccessRestricted();
+            } elseif ($user instanceof \App\Domains\Auth\Models\Academy) {
+                $isAccessRestricted = !$user->is_active || $user->isSubscriptionBlocked();
+            } elseif ($user instanceof \App\Domains\Auth\Models\Guardian) {
+                $isAccessRestricted = $user->hasOnlyInactiveStudents();
+            }
+
             return [
-                'is_suspended' => $user->status === 'suspended',
-                'is_approved' => $user->is_approved,
+                'is_suspended' => ($user->status ?? '') === 'suspended' || ($user instanceof \App\Domains\Auth\Models\Academy && $user->status === 'suspended'),
+                'is_approved' => (method_exists($user, 'getIsApprovedAttribute') || isset($user->is_approved)) ? $user->is_approved : true,
                 'is_independent_active' => $user->is_independent_active ?? false,
+                'is_access_restricted' => $isAccessRestricted,
             ];
         });
 
@@ -51,6 +61,13 @@ class EnsureUserNotSuspended
             return response()->json([
                 'message' => 'حسابك قيد المراجعة ولم تتم الموافقة عليه بعد.',
                 'error' => 'ACCOUNT_NOT_APPROVED'
+            ], 403);
+        }
+
+        if ($suspensionStatus['is_access_restricted']) {
+            return response()->json([
+                'message' => 'عذراً، حسابك معلق حالياً حيث لا يوجد نشاط مستقل أو انتماء لأكاديمية نشطة.',
+                'error' => 'ACCOUNT_RESTRICTED'
             ], 403);
         }
 

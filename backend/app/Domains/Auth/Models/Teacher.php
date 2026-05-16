@@ -254,6 +254,32 @@ class Teacher extends Authenticatable
         return $this->hasMany(TeacherAttendanceLog::class);
     }
 
+    /**
+     * Check if teacher has any active academy connections
+     */
+    public function hasActiveAcademies(): bool
+    {
+        return $this->activeAcademies()->exists();
+    }
+
+    /**
+     * Check if teacher access is restricted based on independent status and academy connections
+     */
+    public function isAccessRestricted(): bool
+    {
+        // If independent is active, they are not restricted
+        if ($this->is_independent_active) {
+            return false;
+        }
+
+        // If they have at least one active academy connection, they are not restricted
+        if ($this->hasActiveAcademies()) {
+            return false;
+        }
+
+        return true;
+    }
+
     public function receivesBroadcastNotificationsOn(): string
     {
         return 'notifications.teacher.' . $this->id;
