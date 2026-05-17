@@ -74,7 +74,26 @@ class StudentExamController extends Controller
     public function submitAnswer(Request $request, \App\Domains\Exams\Models\ExamAttempt $attempt): JsonResponse
     {
         $student = auth()->user();
+
+        // 1. Defensively validate incoming payload (prevent missing/empty answer)
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
+            'answer' => ['required'], // Can be string or array, but must be present
+        ], [
+            'answer.required' => 'الرجاء اختيار إجابة قبل المتابعة.'
+        ]);
+
+        if ($validator->fails()) {
+            return $this->validationError($validator->errors(), 'بيانات غير صالحة');
+        }
+
         $answer = $request->input('answer');
+
+        // Example of safely handling a composite ID if sent from frontend (e.g., question_id:answer)
+        if (is_string($answer) && str_contains($answer, ':')) {
+            $parts = explode(':', $answer);
+            // Safely access index [1] using isset to prevent "Undefined array key 1"
+            $answer = isset($parts[1]) ? trim($parts[1]) : trim($parts[0]);
+        }
 
         // Verify this attempt belongs to current user
         if ($attempt->student_id !== $student->id) {
@@ -114,8 +133,18 @@ class StudentExamController extends Controller
      */
     public function terminate(Request $request, \App\Domains\Exams\Models\ExamAttempt $attempt): JsonResponse
     {
-        $reason = $request->input('reason');
         $student = auth()->user();
+
+        // Defensively validate termination reason
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
+            'reason' => ['nullable', 'string', 'max:255']
+        ]);
+
+        if ($validator->fails()) {
+            return $this->validationError($validator->errors(), 'بيانات غير صالحة');
+        }
+
+        $reason = $request->input('reason');
 
         // Verify this attempt belongs to current user
         if ($attempt->student_id !== $student->id) {
