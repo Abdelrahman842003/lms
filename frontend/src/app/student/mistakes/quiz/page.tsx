@@ -44,7 +44,7 @@ function QuizContent() {
 
     try {
       setLoading(true);
-      const response = await fetchApi(`/student/mistakes/quiz?teacher_id=${teacherId}&limit=10`);
+      const response = await fetchApi(`/student/mistakes/quiz?teacher_id=${teacherId}&limit=10`) as any;
       if (response.success) {
         setQuestions(response.data.questions || []);
       }
@@ -66,7 +66,7 @@ function QuizContent() {
           method: 'POST',
           body: JSON.stringify({ answer: selectedAnswer }),
         }
-      );
+      ) as any;
 
       if (response.success) {
         setResult(response.data);
@@ -151,7 +151,7 @@ function QuizContent() {
                 كويز جديد
               </Button>
               <Link href="/student/mistakes" className="inline-flex">
-                <Button variant="outline">
+                <Button variant="ghost">
                   العودة للأخطاء
                 </Button>
               </Link>
@@ -189,7 +189,7 @@ function QuizContent() {
                   return (
                     <Button
                       key={idx}
-                      variant={isSelected ? 'primary' : 'outline'}
+                      variant={isSelected ? 'primary' : 'ghost'}
                       onClick={() => !result && setSelectedAnswer(option)}
                       disabled={!!result}
                       className={`w-full justify-start text-right mb-2 ${

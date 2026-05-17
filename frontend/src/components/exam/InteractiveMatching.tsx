@@ -21,6 +21,15 @@ export const InteractiveMatching: React.FC<InteractiveMatchingProps> = ({
   const [selectedPoint, setSelectedPoint] = useState<{ id: string; type: 'key' | 'val'; x: number; y: number } | null>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [lineCoords, setLineCoords] = useState<any[]>([]);
+  const [activeMobileKey, setActiveMobileKey] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 640);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
   
   const containerRef = useRef<HTMLDivElement>(null);
   const keyRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -135,8 +144,99 @@ export const InteractiveMatching: React.FC<InteractiveMatchingProps> = ({
     );
   };
 
+  if (isMobile) {
+    return (
+      <div className="space-y-4 w-full mt-4 select-none bg-[#0a0f1d]/40 rounded-2xl border border-white/5 p-4 shadow-[0_20px_50px_rgba(0,0,0,0.3)]">
+        <div className="text-center mb-3">
+          <span className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-gray-400 text-[10px] font-black tracking-widest uppercase shadow-sm">
+            قم بتوصيل العناصر التالية
+          </span>
+        </div>
+
+        <div className="space-y-3">
+          {keys.map((key, kIdx) => {
+            const matchedVal = matches[key];
+            const isMatched = !!matchedVal;
+            const isSelected = activeMobileKey === key;
+
+            return (
+              <div 
+                key={kIdx} 
+                className={`p-3.5 rounded-xl border-2 transition-all duration-300 bg-[#101426]/80 backdrop-blur-xl
+                  ${isSelected ? 'border-primary shadow-[0_0_20px_rgba(66,99,235,0.25)]' : isMatched ? 'border-emerald-500/30' : 'border-white/5'}`}
+              >
+                {/* Header of the Key Item */}
+                <div 
+                  onClick={() => setActiveMobileKey(isSelected ? null : key)}
+                  className="flex items-center justify-between cursor-pointer"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center text-primary-light text-xs font-black">
+                      {kIdx + 1}
+                    </span>
+                    <span className="text-white font-bold text-sm">{key}</span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {isMatched ? (
+                      <span className="px-2.5 py-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold flex items-center gap-1.5 animate-in fade-in duration-300">
+                        <Icon name="check" className="text-[10px]" />
+                        <span>{matchedVal}</span>
+                      </span>
+                    ) : (
+                      <span className="px-2.5 py-0.5 rounded-lg bg-white/5 border border-white/10 text-gray-400 text-xs font-bold flex items-center gap-1.5">
+                        <Icon name="link" className="text-[10px] text-gray-500" />
+                        <span>توصيل</span>
+                      </span>
+                    )}
+                    <Icon 
+                      name="chevron-down" 
+                      className={`text-gray-500 text-[10px] transition-transform duration-300 ${isSelected ? 'rotate-180 text-primary-light' : ''}`} 
+                    />
+                  </div>
+                </div>
+
+                {/* Values Selection Tray */}
+                {isSelected && (
+                  <div className="mt-3 pt-3 border-t border-white/5 animate-in slide-in-from-top-4 duration-300">
+                    <p className="text-[9px] font-black text-gray-light/30 uppercase tracking-widest mb-2 text-right">اختر المطابق:</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {values.map((val, vIdx) => {
+                        const isValMatched = Object.values(matches).includes(val);
+                        const isThisValMatched = matchedVal === val;
+                        
+                        return (
+                          <button
+                            key={vIdx}
+                            type="button"
+                            onClick={() => {
+                              onMatch(key, val);
+                              setActiveMobileKey(null);
+                            }}
+                            className={`p-2.5 rounded-lg border-2 text-center text-xs font-bold transition-all duration-200
+                              ${isThisValMatched 
+                                ? 'bg-emerald-500/10 border-emerald-500 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.15)]' 
+                                : isValMatched
+                                ? 'bg-white/5 border-white/5 text-gray-500 opacity-60'
+                                : 'bg-white/5 border-white/10 text-gray-300 hover:border-white/20'}`}
+                          >
+                            {val}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div ref={containerRef} className="relative w-full mt-10 select-none bg-[#0a0f1d]/40 rounded-[48px] border border-white/5 p-8 md:p-16 overflow-visible shadow-[0_20px_50px_rgba(0,0,0,0.3)]">
+    <div ref={containerRef} className="relative w-full mt-6 select-none bg-[#0a0f1d]/40 rounded-3xl sm:rounded-[48px] border border-white/5 p-4 sm:p-8 md:p-16 overflow-visible shadow-[0_20px_50px_rgba(0,0,0,0.3)]">
       <svg className="absolute inset-0 w-full h-full pointer-events-none z-10 overflow-visible">
         <defs>
           <marker
@@ -172,38 +272,38 @@ export const InteractiveMatching: React.FC<InteractiveMatchingProps> = ({
         {selectedPoint && drawLine(selectedPoint.x, selectedPoint.y, mousePos.x, mousePos.y, true)}
       </svg>
 
-      <div className="grid grid-cols-2 gap-24 md:gap-48 relative z-20">
+      <div className="grid grid-cols-2 gap-4 sm:gap-16 md:gap-32 relative z-20">
         {/* Left Column (Values) */}
-        <div className="space-y-8">
-          <div className="text-center mb-10">
-              <span className="px-6 py-2 rounded-2xl bg-white/5 border border-white/10 text-gray-500 text-[10px] font-black uppercase tracking-[0.4em] shadow-sm">المطابق</span>
+        <div className="space-y-4 sm:space-y-8">
+          <div className="text-center mb-4 sm:mb-8">
+              <span className="px-3 py-1.5 sm:px-6 sm:py-2 rounded-xl sm:rounded-2xl bg-white/5 border border-white/10 text-gray-500 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] sm:tracking-[0.4em] shadow-sm">المطابق</span>
           </div>
           {memoValues.map((val, idx) => {
             const isMatched = Object.values(matches).includes(val);
             const isSelected = selectedPoint?.type === 'val' && selectedPoint.id === val;
             
             return (
-              <div key={idx} className="flex items-center gap-6 group">
+              <div key={idx} className="flex items-center gap-2 sm:gap-4 md:gap-6 group">
                 <button
                   type="button"
                   onClick={(e) => handlePointClick(val, 'val', e)}
-                  className={`flex-1 p-6 rounded-3xl border-2 transition-all duration-500 text-center font-bold text-xl relative ${
-                    isSelected ? 'bg-primary/20 border-primary shadow-[0_0_50px_rgba(66,99,235,0.4)] scale-[1.05] z-30 text-white' :
+                  className={`flex-1 p-3 sm:p-5 md:p-6 rounded-2xl sm:rounded-3xl border-2 transition-all duration-500 text-center font-bold text-sm sm:text-lg md:text-xl relative ${
+                    isSelected ? 'bg-primary/20 border-primary shadow-[0_0_50px_rgba(66,99,235,0.4)] scale-[1.03] z-30 text-white' :
                     isMatched ? 'bg-primary/10 border-primary/40 text-white shadow-[inset_0_0_30px_rgba(66,99,235,0.1)]' :
                     'bg-white/[0.03] border-white/5 hover:border-white/20 text-gray-400 hover:text-white hover:bg-white/[0.07]'
                   }`}
                 >
                   {val}
                   {isMatched && (
-                    <div className="absolute -top-3 -left-3 w-8 h-8 bg-primary rounded-xl flex items-center justify-center border-2 border-[#0a0f1d] shadow-2xl animate-in zoom-in-50 duration-300">
+                    <div className="absolute -top-2 -left-2 sm:-top-3 sm:-left-3 w-6 h-6 sm:w-8 sm:h-8 bg-primary rounded-lg sm:rounded-xl flex items-center justify-center border-2 border-[#0a0f1d] shadow-2xl animate-in zoom-in-50 duration-300">
                       <Icon name="check" size="xs" className="text-white" />
                     </div>
                   )}
                 </button>
                 <div 
-                  ref={el => valRefs.current[val] = el}
-                  className={`w-7 h-7 rounded-full border-4 transition-all duration-500 flex-shrink-0 cursor-pointer ${
-                    isSelected || isMatched ? 'bg-primary border-primary-light shadow-[0_0_30px_rgba(66,99,235,1)] scale-125' : 'bg-[#151a2d] border-white/10 group-hover:border-primary/50'
+                  ref={el => { valRefs.current[val] = el; }}
+                  className={`w-5 h-5 sm:w-7 sm:h-7 rounded-full border-2 sm:border-4 transition-all duration-500 flex-shrink-0 cursor-pointer ${
+                    isSelected || isMatched ? 'bg-primary border-primary-light shadow-[0_0_30px_rgba(66,99,235,1)] scale-110 sm:scale-125' : 'bg-[#151a2d] border-white/10 group-hover:border-primary/50'
                   }`}
                   onClick={(e) => handlePointClick(val, 'val', e)}
                 />
@@ -213,35 +313,35 @@ export const InteractiveMatching: React.FC<InteractiveMatchingProps> = ({
         </div>
 
         {/* Right Column (Keys) */}
-        <div className="space-y-8 text-right">
-          <div className="text-center mb-10">
-              <span className="px-6 py-2 rounded-2xl bg-white/5 border border-white/10 text-gray-500 text-[10px] font-black uppercase tracking-[0.4em] shadow-sm">العنصر</span>
+        <div className="space-y-4 sm:space-y-8 text-right">
+          <div className="text-center mb-4 sm:mb-8">
+              <span className="px-3 py-1.5 sm:px-6 sm:py-2 rounded-xl sm:rounded-2xl bg-white/5 border border-white/10 text-gray-500 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] sm:tracking-[0.4em] shadow-sm">العنصر</span>
           </div>
           {memoKeys.map((key, idx) => {
             const isMatched = !!matches[key];
             const isSelected = selectedPoint?.type === 'key' && selectedPoint.id === key;
             
             return (
-              <div key={idx} className="flex items-center gap-6 group">
+              <div key={idx} className="flex items-center gap-2 sm:gap-4 md:gap-6 group">
                 <div 
-                  ref={el => keyRefs.current[key] = el}
-                  className={`w-7 h-7 rounded-full border-4 transition-all duration-500 flex-shrink-0 cursor-pointer ${
-                    isSelected || isMatched ? 'bg-primary border-primary-light shadow-[0_0_30px_rgba(66,99,235,1)] scale-125' : 'bg-[#151a2d] border-white/10 group-hover:border-primary/50'
+                  ref={el => { keyRefs.current[key] = el; }}
+                  className={`w-5 h-5 sm:w-7 sm:h-7 rounded-full border-2 sm:border-4 transition-all duration-500 flex-shrink-0 cursor-pointer ${
+                    isSelected || isMatched ? 'bg-primary border-primary-light shadow-[0_0_30px_rgba(66,99,235,1)] scale-110 sm:scale-125' : 'bg-[#151a2d] border-white/10 group-hover:border-primary/50'
                   }`}
                   onClick={(e) => handlePointClick(key, 'key', e)}
                 />
                 <button
                   type="button"
                   onClick={(e) => handlePointClick(key, 'key', e)}
-                  className={`flex-1 p-6 rounded-3xl border-2 transition-all duration-500 text-center font-bold text-xl relative ${
-                    isSelected ? 'bg-primary/20 border-primary shadow-[0_0_50px_rgba(66,99,235,0.4)] scale-[1.05] z-30 text-white' :
+                  className={`flex-1 p-3 sm:p-5 md:p-6 rounded-2xl sm:rounded-3xl border-2 transition-all duration-500 text-center font-bold text-sm sm:text-lg md:text-xl relative ${
+                    isSelected ? 'bg-primary/20 border-primary shadow-[0_0_50px_rgba(66,99,235,0.4)] scale-[1.03] z-30 text-white' :
                     isMatched ? 'bg-primary/10 border-primary/40 text-white shadow-[inset_0_0_30px_rgba(66,99,235,0.1)]' :
                     'bg-white/[0.03] border-white/5 hover:border-white/20 text-gray-400 hover:text-white hover:bg-white/[0.07]'
                   }`}
                 >
                   {key}
                   {isMatched && (
-                    <div className="absolute -top-3 -right-3 w-8 h-8 bg-primary rounded-xl flex items-center justify-center border-2 border-[#0a0f1d] shadow-2xl animate-in zoom-in-50 duration-300">
+                    <div className="absolute -top-2 -right-2 sm:-top-3 sm:-right-3 w-6 h-6 sm:w-8 sm:h-8 bg-primary rounded-lg sm:rounded-xl flex items-center justify-center border-2 border-[#0a0f1d] shadow-2xl animate-in zoom-in-50 duration-300">
                       <Icon name="check" size="xs" className="text-white" />
                     </div>
                   )}

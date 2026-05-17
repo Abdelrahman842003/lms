@@ -96,6 +96,7 @@ class MistakesService
                     'question' => [
                         'id' => $item->question->id,
                         'text' => $item->question->text,
+                        'type' => $item->question->type->value,
                         'options' => $item->question->options,
                         'correct_answer' => $item->question->correct_answer,
                     ],

@@ -8,7 +8,7 @@ import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { createAcademyExam, getExamTeachers, getGrades, getGroups } from '@/services/academyService';
 import { toast } from 'react-hot-toast';
 import { Filter } from '@/components/Filter';
-import { Button, Icon, Input, LoadingSpinner, FormModal } from '@/components/ui';
+import { Button, Icon, Input, FormModal } from '@/components/ui';
 
 import {
   DndContext,
@@ -59,18 +59,18 @@ function SortableItem(props: SortableItemProps) {
   };
   
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="p-3 mb-2 bg-white/5 rounded border border-white/10 flex items-center gap-3 cursor-move touch-none">
-      <Icon name="grip-vertical" className="text-gray-400" />
-      <div className="flex-1">
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="p-3 mb-2 bg-white/5 rounded-xl border border-white/10 flex items-center gap-3 cursor-move touch-none hover:bg-white/10 transition-colors">
+      <Icon name="grip-vertical" className="text-gray-400 shrink-0" />
+      <div className="flex-1 min-w-0">
         <p className="font-medium text-white truncate">{props.text || 'سؤال جديد'}</p>
-        <span className="text-xs text-gray-400">{props.duration} ثانية</span>
+        <span className="text-xs text-gray-light/45">{props.duration} ثانية</span>
       </div>
       <button
         onClick={(e: React.MouseEvent) => {
           e.stopPropagation();
           props.onRemove();
         }}
-        className="text-red-400 hover:text-red-300 p-2"
+        className="text-red-400 hover:text-red-300 p-2 hover:bg-red-500/10 rounded-lg transition-colors shrink-0"
         onPointerDown={(e: React.PointerEvent) => e.stopPropagation()}
       >
         <Icon name="trash" />
@@ -263,7 +263,7 @@ export default function AddAcademyExamPage() {
   const handleNextQuestion = () => {
     const currentQ = questions[currentQuestionIndex];
     if (!currentQ.text || currentQ.options.some(o => !o) || !currentQ.correct_answer) {
-      toast.error('يرجى إكمال السؤال الحالي قبل الانتقال للتالي');
+      toast.error('يرجى إكمال السؤال الحالي قبل الانتقال أو إضافة سؤال آخر');
       return;
     }
     
@@ -283,11 +283,11 @@ export default function AddAcademyExamPage() {
     }
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     // Validate current question before finishing
     const currentQ = questions[currentQuestionIndex];
     if (!currentQ.text || currentQ.options.some(o => !o) || !currentQ.correct_answer) {
-      toast.error('يرجى إكمال السؤال الحالي قبل الحفظ');
+      toast.error('يرجى إكمال السؤال الحالي أولاً');
       return;
     }
 
@@ -341,23 +341,62 @@ export default function AddAcademyExamPage() {
       role="academy"
       user={{ name: user?.name || 'الأكاديمية', avatar: user?.avatar || '' }}
     >
+      {/* Step Indicator Header */}
+      <div className="mb-6 premium-glass premium-border rounded-2xl p-4 flex items-center justify-center gap-3 md:gap-6 shadow-xl">
+        <div className="flex items-center gap-2">
+          <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs transition-all ${
+            step === 'details'
+              ? 'bg-gradient-to-br from-primary to-purple-600 text-white shadow-lg shadow-primary/20 scale-105'
+              : 'bg-green-500/20 text-green-400 border border-green-500/30'
+          }`}>
+            {step !== 'details' ? <Icon name="check" size="xs" /> : '١'}
+          </div>
+          <span className={`text-xs md:text-sm font-black transition-all ${step === 'details' ? 'text-white' : 'text-white/40'}`}>
+            بيانات الامتحان
+          </span>
+        </div>
+        
+        <div className="w-12 md:w-20 h-0.5 bg-white/5 rounded-full overflow-hidden">
+          <div className={`h-full bg-gradient-to-r from-primary to-purple-600 transition-all duration-500 ${
+            step === 'questions' ? 'w-full' : 'w-0'
+          }`} />
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs transition-all ${
+            step === 'questions'
+              ? 'bg-gradient-to-br from-primary to-purple-600 text-white shadow-lg shadow-primary/20 scale-105'
+              : 'bg-white/5 text-white/20 border border-white/5'
+          }`}>
+            '٢'
+          </div>
+          <span className={`text-xs md:text-sm font-black transition-all ${step === 'questions' ? 'text-white' : 'text-white/20'}`}>
+            الأسئلة والخيارات
+          </span>
+        </div>
+      </div>
+
       <DashboardCard
-        title="إنشاء امتحان جديد"
-        className="rounded-xl shadow-lg border border-white/5"
+        title={step === 'details' ? 'إدخال تفاصيل الامتحان' : 'محرر الأسئلة'}
+        className="rounded-2xl shadow-2xl border border-white/5"
         noPadding
         action={step === 'questions' ? (
-          <div className="text-sm font-bold text-blue-600">
-            سؤال {currentQuestionIndex + 1} من {questions.length}
+          <div className="text-xs font-black bg-primary/10 text-primary-light px-3 py-1.5 rounded-xl border border-primary/10 flex items-center gap-1.5 shadow-inner">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+            </span>
+            السؤال {currentQuestionIndex + 1} من {questions.length}
           </div>
         ) : undefined}
       >
-        <div className="p-4 md:p-6">
+        <div className="p-4 md:p-6 lg:p-8">
           {step === 'details' ? (
             <form onSubmit={handleStartQuestions}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-8">
                 {/* Teacher Selection - Required for Academy */}
                 <div className="form-group md:col-span-2">
-                  <label className="block text-sm font-medium text-white mb-2">المدرس <span className="text-red-500">*</span></label>
+                  <label className="block text-sm font-bold text-white mb-2">المدرس <span className="text-red-500">*</span></label>
                   <Filter
                     options={teachers.map(t => ({ value: t.id, label: t.name }))}
                     value={teacherId}
@@ -369,27 +408,31 @@ export default function AddAcademyExamPage() {
                 </div>
 
                 <div className="form-group">
-                  <label className="block text-sm font-medium text-white mb-2">عنوان الامتحان <span className="text-red-500">*</span></label>
+                  <label className="block text-sm font-bold text-white mb-2">عنوان الامتحان <span className="text-red-500">*</span></label>
                   <Input
                     type="text"
                     className={formErrors.title ? 'border-red-500' : ''}
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
+                    placeholder="امتحان شهر نوفمبر، الباب الأول..."
                   />
                   {formErrors.title && <span className="text-red-500 text-xs mt-1 block"><Icon name="exclamation-circle" className="ml-1 inline" />{formErrors.title}</span>}
                 </div>
+
                 <div className="form-group">
-                  <label className="block text-sm font-medium text-white mb-2">المادة <span className="text-red-500">*</span></label>
+                  <label className="block text-sm font-bold text-white mb-2">المادة <span className="text-red-500">*</span></label>
                   <Input
                     type="text"
                     className={formErrors.subject ? 'border-red-500' : ''}
                     value={subject}
                     onChange={(e) => setSubject(e.target.value)}
+                    placeholder="الرياضيات، الفيزياء..."
                   />
                   {formErrors.subject && <span className="text-red-500 text-xs mt-1 block"><Icon name="exclamation-circle" className="ml-1 inline" />{formErrors.subject}</span>}
                 </div>
+
                 <div className="form-group">
-                  <label className="block text-sm font-medium text-white mb-2">الصف الدراسي <span className="text-red-500">*</span></label>
+                  <label className="block text-sm font-bold text-white mb-2">الصف الدراسي <span className="text-red-500">*</span></label>
                   <Filter
                     options={grades.map(g => ({ value: g.id, label: g.name }))}
                     value={gradeId}
@@ -400,8 +443,9 @@ export default function AddAcademyExamPage() {
                   />
                   {formErrors.gradeId && <span className="text-red-500 text-xs mt-1 block"><Icon name="exclamation-circle" className="ml-1 inline" />{formErrors.gradeId}</span>}
                 </div>
+
                 <div className="form-group">
-                  <label className="block text-sm font-medium text-white mb-2">المجموعة (اختياري)</label>
+                  <label className="block text-sm font-bold text-white mb-2">المجموعة (اختياري)</label>
                   <Filter
                     options={[
                       { value: '', label: 'كل المجموعات' },
@@ -413,240 +457,347 @@ export default function AddAcademyExamPage() {
                     disabled={!gradeId}
                   />
                 </div>
+
                 <div className="form-group">
-                  <label className="block text-sm font-medium text-white mb-2">تاريخ الامتحان <span className="text-red-500">*</span></label>
+                  <label className="block text-sm font-bold text-white mb-2">تاريخ الامتحان <span className="text-red-500">*</span></label>
                   <Input
                     type="datetime-local"
-                    className={formErrors.date ? 'border-red-500' : ''}
+                    className={formErrors.date ? 'border-red-500 animate-pulse' : ''}
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
                   />
                   {formErrors.date && <span className="text-red-500 text-xs mt-1 block"><Icon name="exclamation-circle" className="ml-1 inline" />{formErrors.date}</span>}
                 </div>
+
                 <div className="form-group">
-                  <label className="block text-sm font-medium text-white mb-2">المدة (دقيقة) <span className="text-red-500">*</span></label>
+                  <label className="block text-sm font-bold text-white mb-2">المدة (دقيقة) <span className="text-red-500">*</span></label>
                   <Input
                     type="number"
                     className={formErrors.duration ? 'border-red-500' : ''}
                     value={duration || ''}
                     onChange={(e) => setDuration(e.target.value === '' ? 0 : parseInt(e.target.value))}
+                    placeholder="60"
                   />
                   {formErrors.duration && <span className="text-red-500 text-xs mt-1 block"><Icon name="exclamation-circle" className="ml-1 inline" />{formErrors.duration}</span>}
                 </div>
+
                 <div className="form-group">
-                  <label className="block text-sm font-medium text-white mb-2">الدرجة الكلية <span className="text-red-500">*</span></label>
+                  <label className="block text-sm font-bold text-white mb-2">الدرجة الكلية <span className="text-red-500">*</span></label>
                   <Input
                     type="number"
                     className={formErrors.totalMarks ? 'border-red-500' : ''}
                     value={totalMarks || ''}
                     onChange={(e) => setTotalMarks(e.target.value === '' ? 0 : parseInt(e.target.value))}
+                    placeholder="100"
                   />
                   {formErrors.totalMarks && <span className="text-red-500 text-xs mt-1 block"><Icon name="exclamation-circle" className="ml-1 inline" />{formErrors.totalMarks}</span>}
                 </div>
               </div>
 
-              <div className="flex flex-col-reverse sm:flex-row justify-between gap-4 mt-8">
+              <div className="flex flex-col-reverse sm:flex-row justify-between gap-4 mt-8 pt-6 border-t border-white/5">
                 <Button
                   type="button"
                   variant="secondary"
                   onClick={() => router.push('/academy/exams')}
-                  className="px-8 py-3 text-lg w-full sm:w-auto"
+                  className="px-8 py-3 text-base w-full sm:w-auto justify-center"
                 >
                   <Icon name="arrow-right" className="ml-2" />
-                  رجوع
+                  رجوع لقائمة الامتحانات
                 </Button>
 
-                <Button type="submit" variant="primary" className="px-8 py-3 text-lg w-full sm:w-auto">
+                <Button type="submit" variant="primary" className="px-8 py-3 text-base w-full sm:w-auto justify-center bg-gradient-to-r from-primary to-purple-600">
                   التالي: إضافة الأسئلة
                   <Icon name="arrow-left" className="mr-2" />
                 </Button>
               </div>
             </form>
           ) : (
-            <div className="space-y-8">
-              {/* Progress Bar */}
-              <div className="w-full rounded-full h-2.5 mb-6">
-                <div 
-                  className="bg-primary h-2.5 rounded-full transition-all duration-300" 
-                  style={{ width: `${((currentQuestionIndex + 1) / questions.length) * 100}%` }}
-                ></div>
+            <div className="space-y-6">
+              {/* Question Navigation Bubbles */}
+              <div className="flex flex-col gap-2 p-4 bg-white/5 border border-white/5 rounded-2xl shadow-inner">
+                <label className="text-xs text-white/50 font-black tracking-widest uppercase">الأسئلة المُضافة ({questions.length})</label>
+                <div className="flex flex-wrap items-center gap-2 max-h-[140px] overflow-y-auto custom-scrollbar pt-1 pr-1">
+                  {questions.map((q, idx) => {
+                    const isActive = idx === currentQuestionIndex;
+                    const isCompleted = q.text && q.options.every(o => (typeof o === 'object' ? (o.a && o.b) : o)) && q.correct_answer;
+                    
+                    return (
+                      <button
+                        key={q.id}
+                        type="button"
+                        onClick={() => {
+                          // Validate current question before navigating
+                          const currentQ = questions[currentQuestionIndex];
+                          if (!currentQ.text || currentQ.options.some(o => (typeof o === 'object' ? (!o.a || !o.b) : !o)) || !currentQ.correct_answer) {
+                            toast.error(`يرجى إكمال السؤال الحالي قبل الانتقال`);
+                            return;
+                          }
+                          setCurrentQuestionIndex(idx);
+                        }}
+                        className={`w-9 h-9 rounded-xl flex items-center justify-center text-xs font-black transition-all duration-300 ${
+                          isActive
+                            ? 'bg-gradient-to-br from-primary to-purple-600 text-white shadow-lg shadow-primary/30 scale-110 ring-2 ring-primary/40'
+                            : isCompleted
+                            ? 'bg-green-500/10 text-green-400 border border-green-500/20 hover:bg-green-500/20'
+                            : 'bg-white/5 text-white/40 border border-white/5 hover:bg-white/10 hover:text-white'
+                        }`}
+                      >
+                        {idx + 1}
+                      </button>
+                    );
+                  })}
+                  
+                  {/* Append new question directly from bubbles list */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const currentQ = questions[currentQuestionIndex];
+                      if (!currentQ.text || currentQ.options.some(o => (typeof o === 'object' ? (!o.a || !o.b) : !o)) || !currentQ.correct_answer) {
+                        toast.error('يرجى إكمال السؤال الحالي أولاً');
+                        return;
+                      }
+                      const newId = crypto.randomUUID();
+                      setQuestions([...questions, {
+                        id: newId,
+                        text: '',
+                        type: 'mcq',
+                        options: ['', '', '', ''],
+                        correct_answer: '',
+                        duration: 60
+                      }]);
+                      setCurrentQuestionIndex(questions.length);
+                    }}
+                    className="w-9 h-9 rounded-xl flex items-center justify-center text-xs font-black bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 hover:scale-105 transition-all"
+                    title="سؤال جديد"
+                  >
+                    <Icon name="plus" size="xs" />
+                  </button>
+                </div>
               </div>
 
-              <div className="">
-                <div className="dashboard-card-header">
-                  <div className="dashboard-card-title">
-                    <h4 className="font-bold text-lg">سؤال {currentQuestionIndex + 1}</h4>
-                    <span className="text-sm text-gray-500 mr-2">من {questions.length}</span>
+              {/* Form Content */}
+              <div className="space-y-6">
+                
+                {/* Question Type and Duration Row */}
+                <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 bg-white/5 p-4 rounded-2xl border border-white/5">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full lg:w-auto">
+                    <label className="block text-sm font-bold text-white shrink-0">نوع السؤال:</label>
+                    <div className="grid grid-cols-2 sm:flex sm:items-center gap-1.5 p-1 bg-white/5 rounded-xl border border-white/5 w-full sm:w-auto">
+                      <button
+                        type="button"
+                        onClick={() => handleQuestionChange('type', 'mcq')}
+                        className={`px-3 py-2 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1.5 ${
+                          questions[currentQuestionIndex].type === 'mcq'
+                            ? 'bg-gradient-to-r from-primary to-purple-600 text-white shadow-md'
+                            : 'text-white/50 hover:text-white hover:bg-white/5'
+                        }`}
+                      >
+                        <Icon name="list-ul" size="sm" />
+                        <span>اختياري</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleQuestionChange('type', 'true_false')}
+                        className={`px-3 py-2 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1.5 ${
+                          questions[currentQuestionIndex].type === 'true_false'
+                            ? 'bg-gradient-to-r from-primary to-purple-600 text-white shadow-md'
+                            : 'text-white/50 hover:text-white hover:bg-white/5'
+                        }`}
+                      >
+                        <Icon name="check-double" size="sm" />
+                        <span>صح وخطأ</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleQuestionChange('type', 'ordering')}
+                        className={`px-3 py-2 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1.5 ${
+                          questions[currentQuestionIndex].type === 'ordering'
+                            ? 'bg-gradient-to-r from-primary to-purple-600 text-white shadow-md'
+                            : 'text-white/50 hover:text-white hover:bg-white/5'
+                        }`}
+                      >
+                        <Icon name="sort-amount-down" size="sm" />
+                        <span>ترتيب</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleQuestionChange('type', 'matching')}
+                        className={`px-3 py-2 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1.5 ${
+                          questions[currentQuestionIndex].type === 'matching'
+                            ? 'bg-gradient-to-r from-primary to-purple-600 text-white shadow-md'
+                            : 'text-white/50 hover:text-white hover:bg-white/5'
+                        }`}
+                      >
+                        <Icon name="arrows-alt-h" size="sm" />
+                        <span>توصيل</span>
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-3 bg-white/5 border border-white/5 px-4 py-2 rounded-xl w-full lg:w-auto justify-between lg:justify-start">
+                    <label className="text-xs text-gray-light/45 font-black shrink-0">مدة السؤال (ثانية):</label>
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="number"
+                        className="w-16 text-center py-1 px-1 bg-transparent border-none text-white font-black text-sm focus:ring-0"
+                        value={questions[currentQuestionIndex].duration || 60}
+                        onChange={(e) => handleQuestionChange('duration', parseInt(e.target.value) || 0)}
+                        min="10"
+                        max="600"
+                      />
+                      <span className="text-xs text-white/35">ثانية</span>
+                    </div>
                   </div>
                 </div>
-                
-                <div>
-                  <div className="form-group mb-6">
-                    <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-2 gap-4">
-                      <div className="flex items-center gap-4">
-                        <label className="block text-sm font-medium">نص السؤال</label>
-                        <div className="flex items-center gap-1 bg-white/5 rounded-lg p-1 border border-white/5">
-                          <button
-                            type="button"
-                            onClick={() => handleQuestionChange('type', 'mcq')}
-                            className={`px-3 py-1 rounded-md text-[10px] font-bold transition-all ${questions[currentQuestionIndex].type === 'mcq' ? 'bg-primary text-white shadow-sm' : 'text-gray-400 hover:text-white'}`}
-                          >
-                            اختياري
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleQuestionChange('type', 'true_false')}
-                            className={`px-3 py-1 rounded-md text-[10px] font-bold transition-all ${questions[currentQuestionIndex].type === 'true_false' ? 'bg-primary text-white shadow-sm' : 'text-gray-400 hover:text-white'}`}
-                          >
-                            صح وخطأ
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleQuestionChange('type', 'ordering')}
-                            className={`px-3 py-1 rounded-md text-[10px] font-bold transition-all ${questions[currentQuestionIndex].type === 'ordering' ? 'bg-primary text-white shadow-sm' : 'text-gray-400 hover:text-white'}`}
-                          >
-                            ترتيب
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleQuestionChange('type', 'matching')}
-                            className={`px-3 py-1 rounded-md text-[10px] font-bold transition-all ${questions[currentQuestionIndex].type === 'matching' ? 'bg-primary text-white shadow-sm' : 'text-gray-400 hover:text-white'}`}
-                          >
-                            توصيل
-                          </button>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-2">
-                        <label className="text-xs text-gray-400">مدة السؤال (ثانية):</label>
-                        <Input
-                          type="number"
-                          className="w-20 py-1 px-2 text-sm"
-                          value={questions[currentQuestionIndex].duration || 60}
-                          onChange={(e) => handleQuestionChange('duration', parseInt(e.target.value))}
-                          min="10"
-                          max="600"
-                        />
-                      </div>
-                    </div>
-                    <Input
-                      type="text"
-                      value={questions[currentQuestionIndex].text}
-                      onChange={(e) => handleQuestionChange('text', e.target.value)}
-                      required
-                      placeholder="اكتب السؤال هنا..."
-                      autoFocus
-                    />
-                  </div>
 
-                  <div className="space-y-4">
-                    <label className="block text-sm font-medium mb-2">
-                      {questions[currentQuestionIndex].type === 'true_false' ? 'حدد الإجابة الصحيحة' : 
-                       questions[currentQuestionIndex].type === 'ordering' ? 'اكتب العناصر بالترتيب الصحيح' :
-                       questions[currentQuestionIndex].type === 'matching' ? 'أضف أزواج التوصيل الصحيحة' :
-                       'الخيارات (اختر الإجابة الصحيحة)'}
-                    </label>
+                {/* Question Text */}
+                <div className="form-group">
+                  <label className="block text-sm font-bold text-white mb-2">نص السؤال</label>
+                  <textarea
+                    value={questions[currentQuestionIndex].text}
+                    onChange={(e) => handleQuestionChange('text', e.target.value)}
+                    required
+                    placeholder="اكتب تفاصيل السؤال هنا بوضوح..."
+                    rows={3}
+                    className="w-full form-input bg-white/5 border border-white/10 rounded-2xl p-4 text-white placeholder-white/30 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all text-base resize-none"
+                    autoFocus
+                  />
+                </div>
 
-                    {(questions[currentQuestionIndex].type === 'mcq' || questions[currentQuestionIndex].type === 'true_false') && (
-                      <div className="grid grid-cols-1 gap-4">
-                        {questions[currentQuestionIndex].options.map((option: string, oIndex: number) => {
-                          const isTrueFalse = questions[currentQuestionIndex].type === 'true_false';
-                          return (
-                            <div key={oIndex} className={`flex items-center gap-3 p-3 rounded-lg ${questions[currentQuestionIndex].correct_answer === option && option !== '' ? 'border border-primary bg-primary/10' : ''}`}>
-                              <div 
-                                className="relative flex items-center justify-center cursor-pointer"
-                                onClick={() => handleQuestionChange('correct_answer', option)}
-                              >
-                                <div className={`w-6 h-6 rounded-full border-2 transition-all duration-200 flex items-center justify-center ${
-                                  questions[currentQuestionIndex].correct_answer === option && option !== ''
-                                    ? 'bg-primary border-primary' 
-                                    : 'bg-white border-gray-300 hover:border-primary'
-                                }`}>
-                                  {questions[currentQuestionIndex].correct_answer === option && option !== '' && (
-                                    <Icon name="check" className="text-white text-xs" />
-                                  )}
-                                </div>
+                {/* Answer Options Section */}
+                <div className="space-y-4">
+                  <label className="block text-sm font-bold text-white mb-2">
+                    {questions[currentQuestionIndex].type === 'true_false' ? 'حدد الإجابة الصحيحة:' : 
+                     questions[currentQuestionIndex].type === 'ordering' ? 'اكتب العناصر بالترتيب الصحيح (سيقوم النظام بلخبطتها تلقائياً):' :
+                     questions[currentQuestionIndex].type === 'matching' ? 'أضف أزواج التوصيل المتطابقة (سيقوم النظام بلخبطتها تلقائياً):' :
+                     'الخيارات (اكتب الخيارات واضغط على الدائرة لتحديد الإجابة الصحيحة):'}
+                  </label>
+
+                  {/* MCQ & True False Options */}
+                  {(questions[currentQuestionIndex].type === 'mcq' || questions[currentQuestionIndex].type === 'true_false') && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {questions[currentQuestionIndex].options.map((option: string, oIndex: number) => {
+                        const isTrueFalse = questions[currentQuestionIndex].type === 'true_false';
+                        const isSelected = questions[currentQuestionIndex].correct_answer === option && option !== '';
+                        
+                        return (
+                          <div 
+                            key={oIndex} 
+                            className={`flex items-center gap-3 p-4 rounded-2xl transition-all duration-300 border cursor-pointer select-none ${
+                              isSelected
+                                ? 'bg-gradient-to-r from-primary/10 to-purple-600/10 border-primary/50 shadow-lg'
+                                : 'bg-white/5 border-white/10 hover:border-white/20'
+                            }`}
+                            onClick={() => {
+                              if (option) {
+                                handleQuestionChange('correct_answer', option);
+                              } else {
+                                toast.error('يرجى كتابة الخيار أولاً قبل اختياره كإجابة صحيحة');
+                              }
+                            }}
+                          >
+                            <div className="relative flex items-center justify-center shrink-0">
+                              <div className={`w-6 h-6 rounded-full border-2 transition-all duration-300 flex items-center justify-center ${
+                                isSelected
+                                  ? 'bg-gradient-to-r from-primary to-purple-600 border-transparent shadow-[0_0_10px_rgba(100,116,139,0.3)]'
+                                  : 'border-white/20 hover:border-white/40'
+                              }`}>
+                                {isSelected && (
+                                  <Icon name="check" className="text-white text-xs font-black" />
+                                )}
                               </div>
-                              <Input
-                                type="text"
-                                readOnly={isTrueFalse}
-                                className={`border-none shadow-none focus:ring-0 ${isTrueFalse ? 'cursor-pointer' : ''}`}
-                                value={option}
-                                onChange={(e) => handleOptionChange(oIndex, e.target.value)}
-                                required
-                                placeholder={`الخيار ${oIndex + 1}`}
-                              />
                             </div>
-                          );
-                        })}
-                      </div>
-                    )}
-
-                    {questions[currentQuestionIndex].type === 'ordering' && (
-                      <div className="space-y-3">
-                        {questions[currentQuestionIndex].options.map((option: string, oIndex: number) => (
-                          <div key={oIndex} className="flex items-center gap-4 p-3 bg-white/5 border border-white/10 rounded-xl">
-                             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
-                               {oIndex + 1}
-                             </div>
-                             <Input
-                               type="text"
-                               className="flex-1 bg-transparent border-none p-0 font-bold text-white shadow-none focus:ring-0"
-                               value={option}
-                               onChange={(e) => {
-                                 const val = e.target.value;
-                                 setQuestions(prev => {
-                                   const newOptions = [...prev[currentQuestionIndex].options];
-                                   newOptions[oIndex] = val;
-                                   const updatedQuestions = [...prev];
-                                   updatedQuestions[currentQuestionIndex] = {
-                                     ...updatedQuestions[currentQuestionIndex],
-                                     options: newOptions,
-                                     correct_answer: newOptions.join('|||')
-                                   };
-                                   return updatedQuestions;
-                                 });
-                               }}
-                               placeholder={`العنصر رقم ${oIndex + 1}`}
-                             />
-                             {questions[currentQuestionIndex].options.length > 2 && (
-                               <button 
-                                 type="button"
-                                 onClick={() => {
-                                   const newOptions = questions[currentQuestionIndex].options.filter((_: any, i: number) => i !== oIndex);
-                                   handleQuestionChange('options', newOptions);
-                                   handleQuestionChange('correct_answer', newOptions.join('|||'));
-                                 }}
-                                 className="text-red-400 hover:text-red-300"
-                               >
-                                 <Icon name="trash" />
-                               </button>
-                             )}
+                            <input
+                              type="text"
+                              readOnly={isTrueFalse}
+                              className={`flex-1 bg-transparent border-none p-0 text-white placeholder-white/30 focus:ring-0 text-sm font-bold ${
+                                isTrueFalse ? 'cursor-pointer' : ''
+                              }`}
+                              value={option}
+                              onChange={(e) => handleOptionChange(oIndex, e.target.value)}
+                              onClick={(e) => {
+                                if (!isTrueFalse) {
+                                  e.stopPropagation(); // Stop click propagating to option wrapper
+                                }
+                              }}
+                              required
+                              placeholder={isTrueFalse ? 'إجابة صح/خطأ' : `الخيار ${oIndex + 1}`}
+                            />
                           </div>
-                        ))}
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          onClick={() => {
-                            const newOptions = [...questions[currentQuestionIndex].options, ''];
-                            handleQuestionChange('options', newOptions);
-                          }}
-                          className="w-full h-10 border-dashed border-2 bg-transparent"
-                        >
-                          <Icon name="plus" className="ml-2" />
-                          إضافة عنصر جديد
-                        </Button>
-                      </div>
-                    )}
+                        );
+                      })}
+                    </div>
+                  )}
 
-                    {questions[currentQuestionIndex].type === 'matching' && (
-                      <div className="space-y-4">
-                        {questions[currentQuestionIndex].options.map((pair: {a: string, b: string}, oIndex: number) => (
-                          <div key={oIndex} className="flex items-center gap-4">
-                             <div className="flex-1 grid grid-cols-2 gap-4 p-3 bg-white/5 border border-white/10 rounded-xl">
-                               <Input
+                  {/* Ordering Options */}
+                  {questions[currentQuestionIndex].type === 'ordering' && (
+                    <div className="space-y-3">
+                      {questions[currentQuestionIndex].options.map((option: string, oIndex: number) => (
+                        <div key={oIndex} className="flex items-center gap-3 p-3 bg-white/5 border border-white/10 rounded-2xl hover:border-white/20 transition-all">
+                           <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center text-white font-black text-sm shrink-0 shadow-md">
+                             {oIndex + 1}
+                           </div>
+                           <input
+                             type="text"
+                             className="flex-1 bg-transparent border-none p-0 font-bold text-white placeholder-white/30 focus:ring-0 text-sm"
+                             value={option}
+                             onChange={(e) => {
+                               const val = e.target.value;
+                               setQuestions(prev => {
+                                 const newOptions = [...prev[currentQuestionIndex].options];
+                                 newOptions[oIndex] = val;
+                                 const updatedQuestions = [...prev];
+                                 updatedQuestions[currentQuestionIndex] = {
+                                   ...updatedQuestions[currentQuestionIndex],
+                                   options: newOptions,
+                                   correct_answer: newOptions.join('|||')
+                                 };
+                                 return updatedQuestions;
+                               });
+                             }}
+                             placeholder={`العنصر رقم ${oIndex + 1}`}
+                           />
+                           {questions[currentQuestionIndex].options.length > 2 && (
+                             <button 
+                               type="button"
+                               onClick={() => {
+                                 const newOptions = questions[currentQuestionIndex].options.filter((_: any, i: number) => i !== oIndex);
+                                 handleQuestionChange('options', newOptions);
+                                 handleQuestionChange('correct_answer', newOptions.join('|||'));
+                               }}
+                               className="w-9 h-9 rounded-xl flex items-center justify-center text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all shrink-0"
+                             >
+                               <Icon name="trash" size="sm" />
+                             </button>
+                           )}
+                        </div>
+                      ))}
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => {
+                          const newOptions = [...questions[currentQuestionIndex].options, ''];
+                          handleQuestionChange('options', newOptions);
+                        }}
+                        className="w-full h-12 border-dashed border-2 bg-transparent hover:bg-white/5 rounded-2xl text-white/80 hover:text-white justify-center"
+                      >
+                        <Icon name="plus" className="ml-2" />
+                        إضافة عنصر جديد
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* Matching Options - Fully Responsive Stacking */}
+                  {questions[currentQuestionIndex].type === 'matching' && (
+                    <div className="space-y-4">
+                      {questions[currentQuestionIndex].options.map((pair: {a: string, b: string}, oIndex: number) => (
+                        <div key={oIndex} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 p-3 bg-white/5 border border-white/10 rounded-2xl hover:border-white/20 transition-all">
+                           <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                             <div className="flex items-center gap-2 bg-white/5 p-2 rounded-xl border border-white/5">
+                               <span className="text-xs font-black text-primary shrink-0 bg-primary/10 w-6 h-6 rounded-lg flex items-center justify-center">أ</span>
+                               <input
                                  type="text"
-                                 className="bg-transparent border-none p-0 font-bold text-white shadow-none focus:ring-0"
+                                 className="w-full bg-transparent border-none p-0 text-sm font-bold text-white placeholder-white/30 focus:ring-0"
                                  value={pair.a}
                                  onChange={(e) => {
                                    const val = e.target.value;
@@ -663,10 +814,13 @@ export default function AddAcademyExamPage() {
                                    });
                                  }}
                                  placeholder="العنصر أ"
-                                 />
-                                 <Input
+                               />
+                             </div>
+                             <div className="flex items-center gap-2 bg-white/5 p-2 rounded-xl border border-white/5">
+                               <span className="text-xs font-black text-purple-400 shrink-0 bg-purple-500/10 w-6 h-6 rounded-lg flex items-center justify-center">ب</span>
+                               <input
                                  type="text"
-                                 className="bg-transparent border-none p-0 font-bold text-white shadow-none focus:ring-0"
+                                 className="w-full bg-transparent border-none p-0 text-sm font-bold text-white placeholder-white/30 focus:ring-0"
                                  value={pair.b}
                                  onChange={(e) => {
                                    const val = e.target.value;
@@ -683,75 +837,118 @@ export default function AddAcademyExamPage() {
                                    });
                                  }}
                                  placeholder="العنصر ب المقابل"
-                                 />                             </div>
-                             {questions[currentQuestionIndex].options.length > 2 && (
-                               <button 
-                                 type="button"
-                                 onClick={() => {
-                                   const newOptions = questions[currentQuestionIndex].options.filter((_: any, i: number) => i !== oIndex);
-                                   handleQuestionChange('options', newOptions);
-                                   handleQuestionChange('correct_answer', newOptions.map(p => `${p.a}===${p.b}`).join('|||'));
-                                 }}
-                                 className="text-red-400 hover:text-red-300"
-                               >
-                                 <Icon name="trash" />
-                               </button>
-                             )}
-                          </div>
-                        ))}
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          onClick={() => {
-                            const newOptions = [...questions[currentQuestionIndex].options, { a: '', b: '' }];
-                            handleQuestionChange('options', newOptions);
-                          }}
-                          className="w-full h-10 border-dashed border-2 bg-transparent"
-                        >
-                          <Icon name="plus" className="ml-2" />
-                          إضافة زوج توصيل جديد
-                        </Button>
-                      </div>
-                    )}
-                  </div>
+                               />
+                             </div>
+                           </div>
+                           {questions[currentQuestionIndex].options.length > 2 && (
+                             <button 
+                               type="button"
+                               onClick={() => {
+                                 const newOptions = questions[currentQuestionIndex].options.filter((_: any, i: number) => i !== oIndex);
+                                 handleQuestionChange('options', newOptions);
+                                 handleQuestionChange('correct_answer', newOptions.map(p => `${p.a}===${p.b}`).join('|||'));
+                               }}
+                               className="w-10 h-10 rounded-xl flex items-center justify-center text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all shrink-0 self-end sm:self-center"
+                             >
+                               <Icon name="trash" size="sm" />
+                             </button>
+                           )}
+                        </div>
+                      ))}
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => {
+                          const newOptions = [...questions[currentQuestionIndex].options, { a: '', b: '' }];
+                          handleQuestionChange('options', newOptions);
+                        }}
+                        className="w-full h-12 border-dashed border-2 bg-transparent hover:bg-white/5 rounded-2xl text-white/80 hover:text-white justify-center"
+                      >
+                        <Icon name="plus" className="ml-2" />
+                        إضافة زوج توصيل جديد
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
 
-              <div className="flex flex-col lg:flex-row lg:justify-between gap-4 mt-8">
-                <div className="flex flex-col sm:flex-row gap-3 order-1 lg:order-2 w-full lg:w-auto">
+              {/* Bottom Action Pagination Bar */}
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mt-10 pt-6 border-t border-white/5">
+                
+                {/* Left Side: Back / Prev Question */}
+                <div className="w-full md:w-auto">
+                  {currentQuestionIndex > 0 ? (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => setCurrentQuestionIndex(prev => prev - 1)}
+                      className="px-6 py-2.5 w-full md:w-auto justify-center"
+                    >
+                      <Icon name="arrow-right" className="ml-2" />
+                      السؤال السابق
+                    </Button>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => setStep('details')}
+                      className="px-6 py-2.5 w-full md:w-auto justify-center"
+                    >
+                      <Icon name="cog" className="ml-2" />
+                      تعديل البيانات الأساسية
+                    </Button>
+                  )}
+                </div>
+
+                {/* Center Side: Preview */}
+                <div className="w-full md:w-auto flex justify-center">
                   <Button
                     type="button"
                     variant="secondary"
                     onClick={() => setShowPreviewModal(true)}
-                    className="px-6 w-full sm:w-auto flex-1 lg:flex-none justify-center"
+                    className="px-6 py-2.5 w-full md:w-auto justify-center border-dashed"
                   >
-                    معاينة وترتيب
+                    معاينة وترتيب الأسئلة
                     <Icon name="sort" className="mr-2" />
                   </Button>
                 </div>
 
-                <div className="flex flex-col sm:flex-row gap-3 order-3 lg:order-3 w-full lg:w-auto">
+                {/* Right Side: Next / Add / Finish */}
+                <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                  {currentQuestionIndex < questions.length - 1 ? (
                     <Button
-                    type="button"
-                    variant="primary"
-                    onClick={handleNextQuestion}
-                    className="px-6 w-full sm:w-auto flex-1 lg:flex-none justify-center"
+                      type="button"
+                      variant="primary"
+                      onClick={handleNextQuestion}
+                      className="px-6 py-2.5 w-full sm:w-auto justify-center"
                     >
-                    سؤال جديد
-                    <Icon name="plus" className="mr-2" />
+                      السؤال التالي
+                      <Icon name="arrow-left" className="mr-2" />
                     </Button>
-
+                  ) : (
                     <Button
+                      type="button"
+                      variant="primary"
+                      onClick={handleNextQuestion}
+                      className="px-6 py-2.5 w-full sm:w-auto justify-center"
+                    >
+                      إضافة سؤال جديد
+                      <Icon name="plus" className="mr-2" />
+                    </Button>
+                  )}
+
+                  <Button
                     type="button"
                     variant="primary"
                     onClick={handleSubmit}
-                    className="px-8 bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto flex-1 lg:flex-none justify-center"
+                    className="px-8 py-2.5 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white w-full sm:w-auto justify-center shadow-lg shadow-emerald-950/20"
                     disabled={loading}
-                    >
-                    إنهاء
+                  >
+                    إنهاء وحفظ الامتحان
                     <Icon name="check" className="mr-2" />
-                    </Button>
+                  </Button>
                 </div>
+
               </div>
             </div>
           )}
@@ -776,7 +973,7 @@ export default function AddAcademyExamPage() {
           <Input
             type="number"
             value={actualQuestionCount}
-            onChange={(e) => setActualQuestionCount(parseInt(e.target.value))}
+            onChange={(e) => setActualQuestionCount(parseInt(e.target.value) || 0)}
             min="1"
             max={questions.length}
           />
@@ -797,7 +994,7 @@ export default function AddAcademyExamPage() {
         cancelText=""
         maxWidth="700px"
       >
-        <div className="max-h-[50vh] overflow-y-auto">
+        <div className="max-h-[50vh] overflow-y-auto pr-1">
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}

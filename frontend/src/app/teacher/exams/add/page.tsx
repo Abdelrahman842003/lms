@@ -133,10 +133,15 @@ export default function AddExamPage() {
     const fetchData = async () => {
       try {
         const [gradesData, groupsData] = await Promise.all([
-          getGrades(),
+          getGrades() as Promise<any>,
           getGroups(1, 100)
         ]);
-        setGrades(gradesData.data || []);
+        const fetchedGrades = Array.isArray(gradesData) 
+          ? gradesData 
+          : (gradesData?.data && Array.isArray(gradesData.data)) 
+            ? gradesData.data 
+            : [];
+        setGrades(fetchedGrades);
         setGroups(groupsData.data || []);
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -274,7 +279,7 @@ export default function AddExamPage() {
         actual_question_count: actualQuestionCount,
         time_per_question: 60, // Default, not used if questions have duration
         questions
-      });
+      } as any);
       
       toast.success('تم إنشاء الامتحان بنجاح');
       
@@ -337,7 +342,7 @@ export default function AddExamPage() {
       <div className="max-w-5xl mx-auto">
         {step === 'details' ? (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="premium-glass p-8 md:p-10 rounded-[2.5rem] border-white/5">
+            <div className="premium-glass p-5 sm:p-8 md:p-10 rounded-3xl sm:rounded-[2.5rem] border-white/5">
               <div className="flex items-center gap-3 mb-10 px-2">
                  <Icon name="info-circle" className="text-primary" />
                  <h3 className="text-xs font-black text-white uppercase tracking-[0.2em]">البيانات الأساسية للامتحان</h3>
@@ -435,12 +440,12 @@ export default function AddExamPage() {
                     type="button"
                     onClick={() => router.push('/teacher/exams')}
                     variant="ghost"
-                    className="h-14 px-10 rounded-2xl font-bold text-gray-light hover:text-white"
+                    className="w-full sm:w-auto h-14 px-10 rounded-2xl font-bold text-gray-light hover:text-white justify-center"
                   >
                     إلغاء والعودة
                   </Button>
 
-                  <Button type="submit" variant="primary" className="h-14 px-12 rounded-2xl font-black gap-2 shadow-xl shadow-primary/20">
+                  <Button type="submit" variant="primary" className="w-full sm:w-auto h-14 px-12 rounded-2xl font-black gap-2 shadow-xl shadow-primary/20 justify-center">
                     <span>التالي: إضافة الأسئلة</span>
                     <Icon name="arrow-left" />
                   </Button>
@@ -463,67 +468,73 @@ export default function AddExamPage() {
                </span>
             </div>
 
-            <div className="premium-glass p-8 md:p-10 rounded-[2.5rem] border-white/5">
-               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10">
-                  <div className="flex items-center gap-4">
-                     <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary font-black text-2xl premium-border shadow-2xl shadow-primary/20">
-                        {currentQuestionIndex + 1}
+             <div className="premium-glass p-4 sm:p-8 md:p-10 rounded-2xl sm:rounded-[2.5rem] border-white/5">
+                <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 sm:gap-6 mb-6 sm:mb-10">
+                   <div className="flex items-center gap-3 sm:gap-4">
+                      <div className="w-11 h-11 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-primary/10 flex items-center justify-center text-primary font-black text-xl sm:text-2xl premium-border shadow-2xl shadow-primary/20 shrink-0">
+                         {currentQuestionIndex + 1}
+                      </div>
+                      <div>
+                         <h3 className="text-lg sm:text-xl font-black text-white">محرر الأسئلة</h3>
+                         <p className="text-[10px] sm:text-xs font-bold text-gray-light/30 uppercase tracking-widest mt-0.5 sm:mt-1">أضف السؤال والخيارات المتاحة</p>
+                      </div>
+                   </div>
+                   
+                   <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 bg-white/5 p-1.5 sm:p-2.5 rounded-xl sm:rounded-2xl border border-white/5 w-full xl:w-auto">
+                     <div className="flex items-center gap-1 bg-white/5 rounded-lg sm:rounded-xl p-1 overflow-x-auto scrollbar-none whitespace-nowrap">
+                       <button
+                         type="button"
+                         onClick={() => handleQuestionChange('type', 'mcq')}
+                         className={`flex items-center px-3 py-1.5 sm:px-4 sm:py-2 rounded-md sm:rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${questions[currentQuestionIndex].type === 'mcq' ? 'bg-primary text-white shadow-lg' : 'text-gray-light/30 hover:text-white'}`}
+                       >
+                         <Icon name="list" className="ml-1.5 text-xs shrink-0" />
+                         <span>اختياري</span>
+                       </button>
+                       <button
+                         type="button"
+                         onClick={() => handleQuestionChange('type', 'true_false')}
+                         className={`flex items-center px-3 py-1.5 sm:px-4 sm:py-2 rounded-md sm:rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${questions[currentQuestionIndex].type === 'true_false' ? 'bg-primary text-white shadow-lg' : 'text-gray-light/30 hover:text-white'}`}
+                       >
+                         <Icon name="check-circle" className="ml-1.5 text-xs shrink-0" />
+                         <span>صح وخطأ</span>
+                       </button>
+                       <button
+                         type="button"
+                         onClick={() => handleQuestionChange('type', 'ordering')}
+                         className={`flex items-center px-3 py-1.5 sm:px-4 sm:py-2 rounded-md sm:rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${questions[currentQuestionIndex].type === 'ordering' ? 'bg-primary text-white shadow-lg' : 'text-gray-light/30 hover:text-white'}`}
+                       >
+                         <Icon name="sort" className="ml-1.5 text-xs shrink-0" />
+                         <span>ترتيب</span>
+                       </button>
+                       <button
+                         type="button"
+                         onClick={() => handleQuestionChange('type', 'matching')}
+                         className={`flex items-center px-3 py-1.5 sm:px-4 sm:py-2 rounded-md sm:rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${questions[currentQuestionIndex].type === 'matching' ? 'bg-primary text-white shadow-lg' : 'text-gray-light/30 hover:text-white'}`}
+                       >
+                         <Icon name="link" className="ml-1.5 text-xs shrink-0" />
+                         <span>توصيل</span>
+                       </button>
                      </div>
-                     <div>
-                        <h3 className="text-xl font-black text-white">محرر الأسئلة</h3>
-                        <p className="text-xs font-bold text-gray-light/30 uppercase tracking-widest mt-1">أضف السؤال والخيارات المتاحة</p>
+                     
+                     <div className="hidden sm:block w-px h-6 bg-white/10 mx-1" />
+ 
+                     <div className="flex items-center justify-between gap-3 sm:gap-2 px-2 py-1.5 bg-white/5 sm:bg-transparent rounded-lg sm:rounded-none">
+                       <label className="text-[10px] font-black text-gray-light/30 uppercase tracking-widest">وقت السؤال (ث)</label>
+                       <Input
+                         type="number"
+                         className="h-9 w-18 sm:h-10 sm:w-20 bg-white/10 border-none rounded-lg sm:rounded-xl text-center font-bold text-primary focus:ring-0 text-xs sm:text-sm"
+                         value={questions[currentQuestionIndex].duration || 60}
+                         onChange={(e) => handleQuestionChange('duration', parseInt(e.target.value))}
+                       />
                      </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-4 bg-white/5 p-2 rounded-2xl border border-white/5">
-                    <div className="flex items-center gap-1 bg-white/5 rounded-xl p-1">
-                      <button
-                        type="button"
-                        onClick={() => handleQuestionChange('type', 'mcq')}
-                        className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${questions[currentQuestionIndex].type === 'mcq' ? 'bg-primary text-white shadow-lg' : 'text-gray-light/30 hover:text-white'}`}
-                      >
-                        اختياري
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleQuestionChange('type', 'true_false')}
-                        className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${questions[currentQuestionIndex].type === 'true_false' ? 'bg-primary text-white shadow-lg' : 'text-gray-light/30 hover:text-white'}`}
-                      >
-                        صح وخطأ
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleQuestionChange('type', 'ordering')}
-                        className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${questions[currentQuestionIndex].type === 'ordering' ? 'bg-primary text-white shadow-lg' : 'text-gray-light/30 hover:text-white'}`}
-                      >
-                        ترتيب
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleQuestionChange('type', 'matching')}
-                        className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${questions[currentQuestionIndex].type === 'matching' ? 'bg-primary text-white shadow-lg' : 'text-gray-light/30 hover:text-white'}`}
-                      >
-                        توصيل
-                      </button>
-                    </div>
-                    
-                    <div className="w-px h-6 bg-white/10 mx-1" />
+                   </div>
+                </div>
 
-                    <label className="text-[10px] font-black text-gray-light/30 uppercase tracking-widest px-2">وقت السؤال (ث)</label>
-                    <Input
-                      type="number"
-                      className="h-10 w-20 bg-white/10 border-none rounded-xl text-center font-bold text-primary focus:ring-0"
-                      value={questions[currentQuestionIndex].duration || 60}
-                      onChange={(e) => handleQuestionChange('duration', parseInt(e.target.value))}
-                    />
-                  </div>
-               </div>
-
-               <div className="space-y-10">
+               <div className="space-y-6 sm:space-y-10">
                   <div className="space-y-3">
                     <label className="text-[10px] font-black text-gray-light/30 uppercase tracking-widest px-2">نص السؤال العلمي</label>
                     <textarea
-                      className="w-full min-h-[120px] bg-white/5 border border-white/5 rounded-3xl p-6 font-bold text-lg text-white focus:bg-white/10 focus:border-primary/30 focus:ring-0 transition-all placeholder:text-gray-light/10 leading-relaxed"
+                      className="w-full min-h-[90px] sm:min-h-[120px] bg-white/5 border border-white/5 rounded-2xl sm:rounded-3xl p-4 sm:p-6 font-bold text-base sm:text-lg text-white focus:bg-white/10 focus:border-primary/30 focus:ring-0 transition-all placeholder:text-gray-light/10 leading-relaxed"
                       value={questions[currentQuestionIndex].text}
                       onChange={(e) => handleQuestionChange('text', e.target.value)}
                       placeholder="اكتب السؤال هنا بوضوح..."
@@ -531,7 +542,7 @@ export default function AddExamPage() {
                     />
                   </div>
 
-                  <div className="space-y-4">
+                  <div className="space-y-3 sm:space-y-4">
                     <label className="text-[10px] font-black text-gray-light/30 uppercase tracking-widest px-2">
                       {questions[currentQuestionIndex].type === 'true_false' ? 'حدد الإجابة الصحيحة' : 
                        questions[currentQuestionIndex].type === 'ordering' ? 'اكتب العناصر بالترتيب الصحيح (من الأول للأخير)' :
@@ -540,7 +551,7 @@ export default function AddExamPage() {
                     </label>
 
                     {(questions[currentQuestionIndex].type === 'mcq' || questions[currentQuestionIndex].type === 'true_false') && (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                         {questions[currentQuestionIndex].options.map((option, oIndex) => {
                           const isCorrect = questions[currentQuestionIndex].correct_answer === option && option !== '';
                           const isTrueFalse = questions[currentQuestionIndex].type === 'true_false';
@@ -548,15 +559,22 @@ export default function AddExamPage() {
                             <div 
                               key={oIndex} 
                               onClick={() => handleQuestionChange('correct_answer', option)}
-                              className={`group relative flex items-center gap-4 p-5 rounded-2xl cursor-pointer border-2 transition-all duration-300
+                              className={`group relative flex items-center gap-3 sm:gap-4 p-4 sm:p-5 rounded-xl sm:rounded-2xl cursor-pointer border-2 transition-all duration-300
                                 ${isCorrect 
                                   ? 'bg-emerald-500/10 border-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.2)]' 
                                   : 'bg-white/5 border-white/5 hover:border-white/20'}`}
                             >
-                               <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 font-black text-xs transition-all border
-                                 ${isCorrect ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-white/5 text-gray-light/20 border-white/5 group-hover:border-white/10'}`}>
+                               <button
+                                 type="button"
+                                 onClick={(e) => {
+                                   e.stopPropagation();
+                                   handleQuestionChange('correct_answer', option);
+                                 }}
+                                 className={`w-9 h-9 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center shrink-0 font-black text-xs transition-all border
+                                   ${isCorrect ? 'bg-emerald-500 text-white border-emerald-500 shadow-md shadow-emerald-500/20' : 'bg-white/5 text-gray-light/40 border-white/10 group-hover:border-white/20'}`}
+                               >
                                  {isCorrect ? <Icon name="check" /> : String.fromCharCode(65 + oIndex)}
-                               </div>
+                               </button>
                                
                                <Input
                                  type="text"
@@ -585,7 +603,7 @@ export default function AddExamPage() {
                     {questions[currentQuestionIndex].type === 'ordering' && (
                       <div className="space-y-3">
                         {questions[currentQuestionIndex].options.map((option: string, oIndex: number) => (
-                          <div key={oIndex} className="flex items-center gap-4 p-4 bg-white/5 border border-white/5 rounded-2xl">
+                          <div key={oIndex} className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-white/5 border border-white/5 rounded-xl sm:rounded-2xl">
                              <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-black text-xs border border-primary/20">
                                {oIndex + 1}
                              </div>
@@ -617,7 +635,7 @@ export default function AddExamPage() {
                                    handleQuestionChange('options', newOptions);
                                    handleQuestionChange('correct_answer', newOptions.join('|||'));
                                  }}
-                                 className="text-red-400/50 hover:text-red-400"
+                                 className="w-9 h-9 rounded-xl flex items-center justify-center text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-all shrink-0"
                                >
                                  <Icon name="trash" />
                                </button>
@@ -641,16 +659,16 @@ export default function AddExamPage() {
 
                     {questions[currentQuestionIndex].type === 'matching' && (
                       <div className="space-y-4">
-                         <div className="grid grid-cols-2 gap-4 px-4 text-[10px] font-black text-gray-light/20 uppercase tracking-widest">
+                         <div className="hidden sm:grid grid-cols-2 gap-4 px-4 text-[10px] font-black text-gray-light/20 uppercase tracking-widest">
                             <div>العمود الأول (أ)</div>
                             <div>العمود الثاني (ب) - المقابل له</div>
                          </div>
                         {questions[currentQuestionIndex].options.map((pair: {a: string, b: string}, oIndex: number) => (
                           <div key={oIndex} className="flex items-center gap-4">
-                             <div className="flex-1 grid grid-cols-2 gap-4 p-4 bg-white/5 border border-white/5 rounded-2xl">
+                             <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-white/5 border border-white/5 rounded-2xl">
                                <Input
                                  type="text"
-                                 className="bg-transparent border-none p-0 font-bold text-white shadow-none focus:ring-0 placeholder:text-gray-light/5 border-l border-white/10 rounded-none"
+                                 className="bg-transparent border-none p-0 font-bold text-white shadow-none focus:ring-0 placeholder:text-gray-light/5 border-b border-white/10 sm:border-b-0 sm:border-l rounded-none pb-2 sm:pb-0"
                                  value={pair.a}
                                  onChange={(e) => {
                                    const val = e.target.value;
@@ -670,7 +688,7 @@ export default function AddExamPage() {
                                  />
                                  <Input
                                  type="text"
-                                 className="bg-transparent border-none p-0 font-bold text-white shadow-none focus:ring-0 placeholder:text-gray-light/5"
+                                 className="bg-transparent border-none p-0 font-bold text-white shadow-none focus:ring-0 placeholder:text-gray-light/5 pt-2 sm:pt-0"
                                  value={pair.b}
                                  onChange={(e) => {
                                    const val = e.target.value;
@@ -696,7 +714,7 @@ export default function AddExamPage() {
                                    handleQuestionChange('options', newOptions);
                                    handleQuestionChange('correct_answer', newOptions.map(p => `${p.a}===${p.b}`).join('|||'));
                                  }}
-                                 className="text-red-400/50 hover:text-red-400"
+                                 className="w-9 h-9 rounded-xl flex items-center justify-center text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-all shrink-0 self-center"
                                >
                                  <Icon name="trash" />
                                </button>
@@ -719,109 +737,267 @@ export default function AddExamPage() {
                     )}
                   </div>
                </div>
-
-               <div className="pt-10 border-t border-white/5 flex flex-col lg:flex-row justify-between gap-6">
-                  <div className="flex items-center gap-3 w-full lg:w-auto">
-                    <Button
-                      type="button"
-                      onClick={() => setShowPreviewModal(true)}
-                      variant="ghost"
-                      className="flex-1 lg:flex-none h-14 px-6 rounded-2xl bg-white/5 border border-white/5 font-bold gap-2 hover:bg-white/10"
-                    >
-                      <Icon name="sort" />
-                      <span>معاينة وترتيب</span>
-                    </Button>
-                    <Button
-                      type="button"
-                      onClick={() => setStep('details')}
-                      variant="ghost"
-                      className="flex-1 lg:flex-none h-14 px-6 rounded-2xl bg-white/5 border border-white/5 font-bold gap-2 hover:bg-white/10"
-                    >
-                      <Icon name="cog" />
-                      <span>الإعدادات</span>
-                    </Button>
-                  </div>
-
-                  <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
-                    {currentQuestionIndex > 0 && (
-                      <Button
-                        type="button"
-                        onClick={handlePrevQuestion}
-                        variant="ghost"
-                        className="h-14 px-6 rounded-2xl font-bold text-gray-light"
-                      >
-                        السابق
-                      </Button>
-                    )}
-                    
-                    <Button
-                      type="button"
-                      onClick={handleNextQuestion}
-                      variant="secondary"
-                      className="w-full sm:w-auto h-14 px-8 rounded-2xl font-bold gap-2"
-                    >
-                      <Icon name="plus" />
-                      <span>سؤال جديد</span>
-                    </Button>
-
-                    <Button
-                      type="button"
-                      onClick={handleSubmit}
-                      variant="primary"
-                      className="w-full sm:w-auto h-14 px-12 rounded-2xl font-black gap-2 shadow-xl shadow-primary/20"
-                      disabled={loading}
-                    >
-                      <span>حفظ ونشر</span>
-                      <Icon name="check-double" />
-                    </Button>
-                  </div>
-               </div>
+ 
+                <div className="pt-6 sm:pt-10 border-t border-white/5 flex flex-col xl:flex-row justify-between gap-4 sm:gap-6 mt-4 sm:mt-8">
+                   {/* Left Side: Meta Actions (Settings, Preview) */}
+                   <div className="grid grid-cols-2 gap-3 w-full xl:w-auto">
+                     <Button
+                       type="button"
+                       onClick={() => setShowPreviewModal(true)}
+                       variant="ghost"
+                       className="h-12 sm:h-14 px-3 sm:px-6 rounded-xl sm:rounded-2xl bg-white/5 border border-white/5 font-bold gap-2 hover:bg-white/10 justify-center text-xs sm:text-sm"
+                     >
+                       <Icon name="sort" />
+                       <span>معاينة وترتيب</span>
+                     </Button>
+                     <Button
+                       type="button"
+                       onClick={() => setStep('details')}
+                       variant="ghost"
+                       className="h-12 sm:h-14 px-3 sm:px-6 rounded-xl sm:rounded-2xl bg-white/5 border border-white/5 font-bold gap-2 hover:bg-white/10 justify-center text-xs sm:text-sm"
+                     >
+                       <Icon name="cog" />
+                       <span>الإعدادات</span>
+                     </Button>
+                   </div>
+  
+                   {/* Right Side: Navigation & Publish Actions */}
+                   <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full xl:w-auto">
+                     <div className={`${currentQuestionIndex > 0 ? 'grid grid-cols-2' : 'flex'} gap-3 w-full sm:w-auto`}>
+                       {currentQuestionIndex > 0 && (
+                         <Button
+                           type="button"
+                           onClick={handlePrevQuestion}
+                           variant="ghost"
+                           className="h-12 sm:h-14 px-4 sm:px-6 rounded-xl sm:rounded-2xl font-bold text-gray-light justify-center border border-white/5 bg-white/5 text-xs sm:text-sm"
+                         >
+                           <Icon name="arrow-right" className="ml-1" />
+                           <span>السابق</span>
+                         </Button>
+                       )}
+                       
+                       <Button
+                         type="button"
+                         onClick={handleNextQuestion}
+                         variant="secondary"
+                         className="flex-1 sm:flex-initial h-12 sm:h-14 px-4 sm:px-8 rounded-xl sm:rounded-2xl font-bold gap-2 justify-center text-xs sm:text-sm"
+                       >
+                         <span>سؤال جديد</span>
+                         <Icon name="plus" />
+                       </Button>
+                     </div>
+  
+                     <Button
+                       type="button"
+                       onClick={handleSubmit}
+                       variant="primary"
+                       className="w-full sm:w-auto h-12 sm:h-14 px-6 sm:px-12 rounded-xl sm:rounded-2xl font-black gap-2 shadow-xl shadow-primary/20 justify-center text-xs sm:text-sm mt-1 sm:mt-0"
+                       disabled={loading}
+                     >
+                       <span>حفظ ونشر</span>
+                       <Icon name="check-double" />
+                     </Button>
+                   </div>
+                </div>
             </div>
           </div>
         )}
       </div>
 
       {/* Finish Modal */}
-      <FormModal
-        isOpen={showFinishModal}
-        onClose={() => setShowFinishModal(false)}
-        onSubmit={(e) => { e.preventDefault(); handleFinalSubmit(); }}
-        title="إعدادات النشر النهائية"
-        isLoading={loading}
-        submitText={loading ? 'جاري الحفظ...' : 'تأكيد ونشر الامتحان'}
-        cancelText="رجوع للتعديل"
-        maxWidth="500px"
-      >
-        <div className="space-y-8 py-2">
-           <div className="p-5 rounded-2xl bg-primary/5 border border-primary/10 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
-                 <Icon name="magic" size="xl" />
-              </div>
-              <div className="space-y-1">
-                 <h4 className="text-sm font-black text-white">العشوائية الذكية</h4>
-                 <p className="text-[11px] font-bold text-gray-light/40 leading-relaxed">يمكنك اختيار عدد أسئلة أقل ليتم توزيعها عشوائياً لكل طالب من بنك الأسئلة الذي أنشأته.</p>
-              </div>
-           </div>
+      {showFinishModal && (
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-xl z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-300">
+          <div className="w-full max-w-[480px] bg-[#0b0f19]/95 border border-white/10 rounded-[2.5rem] shadow-[0_25px_60px_rgba(0,0,0,0.8)] overflow-hidden animate-in zoom-in-95 duration-300 relative">
+            
+            {/* Ambient Background Glows */}
+            <div className="absolute -top-24 -left-24 w-48 h-48 rounded-full bg-primary/15 blur-[80px] pointer-events-none" />
+            <div className="absolute -bottom-24 -right-24 w-48 h-48 rounded-full bg-purple-500/10 blur-[80px] pointer-events-none" />
 
-           <div className="space-y-3">
-             <label className="text-[10px] font-black text-gray-light/30 uppercase tracking-widest px-2">عدد الأسئلة لكل طالب</label>
-             <div className="flex items-center gap-4">
-                <Input
-                  type="number"
-                  className="h-14 flex-1 bg-white/5 border-white/5 rounded-2xl px-5 font-black text-xl text-center text-primary"
-                  value={actualQuestionCount}
-                  onChange={(e) => setActualQuestionCount(parseInt(e.target.value))}
-                  min="1"
-                  max={questions.length}
-                />
-                <div className="text-left min-w-[80px]">
-                   <p className="text-[10px] font-black text-gray-light/20 uppercase tracking-widest leading-none mb-1">الإجمالي</p>
-                   <p className="text-xl font-black text-white leading-none">{questions.length}</p>
+            {/* Header */}
+            <div className="p-6 pb-4 border-b border-white/5 flex items-center justify-between relative z-10 animate-in slide-in-from-top duration-300">
+              <div className="space-y-1">
+                <span className="text-[9px] font-black text-primary uppercase tracking-[0.2em] bg-primary/10 px-2.5 py-1 rounded-full border border-primary/20">نشر الامتحان</span>
+                <h3 className="text-lg font-black text-white">إعدادات النشر النهائية</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowFinishModal(false)}
+                className="w-10 h-10 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center text-gray-light/50 hover:text-rose-500 hover:bg-rose-500/10 hover:border-rose-500/20 transition-all duration-300"
+              >
+                <Icon name="times" size="sm" />
+              </button>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={(e) => { e.preventDefault(); handleFinalSubmit(); }} className="relative z-10">
+              {/* Body */}
+              <div className="p-6 space-y-6">
+                
+                {/* Mode Selector (Segmented Control) */}
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-gray-light/35 uppercase tracking-widest px-2">طريقة توزيع الأسئلة</label>
+                  <div className="grid grid-cols-2 gap-2 p-1.5 bg-white/5 rounded-2xl border border-white/5">
+                    <button
+                      type="button"
+                      onClick={() => setActualQuestionCount(questions.length)}
+                      className={`h-11 rounded-xl font-bold text-xs transition-all duration-300 ${
+                        actualQuestionCount === questions.length
+                          ? 'bg-primary text-white shadow-lg'
+                          : 'text-gray-light/40 hover:text-white hover:bg-white/5'
+                      }`}
+                    >
+                      كامل بنك الأسئلة ({questions.length})
+                    </button>
+                    <button
+                      type="button"
+                      disabled={questions.length <= 1}
+                      onClick={() => setActualQuestionCount(Math.max(1, questions.length - 1))}
+                      className={`h-11 rounded-xl font-bold text-xs transition-all duration-300 disabled:opacity-30 disabled:pointer-events-none ${
+                        actualQuestionCount < questions.length
+                          ? 'bg-primary text-white shadow-lg'
+                          : 'text-gray-light/40 hover:text-white hover:bg-white/5'
+                      }`}
+                    >
+                      العشوائية الذكية 🪄
+                    </button>
+                  </div>
                 </div>
-             </div>
-           </div>
+
+                {/* Smart Randomization Section */}
+                <div className={`space-y-6 transition-all duration-500 overflow-hidden ${
+                  actualQuestionCount < questions.length ? 'opacity-100 scale-100 h-auto' : 'opacity-30 pointer-events-none'
+                }`}>
+                  {/* Magic Card */}
+                  <div className="p-5 rounded-2xl bg-gradient-to-br from-primary/10 to-purple-500/10 border border-primary/20 relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl pointer-events-none group-hover:scale-150 transition-all duration-500" />
+                    <div className="flex items-start gap-4">
+                      <div className="w-11 h-11 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+                        <Icon name="magic" size="lg" className="animate-pulse" />
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-xs font-black text-white">العشوائية الذكية مفعّلة</h4>
+                          <span className="text-[8px] font-black text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full border border-emerald-400/20">توزيع ذكي</span>
+                        </div>
+                        <p className="text-[11px] font-bold text-gray-light/40 leading-relaxed">
+                          سيتم سحب عدد عشوائي من الأسئلة لكل طالب من بنك الأسئلة بالكامل ({questions.length} أسئلة)، مما يضمن عدم تطابق نماذج الطلاب لمنع الغش تماماً!
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Quantity Selector Slider & Counter */}
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center px-1">
+                      <label className="text-[10px] font-black text-gray-light/35 uppercase tracking-widest">عدد الأسئلة المخصصة لكل طالب</label>
+                      <span className="text-xs font-black text-primary bg-primary/10 px-2 py-0.5 rounded-md">
+                        {actualQuestionCount} من أصل {questions.length}
+                      </span>
+                    </div>
+
+                    {/* Numeric Selector with + and - buttons */}
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setActualQuestionCount(Math.max(1, actualQuestionCount - 1))}
+                        disabled={actualQuestionCount <= 1 || actualQuestionCount === questions.length}
+                        className="w-14 h-14 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center text-white hover:bg-white/10 hover:border-white/10 active:scale-95 disabled:opacity-30 disabled:pointer-events-none transition-all duration-200"
+                      >
+                        <Icon name="minus" />
+                      </button>
+
+                      <div className="flex-1 relative">
+                        <input
+                          type="number"
+                          value={actualQuestionCount}
+                          onChange={(e) => {
+                            const val = parseInt(e.target.value);
+                            if (!isNaN(val)) {
+                              setActualQuestionCount(Math.min(questions.length, Math.max(1, val)));
+                            }
+                          }}
+                          disabled={actualQuestionCount === questions.length}
+                          min="1"
+                          max={questions.length}
+                          className="w-full h-14 bg-white/5 border-white/5 rounded-2xl px-5 font-black text-2xl text-center text-primary focus:bg-white/10 focus:border-primary/30 transition-all disabled:opacity-55"
+                        />
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-gray-light/25 tracking-wider">سؤال</span>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setActualQuestionCount(Math.min(questions.length - 1, actualQuestionCount + 1))}
+                        disabled={actualQuestionCount >= questions.length - 1 || actualQuestionCount === questions.length}
+                        className="w-14 h-14 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center text-white hover:bg-white/10 hover:border-white/10 active:scale-95 disabled:opacity-30 disabled:pointer-events-none transition-all duration-200"
+                      >
+                        <Icon name="plus" />
+                      </button>
+                    </div>
+
+                    {/* Custom HTML5 Range Slider */}
+                    {actualQuestionCount < questions.length && (
+                      <div className="pt-2 px-1">
+                        <input
+                          type="range"
+                          min="1"
+                          max={questions.length - 1}
+                          value={actualQuestionCount}
+                          onChange={(e) => setActualQuestionCount(parseInt(e.target.value))}
+                          className="w-full h-2 bg-white/5 rounded-lg appearance-none cursor-pointer accent-primary border border-white/5"
+                        />
+                        <div className="flex justify-between text-[9px] font-bold text-gray-light/20 mt-1">
+                          <span>1 سؤال</span>
+                          <span>{questions.length - 1} سؤال</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Total Stats Details */}
+                <div className="grid grid-cols-3 gap-3 p-4 bg-white/5 rounded-2xl border border-white/5">
+                  <div className="text-center space-y-1">
+                    <p className="text-[8px] font-black text-gray-light/35 uppercase tracking-widest leading-none">بنك الأسئلة</p>
+                    <p className="text-base font-black text-white">{questions.length}</p>
+                  </div>
+                  <div className="text-center space-y-1 border-x border-white/5">
+                    <p className="text-[8px] font-black text-gray-light/35 uppercase tracking-widest leading-none">سيظهر للطالب</p>
+                    <p className="text-base font-black text-primary">{actualQuestionCount}</p>
+                  </div>
+                  <div className="text-center space-y-1">
+                    <p className="text-[8px] font-black text-gray-light/35 uppercase tracking-widest leading-none">العشوائية</p>
+                    <p className="text-base font-black text-emerald-400">
+                      {actualQuestionCount === questions.length ? 'إيقاف' : 'نشط 🪄'}
+                    </p>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Footer */}
+              <div className="p-6 bg-black/40 border-t border-white/5 flex flex-col gap-3">
+                <Button
+                  type="submit"
+                  variant="primary"
+                  className="w-full h-14 rounded-2xl font-black gap-2 shadow-[0_0_35px_rgba(66,99,235,0.35)] justify-center text-sm"
+                  loading={loading}
+                >
+                  <span>تأكيد ونشر الامتحان</span>
+                  <Icon name="paper-plane" />
+                </Button>
+                
+                <button
+                  type="button"
+                  onClick={() => setShowFinishModal(false)}
+                  className="w-full h-12 rounded-xl font-bold text-xs text-gray-light/40 hover:text-white hover:bg-white/5 transition-all duration-300"
+                >
+                  رجوع للتعديل
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
-      </FormModal>
+      )}
 
       {/* Preview & Reorder Modal */}
       <FormModal

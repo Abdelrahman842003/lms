@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { ExamCard } from '@/components/dashboard/ExamCard';
-import { LoadingSpinner, Button, FormModal, Icon, Input } from '@/components/ui';
+import { Button, FormModal, Icon, Input } from '@/components/ui';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { getExams, toggleExamStatus, endExam, copyExam, deleteExam, getAuthToken } from '@/services/authService';
 import { getGroups, Group } from '@/services/groupService';
@@ -91,7 +91,7 @@ export default function ExamsPage() {
       setLoading(true);
       const response = await getExams(page, itemsPerPage, { 
         search: searchQuery
-      });
+      }) as any;
       setExams(response.data);
       setTotalPages(response.meta.last_page);
       setTotalItems(response.meta.total);
@@ -486,7 +486,7 @@ export default function ExamsPage() {
       {totalPages > 1 && (
         <div className="flex justify-center mt-6 gap-2">
           <Button
-            variant="outline"
+            variant="ghost"
             size="sm"
             disabled={currentPage === 1}
             onClick={() => fetchExams(currentPage - 1)}
@@ -497,7 +497,7 @@ export default function ExamsPage() {
             صفحة {currentPage} من {totalPages}
           </span>
           <Button
-            variant="outline"
+            variant="ghost"
             size="sm"
             disabled={currentPage === totalPages}
             onClick={() => fetchExams(currentPage + 1)}

@@ -5,7 +5,6 @@ import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { fetchApi } from '@/services/authService';
-import Link from 'next/link';
 import { Button, Icon } from '@/components/ui/index';
 
 interface Mistake {
@@ -13,7 +12,8 @@ interface Mistake {
   question: {
     id: string;
     text: string;
-    options: string[];
+    type?: 'mcq' | 'true_false' | 'ordering' | 'matching' | 'essay';
+    options: any[];
     correct_answer: string;
   };
   exam: {
@@ -245,12 +245,17 @@ export default function MistakesPage() {
             </div>
 
             <div className="space-y-4">
-              {mistakes.map((mistake) => (
-                <div
-                  key={mistake.id}
-                  className={`premium-glass rounded-[2rem] border transition-all duration-300
-                    ${expandedId === mistake.id ? 'border-primary/30 ring-1 ring-primary/20' : 'border-white/5 hover:border-white/10'}`}
-                >
+              {mistakes.map((mistake) => {
+                const isExpanded = expandedId === mistake.id;
+                return (
+                  <div
+                    key={mistake.id}
+                    className={`rounded-[2rem] border transition-all duration-300
+                      ${isExpanded 
+                        ? 'bg-white/[0.02] backdrop-blur-3xl shadow-[0_25px_60px_rgba(0,0,0,0.6)]' 
+                        : 'premium-glass border-white/5 hover:border-white/10'}`}
+                    style={isExpanded ? { borderColor: 'rgba(66, 99, 235, 0.2)' } : undefined}
+                  >
                   <div
                     className="p-6 cursor-pointer flex items-center justify-between gap-6"
                     onClick={() => setExpandedId(expandedId === mistake.id ? null : mistake.id)}
@@ -279,33 +284,167 @@ export default function MistakesPage() {
                     <div className="px-8 pb-8 animate-in fade-in slide-in-from-top-4 duration-300">
                       <div className="pt-6 border-t border-white/5 space-y-6">
                         <div className="space-y-4">
-                          <label className="text-[10px] font-black text-gray-light/20 uppercase tracking-widest px-2">مراجعة الخيارات والحل الصحيح</label>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            {Array.isArray(mistake.question?.options) && mistake.question.options.map((option, idx) => {
-                              const isCorrect = option === mistake.question?.correct_answer;
-                              const isStudentAnswer = option === mistake.student_answer;
-                              return (
-                                <div
-                                  key={idx}
-                                  className={`p-4 rounded-2xl border flex items-center gap-4 transition-all
-                                    ${isCorrect
-                                      ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-                                      : isStudentAnswer
-                                      ? 'bg-rose-500/10 border-rose-500/30 text-rose-400'
-                                      : 'bg-white/5 border-white/5 text-gray-light/40 opacity-60'
-                                    }`}
-                                >
-                                  <div className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 border
-                                    ${isCorrect ? 'bg-emerald-500 text-white border-emerald-500' : isStudentAnswer ? 'bg-rose-500 text-white border-rose-500' : 'bg-white/5 border-white/10'}`}>
-                                    {isCorrect ? <Icon name="check" size="xs" /> : isStudentAnswer ? <Icon name="times" size="xs" /> : <span className="text-[10px] font-black">{String.fromCharCode(65 + idx)}</span>}
+                          <label className="text-[10px] font-black text-gray-light/20 uppercase tracking-widest px-2 block">
+                            مراجعة تفاصيل السؤال والحل الصحيح
+                          </label>
+
+                          {/* 1. MCQ & TRUE_FALSE */}
+                          {(!mistake.question?.type || mistake.question.type === 'mcq' || mistake.question.type === 'true_false') && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              {Array.isArray(mistake.question?.options) && mistake.question.options.map((option, idx) => {
+                                const isCorrect = option === mistake.question?.correct_answer;
+                                const isStudentAnswer = option === mistake.student_answer;
+                                return (
+                                  <div
+                                    key={idx}
+                                    className={`p-4 rounded-2xl border flex items-center gap-4 transition-all
+                                      ${isCorrect
+                                        ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 font-bold shadow-[0_0_20px_rgba(16,185,129,0.05)]'
+                                        : isStudentAnswer
+                                        ? 'bg-rose-500/10 border-rose-500/30 text-rose-400 font-bold'
+                                        : 'bg-white/5 border-white/5 text-gray-light/40 opacity-60'
+                                      }`}
+                                  >
+                                    <div className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 border text-[10px] font-black
+                                      ${isCorrect ? 'bg-emerald-500 text-white border-emerald-500' : isStudentAnswer ? 'bg-rose-500 text-white border-rose-500' : 'bg-white/5 border-white/10'}`}>
+                                      {isCorrect ? <Icon name="check" size="xs" /> : isStudentAnswer ? <Icon name="times" size="xs" /> : <span>{String.fromCharCode(65 + idx)}</span>}
+                                    </div>
+                                    <span className="text-sm">{option}</span>
+                                    {isCorrect && <span className="mr-auto text-[8px] font-black uppercase bg-emerald-500/20 px-2 py-1 rounded-full border border-emerald-500/30">الحل الصحيح</span>}
+                                    {isStudentAnswer && !isCorrect && <span className="mr-auto text-[8px] font-black uppercase bg-rose-500/20 px-2 py-1 rounded-full border border-rose-500/30">إجابتك</span>}
                                   </div>
-                                  <span className="text-sm font-bold">{option}</span>
-                                  {isCorrect && <span className="mr-auto text-[8px] font-black uppercase bg-emerald-500/20 px-2 py-1 rounded-full">الحل الصحيح</span>}
-                                  {isStudentAnswer && !isCorrect && <span className="mr-auto text-[8px] font-black uppercase bg-rose-500/20 px-2 py-1 rounded-full">إجابتك</span>}
+                                );
+                              })}
+                            </div>
+                          )}
+
+                          {/* 2. ORDERING */}
+                          {mistake.question?.type === 'ordering' && (() => {
+                            const correctItems = mistake.question?.correct_answer ? mistake.question.correct_answer.split('|||') : [];
+                            const studentItems = mistake.student_answer ? mistake.student_answer.split('|||') : [];
+                            return (
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {/* Correct Order */}
+                                <div className="space-y-3">
+                                  <span className="text-[9px] font-black text-emerald-400 uppercase tracking-wider block bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-xl w-fit">الترتيب الصحيح لـلمحتوى</span>
+                                  <div className="space-y-2">
+                                    {correctItems.map((item, idx) => (
+                                      <div key={idx} className="p-4 rounded-2xl bg-emerald-500/[0.03] border border-emerald-500/15 flex items-center gap-4 text-emerald-400/90 font-bold">
+                                        <span className="w-6 h-6 rounded-lg bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center text-xs font-black shrink-0">{idx + 1}</span>
+                                        <span className="text-sm">{item}</span>
+                                      </div>
+                                    ))}
+                                  </div>
                                 </div>
-                              );
-                            })}
-                          </div>
+
+                                {/* Student Order */}
+                                <div className="space-y-3">
+                                  <span className="text-[9px] font-black text-rose-400 uppercase tracking-wider block bg-rose-500/10 border border-rose-500/20 px-3 py-1.5 rounded-xl w-fit">ترتيبك الذي قمت به</span>
+                                  <div className="space-y-2">
+                                    {studentItems.map((item, idx) => {
+                                      const isCorrectPosition = correctItems[idx] === item;
+                                      return (
+                                        <div key={idx} className={`p-4 rounded-2xl border flex items-center gap-4 font-bold ${
+                                          isCorrectPosition 
+                                            ? 'bg-emerald-500/[0.03] border-emerald-500/15 text-emerald-400/90' 
+                                            : 'bg-rose-500/[0.03] border-rose-500/15 text-rose-400/90'
+                                        }`}>
+                                          <span className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs font-black shrink-0 ${
+                                            isCorrectPosition 
+                                              ? 'bg-emerald-500/15 border border-emerald-500/25' 
+                                              : 'bg-rose-500/15 border border-rose-500/25'
+                                          }`}>{idx + 1}</span>
+                                          <span className="text-sm flex-1">{item || 'عنصر مفقود'}</span>
+                                          <Icon name={isCorrectPosition ? 'check' : 'times'} className={isCorrectPosition ? 'text-emerald-500' : 'text-rose-500'} />
+                                        </div>
+                                      );
+                                    })}
+                                    {studentItems.length === 0 && (
+                                      <div className="p-4 rounded-2xl bg-white/5 border border-white/5 text-gray-light/30 text-xs text-center font-bold">
+                                        لم تقم بإدخال أي إجابة لهذا السؤال
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })()}
+
+                          {/* 3. MATCHING */}
+                          {mistake.question?.type === 'matching' && (() => {
+                            const correctPairs = (mistake.question?.correct_answer || '')
+                              .split('|||')
+                              .map(p => {
+                                const parts = p.split('===');
+                                return { key: parts[0] || '', value: parts[1] || '' };
+                              })
+                              .filter(p => p.key);
+
+                            const studentPairsMap: Record<string, string> = {};
+                            (mistake.student_answer || '').split('|||').forEach(p => {
+                              const parts = p.split('===');
+                              if (parts[0]) {
+                                studentPairsMap[parts[0]] = parts[1] || '';
+                              }
+                            });
+
+                            return (
+                              <div className="space-y-3">
+                                <span className="text-[9px] font-black text-primary uppercase tracking-wider block bg-primary/10 border border-primary/20 px-3 py-1.5 rounded-xl w-fit">تحليل أزواج التوصيل والربط</span>
+                                <div className="grid grid-cols-1 gap-3">
+                                  {correctPairs.map((pair, idx) => {
+                                    const studentVal = studentPairsMap[pair.key];
+                                    const isCorrect = studentVal === pair.value;
+                                    return (
+                                      <div key={idx} className={`p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-4 font-bold ${
+                                        isCorrect 
+                                          ? 'bg-emerald-500/[0.02] border-emerald-500/10 text-emerald-400' 
+                                          : 'bg-rose-500/[0.02] border-rose-500/10 text-rose-400'
+                                      }`}>
+                                        {/* Key Card (Column A) */}
+                                        <div className="flex items-center gap-3 min-w-[120px] max-w-[200px]">
+                                          <span className="w-5 h-5 rounded-md bg-white/5 border border-white/10 flex items-center justify-center text-[10px] font-black text-gray-light/40 shrink-0">{idx + 1}</span>
+                                          <span className="text-sm text-white">{pair.key}</span>
+                                        </div>
+
+                                        {/* Arrow / Connection */}
+                                        <div className="flex items-center justify-center shrink-0">
+                                          <div className={`hidden sm:flex items-center gap-1 ${isCorrect ? 'text-emerald-500/30' : 'text-rose-500/30'}`}>
+                                            <div className="w-8 h-[2px] bg-current" />
+                                            <Icon name={isCorrect ? 'chevron-left' : 'times'} size="sm" className="rotate-180" />
+                                          </div>
+                                          <div className="sm:hidden text-center text-xs text-gray-light/20 font-black">مقابل توصيل</div>
+                                        </div>
+
+                                        {/* Matches Display */}
+                                        <div className="flex flex-wrap items-center gap-3 justify-end flex-1">
+                                          {isCorrect ? (
+                                            <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 px-4 py-2 rounded-xl text-emerald-400">
+                                              <Icon name="check-double" size="xs" />
+                                              <span className="text-xs">{pair.value}</span>
+                                            </div>
+                                          ) : (
+                                            <>
+                                              {/* What Student Answered */}
+                                              <div className="flex items-center gap-2 bg-rose-500/10 border border-rose-500/20 px-3 py-1.5 rounded-xl text-rose-400">
+                                                <span className="text-[8px] font-black opacity-60 uppercase">إجابتك:</span>
+                                                <span className="text-xs">{studentVal || 'معلق/غير موصل'}</span>
+                                              </div>
+                                              {/* What was the Correct Answer */}
+                                              <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-xl text-emerald-400">
+                                                <span className="text-[8px] font-black opacity-60 uppercase">الصحيح:</span>
+                                                <span className="text-xs">{pair.value}</span>
+                                              </div>
+                                            </>
+                                          )}
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            );
+                          })()}
                         </div>
 
                         {!mistake.is_mastered && (
@@ -324,7 +463,8 @@ export default function MistakesPage() {
                     </div>
                   )}
                 </div>
-              ))}
+              );
+            })}
             </div>
           </div>
         )}
