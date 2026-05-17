@@ -131,7 +131,7 @@ class StudentExamService
         }
 
         // No existing attempt, dispatch job for processing
-        $position = (int) \Illuminate\Support\Facades\Redis::incr("waiting-room:exam:{$exam->id}:joined");
+        $position = (int) \Illuminate\Support\Facades\Cache::increment("waiting-room:exam:{$exam->id}:joined");
         ProcessExamEntryJob::dispatch((string) $exam->id, (string) $student->id, $position);
 
         return [

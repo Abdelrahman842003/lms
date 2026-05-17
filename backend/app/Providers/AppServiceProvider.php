@@ -353,7 +353,7 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(SubscriptionExpired::class, SuspendEnrollmentsOnExpiry::class);
 
         // Domain Events — Exams
-        Event::listen(ExamCompleted::class, [GrantExamXp::class]);
+        Event::listen(ExamCompleted::class, GrantExamXp::class);
 
         // Domain Events — Gamification (placeholder للـ Listeners المستقبلية)
         // Event::listen(XpGranted::class, NotifyXpGranted::class);

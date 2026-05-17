@@ -15,7 +15,8 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\RateLimiter;
 
 class ProcessExamEntryJob implements ShouldQueue
 {
@@ -39,16 +40,16 @@ class ProcessExamEntryJob implements ShouldQueue
         StartAttemptAction $startAttemptAction,
         StudentExamService $studentExamService
     ): void {
-        // Redis Throttling to prevent DB overload
+        // Throttling to prevent DB overload
         // Allow 20 students per second for a smoother flow
-        Redis::throttle("exam-entry:{$this->examId}")
-            ->allow(20)
-            ->every(1)
-            ->then(function () use ($startAttemptAction, $studentExamService) {
+        $executed = RateLimiter::attempt(
+            "exam-entry:{$this->examId}",
+            20,
+            function () use ($startAttemptAction, $studentExamService) {
                 $exam = Exam::find($this->examId);
                 
                 if (!$exam || !$exam->is_active) {
-                    return;
+                    return true;
                 }
 
                 try {
@@ -59,16 +60,22 @@ class ProcessExamEntryJob implements ShouldQueue
                     ExamAttemptReady::dispatch($this->studentId, $attemptData);
                     
                     // Update global progress for this exam waiting room
-                    Redis::set("waiting-room:exam:{$this->examId}:processed", $this->position);
+                    Cache::put("waiting-room:exam:{$this->examId}:processed", $this->position);
                     ExamQueueProgress::dispatch($this->examId, $this->position);
                     
                     Log::info("Exam entry: Student {$this->studentId} admitted to exam {$this->examId} (Pos: {$this->position})");
+                    return true;
                 } catch (\Exception $e) {
                     Log::error("Failed to process exam entry for student {$this->studentId}: " . $e->getMessage());
+                    return true; // Still return true so we don't retry if it's a domain error
                 }
-            }, function () {
-                // Could not obtain lock... job will be released back to queue
-                $this->release(1);
-            });
+            },
+            1 // decay seconds
+        );
+
+        if (! $executed) {
+            // Could not obtain lock... job will be released back to queue
+            $this->release(1);
+        }
     }
 }

@@ -74,7 +74,7 @@ class StudentAttendanceService
         }
 
         // Dispatch job for processing
-        $position = (int) \Illuminate\Support\Facades\Redis::incr("waiting-room:lecture:{$lecture->id}:joined");
+        $position = (int) \Illuminate\Support\Facades\Cache::increment("waiting-room:lecture:{$lecture->id}:joined");
         ProcessAttendanceEntryJob::dispatch((string) $lecture->id, (string) $student->id, $position);
 
         return [

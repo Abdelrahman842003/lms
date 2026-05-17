@@ -15,7 +15,8 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\RateLimiter;
 
 class ProcessAttendanceEntryJob implements ShouldQueue
 {
@@ -37,17 +38,17 @@ class ProcessAttendanceEntryJob implements ShouldQueue
      */
     public function handle(StudentAttendanceService $attendanceService): void
     {
-        // Redis Throttling to prevent DB overload
+        // Throttling to prevent DB overload
         // Allow 20 students per second for a smoother flow
-        Redis::throttle("attendance-entry:{$this->lectureId}")
-            ->allow(20)
-            ->every(1)
-            ->then(function () use ($attendanceService) {
+        $executed = RateLimiter::attempt(
+            "attendance-entry:{$this->lectureId}",
+            20,
+            function () use ($attendanceService) {
                 $lecture = Lecture::find($this->lectureId);
                 $student = Student::find($this->studentId);
 
                 if (!$lecture || !$student) {
-                    return;
+                    return true;
                 }
 
                 try {
@@ -57,16 +58,22 @@ class ProcessAttendanceEntryJob implements ShouldQueue
                     AttendanceProcessed::dispatch($this->studentId, $result);
                     
                     // Update global progress for this lecture waiting room
-                    Redis::set("waiting-room:lecture:{$this->lectureId}:processed", $this->position);
+                    Cache::put("waiting-room:lecture:{$this->lectureId}:processed", $this->position);
                     LectureQueueProgress::dispatch($this->lectureId, $this->position);
                     
                     Log::info("Attendance entry: Student {$this->studentId} marked present for lecture {$this->lectureId} (Pos: {$this->position})");
+                    return true;
                 } catch (\Exception $e) {
                     Log::error("Failed to process attendance entry for student {$this->studentId}: " . $e->getMessage());
+                    return true;
                 }
-            }, function () {
-                // Could not obtain lock... job will be released back to queue
-                $this->release(1);
-            });
+            },
+            1 // decay seconds
+        );
+
+        if (! $executed) {
+            // Could not obtain lock... job will be released back to queue
+            $this->release(1);
+        }
     }
 }
