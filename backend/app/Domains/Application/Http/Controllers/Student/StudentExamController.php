@@ -162,10 +162,11 @@ class StudentExamController extends Controller
     /**
      * Get exam result
      */
-    public function result(\App\Domains\Exams\Models\Exam $exam): JsonResponse
+    public function result(Request $request, \App\Domains\Exams\Models\Exam $exam): JsonResponse
     {
         $student = auth()->user();
-        $result = $this->examService->getResult($student, $exam);
+        $attemptId = $request->query('attempt_id');
+        $result = $this->examService->getResult($student, $exam, $attemptId);
 
         if (!$result) {
             return $this->errorResponse('لم تقم بأداء هذا الامتحان بعد', 404);

@@ -22,6 +22,7 @@ use App\Domains\Subscriptions\Events\SubscriptionExpired;
 // Domain Listeners
 use App\Domains\Auth\Listeners\LogLoginAudit;
 use App\Domains\Exams\Listeners\GrantExamXp;
+use App\Domains\Exams\Listeners\NotifyGuardianOfSelfTest;
 use App\Domains\Exams\Listeners\RecordMistakes;
 use App\Domains\Lectures\Listeners\NotifyGroupOnActivation;
 use App\Domains\Notifications\Listeners\BroadcastNotificationSent;
@@ -354,6 +355,8 @@ class AppServiceProvider extends ServiceProvider
 
         // Domain Events — Exams
         Event::listen(ExamCompleted::class, GrantExamXp::class);
+        Event::listen(ExamCompleted::class, RecordMistakes::class);
+        Event::listen(ExamCompleted::class, NotifyGuardianOfSelfTest::class);
 
         // Domain Events — Gamification (placeholder للـ Listeners المستقبلية)
         // Event::listen(XpGranted::class, NotifyXpGranted::class);

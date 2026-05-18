@@ -197,10 +197,16 @@ const getNavItems = (role: string): NavItem[] => {
   return [
     ...commonItems,
     {
-      id: 'mistakes',
-      label: 'أخطائي',
-      icon: 'exclamation-circle',
-      href: '/student/mistakes',
+      id: 'exams',
+      label: 'الامتحانات',
+      icon: 'file-alt',
+      href: '/student/exams',
+    },
+    {
+      id: 'self-test',
+      label: 'اختبر نفسك',
+      icon: 'vial',
+      href: '/student/self-test',
     },
     {
       id: 'lectures',
@@ -215,10 +221,10 @@ const getNavItems = (role: string): NavItem[] => {
       href: '/student/videos',
     },
     {
-      id: 'exams',
-      label: 'الامتحانات',
-      icon: 'file-alt',
-      href: '/student/exams',
+      id: 'mistakes',
+      label: 'أخطائي',
+      icon: 'exclamation-circle',
+      href: '/student/mistakes',
     },
     {
       id: 'notifications',

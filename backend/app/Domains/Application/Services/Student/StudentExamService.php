@@ -261,19 +261,22 @@ class StudentExamService
     /**
      * Get student's final result for exam.
      */
-    public function getResult(Student $student, Exam $exam): ?array
+    public function getResult(Student $student, Exam $exam, ?string $attemptId = null): ?array
     {
-        $result = ExamResult::where('exam_id', $exam->id)
-            ->where('student_id', $student->id)
-            ->first();
+        $resultQuery = ExamResult::where('exam_id', $exam->id)
+            ->where('student_id', $student->id);
+
+        if ($attemptId) {
+            $resultQuery->where('attempt_id', $attemptId);
+        }
+
+        $result = $resultQuery->first();
 
         if (! $result) {
             return null;
         }
 
-        $attempt = ExamAttempt::where('exam_id', $exam->id)
-            ->where('student_id', $student->id)
-            ->first();
+        $attempt = ExamAttempt::find($attemptId ?: $result->attempt_id);
 
         $totalQuestions = $attempt ? count((array) $attempt->questions_order) : (int) ($exam->actual_question_count ?? 0);
         $correctAnswers = $attempt

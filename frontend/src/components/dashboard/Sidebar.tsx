@@ -158,6 +158,12 @@ const getSidebarItems = (role: string): SidebarItem[] => {
       href: '/student/exams',
     },
     {
+      id: 'self-test',
+      label: 'اختبر نفسك',
+      icon: 'fas fa-vial',
+      href: '/student/self-test',
+    },
+    {
       id: 'notes',
       label: 'مذكراتي',
       icon: 'fas fa-file-pdf',
@@ -196,6 +202,7 @@ const permissionMap: Record<string, string[]> = {
   reports: ['reports', 'stats', 'view reports'],
   dashboard: ['dashboard', 'view dashboard'],
   gamification: ['honor_roll', 'view dashboard'], // honor_roll is used for leaderboard
+  'self-test': ['dashboard'], // Always visible for students
 };
 
 const filterItemsByPermissions = (items: SidebarItem[], permissions: any[]): SidebarItem[] => {

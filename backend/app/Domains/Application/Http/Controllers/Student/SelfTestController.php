@@ -12,11 +12,60 @@ use Illuminate\Support\Facades\RateLimiter;
 
 class SelfTestController extends Controller
 {
-    use \App\Domains\Application\Traits\ResolvesStudent;
-
     public function __construct(
         private DynamicExamGenerator $examGenerator
     ) {}
+
+    /**
+     * Get available question counts by difficulty for a teacher
+     */
+    public function availableCounts(Request $request): JsonResponse
+    {
+        $request->validate([
+            'teacher_id' => 'required|exists:teachers,id',
+        ]);
+
+        $teacherId = $request->input('teacher_id');
+
+        $counts = \App\Domains\Exams\Models\Question::where('teacher_id', $teacherId)
+            ->select('difficulty', \Illuminate\Support\Facades\DB::raw('count(*) as count'))
+            ->groupBy('difficulty')
+            ->get()
+            ->pluck('count', 'difficulty');
+
+        return $this->successResponse([
+            'easy' => $counts->get('easy', 0),
+            'medium' => $counts->get('medium', 0),
+            'hard' => $counts->get('hard', 0),
+            'total' => $counts->sum(),
+        ]);
+    }
+
+    /**
+     * Get self-test history for the student and teacher
+     */
+    public function history(Request $request): JsonResponse
+    {
+        $request->validate([
+            'teacher_id' => 'required|exists:teachers,id',
+        ]);
+
+        $student = $request->user();
+        $teacherId = $request->input('teacher_id');
+
+        $attempts = \App\Domains\Exams\Models\ExamAttempt::where('student_id', $student->id)
+            ->whereHas('exam', function ($query) use ($teacherId) {
+                $query->where('teacher_id', $teacherId)
+                    ->where('type', 'self_test');
+            })
+            ->with(['result', 'exam'])
+            ->latest()
+            ->paginate($request->input('per_page', 10));
+
+        return $this->successResponse(
+            \App\Domains\Application\Http\Resources\Student\SelfTestHistoryResource::collection($attempts)->response()->getData(true)
+        );
+    }
 
     /**
      * @param Request $request
@@ -31,7 +80,7 @@ class SelfTestController extends Controller
             'hard_count' => 'required|integer|min:0',
         ]);
 
-        $student = $this->getStudentFromRequest($request);
+        $student = $request->user();
         $teacherId = $request->input('teacher_id');
 
         $totalRequested = $request->input('easy_count') + $request->input('medium_count') + $request->input('hard_count');

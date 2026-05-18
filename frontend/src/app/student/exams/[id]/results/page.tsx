@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, use } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
@@ -28,6 +28,9 @@ interface ExamData {
 
 export default function StudentExamResultPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const searchParams = useSearchParams();
+  const attemptId = searchParams.get('attempt_id');
+
   const { user } = useAuth();
   const router = useRouter();
   
@@ -39,9 +42,14 @@ export default function StudentExamResultPage({ params }: { params: Promise<{ id
     const fetchData = async () => {
       try {
         setLoading(true);
+        
+        const resultUrl = attemptId 
+          ? `/student/exams/${id}/result?attempt_id=${attemptId}`
+          : `/student/exams/${id}/result`;
+
         // We need both the result and the exam details
         const [resultRes, examRes] = await Promise.all([
-          fetchApi(`/student/exams/${id}/result`),
+          fetchApi(resultUrl),
           fetchApi(`/student/exams/${id}`)
         ]);
         
@@ -59,7 +67,7 @@ export default function StudentExamResultPage({ params }: { params: Promise<{ id
     if (id) {
       fetchData();
     }
-  }, [id, router]);
+  }, [id, attemptId, router]);
 
   if (loading) {
     return (

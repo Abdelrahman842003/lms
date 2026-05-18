@@ -138,7 +138,7 @@ export default function StudentDashboard() {
             <div className="flex items-center gap-4">
                <div className="flex flex-col items-center md:items-end">
                   <span className="text-[10px] font-black text-gray-light/30 uppercase tracking-[0.2em] mb-1">المعلم الحالي</span>
-                  <span className="text-xl font-black text-white">{selectedTeacher?.name || 'اختر مدرساً'}</span>
+                  <span className="text-xl font-black text-white">{selectedTeacher?.teacher_name || 'اختر مدرساً'}</span>
                </div>
             </div>
           </div>
@@ -179,7 +179,25 @@ export default function StudentDashboard() {
       </div>
 
       {/* Quick Access Section - Added for better navigation */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <Link href="/student/self-test" className="block group">
+          <Button
+            variant="ghost"
+            className="w-full h-auto p-6 bg-primary/10 hover:bg-primary/20 border border-primary/20 hover:border-primary/50 rounded-2xl transition-all duration-300 flex items-center justify-between text-left"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center text-primary-light text-xl group-hover:scale-110 transition-transform">
+                <Icon name="vial" className="text-xl" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white mb-1">اختبر نفسك</h3>
+                <p className="text-sm text-gray-400">تدرب على أسئلة المدرس</p>
+              </div>
+            </div>
+            <Icon name="arrow-left" className="text-gray-500 group-hover:text-primary transition-colors" />
+          </Button>
+        </Link>
+
         <Link href="/student/achievements" className="block group">
           <Button
             variant="ghost"
