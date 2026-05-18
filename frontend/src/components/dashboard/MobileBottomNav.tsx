@@ -88,6 +88,12 @@ const getNavItems = (role: string): NavItem[] => {
         href: '/academy/exams',
       },
       {
+        id: 'question_bank',
+        label: 'بنك الأسئلة',
+        icon: 'database',
+        href: '/academy/questions',
+      },
+      {
         id: 'notifications_academy',
         label: 'الإشعارات',
         icon: 'bell',
@@ -159,6 +165,12 @@ const getNavItems = (role: string): NavItem[] => {
         label: 'الامتحانات',
         icon: 'file-alt',
         href: `${base}/exams`,
+      },
+      {
+        id: 'question_bank',
+        label: 'بنك الأسئلة',
+        icon: 'database',
+        href: `${base}/questions`,
       },
       {
         id: 'notifications',

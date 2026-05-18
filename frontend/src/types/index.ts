@@ -37,6 +37,7 @@ export interface User {
     academies?: AcademyInfo[]
     trial_period_days?: number | null
     effective_trial_period_days?: number
+    subject?: string
 }
 
 // Import for backward compatibility

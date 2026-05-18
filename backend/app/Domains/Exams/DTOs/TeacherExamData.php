@@ -20,6 +20,8 @@ class TeacherExamData
         public readonly ?string $group_id = null,
         public readonly int $time_per_question = 60,
         public readonly ?string $academy_id = null,
+        public readonly ?string $type = 'manual',
+        public readonly ?array $dynamic_settings = null,
     ) {}
 
     public static function fromRequest(Request $request): self
@@ -32,10 +34,12 @@ class TeacherExamData
             duration: (int) $request->validated('duration'),
             total_marks: (int) $request->validated('total_marks'),
             actual_question_count: (int) $request->validated('actual_question_count'),
-            questions: $request->validated('questions'),
+            questions: $request->validated('questions') ?? [],
             group_id: $request->validated('group_id'),
             time_per_question: (int) ($request->validated('time_per_question') ?? 60),
             academy_id: $request->input('academy_id_override'), // Special input for manual override or context
+            type: $request->validated('type') ?? 'manual',
+            dynamic_settings: $request->validated('dynamic_settings'),
         );
     }
 
@@ -52,6 +56,8 @@ class TeacherExamData
             'actual_question_count' => $this->actual_question_count,
             'questions' => $this->questions,
             'time_per_question' => $this->time_per_question,
+            'type' => $this->type,
+            'dynamic_settings' => $this->dynamic_settings,
         ];
     }
 }

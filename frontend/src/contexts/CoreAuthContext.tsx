@@ -61,6 +61,7 @@ function mapAuthResponseToUser(response: any, role: string): User {
     academies: response.academies || response.user.academies,
     trial_period_days: response.user.trial_period_days ?? null,
     effective_trial_period_days: response.user.effective_trial_period_days ?? response.user.trial_period_days ?? undefined,
+    subject: response.user.subject,
   };
 }
 

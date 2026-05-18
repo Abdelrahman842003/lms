@@ -34,6 +34,7 @@ Route::middleware(['auth:sanctum', EnsureTeacherNotSuspendedForStudent::class])-
     Route::get('/dashboard', [StudentDashboardController::class, 'getDashboard']);
     
     // Exam Taking Routes - Rate limited answer submission
+    Route::post('/self-test/start', [\App\Domains\Application\Http\Controllers\Student\SelfTestController::class, 'start']);
     Route::get('/exams/{exam}', [StudentExamController::class, 'show']);
     Route::post('/exams/{exam}/start', [StudentExamController::class, 'start']);
     Route::middleware('throttle:exam-submit')->group(function () {

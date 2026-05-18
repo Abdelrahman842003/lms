@@ -7,49 +7,55 @@ import React from 'react';
 import { clsx } from 'clsx';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  // شلنا الـ outline من هنا
-  variant?: 'primary' | 'secondary' | 'ghost' | 'destructive';
-  size?: 'sm' | 'md' | 'lg';
-  loading?: boolean;
+  variant?: 'primary' | 'secondary' | 'ghost' | 'destructive' | 'outline';
+  size?: 'sm' | 'md' | 'lg' | 'xs' | 'xl';
+  isLoading?: boolean;
+  loading?: boolean; // Keep for backward compatibility
   children: React.ReactNode;
 }
 
 export const Button: React.FC<ButtonProps> = ({
   variant = 'primary',
   size = 'md',
+  isLoading = false,
   loading = false,
   disabled,
   className,
   children,
   ...props
 }) => {
+  const isButtonLoading = isLoading || loading;
+
   const variantStyles = {
     primary: 'btn-primary',
     secondary: 'btn-secondary',
     ghost: 'btn-ghost',
     destructive: 'btn-danger',
+    outline: 'btn-outline border border-white/10 hover:bg-white/5',
   };
 
   const sizeStyles = {
+    xs: 'btn-xs text-[10px] px-2 py-1',
     sm: 'btn-sm',
     md: '',
     lg: 'btn-lg',
+    xl: 'btn-xl h-14 text-lg',
   };
 
   const buttonClasses = clsx(
     'btn',
-    variantStyles[variant],
-    sizeStyles[size],
+    variantStyles[variant as keyof typeof variantStyles] || variantStyles.primary,
+    sizeStyles[size as keyof typeof sizeStyles] || '',
     className
   );
 
   return (
     <button
       className={buttonClasses}
-      disabled={disabled || loading}
+      disabled={disabled || isButtonLoading}
       {...props}
     >
-      {loading && (
+      {isButtonLoading && (
         <svg className="btn-loading-icon" fill="none" viewBox="0 0 24 24" aria-hidden="true">
           <circle
             className="ux-opacity-25"

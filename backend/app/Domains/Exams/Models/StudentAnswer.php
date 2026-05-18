@@ -15,6 +15,7 @@ class StudentAnswer extends Model
     protected $fillable = [
         'exam_attempt_id',
         'question_id',
+        'question_snapshot',
         'answer',
         'is_correct',
         'answered_at',
@@ -25,6 +26,7 @@ class StudentAnswer extends Model
         return [
             'is_correct' => 'boolean',
             'answered_at' => 'datetime',
+            'question_snapshot' => 'array',
         ];
     }
 

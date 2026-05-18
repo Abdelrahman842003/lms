@@ -27,6 +27,7 @@ export interface BaseUser {
   academies?: any[];
   trial_period_days?: number | null;
   effective_trial_period_days?: number;
+  subject?: string;
 }
 
 /**

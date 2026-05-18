@@ -353,6 +353,21 @@ export default function ExamDetailsPage({ params }: { params: Promise<{ id: stri
                     <div className="space-y-6">
                       {exam.questions.map((question, index) => {
                         const options = parseOptions(question.options);
+                        const isCorrectOption = (opt: any) => {
+                          if (typeof opt === 'object' && opt !== null && 'a' in opt && 'b' in opt) {
+                            return true; // For matching questions, all listed options are correct pairs
+                          }
+                          return opt === question.correct_answer;
+                        };
+                        const getOptionText = (opt: any) => {
+                          if (typeof opt === 'object' && opt !== null) {
+                            if ('a' in opt && 'b' in opt) {
+                              return `${opt.a} ↔ ${opt.b}`;
+                            }
+                            return JSON.stringify(opt);
+                          }
+                          return String(opt);
+                        };
                         return (
                           <div key={question.id || index} className="group/q p-6 rounded-3xl bg-white/[0.03] border border-white/5 hover:border-primary/20 transition-all">
                             <div className="flex items-start gap-4 mb-6">
@@ -363,22 +378,26 @@ export default function ExamDetailsPage({ params }: { params: Promise<{ id: stri
                             </div>
                             
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pl-0 md:pl-14">
-                              {options.map((option, oIndex) => (
-                                <div
-                                  key={oIndex}
-                                  className={`p-4 rounded-2xl border transition-all flex items-center gap-3
-                                    ${option === question.correct_answer
-                                      ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.1)]'
-                                      : 'border-white/5 bg-white/5 text-gray-light/60 hover:bg-white/[0.08]'
-                                    }`}
-                                >
-                                  <div className={`w-5 h-5 rounded-lg flex items-center justify-center shrink-0 border
-                                    ${option === question.correct_answer ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-white/5 border-white/10'}`}>
-                                    {option === question.correct_answer ? <Icon name="check" size="xs" /> : <span className="text-[10px] font-black">{String.fromCharCode(65 + oIndex)}</span>}
+                              {options.map((option, oIndex) => {
+                                const isCorrect = isCorrectOption(option);
+                                const optionText = getOptionText(option);
+                                return (
+                                  <div
+                                    key={oIndex}
+                                    className={`p-4 rounded-2xl border transition-all flex items-center gap-3
+                                      ${isCorrect
+                                        ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.1)]'
+                                        : 'border-white/5 bg-white/5 text-gray-light/60 hover:bg-white/[0.08]'
+                                      }`}
+                                  >
+                                    <div className={`w-5 h-5 rounded-lg flex items-center justify-center shrink-0 border
+                                      ${isCorrect ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-white/5 border-white/10'}`}>
+                                      {isCorrect ? <Icon name="check" size="xs" /> : <span className="text-[10px] font-black">{String.fromCharCode(65 + oIndex)}</span>}
+                                    </div>
+                                    <span className="text-sm font-medium">{optionText}</span>
                                   </div>
-                                  <span className="text-sm font-medium">{option}</span>
-                                </div>
-                              ))}
+                                );
+                              })}
                             </div>
                           </div>
                         );

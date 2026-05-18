@@ -32,7 +32,7 @@ class ExamController extends Controller
         $teachers = $academy->teachers()
             ->wherePivot('is_active', true)
             ->where('teachers.status', 'active')
-            ->select('teachers.id', 'teachers.name', 'teachers.phone')
+            ->select('teachers.id', 'teachers.name', 'teachers.phone', 'teachers.subject')
             ->get();
 
         return $this->successResponse([

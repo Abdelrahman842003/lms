@@ -13,6 +13,7 @@ use App\Domains\Application\Filters\ExamFilter;
 use App\Domains\Application\Traits\HasAcademyFilter;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class ExamService
 {
@@ -33,7 +34,6 @@ class ExamService
         (new ExamFilter($filters))->apply($query);
 
         // Apply academy filter via grade relationship
-        // Apply academy filter
         if ($academyId === 'independent') {
             $query->whereNull('academy_id')
                 ->whereDoesntHave('grade', fn ($q) => $q->whereNotNull('academy_id'))
@@ -52,10 +52,16 @@ class ExamService
     public function createExam(Teacher $teacher, TeacherExamData $data): Exam
     {
         return DB::transaction(function () use ($teacher, $data) {
+            // Type might not be in DTO if it's legacy, default to manual
+            $type = property_exists($data, 'type') ? $data->type : 'manual';
+            $dynamicSettings = property_exists($data, 'dynamic_settings') ? $data->dynamic_settings : null;
+
             $exam = Exam::create([
                 'teacher_id' => $teacher->id,
                 'academy_id' => $data->academy_id,
                 'title' => $data->title,
+                'type' => $type,
+                'dynamic_settings' => $dynamicSettings,
                 'subject' => $data->subject,
                 'grade_id' => $data->grade_id,
                 'group_id' => $data->group_id,
@@ -66,7 +72,12 @@ class ExamService
                 'time_per_question' => $data->time_per_question,
             ]);
 
-            $this->createQuestions($exam, $data->questions);
+            if ($type === 'manual') {
+                $questionIds = property_exists($data, 'question_ids') ? $data->question_ids : null;
+                $this->syncQuestions($exam, $teacher, $data->questions, $questionIds);
+            } elseif ($type === 'dynamic' && !empty($dynamicSettings)) {
+                $this->generateDynamicQuestions($exam, $teacher, $dynamicSettings);
+            }
 
             return $exam->load('questions');
         });
@@ -75,9 +86,13 @@ class ExamService
     public function updateExam(Exam $exam, TeacherExamData $data): Exam
     {
         return DB::transaction(function () use ($exam, $data) {
-            // Standard update
+            $type = $data->type ?? $exam->type;
+            $dynamicSettings = $data->dynamic_settings ?? $exam->dynamic_settings;
+
             $exam->update([
                 'title' => $data->title,
+                'type' => $type,
+                'dynamic_settings' => $dynamicSettings,
                 'subject' => $data->subject,
                 'grade_id' => $data->grade_id,
                 'group_id' => $data->group_id,
@@ -88,16 +103,66 @@ class ExamService
                 'time_per_question' => $data->time_per_question,
             ]);
 
-            // Sync questions instead of delete+create for better performance
-            $this->syncQuestions($exam, $data->questions);
+            if ($type === 'manual') {
+                $questionIds = property_exists($data, 'question_ids') ? $data->question_ids : null;
+                $this->syncQuestions($exam, $exam->teacher, $data->questions, $questionIds);
+            } elseif ($type === 'dynamic') {
+                $this->generateDynamicQuestions($exam, $exam->teacher, $dynamicSettings ?? []);
+            } else {
+                // If it became another type, remove questions
+                $exam->questions()->detach();
+            }
 
             return $exam->load('questions');
         });
     }
 
+    /**
+     * Generates questions from the question bank for a dynamic exam and syncs them to the pivot table.
+     */
+    private function generateDynamicQuestions(Exam $exam, Teacher $teacher, array $settings): void
+    {
+        $pivotData = [];
+        $order = 0;
+
+        foreach ($settings as $difficulty => $count) {
+            $count = (int) $count;
+            if ($count <= 0) {
+                continue;
+            }
+
+            // Query bank for this teacher, grade, subject & difficulty
+            $query = Question::where('teacher_id', $teacher->id)
+                ->where('grade_id', $exam->grade_id)
+                ->where('subject', $exam->subject)
+                ->where('difficulty', $difficulty);
+
+            $totalAvailable = $query->count();
+            if ($totalAvailable < $count) {
+                $difficultyAr = match ($difficulty) {
+                    'easy' => 'السهلة',
+                    'medium' => 'المتوسطة',
+                    'hard' => 'الصعبة',
+                    default => $difficulty
+                };
+                throw new \Exception("لا يوجد عدد كافٍ من الأسئلة في بنك الأسئلة لمستوى الصعوبة ({$difficultyAr}). المطلوب {$count} والمتاح {$totalAvailable} فقط.");
+            }
+
+            $questionIds = $query->inRandomOrder()
+                ->limit($count)
+                ->pluck('id');
+
+            foreach ($questionIds as $qId) {
+                $pivotData[$qId] = ['order' => $order++];
+            }
+        }
+
+        $exam->questions()->sync($pivotData);
+    }
+
     public function deleteExam(Exam $exam): void
     {
-        $exam->delete();
+        $exam->delete(); // Cascade handles pivot
     }
 
     public function copyExam(Exam $exam, ?string $title = null): Exam
@@ -107,93 +172,82 @@ class ExamService
             $newExam->title = $title ?? ($exam->title.' (نسخة)');
             $newExam->save();
 
-            // Bulk insert questions for better performance
-            $now = now();
-            $newQuestions = $exam->questions->map(fn($q) => [
-                'id' => \Illuminate\Support\Str::uuid()->toString(),
-                'exam_id' => $newExam->id,
-                'text' => $q->text,
-                'type' => $q->type->value ?? $q->type ?? 'mcq',
-                'options' => json_encode($q->options),
-                'correct_answer' => $q->correct_answer,
-                'duration' => $q->duration,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ])->toArray();
-
-            Question::insert($newQuestions);
+            if ($newExam->type === 'manual') {
+                // Copy pivot relationships exactly
+                $pivotData = [];
+                foreach ($exam->questions as $q) {
+                    $pivotData[$q->id] = ['order' => $q->pivot->order, 'points' => $q->pivot->points];
+                }
+                $newExam->questions()->sync($pivotData);
+            }
 
             return $newExam->load('questions');
         });
     }
 
-    private function createQuestions(Exam $exam, array $questions): void
-    {
-        $now = now();
-        $rows = array_map(fn($q) => [
-            'id' => \Illuminate\Support\Str::uuid()->toString(),
-            'exam_id' => $exam->id,
-            'text' => $q['text'],
-            'type' => $q['type'] ?? 'mcq',
-            'options' => json_encode($q['options']), // Must encode to JSON since insert() bypasses model casts
-            'correct_answer' => $q['correct_answer'],
-            'duration' => $q['duration'] ?? 60,
-            'created_at' => $now,
-            'updated_at' => $now,
-        ], $questions);
-
-        Question::insert($rows);
-    }
-
     /**
-     * مزامنة الأسئلة: تحديث الموجود وإضافة الجديد وحذف المحذوف
-     * أكثر كفاءة من delete+create
+     * Sync questions to the exam_question pivot table.
+     * Handles both pre-existing question_ids and new question objects that need creation.
      */
-    private function syncQuestions(Exam $exam, array $questions): void
+    private function syncQuestions(Exam $exam, Teacher $teacher, ?array $questions, ?array $questionIds): void
     {
-        $existingIds = Question::where('exam_id', $exam->id)->pluck('id')->toArray();
-        $newIds = [];
+        $pivotData = [];
+        $order = 0;
 
-        foreach ($questions as $index => $q) {
-            $questionId = $q['id'] ?? null;
-
-            if ($questionId && in_array($questionId, $existingIds)) {
-                // Update existing question
-                Question::where('id', $questionId)->update([
-                    'text' => $q['text'],
-                    'type' => $q['type'] ?? 'mcq',
-                    'options' => json_encode($q['options']), // Must encode to JSON since update() bypasses model casts
-                    'correct_answer' => $q['correct_answer'],
-                    'duration' => $q['duration'] ?? 60,
-                    'sort_order' => $index,
-                ]);
-                $newIds[] = $questionId;
-            } else {
-                // Create new question - Question::create() triggers model casts, so no json_encode needed
-                $newQuestion = Question::create([
-                    'id' => \Illuminate\Support\Str::uuid()->toString(),
-                    'exam_id' => $exam->id,
-                    'text' => $q['text'],
-                    'type' => $q['type'] ?? 'mcq',
-                    'options' => $q['options'],
-                    'correct_answer' => $q['correct_answer'],
-                    'duration' => $q['duration'] ?? 60,
-                    'sort_order' => $index,
-                ]);
-                $newIds[] = $newQuestion->id;
+        // If IDs are provided directly (from Question Bank selection)
+        if (!empty($questionIds)) {
+            foreach ($questionIds as $qId) {
+                $pivotData[$qId] = ['order' => $order++];
             }
         }
 
-        // Delete questions that are not in the new list
-        $toDelete = array_diff($existingIds, $newIds);
-        if (!empty($toDelete)) {
-            Question::whereIn('id', $toDelete)->delete();
+        // If new questions are provided as objects (legacy manual creation)
+        if (!empty($questions)) {
+            $now = now();
+            $newQuestionsToInsert = [];
+            
+            foreach ($questions as $q) {
+                if (isset($q['id']) && Question::where('id', $q['id'])->exists()) {
+                    // Update existing
+                    Question::where('id', $q['id'])->update([
+                        'text' => $q['text'],
+                        'type' => $q['type'] ?? 'mcq',
+                        'options' => json_encode($q['options']),
+                        'correct_answer' => $q['correct_answer'],
+                        'duration' => $q['duration'] ?? 60,
+                        'difficulty' => $q['difficulty'] ?? 'medium',
+                    ]);
+                    $pivotData[$q['id']] = ['order' => $order++];
+                } else {
+                    // Insert into Question Bank
+                    $newId = Str::uuid()->toString();
+                    $newQuestionsToInsert[] = [
+                        'id' => $newId,
+                        'teacher_id' => $teacher->id,
+                        'grade_id' => $exam->grade_id,
+                        'subject' => $exam->subject,
+                        'exam_id' => $exam->id, // Legacy compat
+                        'text' => $q['text'],
+                        'type' => $q['type'] ?? 'mcq',
+                        'options' => json_encode($q['options']),
+                        'correct_answer' => $q['correct_answer'],
+                        'duration' => $q['duration'] ?? 60,
+                        'difficulty' => $q['difficulty'] ?? 'medium',
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ];
+                    $pivotData[$newId] = ['order' => $order++];
+                }
+            }
+
+            if (!empty($newQuestionsToInsert)) {
+                Question::insert($newQuestionsToInsert);
+            }
         }
+
+        $exam->questions()->sync($pivotData);
     }
 
-    /**
-     * التحقق من وجود امتحانات فعالة حالياً لنفس الطلاب (للتفعيل)
-     */
     public function checkActiveConflicts(Exam $exam): ?array
     {
         $targetStudentIds = $this->getTargetStudentIds($exam);
@@ -202,7 +256,6 @@ class ExamService
             return null;
         }
 
-        // البحث عن امتحانات فعالة من مدرسين آخرين لنفس الطلاب
         $conflictingExams = Exam::where('is_active', true)
             ->where('id', '!=', $exam->id)
             ->where('teacher_id', '!=', $exam->teacher_id)
@@ -227,12 +280,8 @@ class ExamService
         ];
     }
 
-    /**
-     * التحقق من وجود امتحانات في نفس التاريخ لنفس الطلاب (للإنشاء/التحديث)
-     */
     public function checkDateConflicts(string $gradeId, string $date, string $teacherId, ?string $examId = null): ?array
     {
-        // جلب معرفات الطلاب المشتركين فقط (لا حاجة لتحميل العلاقات)
         $targetStudentIds = Enrollment::where('teacher_id', $teacherId)
             ->where('grade_id', $gradeId)
             ->where('is_active', true)
@@ -243,7 +292,6 @@ class ExamService
             return null;
         }
 
-        // البحث عن امتحانات في نفس التاريخ من مدرسين آخرين
         $query = Exam::whereDate('date', $date)
             ->where('teacher_id', '!=', $teacherId)
             ->where('grade_id', $gradeId)
@@ -272,9 +320,6 @@ class ExamService
         ];
     }
 
-    /**
-     * جلب معرفات الطلاب المستهدفين بالامتحان
-     */
     private function getTargetStudentIds(Exam $exam): array
     {
         $query = Enrollment::where('teacher_id', $exam->teacher_id)
@@ -292,7 +337,6 @@ class ExamService
     {
         $isActive = ! $exam->is_active;
 
-        // التحقق من التعارضات قبل التفعيل
         if ($isActive) {
             $conflict = $this->checkActiveConflicts($exam);
 
@@ -318,16 +362,12 @@ class ExamService
         }
 
         $exam->update($updateData);
-
-        // Refresh model to get updated data
         $exam->refresh();
 
         if ($isActive) {
-            // Notify students
             $this->notifyStudents($exam, new \App\Domains\Exams\Notifications\ExamActivatedNotification($exam));
         }
 
-        // Notify teacher for real-time UI update
         $exam->teacher->notify(new \App\Domains\Exams\Notifications\ExamStatusNotification($exam, $isActive ? 'active' : 'inactive'));
 
         return [
@@ -339,7 +379,6 @@ class ExamService
 
     public function endExam(Exam $exam): Exam
     {
-        // Idempotent behavior: if already ended, return as-is.
         if ($exam->ended_at) {
             return $exam;
         }
@@ -349,16 +388,11 @@ class ExamService
             'ended_at' => now(),
         ]);
 
-        // Clear cache for this exam
         unset($this->targetStudentsCache[$exam->id]);
-
-        // Refresh model to get updated data
         $exam->refresh();
 
-        // Notify teacher for real-time UI update
         $exam->teacher->notify(new \App\Domains\Exams\Notifications\ExamStatusNotification($exam, 'ended'));
 
-        // Process results for all students
         $this->processExamResults($exam);
 
         return $exam;
@@ -377,7 +411,6 @@ class ExamService
     {
         $students = $this->getTargetStudents($exam);
 
-        // Pre-load all attempts for this exam in one query (optimized)
         $attempts = $exam->attempts()->get()->keyBy('student_id');
 
         $examService = app(\App\Domains\Application\Services\Student\StudentExamService::class);
@@ -389,11 +422,9 @@ class ExamService
 
             if ($attempt) {
                 if ($attempt->status === 'in_progress') {
-                    // Force submit
                     $examService->terminateExam($attempt, 'time_limit_exceeded');
                 }
             } else {
-                // Collect absent students for bulk insert
                 $absentResults[] = [
                     'id' => \Illuminate\Support\Str::uuid()->toString(),
                     'exam_id' => $exam->id,
@@ -407,11 +438,9 @@ class ExamService
             }
         }
 
-        // Bulk insert absent results
         if (! empty($absentResults)) {
             \App\Domains\Exams\Models\ExamResult::insert($absentResults);
 
-            // Batch notification for absent students
             \Illuminate\Support\Facades\Notification::send(
                 collect($absentStudents),
                 new \App\Domains\Exams\Notifications\ExamAbsentNotification($exam)
@@ -419,15 +448,10 @@ class ExamService
         }
     }
 
-    /**
-     * جلب الطلاب المستهدفين بالامتحان (مشترك بين notifyStudents و processExamResults)
-     * يستخدم cache لتجنب الاستعلامات المكررة
-     */
     private function getTargetStudents(Exam $exam, bool $refresh = false): \Illuminate\Database\Eloquent\Collection
     {
         $cacheKey = $exam->id;
 
-        // Return cached value if available and not forcing refresh
         if (!$refresh && isset($this->targetStudentsCache[$cacheKey])) {
             return $this->targetStudentsCache[$cacheKey];
         }
@@ -446,8 +470,6 @@ class ExamService
         }
 
         $students = $query->distinct()->get();
-
-        // Cache the result
         $this->targetStudentsCache[$cacheKey] = $students;
 
         return $students;

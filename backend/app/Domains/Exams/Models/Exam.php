@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Exam extends Model
 {
@@ -26,6 +27,8 @@ class Exam extends Model
         'teacher_id',
         'academy_id',
         'title',
+        'type', // manual, dynamic, self_test
+        'dynamic_settings',
         'subject',
         'max_score',
         'date',
@@ -46,6 +49,7 @@ class Exam extends Model
             'is_active' => 'boolean',
             'activated_at' => 'datetime',
             'ended_at' => 'datetime',
+            'dynamic_settings' => 'array',
         ];
     }
 
@@ -74,10 +78,16 @@ class Exam extends Model
         return $this->hasMany(ExamResult::class);
     }
 
-    public function questions(): HasMany
+    public function legacyQuestions(): HasMany
     {
         return $this->hasMany(Question::class);
     }
 
-    // Note: Filtering logic moved to \App\Domains\Application\Filters\ExamFilter
+    public function questions(): BelongsToMany
+    {
+        return $this->belongsToMany(Question::class, 'exam_question')
+            ->withPivot(['order', 'points'])
+            ->orderByPivot('order')
+            ->withTimestamps();
+    }
 }

@@ -19,6 +19,8 @@ class StoreExamRequest extends FormRequest
     {
         return [
             'title' => 'required|string|max:255',
+            'type' => 'nullable|string|in:manual,dynamic,self_test',
+            'dynamic_settings' => 'nullable|array',
             'subject' => 'required|string|max:255',
             'grade_id' => 'required|exists:grades,id',
             'group_id' => 'nullable|exists:groups,id',
@@ -27,12 +29,20 @@ class StoreExamRequest extends FormRequest
             'total_marks' => 'required|integer|min:1',
             'actual_question_count' => 'required|integer|min:1',
             'time_per_question' => 'nullable|integer|min:10|max:600', // 10 seconds to 10 minutes
-            'questions' => 'required|array|min:1',
-            'questions.*.text' => 'required|string',
-            'questions.*.type' => ['required', new Enum(QuestionType::class)],
-            'questions.*.options' => 'required|array|min:2',
-            'questions.*.correct_answer' => 'required|string',
-            'questions.*.duration' => 'required|integer|min:10|max:600',
+            // For manual exams, we must have at least one question
+            'questions' => [
+                'required_if:type,manual',
+                'array',
+                $this->type === 'manual' ? 'min:1' : 'nullable',
+            ],
+            'questions.*.text' => 'nullable|string',
+            'questions.*.type' => ['nullable', new Enum(QuestionType::class)],
+            'questions.*.options' => 'nullable|array|min:2',
+            'questions.*.correct_answer' => 'nullable|string',
+            'questions.*.duration' => 'nullable|integer|min:10|max:600',
+            'questions.*.difficulty' => 'nullable|string|in:easy,medium,hard',
+            'question_ids' => 'nullable|array',
+            'question_ids.*' => 'exists:questions,id',
         ];
     }
 
@@ -54,11 +64,7 @@ class StoreExamRequest extends FormRequest
             'time_per_question.required' => 'مدة كل سؤال مطلوبة',
             'time_per_question.min' => 'مدة السؤال يجب أن تكون 10 ثوانٍ على الأقل',
             'time_per_question.max' => 'مدة السؤال يجب ألا تتجاوز 10 دقائق',
-            'questions.required' => 'الأسئلة مطلوبة',
-            'questions.min' => 'يجب إضافة سؤال واحد على الأقل',
-            'questions.*.text.required' => 'نص السؤال مطلوب',
-            'questions.*.options.required' => 'خيارات السؤال مطلوبة',
-            'questions.*.correct_answer.required' => 'الإجابة الصحيحة مطلوبة',
+            'questions.required_if' => 'الأسئلة مطلوبة في حالة الامتحان اليدوي',
         ];
     }
 

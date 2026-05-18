@@ -46,6 +46,10 @@ class GamificationSettingsPage extends Page implements HasForms
         'gamification_exam_max_points',
         'gamification_exam_first_place_bonus',
         'gamification_exam_retake_bonus',
+        // نقاط الأسئلة (بنك الأسئلة / اختبر نفسك)
+        'gamification_question_easy_points',
+        'gamification_question_medium_points',
+        'gamification_question_hard_points',
         // مكافآت الاستمرارية
         'gamification_streak_5_bonus',
         'gamification_streak_10_bonus',
@@ -112,8 +116,8 @@ class GamificationSettingsPage extends Page implements HasForms
                     ])
                     ->columns(2),
 
-                Section::make('نقاط الامتحانات والاختبارات')
-                    ->description('تُحدد كيفية توزيع النقاط بناءً على نتائج الامتحانات.')
+                Section::make('نقاط الامتحانات العادية')
+                    ->description('تُحدد كيفية توزيع النقاط بناءً على نتائج الامتحانات الكلاسيكية.')
                     ->schema([
                         TextInput::make('gamification_exam_max_points')
                             ->label('الحد الأقصى لنقاط الامتحان (عند 100%)')
@@ -127,6 +131,26 @@ class GamificationSettingsPage extends Page implements HasForms
 
                         TextInput::make('gamification_exam_retake_bonus')
                             ->label('نقاط إعادة الامتحان (Bonus)')
+                            ->numeric()
+                            ->required(),
+                    ])
+                    ->columns(3),
+
+                Section::make('نقاط أسئلة الاختبارات الديناميكية (اختبر نفسك)')
+                    ->description('يتم حساب النقاط في الامتحانات الديناميكية بناءً على صعوبة كل سؤال أجابه الطالب إجابة صحيحة.')
+                    ->schema([
+                        TextInput::make('gamification_question_easy_points')
+                            ->label('نقاط السؤال السهل')
+                            ->numeric()
+                            ->required(),
+
+                        TextInput::make('gamification_question_medium_points')
+                            ->label('نقاط السؤال المتوسط')
+                            ->numeric()
+                            ->required(),
+
+                        TextInput::make('gamification_question_hard_points')
+                            ->label('نقاط السؤال الصعب')
                             ->numeric()
                             ->required(),
                     ])

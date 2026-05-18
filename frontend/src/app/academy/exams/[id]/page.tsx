@@ -415,6 +415,21 @@ export default function AcademyExamDetailsPage({ params }: { params: Promise<{ i
               <div className="space-y-4">
                 {exam.questions.map((question, index) => {
                   const options = parseOptions(question.options);
+                  const isCorrectOption = (opt: any) => {
+                    if (typeof opt === 'object' && opt !== null && 'a' in opt && 'b' in opt) {
+                      return true; // For matching questions, all listed options are correct pairs
+                    }
+                    return opt === question.correct_answer;
+                  };
+                  const getOptionText = (opt: any) => {
+                    if (typeof opt === 'object' && opt !== null) {
+                      if ('a' in opt && 'b' in opt) {
+                        return `${opt.a} ↔ ${opt.b}`;
+                      }
+                      return JSON.stringify(opt);
+                    }
+                    return String(opt);
+                  };
                   return (
                     <div key={question.id || index} className="bg-[#1a1f37] p-5 rounded-xl border border-white/5">
                       <div className="flex items-start gap-3 mb-4">
@@ -424,23 +439,27 @@ export default function AcademyExamDetailsPage({ params }: { params: Promise<{ i
                         <p className="text-white font-medium text-lg m-0">{question.text}</p>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pr-11">
-                        {options.map((option, oIndex) => (
-                          <div
-                            key={oIndex}
-                            className={`p-3 rounded-lg border ${
-                              option === question.correct_answer
-                                ? 'border-green-500/50 bg-green-500/10 text-green-400'
-                                : 'border-white/10 bg-white/5 text-gray-300'
-                            }`}
-                          >
-                            <div className="flex items-center gap-2">
-                              {option === question.correct_answer && (
-                                <Icon name="check-circle" className="text-green-400" />
-                              )}
-                              <span>{option}</span>
+                        {options.map((option, oIndex) => {
+                          const isCorrect = isCorrectOption(option);
+                          const optionText = getOptionText(option);
+                          return (
+                            <div
+                              key={oIndex}
+                              className={`p-3 rounded-lg border ${
+                                isCorrect
+                                  ? 'border-green-500/50 bg-green-500/10 text-green-400'
+                                  : 'border-white/10 bg-white/5 text-gray-300'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2">
+                                {isCorrect && (
+                                  <Icon name="check-circle" className="text-green-400" />
+                                )}
+                                <span>{optionText}</span>
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
                   );

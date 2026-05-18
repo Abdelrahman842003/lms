@@ -98,6 +98,12 @@ const getSidebarItems = (role: string): SidebarItem[] => {
         href: '/teacher/exams',
       },
       {
+        id: 'question_bank',
+        label: 'بنك الأسئلة',
+        icon: 'fas fa-database',
+        href: '/teacher/questions',
+      },
+      {
         id: 'notes',
         label: 'المذكرات',
         icon: 'fas fa-file-pdf',
@@ -184,6 +190,7 @@ const permissionMap: Record<string, string[]> = {
   lectures: ['lectures', 'lessons', 'view lectures', 'create lectures', 'edit lectures', 'delete lectures'],
   videos: ['videos', 'courses', 'levels', 'content_mgmt', 'view videos', 'create videos', 'edit videos', 'delete videos', 'publish videos'],
   exams: ['exams', 'exams_mgmt', 'view exams', 'create exams', 'edit exams', 'delete exams'],
+  question_bank: ['exams', 'exams_mgmt', 'view exams', 'create exams', 'edit exams', 'delete exams'],
   notifications: ['notifications', 'send notifications'],
   attendance: ['attendance', 'manage lecture attendance'],
   reports: ['reports', 'stats', 'view reports'],
@@ -250,7 +257,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ role, user, isOpen, onClose, p
   const { selectedAcademy, selectedTeacher, isLoading } = useAuth();
   
   // Get items based on role, then filter by permissions for secretary
-  let items = getSidebarItems(role === 'secretary' ? 'teacher' : role);
+  let items = getSidebarItems(role === 'secretary' || role === 'academy' ? 'teacher' : role);
   
   if (role === 'secretary' && permissions.length > 0) {
     items = filterItemsByPermissions(items, permissions);
@@ -334,6 +341,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ role, user, isOpen, onClose, p
           }
           if (item.id === 'exams') {
             return { ...item, href: '/academy/exams' };
+          }
+          if (item.id === 'question_bank') {
+            return { ...item, href: '/academy/questions' };
           }
           if (item.id === 'lectures') {
             return { ...item, href: '/academy/lectures' };

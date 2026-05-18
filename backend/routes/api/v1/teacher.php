@@ -174,6 +174,9 @@ Route::middleware(['auth:sanctum', EnsureUserNotSuspended::class . ':teacher', E
     Route::put('secretaries/{secretary}/toggle-status', [\App\Domains\Application\Http\Controllers\Teacher\SecretaryController::class, 'toggleStatus']);
     Route::apiResource('secretaries', SecretaryController::class);
     
+    // Question Bank Management
+    Route::apiResource('questions', \App\Domains\Application\Http\Controllers\Teacher\QuestionController::class);
+
     // Exams Management
     Route::get('exams/{exam}/results', [ExamController::class, 'results']);
     Route::put('exams/{exam}/toggle-status', [ExamController::class, 'toggleStatus']);

@@ -108,6 +108,12 @@ const getNavItems = (role: string): SidebarItem[] => {
         href: '/academy/exams',
       },
       {
+        id: 'question_bank',
+        label: 'بنك الأسئلة',
+        icon: 'database',
+        href: '/academy/questions',
+      },
+      {
         id: 'notes',
         label: 'المذكرات',
         icon: 'file-pdf',
@@ -201,6 +207,12 @@ const getNavItems = (role: string): SidebarItem[] => {
         label: 'الامتحانات',
         icon: 'file-alt',
         href: '/teacher/exams',
+      },
+      {
+        id: 'question_bank',
+        label: 'بنك الأسئلة',
+        icon: 'database',
+        href: '/teacher/questions',
       },
       {
         id: 'notes',
@@ -308,6 +320,7 @@ const secretaryPermissionMap: Record<string, string[]> = {
   
   // Exams
   exams: ['exams', 'exams_mgmt', 'view exams', 'create exams', 'edit exams', 'delete exams', 'grade exams'],
+  question_bank: ['exams', 'exams_mgmt', 'view exams', 'create exams', 'edit exams', 'delete exams'],
   
   // Notifications
   notifications: ['notifications', 'send notifications'],
@@ -439,6 +452,9 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
       items = items
         .filter(item => item.id !== 'reports') // Remove Reports
         .map(item => {
+          if (item.id === 'question_bank') {
+            return { ...item, href: '/academy/questions' };
+          }
           if (item.children) {
             return {
               ...item,

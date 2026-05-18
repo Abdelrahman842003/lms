@@ -19,6 +19,8 @@ class UpdateExamRequest extends FormRequest
     {
         return [
             'title' => 'required|string|max:255',
+            'type' => 'nullable|string|in:manual,dynamic,self_test',
+            'dynamic_settings' => 'nullable|array',
             'subject' => 'required|string|max:255',
             'grade_id' => 'required|exists:grades,id',
             'group_id' => 'nullable|exists:groups,id',
@@ -28,11 +30,14 @@ class UpdateExamRequest extends FormRequest
             'actual_question_count' => 'nullable|integer|min:1',
             'time_per_question' => 'nullable|integer|min:10|max:600',
             'questions' => 'nullable|array',
-            'questions.*.text' => 'required_with:questions|string',
-            'questions.*.type' => ['required_with:questions', new Enum(QuestionType::class)],
-            'questions.*.options' => 'required_with:questions|array|min:2',
-            'questions.*.correct_answer' => 'required_with:questions|string',
-            'questions.*.duration' => 'required_with:questions|integer|min:10|max:600',
+            'questions.*.text' => 'nullable|string',
+            'questions.*.type' => ['nullable', new Enum(QuestionType::class)],
+            'questions.*.options' => 'nullable|array|min:2',
+            'questions.*.correct_answer' => 'nullable|string',
+            'questions.*.duration' => 'nullable|integer|min:10|max:600',
+            'questions.*.difficulty' => 'nullable|string|in:easy,medium,hard',
+            'question_ids' => 'nullable|array',
+            'question_ids.*' => 'exists:questions,id',
         ];
     }
 
@@ -52,10 +57,6 @@ class UpdateExamRequest extends FormRequest
             'actual_question_count.min' => 'عدد الأسئلة يجب أن يكون 1 على الأقل',
             'time_per_question.min' => 'مدة السؤال يجب أن تكون 10 ثوانٍ على الأقل',
             'time_per_question.max' => 'مدة السؤال يجب ألا تتجاوز 10 دقائق',
-            'questions.required_with' => 'الأسئلة مطلوبة عند تحديثها',
-            'questions.*.text.required_with' => 'نص السؤال مطلوب',
-            'questions.*.options.required_with' => 'خيارات السؤال مطلوبة',
-            'questions.*.correct_answer.required_with' => 'الإجابة الصحيحة مطلوبة',
         ];
     }
 

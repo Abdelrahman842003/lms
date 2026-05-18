@@ -172,7 +172,7 @@ class StudentExamService
 
         $isCorrect = mb_strtolower($normalizedAnswer) === mb_strtolower($correctAnswer);
 
-        StudentAnswer::updateOrCreate(
+        $studentAnswer = StudentAnswer::updateOrCreate(
             [
                 'exam_attempt_id' => $attempt->id,
                 'question_id' => $question->id,
@@ -183,6 +183,10 @@ class StudentExamService
                 'answered_at' => now(),
             ]
         );
+
+        // Dispatch job to aggregate statistics asynchronously
+        // Time taken could be passed if tracked, but for now we default to 0
+        \App\Jobs\UpdateQuestionStatistics::dispatch($question->id, $isCorrect, 0);
 
         $nextIndex = (int) $attempt->current_question_index + 1;
         $totalQuestions = count((array) $attempt->questions_order);

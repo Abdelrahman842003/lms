@@ -17,6 +17,7 @@ interface Question {
   options: any[];
   correct_answer: string;
   duration?: number;
+  difficulty?: 'easy' | 'medium' | 'hard';
 }
 
 export default function EditExamPage() {
@@ -45,6 +46,12 @@ export default function EditExamPage() {
 
   const [questions, setQuestions] = useState<Question[]>([]);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
+  // Question Source and counts
+  const [questionSource, setQuestionSource] = useState<'manual' | 'dynamic'>('manual');
+  const [easyCount, setEasyCount] = useState(0);
+  const [mediumCount, setMediumCount] = useState(0);
+  const [hardCount, setHardCount] = useState(0);
 
   useEffect(() => {
     fetchExamData();
@@ -80,6 +87,15 @@ export default function EditExamPage() {
         time_per_question: data.time_per_question || 60,
       });
 
+      const source = data.type === 'dynamic' ? 'dynamic' : 'manual';
+      setQuestionSource(source);
+      if (data.dynamic_settings) {
+        const settings = typeof data.dynamic_settings === 'string' ? JSON.parse(data.dynamic_settings) : data.dynamic_settings;
+        setEasyCount(settings.easy || 0);
+        setMediumCount(settings.medium || 0);
+        setHardCount(settings.hard || 0);
+      }
+
       // Parse questions
       if (data.questions && Array.isArray(data.questions)) {
         const parsedQuestions = data.questions.map((q: any) => ({
@@ -89,6 +105,7 @@ export default function EditExamPage() {
           options: parseOptions(q.options),
           correct_answer: q.correct_answer || '',
           duration: q.duration,
+          difficulty: q.difficulty || 'medium',
         }));
         setQuestions(parsedQuestions);
       }
@@ -227,9 +244,18 @@ export default function EditExamPage() {
         date: formattedDateString,
         duration: formData.duration,
         total_marks: formData.max_score,
-        actual_question_count: formData.actual_question_count,
+        actual_question_count: questionSource === 'dynamic' ? (easyCount + mediumCount + hardCount) : formData.actual_question_count,
         time_per_question: formData.time_per_question,
-        questions: questionsWithDuration,
+        type: questionSource,
+        dynamic_settings: questionSource === 'dynamic' ? {
+          easy: easyCount,
+          medium: mediumCount,
+          hard: hardCount
+        } : null,
+        questions: questionSource === 'dynamic' ? [] : questionsWithDuration.map(q => ({
+          ...q,
+          difficulty: q.difficulty || 'medium'
+        })),
       };
 
       const response = await updateExam(examId, submitData);
@@ -368,6 +394,95 @@ export default function EditExamPage() {
               />
             </div>
 
+            <div className="md:col-span-2 space-y-4">
+              <label className="block text-gray-light mb-2 text-[0.95rem]">مصدر ونوع الأسئلة</label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Manual Option Card */}
+                <div 
+                  onClick={() => setQuestionSource('manual')}
+                  className={`p-5 rounded-2xl border-2 cursor-pointer transition-all duration-300 ${questionSource === 'manual' ? 'bg-primary/10 border-primary shadow-lg shadow-primary/15' : 'bg-white/5 border-white/5 hover:border-white/10'}`}
+                >
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${questionSource === 'manual' ? 'bg-primary text-white' : 'bg-white/10 text-gray-300'}`}>
+                      <Icon name="pencil-alt" />
+                    </div>
+                    <span className="font-bold text-white text-sm">أسئلة جديدة (يدوياً)</span>
+                  </div>
+                  <p className="text-[11px] text-white/50 leading-relaxed font-bold">
+                    قم بإضافة الأسئلة وتحديد الخيارات والإجابات بنفسك خطوة بخطوة.
+                  </p>
+                </div>
+
+                {/* Dynamic Option Card */}
+                <div 
+                  onClick={() => setQuestionSource('dynamic')}
+                  className={`p-5 rounded-2xl border-2 cursor-pointer transition-all duration-300 ${questionSource === 'dynamic' ? 'bg-primary/10 border-primary shadow-lg shadow-primary/15' : 'bg-white/5 border-white/5 hover:border-white/10'}`}
+                >
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${questionSource === 'dynamic' ? 'bg-primary text-white' : 'bg-white/10 text-gray-300'}`}>
+                      <Icon name="database" />
+                    </div>
+                    <span className="font-bold text-white text-sm">من بنك الأسئلة (تلقائياً)</span>
+                  </div>
+                  <p className="text-[11px] text-white/50 leading-relaxed font-bold">
+                    حدد عدد الأسئلة المطلوبة من كل مستوى صعوبة، وسيقوم النظام بتوليد الامتحان تلقائياً من البنك.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* If From Question Bank (dynamic) */}
+            {questionSource === 'dynamic' && (
+              <div className="md:col-span-2 p-6 rounded-2xl bg-white/5 border border-white/5 space-y-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Icon name="cog" className="text-primary text-xs" />
+                  <span className="text-[10px] font-black text-white uppercase tracking-widest">تحديد أعداد وصعوبة الأسئلة</span>
+                </div>
+                
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-black text-white/40 uppercase tracking-widest text-center">عدد الأسئلة السهلة</label>
+                    <Input
+                      type="number"
+                      className="h-12 bg-white/5 border-white/5 rounded-xl px-4 font-bold text-center"
+                      value={easyCount || ''}
+                      onChange={(e) => setEasyCount(e.target.value === '' ? 0 : parseInt(e.target.value))}
+                      placeholder="0"
+                      min="0"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-black text-white/40 uppercase tracking-widest text-center">عدد الأسئلة المتوسطة</label>
+                    <Input
+                      type="number"
+                      className="h-12 bg-white/5 border-white/5 rounded-xl px-4 font-bold text-center"
+                      value={mediumCount || ''}
+                      onChange={(e) => setMediumCount(e.target.value === '' ? 0 : parseInt(e.target.value))}
+                      placeholder="0"
+                      min="0"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-black text-white/40 uppercase tracking-widest text-center">عدد الأسئلة الصعبة</label>
+                    <Input
+                      type="number"
+                      className="h-12 bg-white/5 border-white/5 rounded-xl px-4 font-bold text-center"
+                      value={hardCount || ''}
+                      onChange={(e) => setHardCount(e.target.value === '' ? 0 : parseInt(e.target.value))}
+                      placeholder="0"
+                      min="0"
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-2 text-center">
+                  <span className="text-xs font-bold text-white/40">
+                    إجمالي الأسئلة في الامتحان: <strong className="text-primary font-black text-sm">{easyCount + mediumCount + hardCount}</strong> سؤال
+                  </span>
+                </div>
+              </div>
+            )}
+
             <div>
               <label htmlFor="duration" className="block text-gray-light mb-2 text-[0.95rem]">
                 المدة (دقيقة) <span className="text-red-500">*</span>
@@ -484,10 +599,35 @@ export default function EditExamPage() {
                         <h4 className="text-white font-medium">السؤال {currentQuestionIndex + 1} من {questions.length}</h4>
                       </div>
 
-                      <div className="flex items-center gap-1 bg-white/5 rounded-lg p-1 border border-white/5">
-                        <button
-                          type="button"
-                          onClick={() => handleQuestionChange('type', 'mcq')}
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1 bg-white/5 rounded-lg p-1 border border-white/5">
+                          <button
+                            type="button"
+                            onClick={() => handleQuestionChange('difficulty', 'easy')}
+                            className={`px-3 py-1 rounded-md text-[10px] font-bold transition-all ${questions[currentQuestionIndex].difficulty === 'easy' ? 'bg-emerald-600 text-white shadow-sm' : 'text-gray-400 hover:text-white'}`}
+                          >
+                            سهل
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleQuestionChange('difficulty', 'medium')}
+                            className={`px-3 py-1 rounded-md text-[10px] font-bold transition-all ${!questions[currentQuestionIndex].difficulty || questions[currentQuestionIndex].difficulty === 'medium' ? 'bg-amber-600 text-white shadow-sm' : 'text-gray-400 hover:text-white'}`}
+                          >
+                            متوسط
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleQuestionChange('difficulty', 'hard')}
+                            className={`px-3 py-1 rounded-md text-[10px] font-bold transition-all ${questions[currentQuestionIndex].difficulty === 'hard' ? 'bg-rose-600 text-white shadow-sm' : 'text-gray-400 hover:text-white'}`}
+                          >
+                            صعب
+                          </button>
+                        </div>
+
+                        <div className="flex items-center gap-1 bg-white/5 rounded-lg p-1 border border-white/5">
+                          <button
+                            type="button"
+                            onClick={() => handleQuestionChange('type', 'mcq')}
                           className={`px-3 py-1 rounded-md text-[10px] font-bold transition-all ${questions[currentQuestionIndex].type === 'mcq' ? 'bg-primary text-white shadow-sm' : 'text-gray-400 hover:text-white'}`}
                         >
                           اختياري
@@ -513,6 +653,7 @@ export default function EditExamPage() {
                         >
                           توصيل
                         </button>
+                        </div>
                       </div>
                     </div>
 

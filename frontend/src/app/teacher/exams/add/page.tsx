@@ -35,6 +35,7 @@ interface Question {
   options: any[];
   correct_answer: string;
   duration: number;
+  difficulty?: 'easy' | 'medium' | 'hard';
 }
 
 interface SortableItemProps {
@@ -92,13 +93,19 @@ export default function AddExamPage() {
 
   // Exam Basic Info
   const [title, setTitle] = useState('');
-  const [subject, setSubject] = useState('');
+  const [subject, setSubject] = useState(user?.subject || '');
   const [gradeId, setGradeId] = useState('');
   const [groupId, setGroupId] = useState('');
   const [date, setDate] = useState('');
   const [duration, setDuration] = useState(60);
   const [totalMarks, setTotalMarks] = useState(100);
   const [actualQuestionCount, setActualQuestionCount] = useState(0); // Questions shown in actual exam
+
+  // Question Source and counts
+  const [questionSource, setQuestionSource] = useState<'manual' | 'dynamic'>('manual');
+  const [easyCount, setEasyCount] = useState(0);
+  const [mediumCount, setMediumCount] = useState(0);
+  const [hardCount, setHardCount] = useState(0);
   
   // Final Modal State
   const [showFinishModal, setShowFinishModal] = useState(false);
@@ -150,6 +157,12 @@ export default function AddExamPage() {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    if (user?.subject) {
+      setSubject(user.subject);
+    }
+  }, [user?.subject]);
+
   const validateDetails = (): boolean => {
     const errors: Record<string, string> = {};
     
@@ -172,18 +185,72 @@ export default function AddExamPage() {
       return;
     }
     
-    // Initialize with one empty question if empty
-    if (questions.length === 0) {
-      setQuestions([{
-        id: crypto.randomUUID(),
-        text: '',
-        type: 'mcq',
-        options: ['', '', '', ''],
-        correct_answer: '',
-        duration: 60
-      }]);
+    if (questionSource === 'dynamic') {
+      const sum = easyCount + mediumCount + hardCount;
+      if (sum <= 0) {
+        toast.error('يرجى تحديد عدد الأسئلة (سؤال واحد على الأقل)');
+        return;
+      }
+      handleDynamicSubmit();
+    } else {
+      // Initialize with one empty question if empty
+      if (questions.length === 0) {
+        setQuestions([{
+          id: crypto.randomUUID(),
+          text: '',
+          type: 'mcq',
+          options: ['', '', '', ''],
+          correct_answer: '',
+          duration: 60,
+          difficulty: 'medium'
+        }]);
+      }
+      setStep('questions');
     }
-    setStep('questions');
+  };
+
+  const handleDynamicSubmit = async () => {
+    setLoading(true);
+    try {
+      const response = await createExam({
+        title,
+        subject,
+        grade_id: gradeId,
+        group_id: groupId || undefined,
+        date,
+        duration,
+        total_marks: totalMarks,
+        actual_question_count: easyCount + mediumCount + hardCount,
+        time_per_question: 60,
+        type: 'dynamic',
+        dynamic_settings: {
+          easy: easyCount,
+          medium: mediumCount,
+          hard: hardCount
+        },
+        questions: []
+      } as any);
+      
+      toast.success('تم إنشاء الامتحان بنجاح');
+      
+      if (response?.warning) {
+        toast(response.warning, {
+          icon: '⚠️',
+          duration: 6000,
+          style: {
+            background: '#f59e0b',
+            color: '#1f2937',
+          },
+        });
+      }
+      
+      router.push('/teacher/exams');
+    } catch (error) {
+      console.error('Error creating exam:', error);
+      toast.error('حدث خطأ أثناء إنشاء الامتحان');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleQuestionChange = (field: keyof Question, value: any) => {
@@ -240,7 +307,8 @@ export default function AddExamPage() {
         type: 'mcq',
         options: ['', '', '', ''],
         correct_answer: '',
-        duration: 60
+        duration: 60,
+        difficulty: 'medium'
       }]);
       setCurrentQuestionIndex(prev => prev + 1);
     }
@@ -278,7 +346,11 @@ export default function AddExamPage() {
         total_marks: totalMarks,
         actual_question_count: actualQuestionCount,
         time_per_question: 60, // Default, not used if questions have duration
-        questions
+        type: 'manual',
+        questions: questions.map(q => ({
+          ...q,
+          difficulty: q.difficulty || 'medium'
+        }))
       } as any);
       
       toast.success('تم إنشاء الامتحان بنجاح');
@@ -402,6 +474,95 @@ export default function AddExamPage() {
                     />
                   </div>
 
+                  <div className="md:col-span-2 space-y-4">
+                    <label className="text-[10px] font-black text-gray-light/30 uppercase tracking-widest px-2 block">مصدر ونوع الأسئلة</label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {/* Manual Option Card */}
+                      <div 
+                        onClick={() => setQuestionSource('manual')}
+                        className={`p-5 rounded-2xl border-2 cursor-pointer transition-all duration-300 ${questionSource === 'manual' ? 'bg-primary/10 border-primary shadow-lg shadow-primary/15' : 'bg-white/5 border-white/5 hover:border-white/10'}`}
+                      >
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${questionSource === 'manual' ? 'bg-primary text-white' : 'bg-white/10 text-gray-300'}`}>
+                            <Icon name="pencil-alt" />
+                          </div>
+                          <span className="font-bold text-white text-sm">أسئلة جديدة (يدوياً)</span>
+                        </div>
+                        <p className="text-[11px] text-gray-light/45 leading-relaxed font-bold">
+                          قم بإضافة الأسئلة وتحديد الخيارات والإجابات بنفسك خطوة بخطوة.
+                        </p>
+                      </div>
+
+                      {/* Dynamic Option Card */}
+                      <div 
+                        onClick={() => setQuestionSource('dynamic')}
+                        className={`p-5 rounded-2xl border-2 cursor-pointer transition-all duration-300 ${questionSource === 'dynamic' ? 'bg-primary/10 border-primary shadow-lg shadow-primary/15' : 'bg-white/5 border-white/5 hover:border-white/10'}`}
+                      >
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${questionSource === 'dynamic' ? 'bg-primary text-white' : 'bg-white/10 text-gray-300'}`}>
+                            <Icon name="database" />
+                          </div>
+                          <span className="font-bold text-white text-sm">من بنك الأسئلة (تلقائياً)</span>
+                        </div>
+                        <p className="text-[11px] text-gray-light/45 leading-relaxed font-bold">
+                          حدد عدد الأسئلة المطلوبة من كل مستوى صعوبة، وسيقوم النظام بتوليد الامتحان تلقائياً من البنك.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* If From Question Bank (dynamic) */}
+                  {questionSource === 'dynamic' && (
+                    <div className="md:col-span-2 p-6 rounded-2xl bg-white/5 border border-white/5 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                      <div className="flex items-center gap-2 mb-2 px-1">
+                        <Icon name="cog" className="text-primary text-xs" />
+                        <span className="text-[10px] font-black text-white uppercase tracking-widest">تحديد أعداد وصعوبة الأسئلة</span>
+                      </div>
+                      
+                      <div className="grid grid-cols-3 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-gray-light/30 uppercase tracking-widest px-2 block text-center">عدد الأسئلة السهلة</label>
+                          <Input
+                            type="number"
+                            className="h-12 bg-white/5 border-white/5 rounded-xl px-4 font-bold focus:bg-white/10 text-center"
+                            value={easyCount || ''}
+                            onChange={(e) => setEasyCount(e.target.value === '' ? 0 : parseInt(e.target.value))}
+                            placeholder="0"
+                            min="0"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-gray-light/30 uppercase tracking-widest px-2 block text-center">عدد الأسئلة المتوسطة</label>
+                          <Input
+                            type="number"
+                            className="h-12 bg-white/5 border-white/5 rounded-xl px-4 font-bold focus:bg-white/10 text-center"
+                            value={mediumCount || ''}
+                            onChange={(e) => setMediumCount(e.target.value === '' ? 0 : parseInt(e.target.value))}
+                            placeholder="0"
+                            min="0"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-gray-light/30 uppercase tracking-widest px-2 block text-center">عدد الأسئلة الصعبة</label>
+                          <Input
+                            type="number"
+                            className="h-12 bg-white/5 border-white/5 rounded-xl px-4 font-bold focus:bg-white/10 text-center"
+                            value={hardCount || ''}
+                            onChange={(e) => setHardCount(e.target.value === '' ? 0 : parseInt(e.target.value))}
+                            placeholder="0"
+                            min="0"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="pt-2 text-center">
+                        <span className="text-xs font-bold text-gray-light/40">
+                          إجمالي الأسئلة في الامتحان: <strong className="text-primary font-black text-sm">{easyCount + mediumCount + hardCount}</strong> سؤال
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-gray-light/30 uppercase tracking-widest px-2">تاريخ ووقت الامتحان</label>
                     <Input
@@ -446,8 +607,8 @@ export default function AddExamPage() {
                   </Button>
 
                   <Button type="submit" variant="primary" className="w-full sm:w-auto h-14 px-12 rounded-2xl font-black gap-2 shadow-xl shadow-primary/20 justify-center">
-                    <span>التالي: إضافة الأسئلة</span>
-                    <Icon name="arrow-left" />
+                    <span>{questionSource === 'dynamic' ? 'حفظ ونشر الامتحان' : 'التالي: إضافة الأسئلة'}</span>
+                    <Icon name={questionSource === 'dynamic' ? 'check' : 'arrow-left'} />
                   </Button>
                 </div>
               </form>
@@ -527,8 +688,34 @@ export default function AddExamPage() {
                          onChange={(e) => handleQuestionChange('duration', parseInt(e.target.value))}
                        />
                      </div>
-                   </div>
-                </div>
+
+                     <div className="hidden sm:block w-px h-6 bg-white/10 mx-1" />
+
+                     <div className="flex items-center gap-1 bg-white/5 rounded-lg sm:rounded-xl p-1 whitespace-nowrap">
+                       <button
+                         type="button"
+                         onClick={() => handleQuestionChange('difficulty', 'easy')}
+                         className={`px-3 py-1.5 rounded-md text-[10px] font-black transition-all ${questions[currentQuestionIndex].difficulty === 'easy' ? 'bg-emerald-600 text-white shadow-md' : 'text-gray-light/30 hover:text-white'}`}
+                       >
+                         سهل
+                       </button>
+                       <button
+                         type="button"
+                         onClick={() => handleQuestionChange('difficulty', 'medium')}
+                         className={`px-3 py-1.5 rounded-md text-[10px] font-black transition-all ${!questions[currentQuestionIndex].difficulty || questions[currentQuestionIndex].difficulty === 'medium' ? 'bg-amber-600 text-white shadow-md' : 'text-gray-light/30 hover:text-white'}`}
+                       >
+                         متوسط
+                       </button>
+                       <button
+                         type="button"
+                         onClick={() => handleQuestionChange('difficulty', 'hard')}
+                         className={`px-3 py-1.5 rounded-md text-[10px] font-black transition-all ${questions[currentQuestionIndex].difficulty === 'hard' ? 'bg-rose-600 text-white shadow-md' : 'text-gray-light/30 hover:text-white'}`}
+                       >
+                         صعب
+                       </button>
+                     </div>
+                    </div>
+                 </div>
 
                <div className="space-y-6 sm:space-y-10">
                   <div className="space-y-3">
