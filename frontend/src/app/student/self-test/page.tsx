@@ -154,56 +154,69 @@ export default function SelfTestPage() {
     );
   }
 
+  const totalSelected = config.easy + config.medium + config.hard;
+
   return (
     <DashboardLayout role="student" user={user || undefined}>
-      <div className="max-w-5xl mx-auto p-4 sm:p-8">
+      <div className="max-w-5xl mx-auto p-4 sm:p-8 pb-32 sm:pb-8">
         
-        {/* Header */}
-        <div className="relative mb-8 p-6 sm:p-10 rounded-[2rem] bg-[#101426]/60 border border-white/10 overflow-hidden backdrop-blur-xl">
-           <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 blur-[100px] -z-10"></div>
-           <div className="flex items-center gap-5">
-              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-primary/20 border border-primary/30 flex items-center justify-center text-primary-light">
-                 <Icon name="vial" size="lg" />
+        {/* Header - Compact on mobile */}
+        <div className="relative mb-6 sm:mb-10 p-5 sm:p-10 rounded-2xl sm:rounded-[2.5rem] bg-[#101426]/60 border border-white/10 overflow-hidden backdrop-blur-xl">
+           <div className="absolute top-0 right-0 w-48 h-48 bg-primary/10 blur-[80px] -z-10"></div>
+           <div className="flex items-center gap-4 sm:gap-6">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-primary/20 border border-primary/30 flex items-center justify-center text-primary-light shrink-0">
+                 <Icon name="vial" className="text-xl sm:text-2xl" />
               </div>
-              <div>
-                 <h1 className="text-2xl sm:text-3xl font-black text-white">اختبر نفسك (الاختبارات الموديل)</h1>
-                 <p className="text-gray-400 font-medium">مع الأستاذ: {authSelectedTeacher.teacher_name}</p>
+              <div className="min-w-0">
+                 <h1 className="text-xl sm:text-3xl font-black text-white truncate">اختبر نفسك (الاختبارات الموديل)</h1>
+                 <p className="text-gray-400 font-medium text-xs sm:text-sm truncate opacity-70">المدرس: {authSelectedTeacher.teacher_name}</p>
               </div>
            </div>
         </div>
 
         {counts && (
-          <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="space-y-10 sm:space-y-16 animate-in fade-in slide-in-from-bottom-4 duration-500">
             
             {/* Setup Section */}
-            <section className="space-y-8">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-white pr-2">إنشاء اختبار جديد:</h2>
+            <section className="space-y-6 sm:space-y-8">
+              <div className="flex items-center justify-between px-1">
+                <h2 className="text-lg sm:text-xl font-bold text-white pr-2 border-r-4 border-primary">إنشاء اختبار جديد:</h2>
+                <div className="hidden sm:flex items-center gap-2 text-gray-500 text-xs">
+                    <Icon name="info-circle" size="xs" />
+                    <p>سيتم توليد الاختبار عشوائياً</p>
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
                 {[
-                  { key: 'easy', label: 'مستوى سهل', color: 'text-success', bg: 'bg-success/10', border: 'border-success/20', available: counts.easy },
-                  { key: 'medium', label: 'مستوى متوسط', color: 'text-warning', bg: 'bg-warning/10', border: 'border-warning/20', available: counts.medium },
-                  { key: 'hard', label: 'مستوى صعب', color: 'text-danger', bg: 'bg-danger/10', border: 'border-danger/20', available: counts.hard },
+                  { key: 'easy', label: 'مستوى سهل', color: 'text-success', bg: 'bg-success/10', border: 'border-success/20', icon: 'smile', available: counts.easy },
+                  { key: 'medium', label: 'مستوى متوسط', color: 'text-warning', bg: 'bg-warning/10', border: 'border-warning/20', icon: 'meh', available: counts.medium },
+                  { key: 'hard', label: 'مستوى صعب', color: 'text-danger', bg: 'bg-danger/10', border: 'border-danger/20', icon: 'frown', available: counts.hard },
                 ].map((item) => (
-                  <div key={item.key} className={`p-6 rounded-[2.5rem] bg-white/[0.03] border border-white/10 flex flex-col items-center gap-6 group hover:border-white/20 transition-all`}>
-                    <div className={`w-12 h-12 rounded-xl ${item.bg} ${item.color} flex items-center justify-center font-black`}>
-                      <Icon name={item.key === 'easy' ? 'smile' : item.key === 'medium' ? 'meh' : 'frown'} />
+                  <div key={item.key} className={`relative p-4 sm:p-6 rounded-[1.5rem] sm:rounded-[2.5rem] bg-white/[0.03] border border-white/5 flex flex-row sm:flex-col items-center justify-between sm:justify-center gap-4 group hover:border-white/20 transition-all overflow-hidden`}>
+                    {/* Background Icon Decor */}
+                    <div className={`absolute -right-4 -bottom-4 opacity-[0.03] text-6xl group-hover:scale-110 transition-transform sm:hidden`}>
+                       <Icon name={item.icon as any} />
                     </div>
-                    <div className="text-center">
-                      <h3 className="text-white font-bold mb-1">{item.label}</h3>
-                      <p className="text-gray-500 text-xs">المتاح: {item.available} سؤال</p>
+
+                    <div className="flex items-center gap-3 sm:flex-col sm:gap-4">
+                        <div className={`w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl ${item.bg} ${item.color} flex items-center justify-center text-lg sm:text-2xl font-black`}>
+                        <Icon name={item.icon as any} />
+                        </div>
+                        <div className="text-right sm:text-center">
+                        <h3 className="text-white font-bold text-sm sm:text-base mb-0.5">{item.label}</h3>
+                        <p className="text-gray-500 text-[10px] sm:text-xs">المتاح: {item.available} سؤال</p>
+                        </div>
                     </div>
                     
-                    <div className="flex items-center gap-4 bg-black/20 p-2 rounded-2xl border border-white/5">
+                    <div className="flex items-center gap-1.5 sm:gap-4 bg-black/40 p-1.5 sm:p-2 rounded-xl sm:rounded-2xl border border-white/5 relative z-10 shrink-0">
                       <button 
                         onClick={() => setConfig(prev => ({ ...prev, [item.key]: Math.max(0, prev[item.key as keyof typeof config] - 1) }))}
-                        className="w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 text-white flex items-center justify-center transition-colors"
+                        className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-white/5 hover:bg-white/10 text-white flex items-center justify-center transition-colors active:scale-90"
                       >
-                        <Icon name="minus" size="xs" />
+                        <Icon name="minus" className="text-[10px] sm:text-xs" />
                       </button>
-                      <span className="w-12 text-center text-xl font-black text-white">{config[item.key as keyof typeof config]}</span>
+                      <span className="w-8 sm:w-12 text-center text-lg sm:text-xl font-black text-white">{config[item.key as keyof typeof config]}</span>
                       <button 
                         onClick={() => {
                           const current = config[item.key as keyof typeof config];
@@ -213,89 +226,115 @@ export default function SelfTestPage() {
                              toast.error('وصلت للحد الأقصى المتاح');
                           }
                         }}
-                        className="w-10 h-10 rounded-xl bg-primary/20 hover:bg-primary/30 text-primary-light flex items-center justify-center transition-colors"
+                        className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center transition-all active:scale-90 ${
+                            config[item.key as keyof typeof config] >= item.available 
+                            ? 'bg-gray-500/20 text-gray-500 cursor-not-allowed' 
+                            : 'bg-primary/20 hover:bg-primary/30 text-primary-light'
+                        }`}
                       >
-                        <Icon name="plus" size="xs" />
+                        <Icon name="plus" className="text-[10px] sm:text-xs" />
                       </button>
                     </div>
                   </div>
                 ))}
               </div>
 
-              <div className="p-8 rounded-[3rem] bg-gradient-to-br from-primary/20 to-secondary/10 border border-primary/20 flex flex-col sm:flex-row items-center justify-between gap-6">
-                <div className="text-center sm:text-right">
-                    <p className="text-primary-light font-black text-sm uppercase tracking-widest mb-1">إجمالي الأسئلة</p>
-                    <div className="flex items-baseline gap-2 justify-center sm:justify-start">
-                      <span className="text-5xl font-black text-white">{config.easy + config.medium + config.hard}</span>
-                      <span className="text-gray-400 font-bold">/ 50</span>
+              {/* Summary & Start Bar - Sticky on mobile */}
+              <div className="fixed bottom-24 left-0 right-0 px-4 py-3 bg-[#050811]/90 backdrop-blur-xl border-t border-white/10 sm:relative sm:bottom-0 sm:px-0 sm:bg-transparent sm:backdrop-blur-none sm:border-0 z-50">
+                <div className="max-w-5xl mx-auto p-4 sm:p-8 rounded-2xl sm:rounded-[3rem] bg-gradient-to-br from-primary/30 to-secondary/20 border border-primary/20 flex items-center justify-between gap-4 sm:gap-6 shadow-2xl shadow-black/50 sm:shadow-none">
+                    <div className="text-right">
+                        <p className="text-primary-light font-black text-[10px] sm:text-sm uppercase tracking-widest mb-0.5 sm:mb-1">إجمالي الأسئلة</p>
+                        <div className="flex items-baseline gap-1.5 sm:gap-2">
+                        <span className={`text-2xl sm:text-5xl font-black text-white transition-all ${totalSelected > 0 ? 'scale-110 text-primary-light' : ''}`}>{totalSelected}</span>
+                        <span className="text-gray-400 font-bold text-xs sm:text-lg">/ 50</span>
+                        </div>
                     </div>
+                    
+                    <Button
+                        variant="primary"
+                        onClick={handleStart}
+                        loading={starting}
+                        className={`h-12 sm:h-16 px-6 sm:px-12 rounded-xl sm:rounded-[2rem] text-sm sm:text-lg font-black shadow-xl transition-all ${
+                            totalSelected > 0 ? 'shadow-primary/40' : 'opacity-50 grayscale pointer-events-none'
+                        }`}
+                    >
+                        ابدأ الاختبار
+                        <Icon name="bolt" className="mr-2 hidden sm:inline" />
+                    </Button>
                 </div>
-                
-                <Button
-                  variant="primary"
-                  onClick={handleStart}
-                  loading={starting}
-                  className="w-full sm:w-64 h-16 rounded-[2rem] text-lg font-black shadow-xl shadow-primary/20"
-                >
-                  ابدأ الاختبار الآن
-                </Button>
               </div>
             </section>
 
             {/* History Section */}
             <section className="space-y-6">
-               <div className="flex items-center gap-3 pr-2">
-                  <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+               <div className="flex items-center gap-3 px-1">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500 border border-emerald-500/20 shadow-lg shadow-emerald-500/5">
                      <Icon name="history" />
                   </div>
-                  <h2 className="text-xl font-bold text-white">نتائج الاختبارات السابقة:</h2>
+                  <div>
+                    <h2 className="text-lg sm:text-xl font-bold text-white leading-tight">سجل الإنجازات:</h2>
+                    <p className="text-gray-500 text-[10px] sm:text-xs font-medium">نتائج اختباراتك السابقة وتطور مستواك</p>
+                  </div>
                </div>
 
-               <div className="grid grid-cols-1 gap-4">
+               <div className="grid grid-cols-1 gap-3 sm:gap-4">
                   {history.length > 0 ? (
                     history.map((item) => (
-                      <div key={item.id} className="group p-5 rounded-[2rem] bg-white/[0.02] border border-white/5 hover:bg-white/[0.04] transition-all flex flex-col sm:flex-row items-center justify-between gap-6">
-                        <div className="flex items-center gap-5 w-full sm:w-auto">
-                          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl ${
-                            (item.percentage || 0) >= 60 ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'
+                      <div key={item.id} className="group relative p-4 sm:p-6 rounded-2xl sm:rounded-[2.5rem] bg-white/[0.02] border border-white/5 hover:bg-white/[0.05] hover:border-white/10 transition-all flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6 overflow-hidden">
+                        
+                        {/* Status bar */}
+                        <div className={`absolute top-0 right-0 bottom-0 w-1 sm:w-1.5 ${
+                             (item.percentage || 0) >= 60 ? 'bg-success/40' : 'bg-danger/40'
+                        }`} />
+
+                        <div className="flex items-center gap-4 sm:gap-6 w-full sm:w-auto relative z-10">
+                          <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl shrink-0 flex items-center justify-center text-xl sm:text-2xl shadow-2xl transition-transform group-hover:scale-110 ${
+                            (item.percentage || 0) >= 60 
+                            ? 'bg-success/10 text-success border border-success/20' 
+                            : 'bg-danger/10 text-danger border border-danger/20'
                           }`}>
                             <Icon name={item.status === 'completed' ? 'check-circle' : 'exclamation-circle'} />
                           </div>
-                          <div>
-                            <h3 className="text-white font-bold">{item.exam_title}</h3>
-                            <div className="flex items-center gap-3 text-gray-500 text-xs mt-1">
-                              <span>{item.subject}</span>
-                              <span className="w-1 h-1 rounded-full bg-white/10" />
-                              <span>{formatDate(item.started_at)}</span>
+                          <div className="min-w-0">
+                            <h3 className="text-white font-bold text-sm sm:text-lg truncate">{item.exam_title}</h3>
+                            <div className="flex items-center gap-2 sm:gap-4 text-gray-500 text-[10px] sm:text-xs mt-1 font-medium">
+                              <span className="truncate">{item.subject}</span>
+                              <span className="w-1 h-1 rounded-full bg-white/10 shrink-0" />
+                              <span className="shrink-0">{formatDate(item.started_at)}</span>
                             </div>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-8 w-full sm:w-auto justify-between sm:justify-end border-t sm:border-t-0 border-white/5 pt-4 sm:pt-0">
+                        <div className="flex items-center gap-6 sm:gap-10 w-full sm:w-auto justify-between sm:justify-end border-t sm:border-t-0 border-white/5 pt-4 sm:pt-0 relative z-10">
                            <div className="text-right">
-                              <span className="block text-[8px] font-black text-gray-500 uppercase tracking-widest mb-1">الدرجة</span>
-                              <div className="flex items-baseline gap-1">
-                                 <span className={`text-2xl font-black ${(item.percentage || 0) >= 60 ? 'text-success' : 'text-danger'}`}>
+                              <span className="block text-[8px] sm:text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1 sm:mb-2 opacity-50">النتيجة النهائية</span>
+                              <div className="flex items-baseline gap-1.5">
+                                 <span className={`text-2xl sm:text-3xl font-black ${(item.percentage || 0) >= 60 ? 'text-success' : 'text-danger'} drop-shadow-glow`}>
                                     {item.percentage ?? 0}%
                                  </span>
-                                 <span className="text-gray-600 text-xs">({item.score ?? 0} نقطة)</span>
+                                 <span className="text-gray-600 text-[10px] sm:text-xs font-bold">({item.score ?? 0} نقطة)</span>
                               </div>
                            </div>
                            
                            <Button 
                              variant="outline" 
                              size="sm" 
-                             className="rounded-xl border-white/5 hover:bg-white/10"
+                             className="rounded-xl sm:rounded-2xl border-white/10 hover:border-primary hover:bg-primary/10 transition-all text-[10px] sm:text-xs h-9 sm:h-12 px-5 sm:px-8 font-black"
                              onClick={() => router.push(`/student/exams/${item.exam_id}/results?attempt_id=${item.id}`)}
                            >
                              التفاصيل
+                             <Icon name="chevron-left" className="mr-2 text-[10px] group-hover:-translate-x-1 transition-transform" />
                            </Button>
                         </div>
                       </div>
                     ))
                   ) : (
-                    <div className="p-10 text-center bg-white/[0.01] rounded-3xl border border-dashed border-white/5">
-                       <p className="text-gray-600">لا يوجد سجل اختبارات مسبقة.</p>
+                    <div className="py-16 sm:py-24 text-center bg-white/[0.01] rounded-[2.5rem] border border-dashed border-white/10 flex flex-col items-center justify-center gap-4">
+                       <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center text-gray-700">
+                          <Icon name="history" size="lg" />
+                       </div>
+                       <p className="text-gray-600 font-bold text-sm sm:text-base">لا يوجد سجل اختبارات مسبقة لهذا المدرس.</p>
+                       <p className="text-gray-700 text-xs">ابدأ أول اختبار لك الآن!</p>
                     </div>
                   )}
                </div>
