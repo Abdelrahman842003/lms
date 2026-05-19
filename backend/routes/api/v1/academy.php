@@ -110,6 +110,9 @@ Route::middleware(['auth:sanctum', EnsureActiveSubscription::class])->prefix('ac
     Route::post('grades/bulk-delete', [GradeController::class, 'bulkDelete']);
     Route::apiResource('grades', GradeController::class);
     Route::apiResource('groups', GroupController::class);
+
+    // Question Bank Management
+    Route::apiResource('questions', \App\Domains\Application\Http\Controllers\Academy\QuestionController::class);
     
     // Students Management
     Route::get('students/statistics', [StudentController::class, 'statistics']);

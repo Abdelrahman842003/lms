@@ -17,10 +17,11 @@ class QuestionSelectionService
      * @param string $teacherId
      * @param string $studentId
      * @param array $config e.g. ['easy' => 5, 'medium' => 3, 'hard' => 2]
+     * @param string|null $gradeId
      * @return Collection Collection of Question models
      * @throws \Exception If not enough questions available
      */
-    public function selectForStudent(string $teacherId, string $studentId, array $config): Collection
+    public function selectForStudent(string $teacherId, string $studentId, array $config, ?string $gradeId = null): Collection
     {
         $selectedQuestions = collect();
 
@@ -42,6 +43,10 @@ class QuestionSelectionService
             // Query bank for this teacher & difficulty
             $query = Question::where('teacher_id', $teacherId)
                 ->where('difficulty', $difficulty);
+
+            if ($gradeId) {
+                $query->where('grade_id', $gradeId);
+            }
 
             // Fetch available count without exclusions first to check total limits
             $totalAvailable = $query->count();

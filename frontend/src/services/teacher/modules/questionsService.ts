@@ -7,6 +7,13 @@ export interface Question {
   difficulty: 'easy' | 'medium' | 'hard';
   options: any;
   correct_answer: any;
+  grade_id?: string;
+  subject?: string;
+  teacher_id?: string;
+  teacher?: {
+    id: string;
+    name: string;
+  };
   duration?: number;
   tags?: string[];
   is_locked?: boolean;
@@ -20,13 +27,19 @@ export interface QuestionsResponse {
   total: number;
 }
 
-export const getQuestions = async (page = 1, perPage = 15, filters = {}): Promise<QuestionsResponse> => {
+export const getQuestions = async (page = 1, perPage = 15, filters: Record<string, any> = {}): Promise<QuestionsResponse> => {
   const queryParams = new URLSearchParams({
     page: page.toString(),
     per_page: perPage.toString(),
-    ...filters
   });
-  return await fetchApi<QuestionsResponse>(`/teacher/questions?${queryParams}`);
+
+  Object.keys(filters).forEach(key => {
+    if (filters[key] !== undefined && filters[key] !== null && filters[key] !== '') {
+      queryParams.append(key, filters[key]);
+    }
+  });
+
+  return await fetchApi<QuestionsResponse>(`/teacher/questions?${queryParams.toString()}`);
 };
 
 export const getQuestion = async (id: string): Promise<Question> => {

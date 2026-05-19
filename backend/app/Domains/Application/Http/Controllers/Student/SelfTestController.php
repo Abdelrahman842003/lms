@@ -26,9 +26,20 @@ class SelfTestController extends Controller
         ]);
 
         $teacherId = $request->input('teacher_id');
+        $student = $request->user();
 
-        $counts = \App\Domains\Exams\Models\Question::where('teacher_id', $teacherId)
-            ->select('difficulty', \Illuminate\Support\Facades\DB::raw('count(*) as count'))
+        // Get student's grade for this teacher
+        $enrollment = \App\Domains\Enrollments\Models\Enrollment::where('student_id', $student->id)
+            ->where('teacher_id', $teacherId)
+            ->first();
+        
+        $query = \App\Domains\Exams\Models\Question::where('teacher_id', $teacherId);
+
+        if ($enrollment?->grade_id) {
+            $query->where('grade_id', $enrollment->grade_id);
+        }
+
+        $counts = $query->select('difficulty', \Illuminate\Support\Facades\DB::raw('count(*) as count'))
             ->groupBy('difficulty')
             ->get()
             ->pluck('count', 'difficulty');

@@ -29,8 +29,18 @@ class DynamicExamGenerator
                 throw new \Exception("إعدادات الامتحان الديناميكي غير صالحة.");
             }
 
+            // Determine grade_id
+            $gradeId = $exam->grade_id;
+            if ($exam->type === 'self_test' || $exam->type->value === 'self_test') {
+                // For self-tests, use the student's current grade for this teacher
+                $enrollment = \App\Domains\Enrollments\Models\Enrollment::where('student_id', $studentId)
+                    ->where('teacher_id', $exam->teacher_id)
+                    ->first();
+                $gradeId = $enrollment?->grade_id;
+            }
+
             // 1. Select Questions dynamically
-            $questions = $this->selectionService->selectForStudent($exam->teacher_id, $studentId, $config);
+            $questions = $this->selectionService->selectForStudent($exam->teacher_id, $studentId, $config, $gradeId);
 
             if ($questions->isEmpty()) {
                 throw new \Exception("لا يمكن توليد الامتحان لعدم وجود أسئلة متاحة.");

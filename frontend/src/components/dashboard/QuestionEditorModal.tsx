@@ -11,6 +11,9 @@ interface QuestionEditorModalProps {
   onClose: () => void;
   question: Question | null;
   onSave: (updatedQuestion: any) => Promise<void>;
+  grades: { id: string, name: string }[];
+  teachers?: { id: string, name: string }[];
+  role?: 'teacher' | 'academy';
 }
 
 export const QuestionEditorModal: React.FC<QuestionEditorModalProps> = ({
@@ -18,6 +21,9 @@ export const QuestionEditorModal: React.FC<QuestionEditorModalProps> = ({
   onClose,
   question,
   onSave,
+  grades,
+  teachers = [],
+  role = 'teacher',
 }) => {
   const [formData, setFormData] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -29,6 +35,9 @@ export const QuestionEditorModal: React.FC<QuestionEditorModalProps> = ({
         type: question.type,
         difficulty: question.difficulty,
         duration: question.duration || 60,
+        grade_id: question.grade_id || '',
+        subject: question.subject || '',
+        teacher_id: question.teacher_id || '',
         options: Array.isArray(question.options) ? [...question.options] : [],
         correct_answer: question.correct_answer,
       });
@@ -39,6 +48,9 @@ export const QuestionEditorModal: React.FC<QuestionEditorModalProps> = ({
         type: 'mcq',
         difficulty: 'easy',
         duration: 60,
+        grade_id: '',
+        subject: '',
+        teacher_id: '',
         options: ['', '', '', ''],
         correct_answer: '',
       });
@@ -115,6 +127,16 @@ export const QuestionEditorModal: React.FC<QuestionEditorModalProps> = ({
       return;
     }
 
+    if (!formData.grade_id) {
+      toast.error('يرجى اختيار الصف الدراسي');
+      return;
+    }
+
+    if (role === 'academy' && !formData.teacher_id) {
+      toast.error('يرجى اختيار المدرس');
+      return;
+    }
+
     if (formData.type === 'mcq' && !formData.correct_answer) {
       toast.error('يرجى تحديد الإجابة الصحيحة');
       return;
@@ -156,6 +178,29 @@ export const QuestionEditorModal: React.FC<QuestionEditorModalProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 max-h-[70vh] overflow-y-auto custom-scrollbar space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {role === 'academy' && (
+              <div>
+                <label className="block text-xs font-bold text-gray-light/60 mb-2 mr-1">المدرس</label>
+                <Select
+                  options={teachers.map(t => ({ value: t.id, label: t.name }))}
+                  value={formData.teacher_id}
+                  onChange={(val) => setFormData({ ...formData, teacher_id: val })}
+                  placeholder="اختر المدرس"
+                />
+              </div>
+            )}
+            <div>
+              <label className="block text-xs font-bold text-gray-light/60 mb-2 mr-1">الصف الدراسي</label>
+              <Select
+                options={grades.map(g => ({ value: g.id, label: g.name }))}
+                value={formData.grade_id}
+                onChange={(val) => setFormData({ ...formData, grade_id: val })}
+                placeholder="اختر الصف"
+              />
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-gray-light/60 mb-2 mr-1">نوع السؤال</label>

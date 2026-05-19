@@ -2,26 +2,38 @@
 
 declare(strict_types=1);
 
-namespace App\Domains\Application\Http\Controllers\Teacher;
+namespace App\Domains\Application\Http\Controllers\Academy;
 
 use App\Domains\Application\Http\Controllers\Controller;
-use App\Domains\Application\Http\Requests\Teacher\Question\StoreQuestionRequest;
-use App\Domains\Application\Http\Requests\Teacher\Question\UpdateQuestionRequest;
+use App\Domains\Application\Http\Requests\Academy\Question\StoreAcademyQuestionRequest;
+use App\Domains\Application\Http\Requests\Academy\Question\UpdateAcademyQuestionRequest;
 use App\Domains\Exams\Models\Question;
-use App\Domains\Exams\Models\Exam;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class QuestionController extends Controller
 {
-    use \App\Domains\Application\Traits\ResolvesTeacher;
+    use \App\Domains\Application\Traits\ResolvesAcademy;
 
     public function index(Request $request): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $academy = $this->getAcademy($request);
+        if (!$academy) {
+            return $this->errorResponse('Unauthorized', 403);
+        }
+
+        // Get IDs of teachers belonging to this academy
+        $teacherIds = $academy->teachers()->pluck('teachers.id')->toArray();
         
-        $query = Question::where('teacher_id', $teacher->id);
+        $query = Question::whereIn('teacher_id', $teacherIds);
+
+        if ($request->has('teacher_id')) {
+            $query->where('teacher_id', $request->input('teacher_id'));
+        }
+
+        if ($request->has('grade_id')) {
+            $query->where('grade_id', $request->input('grade_id'));
+        }
 
         if ($request->has('difficulty')) {
             $query->where('difficulty', $request->input('difficulty'));
@@ -29,14 +41,6 @@ class QuestionController extends Controller
 
         if ($request->has('type')) {
             $query->where('type', $request->input('type'));
-        }
-
-        if ($request->has('grade_id')) {
-            $query->where('grade_id', $request->input('grade_id'));
-        }
-
-        if ($request->has('subject')) {
-            $query->where('subject', $request->input('subject'));
         }
 
         if ($request->has('search')) {
@@ -53,17 +57,24 @@ class QuestionController extends Controller
                   });
         }]);
 
-        $questions = $query->latest()->paginate((int) $request->input('per_page', 15));
+        $questions = $query->with('teacher:id,name')->latest()->paginate((int) $request->input('per_page', 15));
 
         return $this->successResponse($questions);
     }
 
-    public function store(StoreQuestionRequest $request): JsonResponse
+    public function store(StoreAcademyQuestionRequest $request): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
-        
+        $academy = $this->getAcademy($request);
+        if (!$academy) {
+            return $this->errorResponse('Unauthorized', 403);
+        }
+
         $data = $request->validated();
-        $data['teacher_id'] = $teacher->id;
+        
+        // Ensure teacher belongs to academy
+        if (!$academy->teachers()->where('teachers.id', $data['teacher_id'])->exists()) {
+            return $this->errorResponse('المدرس المختار لا ينتمي لهذه الأكاديمية', 403);
+        }
 
         $question = Question::create($data);
 
@@ -72,8 +83,13 @@ class QuestionController extends Controller
 
     public function show(Request $request, Question $question): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
-        if ($question->teacher_id !== $teacher->id) {
+        $academy = $this->getAcademy($request);
+        if (!$academy) {
+            return $this->errorResponse('Unauthorized', 403);
+        }
+
+        // Ensure teacher belongs to academy
+        if (!$academy->teachers()->where('teachers.id', $question->teacher_id)->exists()) {
             return $this->errorResponse('غير مصرح لك بعرض هذا السؤال', 403);
         }
 
@@ -85,15 +101,28 @@ class QuestionController extends Controller
             })->exists();
 
         $question->is_locked = $isLocked;
+        $question->load('teacher:id,name');
 
         return $this->successResponse($question);
     }
 
-    public function update(UpdateQuestionRequest $request, Question $question): JsonResponse
+    public function update(UpdateAcademyQuestionRequest $request, Question $question): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
-        if ($question->teacher_id !== $teacher->id) {
+        $academy = $this->getAcademy($request);
+        if (!$academy) {
+            return $this->errorResponse('Unauthorized', 403);
+        }
+
+        // Ensure current question's teacher belongs to academy
+        if (!$academy->teachers()->where('teachers.id', $question->teacher_id)->exists()) {
             return $this->errorResponse('غير مصرح لك بتعديل هذا السؤال', 403);
+        }
+
+        $data = $request->validated();
+
+        // If updating teacher_id, ensure new teacher also belongs to academy
+        if (isset($data['teacher_id']) && !$academy->teachers()->where('teachers.id', $data['teacher_id'])->exists()) {
+            return $this->errorResponse('المدرس الجديد المختار لا ينتمي لهذه الأكاديمية', 403);
         }
 
         // Block update if attached to active or scheduled exams
@@ -108,15 +137,20 @@ class QuestionController extends Controller
             return $this->errorResponse('لا يمكن تعديل السؤال لأنه مستخدم في امتحانات نشطة حالياً', 422);
         }
 
-        $question->update($request->validated());
+        $question->update($data);
 
         return $this->successResponse($question, 'تم تحديث السؤال بنجاح');
     }
 
     public function destroy(Request $request, Question $question): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
-        if ($question->teacher_id !== $teacher->id) {
+        $academy = $this->getAcademy($request);
+        if (!$academy) {
+            return $this->errorResponse('Unauthorized', 403);
+        }
+
+        // Ensure teacher belongs to academy
+        if (!$academy->teachers()->where('teachers.id', $question->teacher_id)->exists()) {
             return $this->errorResponse('غير مصرح لك بحذف هذا السؤال', 403);
         }
 

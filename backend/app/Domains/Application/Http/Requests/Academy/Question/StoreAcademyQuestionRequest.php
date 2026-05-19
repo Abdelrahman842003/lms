@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace App\Domains\Application\Http\Requests\Teacher\Question;
+namespace App\Domains\Application\Http\Requests\Academy\Question;
 
 use App\Domains\Exams\Enums\QuestionType;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rules\Enum;
 
-class StoreQuestionRequest extends FormRequest
+class StoreAcademyQuestionRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -18,11 +18,12 @@ class StoreQuestionRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'teacher_id' => ['required', 'uuid', 'exists:teachers,id'],
+            'grade_id' => ['required', 'uuid', 'exists:grades,id'],
+            'subject' => ['nullable', 'string', 'max:255'],
             'text' => ['required', 'string'],
             'type' => ['required', new Enum(QuestionType::class)],
             'difficulty' => ['required', 'string', 'in:easy,medium,hard'],
-            'grade_id' => ['required', 'uuid', 'exists:grades,id'],
-            'subject' => ['nullable', 'string', 'max:255'],
             'options' => ['required', 'array', 'min:2'],
             'correct_answer' => ['required', 'string'],
             'duration' => ['required', 'integer', 'min:10'],
