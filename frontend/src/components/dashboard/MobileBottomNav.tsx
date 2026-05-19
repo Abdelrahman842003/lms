@@ -173,6 +173,12 @@ const getNavItems = (role: string): NavItem[] => {
         href: `${base}/questions`,
       },
       {
+        id: 'notes',
+        label: 'المذكرات',
+        icon: 'file-pdf',
+        href: `${base}/notes`,
+      },
+      {
         id: 'notifications',
         label: 'الإخطارات والدعم',
         icon: 'bell',
@@ -207,6 +213,12 @@ const getNavItems = (role: string): NavItem[] => {
       label: 'اختبر نفسك',
       icon: 'vial',
       href: '/student/self-test',
+    },
+    {
+      id: 'notes',
+      label: 'مذكراتي',
+      icon: 'file-pdf',
+      href: '/student/notes',
     },
     {
       id: 'lectures',

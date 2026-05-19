@@ -24,11 +24,13 @@ class GamificationSettingsSeeder extends Seeder
             ['key' => 'gamification_perfect_month_bonus', 'value' => '100', 'group' => 'gamification'],
             
             // Exam Points
-            ['key' => 'gamification_exam_max_points', 'value' => '200', 'group' => 'gamification'],
-            ['key' => 'gamification_exam_first_place_bonus', 'value' => '50', 'group' => 'gamification'],
-            ['key' => 'gamification_exam_retake_bonus', 'value' => '5', 'group' => 'gamification'],
-            
-            // Streaks
+            ['key' => 'gamification_exam_max_points', 'value' => '50', 'group' => 'gamification'],
+            ['key' => 'gamification_exam_first_place_bonus', 'value' => '25', 'group' => 'gamification'],
+            ['key' => 'gamification_exam_retake_bonus', 'value' => '20', 'group' => 'gamification'],
+            ['key' => 'gamification_exam_fail_deduction', 'value' => '10', 'group' => 'gamification'],
+            ['key' => 'gamification_exam_passing_percentage', 'value' => '50', 'group' => 'gamification'],
+
+            // Question Points (Bank / Self-Test)
             ['key' => 'gamification_streak_5_bonus', 'value' => '25', 'group' => 'gamification'],
             ['key' => 'gamification_streak_10_bonus', 'value' => '75', 'group' => 'gamification'],
             

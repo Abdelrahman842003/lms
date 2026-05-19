@@ -46,6 +46,8 @@ class GamificationSettingsPage extends Page implements HasForms
         'gamification_exam_max_points',
         'gamification_exam_first_place_bonus',
         'gamification_exam_retake_bonus',
+        'gamification_exam_fail_deduction',
+        'gamification_exam_passing_percentage',
         // نقاط الأسئلة (بنك الأسئلة / اختبر نفسك)
         'gamification_question_easy_points',
         'gamification_question_medium_points',
@@ -133,6 +135,17 @@ class GamificationSettingsPage extends Page implements HasForms
                             ->label('نقاط إعادة الامتحان (Bonus)')
                             ->numeric()
                             ->required(),
+
+                        TextInput::make('gamification_exam_fail_deduction')
+                            ->label('نقاط الخصم عند الرسوب')
+                            ->numeric()
+                            ->required(),
+
+                        TextInput::make('gamification_exam_passing_percentage')
+                            ->label('درجة النجاح (%)')
+                            ->numeric()
+                            ->required()
+                            ->suffix('%'),
                     ])
                     ->columns(3),
 

@@ -270,6 +270,12 @@ const getNavItems = (role: string): SidebarItem[] => {
       href: '/student/exams',
     },
     {
+      id: 'self-test',
+      label: 'اختبر نفسك',
+      icon: 'vial',
+      href: '/student/self-test',
+    },
+    {
       id: 'notes',
       label: 'مذكراتي',
       icon: 'file-pdf',

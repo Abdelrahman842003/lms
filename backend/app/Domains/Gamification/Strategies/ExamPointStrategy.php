@@ -27,31 +27,39 @@ class ExamPointStrategy implements PointCalculationStrategyInterface
 
         /** @var ExamResult $context */
         $exam = $context->exam;
+        $percentage = (float) $context->percentage;
 
-        if ($exam && in_array($exam->type, ['self_test', 'dynamic'])) {
-            $attempt = $context->attempt;
-            if (!$attempt) {
-                return 0; // Fallback
-            }
-            
-            $points = 0;
-            $answers = $attempt->answers()->where('is_correct', true)->get();
-            
-            foreach ($answers as $answer) {
-                $snapshot = $answer->question_snapshot;
-                // If snapshot is missing difficulty, fallback to relation or medium
-                $difficulty = $snapshot['difficulty'] ?? ($answer->question->difficulty ?? 'medium');
-                
-                $points += match ($difficulty) {
-                    'easy' => $settings->question_easy_points,
-                    'hard' => $settings->question_hard_points,
-                    default => $settings->question_medium_points,
-                };
-            }
-            return $points;
+        // 1. Check if student failed
+        $passingPercentage = $settings->exam_passing_percentage ?? 50;
+        if ($percentage < $passingPercentage) {
+            $deduction = $settings->exam_fail_deduction ?? 10;
+            return -abs((int) $deduction); // Ensure it's negative
         }
 
-        return $settings->calculateExamPoints((float) $context->percentage);
+        // 2. If passed, calculate points based on question difficulty (for all exams if attempt exists)
+        $attempt = $context->attempt;
+        if ($attempt) {
+            $points = 0;
+            $correctAnswers = $attempt->answers()->where('is_correct', true)->get();
+            
+            if ($correctAnswers->isNotEmpty()) {
+                foreach ($correctAnswers as $answer) {
+                    $snapshot = $answer->question_snapshot;
+                    // If snapshot is missing difficulty, fallback to relation or medium
+                    $difficulty = $snapshot['difficulty'] ?? ($answer->question->difficulty ?? 'medium');
+                    
+                    $points += match ($difficulty) {
+                        'easy' => $settings->question_easy_points,
+                        'hard' => $settings->question_hard_points,
+                        default => $settings->question_medium_points,
+                    };
+                }
+                return $points;
+            }
+        }
+
+        // 3. Fallback: Calculation based on percentage if no attempt or answers found
+        return $settings->calculateExamPoints($percentage);
     }
 
     /**

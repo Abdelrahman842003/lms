@@ -50,18 +50,33 @@ export default function QuestionsPage({ role = 'teacher' }: { role?: 'teacher' |
     fetchQuestions(1);
   }, [searchQuery, selectedType, selectedDifficulty, selectedGrade, selectedTeacher]);
 
+  const extractArray = <T,>(res: unknown): T[] => {
+    if (!res) return [];
+    if (Array.isArray(res)) return res as T[];
+    if (typeof res === 'object' && res !== null) {
+      const obj = res as Record<string, unknown>;
+      if (Array.isArray(obj.data)) return obj.data as T[];
+      if (obj.data && typeof obj.data === 'object' && obj.data !== null) {
+        const nestedData = obj.data as Record<string, unknown>;
+        if (Array.isArray(nestedData.data)) return nestedData.data as T[];
+        if (Array.isArray(nestedData.teachers)) return nestedData.teachers as T[];
+      }
+    }
+    return [];
+  };
+
   const fetchInitialData = async () => {
     try {
       if (role === 'teacher') {
         const response = await getTeacherGrades();
-        setGrades(response.data || []);
+        setGrades(extractArray<{ id: string; name: string }>(response));
       } else if (role === 'academy') {
         const [gradesRes, teachersRes] = await Promise.all([
           getAcademyGrades(1, 100),
           getTeachers(1, 100)
         ]);
-        setGrades(gradesRes.data || []);
-        setTeachers(teachersRes.data || []);
+        setGrades(extractArray<{ id: string; name: string }>(gradesRes));
+        setTeachers(extractArray<{ id: string; name: string }>(teachersRes));
       }
     } catch (error) {
       console.error('Failed to fetch initial data:', error);
