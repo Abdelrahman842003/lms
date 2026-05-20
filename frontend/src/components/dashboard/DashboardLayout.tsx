@@ -38,7 +38,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       />
 
       {/* Main Content */}
-      <main className={`dashboard-main-navbar ${role !== 'parent' ? 'pb-32 md:pb-0' : ''}`}>
+      <main className={`dashboard-main-navbar ${role !== 'parent' ? 'pb-32 lg:pb-0' : ''}`}>
         {/* Header */}
         {(title || headerActions) && (
           <div className="dashboard-header">

@@ -319,7 +319,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ role }) => {
     <>
       {/* More Menu Overlay */}
       {isMenuOpen && (
-        <div className="fixed inset-0 z-[150] md:hidden">
+        <div className="fixed inset-0 z-[150] lg:hidden">
           <div 
             className="absolute inset-0 bg-black/60 backdrop-blur-md animate-in fade-in duration-300"
             onClick={() => setIsMenuOpen(false)}
@@ -399,7 +399,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ role }) => {
       />
 
       {/* Main Nav Bar */}
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-md z-[200] md:hidden">
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-md z-[200] lg:hidden">
         <nav className="premium-glass premium-border rounded-[2rem] px-4 py-3 shadow-2xl flex items-center justify-between gap-1 backdrop-blur-3xl bg-black/40">
           {visibleItems.map((item) => {
             const isActive = pathname === item.href;
