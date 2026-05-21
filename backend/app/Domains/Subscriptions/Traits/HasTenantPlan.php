@@ -21,6 +21,7 @@ trait HasTenantPlan
         'plan_max_students', 'is_unlimited_students', 'subscription_fee',
         'paid_amount', 'storage_minutes_limit', 'storage_minutes_used',
         'delivery_minutes_limit', 'delivery_minutes_used', 'storage_used_bytes',
+        'storage_limit_gb',
         'discount_percent', 'discount_type', 'discount_scope', 'billing_notes'
     ];
 

@@ -120,14 +120,10 @@ class NotificationService
             throw new RuntimeException('إرسال الإشعارات للسكرتيرين متوقف من إعدادات النظام.');
         }
 
-        $voiceBytes = max(0, (int) ($voiceFile->getSize() ?? 0));
-        $this->storageQuota->assertCanUpload($academy, $voiceBytes);
         $this->voiceService->validateAudioFile($voiceFile, $duration);
 
         $voicePath = $this->voiceService->storeVoiceFile($voiceFile, $academy);
         $voiceUrl = $this->voiceService->getVoiceUrl($voicePath);
-
-        $this->storageQuota->incrementUsage($academy, $voiceBytes);
 
         $data = new NotificationData(
             title: $title,

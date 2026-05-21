@@ -121,10 +121,6 @@ class NotificationController extends Controller
 
         try {
             $voiceFile = $request->file('voice');
-            $voiceBytes = max(0, (int) ($voiceFile?->getSize() ?? 0));
-
-            // Enforce storage quota by bytes (package GB), not count-based daily limits.
-            $this->storageQuota->assertCanUpload($teacher, $voiceBytes);
 
             // Validate audio file
             $this->voiceService->validateAudioFile(
@@ -148,9 +144,6 @@ class NotificationController extends Controller
             // Store voice file
             $voicePath = $this->voiceService->storeVoiceFile($voiceFile, $teacher);
             $voiceUrl = $this->voiceService->getVoiceUrl($voicePath);
-
-            // Track storage consumption in teacher package usage.
-            $this->storageQuota->incrementUsage($teacher, $voiceBytes);
 
             // Send notification to recipients
             $channel = NotificationFactory::make('database');

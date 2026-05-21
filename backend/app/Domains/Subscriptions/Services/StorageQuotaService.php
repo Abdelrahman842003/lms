@@ -83,6 +83,61 @@ class StorageQuotaService
     }
 
     /**
+     * Assert that the owner has enough storage remaining for the upload.
+     *
+     * @throws \Illuminate\Auth\Access\AuthorizationException
+     */
+    public function assertCanUpload(Model $owner, int $bytes): void
+    {
+        $snapshot = $this->getStorageSnapshot($owner);
+
+        if ($snapshot['is_unlimited']) {
+            return;
+        }
+
+        if ($bytes > $snapshot['remaining_bytes']) {
+            throw new \Illuminate\Auth\Access\AuthorizationException(
+                "لقد تجاوزت مساحة التخزين المتاحة. المتبقي: " . $snapshot['remaining_gb'] . " جيجابايت"
+            );
+        }
+    }
+
+    /**
+     * Get a snapshot of storage usage and limits.
+     */
+    public function getStorageSnapshot(Model $owner): array
+    {
+        $limitGb = $owner->storage_limit_gb;
+        $usedBytes = (int) $owner->storage_used_bytes;
+
+        if ($limitGb === null || $limitGb <= 0) {
+            return [
+                'is_unlimited' => true,
+                'limit_gb' => null,
+                'used_bytes' => $usedBytes,
+                'used_gb' => round($usedBytes / self::BYTES_PER_GB, 2),
+                'remaining_bytes' => null,
+                'remaining_gb' => null,
+                'percentage' => 0.0,
+            ];
+        }
+
+        $limitBytes = $limitGb * self::BYTES_PER_GB;
+        $remainingBytes = max(0, $limitBytes - $usedBytes);
+        $percentage = min(100, round(($usedBytes / $limitBytes) * 100, 2));
+
+        return [
+            'is_unlimited' => false,
+            'limit_gb' => $limitGb,
+            'used_bytes' => $usedBytes,
+            'used_gb' => round($usedBytes / self::BYTES_PER_GB, 2),
+            'remaining_bytes' => $remainingBytes,
+            'remaining_gb' => round($remainingBytes / self::BYTES_PER_GB, 2),
+            'percentage' => (float) $percentage,
+        ];
+    }
+
+    /**
      * Resolve the VideoOwnerType string and owner UUID.
      */
     private function resolveOwnerTypeAndId(Model $owner): array
