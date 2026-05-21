@@ -7,61 +7,82 @@ namespace App\Domains\Reporting\Infrastructure\Queries\Academy;
 use App\Domains\Auth\Models\Academy;
 use App\Domains\Lectures\Models\Attendance;
 use App\Domains\Lectures\Models\Lecture;
+use App\Domains\Reporting\Domain\ValueObjects\AcademyReportFilters;
 use App\Domains\Reporting\Domain\ValueObjects\ReportingPeriod;
 use Illuminate\Support\Facades\DB;
 
 final class AcademySessionQueries
 {
-    public function getScheduledCount(Academy $academy, ReportingPeriod $period): int
+    public function getScheduledCount(Academy $academy, ReportingPeriod $period, ?AcademyReportFilters $filters = null): int
     {
-        return Lecture::where('academy_id', $academy->id)
+        $query = Lecture::where('academy_id', $academy->id)
             ->whereBetween('start_time', [
                 $period->startAt->toDateTimeString(),
                 $period->endAt->toDateTimeString(),
-            ])
-            ->count();
+            ]);
+
+        if ($filters) {
+            $query = $this->applyFilters($query, $filters);
+        }
+
+        return $query->count();
     }
 
-    public function getDeliveredCount(Academy $academy, ReportingPeriod $period): int
+    public function getDeliveredCount(Academy $academy, ReportingPeriod $period, ?AcademyReportFilters $filters = null): int
     {
-        return Lecture::where('academy_id', $academy->id)
+        $query = Lecture::where('academy_id', $academy->id)
             ->whereBetween('start_time', [
                 $period->startAt->toDateTimeString(),
                 $period->endAt->toDateTimeString(),
             ])
             ->where('is_active', true)
-            ->where('start_time', '<=', now())
-            ->count();
+            ->where('start_time', '<=', now());
+
+        if ($filters) {
+            $query = $this->applyFilters($query, $filters);
+        }
+
+        return $query->count();
     }
 
-    public function getCanceledCount(Academy $academy, ReportingPeriod $period): int
+    public function getCanceledCount(Academy $academy, ReportingPeriod $period, ?AcademyReportFilters $filters = null): int
     {
-        return Lecture::where('academy_id', $academy->id)
+        $query = Lecture::where('academy_id', $academy->id)
             ->whereBetween('start_time', [
                 $period->startAt->toDateTimeString(),
                 $period->endAt->toDateTimeString(),
             ])
             ->where('is_active', false)
-            ->whereNotNull('cancelled_dates')
-            ->count();
+            ->whereNotNull('cancelled_dates');
+
+        if ($filters) {
+            $query = $this->applyFilters($query, $filters);
+        }
+
+        return $query->count();
     }
 
-    public function getPostponedCount(Academy $academy, ReportingPeriod $period): int
+    public function getPostponedCount(Academy $academy, ReportingPeriod $period, ?AcademyReportFilters $filters = null): int
     {
         // No direct "postponed" status on lectures; return 0 until a migration adds support
         return 0;
     }
 
-    public function getAverageAttendance(Academy $academy, ReportingPeriod $period): float
+    public function getAverageAttendance(Academy $academy, ReportingPeriod $period, ?AcademyReportFilters $filters = null): float
     {
-        $lectures = Lecture::where('academy_id', $academy->id)
+        $query = Lecture::where('academy_id', $academy->id)
             ->whereBetween('start_time', [
                 $period->startAt->toDateTimeString(),
                 $period->endAt->toDateTimeString(),
             ])
             ->where('is_active', true)
-            ->where('start_time', '<=', now())
-            ->withCount([
+            ->where('start_time', '<=', now());
+
+        if ($filters) {
+            $query = $this->applyFilters($query, $filters);
+        }
+
+        $lectures = $query->withCount([
                 'attendances as present_count' => fn ($q) => $q->where('status', 'present'),
                 'attendances as total_count',
             ])
@@ -77,16 +98,21 @@ final class AcademySessionQueries
         return $totalStudents > 0 ? round(($totalPresent / $totalStudents) * 100, 2) : 0.0;
     }
 
-    public function getSessionExecutionList(Academy $academy, ReportingPeriod $period): array
+    public function getSessionExecutionList(Academy $academy, ReportingPeriod $period, ?AcademyReportFilters $filters = null): array
     {
-        return Lecture::where('lectures.academy_id', $academy->id)
+        $query = Lecture::where('lectures.academy_id', $academy->id)
             ->whereBetween('lectures.start_time', [
                 $period->startAt->toDateTimeString(),
                 $period->endAt->toDateTimeString(),
             ])
             ->join('teachers', 'lectures.teacher_id', '=', 'teachers.id')
-            ->leftJoin('groups', 'lectures.group_id', '=', 'groups.id')
-            ->select(
+            ->leftJoin('groups', 'lectures.group_id', '=', 'groups.id');
+
+        if ($filters) {
+            $query = $this->applyFilters($query, $filters);
+        }
+
+        return $query->select(
                 'lectures.id',
                 'lectures.title',
                 'teachers.name as teacher_name',
@@ -107,5 +133,18 @@ final class AcademySessionQueries
                 'total_students' => (int) $row->total_students,
             ])
             ->all();
+    }
+
+    private function applyFilters($query, AcademyReportFilters $filters)
+    {
+        return $query
+            ->when($filters->teacherId, fn ($q) => $q->where('teacher_id', $filters->teacherId))
+            ->when($filters->groupId, fn ($q) => $q->where('group_id', $filters->groupId))
+            ->when($filters->gradeId, fn ($q) => $q->where('grade_id', $filters->gradeId))
+            ->when($filters->sessionStatus, function ($q) use ($filters) {
+                 if ($filters->sessionStatus === 'delivered') return $q->where('is_active', true)->where('start_time', '<=', now());
+                 if ($filters->sessionStatus === 'cancelled') return $q->where('is_active', false);
+                 return $q;
+            });
     }
 }

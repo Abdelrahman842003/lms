@@ -9,7 +9,7 @@ use App\Domains\Auth\Models\Student;
 use App\Domains\Lectures\Models\Attendance;
 use App\Domains\Lectures\Models\Lecture;
 use App\Domains\Gamification\Models\PointTransaction;
-use App\Domains\Gamification\Models\PointService;
+use App\Domains\Gamification\Services\PointService;
 use App\Domains\Lectures\Jobs\ProcessAttendanceEntryJob;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;

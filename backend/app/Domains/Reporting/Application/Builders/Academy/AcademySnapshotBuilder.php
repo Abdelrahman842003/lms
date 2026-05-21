@@ -29,16 +29,20 @@ final readonly class AcademySnapshotBuilder
             ? $filters->comparisonPeriod()
             : null;
 
-        $totalStudents = $this->studentQueries->getTotalStudents($academy);
-        $activeStudents = $this->studentQueries->getActiveStudents($academy);
-        $newStudents = $this->studentQueries->getNewStudents($academy, $period);
+        $totalStudents = $this->studentQueries->getTotalStudents($academy, $filters);
+        $activeStudents = $this->studentQueries->getActiveStudents($academy, $filters);
+        $newStudents = $this->studentQueries->getNewStudents($academy, $period, $filters);
         $inactiveStudents = $totalStudents - $activeStudents;
-        $totalTeachers = $this->teacherQueries->getActiveTeachers($academy);
+        $totalTeachers = $this->teacherQueries->getActiveTeachers($academy, $filters);
 
-        $activeGroups = $academy->groups()->count();
+        $groupsQuery = $academy->groups();
+        if ($filters->teacherId) $groupsQuery->where('teacher_id', $filters->teacherId);
+        if ($filters->groupId) $groupsQuery->where('id', $filters->groupId);
+        if ($filters->gradeId) $groupsQuery->where('grade_id', $filters->gradeId);
+        $activeGroups = $groupsQuery->count();
 
-        $sessionsDelivered = $this->sessionQueries->getDeliveredCount($academy, $period);
-        $attendanceRate = $this->attendanceQueries->getOverallAttendanceRate($academy, $period);
+        $sessionsDelivered = $this->sessionQueries->getDeliveredCount($academy, $period, $filters);
+        $attendanceRate = $this->attendanceQueries->getOverallAttendanceRate($academy, $period, $filters);
 
         $metricDefinitions = [
             [

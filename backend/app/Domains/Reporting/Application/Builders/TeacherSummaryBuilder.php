@@ -7,7 +7,7 @@ namespace App\Domains\Reporting\Application\Builders;
 use App\Domains\Auth\Models\Teacher;
 use App\Domains\Reporting\Domain\DTO\KpiCardResult;
 use App\Domains\Reporting\Domain\Services\KpiCardFactory;
-use App\Domains\Reporting\Domain\ValueObjects\ReportFilters;
+use App\Domains\Reporting\Domain\ValueObjects\TeacherReportFilters;
 use App\Domains\Reporting\Domain\ValueObjects\TeacherScope;
 use App\Domains\Reporting\Infrastructure\Queries\TeacherAttendanceQueryService;
 use App\Domains\Reporting\Infrastructure\Queries\TeacherGroupQueryService;
@@ -29,7 +29,7 @@ final readonly class TeacherSummaryBuilder
     /**
      * @return array<int, KpiCardResult>
      */
-    public function build(Teacher $teacher, TeacherScope $scope, ReportFilters $filters): array
+    public function build(Teacher $teacher, TeacherScope $scope, TeacherReportFilters $filters): array
     {
         $totalStudents = $this->studentQuery->totalLinkedStudents($teacher, $filters);
         $activeStudents = $this->studentQuery->activeStudentsCount($teacher, $filters);

@@ -10,18 +10,20 @@ use App\Domains\Enrollments\Models\Group;
 use App\Domains\Lectures\Models\Attendance;
 use App\Domains\Lectures\Models\Lecture;
 use App\Domains\Lectures\Models\LectureSession;
-use App\Domains\Reporting\Domain\ValueObjects\ReportFilters;
+use App\Domains\Reporting\Domain\ValueObjects\TeacherReportFilters;
 use Illuminate\Support\Facades\DB;
 
 final class TeacherAttendanceQueryService
 {
-    public function overallAttendanceRate(Teacher $teacher, ReportFilters $filters): float
+    public function overallAttendanceRate(Teacher $teacher, TeacherReportFilters $filters): float
     {
-        $lectureIds = Lecture::where('teacher_id', $teacher->id)->pluck('id');
+        $lectureQuery = Lecture::where('teacher_id', $teacher->id);
+        if ($filters->groupId) $lectureQuery->where('group_id', $filters->groupId);
+        $lectureIds = $lectureQuery->pluck('id');
 
         $sessionIds = LectureSession::whereIn('lecture_id', $lectureIds)
             ->where('is_cancelled', false)
-            ->whereBetween('date', [$filters->period->startAt, $filters->period->endAt])
+            ->whereBetween('date', [$filters->base->period->startAt, $filters->base->period->endAt])
             ->pluck('id');
 
         $total = Attendance::whereIn('lecture_session_id', $sessionIds)->count();
@@ -37,9 +39,11 @@ final class TeacherAttendanceQueryService
         return round(($present / $total) * 100, 2);
     }
 
-    public function attendanceByGroup(Teacher $teacher, ReportFilters $filters): array
+    public function attendanceByGroup(Teacher $teacher, TeacherReportFilters $filters): array
     {
-        $groupIds = Group::where('teacher_id', $teacher->id)->pluck('id');
+        $groupQuery = Group::where('teacher_id', $teacher->id);
+        if ($filters->groupId) $groupQuery->where('id', $filters->groupId);
+        $groupIds = $groupQuery->pluck('id');
 
         // Single query: attendance counts per group
         $attendanceCounts = Attendance::join('lecture_sessions', 'attendances.lecture_session_id', '=', 'lecture_sessions.id')
@@ -47,7 +51,7 @@ final class TeacherAttendanceQueryService
             ->where('lectures.teacher_id', $teacher->id)
             ->whereIn('lectures.group_id', $groupIds)
             ->where('lecture_sessions.is_cancelled', false)
-            ->whereBetween('lecture_sessions.date', [$filters->period->startAt, $filters->period->endAt])
+            ->whereBetween('lecture_sessions.date', [$filters->base->period->startAt, $filters->base->period->endAt])
             ->select('lectures.group_id',
                 DB::raw('COUNT(*) as total'),
                 DB::raw('SUM(CASE WHEN attendances.status = \'present\' THEN 1 ELSE 0 END) as present'),
@@ -61,7 +65,7 @@ final class TeacherAttendanceQueryService
             ->where('lectures.teacher_id', $teacher->id)
             ->whereIn('lectures.group_id', $groupIds)
             ->where('lecture_sessions.is_cancelled', false)
-            ->whereBetween('lecture_sessions.date', [$filters->period->startAt, $filters->period->endAt])
+            ->whereBetween('lecture_sessions.date', [$filters->base->period->startAt, $filters->base->period->endAt])
             ->select('lectures.group_id', DB::raw('COUNT(*) as sessions_count'))
             ->groupBy('lectures.group_id')
             ->get()
@@ -76,7 +80,7 @@ final class TeacherAttendanceQueryService
             ->get()
             ->keyBy('group_id');
 
-        $groups = Group::where('teacher_id', $teacher->id)->get();
+        $groups = Group::where('teacher_id', $teacher->id)->whereIn('id', $groupIds)->get();
         $result = [];
 
         foreach ($groups as $group) {
@@ -99,7 +103,7 @@ final class TeacherAttendanceQueryService
         return $result;
     }
 
-    public function bestAndWorstGroup(Teacher $teacher, ReportFilters $filters): array
+    public function bestAndWorstGroup(Teacher $teacher, TeacherReportFilters $filters): array
     {
         $byGroup = $this->attendanceByGroup($teacher, $filters);
 
@@ -113,20 +117,24 @@ final class TeacherAttendanceQueryService
         ];
     }
 
-    public function attendanceChangeFromPrevious(Teacher $teacher, ReportFilters $filters): ?float
+    public function attendanceChangeFromPrevious(Teacher $teacher, TeacherReportFilters $filters): ?float
     {
-        if (!$filters->hasComparison() || $filters->comparisonPeriod === null) {
+        if (!$filters->base->hasComparison() || $filters->base->comparisonPeriod === null) {
             return null;
         }
 
         $current = $this->overallAttendanceRate($teacher, $filters);
 
-        $previousFilters = new ReportFilters(
-            period: new \App\Domains\Reporting\Domain\ValueObjects\ReportingPeriod(
-                $filters->comparisonPeriod->startAt,
-                $filters->comparisonPeriod->endAt,
-                $filters->period->timezone,
-            ),
+        $previousFilters = new TeacherReportFilters(
+            base: \App\Domains\Reporting\Domain\ValueObjects\ReportFilters::fromArray([
+                'preset' => 'custom_range',
+                'start_at' => $filters->base->comparisonPeriod->startAt->toIso8601String(),
+                'end_at' => $filters->base->comparisonPeriod->endAt->toIso8601String(),
+                'timezone' => $filters->base->period->timezone->getName(),
+            ]),
+            groupId: $filters->groupId,
+            studentActivityState: $filters->studentActivityState,
+            attendanceState: $filters->attendanceState,
         );
 
         $previous = $this->overallAttendanceRate($teacher, $previousFilters);

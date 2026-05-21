@@ -19,11 +19,11 @@ final readonly class StudentDistributionBuilder
         $period = $filters->period();
 
         return [
-            'by_grade' => $this->studentQueries->getStudentsByGrade($academy),
-            'by_group' => $this->studentQueries->getStudentsByGroup($academy),
-            'by_teacher' => $this->studentQueries->getStudentsByTeacher($academy),
-            'active_vs_inactive' => $this->studentQueries->getActiveVsInactive($academy),
-            'new_students_over_time' => $this->studentQueries->getNewStudentsOverTime($academy, $period),
+            'by_grade' => $this->studentQueries->getStudentsByGrade($academy, $filters),
+            'by_group' => $this->studentQueries->getStudentsByGroup($academy, $filters),
+            'by_teacher' => $this->studentQueries->getStudentsByTeacher($academy, $filters),
+            'active_vs_inactive' => $this->studentQueries->getActiveVsInactive($academy, $filters),
+            'new_students_over_time' => $this->studentQueries->getNewStudentsOverTime($academy, $period, $filters),
         ];
     }
 }

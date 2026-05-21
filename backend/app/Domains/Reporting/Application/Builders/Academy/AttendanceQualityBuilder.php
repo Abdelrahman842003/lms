@@ -19,12 +19,12 @@ final readonly class AttendanceQualityBuilder
         $period = $filters->period();
 
         return [
-            'overall_rate' => $this->attendanceQueries->getOverallAttendanceRate($academy, $period),
-            'by_teacher' => $this->attendanceQueries->getAttendanceByTeacher($academy, $period),
-            'by_group' => $this->attendanceQueries->getAttendanceByGroup($academy, $period),
-            'trend' => $this->attendanceQueries->getAttendanceTrend($academy, $period),
-            'best_groups' => $this->attendanceQueries->getBestGroups($academy, $period),
-            'weakest_groups' => $this->attendanceQueries->getWeakestGroups($academy, $period),
+            'overall_rate' => $this->attendanceQueries->getOverallAttendanceRate($academy, $period, $filters),
+            'by_teacher' => $this->attendanceQueries->getAttendanceByTeacher($academy, $period, $filters),
+            'by_group' => $this->attendanceQueries->getAttendanceByGroup($academy, $period, $filters),
+            'trend' => $this->attendanceQueries->getAttendanceTrend($academy, $period, $filters),
+            'best_groups' => $this->attendanceQueries->getBestGroups($academy, $period, $filters),
+            'weakest_groups' => $this->attendanceQueries->getWeakestGroups($academy, $period, $filters),
         ];
     }
 }

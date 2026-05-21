@@ -833,8 +833,8 @@ select:focus {
 /* Print styles - Optimized for full-page printing with all details */
 @media print {
   @page {
-    size: A4;
-    margin: 5mm;
+    size: auto;
+    margin: 15mm; /* Safe buffer to prevent printer cutoff */
   }
 
   * {
@@ -931,17 +931,42 @@ select:focus {
     font-size: 11px !important;
   }
 
-  /* Hide decorative elements */
+  /* Hide all lighting, glows, and blur effects for clean printing */
+  [class*="blur-"],
+  [class*="bg-primary/"],
+  [class*="bg-secondary/"],
+  .premium-glass::after,
+  .premium-border::after,
   body::before,
-  body::after {
-    display: none !important;
-  }
-
+  body::after,
   .grid-pattern {
     display: none !important;
   }
 
+  /* Force clean page breaks - No elements should split across pages */
+  .stat-card,
+  .dashboard-card,
+  .card,
+  .feature-card,
+  .premium-glass,
+  section,
+  tr {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  /* Ensure text doesn't overlap by allowing natural height and overflow */
+  * {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    text-shadow: none !important;
+  }
+
   /* Hide UI elements that shouldn't be printed */
+  nav,
+  .navbar,
+  img[src*="logo"],
   .notification-trigger-btn,
   .navbar-print-btn,
   .mobile-print-btn,
@@ -952,7 +977,6 @@ select:focus {
   .sidebar-toggle,
   .mobile-sidebar-overlay,
   .sidebar-overlay,
-  .navbar,
   button:not(.btn-print-visible), 
   .btn:not(.btn-print-visible),
   [class*="hide-print"],

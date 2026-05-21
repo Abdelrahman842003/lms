@@ -25,14 +25,14 @@ final readonly class SessionExecutionBuilder
         $period = $filters->period();
 
         $summary = [
-            'scheduled' => $this->sessionQueries->getScheduledCount($academy, $period),
-            'delivered' => $this->sessionQueries->getDeliveredCount($academy, $period),
-            'canceled' => $this->sessionQueries->getCanceledCount($academy, $period),
-            'postponed' => $this->sessionQueries->getPostponedCount($academy, $period),
-            'avg_attendance' => $this->sessionQueries->getAverageAttendance($academy, $period),
+            'scheduled' => $this->sessionQueries->getScheduledCount($academy, $period, $filters),
+            'delivered' => $this->sessionQueries->getDeliveredCount($academy, $period, $filters),
+            'canceled' => $this->sessionQueries->getCanceledCount($academy, $period, $filters),
+            'postponed' => $this->sessionQueries->getPostponedCount($academy, $period, $filters),
+            'avg_attendance' => $this->sessionQueries->getAverageAttendance($academy, $period, $filters),
         ];
 
-        $sessions = $this->sessionQueries->getSessionExecutionList($academy, $period);
+        $sessions = $this->sessionQueries->getSessionExecutionList($academy, $period, $filters);
 
         $schema = [
             'title' => 'string',

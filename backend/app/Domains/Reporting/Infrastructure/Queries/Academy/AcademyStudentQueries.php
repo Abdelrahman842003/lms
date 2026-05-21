@@ -17,42 +17,73 @@ final class AcademyStudentQueries
         private readonly SharedDateScope $dateScope,
     ) {}
 
-    public function getTotalStudents(Academy $academy): int
+    public function getTotalStudents(Academy $academy, ?AcademyReportFilters $filters = null): int
     {
-        return Enrollment::where('academy_id', $academy->id)
-            ->distinct('student_id')
+        $query = Enrollment::where('academy_id', $academy->id);
+
+        if ($filters) {
+            $query = $this->applyEntityFilters($query, $filters)
+                ->where('enrollments.created_at', '<=', $filters->period()->endAt->toDateTimeString());
+        }
+
+        return $query->distinct('student_id')
             ->count('student_id');
     }
 
-    public function getActiveStudents(Academy $academy): int
+    public function getActiveStudents(Academy $academy, ?AcademyReportFilters $filters = null): int
     {
-        return Enrollment::where('academy_id', $academy->id)
-            ->where('is_active', true)
-            ->distinct('student_id')
+        $query = Enrollment::where('academy_id', $academy->id)
+            ->where('is_active', true);
+
+        if ($filters) {
+            $query = $this->applyEntityFilters($query, $filters)
+                ->where('enrollments.created_at', '<=', $filters->period()->endAt->toDateTimeString());
+        }
+
+        return $query->distinct('student_id')
             ->count('student_id');
     }
 
-    public function getNewStudents(Academy $academy, ReportingPeriod $period): int
+    public function getNewStudents(Academy $academy, ReportingPeriod $period, ?AcademyReportFilters $filters = null): int
     {
-        return Enrollment::where('academy_id', $academy->id)
-            ->whereBetween('created_at', [
+        $query = Enrollment::where('academy_id', $academy->id)
+            ->whereBetween('enrollments.created_at', [
                 $period->startAt->toDateTimeString(),
                 $period->endAt->toDateTimeString(),
-            ])
-            ->distinct('student_id')
+            ]);
+
+        if ($filters) {
+            $query = $this->applyEntityFilters($query, $filters);
+        }
+
+        return $query->distinct('student_id')
             ->count('student_id');
     }
 
-    public function getInactiveStudents(Academy $academy): int
+    public function getInactiveStudents(Academy $academy, ?AcademyReportFilters $filters = null): int
     {
-        return $this->getTotalStudents($academy) - $this->getActiveStudents($academy);
+        $query = Enrollment::where('academy_id', $academy->id)
+            ->where('is_active', false);
+
+        if ($filters) {
+            $query = $this->applyEntityFilters($query, $filters)
+                ->where('enrollments.created_at', '<=', $filters->period()->endAt->toDateTimeString());
+        }
+
+        return $query->distinct('student_id')
+            ->count('student_id');
     }
 
-    public function getStudentsByGrade(Academy $academy): array
+    public function getStudentsByGrade(Academy $academy, ?AcademyReportFilters $filters = null): array
     {
-        $rows = Enrollment::where('enrollments.academy_id', $academy->id)
-            ->join('grades', 'enrollments.grade_id', '=', 'grades.id')
-            ->select('grades.name as grade', DB::raw('COUNT(DISTINCT enrollments.student_id) as count'))
+        $query = Enrollment::where('enrollments.academy_id', $academy->id)
+            ->join('grades', 'enrollments.grade_id', '=', 'grades.id');
+
+        if ($filters) {
+            $query = $this->applyEntityFilters($query, $filters);
+        }
+
+        $rows = $query->select('grades.name as grade', DB::raw('COUNT(DISTINCT enrollments.student_id) as count'))
             ->groupBy('grades.id', 'grades.name')
             ->get();
 
@@ -62,12 +93,17 @@ final class AcademyStudentQueries
         ])->all();
     }
 
-    public function getStudentsByGroup(Academy $academy): array
+    public function getStudentsByGroup(Academy $academy, ?AcademyReportFilters $filters = null): array
     {
-        $rows = Enrollment::where('enrollments.academy_id', $academy->id)
+        $query = Enrollment::where('enrollments.academy_id', $academy->id)
             ->join('groups', 'enrollments.group_id', '=', 'groups.id')
-            ->leftJoin('teachers', 'groups.teacher_id', '=', 'teachers.id')
-            ->select(
+            ->leftJoin('teachers', 'groups.teacher_id', '=', 'teachers.id');
+
+        if ($filters) {
+            $query = $this->applyEntityFilters($query, $filters);
+        }
+
+        $rows = $query->select(
                 'groups.name as group_name',
                 'teachers.name as teacher_name',
                 DB::raw('COUNT(DISTINCT enrollments.student_id) as count')
@@ -82,11 +118,16 @@ final class AcademyStudentQueries
         ])->all();
     }
 
-    public function getStudentsByTeacher(Academy $academy): array
+    public function getStudentsByTeacher(Academy $academy, ?AcademyReportFilters $filters = null): array
     {
-        $rows = Enrollment::where('enrollments.academy_id', $academy->id)
-            ->join('teachers', 'enrollments.teacher_id', '=', 'teachers.id')
-            ->select('teachers.name as teacher', DB::raw('COUNT(DISTINCT enrollments.student_id) as count'))
+        $query = Enrollment::where('enrollments.academy_id', $academy->id)
+            ->join('teachers', 'enrollments.teacher_id', '=', 'teachers.id');
+
+        if ($filters) {
+            $query = $this->applyEntityFilters($query, $filters);
+        }
+
+        $rows = $query->select('teachers.name as teacher', DB::raw('COUNT(DISTINCT enrollments.student_id) as count'))
             ->groupBy('teachers.id', 'teachers.name')
             ->get();
 
@@ -96,22 +137,27 @@ final class AcademyStudentQueries
         ])->all();
     }
 
-    public function getActiveVsInactive(Academy $academy): array
+    public function getActiveVsInactive(Academy $academy, ?AcademyReportFilters $filters = null): array
     {
         return [
-            'active' => $this->getActiveStudents($academy),
-            'inactive' => $this->getInactiveStudents($academy),
+            'active' => $this->getActiveStudents($academy, $filters),
+            'inactive' => $this->getInactiveStudents($academy, $filters),
         ];
     }
 
-    public function getNewStudentsOverTime(Academy $academy, ReportingPeriod $period): array
+    public function getNewStudentsOverTime(Academy $academy, ReportingPeriod $period, ?AcademyReportFilters $filters = null): array
     {
-        $rows = Enrollment::where('academy_id', $academy->id)
+        $query = Enrollment::where('academy_id', $academy->id)
             ->whereBetween('created_at', [
                 $period->startAt->toDateTimeString(),
                 $period->endAt->toDateTimeString(),
-            ])
-            ->select(
+            ]);
+
+        if ($filters) {
+            $query = $this->applyEntityFilters($query, $filters);
+        }
+
+        $rows = $query->select(
                 DB::raw('DATE(created_at) as date'),
                 DB::raw('COUNT(DISTINCT student_id) as count')
             )

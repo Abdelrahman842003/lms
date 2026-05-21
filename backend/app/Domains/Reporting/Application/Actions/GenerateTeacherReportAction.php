@@ -13,6 +13,7 @@ use App\Domains\Reporting\Application\Builders\TeacherSubscriptionBuilder;
 use App\Domains\Reporting\Application\Builders\TeacherSummaryBuilder;
 use App\Domains\Reporting\Domain\Services\TeacherAlertEngine;
 use App\Domains\Reporting\Domain\ValueObjects\ReportFilters;
+use App\Domains\Reporting\Domain\ValueObjects\TeacherReportFilters;
 use App\Domains\Reporting\Domain\ValueObjects\TeacherScope;
 use App\Domains\Reporting\Infrastructure\Queries\TeacherAttendanceQueryService;
 use App\Domains\Reporting\Infrastructure\Queries\TeacherGroupQueryService;
@@ -40,11 +41,18 @@ final readonly class GenerateTeacherReportAction
 
     public function execute(Teacher $teacher, array $input): array
     {
-        $filters = $this->buildContext->execute($input);
+        $baseFilters = $this->buildContext->execute($input);
+
+        $filters = new TeacherReportFilters(
+            base: $baseFilters,
+            groupId: $input['group_id'] ?? null,
+            studentActivityState: $input['student_activity_state'] ?? null,
+            attendanceState: $input['attendance_state'] ?? null,
+        );
 
         $scope = TeacherScope::fromRequest(
             teacherId: $teacher->id,
-            groupId: $input['group_id'] ?? null,
+            groupId: $filters->groupId,
         );
 
         $summary = $this->summaryBuilder->build($teacher, $scope, $filters);
@@ -63,7 +71,7 @@ final readonly class GenerateTeacherReportAction
         return [
             'meta' => [
                 'generated_at' => now()->toIso8601String(),
-                'timezone' => $filters->period->timezone->getName(),
+                'timezone' => $filters->base->period->timezone->getName(),
                 'report_scope' => 'teacher',
                 'version' => '2.0',
             ],
@@ -74,7 +82,7 @@ final readonly class GenerateTeacherReportAction
         ];
     }
 
-    private function buildAlertContext(Teacher $teacher, TeacherScope $scope, ReportFilters $filters, array $sections): array
+    private function buildAlertContext(Teacher $teacher, TeacherScope $scope, TeacherReportFilters $filters, array $sections): array
     {
         $incomeTrends = $sections['income_trends'] ?? [];
         $attendance = $sections['attendance'] ?? [];

@@ -25,7 +25,7 @@ final readonly class TeacherPerformanceBuilder
         string $sortDirection = 'desc',
     ): array {
         $period = $filters->period();
-        $rows = $this->teacherQueries->getTeacherPerformanceMetrics($academy, $period);
+        $rows = $this->teacherQueries->getTeacherPerformanceMetrics($academy, $period, $filters);
 
         usort($rows, function ($a, $b) use ($sortColumn) {
             $aVal = $a[$sortColumn] ?? 0;

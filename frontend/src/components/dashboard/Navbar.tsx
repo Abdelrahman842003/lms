@@ -588,10 +588,10 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
 
               {/* Action Buttons Group */}
               <div className="flex items-center gap-1 md:gap-2 bg-white/5 p-1 rounded-2xl border border-white/5">
-                {/* Print Button (Desktop Only) */}
+                {/* Print Button */}
                 <button
                   onClick={() => window.print()}
-                  className="w-10 h-10 md:w-11 md:h-11 rounded-xl flex items-center justify-center text-gray-light/40 hover:text-primary hover:bg-white/10 transition-all hidden sm:flex relative group"
+                  className="w-10 h-10 md:w-11 md:h-11 rounded-xl flex items-center justify-center text-gray-light/40 hover:text-primary hover:bg-white/10 transition-all relative group"
                   title="طباعة"
                 >
                   <Icon name="print" />

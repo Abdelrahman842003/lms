@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Reporting\Application\Builders;
 
 use App\Domains\Auth\Models\Teacher;
-use App\Domains\Reporting\Domain\ValueObjects\ReportFilters;
+use App\Domains\Reporting\Domain\ValueObjects\TeacherReportFilters;
 use App\Domains\Reporting\Domain\ValueObjects\TeacherScope;
 use App\Domains\Reporting\Infrastructure\Queries\TeacherGroupQueryService;
 
@@ -15,7 +15,7 @@ final readonly class TeacherGroupBreakdownBuilder
         private TeacherGroupQueryService $groupQuery,
     ) {}
 
-    public function build(Teacher $teacher, TeacherScope $scope, ReportFilters $filters): array
+    public function build(Teacher $teacher, TeacherScope $scope, TeacherReportFilters $filters): array
     {
         $groups = $this->groupQuery->perGroupMetrics($teacher, $filters);
 

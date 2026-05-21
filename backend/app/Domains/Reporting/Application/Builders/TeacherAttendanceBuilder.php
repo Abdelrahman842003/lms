@@ -6,7 +6,7 @@ namespace App\Domains\Reporting\Application\Builders;
 
 use App\Domains\Auth\Models\Teacher;
 use App\Domains\Reporting\Domain\Enums\Direction;
-use App\Domains\Reporting\Domain\ValueObjects\ReportFilters;
+use App\Domains\Reporting\Domain\ValueObjects\TeacherReportFilters;
 use App\Domains\Reporting\Domain\ValueObjects\TeacherScope;
 use App\Domains\Reporting\Infrastructure\Queries\TeacherAttendanceQueryService;
 
@@ -16,7 +16,7 @@ final readonly class TeacherAttendanceBuilder
         private TeacherAttendanceQueryService $attendanceQuery,
     ) {}
 
-    public function build(Teacher $teacher, TeacherScope $scope, ReportFilters $filters): array
+    public function build(Teacher $teacher, TeacherScope $scope, TeacherReportFilters $filters): array
     {
         $overallRate = $this->attendanceQuery->overallAttendanceRate($teacher, $filters);
         $byGroup = $this->attendanceQuery->attendanceByGroup($teacher, $filters);

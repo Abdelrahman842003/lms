@@ -19,11 +19,11 @@ const PERIOD_PRESETS = [
   { value: 'last_3_months', label: 'آخر 3 أشهر' },
   { value: 'this_year', label: 'هذا العام' },
   { value: 'today', label: 'اليوم' },
-  { value: 'custom', label: 'مخصص' },
+  { value: 'custom_range', label: 'مخصص' },
 ];
 
 export default function ReportFilters({ filters, onFiltersChange, onApply, loading }: ReportFiltersProps) {
-  const isCustom = filters.preset === 'custom';
+  const isCustom = filters.preset === 'custom_range';
 
   return (
     <div className="flex flex-col gap-2 w-full md:w-auto relative z-50">
