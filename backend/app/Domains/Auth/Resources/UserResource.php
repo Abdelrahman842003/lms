@@ -17,7 +17,11 @@ class UserResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'email' => $this->email,
+            'identifier' => match (true) {
+                $this->resource instanceof Admin => $this->username,
+                $this->resource instanceof Teacher || $this->resource instanceof Student => $this->phone,
+                default => null,
+            },
             'role' => $this->when($this->resource instanceof Admin, 'admin',
                       $this->when($this->resource instanceof Teacher, 'teacher',
                       $this->when($this->resource instanceof Student, 'student', 'user'))),

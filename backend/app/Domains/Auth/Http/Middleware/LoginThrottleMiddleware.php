@@ -24,9 +24,8 @@ class LoginThrottleMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // Get identifier from request (phone, email, or username)
+        // Get identifier from request (phone or username)
         $identifier = $request->input('phone') 
-            ?? $request->input('email') 
             ?? $request->input('username');
 
         if (!$identifier) {

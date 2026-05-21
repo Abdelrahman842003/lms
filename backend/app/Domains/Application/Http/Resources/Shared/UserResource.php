@@ -14,7 +14,11 @@ class UserResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'email' => $this->email,
+            'identifier' => match (true) {
+                $this->resource instanceof \App\Domains\Auth\Models\Admin => $this->username,
+                $this->resource instanceof \App\Domains\Auth\Models\Teacher || $this->resource instanceof \App\Domains\Auth\Models\Student => $this->phone,
+                default => null,
+            },
             'role' => $this->when($this->resource instanceof \App\Domains\Auth\Models\Admin, 'admin', 
                       $this->when($this->resource instanceof \App\Domains\Auth\Models\Teacher, 'teacher', 
                       $this->when($this->resource instanceof \App\Domains\Auth\Models\Student, 'student', 'user'))),

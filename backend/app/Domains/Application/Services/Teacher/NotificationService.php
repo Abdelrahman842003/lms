@@ -50,7 +50,7 @@ class NotificationService
                       ->where('teacher_id', $teacher->id)
                       ->where('is_active', true);
                 }),
-            'admin' => Admin::select(['id', 'name', 'email']),
+            'admin' => Admin::select(['id', 'name', 'username']),
             default => null,
         };
 

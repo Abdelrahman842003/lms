@@ -18,7 +18,6 @@ class UpdateProfileRequest extends FormRequest
         return [
             'name' => 'sometimes|required|string|max:255',
             'phone' => 'sometimes|required|string|max:20|unique:teachers,phone,' . $this->user()->id,
-            'email' => 'sometimes|nullable|email|max:255|unique:teachers,email,' . $this->user()->id,
             'trial_period_days' => 'sometimes|nullable|integer|min:1|max:365',
         ];
     }
@@ -33,9 +32,6 @@ class UpdateProfileRequest extends FormRequest
             'phone.string' => 'رقم الهاتف يجب أن يكون نصاً',
             'phone.max' => 'رقم الهاتف لا يمكن أن يزيد عن 20 حرفاً',
             'phone.unique' => 'رقم الهاتف مستخدم من قبل',
-            'email.email' => 'البريد الإلكتروني غير صحيح',
-            'email.max' => 'البريد الإلكتروني لا يمكن أن يزيد عن 255 حرفاً',
-            'email.unique' => 'البريد الإلكتروني مستخدم من قبل',
             'trial_period_days.integer' => 'مدة الفترة التجريبية يجب أن تكون رقم صحيح',
             'trial_period_days.min' => 'مدة الفترة التجريبية يجب أن تكون يوم واحد على الأقل',
             'trial_period_days.max' => 'مدة الفترة التجريبية لا يمكن أن تزيد عن 365 يوم',

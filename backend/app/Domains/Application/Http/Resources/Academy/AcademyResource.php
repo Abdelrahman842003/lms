@@ -20,7 +20,6 @@ class AcademyResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'phone' => $this->phone,
-            'email' => $this->email,
             'logo_key' => $this->logo_key,
             'is_active' => $this->is_active,
             'checkin_qr_code' => $this->checkin_qr_code,

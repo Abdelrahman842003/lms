@@ -16,10 +16,8 @@ class AuthService
         $user = null;
         $userType = null;
 
-        // Try to find Admin (by username or email)
-        $user = Admin::where('username', $identifier)
-            ->orWhere('email', $identifier)
-            ->first();
+        // Try to find Admin (by username)
+        $user = Admin::where('username', $identifier)->first();
 
         if ($user) {
             $userType = 'admin';
