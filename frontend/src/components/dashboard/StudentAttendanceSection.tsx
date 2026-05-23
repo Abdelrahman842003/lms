@@ -97,13 +97,16 @@ export default function StudentAttendanceSection() {
       const isActive = typeof event.is_active === 'boolean' ? event.is_active : event.lecture?.is_active;
       
       if (lectureId) {
-        const title = event.lecture?.title || 'المحاضرة';
-        const statusText = isActive ? 'بدأت الآن' : 'انتهت الآن';
-        toast.success(`محاضرة ${title} ${statusText}`, {
-          duration: 4000,
-          position: 'top-center',
-          icon: isActive ? '🟢' : '🔴',
-        });
+        // Show toast notification only on start/end actions
+        if (event.action === 'started' || event.action === 'ended') {
+          const title = event.lecture?.title || 'المحاضرة';
+          const statusText = event.action === 'started' ? 'بدأت الآن' : 'انتهت الآن';
+          toast.success(`محاضرة ${title} ${statusText}`, {
+            duration: 4000,
+            position: 'top-center',
+            icon: event.action === 'started' ? '🟢' : '🔴',
+          });
+        }
 
         setLectures((prevLectures) => {
           return prevLectures.map((lecture) => {

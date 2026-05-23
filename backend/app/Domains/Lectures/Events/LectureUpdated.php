@@ -17,10 +17,12 @@ class LectureUpdated implements ShouldBroadcastNow
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public Lecture $lecture;
+    public ?string $action;
 
-    public function __construct(Lecture $lecture)
+    public function __construct(Lecture $lecture, ?string $action = null)
     {
         $this->lecture = $lecture;
+        $this->action = $action;
     }
 
     public function broadcastOn(): array
@@ -64,6 +66,7 @@ class LectureUpdated implements ShouldBroadcastNow
             'lecture_id' => $this->lecture->id,
             'is_active'  => $this->lecture->is_active,
             'exists'     => $this->lecture->exists,
+            'action'     => $this->action,
         ];
     }
 }

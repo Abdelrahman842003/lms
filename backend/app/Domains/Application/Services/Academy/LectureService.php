@@ -65,7 +65,7 @@ class LectureService
         $lecture->load(['teacher', 'grade', 'group']);
 
         // Broadcast lecture created event
-        LectureUpdated::dispatch($lecture);
+        LectureUpdated::dispatch($lecture, 'created');
 
         return $lecture;
     }
@@ -88,7 +88,7 @@ class LectureService
         $freshLecture = $lecture->fresh(['teacher', 'grade', 'group']);
 
         // Broadcast lecture updated event
-        LectureUpdated::dispatch($freshLecture);
+        LectureUpdated::dispatch($freshLecture, 'updated');
 
         return $freshLecture;
     }
@@ -110,7 +110,7 @@ class LectureService
         $tempLecture->is_active = false;
         $tempLecture->exists = false;
         
-        LectureUpdated::dispatch($tempLecture);
+        LectureUpdated::dispatch($tempLecture, 'deleted');
     }
 
     // Delegate specific actions to TeacherLectureService to avoid duplication

@@ -34,6 +34,7 @@ interface ExamCardProps {
   onDelete: () => void;
   onToggleStatus: () => void;
   onEnd: () => void;
+  showTeacher?: boolean;
 }
 
 export const ExamCard: React.FC<ExamCardProps> = ({
@@ -47,6 +48,7 @@ export const ExamCard: React.FC<ExamCardProps> = ({
   onDelete,
   onToggleStatus,
   onEnd,
+  showTeacher = true,
 }) => {
   const isActive = exam.is_active;
   const isEnded = !!exam.ended_at;
@@ -192,9 +194,17 @@ export const ExamCard: React.FC<ExamCardProps> = ({
           <h3 className="text-xl font-black text-white mb-2 leading-tight group-hover:text-primary transition-colors line-clamp-1">
             {exam.title}
           </h3>
-          <div className="flex items-center gap-2 text-gray-light/40">
-             <div className="w-4 h-[1px] bg-primary/30" />
-             <p className="text-[11px] font-bold uppercase tracking-widest">{exam.subject || 'مادة الامتحان'}</p>
+          <div className="flex justify-between items-center text-gray-light/40">
+             <div className="flex items-center gap-2">
+                <div className="w-4 h-[1px] bg-primary/30" />
+                <p className="text-[11px] font-bold uppercase tracking-widest">{exam.subject || 'مادة الامتحان'}</p>
+             </div>
+             {showTeacher && exam.teacher?.name && (
+                <div className="flex items-center gap-1.5 text-[11px] font-bold text-primary bg-primary/10 px-3 py-1 rounded-full border border-primary/20 backdrop-blur-md">
+                   <Icon name="chalkboard-teacher" size="xs" className="ml-1" />
+                   <span>أ. {exam.teacher.name}</span>
+                </div>
+             )}
           </div>
         </div>
 
@@ -205,8 +215,10 @@ export const ExamCard: React.FC<ExamCardProps> = ({
                  <Icon name="calendar" size="sm" />
               </div>
               <div className="flex flex-col">
-                 <span className="text-[10px] font-bold text-gray-light/40 uppercase leading-none mb-1">التاريخ</span>
-                 <span className="text-[11px] font-bold text-white whitespace-nowrap">{examDate.toLocaleDateString('ar-EG')}</span>
+                 <span className="text-[10px] font-bold text-gray-light/40 uppercase leading-none mb-1">التاريخ والوقت</span>
+                 <span className="text-[11px] font-bold text-white whitespace-nowrap">
+                   {examDate.toLocaleDateString('ar-EG')} | {examDate.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                 </span>
               </div>
            </div>
 

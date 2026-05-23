@@ -58,7 +58,7 @@ class ProcessLectureStart implements ShouldQueue
             Log::info("ProcessLectureStart: Activated lecture {$this->lecture->id}");
 
             // 1. بث تحديث للمدرس عبر Reverb (Private Channel)
-            event(new LectureUpdated($this->lecture));
+            event(new LectureUpdated($this->lecture, 'started'));
 
             // 2. بث تفعيل المحاضرة للطلاب عبر Reverb (Public Channel)
             event(new LectureActivated($this->lecture));

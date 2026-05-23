@@ -35,7 +35,7 @@ class ProcessLectureEnd implements ShouldQueue
             $this->lecture->refresh();
 
             // 1. بث تحديث للمدرس عبر Reverb (Private Channel)
-            event(new LectureUpdated($this->lecture));
+            event(new LectureUpdated($this->lecture, 'ended'));
 
             // 2. بث إغلاق المحاضرة للطلاب عبر Reverb (Public Channel)
             event(new LectureClosed($this->lecture));

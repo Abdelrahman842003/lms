@@ -39,7 +39,7 @@ class CheckLectureStatus extends Command
                 Log::info("Auto-activated lecture: {$lecture->title} ({$lecture->id})");
                 
                 // Dispatch realtime events
-                LectureUpdated::dispatch($lecture);
+                LectureUpdated::dispatch($lecture, 'started');
                 event(new LectureActivated($lecture));
                 
                 // Notify teacher and academy immediately
@@ -59,7 +59,7 @@ class CheckLectureStatus extends Command
                 Log::info("Auto-deactivated lecture: {$lecture->title} ({$lecture->id})");
                 
                 // Dispatch realtime events
-                LectureUpdated::dispatch($lecture);
+                LectureUpdated::dispatch($lecture, 'ended');
                 event(new LectureClosed($lecture));
                 
                 // Notify teacher and academy immediately
@@ -114,7 +114,7 @@ class CheckLectureStatus extends Command
                 Log::info("Auto-activated recurring lecture: {$lecture->title} ({$lecture->id})");
                 
                 // Dispatch realtime events
-                LectureUpdated::dispatch($lecture);
+                LectureUpdated::dispatch($lecture, 'started');
                 event(new LectureActivated($lecture));
 
                 // Notify teacher and academy immediately
@@ -132,7 +132,7 @@ class CheckLectureStatus extends Command
                 Log::info("Auto-deactivated recurring lecture: {$lecture->title} ({$lecture->id})");
                 
                 // Dispatch realtime events
-                LectureUpdated::dispatch($lecture);
+                LectureUpdated::dispatch($lecture, 'ended');
                 event(new LectureClosed($lecture));
                 
                 // Notify teacher and academy immediately

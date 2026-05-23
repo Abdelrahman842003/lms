@@ -160,12 +160,15 @@ export default function TeacherLecturesPage() {
       
       // Show toast notification
       if (event.lecture) {
-        const statusText = event.lecture.is_active ? 'بدأت الآن' : 'انتهت الآن';
-        toast.success(`محاضرة ${event.lecture.title} ${statusText}`, {
-          duration: 4000,
-          position: 'top-center',
-          icon: event.lecture.is_active ? '🟢' : '🔴',
-        });
+        // Show toast notification only on start/end actions
+        if (event.action === 'started' || event.action === 'ended') {
+          const statusText = event.action === 'started' ? 'بدأت الآن' : 'انتهت الآن';
+          toast.success(`محاضرة ${event.lecture.title} ${statusText}`, {
+            duration: 4000,
+            position: 'top-center',
+            icon: event.action === 'started' ? '🟢' : '🔴',
+          });
+        }
 
         // Optimistic Update: Update UI immediately without waiting for API
         console.log('Attempting Optimistic Update for lecture:', event.lecture.id);

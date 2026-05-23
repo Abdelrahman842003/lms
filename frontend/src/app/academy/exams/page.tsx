@@ -376,6 +376,7 @@ export default function AcademyExamsPage() {
                 key={exam.id}
                 exam={exam}
                 isMenuOpen={isMenuOpen}
+                showTeacher={true}
                 onMenuToggle={(e) => {
                   e.stopPropagation();
                   setOpenMenuId(isMenuOpen ? null : exam.id);

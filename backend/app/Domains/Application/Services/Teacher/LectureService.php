@@ -65,7 +65,7 @@ class LectureService
         $lecture = $teacher->lectures()->create($data);
 
         // Broadcast lecture created event
-        LectureUpdated::dispatch($lecture);
+        LectureUpdated::dispatch($lecture, 'created');
 
         return $lecture;
     }
@@ -75,7 +75,7 @@ class LectureService
         $lecture->update($data);
 
         // Broadcast lecture updated event
-        LectureUpdated::dispatch($lecture->fresh());
+        LectureUpdated::dispatch($lecture->fresh(), 'updated');
 
         return $lecture;
     }
@@ -98,7 +98,7 @@ class LectureService
             $tempLecture->teacher_id = $teacherId;
             $tempLecture->is_active = false;
             $tempLecture->exists = false;
-            LectureUpdated::dispatch($tempLecture);
+            LectureUpdated::dispatch($tempLecture, 'deleted');
         }
 
         return $result;
@@ -136,7 +136,7 @@ class LectureService
         $lecture->refresh();
 
         // بث تحديث للمدرس عبر Reverb (Private Channel)
-        LectureUpdated::dispatch($lecture);
+        LectureUpdated::dispatch($lecture, $lecture->is_active ? 'started' : 'ended');
 
         if ($lecture->is_active) {
             // بث تفعيل المحاضرة للطلاب عبر Reverb (Public Channel)
