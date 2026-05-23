@@ -217,7 +217,7 @@ export const getAttendees = async (
 
 export const exportAttendeesPDF = async (lectureId: string): Promise<void> => {
   const token = getAuthToken();
-  const response = await fetch(`${API_BASE_URL}/api/teacher/lectures/${lectureId}/attendees/export`, {
+  const response = await fetch(`${API_BASE_URL}/api/v1/teacher/lectures/${lectureId}/attendees/export`, {
     headers: {
       'Authorization': `Bearer ${token}`,
     },

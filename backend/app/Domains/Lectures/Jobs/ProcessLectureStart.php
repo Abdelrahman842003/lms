@@ -69,26 +69,39 @@ class ProcessLectureStart implements ShouldQueue
             }
             $this->lecture->teacher->notify(new LectureStatusNotification($this->lecture, 'active'));
 
-            // 4. إشعار الطلاب المسجلين
+            // 4. إشعار الطلاب المسجلين وأولياء أمورهم
             try {
-                $students = $this->lecture->teacher->students()
+                $studentsQuery = $this->lecture->teacher->students()
                     ->wherePivot('grade_id', $this->lecture->grade_id)
-                    ->wherePivot('is_active', true)
-                    ->get();
+                    ->wherePivot('is_active', true);
+
+                if ($this->lecture->group_id) {
+                    $studentsQuery->wherePivot('group_id', $this->lecture->group_id);
+                }
+
+                $students = $studentsQuery->get();
 
                 if ($students->count() > 0) {
-                    Notification::send(
-                        $students,
-                        new LectureActivatedNotification(
-                            $this->lecture->title,
-                            $this->lecture->teacher->name,
-                            $this->lecture->id
-                        )
+                    $notification = new LectureActivatedNotification(
+                        $this->lecture->title,
+                        $this->lecture->teacher->name,
+                        $this->lecture->id,
+                        $this->lecture->academy ? $this->lecture->academy->name : ($this->lecture->grade && $this->lecture->grade->academy_id ? \App\Domains\Auth\Models\Academy::find($this->lecture->grade->academy_id)?->name : null)
                     );
+
+                    // إشعار الطلاب
+                    Notification::send($students, $notification);
                     Log::info("ProcessLectureStart: Notified {$students->count()} students for lecture {$this->lecture->id}");
+
+                    // إشعار أولياء الأمور
+                    $guardians = $students->map->guardian->filter()->unique('id');
+                    if ($guardians->isNotEmpty()) {
+                        Notification::send($guardians, $notification);
+                        Log::info("ProcessLectureStart: Notified {$guardians->count()} guardians for lecture {$this->lecture->id}");
+                    }
                 }
             } catch (\Exception $e) {
-                Log::error("ProcessLectureStart: Failed to notify students for lecture {$this->lecture->id}", [
+                Log::error("ProcessLectureStart: Failed to notify students/guardians for lecture {$this->lecture->id}", [
                     'error' => $e->getMessage(),
                 ]);
             }

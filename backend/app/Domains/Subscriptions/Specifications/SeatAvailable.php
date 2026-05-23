@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace App\Domains\Subscriptions\Specifications;
 
 use App\Domains\Subscriptions\DTOs\SubscriptionCandidate;
-use App\Domains\Subscriptions\Models\TeacherSubscription;
-use App\Domains\Subscriptions\Models\AcademySubscription;
 
 /**
  * Specification: هل المشترك (مدرس أو منظمة) لديه مقاعد متاحة؟
@@ -29,34 +27,27 @@ final class SeatAvailable extends AbstractSpecification
         // Convert to SubscriptionCandidate DTO for type-safe access
         $subscriptionCandidate = SubscriptionCandidate::from($candidate);
 
-        if ($subscriptionCandidate->subscriberType === 'teacher') {
-            $sub = TeacherSubscription::query()
-                ->where('teacher_id', $subscriptionCandidate->subscriberId)
-                ->where('status', 'active')
-                ->where(fn ($q) => $q->whereNull('ends_at')->orWhere('ends_at', '>=', now()))
-                ->first();
+        $subscriber = $subscriptionCandidate->subscriberType === 'teacher'
+            ? \App\Domains\Auth\Models\Teacher::find($subscriptionCandidate->subscriberId)
+            : \App\Domains\Auth\Models\Academy::find($subscriptionCandidate->subscriberId);
 
-            if (! $sub) {
-                return false;
-            }
-
-            return $sub->max_students === null || $sub->used_seats < $sub->max_students;
+        if (!$subscriber) {
+            return false;
         }
 
-        if ($subscriptionCandidate->subscriberType === 'academy') {
-            $sub = AcademySubscription::query()
-                ->where('academy_id', $subscriptionCandidate->subscriberId)
-                ->where('status', 'active')
-                ->where(fn ($q) => $q->whereNull('ends_at')->orWhere('ends_at', '>=', now()))
-                ->first();
-
-            if (! $sub) {
-                return false;
-            }
-
-            return $sub->max_students === null || $sub->used_seats < $sub->max_students;
+        if ($subscriber->is_unlimited_students) {
+            return true;
         }
 
-        return false;
+        $limit = (int) ($subscriber->plan_max_students ?? 0);
+
+        $used = $subscriptionCandidate->subscriberType === 'teacher'
+            ? $subscriber->activeEnrollments()->count()
+            : \App\Domains\Enrollments\Models\Enrollment::where('academy_id', $subscriber->id)
+                ->where('is_active', true)
+                ->distinct('student_id')
+                ->count('student_id');
+
+        return $used < $limit;
     }
 }

@@ -16,11 +16,26 @@ class LectureStatusNotification extends BaseNotification
 
     protected function getData(): array
     {
-        $statusText = $this->status === 'active' ? 'بدأت الآن' : 'انتهت الآن';
+        $isAcademy = $this->lecture->academy_id !== null;
+        $academyName = $isAcademy ? ($this->lecture->academy->name ?? 'الأكاديمية') : null;
+
+        if ($this->status === 'active') {
+            if ($isAcademy) {
+                $message = "قامت {$academyName} بتفعيل محاضرة: {$this->lecture->title}";
+            } else {
+                $message = "تم تفعيل محاضرة {$this->lecture->title}";
+            }
+        } else {
+            if ($isAcademy) {
+                $message = "قامت {$academyName} بإنهاء محاضرة: {$this->lecture->title}";
+            } else {
+                $message = "تم إنهاء محاضرة {$this->lecture->title}";
+            }
+        }
 
         return [
             'title'      => 'تحديث حالة المحاضرة',
-            'message'    => "محاضرة {$this->lecture->title} {$statusText}",
+            'message'    => $message,
             'type'       => 'lecture_status',
             'lecture_id' => $this->lecture->id,
             'status'     => $this->status,

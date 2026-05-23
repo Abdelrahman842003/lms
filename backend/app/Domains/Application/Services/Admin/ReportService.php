@@ -149,17 +149,25 @@ class ReportService
             ->whereBetween('confirmed_at', [$startDate, $endDate])
             ->sum('amount');
 
-        // Source 3: TeacherSubscription records (teacher-to-platform monthly subscriptions)
-        $subscriptionsPaid = (float) TeacherSubscription::where('teacher_id', $teacher->id)
+        // Source 3: Teacher unified subscription records (teacher-to-platform monthly subscriptions)
+        $subscriptionsPaid = (float) \App\Domains\Subscriptions\Models\Subscription::query()
+            ->where('subscriber_id', $teacher->id)
+            ->where('subscriber_type', \App\Domains\Auth\Models\Teacher::class)
             ->sum('amount_paid');
-        $subscriptionsDue = (float) TeacherSubscription::where('teacher_id', $teacher->id)
+        $subscriptionsDue = (float) \App\Domains\Subscriptions\Models\Subscription::query()
+            ->where('subscriber_id', $teacher->id)
+            ->where('subscriber_type', \App\Domains\Auth\Models\Teacher::class)
             ->sum('amount_due');
-        $paidSubscriptionsCount = TeacherSubscription::where('teacher_id', $teacher->id)
+        $paidSubscriptionsCount = \App\Domains\Subscriptions\Models\Subscription::query()
+            ->where('subscriber_id', $teacher->id)
+            ->where('subscriber_type', \App\Domains\Auth\Models\Teacher::class)
             ->where('amount_paid', '>', 0)
             ->count();
 
         // Last paid subscription
-        $lastPaidSubscription = TeacherSubscription::where('teacher_id', $teacher->id)
+        $lastPaidSubscription = \App\Domains\Subscriptions\Models\Subscription::query()
+            ->where('subscriber_id', $teacher->id)
+            ->where('subscriber_type', \App\Domains\Auth\Models\Teacher::class)
             ->where('amount_paid', '>', 0)
             ->orderBy('month', 'desc')
             ->first();
@@ -198,7 +206,9 @@ class ReportService
 
         // If no PaymentLog, use first subscription
         if (!$subscriptionStartDate) {
-            $firstSubscription = TeacherSubscription::where('teacher_id', $teacher->id)
+            $firstSubscription = \App\Domains\Subscriptions\Models\Subscription::query()
+                ->where('subscriber_id', $teacher->id)
+                ->where('subscriber_type', \App\Domains\Auth\Models\Teacher::class)
                 ->orderBy('month', 'asc')
                 ->first();
             if ($firstSubscription) {
@@ -391,12 +401,18 @@ class ReportService
 
         // === PAYMENT DATA FROM ALL SOURCES ===
 
-        // Source 1: Academy subscriptions table (dedicated tracking)
-        $academySubscriptionsPaid = (float) AcademySubscription::where('academy_id', $academy->id)
+        // Source 1: Academy unified subscription records (dedicated tracking)
+        $academySubscriptionsPaid = (float) \App\Domains\Subscriptions\Models\Subscription::query()
+            ->where('subscriber_id', $academy->id)
+            ->where('subscriber_type', \App\Domains\Auth\Models\Academy::class)
             ->sum('amount_paid');
-        $academySubscriptionsDue = (float) AcademySubscription::where('academy_id', $academy->id)
+        $academySubscriptionsDue = (float) \App\Domains\Subscriptions\Models\Subscription::query()
+            ->where('subscriber_id', $academy->id)
+            ->where('subscriber_type', \App\Domains\Auth\Models\Academy::class)
             ->sum('amount_due');
-        $paidAcademySubscriptionsCount = AcademySubscription::where('academy_id', $academy->id)
+        $paidAcademySubscriptionsCount = \App\Domains\Subscriptions\Models\Subscription::query()
+            ->where('subscriber_id', $academy->id)
+            ->where('subscriber_type', \App\Domains\Auth\Models\Academy::class)
             ->where('amount_paid', '>', 0)
             ->count();
 
@@ -787,7 +803,9 @@ class ReportService
 
             // Source of Truth: AcademySubscription record
             if ($academy) {
-                $subscription = AcademySubscription::where('academy_id', $academy->id)
+                $subscription = \App\Domains\Subscriptions\Models\Subscription::query()
+                    ->where('subscriber_id', $academy->id)
+                    ->where('subscriber_type', \App\Domains\Auth\Models\Academy::class)
                     ->where('month', $monthStart->format('Y-m-d'))
                     ->first();
             } else {
@@ -795,7 +813,7 @@ class ReportService
             }
 
             if ($subscription) {
-                $studentCount = $subscription->student_count;
+                $studentCount = $subscription->seats_count;
                 $amountDue = $subscription->amount_due;
                 $amountPaid = $subscription->amount_paid;
                 $status = $subscription->status->value ?? 'pending';
@@ -851,15 +869,19 @@ class ReportService
             $monthEnd = $currentMonth->copy()->endOfMonth();
 
             // Try to find existing subscription record first (Source of Truth)
-            $subscription = TeacherSubscription::where('teacher_id', $teacher->id)
+            $subscription = \App\Domains\Subscriptions\Models\Subscription::query()
+                ->where('subscriber_id', $teacher->id)
+                ->where('subscriber_type', \App\Domains\Auth\Models\Teacher::class)
                 ->where('month', $monthStart->format('Y-m-d'))
                 ->first();
 
             if ($subscription) {
-                $totalMonthsPaidInMonth = $subscription->student_count;
+                $totalMonthsPaidInMonth = $subscription->seats_count;
                 $amountDue = $subscription->amount_due;
                 $amountPaid = $subscription->amount_paid;
-                $status = $subscription->status;
+                $status = $subscription->status instanceof \App\Domains\Subscriptions\Enums\SubscriptionStatus
+                    ? $subscription->status->value
+                    : (string) $subscription->status;
             } else {
                 // Fallback: Calculate on the fly (Potential Revenue - Seat System)
                 $query = Enrollment::where('teacher_id', $teacher->id)

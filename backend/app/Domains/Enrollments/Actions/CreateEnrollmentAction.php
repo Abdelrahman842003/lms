@@ -71,12 +71,15 @@ final class CreateEnrollmentAction
                 throw new SubscriptionExpiredException('الاشتراك غير نشط.');
             }
 
-            // 5. زيادة عداد المقاعد بشكل atomي (يفحص ويزيد في عملية واحدة)
+            // 5. زيادة عداد المقاعد بشكل ذري (يفحص ويزيد في عملية واحدة)
             $updated = DB::table($subscription->getTable())
                 ->where('id', $subscription->id)
-                ->where('status', 'active')
-                ->whereColumn('used_seats', '<', 'max_seats')
-                ->update(['used_seats' => DB::raw('used_seats + 1')]);
+                ->where('status', \App\Domains\Subscriptions\Enums\SubscriptionStatus::ACTIVE->value)
+                ->where(function ($query) {
+                    $query->whereNull('quota_limit')
+                        ->orWhereColumn('seats_count', '<', 'quota_limit');
+                })
+                ->update(['seats_count' => DB::raw('seats_count + 1')]);
 
             if ($updated === 0) {
                 throw new SeatLimitException('لا تتوفر مقاعد شاغرة. يرجى ترقية الباقة.');
@@ -95,17 +98,15 @@ final class CreateEnrollmentAction
     /**
      * Get subscription with pessimistic lock to prevent race conditions.
      */
-    private function getSubscriptionWithLock(int $subscriberId, string $subscriberType): ?object
+    private function getSubscriptionWithLock(string|int $subscriberId, string $subscriberType): ?\App\Domains\Subscriptions\Models\Subscription
     {
-        if ($subscriberType === 'teacher') {
-            return \App\Domains\Auth\Models\TeacherSubscription::where('teacher_id', $subscriberId)
-                ->where('status', 'active')
-                ->lockForUpdate()
-                ->first();
-        }
+        $subscriberClass = $subscriberType === 'teacher'
+            ? \App\Domains\Auth\Models\Teacher::class
+            : \App\Domains\Auth\Models\Academy::class;
 
-        return \App\Domains\Auth\Models\AcademySubscription::where('academy_id', $subscriberId)
-            ->where('status', 'active')
+        return \App\Domains\Subscriptions\Models\Subscription::where('subscriber_id', $subscriberId)
+            ->where('subscriber_type', $subscriberClass)
+            ->where('status', \App\Domains\Subscriptions\Enums\SubscriptionStatus::ACTIVE->value)
             ->lockForUpdate()
             ->first();
     }

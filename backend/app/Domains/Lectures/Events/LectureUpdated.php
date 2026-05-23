@@ -33,18 +33,13 @@ class LectureUpdated implements ShouldBroadcastNow
 
         if ($this->lecture->academy_id) {
             $academyIds[] = (string) $this->lecture->academy_id;
+        } elseif ($this->lecture->grade && $this->lecture->grade->academy_id) {
+            $academyIds[] = (string) $this->lecture->grade->academy_id;
+        } elseif ($this->lecture->group && $this->lecture->group->academy_id) {
+            $academyIds[] = (string) $this->lecture->group->academy_id;
         }
 
-        if ($this->lecture->teacher_id) {
-            $linkedAcademies = DB::table('academy_teacher')
-                ->where('teacher_id', $this->lecture->teacher_id)
-                ->where('is_active', true)
-                ->pluck('academy_id')
-                ->map(fn ($id) => (string) $id)
-                ->all();
-
-            $academyIds = array_values(array_unique(array_merge($academyIds, $linkedAcademies)));
-        }
+        $academyIds = array_unique($academyIds);
 
         foreach ($academyIds as $academyId) {
             $channels[] = new PrivateChannel('academy.' . $academyId);

@@ -656,6 +656,7 @@ export default function TeacherLecturesPage() {
               key={lecture.id}
               lecture={lecture}
               isMenuOpen={isMenuOpen}
+              showTeacher={false}
               onMenuToggle={(e) => {
                 e.stopPropagation();
                 setOpenMenuId(isMenuOpen ? null : lecture.id);

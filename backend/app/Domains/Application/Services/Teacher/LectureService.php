@@ -155,7 +155,8 @@ class LectureService
                         new LectureActivatedNotification(
                             $lecture->title,
                             $lecture->teacher->name,
-                            $lecture->id
+                            $lecture->id,
+                            $lecture->academy ? $lecture->academy->name : ($lecture->grade && $lecture->grade->academy_id ? \App\Domains\Auth\Models\Academy::find($lecture->grade->academy_id)?->name : null)
                         )
                     );
                 }

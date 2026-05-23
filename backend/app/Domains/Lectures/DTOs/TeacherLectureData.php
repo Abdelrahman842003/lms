@@ -23,6 +23,7 @@ final readonly class TeacherLectureData
         public ?array $recurrenceDays,
         public ?string $recurrenceTime,
         public ?int $durationMinutes,
+        public ?string $academyId = null,
     ) {}
 
     /**
@@ -43,6 +44,7 @@ final readonly class TeacherLectureData
             recurrenceDays: $validated['recurrence_days'] ?? null,
             recurrenceTime: $validated['recurrence_time'] ?? null,
             durationMinutes: isset($validated['duration_minutes']) ? (int) $validated['duration_minutes'] : null,
+            academyId: $validated['academy_id'] ?? $request->input('academy_id') ?? null,
         );
     }
 
@@ -60,6 +62,7 @@ final readonly class TeacherLectureData
             'recurrence_days' => $this->recurrenceDays,
             'recurrence_time' => $this->recurrenceTime,
             'duration_minutes' => $this->durationMinutes,
+            'academy_id' => $this->academyId,
         ], fn($value) => !is_null($value));
 
         // Handle date/time logic if date is provided

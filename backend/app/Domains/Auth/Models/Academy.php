@@ -179,6 +179,7 @@ class Academy extends Model implements AuthenticatableContract, AuthorizableCont
 
         return \Illuminate\Support\Facades\DB::table('enrollments')
             ->whereIn('teacher_id', $teacherIds)
+            ->where('academy_id', $this->id)
             ->where('is_active', true)
             ->distinct('student_id')
             ->count('student_id');
@@ -193,6 +194,7 @@ class Academy extends Model implements AuthenticatableContract, AuthorizableCont
         
         return \Illuminate\Support\Facades\DB::table('enrollments')
             ->whereIn('teacher_id', $teacherIds)
+            ->where('academy_id', $this->id)
             ->count();
     }
 
@@ -241,6 +243,7 @@ class Academy extends Model implements AuthenticatableContract, AuthorizableCont
         $teacherIds = $this->activeTeachers()->pluck('teachers.id')->toArray();
         $currentEnrollments = \Illuminate\Support\Facades\DB::table('enrollments')
             ->whereIn('teacher_id', $teacherIds)
+            ->where('academy_id', $this->id)
             ->where('is_active', true)
             ->count();
 

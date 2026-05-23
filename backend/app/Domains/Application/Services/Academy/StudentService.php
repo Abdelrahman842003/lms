@@ -186,22 +186,17 @@ class StudentService
 
     public function getStatistics(Academy $academy): array
     {
-        $baseQuery = Enrollment::whereHas('teacher', function ($q) use ($academy) {
-            $q->whereHas('academies', function ($q2) use ($academy) {
-                $q2->where('academy_id', $academy->id);
-            });
-        })->with(['academy:id', 'academy.tenantPlan', 'teacher:id', 'teacher.tenantPlan']);
+        $baseQuery = Enrollment::where('academy_id', $academy->id)
+            ->with(['academy:id', 'academy.tenantPlan', 'teacher:id', 'teacher.tenantPlan']);
 
         // Get unique students count
-        $totalStudents = Student::whereHas('enrollments.teacher.academies', function ($q) use ($academy) {
+        $totalStudents = Student::whereHas('enrollments', function ($q) use ($academy) {
             $q->where('academy_id', $academy->id);
         })->count();
 
         $activeStudents = Student::whereHas('enrollments', function ($q) use ($academy) {
             $q->where('is_active', true)
-              ->whereHas('teacher.academies', function ($q2) use ($academy) {
-                  $q2->where('academy_id', $academy->id);
-              });
+              ->where('academy_id', $academy->id);
         })->count();
 
         return [

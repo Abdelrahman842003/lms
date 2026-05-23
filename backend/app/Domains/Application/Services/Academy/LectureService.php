@@ -10,6 +10,7 @@ use App\Domains\Auth\Models\Academy;
 use App\Domains\Auth\Models\Teacher;
 use App\Domains\Lectures\DTOs\LectureData;
 use App\Domains\Lectures\Models\Lecture;
+use App\Domains\Lectures\Events\LectureUpdated;
 use App\Domains\Application\Filters\LectureFilter;
 use Carbon\Carbon;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -63,6 +64,9 @@ class LectureService
         $lecture = Lecture::create($lectureData);
         $lecture->load(['teacher', 'grade', 'group']);
 
+        // Broadcast lecture created event
+        LectureUpdated::dispatch($lecture);
+
         return $lecture;
     }
 
@@ -81,13 +85,32 @@ class LectureService
         }
 
         $lecture->update($lectureData);
+        $freshLecture = $lecture->fresh(['teacher', 'grade', 'group']);
 
-        return $lecture->fresh(['teacher', 'grade', 'group']);
+        // Broadcast lecture updated event
+        LectureUpdated::dispatch($freshLecture);
+
+        return $freshLecture;
     }
 
     public function deleteLecture(Lecture $lecture): void
     {
+        // Store teacher_id and academy_id before deletion for broadcasting
+        $teacherId = $lecture->teacher_id;
+        $academyId = $lecture->academy_id;
+        $lectureId = $lecture->id;
+
         $lecture->delete();
+
+        // Broadcast lecture deleted event
+        $tempLecture = new Lecture;
+        $tempLecture->id = $lectureId;
+        $tempLecture->teacher_id = $teacherId;
+        $tempLecture->academy_id = $academyId;
+        $tempLecture->is_active = false;
+        $tempLecture->exists = false;
+        
+        LectureUpdated::dispatch($tempLecture);
     }
 
     // Delegate specific actions to TeacherLectureService to avoid duplication

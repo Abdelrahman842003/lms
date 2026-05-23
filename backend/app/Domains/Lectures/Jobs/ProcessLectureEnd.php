@@ -57,10 +57,15 @@ class ProcessLectureEnd implements ShouldQueue
         }
 
         // تسجيل الغياب للطلاب اللي ماحضروش
-        $activeStudents = $teacher->students()
+        $activeStudentsQuery = $teacher->students()
             ->wherePivot('grade_id', $this->lecture->grade_id)
-            ->wherePivot('is_active', true)
-            ->get();
+            ->wherePivot('is_active', true);
+
+        if ($this->lecture->group_id) {
+            $activeStudentsQuery->wherePivot('group_id', $this->lecture->group_id);
+        }
+
+        $activeStudents = $activeStudentsQuery->get();
 
         $absentCount = 0;
         $academyName = $this->lecture->academy ? $this->lecture->academy->name : '';
@@ -78,13 +83,21 @@ class ProcessLectureEnd implements ShouldQueue
                 ]);
 
                 try {
-                    $student->notify(new StudentAbsentNotification(
+                    $notification = new StudentAbsentNotification(
                         $this->lecture->title,
                         $teacher->name,
                         $academyName,
-                    ));
+                    );
+
+                    // إشعار الطالب
+                    $student->notify($notification);
+
+                    // إشعار ولي الأمر
+                    if ($student->guardian) {
+                        $student->guardian->notify($notification);
+                    }
                 } catch (\Exception $e) {
-                    Log::error("ProcessLectureEnd: Notification failed for student {$student->id}", [
+                    Log::error("ProcessLectureEnd: Notification failed for student/guardian {$student->id}", [
                         'error' => $e->getMessage(),
                     ]);
                 }

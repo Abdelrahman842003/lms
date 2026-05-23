@@ -25,7 +25,8 @@ class QuestionController extends Controller
         // Get IDs of teachers belonging to this academy
         $teacherIds = $academy->teachers()->pluck('teachers.id')->toArray();
         
-        $query = Question::whereIn('teacher_id', $teacherIds);
+        $query = Question::whereIn('teacher_id', $teacherIds)
+            ->whereHas('grade', fn ($g) => $g->where('academy_id', $academy->id));
 
         if ($request->has('teacher_id')) {
             $query->where('teacher_id', $request->input('teacher_id'));
@@ -74,6 +75,15 @@ class QuestionController extends Controller
         // Ensure teacher belongs to academy
         if (!$academy->teachers()->where('teachers.id', $data['teacher_id'])->exists()) {
             return $this->errorResponse('المدرس المختار لا ينتمي لهذه الأكاديمية', 403);
+        }
+
+        // Ensure grade belongs to this academy
+        $gradeBelongsToAcademy = \Illuminate\Support\Facades\DB::table('grades')
+            ->where('id', $data['grade_id'])
+            ->where('academy_id', $academy->id)
+            ->exists();
+        if (!$gradeBelongsToAcademy) {
+            return $this->errorResponse('الصف الدراسي المختار لا ينتمي لهذه الأكاديمية', 400);
         }
 
         $question = Question::create($data);

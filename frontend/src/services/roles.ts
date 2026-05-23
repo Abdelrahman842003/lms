@@ -47,9 +47,9 @@ async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise
 }
 
 export const getTeacherPermissions = async () => {
-  return fetchApi<Permission[]>('/api/teacher/permissions');
+  return fetchApi<Permission[]>('/api/v1/teacher/permissions');
 };
 
 export const getAcademyPermissions = async () => {
-  return fetchApi<Permission[]>('/api/academy/permissions');
+  return fetchApi<Permission[]>('/api/v1/academy/permissions');
 };

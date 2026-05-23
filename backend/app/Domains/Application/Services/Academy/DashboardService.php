@@ -89,9 +89,13 @@ class DashboardService
         }
 
         // Get pending billing
-        $pendingBilling = \App\Domains\Subscriptions\Models\AcademySubscription::query()
-            ->where('academy_id', $academy->id)
-            ->whereIn('status', ['pending', 'partial'])
+        $pendingBilling = \App\Domains\Subscriptions\Models\Subscription::query()
+            ->where('subscriber_id', $academy->id)
+            ->where('subscriber_type', \App\Domains\Auth\Models\Academy::class)
+            ->whereIn('status', [
+                \App\Domains\Subscriptions\Enums\SubscriptionStatus::PENDING->value,
+                \App\Domains\Subscriptions\Enums\SubscriptionStatus::PARTIAL->value,
+            ])
             ->latest()
             ->first();
         

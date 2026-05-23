@@ -25,6 +25,7 @@ class UpdateLectureRequest extends FormRequest
             'recurrence_days' => 'nullable|array',
             'recurrence_time' => 'nullable|date_format:H:i',
             'duration_minutes' => 'nullable|integer|min:1',
+            'academy_id' => 'nullable|uuid|exists:academies,id',
         ];
     }
 

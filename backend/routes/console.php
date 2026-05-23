@@ -58,8 +58,8 @@ Schedule::job(new EndExpiredLecturesJob)->everyTenMinutes()->withoutOverlapping(
 // إغلاق الامتحانات المنتهية كل 5 دقائق
 Schedule::job(new EndExpiredExamsJob)->everyFiveMinutes()->withoutOverlapping();
 
-// فحص حالة المحاضرات كل ساعة
-Schedule::command('lectures:check-status')->hourly();
+// فحص حالة المحاضرات كل دقيقة لضمان تفعيلها وإنهائها بدقة
+Schedule::command('lectures:check-status')->everyMinute()->withoutOverlapping();
 
 // مزامنة مهام المحاضرات يومياً كإجراء احترازي
 Schedule::command('lectures:sync-jobs')->daily();

@@ -20,8 +20,18 @@ class QuestionController extends Controller
     public function index(Request $request): JsonResponse
     {
         $teacher = $this->getTeacherFromRequest($request);
+        $academyId = $request->header('X-Academy-Id') ?? $request->input('academy_id');
         
         $query = Question::where('teacher_id', $teacher->id);
+
+        if ($academyId === 'independent') {
+            $query->where(function ($q) {
+                $q->whereDoesntHave('grade')
+                  ->orWhereHas('grade', fn ($g) => $g->whereNull('academy_id'));
+            });
+        } elseif ($academyId) {
+            $query->whereHas('grade', fn ($g) => $g->where('academy_id', $academyId));
+        }
 
         if ($request->has('difficulty')) {
             $query->where('difficulty', $request->input('difficulty'));
@@ -61,9 +71,29 @@ class QuestionController extends Controller
     public function store(StoreQuestionRequest $request): JsonResponse
     {
         $teacher = $this->getTeacherFromRequest($request);
+        $academyId = $request->header('X-Academy-Id') ?? $request->input('academy_id');
         
         $data = $request->validated();
         $data['teacher_id'] = $teacher->id;
+
+        // Ensure grade belongs to the correct context
+        if ($academyId && $academyId !== 'independent') {
+            $gradeBelongsToAcademy = \Illuminate\Support\Facades\DB::table('grades')
+                ->where('id', $data['grade_id'])
+                ->where('academy_id', $academyId)
+                ->exists();
+            if (!$gradeBelongsToAcademy) {
+                return $this->errorResponse('الصف الدراسي المختار لا ينتمي للأكاديمية الحالية', 400);
+            }
+        } else {
+            $gradeIsIndependent = \Illuminate\Support\Facades\DB::table('grades')
+                ->where('id', $data['grade_id'])
+                ->whereNull('academy_id')
+                ->exists();
+            if (!$gradeIsIndependent) {
+                return $this->errorResponse('الصف الدراسي المختار ليس صفاً مستقلاً', 400);
+            }
+        }
 
         $question = Question::create($data);
 

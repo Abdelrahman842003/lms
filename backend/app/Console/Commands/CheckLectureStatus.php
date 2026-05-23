@@ -6,6 +6,9 @@ namespace App\Console\Commands;
 
 use App\Domains\Lectures\Models\Lecture;
 use App\Domains\Lectures\Events\LectureUpdated;
+use App\Domains\Lectures\Events\LectureActivated;
+use App\Domains\Lectures\Events\LectureClosed;
+use App\Domains\Lectures\Notifications\LectureStatusNotification;
 use App\Domains\Lectures\Jobs\ProcessLectureEnd;
 use App\Domains\Lectures\Jobs\ProcessLectureStart;
 use Illuminate\Console\Command;
@@ -34,10 +37,16 @@ class CheckLectureStatus extends Command
                 $lecture->update(['is_active' => true]);
                 $this->info("Activated lecture: {$lecture->title} ({$lecture->id})");
                 Log::info("Auto-activated lecture: {$lecture->title} ({$lecture->id})");
-                LectureUpdated::dispatch($lecture); // Dispatch event
                 
-                // Notify teacher immediately
-                $lecture->teacher->notify(new \App\Domains\Lectures\Notifications\LectureStatusNotification($lecture, 'active'));
+                // Dispatch realtime events
+                LectureUpdated::dispatch($lecture);
+                event(new LectureActivated($lecture));
+                
+                // Notify teacher and academy immediately
+                $lecture->teacher->notify(new LectureStatusNotification($lecture, 'active'));
+                if ($lecture->academy) {
+                    $lecture->academy->notify(new LectureStatusNotification($lecture, 'active'));
+                }
                 
                 // Schedule end job
                 $delay = $now->diffInSeconds($lecture->end_time);
@@ -48,10 +57,16 @@ class CheckLectureStatus extends Command
                 $lecture->update(['is_active' => false]);
                 $this->info("Deactivated lecture: {$lecture->title} ({$lecture->id})");
                 Log::info("Auto-deactivated lecture: {$lecture->title} ({$lecture->id})");
-                LectureUpdated::dispatch($lecture); // Dispatch event
                 
-                // Notify teacher immediately
-                $lecture->teacher->notify(new \App\Domains\Lectures\Notifications\LectureStatusNotification($lecture, 'finished'));
+                // Dispatch realtime events
+                LectureUpdated::dispatch($lecture);
+                event(new LectureClosed($lecture));
+                
+                // Notify teacher and academy immediately
+                $lecture->teacher->notify(new LectureStatusNotification($lecture, 'finished'));
+                if ($lecture->academy) {
+                    $lecture->academy->notify(new LectureStatusNotification($lecture, 'finished'));
+                }
 
                 // Dispatch job for end lecture processing (absent marking etc)
                 ProcessLectureEnd::dispatch($lecture);
@@ -74,7 +89,6 @@ class CheckLectureStatus extends Command
 
             $shouldBeActive = false;
             // Check today and yesterday to handle overnight sessions or late closures
-            // We check yesterday because a lecture might have started yesterday and is still running (or should have closed)
             $datesToCheck = [$now->copy(), $now->copy()->subDay()];
 
             foreach ($datesToCheck as $date) {
@@ -98,11 +112,16 @@ class CheckLectureStatus extends Command
                 $lecture->update(['is_active' => true]);
                 $this->info("Activated recurring lecture: {$lecture->title} ({$lecture->id})");
                 Log::info("Auto-activated recurring lecture: {$lecture->title} ({$lecture->id})");
-                Log::info("Auto-activated recurring lecture: {$lecture->title} ({$lecture->id})");
+                
+                // Dispatch realtime events
                 LectureUpdated::dispatch($lecture);
+                event(new LectureActivated($lecture));
 
-                // Notify teacher immediately
-                $lecture->teacher->notify(new \App\Domains\Lectures\Notifications\LectureStatusNotification($lecture, 'active'));
+                // Notify teacher and academy immediately
+                $lecture->teacher->notify(new LectureStatusNotification($lecture, 'active'));
+                if ($lecture->academy) {
+                    $lecture->academy->notify(new LectureStatusNotification($lecture, 'active'));
+                }
 
                 // Schedule end job
                 $delay = $now->diffInSeconds($endTime);
@@ -111,18 +130,22 @@ class CheckLectureStatus extends Command
                 $lecture->update(['is_active' => false]);
                 $this->info("Deactivated recurring lecture: {$lecture->title} ({$lecture->id})");
                 Log::info("Auto-deactivated recurring lecture: {$lecture->title} ({$lecture->id})");
-                LectureUpdated::dispatch($lecture);
                 
-                // Notify teacher immediately
-                $lecture->teacher->notify(new \App\Domains\Lectures\Notifications\LectureStatusNotification($lecture, 'finished'));
+                // Dispatch realtime events
+                LectureUpdated::dispatch($lecture);
+                event(new LectureClosed($lecture));
+                
+                // Notify teacher and academy immediately
+                $lecture->teacher->notify(new LectureStatusNotification($lecture, 'finished'));
+                if ($lecture->academy) {
+                    $lecture->academy->notify(new LectureStatusNotification($lecture, 'finished'));
+                }
                 
                 ProcessLectureEnd::dispatch($lecture);
             }
             
             // Look-ahead Activation (Recurring)
-            // Check if it starts in the next minute
             if (!$lecture->is_active) {
-                // We need to check if today is a recurrence day
                 if (in_array($now->format('l'), $lecture->recurrence_days ?? [])) {
                     $startTime = Carbon::parse($now->setTimezone('Africa/Cairo')->format('Y-m-d') . ' ' . $lecture->recurrence_time, 'Africa/Cairo')->setTimezone('UTC');
                     

@@ -57,6 +57,7 @@ class StoreLectureRequest extends BaseAuthorizedRequest
             'recurrence_days.*' => 'string|in:Sunday,Monday,Tuesday,Wednesday,Thursday,Friday,Saturday',
             'recurrence_time' => 'nullable|date_format:H:i|required_if:is_recurring,true',
             'duration_minutes' => 'nullable|integer|min:1|required_if:is_recurring,true',
+            'academy_id' => 'nullable|uuid|exists:academies,id',
         ];
     }
 

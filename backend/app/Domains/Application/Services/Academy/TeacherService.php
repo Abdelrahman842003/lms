@@ -280,7 +280,7 @@ class TeacherService
                 'subject' => $teacher->subject,
                 'status' => $this->normalizeEnumValue($teacher->status),
                 'is_active' => (bool) ($teacher->pivot?->is_active ?? true),
-                'joined_at' => $teacher->pivot?->joined_at?->toISOString(),
+                'joined_at' => $teacher->pivot?->joined_at ? \Carbon\Carbon::parse($teacher->pivot->joined_at)->toISOString() : null,
                 'avatar' => $teacher->avatar_key ? $imageService->getUrl($teacher->avatar_key) : null,
                 'avatar_key' => $teacher->avatar_key,
             ],

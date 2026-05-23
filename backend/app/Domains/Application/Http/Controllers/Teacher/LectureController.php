@@ -47,7 +47,43 @@ class LectureController extends Controller
     {
         try {
             $teacher = $this->getTeacherFromRequest($request);
+            $academyId = $request->header('X-Academy-Id') ?? $request->input('academy_id');
             
+            $resolvedAcademyId = null;
+            if ($academyId && $academyId !== 'independent') {
+                // Check if teacher belongs to this academy using pivot
+                $teacherBelongsToAcademy = \Illuminate\Support\Facades\DB::table('academy_teacher')
+                    ->where('teacher_id', $teacher->id)
+                    ->where('academy_id', $academyId)
+                    ->where('is_active', true)
+                    ->exists();
+                if ($teacherBelongsToAcademy) {
+                    $resolvedAcademyId = $academyId;
+                } else {
+                    return $this->errorResponse('المدرس لا ينتمي لهذه الأكاديمية', 403);
+                }
+
+                // Ensure grade belongs to this academy
+                $gradeBelongsToAcademy = \Illuminate\Support\Facades\DB::table('grades')
+                    ->where('id', $request->input('grade_id'))
+                    ->where('academy_id', $resolvedAcademyId)
+                    ->exists();
+                if (!$gradeBelongsToAcademy) {
+                    return $this->errorResponse('الصف الدراسي المختار لا ينتمي للأكاديمية الحالية', 400);
+                }
+            } else {
+                // Independent context: ensure grade has no academy_id
+                $gradeIsIndependent = \Illuminate\Support\Facades\DB::table('grades')
+                    ->where('id', $request->input('grade_id'))
+                    ->whereNull('academy_id')
+                    ->exists();
+                if (!$gradeIsIndependent) {
+                    return $this->errorResponse('الصف الدراسي المختار ليس صفاً مستقلاً', 400);
+                }
+            }
+
+            // Merge resolved academy_id into request
+            $request->merge(['academy_id' => $resolvedAcademyId]);
             $lectureData = TeacherLectureData::fromRequest($request);
             $lecture = $this->service->createLecture($teacher, $lectureData->toArray());
 

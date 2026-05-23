@@ -19,7 +19,21 @@ class TeacherResource extends JsonResource
 
         // Safely get students count
         try {
-            $studentsCount = $this->activeEnrollments()->count();
+            $user = $request->user();
+            $academyId = null;
+            if ($user instanceof \App\Domains\Auth\Models\Academy) {
+                $academyId = $user->id;
+            } elseif ($user instanceof \App\Domains\Auth\Models\Secretary) {
+                $academyId = $user->academies()->first()?->id;
+            }
+
+            if ($academyId) {
+                $studentsCount = $this->activeEnrollments()
+                    ->where('academy_id', $academyId)
+                    ->count();
+            } else {
+                $studentsCount = $this->activeEnrollments()->count();
+            }
         } catch (\Exception $e) {
             $studentsCount = 0;
         }
@@ -43,7 +57,11 @@ class TeacherResource extends JsonResource
             'is_active' => (bool) $isActive,
             'is_approved' => (bool) $isApproved,
             'is_suspended' => (bool) $isSuspended,
-            'joined_at' => $this->pivot?->joined_at ?? $this->created_at,
+            'joined_at' => $this->pivot?->joined_at 
+                ? ($this->pivot->joined_at instanceof \Carbon\Carbon 
+                    ? $this->pivot->joined_at->toIso8601String() 
+                    : \Carbon\Carbon::parse($this->pivot->joined_at)->toIso8601String())
+                : $this->created_at->toIso8601String(),
             'created_at' => $this->created_at->toIso8601String(),
         ];
     }

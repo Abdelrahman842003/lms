@@ -80,7 +80,7 @@ function AttendanceContent() {
   const markAttendance = async () => {
     try {
       const authToken = getAuthToken();
-      const response = await fetch(`${API_BASE_URL}/api/student/attend`, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/student/attend`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

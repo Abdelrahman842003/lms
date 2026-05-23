@@ -69,6 +69,18 @@ export default function StudentAttendanceSection() {
 
   const { user } = useAuth(); // get user
 
+  // Keep references to fetchLectures and currentPage to prevent stale closures and avoid Echo connection churn
+  const currentPageRef = React.useRef(currentPage);
+  const fetchLecturesRef = React.useRef(fetchLectures);
+
+  useEffect(() => {
+    currentPageRef.current = currentPage;
+  }, [currentPage]);
+
+  useEffect(() => {
+    fetchLecturesRef.current = fetchLectures;
+  });
+
   // Hook for Echo real-time updates
   useEffect(() => {
     const token = getAccessToken();
@@ -81,26 +93,79 @@ export default function StudentAttendanceSection() {
     
     const handleEvent = (event: any) => {
       console.log('Lecture updated event received in Academy:', event);
-      if (event.lecture_id) {
+      const lectureId = event.lecture_id || event.lecture?.id;
+      const isActive = typeof event.is_active === 'boolean' ? event.is_active : event.lecture?.is_active;
+      
+      if (lectureId) {
+        const title = event.lecture?.title || 'المحاضرة';
+        const statusText = isActive ? 'بدأت الآن' : 'انتهت الآن';
+        toast.success(`محاضرة ${title} ${statusText}`, {
+          duration: 4000,
+          position: 'top-center',
+          icon: isActive ? '🟢' : '🔴',
+        });
+
         setLectures((prevLectures) => {
           return prevLectures.map((lecture) => {
-            if (String(lecture.id) === String(event.lecture_id)) {
+            if (String(lecture.id) === String(lectureId)) {
               return {
                 ...lecture,
-                is_active: event.is_active,
-                status: event.is_active ? 'جاري الآن' : 'منتهية'
+                is_active: isActive,
+                status: isActive ? 'جاري الآن' : 'منتهية'
               };
             }
             return lecture;
           });
         });
       }
+      
+      // Refresh lectures list from API
+      fetchLecturesRef.current(currentPageRef.current);
     };
 
     privateChannel.listen('.lecture.updated', handleEvent);
 
+    // Subscribe to academy notifications channel
+    const notificationChannel = echo.private(`notifications.academy.${user.id}`);
+    
+    const handleNotification = (notification: any) => {
+      console.log('Academy notification received:', notification);
+      if (notification.type === 'lecture_status') {
+        const isActive = notification.status === 'active';
+        const lectureId = notification.lecture_id;
+        
+        // Show toast notification
+        const statusText = isActive ? 'بدأت الآن' : 'انتهت الآن';
+        toast.success(`${notification.message || `محاضرة ${statusText}`}`, {
+          duration: 4000,
+          position: 'top-center',
+          icon: isActive ? '🟢' : '🔴',
+        });
+        
+        // Optimistic Update
+        setLectures((prevLectures) => {
+          return prevLectures.map((lecture) => {
+            if (String(lecture.id) === String(lectureId)) {
+              return {
+                ...lecture,
+                is_active: isActive,
+                status: isActive ? 'جاري الآن' : 'منتهية'
+              };
+            }
+            return lecture;
+          });
+        });
+        
+        // Refresh lectures list from API
+        fetchLecturesRef.current(currentPageRef.current);
+      }
+    };
+
+    notificationChannel.notification(handleNotification);
+
     return () => {
       echo.leave(`academy.${user.id}`);
+      echo.leave(`notifications.academy.${user.id}`);
     };
   }, [user]);
 
@@ -131,7 +196,7 @@ export default function StudentAttendanceSection() {
     return () => clearTimeout(timer);
   }, [searchQuery, selectedStatus, selectedTeacherId]);
 
-  const fetchLectures = async (page = 1) => {
+  async function fetchLectures(page = 1) {
     try {
       setIsLoading(true);
       const response = await academyService.getLectures(page, 12, {
@@ -150,7 +215,7 @@ export default function StudentAttendanceSection() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }
 
   // Handlers
   const handleAddClick = () => {
@@ -359,33 +424,38 @@ export default function StudentAttendanceSection() {
       </div>
 
       {/* Header Section */}
-      <div className="ux-flex ux-justify-between ux-items-center ux-mb-6 ux-max-md-flex-col ux-max-md-items-stretch ux-max-md-gap-4">
-        <div className="ux-flex ux-items-center ux-gap-3 ux-max-md-w-full ux-max-md-justify-center">
-          <div className="ux-w-12 ux-h-12 ux-rounded-xl ux-bg-rgba-66-99-235-0dot1 ux-flex ux-items-center ux-justify-center ux-text-primary ux-text-2xl">
+      <div className="flex justify-between items-center mb-8 max-md:flex-col max-md:items-stretch max-md:gap-5 bg-gradient-to-r from-primary/10 to-transparent p-6 rounded-3xl border border-primary/10 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 blur-[100px] rounded-full -z-10"></div>
+        <div className="flex items-center gap-4 max-md:justify-center z-10">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white text-2xl shadow-lg shadow-primary/30">
             <Icon name="video" />
           </div>
-          <h2 className="ux-text-2xl ux-font-bold ux-text-white ux-m-0">إدارة المحاضرات</h2>
+          <div>
+             <h2 className="text-3xl font-black text-white m-0 tracking-tight">إدارة المحاضرات</h2>
+             <p className="text-white/50 text-sm mt-1 font-medium">تحكم كامل في محاضرات الأكاديمية</p>
+          </div>
         </div>
-        <div className="ux-max-md-w-full">
-          <Button variant="primary" onClick={handleAddClick} className="btn btn-primary ux-max-md-w-full ux-max-md-justify-center">
+        <div className="max-md:w-full z-10">
+          <Button variant="primary" onClick={handleAddClick} className="btn btn-primary h-12 px-8 rounded-xl bg-white text-primary hover:bg-gray-100 font-bold max-md:w-full max-md:justify-center shadow-[0_10px_30px_rgba(255,255,255,0.15)] transition-all hover:scale-105 border-none">
             <Icon name="plus" />
             <span>إضافة محاضرة</span>
           </Button>
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="ux-flex ux-gap-4 ux-mb-6 ux-max-md-flex-col">
-        <div className="ux-flex-1">
+      {/* Filters Area - Glassmorphism */}
+      <div className="flex gap-4 mb-8 max-md:flex-col p-4 bg-white/[0.03] border border-white/[0.05] rounded-3xl backdrop-blur-xl">
+        <div className="flex-1 relative">
+          <Icon name="search" className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30" />
           <input
             type="text"
-            placeholder="بحث عن محاضرة..."
+            placeholder="ابحث عن محاضرة باسمها..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="form-input ux-w-full ux-p-3 ux-bg-white-5 ux-border ux-border-white-10 ux-rounded-lg ux-text-white"
+            className="form-input w-full h-12 pl-4 pr-12 bg-black/20 border border-white/5 rounded-2xl text-white placeholder-white/30 focus:border-primary/50 focus:bg-black/40 transition-all outline-none"
           />
         </div>
-        <div className="ux-w-64 ux-max-md-w-full">
+        <div className="w-64 max-md:w-full">
           <Filter
             options={[
               { value: '', label: 'كل المدرسين' },
@@ -394,10 +464,10 @@ export default function StudentAttendanceSection() {
             value={selectedTeacherId}
             onChange={(value) => setSelectedTeacherId(value)}
             placeholder="كل المدرسين"
-            className="ux-w-full"
+            className="w-full h-12 !bg-black/20 !border-white/5 !rounded-2xl"
           />
         </div>
-        <div className="ux-w-48 ux-max-md-w-full">
+        <div className="w-48 max-md:w-full">
           <Filter
             options={[
               { value: '', label: 'كل الحالات' },
@@ -409,7 +479,7 @@ export default function StudentAttendanceSection() {
             value={selectedStatus}
             onChange={(value) => setSelectedStatus(value)}
             placeholder="الحالة"
-            className="ux-w-full"
+            className="w-full h-12 !bg-black/20 !border-white/5 !rounded-2xl"
           />
         </div>
       </div>
@@ -449,6 +519,7 @@ export default function StudentAttendanceSection() {
                 key={lecture.id}
                 lecture={lecture}
                 isMenuOpen={isMenuOpen}
+                showTeacher={true}
                 onMenuToggle={(e) => {
                   e.stopPropagation();
                   setOpenMenuId(isMenuOpen ? null : lecture.id);

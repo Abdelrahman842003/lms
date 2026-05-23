@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace App\Domains\Subscriptions\Specifications;
 
 use App\Domains\Subscriptions\DTOs\SubscriptionCandidate;
-use App\Domains\Subscriptions\Models\TeacherSubscription;
-use App\Domains\Subscriptions\Models\AcademySubscription;
 
 /**
  * Specification: هل الباقة المرتبطة بالمشترك نشطة وغير منتهية؟
@@ -29,26 +27,14 @@ final class PlanActive extends AbstractSpecification
         // Convert to SubscriptionCandidate DTO for type-safe access
         $subscriptionCandidate = SubscriptionCandidate::from($candidate);
 
-        if ($subscriptionCandidate->subscriberType === 'teacher') {
-            return TeacherSubscription::query()
-                ->where('teacher_id', $subscriptionCandidate->subscriberId)
-                ->where('status', 'active')
-                ->where(function ($q) {
-                    $q->whereNull('ends_at')->orWhere('ends_at', '>=', now());
-                })
-                ->exists();
+        $subscriber = $subscriptionCandidate->subscriberType === 'teacher'
+            ? \App\Domains\Auth\Models\Teacher::find($subscriptionCandidate->subscriberId)
+            : \App\Domains\Auth\Models\Academy::find($subscriptionCandidate->subscriberId);
+
+        if (!$subscriber) {
+            return false;
         }
 
-        if ($subscriptionCandidate->subscriberType === 'academy') {
-            return AcademySubscription::query()
-                ->where('academy_id', $subscriptionCandidate->subscriberId)
-                ->where('status', 'active')
-                ->where(function ($q) {
-                    $q->whereNull('ends_at')->orWhere('ends_at', '>=', now());
-                })
-                ->exists();
-        }
-
-        return false;
+        return $subscriber->hasActiveSubscription();
     }
 }

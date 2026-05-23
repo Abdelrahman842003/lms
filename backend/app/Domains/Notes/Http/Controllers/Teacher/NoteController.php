@@ -23,10 +23,18 @@ class NoteController extends Controller
     public function index(Request $request): JsonResponse
     {
         $teacher = $this->getTeacherFromRequest($request);
+        $academyId = $request->header('X-Academy-Id') ?? $request->input('academy_id');
         
-        $notes = Note::where('teacher_id', $teacher->id)
-            ->with(['grade', 'groups', 'attachments'])
-            ->latest()
+        $query = Note::where('teacher_id', $teacher->id)
+            ->with(['grade', 'groups', 'attachments']);
+
+        if ($academyId === 'independent') {
+            $query->whereNull('academy_id');
+        } elseif ($academyId) {
+            $query->where('academy_id', $academyId);
+        }
+
+        $notes = $query->latest()
             ->paginate((int) $request->input('per_page', 15));
 
         return $this->successResponse(NoteResource::collection($notes)->response()->getData(true));
@@ -45,8 +53,44 @@ class NoteController extends Controller
         ]);
 
         $teacher = $this->getTeacherFromRequest($request);
+        $academyId = $request->header('X-Academy-Id') ?? $request->input('academy_id');
+        
+        $resolvedAcademyId = null;
+        if ($academyId && $academyId !== 'independent') {
+            // Check if teacher belongs to this academy using the pivot table
+            $teacherBelongsToAcademy = \Illuminate\Support\Facades\DB::table('academy_teacher')
+                ->where('teacher_id', $teacher->id)
+                ->where('academy_id', $academyId)
+                ->where('is_active', true)
+                ->exists();
+            
+            if ($teacherBelongsToAcademy) {
+                $resolvedAcademyId = $academyId;
+            } else {
+                return $this->errorResponse('المدرس لا ينتمي لهذه الأكاديمية', 403);
+            }
+
+            // Ensure grade belongs to this academy
+            $gradeBelongsToAcademy = \Illuminate\Support\Facades\DB::table('grades')
+                ->where('id', $request->input('grade_id'))
+                ->where('academy_id', $resolvedAcademyId)
+                ->exists();
+            if (!$gradeBelongsToAcademy) {
+                return $this->errorResponse('الصف الدراسي المختار لا ينتمي للأكاديمية الحالية', 400);
+            }
+        } else {
+            // Independent context: ensure grade has no academy_id
+            $gradeIsIndependent = \Illuminate\Support\Facades\DB::table('grades')
+                ->where('id', $request->input('grade_id'))
+                ->whereNull('academy_id')
+                ->exists();
+            if (!$gradeIsIndependent) {
+                return $this->errorResponse('الصف الدراسي المختار ليس صفاً مستقلاً', 400);
+            }
+        }
 
         $payload = $this->noteService->initiateNote([
+            'academy_id' => $resolvedAcademyId,
             'teacher_id' => $teacher->id,
             'grade_id' => $request->input('grade_id'),
             'title' => $request->input('title'),
