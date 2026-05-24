@@ -193,7 +193,7 @@ export class RateLimiter {
 }
 
 /**
- * DEPRECATED: Token storage via sessionStorage
+ * DEPRECATED: Token storage via localStorage
  *
  * Use HttpOnly cookies (Laravel Sanctum) instead.
  * This is kept only for backward compatibility during migration.
@@ -202,27 +202,27 @@ export class RateLimiter {
  */
 export const legacyTokenStorage = {
   setToken(token: string): void {
-    sessionStorage.setItem('auth_token', token);
+    localStorage.setItem('auth_token', token);
   },
 
   getToken(): string | null {
-    return sessionStorage.getItem('auth_token');
+    return localStorage.getItem('auth_token');
   },
 
   removeToken(): void {
-    sessionStorage.removeItem('auth_token');
+    localStorage.removeItem('auth_token');
   },
 
   setRefreshToken(token: string): void {
-    sessionStorage.setItem('refresh_token', token);
+    localStorage.setItem('refresh_token', token);
   },
 
   getRefreshToken(): string | null {
-    return sessionStorage.getItem('refresh_token');
+    return localStorage.getItem('refresh_token');
   },
 
   removeRefreshToken(): void {
-    sessionStorage.removeItem('refresh_token');
+    localStorage.removeItem('refresh_token');
   }
 };
 

@@ -2,12 +2,12 @@
  * Token Manager with Hybrid Storage Strategy
  *
  * Primary Storage: In-memory variable (cleared on page refresh)
- * Fallback Storage: sessionStorage (survives hard refresh)
+ * Fallback Storage: localStorage (survives hard refresh and new tabs)
  *
  * Security Note:
- * - sessionStorage is still accessible via JavaScript (XSS risk)
+ * - localStorage is still accessible via JavaScript (XSS risk)
  * - For true security, refresh tokens are stored in httpOnly cookies by the backend
- * - Access tokens in memory/sessionStorage are a convenience for immediate API calls
+ * - Access tokens in memory/localStorage are a convenience for immediate API calls
  */
 
 import { getVersionedApiUrl } from '@/config/api-config';
@@ -20,7 +20,7 @@ interface TokenState {
 const TOKEN_STORAGE_KEY = 'auth_access_token_state';
 const ACCESS_TOKEN_FALLBACK_MINUTES = 43200; // 30 days
 
-// Primary in-memory storage with sessionStorage fallback for hard refresh recovery
+// Primary in-memory storage with localStorage fallback for hard refresh recovery
 let tokenState: TokenState = {
   accessToken: null,
   expiresAt: null,
@@ -81,7 +81,7 @@ function getJwtExpiryMs(token: string): number | null {
 export function getAccessToken(): string | null {
   if (!tokenState.accessToken && typeof window !== 'undefined') {
     try {
-      const raw = sessionStorage.getItem(TOKEN_STORAGE_KEY);
+      const raw = localStorage.getItem(TOKEN_STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw) as TokenState;
         if (parsed?.accessToken) {
@@ -116,7 +116,7 @@ export function setAccessToken(token: string, expiresInMinutes: number = ACCESS_
 
   if (typeof window !== 'undefined') {
     try {
-      sessionStorage.setItem(TOKEN_STORAGE_KEY, JSON.stringify(tokenState));
+      localStorage.setItem(TOKEN_STORAGE_KEY, JSON.stringify(tokenState));
     } catch {
       // Ignore storage write failures
     }
@@ -137,7 +137,7 @@ export function clearAccessToken(): void {
 
   if (typeof window !== 'undefined') {
     try {
-      sessionStorage.removeItem(TOKEN_STORAGE_KEY);
+      localStorage.removeItem(TOKEN_STORAGE_KEY);
     } catch {
       // Ignore storage remove failures
     }
@@ -151,7 +151,7 @@ export function clearAccessToken(): void {
  * Check if token is expired or will expire soon
  */
 export function isTokenExpired(thresholdSeconds: number = 300): boolean {
-  // Ensure tokenState is hydrated from sessionStorage on hard refresh.
+  // Ensure tokenState is hydrated from localStorage on hard refresh.
   getAccessToken();
 
   if (!tokenState.expiresAt) return false;
