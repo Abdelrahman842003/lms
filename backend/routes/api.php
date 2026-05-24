@@ -78,6 +78,13 @@ Route::prefix('v1')->group(function () {
     });
 
     // ============================================
+    // Sync Routes (Offline Support)
+    // ============================================
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::get('/sync/pull', [\App\Domains\Application\Http\Controllers\Api\SyncController::class, 'pull']);
+    });
+
+    // ============================================
     // Public Settings & Pricing
     // ============================================
     Route::get('/public-settings', [\App\Domains\Application\Http\Controllers\Api\PublicController::class, 'publicSettings']);

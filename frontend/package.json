@@ -29,6 +29,8 @@
     "@react-pdf-viewer/default-layout": "^3.12.0",
     "@react-pdf-viewer/highlight": "^3.12.0",
     "@react-pdf-viewer/search": "^3.12.0",
+    "@serwist/next": "^9.5.11",
+    "@serwist/sw": "^9.5.11",
     "@types/canvas-confetti": "^1.9.0",
     "axios": "^1.11.0",
     "canvas-confetti": "^1.9.4",

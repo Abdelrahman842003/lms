@@ -15,6 +15,9 @@ import {
 import { getCSRFToken, initializeCSRF } from '@/lib/csrf';
 import { getAccessToken, refreshAccessToken as refreshAccessTokenFromManager } from '@/lib/tokenManager';
 import { ApiError, showErrorToast } from '@/lib/errorHandler';
+import { networkMonitor } from '@/lib/offline/network-monitor';
+import { syncEngine } from '@/lib/offline/sync-engine';
+import * as stores from '@/lib/offline/stores';
 
 // Re-export for backward compatibility
 export const API_BASE_URL = API_CONFIG.baseUrl;
@@ -275,6 +278,7 @@ export async function fetchApi<T = unknown>(
     throw new Error('Invalid endpoint: endpoint must be a non-empty string');
   }
 
+  const method = (options.method || 'GET').toUpperCase();
   const url = buildRequestUrl(endpoint);
   const isTrustedUrl = isTrustedApiUrl(url);
   const additionalHeaders = normalizeHeaders(options.headers);
@@ -282,6 +286,65 @@ export async function fetchApi<T = unknown>(
     method: options.method,
     body: options.body,
   });
+
+  const offlineOptions = options as RequestInit & {
+    offlineConfig?: {
+      storeName?: string;
+      entityId?: string;
+      entityType?: string;
+      skipCache?: boolean;
+    };
+  };
+
+  const isOnline = networkMonitor.isOnline;
+
+  if (!isOnline) {
+    if (method === 'GET' && offlineOptions.offlineConfig?.storeName) {
+      const storeName = offlineOptions.offlineConfig.storeName;
+      const entityId = offlineOptions.offlineConfig.entityId;
+      const targetStore = (stores as any)[storeName + 'Store'];
+      if (targetStore) {
+        console.log(`[fetchApi] Offline: Serving from store ${storeName}`);
+        if (entityId) {
+          const data = await targetStore.getById(entityId);
+          if (data !== undefined) return data as T;
+        } else {
+          const data = await targetStore.getAll();
+          return data as T;
+        }
+      }
+      throw new ApiError('أنت غير متصل بالإنترنت والبيانات المطلوبة غير متوفرة محلياً.', 0);
+    }
+
+    if ((method === 'POST' || method === 'PUT' || method === 'PATCH' || method === 'DELETE') && offlineOptions.offlineConfig?.entityType) {
+      const entityType = offlineOptions.offlineConfig.entityType;
+      const entityId = offlineOptions.offlineConfig.entityId;
+      
+      const safeHeaders: Record<string, string> = {};
+      if (headers['X-Academy-Id']) safeHeaders['X-Academy-Id'] = headers['X-Academy-Id'];
+      if (headers['X-XSRF-TOKEN']) safeHeaders['X-XSRF-TOKEN'] = headers['X-XSRF-TOKEN'];
+      if (headers['Authorization']) safeHeaders['Authorization'] = headers['Authorization'];
+
+      console.log(`[fetchApi] Offline: Enqueuing mutation for ${entityType}`);
+      const queueId = await syncEngine.enqueue(
+        url,
+        method as any,
+        options.body ? JSON.parse(options.body as string) : {},
+        entityType,
+        entityId,
+        safeHeaders
+      );
+
+      return {
+        status: 'offline_queued',
+        message: 'تم حفظ العملية محلياً وسيتم مزامنتها تلقائياً عند اتصالك بالإنترنت.',
+        queueId,
+        id: entityId,
+      } as unknown as T;
+    }
+
+    throw new ApiError('يرجى الاتصال بالإنترنت لإجراء هذه العملية.', 0);
+  }
 
   const executeRequest = async (): Promise<Response> => {
     try {
@@ -291,6 +354,22 @@ export async function fetchApi<T = unknown>(
         credentials: 'include',
       });
     } catch (error) {
+      // Sudden connection failure fallback
+      if (method === 'GET' && offlineOptions.offlineConfig?.storeName) {
+        const storeName = offlineOptions.offlineConfig.storeName;
+        const entityId = offlineOptions.offlineConfig.entityId;
+        const targetStore = (stores as any)[storeName + 'Store'];
+        if (targetStore) {
+          console.warn('[fetchApi] Network failed, falling back to cache');
+          if (entityId) {
+            const data = await targetStore.getById(entityId);
+            if (data !== undefined) return new Response(JSON.stringify({ status: true, data }), { headers: { 'Content-Type': 'application/json' } });
+          } else {
+            const data = await targetStore.getAll();
+            return new Response(JSON.stringify({ status: true, data }), { headers: { 'Content-Type': 'application/json' } });
+          }
+        }
+      }
       const networkError = createNetworkError(error);
       showErrorToast(networkError);
       throw networkError;
@@ -412,5 +491,20 @@ export async function fetchApi<T = unknown>(
   }
 
   const res: ApiResponse<T> = await response.json();
-  return res.data !== undefined ? res.data : (res as unknown as T);
+  const dataResult = res.data !== undefined ? res.data : (res as unknown as T);
+
+  // Auto-cache to IndexedDB when online GET succeeds
+  if (method === 'GET' && response.ok && offlineOptions.offlineConfig?.storeName && !offlineOptions.offlineConfig.skipCache) {
+    const storeName = offlineOptions.offlineConfig.storeName;
+    const targetStore = (stores as any)[storeName + 'Store'];
+    if (targetStore && dataResult) {
+      if (Array.isArray(dataResult)) {
+        targetStore.putMany(dataResult).catch((err: any) => console.error(`[fetchApi] Auto-cache putMany failed for ${storeName}:`, err));
+      } else {
+        targetStore.put(dataResult).catch((err: any) => console.error(`[fetchApi] Auto-cache put failed for ${storeName}:`, err));
+      }
+    }
+  }
+
+  return dataResult;
 }

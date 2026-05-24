@@ -15,6 +15,9 @@ import { getApiBaseUrl, getVersionedApiUrl } from '@/config/api-config';
 import { getCSRFToken, initializeCSRF } from './csrf';
 import { getAccessToken, refreshAccessToken as tokenRefresh } from './tokenManager';
 import { ApiError } from './errorHandler';
+import { networkMonitor } from './offline/network-monitor';
+import { syncEngine } from './offline/sync-engine';
+import * as stores from './offline/stores';
 
 /**
  * HTTP Methods
@@ -24,11 +27,17 @@ export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD' | 
 /**
  * Request Options
  */
-interface RequestOptions extends Omit<RequestInit, 'headers' | 'method'> {
+export interface RequestOptions extends Omit<RequestInit, 'headers' | 'method'> {
   headers?: Record<string, string>;
   params?: Record<string, string | number | boolean | undefined>;
   skipAuth?: boolean;
   skipAcademy?: boolean;
+  offlineConfig?: {
+    storeName?: string;
+    entityId?: string;
+    entityType?: string;
+    skipCache?: boolean;
+  };
 }
 
 /**
@@ -291,6 +300,60 @@ class ApiClient {
       return fetchOptions;
     };
 
+    // Check connection status
+    const isOnline = networkMonitor.isOnline;
+
+    if (!isOnline) {
+      // 1. Handling GET request (read cache)
+      if (method === 'GET' && options.offlineConfig?.storeName) {
+        const storeName = options.offlineConfig.storeName;
+        const entityId = options.offlineConfig.entityId;
+        const targetStore = (stores as any)[storeName + 'Store'];
+        if (targetStore) {
+          console.log(`[ApiClient] Offline: Serving from store ${storeName}`);
+          if (entityId) {
+            const data = await targetStore.getById(entityId);
+            if (data !== undefined) return data as T;
+          } else {
+            const data = await targetStore.getAll();
+            return data as T;
+          }
+        }
+        throw new ApiError('أنت غير متصل بالإنترنت والبيانات المطلوبة غير متوفرة محلياً.', 0);
+      }
+
+      // 2. Handling mutations (write queue)
+      if ((method === 'POST' || method === 'PUT' || method === 'PATCH' || method === 'DELETE') && options.offlineConfig?.entityType) {
+        const entityType = options.offlineConfig.entityType;
+        const entityId = options.offlineConfig.entityId;
+        
+        const headers = this.buildHeaders(method, url, options);
+        const safeHeaders: Record<string, string> = {};
+        if (headers['X-Academy-Id']) safeHeaders['X-Academy-Id'] = headers['X-Academy-Id'];
+        if (headers['X-XSRF-TOKEN']) safeHeaders['X-XSRF-TOKEN'] = headers['X-XSRF-TOKEN'];
+        if (headers['Authorization']) safeHeaders['Authorization'] = headers['Authorization'];
+
+        console.log(`[ApiClient] Offline: Enqueuing mutation for ${entityType}`);
+        const queueId = await syncEngine.enqueue(
+          url,
+          method,
+          options.body ? JSON.parse(options.body as string) : {},
+          entityType,
+          entityId,
+          safeHeaders
+        );
+
+        return {
+          status: 'offline_queued',
+          message: 'تم حفظ العملية محلياً وسيتم مزامنتها تلقائياً عند اتصالك بالإنترنت.',
+          queueId,
+          id: entityId,
+        } as unknown as T;
+      }
+
+      throw new ApiError('يرجى الاتصال بالإنترنت لإجراء هذه العملية.', 0);
+    }
+
     // IMPORTANT: keep this dynamic so retries after CSRF/token refresh use fresh headers.
     const executeRequest = (): Promise<Response> => fetch(url, buildFetchOptions());
     const trustedUrl = this.isTrustedRequestUrl(url);
@@ -299,6 +362,23 @@ class ApiClient {
     try {
       response = await executeRequest();
     } catch (error) {
+      // Offline fallback if fetch fails due to sudden network loss
+      if (method === 'GET' && options.offlineConfig?.storeName) {
+        const storeName = options.offlineConfig.storeName;
+        const entityId = options.offlineConfig.entityId;
+        const targetStore = (stores as any)[storeName + 'Store'];
+        if (targetStore) {
+          console.warn('[ApiClient] Connection failed, falling back to cache');
+          if (entityId) {
+            const data = await targetStore.getById(entityId);
+            if (data !== undefined) return data as T;
+          } else {
+            const data = await targetStore.getAll();
+            return data as T;
+          }
+        }
+      }
+
       const message = error instanceof Error && error.message
         ? `فشل الاتصال بالخادم: ${error.message}`
         : 'فشل الاتصال بالخادم. يرجى التحقق من اتصال الإنترنت.';
@@ -320,7 +400,22 @@ class ApiClient {
       await this.handleError(response);
     }
 
-    return this.parseResponse<T>(response);
+    const parsedResult = await this.parseResponse<T>(response);
+
+    // Auto-update cache for GET requests when online
+    if (method === 'GET' && response.ok && options.offlineConfig?.storeName && !options.offlineConfig.skipCache) {
+      const storeName = options.offlineConfig.storeName;
+      const targetStore = (stores as any)[storeName + 'Store'];
+      if (targetStore && parsedResult) {
+        if (Array.isArray(parsedResult)) {
+          targetStore.putMany(parsedResult).catch((err: any) => console.error(`[ApiClient] Auto-cache putMany failed for ${storeName}:`, err));
+        } else {
+          targetStore.put(parsedResult).catch((err: any) => console.error(`[ApiClient] Auto-cache put failed for ${storeName}:`, err));
+        }
+      }
+    }
+
+    return parsedResult;
   }
 
   /**

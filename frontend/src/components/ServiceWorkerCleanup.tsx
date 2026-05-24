@@ -11,9 +11,10 @@ export default function ServiceWorkerCleanup() {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then((registrations) => {
         for (const registration of registrations) {
-          // Keep only firebase-messaging-sw.js, unregister everything else
+          // Keep only firebase-messaging-sw.js and our main sw.js, unregister everything else
           const swUrl = registration.active?.scriptURL || '';
-          if (!swUrl.includes('firebase-messaging-sw.js')) {
+          const isAllowedSw = swUrl.includes('firebase-messaging-sw.js') || swUrl.includes('sw.js');
+          if (!isAllowedSw) {
             registration.unregister().then((success) => {
               if (success) {
                 console.log('[Cleanup] Unregistered old service worker:', swUrl);
@@ -28,12 +29,14 @@ export default function ServiceWorkerCleanup() {
         caches.keys().then((cacheNames) => {
           cacheNames.forEach((cacheName) => {
             // Delete stale app caches that may serve outdated JS/CSS bundles.
+            // Exclude new Serwist cache namespaces.
             const shouldDeleteCache =
-              cacheName.startsWith('lms-') ||
+              (cacheName.startsWith('lms-') ||
               cacheName.startsWith('workbox-') ||
               cacheName.startsWith('next-') ||
               cacheName.startsWith('pwa-') ||
-              cacheName.includes('precache');
+              cacheName.includes('precache')) &&
+              !cacheName.startsWith('serwist');
 
             if (shouldDeleteCache) {
               caches.delete(cacheName).then(() => {

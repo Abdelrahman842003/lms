@@ -5,6 +5,14 @@ const withBundleAnalyzer = require('@next/bundle-analyzer')({
   enabled: process.env.ANALYZE === 'true',
 });
 
+const { withSerwist } = require("@serwist/next");
+
+const withSerwistConfig = withSerwist({
+  swSrc: "src/app/sw.ts",
+  swDest: "public/sw.js",
+  disable: process.env.NODE_ENV === "development", // Disable SW in development for better DX
+});
+
 const nextConfig = {
   output: 'standalone',
   // Security: Ignore ESLint/TypeScript errors during build for deployment stability
@@ -141,4 +149,4 @@ const nextConfig = {
   },
 };
 
-module.exports = withBundleAnalyzer(nextConfig);
+module.exports = withBundleAnalyzer(withSerwistConfig(nextConfig));

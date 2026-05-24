@@ -36,15 +36,19 @@ export const getGrades = async (
     ...(filters?.search && { search: filters.search }),
   });
 
-  const data = await fetchApi(`/api/teacher/grades?${queryParams}`);
+  const data = await fetchApi(`/api/teacher/grades?${queryParams}`, {
+    offlineConfig: { storeName: 'grades' }
+  } as any);
   return data;
 };
 
 export const createGrade = async (data: CreateGradeData): Promise<{ grade: Grade; message: string }> => {
+  const localId = crypto.randomUUID();
   const res = await fetchApi<{ grade: Grade; message: string }>('/teacher/grades', {
     method: 'POST',
     body: JSON.stringify(data),
-  });
+    offlineConfig: { entityType: 'grades', entityId: localId }
+  } as any);
   return res;
 };
 
@@ -52,13 +56,15 @@ export const updateGrade = async (id: string, data: UpdateGradeData): Promise<{ 
   const res = await fetchApi<{ grade: Grade; message: string }>(`/teacher/grades/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
-  });
+    offlineConfig: { entityType: 'grades', entityId: id }
+  } as any);
   return res;
 };
 
 export const deleteGrade = async (id: string): Promise<{ message: string }> => {
   const res = await fetchApi<{ message: string }>(`/teacher/grades/${id}`, {
     method: 'DELETE',
-  });
+    offlineConfig: { entityType: 'grades', entityId: id }
+  } as any);
   return res;
 };

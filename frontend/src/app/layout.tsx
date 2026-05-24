@@ -12,6 +12,9 @@ import MaintenanceGuard from '@/components/MaintenanceGuard';
 import SeasonalDecorations from '@/components/SeasonalDecorations';
 import { resolveSeasonalThemeFromSettings } from '@/lib/seasonalTheme';
 import { VideoUploadProvider } from '@/contexts/VideoUploadContext';
+import { OfflineProvider } from '@/contexts/OfflineContext';
+import NetworkStatusBanner from '@/components/offline/NetworkStatusBanner';
+import ConflictResolutionModal from '@/components/offline/ConflictResolutionModal';
 
 // Fetch SEO settings from API
 const getSeoSettings = async () => {
@@ -157,15 +160,19 @@ export default async function RootLayout({
                 <SettingsProvider>
                 <SeasonalDecorations initialTheme={seasonalTheme.theme} />
                 <AuthProvider>
+                <OfflineProvider>
                 <VideoUploadProvider>
                   <ServiceWorkerCleanup />
                   <InstallPrompt />
                   <MaintenanceGuard maintenanceMode={maintenanceMode}>
+                    <NetworkStatusBanner />
                     <div className="relative z-10 max-w-[1200px] mx-auto">
                         {children}
                     </div>
+                    <ConflictResolutionModal />
                     <Toaster position="top-center" />                  </MaintenanceGuard>
                 </VideoUploadProvider>
+                </OfflineProvider>
                 </AuthProvider>
                 </SettingsProvider>
             </body>
