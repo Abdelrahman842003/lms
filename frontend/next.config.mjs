@@ -1,18 +1,21 @@
-/** @type {import('next').NextConfig} */
+import withSerwistInit from '@serwist/next';
+import bundleAnalyzerInit from '@next/bundle-analyzer';
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
 
 // Bundle analyzer configuration
-const withBundleAnalyzer = require('@next/bundle-analyzer')({
+const withBundleAnalyzer = bundleAnalyzerInit({
   enabled: process.env.ANALYZE === 'true',
 });
 
-const { withSerwist } = require("@serwist/next");
-
-const withSerwistConfig = withSerwist({
+const withSerwist = withSerwistInit({
   swSrc: "src/app/sw.ts",
   swDest: "public/sw.js",
   disable: process.env.NODE_ENV === "development", // Disable SW in development for better DX
 });
 
+/** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone',
   // Security: Ignore ESLint/TypeScript errors during build for deployment stability
@@ -149,4 +152,4 @@ const nextConfig = {
   },
 };
 
-module.exports = withBundleAnalyzer(withSerwistConfig(nextConfig));
+export default withBundleAnalyzer(withSerwist(nextConfig));
