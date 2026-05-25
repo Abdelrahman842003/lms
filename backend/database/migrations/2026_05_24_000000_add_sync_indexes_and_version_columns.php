@@ -20,13 +20,11 @@ return new class extends Migration
                 Schema::table($tableName, function (Blueprint $table) use ($tableName) {
                     // Add index to updated_at for fast delta pulls
                     if (Schema::hasColumn($tableName, 'updated_at')) {
-                        // Check if index already exists to avoid errors
-                        $conn = Schema::getConnection();
-                        $dbSchemaManager = $conn->getDoctrineSchemaManager();
-                        $indexes = $dbSchemaManager->listTableIndexes($conn->getTablePrefix() . $tableName);
-                        $indexName = $conn->getTablePrefix() . $tableName . '_updated_at_index';
+                        // Laravel 11 Native check for existing index
+                        // By default, Laravel names the index: table_column_index
+                        $indexName = $tableName . '_updated_at_index';
                         
-                        if (!array_key_exists($indexName, $indexes)) {
+                        if (!Schema::hasIndex($tableName, $indexName)) {
                             $table->index('updated_at');
                         }
                     }
@@ -50,13 +48,12 @@ return new class extends Migration
         foreach ($tables as $tableName) {
             if (Schema::hasTable($tableName)) {
                 Schema::table($tableName, function (Blueprint $table) use ($tableName) {
-                    if (Schema::hasColumn($tableName, 'updated_at')) {
-                        try {
-                            $table->dropIndex(['updated_at']);
-                        } catch (\Exception $e) {
-                            // Suppress if index doesn't exist
-                        }
+                    $indexName = $tableName . '_updated_at_index';
+                    
+                    if (Schema::hasIndex($tableName, $indexName)) {
+                        $table->dropIndex($indexName);
                     }
+                    
                     if (Schema::hasColumn($tableName, 'version')) {
                         $table->dropColumn('version');
                     }
