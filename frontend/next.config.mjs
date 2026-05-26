@@ -100,10 +100,16 @@ const nextConfig = {
     return config;
   },
   async rewrites() {
+    // Normalize base URL to avoid double /api/v1/v1
+    const baseUrl = (process.env.INTERNAL_API_URL || 'http://localhost:8000')
+      .replace(/\/api\/v\d+\/?$/, '')
+      .replace(/\/api\/?$/, '')
+      .replace(/\/$/, '');
+
     return [
       {
         source: '/api/:path*',
-        destination: `${process.env.INTERNAL_API_URL || 'http://octane:8000/api/v1'}/:path*`,
+        destination: `${baseUrl}/api/:path*`,
       },
     ];
   },

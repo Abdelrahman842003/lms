@@ -11,10 +11,7 @@ const API_BASE_URL = getVersionedApiUrl();
 
 // ========== Dashboard ==========
 export const getDashboardStats = async () => {
-  const response = await axios.get(`${API_BASE_URL}/academy/dashboard`, {
-    headers: getAuthHeaders(),
-  });
-  return response.data;
+  return await fetchApi<any>('/academy/dashboard');
 };
 
 // ========== Teachers Management ==========

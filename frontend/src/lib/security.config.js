@@ -18,8 +18,8 @@ function generateCSPHeader() {
     "default-src 'self'",
     // Development needs 'unsafe-eval' for Next.js hot reload
     isDev
-      ? "script-src 'self' 'unsafe-eval' 'unsafe-inline'"
-      : "script-src 'self' 'unsafe-inline'",
+      ? "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://static.cloudflareinsights.com"
+      : "script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com",
     // Allow Google Fonts + cdnjs (Font Awesome) stylesheets
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com",
     // Allow Google Fonts + cdnjs (Font Awesome) font files

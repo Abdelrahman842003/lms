@@ -81,7 +81,8 @@ class NetworkMonitor {
       });
       
       clearTimeout(timeoutId);
-      const isActuallyOnline = response.ok || response.status === 401 || response.status === 419; // Auth errors mean server is reachable
+      // If fetch didn't throw, the server is reachable regardless of HTTP status
+      const isActuallyOnline = true;
       
       this.updateStatus(isActuallyOnline);
       return isActuallyOnline;
