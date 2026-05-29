@@ -17,6 +17,7 @@ import { SecureVideoPlayer } from '@/components/video/SecureVideoPlayer';
 import { VideoCommentsSection } from '@/components/video/VideoCommentsSection';
 import { VideoQuizStudent } from '@/components/video/VideoQuizStudent';
 import { PdfViewerModal } from '@/components/shared/PdfViewerModal';
+import { AppNotFound } from '@/components/shared/AppNotFound';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -61,7 +62,10 @@ function Stat({ icon, value, label, glow }: { icon: string; value: string | numb
 
 export default function StudentVideoDetailsPage() {
   const params = useParams<{ id: string }>();
-  const { user } = useAuth();
+  const { user, selectedTeacher } = useAuth();
+  const hasSelectedTeacher = !!selectedTeacher;
+  const hasVideosAddon = selectedTeacher?.has_videos_addon !== false;
+  const canAccessVideos = hasSelectedTeacher && hasVideosAddon;
 
   const [video, setVideo]           = useState<VideoItem | null>(null);
   const [progress, setProgress]     = useState<VideoWatchProgress | null>(null);
@@ -120,7 +124,38 @@ export default function StudentVideoDetailsPage() {
     } catch { /* ignore */ }
   }, [params.id]);
 
-  useEffect(() => { void loadVideo(); }, [loadVideo]);
+  useEffect(() => {
+    if (!canAccessVideos) {
+      setLoading(false);
+      return;
+    }
+
+    void loadVideo();
+  }, [loadVideo, canAccessVideos]);
+
+  if (!hasSelectedTeacher) {
+    return (
+      <AppNotFound
+        title="اختر مدرساً"
+        description="يرجى اختيار مدرس أولاً للوصول إلى مكتبة الفيديوهات."
+        hint="تلميح: اختر المدرس من صفحة المعلمين ثم ارجع لمكتبة الفيديوهات."
+        actionHref="/student/teachers"
+        actionLabel="اختيار مدرس"
+      />
+    );
+  }
+
+  if (!hasVideosAddon) {
+    return (
+      <AppNotFound
+        title="الميزة غير متاحة"
+        description="باقة الفيديوهات غير مفعلة لهذا المدرس حالياً."
+        hint="تلميح: يمكنك متابعة المحاضرات والامتحانات مع هذا المدرس بدون فيديوهات."
+        actionHref="/student/dashboard"
+        actionLabel="الرجوع للوحة التحكم"
+      />
+    );
+  }
 
   const handleLike = async () => {
     if (!video || liking) return;

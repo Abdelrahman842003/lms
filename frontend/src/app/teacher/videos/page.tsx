@@ -23,6 +23,9 @@ export default function TeacherVideosPage() {
   const { user, selectedAcademy, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const isIndependentSelected = !selectedAcademy || selectedAcademy?.id === 'independent';
+  const hasVideosAddon = isIndependentSelected
+    ? Boolean((user as any)?.has_videos_addon)
+    : Boolean(selectedAcademy?.has_videos_addon);
 
   const [videos, setVideos] = useState<VideoItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,14 +58,14 @@ export default function TeacherVideosPage() {
   useEffect(() => {
     if (authLoading) return;
 
-    if (!isIndependentSelected) {
+    if (!isIndependentSelected || !hasVideosAddon) {
       setVideos([]);
       setLoading(false);
       return;
     }
 
     void fetchVideos();
-  }, [authLoading, isIndependentSelected]);
+  }, [authLoading, isIndependentSelected, hasVideosAddon]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -162,9 +165,20 @@ export default function TeacherVideosPage() {
     return (
       <AppNotFound
         description="هذه الصفحة متاحة فقط عند اختيار وضع المدرس المستقل."
-        hint="تلميح: اختر (مدرس مستقل) من مبدّل الأكاديمية في أعلى الصفحة."
-        actionHref="/teacher/dashboard"
-        actionLabel="الرجوع للوحة التحكم"
+        hint="تلميح: اختر (مدرس مستقل) من مبدّل الأكاديمية في أعلى الصفحة أو استخدم صفحة الأكاديمية للفيديوهات."
+        actionHref="/academy/videos"
+        actionLabel="الانتقال لفيديوهات الأكاديمية"
+      />
+    );
+  }
+
+  if (!hasVideosAddon) {
+    return (
+      <AppNotFound
+        description="باقة الفيديوهات الأونلاين غير مفعلة لهذا الحساب."
+        hint="يرجى التواصل مع الإدارة أو الاشتراك في باقة الفيديوهات لتفعيل الميزة."
+        actionHref="/teacher/subscription"
+        actionLabel="الذهاب للاشتراك"
       />
     );
   }

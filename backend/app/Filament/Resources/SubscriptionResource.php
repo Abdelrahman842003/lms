@@ -252,6 +252,18 @@ class SubscriptionResource extends BaseResource
                             })
                             ->nullable(),
 
+                        Toggle::make('has_videos_addon')
+                            ->label('باقة الفيديوهات الأونلاين (إضافة)')
+                            ->default(false)
+                            ->afterStateHydrated(function ($component, $state, ?Subscription $record): void {
+                                if (! $record) {
+                                    return;
+                                }
+
+                                $hasVideosAddon = data_get($record->subscriber, 'has_videos_addon');
+                                $component->state((bool) $hasVideosAddon);
+                            }),
+
                         TextInput::make('storage_minutes_limit')
                             ->label('حد دقائق التخزين (فيديو)')
                             ->numeric()

@@ -37,7 +37,7 @@ export default function TeacherAttendancePage() {
   };
 
   useEffect(() => {
-    if (user?.userType === 'teacher' && selectedAcademy?.id) {
+    if (user?.userType === 'teacher' && selectedAcademy?.id && selectedAcademy.id !== 'independent') {
       fetchTodayStatus();
     }
   }, [user, selectedAcademy]);
@@ -52,7 +52,7 @@ export default function TeacherAttendancePage() {
     );
   }
 
-  if (!selectedAcademy?.id) {
+  if (!selectedAcademy?.id || selectedAcademy.id === 'independent') {
     return (
       <DashboardLayout role="teacher" user={user}>
         <div className="min-h-[60vh] flex flex-col items-center justify-center text-center p-6">

@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { Icon } from '@/components/ui';
+import { AppNotFound } from '@/components/shared/AppNotFound';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { getStudentVideos } from '@/services/videoService';
 import type { VideoItem } from '@/types/video.types';
@@ -13,6 +14,9 @@ export default function StudentVideosPage() {
   const { user, selectedTeacher } = useAuth();
   const [videos, setVideos] = useState<VideoItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const hasSelectedTeacher = !!selectedTeacher;
+  const hasVideosAddon = selectedTeacher?.has_videos_addon !== false;
+  const canAccessVideos = hasSelectedTeacher && hasVideosAddon;
 
   useEffect(() => {
     const loadVideos = async () => {
@@ -24,8 +28,14 @@ export default function StudentVideosPage() {
       }
     };
 
+    if (!canAccessVideos) {
+      setVideos([]);
+      setLoading(false);
+      return;
+    }
+
     void loadVideos();
-  }, []);
+  }, [canAccessVideos]);
 
   const stats = useMemo(() => {
     const totalLikes = videos.reduce((sum, video) => sum + (video.likes_count || 0), 0);
@@ -41,6 +51,30 @@ export default function StudentVideosPage() {
       totalDurationMinutes: Math.floor(totalDurationSeconds / 60),
     };
   }, [videos]);
+
+  if (!hasSelectedTeacher) {
+    return (
+      <AppNotFound
+        title="اختر مدرساً"
+        description="يرجى اختيار مدرس أولاً لعرض مكتبة الفيديوهات الخاصة به."
+        hint="تلميح: اختر المدرس من صفحة المعلمين ثم ارجع لمكتبة الفيديوهات."
+        actionHref="/student/teachers"
+        actionLabel="اختيار مدرس"
+      />
+    );
+  }
+
+  if (!hasVideosAddon) {
+    return (
+      <AppNotFound
+        title="الميزة غير متاحة"
+        description="باقة الفيديوهات غير مفعلة لهذا المدرس حالياً."
+        hint="تلميح: يمكنك متابعة المحاضرات والامتحانات مع هذا المدرس بدون فيديوهات."
+        actionHref="/student/dashboard"
+        actionLabel="الرجوع للوحة التحكم"
+      />
+    );
+  }
 
   return (
     <DashboardLayout role="student" user={user || undefined}>

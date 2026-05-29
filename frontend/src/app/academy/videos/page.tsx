@@ -7,8 +7,9 @@ import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { StatCard } from '@/components/dashboard/StatCard';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import { Filter } from '@/components/Filter';
-import { Button, Icon, Input } from '@/components/ui';
+import { Button, Icon, Input, LoadingSpinner } from '@/components/ui';
 import { VideoCard, VideoCardSkeleton } from '@/components/video/VideoCard';
+import { AppNotFound } from '@/components/shared/AppNotFound';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import {
   deleteAcademyVideo,
@@ -19,8 +20,11 @@ import {
 import type { VideoItem } from '@/types/video.types';
 
 export default function AcademyVideosPage() {
-  const { user } = useAuth();
+  const { user, selectedAcademy, isLoading: authLoading } = useAuth();
   const router = useRouter();
+  const hasVideosAddon = selectedAcademy?.id
+    ? Boolean(selectedAcademy?.has_videos_addon)
+    : Boolean((user as any)?.has_videos_addon);
 
   const [videos, setVideos] = useState<VideoItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,8 +55,18 @@ export default function AcademyVideosPage() {
   };
 
   useEffect(() => {
+    if (authLoading) {
+      return;
+    }
+
+    if (!hasVideosAddon) {
+      setVideos([]);
+      setLoading(false);
+      return;
+    }
+
     void fetchVideos();
-  }, []);
+  }, [authLoading, hasVideosAddon]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -151,6 +165,25 @@ export default function AcademyVideosPage() {
       setIsProcessing(false);
     }
   };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-dark">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+
+  if (!hasVideosAddon) {
+    return (
+      <AppNotFound
+        description="باقة الفيديوهات الأونلاين غير مفعلة لهذه الأكاديمية."
+        hint="يرجى التواصل مع الإدارة لتفعيل الميزة قبل إدارة الفيديوهات."
+        actionHref="/academy/dashboard"
+        actionLabel="الرجوع للوحة التحكم"
+      />
+    );
+  }
 
   return (
     <DashboardLayout

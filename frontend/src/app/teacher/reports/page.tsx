@@ -31,7 +31,7 @@ import DrilldownTable from '@/components/reports/DrilldownTable';
 import { KpiGridSkeleton, ChartSkeleton, TableSkeleton } from '@/components/reports/teacher/ReportSkeletons';
 
 export default function TeacherReportsPage() {
-  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading, selectedAcademy } = useAuth();
   const router = useRouter();
 
   const [filters, setFilters] = useState<TeacherReportFilters>({ preset: 'this_month' });
@@ -39,6 +39,7 @@ export default function TeacherReportsPage() {
   const [report, setReport] = useState<TeacherReportOverview | null>(null);
   const [drilldown, setDrilldown] = useState<TeacherDrilldownResponse | null>(null);
   const [drilldownLoading, setDrilldownLoading] = useState(false);
+  const isAcademyMode = !!(selectedAcademy?.id && selectedAcademy.id !== 'independent');
 
   useEffect(() => {
     if (!authLoading && (!isAuthenticated || (user?.userType !== 'teacher' && user?.userType !== 'secretary'))) {
@@ -59,10 +60,16 @@ export default function TeacherReportsPage() {
   }, [filters]);
 
   useEffect(() => {
-    if (user && (user.userType === 'teacher' || user.userType === 'secretary')) {
-      loadReport();
+    if (!user || (user.userType !== 'teacher' && user.userType !== 'secretary')) {
+      return;
     }
-  }, []);
+
+    if (isAcademyMode || report !== null) {
+      return;
+    }
+
+    loadReport();
+  }, [user, isAcademyMode, report, loadReport]);
 
   const handleDrilldown = useCallback(async (key: string) => {
     setDrilldownLoading(true);
@@ -86,6 +93,30 @@ export default function TeacherReportsPage() {
   const groupBreakdown = sections?.group_breakdown;
   const subscription = sections?.subscription;
   const alerts = report?.alerts;
+
+  if (authLoading || !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-dark">
+        <Icon name="spinner" className="animate-spin text-primary text-4xl" />
+      </div>
+    );
+  }
+
+  if (isAcademyMode) {
+    return (
+      <DashboardLayout role={(user?.userType as 'teacher' | 'secretary') || 'teacher'} user={user || undefined}>
+        <div className="min-h-[60vh] flex flex-col items-center justify-center text-center p-6">
+          <div className="w-24 h-24 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-light/20 text-4xl mb-8">
+            <Icon name="chart-bar" />
+          </div>
+          <h2 className="text-2xl font-black text-white mb-4 tracking-tight">هذه الميزة متاحة فقط في النظام المستقل</h2>
+          <p className="text-gray-light/40 text-sm max-w-md font-medium leading-relaxed">
+            التقارير التفصيلية غير متاحة أثناء العمل كعضو في أكاديمية.
+          </p>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout role={(user?.userType as 'teacher' | 'secretary') || 'teacher'} user={user || undefined}>

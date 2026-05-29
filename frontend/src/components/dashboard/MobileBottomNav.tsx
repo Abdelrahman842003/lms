@@ -256,12 +256,50 @@ const getNavItems = (role: string): NavItem[] => {
 export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ role }) => {
   const pathname = usePathname();
   const router = useRouter();
-  const { user: authUser, logout, isLoading } = useAuth();
+  const { user: authUser, logout, isLoading, selectedAcademy } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [hasAcademies, setHasAcademies] = useState(false);
   const [isAcademyModalOpen, setIsAcademyModalOpen] = useState(false);
   
-  const items = getNavItems(role);
+  let items = getNavItems(role);
+
+  const hasVideosAddon = (function() {
+    if (role === 'academy') {
+      return (authUser as any)?.has_videos_addon;
+    }
+    if (role === 'teacher') {
+      const isIndependent = selectedAcademy?.id === 'independent' || (!selectedAcademy?.id && !isLoading);
+      if (isIndependent) {
+        return (authUser as any)?.has_videos_addon;
+      }
+      return selectedAcademy?.has_videos_addon;
+    }
+    if (role === 'secretary') {
+      const isIndependent = selectedAcademy?.id === 'independent' || (!selectedAcademy?.id && !isLoading);
+      if (isIndependent) {
+          if (selectedAcademy?.id && selectedAcademy.id !== 'independent') {
+              return selectedAcademy.has_videos_addon;
+          }
+          return (authUser as any)?.has_videos_addon ?? true;
+      }
+      return selectedAcademy?.has_videos_addon;
+    }
+    return true;
+  })();
+
+  if (!hasVideosAddon) {
+    items = items.filter(item => item.id !== 'videos');
+  }
+
+  if (role === 'teacher') {
+    const isAcademyMode = (selectedAcademy?.id && selectedAcademy.id !== 'independent') || isLoading;
+    if (isAcademyMode) {
+      items = items.filter(item => item.id !== 'reports');
+    } else {
+      items = items.filter(item => item.id !== 'attendance');
+    }
+  }
+
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Check for academies (Teacher only)

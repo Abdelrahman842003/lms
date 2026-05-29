@@ -74,7 +74,12 @@ class EditSubscription extends EditRecord
             ? max(0, (int) $data['delivery_minutes_limit'])
             : (int) ($subscriber->delivery_minutes_limit ?? 0);
 
+        $hasVideosAddon = isset($data['has_videos_addon']) 
+            ? (bool) $data['has_videos_addon'] 
+            : (bool) ($subscriber->has_videos_addon ?? false);
+
         $payload = [
+            'has_videos_addon' => $hasVideosAddon,
             'plan_max_students' => $planMaxStudents,
             'storage_minutes_limit' => $storageMinutesLimit,
             'delivery_minutes_limit' => $deliveryMinutesLimit,

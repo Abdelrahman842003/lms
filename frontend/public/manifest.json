@@ -1,6 +1,6 @@
 {
-  "name": "منصة نطاق التعليمية | Neetaq LMS",
-  "short_name": "نطاق | Neetaq",
+  "name": "نطاق",
+  "short_name": "نطاق",
   "description": "نظام إدارة التعلم المتكامل للطلاب والمعلمين والأكاديميات وأولياء الأمور",
   "start_url": "/",
   "scope": "/",
@@ -11,25 +11,25 @@
   "categories": ["education", "productivity"],
   "icons": [
     {
-      "src": "/logo.png",
+      "src": "/pwa-logo.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/logo.png",
+      "src": "/pwa-logo.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "/logo.png",
+      "src": "/pwa-logo.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/logo.png",
+      "src": "/pwa-logo.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
@@ -39,12 +39,12 @@
     {
       "name": "لوحة التحكم",
       "url": "/",
-      "icons": [{ "src": "/logo.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/pwa-logo.png", "sizes": "192x192" }]
     },
     {
       "name": "المحاضرات",
       "url": "/academy/lectures",
-      "icons": [{ "src": "/logo.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/pwa-logo.png", "sizes": "192x192" }]
     }
   ]
 }
