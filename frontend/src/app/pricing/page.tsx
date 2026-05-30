@@ -127,17 +127,17 @@ export default function PricingPage() {
       <div className="max-w-[1200px] mx-auto px-6 py-16 md:py-24">
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-6xl font-black mb-6">خطط الأسعار</h1>
-          <p className="text-gray-400 text-lg md:text-xl max-w-2xl mx-auto mb-10">
+          <p className="text-text-theme-secondary text-lg md:text-xl max-w-2xl mx-auto mb-10">
             اختر الباقة المناسبة لاحتياجاتك التعليمية. جميع الباقات تشمل دعم فني متكامل وتحديثات مستمرة.
           </p>
 
           <div className="flex flex-col items-center gap-8">
              {/* Main View Toggle (Plans vs Addons) */}
-             <div className="p-1 bg-[#15192B] border border-white/5 rounded-2xl flex items-center w-fit">
+             <div className="p-1 bg-surface-secondary border border-border-theme-secondary rounded-2xl flex items-center w-fit">
                <button
                   onClick={() => setViewType('plans')}
                   className={`px-8 py-3 rounded-xl font-black transition-all duration-300 ${
-                    viewType === 'plans' ? 'bg-[#3249A9] text-white shadow-lg shadow-[#3249A9]/20' : 'text-gray-500 hover:text-gray-300'
+                    viewType === 'plans' ? 'bg-[#3249A9] text-white shadow-lg shadow-[#3249A9]/20' : 'text-text-theme-muted hover:text-text-theme-primary'
                   }`}
                >
                  خطط الاشتراك
@@ -145,7 +145,7 @@ export default function PricingPage() {
                <button
                   onClick={() => setViewType('addons')}
                   className={`px-8 py-3 rounded-xl font-black transition-all duration-300 ${
-                    viewType === 'addons' ? 'bg-[#3249A9] text-white shadow-lg shadow-[#3249A9]/20' : 'text-gray-500 hover:text-gray-300'
+                    viewType === 'addons' ? 'bg-[#3249A9] text-white shadow-lg shadow-[#3249A9]/20' : 'text-text-theme-muted hover:text-text-theme-primary'
                   }`}
                >
                  باقات الفيديوهات
@@ -154,7 +154,7 @@ export default function PricingPage() {
 
             {/* Billing Toggle (Only for Plans) */}
             {viewType === 'plans' && (
-              <div className="relative p-1 bg-[#15192B] border border-white/5 rounded-2xl flex items-center w-fit min-w-[300px] md:min-w-[450px] animate-in fade-in slide-in-from-top-2 duration-500">
+              <div className="relative p-1 bg-surface-secondary border border-border-theme-secondary rounded-2xl flex items-center w-fit min-w-[300px] md:min-w-[450px] animate-in fade-in slide-in-from-top-2 duration-500">
                 <div 
                   className={`absolute h-[calc(100%-8px)] rounded-xl bg-[#3249A9] shadow-lg shadow-[#3249A9]/20 transition-all duration-300 ease-out ${
                     billingCycle === 'monthly' 
@@ -168,7 +168,7 @@ export default function PricingPage() {
                 <button
                   onClick={() => setBillingCycle('monthly')}
                   className={`relative flex-1 py-3 px-4 text-xs md:text-sm font-black transition-colors duration-300 z-10 flex flex-col items-center justify-center ${
-                    billingCycle === 'monthly' ? 'text-white' : 'text-gray-500 hover:text-gray-300'
+                    billingCycle === 'monthly' ? 'text-white' : 'text-text-theme-muted hover:text-text-theme-primary'
                   }`}
                 >
                   <span>1 شهر</span>
@@ -177,7 +177,7 @@ export default function PricingPage() {
                 <button
                   onClick={() => setBillingCycle('semi-annual')}
                   className={`relative flex-1 py-3 px-4 text-xs md:text-sm font-black transition-colors duration-300 z-10 flex flex-col items-center justify-center ${
-                    billingCycle === 'semi-annual' ? 'text-white' : 'text-gray-500 hover:text-gray-300'
+                    billingCycle === 'semi-annual' ? 'text-white' : 'text-text-theme-muted hover:text-text-theme-primary'
                   }`}
                 >
                   <span>6 شهور</span>
@@ -186,7 +186,7 @@ export default function PricingPage() {
                 <button
                   onClick={() => setBillingCycle('yearly')}
                   className={`relative flex-1 py-3 px-4 text-xs md:text-sm font-black transition-colors duration-300 z-10 flex flex-col items-center justify-center ${
-                    billingCycle === 'yearly' ? 'text-white' : 'text-gray-500 hover:text-gray-300'
+                    billingCycle === 'yearly' ? 'text-white' : 'text-text-theme-muted hover:text-text-theme-primary'
                   }`}
                 >
                   <span>12 شهر</span>
@@ -233,10 +233,10 @@ export default function PricingPage() {
                   return (
                     <div
                       key={pkg.id}
-                      className={`relative group bg-[#15192B] rounded-[2.5rem] border transition-all duration-500 hover:-translate-y-2 p-10 flex flex-col ${
+                      className={`relative group bg-surface-secondary rounded-[2.5rem] border transition-all duration-500 hover:-translate-y-2 p-10 flex flex-col ${
                         pkg.is_popular
                           ? 'border-[#3249A9] shadow-[0_20px_50px_rgba(50,73,169,0.15)]'
-                          : 'border-white/5 hover:border-[#3249A9]/30'
+                          : 'border-border-theme-secondary hover:border-card-border-hover'
                       }`}
                     >
                       {pkg.is_popular && (
@@ -246,14 +246,14 @@ export default function PricingPage() {
                       )}
 
                       <div className="mb-8">
-                        <h3 className="text-2xl font-black text-white mb-2">{pkg.name_ar}</h3>
+                        <h3 className="text-2xl font-black text-text-theme-primary mb-2">{pkg.name_ar}</h3>
                         <div className="flex flex-col gap-1">
                           <div className="flex items-baseline gap-2">
-                            <span className="text-4xl font-black text-white">
+                            <span className="text-4xl font-black text-text-theme-primary">
                               {!hasPrice ? 'مجاناً' : `${discountedPrice.toLocaleString()} ج.م`}
                             </span>
                             {hasPrice && (
-                              <span className="text-gray-500 text-sm font-bold">
+                              <span className="text-text-theme-secondary text-sm font-bold">
                                 / {cycleText}
                               </span>
                             )}
@@ -261,7 +261,7 @@ export default function PricingPage() {
                           {hasPrice && hasDiscount && (
                             <div className="flex flex-col gap-1.5 mt-2">
                               <div className="flex items-center gap-2">
-                                <span className="text-gray-500 line-through text-sm font-medium">
+                                <span className="text-text-theme-secondary line-through text-sm font-medium">
                                   {originalPrice.toLocaleString()} ج.م
                                 </span>
                                 <span className="text-[11px] bg-[#16a34a] text-white px-2 py-0.5 rounded-lg font-black shadow-sm">
@@ -286,7 +286,7 @@ export default function PricingPage() {
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                             </svg>
                           </div>
-                          <span className="text-gray-300 font-medium">
+                          <span className="text-text-theme-secondary font-medium">
                             {pkg.max_students === 0 ? 'طلاب غير محدودين' : `حتى ${pkg.max_students} طالب`}
                           </span>
                         </div>
@@ -297,7 +297,7 @@ export default function PricingPage() {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                               </svg>
                             </div>
-                            <span className="text-gray-300 font-medium">تخزين {pkg.storage_minutes.toLocaleString()} دقيقة فيديو</span>
+                            <span className="text-text-theme-secondary font-medium">تخزين {pkg.storage_minutes.toLocaleString()} دقيقة فيديو</span>
                           </div>
                         )}
                         {pkg.delivery_minutes > 0 && (
@@ -307,7 +307,7 @@ export default function PricingPage() {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                               </svg>
                             </div>
-                            <span className="text-gray-300 font-medium">مشاهدة {pkg.delivery_minutes.toLocaleString()} دقيقة فيديو</span>
+                            <span className="text-text-theme-secondary font-medium">مشاهدة {pkg.delivery_minutes.toLocaleString()} دقيقة فيديو</span>
                           </div>
                         )}
                         {pkg.features?.map((f, i) => (
@@ -317,7 +317,7 @@ export default function PricingPage() {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                               </svg>
                             </div>
-                            <span className="text-gray-300 font-medium">{f.feature}</span>
+                            <span className="text-text-theme-secondary font-medium">{f.feature}</span>
                           </div>
                         ))}
                       </div>
@@ -327,7 +327,7 @@ export default function PricingPage() {
                         className={`w-full py-4 rounded-2xl font-black transition-all duration-300 ${
                           pkg.is_popular
                             ? 'bg-[#3249A9] hover:bg-[#283d8f] text-white shadow-[0_10px_30px_rgba(50,73,169,0.3)]'
-                            : 'bg-white/5 hover:bg-white/10 text-white'
+                            : 'bg-surface-tertiary hover:bg-surface-hover text-text-theme-primary'
                         }`}
                       >
                         {!hasPrice ? 'ابدأ مجاناً' : 'اشترك الآن'}
@@ -343,13 +343,13 @@ export default function PricingPage() {
                     {addons.map((addon, idx) => (
                       <div 
                         key={idx}
-                        className="relative group bg-[#15192B] rounded-[2.5rem] border border-white/5 hover:border-[#3249A9]/50 transition-all duration-500 hover:-translate-y-2 p-10 flex flex-col"
+                        className="relative group bg-surface-secondary rounded-[2.5rem] border border-border-theme-secondary hover:border-card-border-hover transition-all duration-500 hover:-translate-y-2 p-10 flex flex-col"
                       >
                         <div className="mb-8">
-                          <h4 className="text-2xl font-black text-white mb-2">{addon.name_ar}</h4>
+                          <h4 className="text-2xl font-black text-text-theme-primary mb-2">{addon.name_ar}</h4>
                           <div className="flex items-baseline gap-2">
-                            <span className="text-4xl font-black text-white">{parseFloat(addon.price as any).toLocaleString()} ج.م</span>
-                            <span className="text-gray-500 text-sm font-bold">/ شهرياً</span>
+                            <span className="text-4xl font-black text-text-theme-primary">{parseFloat(addon.price as any).toLocaleString()} ج.م</span>
+                            <span className="text-text-theme-secondary text-sm font-bold">/ شهرياً</span>
                           </div>
                         </div>
 
@@ -360,7 +360,7 @@ export default function PricingPage() {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                               </svg>
                             </div>
-                            <span className="text-gray-300 font-medium">{addon.storage_minutes.toLocaleString()} دقيقة تخزين إضافية</span>
+                            <span className="text-text-theme-secondary font-medium">{addon.storage_minutes.toLocaleString()} دقيقة تخزين إضافية</span>
                           </div>
                           <div className="flex items-center gap-3">
                             <div className="w-5 h-5 rounded-full bg-[#3249A9]/20 flex items-center justify-center text-[#3249A9]">
@@ -368,7 +368,7 @@ export default function PricingPage() {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                               </svg>
                             </div>
-                            <span className="text-gray-300 font-medium">{addon.delivery_minutes.toLocaleString()} دقيقة مشاهدة إضافية</span>
+                            <span className="text-text-theme-secondary font-medium">{addon.delivery_minutes.toLocaleString()} دقيقة مشاهدة إضافية</span>
                           </div>
                           <div className="flex items-center gap-3">
                             <div className="w-5 h-5 rounded-full bg-[#16a34a]/20 flex items-center justify-center text-[#16a34a]">
@@ -376,13 +376,13 @@ export default function PricingPage() {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                               </svg>
                             </div>
-                            <span className="text-gray-300 font-medium">تفعيل فوري</span>
+                            <span className="text-text-theme-secondary font-medium">تفعيل فوري</span>
                           </div>
                         </div>
 
                         <button 
                           onClick={() => handleAddonOrder(addon as any)}
-                          className="w-full py-4 bg-white/5 hover:bg-[#3249A9] text-white rounded-2xl font-black transition-all duration-300"
+                          className="w-full py-4 bg-surface-tertiary hover:bg-[#3249A9] text-text-theme-primary hover:text-white rounded-2xl font-black transition-all duration-300"
                         >
                           اطلب الباقة الآن
                         </button>
@@ -391,13 +391,13 @@ export default function PricingPage() {
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center py-20 text-center">
-                    <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-6 text-gray-500">
+                    <div className="w-20 h-20 bg-surface-secondary rounded-full flex items-center justify-center mb-6 text-text-theme-muted border border-border-theme-primary">
                        <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                        </svg>
                     </div>
-                    <h3 className="text-xl font-black text-white mb-2">لا يوجد باقات إضافية حالياً</h3>
-                    <p className="text-gray-500">يرجى العودة لاحقاً أو التواصل مع الدعم الفني لمزيد من المعلومات</p>
+                    <h3 className="text-xl font-black text-text-theme-primary mb-2">لا يوجد باقات إضافية حالياً</h3>
+                    <p className="text-text-theme-muted">يرجى العودة لاحقاً أو التواصل مع الدعم الفني لمزيد من المعلومات</p>
                   </div>
                 )}
               </div>
@@ -405,9 +405,9 @@ export default function PricingPage() {
           </div>
         )}
 
-        <div className="mt-24 bg-[#0B0F1A] rounded-[3rem] p-10 md:p-16 border border-white/5 text-center">
-          <h2 className="text-3xl md:text-4xl font-black mb-6">هل تحتاج إلى باقة مخصصة؟</h2>
-          <p className="text-gray-400 text-lg mb-10 max-w-2xl mx-auto">
+        <div className="mt-24 bg-surface-secondary rounded-[3rem] p-10 md:p-16 border border-border-theme-secondary text-center">
+          <h2 className="text-3xl md:text-4xl font-black mb-6 text-text-theme-primary">هل تحتاج إلى باقة مخصصة؟</h2>
+          <p className="text-text-theme-secondary text-lg mb-10 max-w-2xl mx-auto">
             إذا كانت لديك احتياجات خاصة لمؤسستك تعليمية الكبيرة، يسعدنا تقديم عرض سعر مخصص يتناسب مع متطلباتك.
           </p>
           <button
@@ -421,7 +421,7 @@ export default function PricingPage() {
                 router.push('/contact');
               }
             }}
-            className="px-10 py-4 border border-white/10 hover:border-[#3249A9] rounded-full text-white font-black transition-all"
+            className="px-10 py-4 border border-border-theme-primary hover:border-[#3249A9] rounded-full text-text-theme-primary font-black hover:bg-surface-hover transition-all"
           >
             تواصل معنا
           </button>

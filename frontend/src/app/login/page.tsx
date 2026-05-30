@@ -117,15 +117,15 @@ export default function LoginPage() {
             
             {/* Left Side: Creative Text (Hidden on mobile or centered) */}
             <div className="hidden lg:block text-right space-y-6">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/[0.03] text-gray-400 text-sm">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-border-theme-primary bg-surface-secondary text-text-theme-secondary text-sm">
                 <span>أهلاً بك مجدداً في نيتاق</span>
               </div>
-              <h1 className="text-[3.5rem] font-extrabold leading-[1.1] tracking-tight">
+              <h1 className="text-[3.5rem] font-extrabold leading-[1.1] tracking-tight text-text-theme-primary">
                 ابدأ رحلتك
                 <br />
                 <span className="text-[#3249A9]">التعليمية الآن.</span>
               </h1>
-              <p className="text-gray-400 text-xl max-w-[450px] leading-relaxed">
+              <p className="text-text-theme-secondary text-xl max-w-[450px] leading-relaxed">
                 ادخل إلى عالم من الابتكار، حيث نجمع لك كل ما تحتاجه للنجاح في مكان واحد.
               </p>
             </div>
@@ -136,7 +136,7 @@ export default function LoginPage() {
                 
                 {/* Mobile Heading */}
                 <div className="lg:hidden text-center space-y-4 mb-10">
-                   <h1 className="text-4xl font-extrabold tracking-tight">
+                   <h1 className="text-4xl font-extrabold tracking-tight text-text-theme-primary">
                      ابدأ رحلتك <span className="text-[#3249A9]">الآن</span>
                    </h1>
                 </div>
@@ -160,7 +160,7 @@ export default function LoginPage() {
                         <span className={`text-[0.75rem] font-medium ${validation.phone.error ? 'text-red-400' : 'text-green-500'}`}>
                           {validation.phone.error || (validation.phone.isValid ? '✓ جاهز' : '')}
                         </span>
-                        <label className="text-sm font-bold text-gray-400">رقم الهاتف</label>
+                        <label className="text-sm font-bold text-text-theme-secondary">رقم الهاتف</label>
                       </div>
                       <Input
                         id="phone"
@@ -172,7 +172,7 @@ export default function LoginPage() {
                         icon="fas fa-phone"
                         required
                         className={`
-                          bg-transparent border-b-2 border-t-0 border-x-0 border-white/10 rounded-none px-0 py-5 text-xl
+                          bg-transparent border-b-2 border-t-0 border-x-0 border-border-theme-primary rounded-none px-0 py-5 text-xl text-text-theme-primary
                           focus:border-[#3249A9] focus:ring-0 transition-all duration-500
                           ${validation.phone.error ? 'border-red-500/50' : ''}
                         `}
@@ -184,7 +184,7 @@ export default function LoginPage() {
                         <span className={`text-[0.75rem] font-medium ${validation.password.error ? 'text-red-400' : 'text-green-500'}`}>
                           {validation.password.error || (validation.password.isValid ? '✓ جاهز' : '')}
                         </span>
-                        <label className="text-sm font-bold text-gray-400">كلمة المرور</label>
+                        <label className="text-sm font-bold text-text-theme-secondary">كلمة المرور</label>
                       </div>
                       <Input
                         id="password"
@@ -196,7 +196,7 @@ export default function LoginPage() {
                         icon="fas fa-lock"
                         required
                         className={`
-                          bg-transparent border-b-2 border-t-0 border-x-0 border-white/10 rounded-none px-0 py-5 text-xl
+                          bg-transparent border-b-2 border-t-0 border-x-0 border-border-theme-primary rounded-none px-0 py-5 text-xl text-text-theme-primary
                           focus:border-[#3249A9] focus:ring-0 transition-all duration-500
                           ${validation.password.error ? 'border-red-500/50' : ''}
                         `}
@@ -208,7 +208,7 @@ export default function LoginPage() {
                     <button
                       type="button"
                       onClick={() => setIsForgotPasswordOpen(true)}
-                      className="text-sm text-gray-500 hover:text-[#3249A9] transition-colors font-bold"
+                      className="text-sm text-text-theme-muted hover:text-[#3249A9] transition-colors font-bold"
                     >
                       نسيت كلمة السر؟
                     </button>
@@ -220,7 +220,7 @@ export default function LoginPage() {
                     disabled={isBanned}
                     className={`
                       w-full py-5 text-white font-black rounded-2xl transition-all shadow-[0_20px_40px_rgba(50,73,169,0.2)] text-lg
-                      ${isBanned ? 'bg-gray-800' : 'bg-[#3249A9] hover:bg-[#283d8f] hover:-translate-y-1 active:translate-y-0'}
+                      ${isBanned ? 'bg-surface-tertiary' : 'bg-[#3249A9] hover:bg-[#283d8f] hover:-translate-y-1 active:translate-y-0'}
                     `}
                   >
                     {isBanned ? `انتظر ${countdown} ثانية` : 'دخول المنصة'}
@@ -228,7 +228,7 @@ export default function LoginPage() {
                 </form>
 
                 <div className="text-center">
-                   <p className="text-gray-500 text-sm">
+                   <p className="text-text-theme-muted text-sm">
                      تحتاج مساعدة؟ <button onClick={() => setIsForgotPasswordOpen(true)} className="text-[#3249A9] font-bold hover:underline">تواصل معنا</button>
                    </p>
                 </div>
@@ -243,7 +243,7 @@ export default function LoginPage() {
         isOpen={isForgotPasswordOpen}
         title="استرجاع الحساب"
         message={
-          <div className="text-right text-sm leading-relaxed text-gray-300">
+          <div className="text-right text-sm leading-relaxed text-text-theme-secondary">
             عزيزي {audienceByUserType[userType]}، لتغيير كلمة المرور يرجى التواصل مع إدارة المنصة مباشرة عبر الواتساب.
             {hasContactNumber && (
               <div className="mt-4 p-4 rounded-2xl bg-[#3249A9]/10 border border-[#3249A9]/20 font-bold text-[#3249A9] text-center text-lg">

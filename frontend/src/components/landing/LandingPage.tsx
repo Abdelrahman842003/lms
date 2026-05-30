@@ -141,18 +141,18 @@ export default function LandingPage() {
             transform: heroAnim.inView ? 'translateY(0) scale(1) rotateX(0)' : 'translateY(100px) scale(0.9) rotateX(20deg)'
           }}
         >
-          <div className="inline-flex items-center gap-2 px-5 py-2 mb-8 rounded-full border border-white/10 bg-white/[0.03] text-gray-400 text-[0.85rem]">
+          <div className="inline-flex items-center gap-2 px-5 py-2 mb-8 rounded-full border border-border-theme-primary bg-surface-secondary text-text-theme-secondary text-[0.85rem]">
             <span className="w-1.5 h-1.5 rounded-full bg-[#3249A9] animate-pulse"></span>
             <span>{content.hero.badge}</span>
           </div>
 
-          <h1 className="text-[2.2rem] sm:text-[3.2rem] md:text-[4rem] lg:text-[4.5rem] font-extrabold leading-[1.15] mb-6 tracking-tight">
+          <h1 className="text-[2.2rem] sm:text-[3.2rem] md:text-[4rem] lg:text-[4.5rem] font-extrabold leading-[1.15] mb-6 tracking-tight text-text-theme-primary">
             {content.hero.title}
             <br />
-            <span className="text-white bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-white/40">{content.hero.subtitle}</span>
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary-light">{content.hero.subtitle}</span>
           </h1>
 
-          <p className="text-[0.95rem] md:text-[1.15rem] text-gray-400 max-w-[580px] mx-auto mb-10 leading-relaxed px-4">
+          <p className="text-[0.95rem] md:text-[1.15rem] text-text-theme-secondary max-w-[580px] mx-auto mb-10 leading-relaxed px-4">
             {content.hero.description}
           </p>
 
@@ -179,7 +179,7 @@ export default function LandingPage() {
               onClick={() => {
                 router.push('/pricing');
               }}
-              className="group flex items-center gap-2 px-7 py-3.5 text-gray-300 hover:text-white font-semibold transition-all duration-300 text-[0.95rem] hover:bg-white/5 rounded-full"
+              className="group flex items-center gap-2 px-7 py-3.5 text-text-theme-secondary hover:text-text-theme-primary font-semibold transition-all duration-300 text-[0.95rem] hover:bg-surface-secondary rounded-full"
             >
               <span>{content.hero.cta_secondary}</span>
               <svg className="w-4 h-4 rtl:rotate-180 transition-transform group-hover:-translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -201,7 +201,7 @@ export default function LandingPage() {
         <div className="w-[92%] md:w-[80%] max-w-[1100px] mx-auto">
           <div
             ref={ctaAnim.ref}
-            className={`relative rounded-[3rem] overflow-hidden border border-white/[0.08] p-12 md:p-24 transition-all duration-[1200ms] ease-[cubic-bezier(0.2,0.8,0.2,1)] flex flex-col items-center justify-center text-center bg-[#0c0f1a] ${
+            className={`relative rounded-[3rem] overflow-hidden border border-border-theme-primary p-12 md:p-24 transition-all duration-[1200ms] ease-[cubic-bezier(0.2,0.8,0.2,1)] flex flex-col items-center justify-center text-center bg-surface-secondary ${
               ctaAnim.inView ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
             }`}
           >

@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { StatCard } from '@/components/dashboard/StatCard';
-import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { PageTransition } from '@/components/shared/PageTransition';
 import { fetchApi } from '@/services/authService';
 import { Filter } from '@/components/Filter';
@@ -14,16 +13,18 @@ import { Input } from '@/components/ui/Input';
 
 interface LectureItem {
   id: string;
+  lecture_title?: string;
   title: string;
   date: string;
-  time: string;
+  time?: string;
   status: 'present' | 'absent' | 'not_recorded';
 }
 
 interface ExamItem {
   id: string;
+  exam_title?: string;
   title: string;
-  subject: string;
+  subject?: string;
   score: number | null;
   max_score: number;
   percentage: number | null;
@@ -450,11 +451,15 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
                                 teacherData.attendance.list.map((lecture, index) => (
                                   <div key={`${teacherData.teacher.id}-lecture-${lecture.id || index}`} className="premium-glass p-5 rounded-2xl border-border-theme-secondary flex items-center justify-between group/item hover:border-card-border-hover transition-all">
                                      <div className="space-y-1">
-                                        <h5 className="text-text-theme-primary font-bold text-sm line-clamp-1">{lecture.title}</h5>
+                                        <h5 className="text-text-theme-primary font-bold text-sm line-clamp-1">{lecture.lecture_title || lecture.title}</h5>
                                         <div className="flex items-center gap-3 text-[10px] text-text-theme-secondary font-bold">
                                            <span>{lecture.date}</span>
-                                           <span>•</span>
-                                           <span>{lecture.time}</span>
+                                           {lecture.time && (
+                                              <>
+                                                 <span>•</span>
+                                                 <span>{lecture.time}</span>
+                                              </>
+                                           )}
                                         </div>
                                      </div>
                                      <div className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${lecture.status === 'present' ? 'bg-emerald-500/10 text-emerald-400' : lecture.status === 'absent' ? 'bg-rose-500/10 text-rose-400' : 'bg-surface-tertiary text-text-theme-secondary'}`}>
@@ -481,8 +486,8 @@ export default function ChildSummaryPage({ params }: { params: Promise<{ childId
                                   <div key={`${teacherData.teacher.id}-exam-${exam.id || index}`} className="premium-glass p-6 rounded-2xl border-border-theme-secondary space-y-4 group/item hover:border-card-border-hover transition-all">
                                      <div className="flex justify-between items-start">
                                         <div className="space-y-1">
-                                           <h5 className="text-text-theme-primary font-bold text-sm line-clamp-1">{exam.title}</h5>
-                                           <p className="text-[10px] text-text-theme-secondary font-bold uppercase tracking-widest">{exam.subject}</p>
+                                           <h5 className="text-text-theme-primary font-bold text-sm line-clamp-1">{exam.exam_title || exam.title}</h5>
+                                           {exam.subject && <p className="text-[10px] text-text-theme-secondary font-bold uppercase tracking-widest">{exam.subject}</p>}
                                         </div>
                                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xs font-black ${(exam.percentage || 0) >= 80 ? 'bg-emerald-500/10 text-emerald-400' : (exam.percentage || 0) >= 50 ? 'bg-amber-500/10 text-amber-400' : 'bg-rose-500/10 text-rose-400'}`}>
                                            {exam.percentage ? `${exam.percentage}%` : '-%'}
