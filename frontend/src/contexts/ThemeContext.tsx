@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
-type Theme = 'dark' | 'light';
+export type Theme = 'dark' | 'light' | 'system';
 
 interface ThemeContextType {
   theme: Theme;
@@ -13,17 +13,16 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [theme, setThemeState] = useState<Theme>('dark');
+  const [theme, setThemeState] = useState<Theme>('system');
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    // Read from localStorage or default to system preference or dark
+    // Read from localStorage or default to system
     const storedTheme = localStorage.getItem('neetaq-theme') as Theme | null;
     if (storedTheme) {
       setThemeState(storedTheme);
     } else {
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      setThemeState(prefersDark ? 'dark' : 'light');
+      setThemeState('system');
     }
     setMounted(true);
   }, []);
@@ -31,19 +30,21 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const setTheme = (newTheme: Theme) => {
     setThemeState(newTheme);
     localStorage.setItem('neetaq-theme', newTheme);
-    
-    // Apply changes to documentElement
-    const root = window.document.documentElement;
-    root.setAttribute('data-theme', newTheme);
-    if (newTheme === 'dark') {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
+  };
+
+  const getActiveTheme = (t: Theme): 'dark' | 'light' => {
+    if (t === 'system') {
+      if (typeof window !== 'undefined') {
+        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
+      return 'dark'; // Fallback for SSR
     }
+    return t;
   };
 
   const toggleTheme = () => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
+    const active = getActiveTheme(theme);
+    setTheme(active === 'dark' ? 'light' : 'dark');
   };
 
   // Sync theme changes with DOM on mount and updates
@@ -51,17 +52,33 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (!mounted) return;
     
     const root = window.document.documentElement;
-    root.setAttribute('data-theme', theme);
-    if (theme === 'dark') {
+    const activeTheme = getActiveTheme(theme);
+    
+    root.setAttribute('data-theme', activeTheme);
+    if (activeTheme === 'dark') {
       root.classList.add('dark');
     } else {
       root.classList.remove('dark');
     }
+
+    // Listen for system theme changes if theme is 'system'
+    if (theme === 'system') {
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      const handleChange = (e: MediaQueryListEvent) => {
+        const newActiveTheme = e.matches ? 'dark' : 'light';
+        root.setAttribute('data-theme', newActiveTheme);
+        if (newActiveTheme === 'dark') {
+          root.classList.add('dark');
+        } else {
+          root.classList.remove('dark');
+        }
+      };
+      
+      mediaQuery.addEventListener('change', handleChange);
+      return () => mediaQuery.removeEventListener('change', handleChange);
+    }
   }, [theme, mounted]);
 
-  // Prevent flash during hydration by only rendering children when mounted on client,
-  // or wrap with hydration-safe default layout. We return the children directly
-  // but ensure root has correct class during initial SSR/client sync via layout script.
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme, setTheme }}>
       {children}

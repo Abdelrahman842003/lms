@@ -87,7 +87,7 @@ export default function AttendanceDetailsModal({
         {/* Footer */}
         <div className="modal-footer">
           <Button
-            variant="outline"
+            variant="destructive"
             onClick={onClose}
           >
             إغلاق

@@ -131,17 +131,17 @@ export default async function RootLayout({
     return (
     <html lang="ar" dir="rtl" className="h-full" data-scroll-behavior="smooth" suppressHydrationWarning>
             <head>
-                {/* Prevent FOUC - set theme before render */}
                 <script dangerouslySetInnerHTML={{ __html: `
                     (function() {
                         try {
-                            var theme = localStorage.getItem('neetaq-theme');
-                            if (!theme) {
+                            var theme = localStorage.getItem('neetaq-theme') || 'system';
+                            var activeTheme = theme;
+                            if (theme === 'system') {
                                 var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                                theme = prefersDark ? 'dark' : 'light';
+                                activeTheme = prefersDark ? 'dark' : 'light';
                             }
-                            document.documentElement.setAttribute('data-theme', theme);
-                            if (theme === 'dark') {
+                            document.documentElement.setAttribute('data-theme', activeTheme);
+                            if (activeTheme === 'dark') {
                                 document.documentElement.classList.add('dark');
                             } else {
                                 document.documentElement.classList.remove('dark');

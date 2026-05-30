@@ -181,7 +181,7 @@ export default function NewPaymentModal({ onClose, onSuccess }: Props) {
           <div className="modal-footer">
             <Button
               type="button"
-              variant="outline"
+              variant="destructive"
               onClick={onClose}
             >
               إلغاء

@@ -141,12 +141,12 @@ export default function SelfTestPage() {
     return (
       <DashboardLayout role="student" user={user || undefined}>
         <div className="max-w-5xl mx-auto p-4 sm:p-8">
-           <div className="p-10 text-center bg-white/[0.02] rounded-3xl border border-dashed border-white/10">
+           <div className="p-10 text-center premium-glass rounded-3xl border border-dashed border-border-theme-secondary shadow-lg">
               <div className="w-16 h-16 bg-warning/10 rounded-full flex items-center justify-center mx-auto mb-4">
                  <Icon name="exclamation-triangle" className="text-warning" size="lg" />
               </div>
-              <h2 className="text-white text-xl font-bold mb-2">لم يتم اختيار مدرس</h2>
-              <p className="text-gray-500 mb-6">يرجى اختيار المدرس من القائمة العلوية أولاً لتتمكن من إجراء الاختبار.</p>
+              <h2 className="text-text-theme-primary text-xl font-bold mb-2">لم يتم اختيار مدرس</h2>
+              <p className="text-text-theme-secondary mb-6">يرجى اختيار المدرس من القائمة العلوية أولاً لتتمكن من إجراء الاختبار.</p>
               <Button onClick={() => router.push('/student/teachers')}>ذهاب لصفحة المدرسين</Button>
            </div>
         </div>
@@ -161,15 +161,15 @@ export default function SelfTestPage() {
       <div className="max-w-5xl mx-auto p-4 sm:p-8 pb-32 sm:pb-8">
         
         {/* Header - Compact on mobile */}
-        <div className="relative mb-6 sm:mb-10 p-5 sm:p-10 rounded-2xl sm:rounded-[2.5rem] bg-[#101426]/60 border border-white/10 overflow-hidden backdrop-blur-xl">
+        <div className="relative mb-6 sm:mb-10 p-5 sm:p-10 rounded-2xl sm:rounded-[2.5rem] premium-glass border border-border-theme-secondary overflow-hidden shadow-xl">
            <div className="absolute top-0 right-0 w-48 h-48 bg-primary/10 blur-[80px] -z-10"></div>
            <div className="flex items-center gap-4 sm:gap-6">
               <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-primary/20 border border-primary/30 flex items-center justify-center text-primary-light shrink-0">
                  <Icon name="vial" className="text-xl sm:text-2xl" />
               </div>
               <div className="min-w-0">
-                 <h1 className="text-xl sm:text-3xl font-black text-white truncate">اختبر نفسك (الاختبارات الموديل)</h1>
-                 <p className="text-gray-400 font-medium text-xs sm:text-sm truncate opacity-70">المدرس: {authSelectedTeacher.teacher_name}</p>
+                 <h1 className="text-xl sm:text-3xl font-black text-text-theme-primary truncate">اختبر نفسك (الاختبارات الموديل)</h1>
+                 <p className="text-text-theme-secondary font-medium text-xs sm:text-sm truncate opacity-70">المدرس: {authSelectedTeacher.teacher_name}</p>
               </div>
            </div>
         </div>
@@ -180,8 +180,8 @@ export default function SelfTestPage() {
             {/* Setup Section */}
             <section className="space-y-6 sm:space-y-8">
               <div className="flex items-center justify-between px-1">
-                <h2 className="text-lg sm:text-xl font-bold text-white pr-2 border-r-4 border-primary">إنشاء اختبار جديد:</h2>
-                <div className="hidden sm:flex items-center gap-2 text-gray-500 text-xs">
+                <h2 className="text-lg sm:text-xl font-bold text-text-theme-primary pr-2 border-r-4 border-primary">إنشاء اختبار جديد:</h2>
+                <div className="hidden sm:flex items-center gap-2 text-text-theme-secondary text-xs">
                     <Icon name="info-circle" size="xs" />
                     <p>سيتم توليد الاختبار عشوائياً</p>
                 </div>
@@ -193,7 +193,7 @@ export default function SelfTestPage() {
                   { key: 'medium', label: 'مستوى متوسط', color: 'text-warning', bg: 'bg-warning/10', border: 'border-warning/20', icon: 'meh', available: counts.medium },
                   { key: 'hard', label: 'مستوى صعب', color: 'text-danger', bg: 'bg-danger/10', border: 'border-danger/20', icon: 'frown', available: counts.hard },
                 ].map((item) => (
-                  <div key={item.key} className={`relative p-4 sm:p-6 rounded-[1.5rem] sm:rounded-[2.5rem] bg-white/[0.03] border border-white/5 flex flex-row sm:flex-col items-center justify-between sm:justify-center gap-4 group hover:border-white/20 transition-all overflow-hidden`}>
+                  <div key={item.key} className={`relative p-4 sm:p-6 rounded-[1.5rem] sm:rounded-[2.5rem] premium-glass border border-border-theme-secondary flex flex-row sm:flex-col items-center justify-between sm:justify-center gap-4 group hover:border-card-border-hover transition-all overflow-hidden shadow-lg`}>
                     {/* Background Icon Decor */}
                     <div className={`absolute -right-4 -bottom-4 opacity-[0.03] text-6xl group-hover:scale-110 transition-transform sm:hidden`}>
                        <Icon name={item.icon as any} />
@@ -204,19 +204,24 @@ export default function SelfTestPage() {
                         <Icon name={item.icon as any} />
                         </div>
                         <div className="text-right sm:text-center">
-                        <h3 className="text-white font-bold text-sm sm:text-base mb-0.5">{item.label}</h3>
-                        <p className="text-gray-500 text-[10px] sm:text-xs">المتاح: {item.available} سؤال</p>
+                        <h3 className="text-text-theme-primary font-bold text-sm sm:text-base mb-0.5">{item.label}</h3>
+                        <p className="text-text-theme-secondary text-[10px] sm:text-xs">المتاح: {item.available} سؤال</p>
                         </div>
                     </div>
                     
-                    <div className="flex items-center gap-1.5 sm:gap-4 bg-black/40 p-1.5 sm:p-2 rounded-xl sm:rounded-2xl border border-white/5 relative z-10 shrink-0">
+                    <div className="flex items-center gap-1.5 sm:gap-4 bg-surface-secondary p-1.5 sm:p-2 rounded-xl sm:rounded-2xl border border-border-theme-secondary relative z-10 shrink-0">
                       <button 
                         onClick={() => setConfig(prev => ({ ...prev, [item.key]: Math.max(0, prev[item.key as keyof typeof config] - 1) }))}
-                        className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-white/5 hover:bg-white/10 text-white flex items-center justify-center transition-colors active:scale-90"
+                        disabled={config[item.key as keyof typeof config] <= 0}
+                        className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center transition-all active:scale-90 ${
+                            config[item.key as keyof typeof config] <= 0 
+                            ? 'bg-gray-500/20 text-gray-500 cursor-not-allowed opacity-50' 
+                            : 'bg-primary/20 hover:bg-primary/30 text-primary-light'
+                        }`}
                       >
                         <Icon name="minus" className="text-[10px] sm:text-xs" />
                       </button>
-                      <span className="w-8 sm:w-12 text-center text-lg sm:text-xl font-black text-white">{config[item.key as keyof typeof config]}</span>
+                      <span className="w-8 sm:w-12 text-center text-lg sm:text-xl font-black text-text-theme-primary">{config[item.key as keyof typeof config]}</span>
                       <button 
                         onClick={() => {
                           const current = config[item.key as keyof typeof config];
@@ -228,7 +233,7 @@ export default function SelfTestPage() {
                         }}
                         className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center transition-all active:scale-90 ${
                             config[item.key as keyof typeof config] >= item.available 
-                            ? 'bg-gray-500/20 text-gray-500 cursor-not-allowed' 
+                            ? 'bg-gray-500/20 text-gray-500 cursor-not-allowed opacity-50' 
                             : 'bg-primary/20 hover:bg-primary/30 text-primary-light'
                         }`}
                       >
@@ -240,13 +245,13 @@ export default function SelfTestPage() {
               </div>
 
               {/* Summary & Start Bar - Sticky on mobile */}
-              <div className="fixed bottom-24 left-0 right-0 px-4 py-3 bg-[#050811]/90 backdrop-blur-xl border-t border-white/10 sm:relative sm:bottom-0 sm:px-0 sm:bg-transparent sm:backdrop-blur-none sm:border-0 z-50">
-                <div className="max-w-5xl mx-auto p-4 sm:p-8 rounded-2xl sm:rounded-[3rem] bg-gradient-to-br from-primary/30 to-secondary/20 border border-primary/20 flex items-center justify-between gap-4 sm:gap-6 shadow-2xl shadow-black/50 sm:shadow-none">
+              <div className="fixed bottom-24 left-0 right-0 px-4 py-3 bg-surface-primary/95 backdrop-blur-xl border-t border-border-theme-primary sm:relative sm:bottom-0 sm:px-0 sm:bg-transparent sm:backdrop-blur-none sm:border-0 z-50 shadow-[0_-10px_30px_rgba(0,0,0,0.05)]">
+                <div className="max-w-5xl mx-auto p-4 sm:p-8 rounded-2xl sm:rounded-[3rem] bg-gradient-to-br from-primary/10 to-secondary/5 border border-border-theme-primary flex items-center justify-between gap-4 sm:gap-6 shadow-xl sm:shadow-none">
                     <div className="text-right">
                         <p className="text-primary-light font-black text-[10px] sm:text-sm uppercase tracking-widest mb-0.5 sm:mb-1">إجمالي الأسئلة</p>
                         <div className="flex items-baseline gap-1.5 sm:gap-2">
-                        <span className={`text-2xl sm:text-5xl font-black text-white transition-all ${totalSelected > 0 ? 'scale-110 text-primary-light' : ''}`}>{totalSelected}</span>
-                        <span className="text-gray-400 font-bold text-xs sm:text-lg">/ 50</span>
+                        <span className={`text-2xl sm:text-5xl font-black text-text-theme-primary transition-all ${totalSelected > 0 ? 'scale-110 text-primary-light' : ''}`}>{totalSelected}</span>
+                        <span className="text-text-theme-secondary font-bold text-xs sm:text-lg">/ 50</span>
                         </div>
                     </div>
                     
@@ -272,15 +277,15 @@ export default function SelfTestPage() {
                      <Icon name="history" />
                   </div>
                   <div>
-                    <h2 className="text-lg sm:text-xl font-bold text-white leading-tight">سجل الإنجازات:</h2>
-                    <p className="text-gray-500 text-[10px] sm:text-xs font-medium">نتائج اختباراتك السابقة وتطور مستواك</p>
+                    <h2 className="text-lg sm:text-xl font-bold text-text-theme-primary leading-tight">سجل الإنجازات:</h2>
+                    <p className="text-text-theme-secondary text-[10px] sm:text-xs font-medium">نتائج اختباراتك السابقة وتطور مستواك</p>
                   </div>
                </div>
 
                <div className="grid grid-cols-1 gap-3 sm:gap-4">
                   {history.length > 0 ? (
                     history.map((item) => (
-                      <div key={item.id} className="group relative p-4 sm:p-6 rounded-2xl sm:rounded-[2.5rem] bg-white/[0.02] border border-white/5 hover:bg-white/[0.05] hover:border-white/10 transition-all flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6 overflow-hidden">
+                      <div key={item.id} className="group relative p-4 sm:p-6 rounded-2xl sm:rounded-[2.5rem] premium-glass border border-border-theme-secondary hover:bg-surface-hover hover:border-card-border-hover transition-all flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6 overflow-hidden shadow-md">
                         
                         {/* Status bar */}
                         <div className={`absolute top-0 right-0 bottom-0 w-1 sm:w-1.5 ${
@@ -296,30 +301,30 @@ export default function SelfTestPage() {
                             <Icon name={item.status === 'completed' ? 'check-circle' : 'exclamation-circle'} />
                           </div>
                           <div className="min-w-0">
-                            <h3 className="text-white font-bold text-sm sm:text-lg truncate">{item.exam_title}</h3>
-                            <div className="flex items-center gap-2 sm:gap-4 text-gray-500 text-[10px] sm:text-xs mt-1 font-medium">
+                            <h3 className="text-text-theme-primary font-bold text-sm sm:text-lg truncate">{item.exam_title}</h3>
+                            <div className="flex items-center gap-2 sm:gap-4 text-text-theme-secondary text-[10px] sm:text-xs mt-1 font-medium">
                               <span className="truncate">{item.subject}</span>
-                              <span className="w-1 h-1 rounded-full bg-white/10 shrink-0" />
+                              <span className="w-1 h-1 rounded-full bg-border-theme-secondary shrink-0" />
                               <span className="shrink-0">{formatDate(item.started_at)}</span>
                             </div>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-6 sm:gap-10 w-full sm:w-auto justify-between sm:justify-end border-t sm:border-t-0 border-white/5 pt-4 sm:pt-0 relative z-10">
+                        <div className="flex items-center gap-6 sm:gap-10 w-full sm:w-auto justify-between sm:justify-end border-t sm:border-t-0 border-border-theme-secondary pt-4 sm:pt-0 relative z-10">
                            <div className="text-right">
-                              <span className="block text-[8px] sm:text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1 sm:mb-2 opacity-50">النتيجة النهائية</span>
+                              <span className="block text-[8px] sm:text-[9px] font-black text-text-theme-muted uppercase tracking-widest mb-1 sm:mb-2 opacity-50">النتيجة النهائية</span>
                               <div className="flex items-baseline gap-1.5">
                                  <span className={`text-2xl sm:text-3xl font-black ${(item.percentage || 0) >= 60 ? 'text-success' : 'text-danger'} drop-shadow-glow`}>
                                     {item.percentage ?? 0}%
                                  </span>
-                                 <span className="text-gray-600 text-[10px] sm:text-xs font-bold">({item.score ?? 0} نقطة)</span>
+                                 <span className="text-text-theme-secondary text-[10px] sm:text-xs font-bold">({item.score ?? 0} نقطة)</span>
                               </div>
                            </div>
                            
                            <Button 
                              variant="outline" 
                              size="sm" 
-                             className="rounded-xl sm:rounded-2xl border-white/10 hover:border-primary hover:bg-primary/10 transition-all text-[10px] sm:text-xs h-9 sm:h-12 px-5 sm:px-8 font-black"
+                             className="rounded-xl sm:rounded-2xl border-border-theme-primary hover:border-primary hover:bg-primary/10 transition-all text-[10px] sm:text-xs h-9 sm:h-12 px-5 sm:px-8 font-black text-text-theme-secondary hover:text-primary-light"
                              onClick={() => router.push(`/student/exams/${item.exam_id}/results?attempt_id=${item.id}`)}
                            >
                              التفاصيل
@@ -329,12 +334,12 @@ export default function SelfTestPage() {
                       </div>
                     ))
                   ) : (
-                    <div className="py-16 sm:py-24 text-center bg-white/[0.01] rounded-[2.5rem] border border-dashed border-white/10 flex flex-col items-center justify-center gap-4">
-                       <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center text-gray-700">
+                    <div className="py-16 sm:py-24 text-center premium-glass rounded-[2.5rem] border border-dashed border-border-theme-secondary flex flex-col items-center justify-center gap-4 shadow-sm">
+                       <div className="w-16 h-16 rounded-full bg-surface-secondary flex items-center justify-center text-text-theme-secondary">
                           <Icon name="history" size="lg" />
                        </div>
-                       <p className="text-gray-600 font-bold text-sm sm:text-base">لا يوجد سجل اختبارات مسبقة لهذا المدرس.</p>
-                       <p className="text-gray-700 text-xs">ابدأ أول اختبار لك الآن!</p>
+                       <p className="text-text-theme-primary font-bold text-sm sm:text-base">لا يوجد سجل اختبارات مسبقة لهذا المدرس.</p>
+                       <p className="text-text-theme-secondary text-xs">ابدأ أول اختبار لك الآن!</p>
                     </div>
                   )}
                </div>

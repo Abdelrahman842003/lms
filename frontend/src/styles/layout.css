@@ -240,7 +240,7 @@
   left: auto;
   min-width: 240px;
   max-width: 90vw;
-  background: rgba(16, 20, 38, 0.95);
+  background: #101426;
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;
@@ -689,8 +689,9 @@
 }
 
 .dashboard-subtitle {
-  font-size: 0.95rem;
-  color: var(--gray-light);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-secondary);
   margin: 0;
 }
 
@@ -747,12 +748,12 @@
 }
 
 .stat-card-info h3 {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--gray-light);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-secondary);
   margin: 0 0 8px 0;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
 }
 
 .stat-card-value {
@@ -836,7 +837,7 @@
 .dashboard-card-title h2 {
   font-size: 1.25rem;
   font-weight: 700;
-  color: white;
+  color: var(--text-primary);
   margin: 0;
 }
 
@@ -963,8 +964,9 @@
 }
 
 .dashboard-page-header p {
-  font-size: 0.95rem;
-  color: var(--gray-light);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-secondary);
   margin: 0;
 }
 

@@ -99,7 +99,7 @@ export const StatCard: React.FC<StatCardProps> = ({
 
   if (variant === 'centered') {
     return (
-      <div className="premium-glass p-8 rounded-3xl flex flex-col items-center justify-center text-center group border-border-theme-secondary hover:border-border-theme-primary relative overflow-hidden">
+      <div className="stat-card premium-glass p-8 rounded-3xl flex flex-col items-center justify-center text-center group border-border-theme-secondary hover:border-border-theme-primary relative overflow-hidden">
         <div className={`absolute -top-24 -right-24 w-48 h-48 bg-gradient-to-br ${theme.gradient} blur-3xl opacity-50 group-hover:opacity-80 transition-opacity`}></div>
         
         <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${theme.gradient} flex items-center justify-center mb-6 relative z-10 premium-border`}>
@@ -133,7 +133,7 @@ export const StatCard: React.FC<StatCardProps> = ({
   }
 
   return (
-    <div className="premium-glass p-5 rounded-2xl flex items-center gap-4 group border-border-theme-secondary hover:border-border-theme-primary relative overflow-hidden">
+    <div className="stat-card premium-glass p-5 rounded-2xl flex items-center gap-4 group border-border-theme-secondary hover:border-border-theme-primary relative overflow-hidden">
       <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${theme.gradient} flex items-center justify-center shrink-0 premium-border`}>
         <Icon name={iconName} className={theme.text} />
       </div>

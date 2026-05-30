@@ -641,7 +641,7 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
 
                 {/* Profile Dropdown Menu */}
                 {isDropdownOpen && (
-                  <div className="absolute top-full mt-4 left-0 w-64 bg-surface-primary/95 backdrop-blur-3xl border border-border-theme-primary rounded-[2.5rem] p-4 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-500 z-[110]">
+                  <div className="absolute top-full mt-4 left-0 w-64 bg-surface-primary border border-border-theme-primary rounded-[2.5rem] p-4 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-500 z-[110]">
                     <div className="p-4 mb-2 bg-surface-secondary rounded-2xl border border-border-theme-secondary">
                       <p className="text-xs font-black text-text-theme-muted/40 uppercase tracking-widest mb-1">الحساب الحالي</p>
                       <p className="text-sm font-black text-text-theme-primary truncate">{user?.name}</p>
@@ -730,7 +730,7 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
       )}
 
       {/* Universal Sidebar */}
-      <div className={`fixed inset-y-0 right-0 w-[300px] bg-surface-primary/95 backdrop-blur-3xl border-r border-border-theme-primary z-[200] transition-transform duration-500 ease-out ${isMobileSidebarOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+      <div className={`fixed inset-y-0 right-0 w-[300px] bg-surface-primary border-r border-border-theme-primary z-[200] transition-transform duration-500 ease-out ${isMobileSidebarOpen ? 'translate-x-0' : 'translate-x-full'}`}>
         
         {/* Sidebar Header */}
         <div className="p-6 border-bottom border-border-theme-secondary flex items-center justify-between">

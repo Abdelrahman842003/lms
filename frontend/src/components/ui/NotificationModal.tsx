@@ -131,7 +131,7 @@ export default function NotificationModal({
           <div className="modal-footer">
             <Button
               type="button"
-              variant="outline"
+              variant="destructive"
               onClick={onClose}
               disabled={isLoading}
             >

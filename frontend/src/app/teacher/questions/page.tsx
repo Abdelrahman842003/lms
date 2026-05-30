@@ -257,7 +257,7 @@ export default function QuestionsPage({ role = 'teacher' }: { role?: 'teacher' |
             variant="ghost"
             size="sm"
             onClick={() => handleEditClick(record)}
-            className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-primary p-0"
+            className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 !text-primary p-0"
             disabled={record.is_locked}
           >
             <Icon name="edit" size="sm" />
@@ -266,7 +266,7 @@ export default function QuestionsPage({ role = 'teacher' }: { role?: 'teacher' |
             variant="ghost"
             size="sm"
             onClick={() => handleDeleteClick(record)}
-            className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-rose-400 p-0"
+            className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 !text-rose-400 p-0"
             disabled={record.is_locked}
           >
             <Icon name="trash" size="sm" />

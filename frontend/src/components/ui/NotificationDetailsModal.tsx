@@ -147,7 +147,7 @@ export default function NotificationDetailsModal({
         {/* Footer */}
         <div className="modal-footer">
           <Button
-            variant="outline"
+            variant="destructive"
             size="sm"
             onClick={onClose}
           >

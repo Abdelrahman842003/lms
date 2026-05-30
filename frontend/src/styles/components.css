@@ -475,7 +475,7 @@
   margin: 0;
   font-size: 1.25rem;
   font-weight: 700;
-  color: white;
+  color: var(--text-primary);
 }
 
 .modal-close {
@@ -602,13 +602,15 @@
 }
 
 .attendance-percentage {
-  font-size: 0.8em;
-  color: var(--gray-light);
+  font-size: 0.9em;
+  font-weight: 600;
+  color: var(--text-secondary);
 }
 
 /* StatCard Refactored Styles */
 .stat-card-trend-label {
-  color: var(--gray-light);
+  color: var(--text-secondary);
+  font-weight: 600;
   margin-right: 4px;
 }
 
@@ -1217,7 +1219,7 @@
   right: auto;
   top: calc(var(--notification-navbar-offset) + var(--notification-gap));
   transform: translateX(-50%);
-  background: rgba(16, 20, 38, 0.95);
+  background: #101426;
   border: 1px solid rgba(0, 128, 255, 0.1);
   border-radius: 12px;
   overflow: hidden;
@@ -1566,7 +1568,7 @@
 .teacher-selector-name {
   font-size: 0.9rem;
   font-weight: 500;
-  color: white;
+  color: var(--text-primary);
   max-width: 120px;
   white-space: nowrap;
   overflow: hidden;
@@ -1575,7 +1577,7 @@
 
 .teacher-selector-chevron {
   font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-muted);
   transition: transform 0.2s;
 }
 
@@ -1601,12 +1603,12 @@
 }
 
 .teacher-dropdown-academy-name {
-  color: white;
+  color: var(--text-primary);
   font-weight: 500;
 }
 
 .teacher-dropdown-academy-chevron {
-  color: #aaa;
+  color: var(--text-muted);
   transition: transform 0.2s;
 }
 
@@ -1620,11 +1622,11 @@
 }
 
 .teacher-dropdown-empty {
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--text-muted);
 }
 
 .teacher-dropdown-academy {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--border-secondary);
 }
 
 .teacher-dropdown-academy-header {
@@ -1637,16 +1639,16 @@
 }
 
 .teacher-dropdown-academy-header:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--surface-hover);
 }
 
 .teacher-dropdown-academy-header.expanded {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--surface-secondary);
 }
 
 .teacher-dropdown-item {
   padding: 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--border-secondary);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -1655,11 +1657,11 @@
 }
 
 .teacher-dropdown-item:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--surface-hover);
 }
 
 .teacher-dropdown-item-selected {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--surface-secondary);
 }
 
 .teacher-dropdown-item-nested {
@@ -1671,7 +1673,8 @@
 }
 
 .teacher-dropdown-nested-wrap {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--surface-secondary);
+  opacity: 0.9;
 }
 
 .teacher-item-avatar {
@@ -1711,14 +1714,14 @@
 .teacher-item-name {
   margin: 0;
   font-size: 1rem;
-  color: white;
+  color: var(--text-primary);
   font-weight: 600;
 }
 
 .teacher-item-meta {
   margin: 4px 0 0;
   font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.68);
+  color: var(--text-secondary);
 }
 
 .teacher-item-state {
@@ -2088,13 +2091,14 @@
 .section-header-title {
   font-size: 1.25rem;
   font-weight: 700;
-  color: white;
+  color: var(--text-primary);
   margin: 0 0 4px;
 }
 
 .section-header-subtitle {
-  color: var(--gray-light);
-  font-size: 0.9rem;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  font-weight: 600;
   margin: 0;
 }
 
@@ -2170,13 +2174,14 @@
 .stat-card-centered-value {
   font-size: 2rem;
   font-weight: 700;
-  color: white;
+  color: var(--text-primary);
   margin: 0 0 8px;
 }
 
 .stat-card-centered-title {
-  color: var(--gray-light);
-  font-size: 0.95rem;
+  color: var(--text-secondary);
+  font-size: 1rem;
+  font-weight: 600;
   margin: 0;
 }
 
@@ -2189,16 +2194,16 @@
 }
 
 .stat-card-label {
-  color: var(--gray-light);
-  font-size: 0.9rem;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
   margin: 0 0 8px;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .stat-card-main-value {
   font-size: 1.75rem;
   font-weight: 700;
-  color: white;
+  color: var(--text-primary);
   margin: 0;
 }
 
@@ -2516,14 +2521,14 @@
 }
 
 .notification-permission-title {
-  color: white;
+  color: var(--text-primary);
   font-size: 1.5rem;
   font-weight: 700;
   margin: 0 0 16px;
 }
 
 .notification-permission-text {
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-secondary);
   font-size: 1rem;
   line-height: 1.6;
   margin: 0 0 32px;
@@ -2560,7 +2565,7 @@
 .notification-details-title {
   font-size: 1rem;
   font-weight: 600;
-  color: white;
+  color: var(--text-primary);
   margin: 0 0 4px;
 }
 
@@ -4398,6 +4403,26 @@
   background: var(--primary) !important;
 }
 
+.notification-badge-count {
+  color: #ffffff !important;
+  border-color: #0f172a !important;
+}
+
+[data-theme="light"] .notification-badge-count {
+  color: #ffffff !important;
+  border-color: #ffffff !important;
+}
+
+.theme-toggle-dropdown {
+  background-color: #101426 !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-theme="light"] .theme-toggle-dropdown {
+  background-color: #ffffff !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+
 [data-theme="light"] .notification-dropdown-empty {
   color: var(--text-muted) !important;
 }
@@ -4545,6 +4570,52 @@
   color: var(--text-primary) !important;
 }
 
+/* Ensure all colored buttons, active badges, or solid colored elements keep their white text */
+[data-theme="light"] button.text-white,
+[data-theme="light"] button [class*="text-white"],
+[data-theme="light"] a.text-white,
+[data-theme="light"] a [class*="text-white"],
+[data-theme="light"] .btn-primary,
+[data-theme="light"] .btn-secondary,
+[data-theme="light"] .btn-danger,
+[data-theme="light"] .bg-primary,
+[data-theme="light"] .bg-secondary,
+[data-theme="light"] .bg-success,
+[data-theme="light"] .bg-danger,
+[data-theme="light"] .bg-warning,
+[data-theme="light"] [class*="bg-primary"].text-white,
+[data-theme="light"] [class*="bg-secondary"].text-white,
+[data-theme="light"] [class*="bg-success"].text-white,
+[data-theme="light"] [class*="bg-danger"].text-white,
+[data-theme="light"] [class*="bg-emerald-"].text-white,
+[data-theme="light"] [class*="bg-rose-"].text-white,
+[data-theme="light"] [class*="bg-blue-"].text-white,
+[data-theme="light"] [class*="bg-indigo-"].text-white,
+[data-theme="light"] [class*="bg-yellow-"].text-white,
+[data-theme="light"] [class*="bg-amber-"].text-white,
+[data-theme="light"] [class*="bg-green-"].text-white {
+  color: #ffffff !important;
+}
+
+/* Ensure icons inside colored buttons/elements are also white */
+[data-theme="light"] button.text-white i,
+[data-theme="light"] button [class*="text-white"] i,
+[data-theme="light"] a.text-white i,
+[data-theme="light"] a [class*="text-white"] i,
+[data-theme="light"] .btn-primary i,
+[data-theme="light"] .btn-secondary i,
+[data-theme="light"] .btn-danger i,
+[data-theme="light"] .bg-primary i,
+[data-theme="light"] .bg-secondary i,
+[data-theme="light"] .bg-success i,
+[data-theme="light"] .bg-danger i,
+[data-theme="light"] [class*="bg-primary"].text-white i,
+[data-theme="light"] [class*="bg-secondary"].text-white i,
+[data-theme="light"] [class*="bg-success"].text-white i,
+[data-theme="light"] [class*="bg-danger"].text-white i {
+  color: #ffffff !important;
+}
+
 [data-theme="light"] .text-gray-light,
 [data-theme="light"] .ux-text-gray-light {
   color: var(--text-secondary) !important;
@@ -4552,6 +4623,98 @@
 
 [data-theme="light"] .text-gray-light-80 {
   color: var(--text-secondary) !important;
+}
+
+/* Gray colors overrides for Light Mode */
+[data-theme="light"] .text-gray-200 {
+  color: var(--text-primary) !important;
+}
+[data-theme="light"] .text-gray-300 {
+  color: var(--text-primary) !important;
+}
+[data-theme="light"] .text-gray-400 {
+  color: var(--text-secondary) !important;
+}
+[data-theme="light"] .text-gray-500 {
+  color: var(--text-muted) !important;
+}
+[data-theme="light"] .text-gray-600 {
+  color: var(--text-muted) !important;
+}
+[data-theme="light"] .text-gray-700 {
+  color: var(--text-muted) !important;
+}
+
+/* text-gray-light opacity values overrides for Light Mode */
+[data-theme="light"] .text-gray-light\/5 {
+  color: var(--text-secondary) !important;
+  opacity: 0.4 !important;
+}
+[data-theme="light"] .text-gray-light\/10 {
+  color: var(--text-secondary) !important;
+  opacity: 0.5 !important;
+}
+[data-theme="light"] .text-gray-light\/20 {
+  color: var(--text-secondary) !important;
+  opacity: 0.6 !important;
+}
+[data-theme="light"] .text-gray-light\/25 {
+  color: var(--text-secondary) !important;
+  opacity: 0.65 !important;
+}
+[data-theme="light"] .text-gray-light\/30 {
+  color: var(--text-secondary) !important;
+  opacity: 0.7 !important;
+}
+[data-theme="light"] .text-gray-light\/40 {
+  color: var(--text-secondary) !important;
+}
+[data-theme="light"] .text-gray-light\/50 {
+  color: var(--text-secondary) !important;
+  opacity: 0.8 !important;
+}
+[data-theme="light"] .text-gray-light\/60 {
+  color: var(--text-secondary) !important;
+  opacity: 0.85 !important;
+}
+[data-theme="light"] .text-gray-light\/70 {
+  color: var(--text-secondary) !important;
+  opacity: 0.9 !important;
+}
+[data-theme="light"] .text-gray-light\/75 {
+  color: var(--text-secondary) !important;
+  opacity: 0.92 !important;
+}
+[data-theme="light"] .text-gray-light\/80 {
+  color: var(--text-secondary) !important;
+  opacity: 0.95 !important;
+}
+[data-theme="light"] .text-gray-light\/90 {
+  color: var(--text-secondary) !important;
+  opacity: 0.98 !important;
+}
+
+/* Color utilities high-contrast overrides for Light Mode */
+[data-theme="light"] .text-green-400 {
+  color: #15803d !important;
+}
+[data-theme="light"] .text-red-400 {
+  color: #b91c1c !important;
+}
+[data-theme="light"] .text-yellow-400 {
+  color: #a16207 !important;
+}
+[data-theme="light"] .text-blue-400 {
+  color: #1d4ed8 !important;
+}
+[data-theme="light"] .text-emerald-400 {
+  color: #047857 !important;
+}
+[data-theme="light"] .text-rose-400 {
+  color: #be123c !important;
+}
+[data-theme="light"] .text-amber-400 {
+  color: #b45309 !important;
 }
 
 /* Interactive item hovered background values */
@@ -4570,11 +4733,6 @@
 
 [data-theme="light"] .border-white\/10 {
   border-color: var(--border-primary) !important;
-}
-
-/* Table header texts */
-[data-theme="light"] .text-gray-light\/40 {
-  color: var(--text-secondary) !important;
 }
 
 /* Active bottom / side items in subpages */
@@ -4667,4 +4825,50 @@
 [data-theme="light"] .actions-menu-item:hover {
   background: var(--surface-hover) !important;
   color: var(--text-primary) !important;
+}
+
+/* Stat Card Light Mode Overrides */
+[data-theme="light"] .stat-card p.text-text-theme-secondary,
+[data-theme="light"] .stat-card p.text-xs {
+  color: var(--text-secondary) !important;
+  font-weight: 700 !important;
+}
+
+[data-theme="light"] .stat-card .text-blue-400 {
+  color: #1e3a8a !important; /* Dark blue icon */
+}
+[data-theme="light"] .stat-card .text-emerald-400 {
+  color: #065f46 !important; /* Dark emerald icon */
+}
+[data-theme="light"] .stat-card .text-amber-400 {
+  color: #92400e !important; /* Dark amber icon */
+}
+[data-theme="light"] .stat-card .text-green-400 {
+  color: #166534 !important; /* Dark green icon */
+}
+[data-theme="light"] .stat-card .text-rose-400 {
+  color: #991b1b !important; /* Dark rose/red icon */
+}
+[data-theme="light"] .stat-card .text-sky-400 {
+  color: #0369a1 !important; /* Dark sky icon */
+}
+
+/* Gradients backgrounds for Icon boxes in Light Mode */
+[data-theme="light"] .stat-card .from-indigo-500\/20 {
+  background: rgba(66, 99, 235, 0.12) !important;
+}
+[data-theme="light"] .stat-card .from-emerald-500\/20 {
+  background: rgba(16, 185, 129, 0.12) !important;
+}
+[data-theme="light"] .stat-card .from-amber-500\/20 {
+  background: rgba(245, 158, 11, 0.12) !important;
+}
+[data-theme="light"] .stat-card .from-green-500\/20 {
+  background: rgba(34, 197, 94, 0.12) !important;
+}
+[data-theme="light"] .stat-card .from-rose-500\/20 {
+  background: rgba(244, 63, 94, 0.12) !important;
+}
+[data-theme="light"] .stat-card .from-sky-500\/20 {
+  background: rgba(14, 165, 233, 0.12) !important;
 }

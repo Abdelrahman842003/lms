@@ -426,7 +426,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
       >
         <Icon name="bell" />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-primary text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-slate-900 shadow-lg">
+          <span className="notification-badge-count absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-primary text-[10px] font-black rounded-full flex items-center justify-center border-2 border-slate-900 shadow-lg">
             {unreadCount}
           </span>
         )}

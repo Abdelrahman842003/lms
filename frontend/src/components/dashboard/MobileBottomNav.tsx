@@ -438,7 +438,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ role }) => {
 
       {/* Main Nav Bar */}
       <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-md z-[200] lg:hidden">
-        <nav className="premium-glass premium-border rounded-[2rem] px-4 py-3 shadow-2xl flex items-center justify-between gap-1 backdrop-blur-3xl bg-surface-primary/40">
+        <nav className="premium-glass premium-border rounded-[2rem] px-4 py-3 shadow-2xl flex items-center justify-between gap-1 backdrop-blur-3xl">
           {visibleItems.map((item) => {
             const isActive = pathname === item.href;
             return (
@@ -446,7 +446,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ role }) => {
                 key={item.id}
                 href={item.href}
                 className={`relative flex-1 flex flex-col items-center justify-center gap-1.5 transition-all duration-500 py-1.5 ${
-                  isActive ? 'text-primary' : 'text-text-theme-muted'
+                  isActive ? 'text-primary' : 'text-text-theme-secondary'
                 }`}
               >
                 {isActive && (
@@ -461,7 +461,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ role }) => {
                    />
                 </div>
                 
-                <span className={`text-[9px] font-black tracking-tight transition-all duration-500 ${isActive ? 'opacity-100' : 'opacity-40 text-text-theme-muted'}`}>
+                <span className={`text-[9px] font-black tracking-tight transition-all duration-500 ${isActive ? 'opacity-100' : 'opacity-65 text-text-theme-secondary'}`}>
                   {item.label}
                 </span>
 
@@ -474,7 +474,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ role }) => {
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className={`relative flex-1 flex flex-col items-center justify-center gap-1.5 py-1.5 ${
-                isMenuOpen ? 'text-primary' : 'text-text-theme-muted'
+                isMenuOpen ? 'text-primary' : 'text-text-theme-secondary'
               }`}
             >
               <div className={`relative flex items-center justify-center transition-transform duration-500 ${isMenuOpen ? 'scale-110 -translate-y-1 rotate-180' : 'active:scale-95'}`}>
@@ -484,7 +484,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ role }) => {
                  />
               </div>
               
-              <span className={`text-[9px] font-black tracking-tight transition-all duration-500 ${isMenuOpen ? 'opacity-100' : 'opacity-40 text-text-theme-muted'}`}>
+              <span className={`text-[9px] font-black tracking-tight transition-all duration-500 ${isMenuOpen ? 'opacity-100' : 'opacity-65 text-text-theme-secondary'}`}>
                 المزيد
               </span>
             </button>

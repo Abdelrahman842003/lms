@@ -160,19 +160,19 @@ export const QuestionEditorModal: React.FC<QuestionEditorModalProps> = ({
     <div className={`fixed inset-0 z-[9999] flex items-center justify-center p-4 transition-all duration-300 ${isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
       <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose}></div>
       
-      <div className={`relative w-full max-w-2xl bg-[#0f1225] border border-white/10 rounded-3xl shadow-2xl overflow-hidden transition-all duration-500 transform ${isOpen ? 'scale-100 translate-y-0' : 'scale-95 translate-y-10'}`}>
+      <div className={`modal-content relative w-full max-w-2xl !rounded-3xl overflow-hidden transition-all duration-500 transform ${isOpen ? 'scale-100 translate-y-0' : 'scale-95 translate-y-10'}`}>
         {/* Header */}
-        <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
+        <div className="modal-header p-6 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
           <div className="flex items-center gap-3">
             <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-lg ${question ? 'bg-primary/20 text-primary shadow-primary/10' : 'bg-emerald-500/20 text-emerald-500 shadow-emerald-500/10'}`}>
               <Icon name={question ? 'edit' : 'plus'} />
             </div>
             <div>
-              <h2 className="text-xl font-black text-white">{question ? 'تعديل السؤال' : 'إضافة سؤال جديد'}</h2>
+              <h3 className="text-xl font-black">{question ? 'تعديل السؤال' : 'إضافة سؤال جديد'}</h3>
               <p className="text-xs text-gray-light/40">{question ? 'تحديث بيانات السؤال في بنك الأسئلة' : 'إضافة سؤال جديد لبنك الأسئلة الخاص بك'}</p>
             </div>
           </div>
-          <button onClick={onClose} className="w-10 h-10 rounded-xl hover:bg-white/5 flex items-center justify-center text-gray-light transition-all">
+          <button onClick={onClose} className="modal-close w-10 h-10 rounded-xl hover:bg-white/5 flex items-center justify-center text-gray-light transition-all">
             <Icon name="times" />
           </button>
         </div>
@@ -264,7 +264,7 @@ export const QuestionEditorModal: React.FC<QuestionEditorModalProps> = ({
                       className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
                         formData.correct_answer === option && option !== ''
                           ? 'bg-emerald-500 border-emerald-500'
-                          : 'border-white/20 hover:border-emerald-500'
+                          : 'border-border-theme-primary hover:border-emerald-500'
                       }`}
                     >
                       {formData.correct_answer === option && option !== '' && <Icon name="check" className="text-white text-[10px]" />}
@@ -377,7 +377,7 @@ export const QuestionEditorModal: React.FC<QuestionEditorModalProps> = ({
           </div>
         </form>
 
-        <div className="p-6 bg-black/20 border-t border-white/5 flex gap-3">
+        <div className="modal-footer p-6 bg-black/20 border-t border-white/5 flex gap-3">
           <Button
             onClick={handleSubmit}
             variant="primary"
@@ -388,8 +388,8 @@ export const QuestionEditorModal: React.FC<QuestionEditorModalProps> = ({
           </Button>
           <Button
             onClick={onClose}
-            variant="ghost"
-            className="flex-1 h-14 rounded-2xl font-bold text-gray-light hover:bg-white/5"
+            variant="destructive"
+            className="flex-1 h-14 rounded-2xl font-bold"
             disabled={isSubmitting}
           >
             إلغاء

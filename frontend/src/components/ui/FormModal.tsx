@@ -59,7 +59,7 @@ export default function FormModal({
             {cancelText && (
               <Button
                 type="button"
-                variant="outline"
+                variant="destructive"
                 size="sm"
                 onClick={onClose}
                 disabled={isLoading}
