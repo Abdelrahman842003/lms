@@ -4,7 +4,7 @@ class NetworkMonitor {
   private listeners: Set<NetworkCallback> = new Set();
   private onlineStatus: boolean = true;
   private pingIntervalId: any = null;
-  private pingUrl: string = '/api/v1/public-settings';
+  private pingUrl: string = '/manifest.json';
 
   constructor() {
     if (typeof window === 'undefined') return;

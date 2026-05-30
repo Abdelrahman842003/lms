@@ -6,8 +6,13 @@ import type { PrecacheEntry, RouteHandlerCallbackOptions } from "@serwist/sw";
 declare const self: any;
 
 // Create a custom Serwist Service Worker
+const precacheEntries = [
+  ...(self.__SW_MANIFEST || []),
+  { url: "/offline", revision: "1.0.0" }
+];
+
 installSerwist({
-  precacheEntries: self.__SW_MANIFEST,
+  precacheEntries,
   skipWaiting: true,
   clientsClaim: true,
   navigationPreload: true,
@@ -49,6 +54,9 @@ installSerwist({
     {
       matcher: ({ url }: RouteHandlerCallbackOptions) => 
         url.pathname.startsWith("/logo.png") || 
+        url.pathname.startsWith("/pwa-192.png") || 
+        url.pathname.startsWith("/pwa-512.png") || 
+        url.pathname.startsWith("/pwa.png") || 
         url.pathname.startsWith("/favicon.ico") ||
         url.pathname.startsWith("/assets/"),
       handler: "CacheFirst",
