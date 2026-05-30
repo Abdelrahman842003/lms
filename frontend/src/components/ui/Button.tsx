@@ -31,7 +31,7 @@ export const Button: React.FC<ButtonProps> = ({
     secondary: 'btn-secondary',
     ghost: 'btn-ghost',
     destructive: 'btn-danger',
-    outline: 'btn-outline border border-white/10 hover:bg-white/5',
+    outline: 'btn-outline border border-border-theme-primary hover:bg-surface-hover text-text-theme-secondary',
   };
 
   const sizeStyles = {

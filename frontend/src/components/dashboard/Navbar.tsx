@@ -13,6 +13,7 @@ import ScanAttendanceModal from './ScanAttendanceModal';
 import { getTeacherAcademies } from '@/services/authService';
 import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/ui/Icon';
+import { ThemeToggle } from './ThemeToggle';
 
 
 interface NavbarProps {
@@ -588,6 +589,9 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
 
               {/* Action Buttons Group */}
               <div className="flex items-center gap-1 md:gap-2 bg-white/5 p-1 rounded-2xl border border-white/5">
+                {/* Theme Toggle */}
+                <ThemeToggle />
+
                 {/* Print Button */}
                 <button
                   onClick={() => window.print()}
@@ -607,12 +611,12 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
                 <button 
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                   className={`flex items-center gap-3 p-1.5 md:p-2 rounded-2xl transition-all border ${
-                    isDropdownOpen ? 'bg-primary/10 border-primary/20' : 'bg-white/5 border-white/5 hover:border-white/10'
+                    isDropdownOpen ? 'bg-primary/10 border-primary/20' : 'bg-surface-secondary border-border-theme-secondary hover:border-border-theme-primary'
                   }`}
                 >
                   <div className="relative">
                     <div className="w-9 h-9 md:w-11 md:h-11 rounded-xl bg-gradient-to-br from-primary to-purple-600 p-0.5 shadow-lg">
-                      <div className="w-full h-full rounded-[0.6rem] bg-slate-900 overflow-hidden flex items-center justify-center text-xs font-black text-white">
+                      <div className="w-full h-full rounded-[0.6rem] bg-surface-secondary overflow-hidden flex items-center justify-center text-xs font-black text-text-theme-primary">
                         {user?.avatar ? (
                           <img src={user.avatar} alt="User" className="w-full h-full object-cover" />
                         ) : (
@@ -620,34 +624,34 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
                         )}
                       </div>
                     </div>
-                    <div className="absolute -bottom-1 -left-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-slate-900 rounded-full shadow-lg"></div>
+                    <div className="absolute -bottom-1 -left-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-surface-primary rounded-full shadow-lg"></div>
                   </div>
                   
                   <div className="hidden sm:flex flex-col items-start pr-1">
-                    <span className="text-sm font-black text-white leading-tight truncate max-w-[120px]">{user?.name?.split(' ')[0]}</span>
-                    <span className="text-[10px] font-bold text-gray-light/30">نشط الآن</span>
+                    <span className="text-sm font-black text-text-theme-primary leading-tight truncate max-w-[120px]">{user?.name?.split(' ')[0]}</span>
+                    <span className="text-[10px] font-bold text-text-theme-muted/50">نشط الآن</span>
                   </div>
                   
                   <Icon 
                     name="chevron-down" 
                     size="xs" 
-                    className={`text-gray-light/30 transition-transform duration-300 hidden sm:block ${isDropdownOpen ? 'rotate-180' : ''}`} 
+                    className={`text-text-theme-muted/50 transition-transform duration-300 hidden sm:block ${isDropdownOpen ? 'rotate-180' : ''}`} 
                   />
                 </button>
 
                 {/* Profile Dropdown Menu */}
                 {isDropdownOpen && (
-                  <div className="absolute top-full mt-4 left-0 w-64 bg-slate-950/95 backdrop-blur-3xl premium-border rounded-[2.5rem] p-4 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-500 z-[110]">
-                    <div className="p-4 mb-2 bg-white/5 rounded-2xl border border-white/5">
-                      <p className="text-xs font-black text-gray-light/20 uppercase tracking-widest mb-1">الحساب الحالي</p>
-                      <p className="text-sm font-black text-white truncate">{user?.name}</p>
+                  <div className="absolute top-full mt-4 left-0 w-64 bg-surface-primary/95 backdrop-blur-3xl border border-border-theme-primary rounded-[2.5rem] p-4 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-500 z-[110]">
+                    <div className="p-4 mb-2 bg-surface-secondary rounded-2xl border border-border-theme-secondary">
+                      <p className="text-xs font-black text-text-theme-muted/40 uppercase tracking-widest mb-1">الحساب الحالي</p>
+                      <p className="text-sm font-black text-text-theme-primary truncate">{user?.name}</p>
                       <p className="text-[10px] font-bold text-primary/60">{user?.email || getRoleLabel(role)}</p>
                     </div>
 
                     <div className="space-y-1">
                       <Link 
                         href={`/${role}/profile`}
-                        className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-gray-light/60 hover:text-white hover:bg-white/5 transition-all"
+                        className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-text-theme-secondary hover:text-text-theme-primary hover:bg-surface-hover transition-all"
                         onClick={() => setIsDropdownOpen(false)}
                       >
                         <Icon name="user" className="text-primary" />
@@ -726,13 +730,13 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
       )}
 
       {/* Universal Sidebar */}
-      <div className={`fixed inset-y-0 right-0 w-[300px] bg-black/60 backdrop-blur-3xl border-r border-white/10 z-[200] transition-transform duration-500 ease-out ${isMobileSidebarOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+      <div className={`fixed inset-y-0 right-0 w-[300px] bg-surface-primary/95 backdrop-blur-3xl border-r border-border-theme-primary z-[200] transition-transform duration-500 ease-out ${isMobileSidebarOpen ? 'translate-x-0' : 'translate-x-full'}`}>
         
         {/* Sidebar Header */}
-        <div className="p-6 border-bottom border-white/5 flex items-center justify-between">
+        <div className="p-6 border-bottom border-border-theme-secondary flex items-center justify-between">
           <div className="flex items-center gap-3">
              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-purple-600 p-0.5 shadow-lg">
-                <div className="w-full h-full rounded-[0.6rem] bg-slate-900 overflow-hidden flex items-center justify-center text-xs font-black text-white">
+                <div className="w-full h-full rounded-[0.6rem] bg-surface-secondary overflow-hidden flex items-center justify-center text-xs font-black text-text-theme-primary">
                   {user?.avatar ? (
                     <img src={user.avatar} alt="User" className="w-full h-full object-cover" />
                   ) : (
@@ -741,7 +745,7 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
                 </div>
              </div>
              <div>
-                <p className="text-sm font-black text-white leading-tight">{user?.name?.split(' ')[0]}</p>
+                <p className="text-sm font-black text-text-theme-primary leading-tight">{user?.name?.split(' ')[0]}</p>
                 <p className="text-[10px] font-bold text-gray-light/30">{getRoleLabel(role)}</p>
              </div>
           </div>

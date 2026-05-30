@@ -70,20 +70,20 @@ const QRScannerModal: React.FC<QRScannerModalProps> = ({ isOpen, onClose, onScan
   return (
     <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
       {/* Immersive Backdrop */}
-      <div className="absolute inset-0 bg-black/90 backdrop-blur-2xl animate-in fade-in duration-500" onClick={onClose} />
+      <div className="absolute inset-0 bg-overlay-bg backdrop-blur-2xl animate-in fade-in duration-500" onClick={onClose} />
 
       {/* Premium Scanner Card */}
-      <div className="relative w-full max-w-md bg-slate-950/90 border border-white/10 rounded-[3rem] shadow-2xl shadow-primary/10 overflow-hidden animate-in zoom-in-95 duration-500">
+      <div className="relative w-full max-w-md bg-surface-primary border border-border-theme-primary rounded-[3rem] shadow-2xl shadow-primary/10 overflow-hidden animate-in zoom-in-95 duration-500">
         
         {/* Header Section */}
         <div className="px-8 pt-8 pb-6 flex items-center justify-between">
           <div>
-            <h3 className="text-xl font-black text-white tracking-tight">مسح الحضور</h3>
+            <h3 className="text-xl font-black text-text-theme-primary tracking-tight">مسح الحضور</h3>
             <p className="text-[10px] font-bold text-primary uppercase tracking-widest mt-1">{lectureTitle}</p>
           </div>
           <button 
             onClick={onClose} 
-            className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white/40 hover:text-white transition-colors"
+            className="w-10 h-10 rounded-full bg-surface-secondary flex items-center justify-center text-text-theme-secondary hover:text-text-theme-primary transition-colors"
           >
             <Icon name="times" className="text-sm" />
           </button>
@@ -91,7 +91,7 @@ const QRScannerModal: React.FC<QRScannerModalProps> = ({ isOpen, onClose, onScan
 
         {/* Camera & Scanner Interface */}
         <div className="px-6 pb-6">
-          <div className="relative aspect-square bg-black rounded-[2rem] overflow-hidden border border-white/5 group">
+          <div className="relative aspect-square bg-black rounded-[2rem] overflow-hidden border border-border-theme-secondary group">
             {/* The actual camera feed */}
             <div id="reader" className="w-full h-full scale-110" />
 
@@ -119,14 +119,14 @@ const QRScannerModal: React.FC<QRScannerModalProps> = ({ isOpen, onClose, onScan
         {/* Footer Info */}
         <div className="px-8 pb-8 space-y-6">
           <div className="text-center">
-            <p className="text-sm font-bold text-gray-light/60 leading-relaxed">
+            <p className="text-sm font-bold text-text-theme-secondary leading-relaxed">
               {instructions || "وجه الكاميرا نحو رمز QR للطالب لتسجيل الحضور"}
             </p>
           </div>
 
           <button
             onClick={onClose}
-            className="w-full py-4 rounded-2xl bg-white/5 hover:bg-rose-500/10 text-gray-light/40 hover:text-rose-400 font-bold text-xs border border-white/5 hover:border-rose-500/20 transition-all active:scale-95 uppercase tracking-widest"
+            className="w-full py-4 rounded-2xl bg-surface-secondary hover:bg-rose-500/10 text-text-theme-muted hover:text-rose-400 font-bold text-xs border border-border-theme-primary hover:border-rose-500/20 transition-all active:scale-95 uppercase tracking-widest"
           >
             إلغاء العملية
           </button>

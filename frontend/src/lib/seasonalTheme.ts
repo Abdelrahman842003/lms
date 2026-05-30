@@ -173,9 +173,16 @@ export function applySeasonalThemeToBody(
   if (typeof document !== 'undefined') {
     document.body.setAttribute('data-season-theme', resolved.theme);
 
-    Object.entries(resolved.cssVariables).forEach(([key, value]) => {
-      document.body.style.setProperty(key, value);
-    });
+    if (resolved.theme !== 'default') {
+      Object.entries(resolved.cssVariables).forEach(([key, value]) => {
+        document.body.style.setProperty(key, value);
+      });
+    } else {
+      // Clear any custom properties we might have set so standard light/dark mode variables work
+      Object.keys(resolved.cssVariables).forEach((key) => {
+        document.body.style.removeProperty(key);
+      });
+    }
   }
 
   return resolved;

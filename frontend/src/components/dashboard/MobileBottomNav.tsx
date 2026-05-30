@@ -366,7 +366,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ role }) => {
             className="absolute bottom-28 left-1/2 -translate-x-1/2 w-[92%] max-w-sm max-h-[70vh] overflow-hidden flex flex-col"
             ref={menuRef}
           >
-            <div className="bg-black/80 premium-border rounded-[2.5rem] p-4 shadow-2xl animate-in slide-in-from-bottom-8 fade-in duration-500 backdrop-blur-3xl overflow-y-auto custom-scrollbar flex-1">
+            <div className="bg-surface-primary premium-border rounded-[2.5rem] p-4 shadow-2xl animate-in slide-in-from-bottom-8 fade-in duration-500 backdrop-blur-3xl overflow-y-auto custom-scrollbar flex-1">
               <div className="grid grid-cols-2 gap-2 mb-4">
                 {hiddenItems.map((item) => (
                   <Link
@@ -375,7 +375,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ role }) => {
                     className={`flex flex-col items-center justify-center gap-2 p-4 rounded-3xl border ${
                       pathname === item.href 
                         ? 'bg-primary/20 text-primary border-primary/20 shadow-lg shadow-primary/10' 
-                        : 'bg-white/5 text-gray-light/60 border-white/5'
+                        : 'bg-surface-secondary text-text-theme-secondary border-border-theme-secondary'
                     }`}
                   >
                     <Icon name={item.icon as any} size="sm" />
@@ -385,10 +385,10 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ role }) => {
               </div>
 
               {/* Action Section */}
-              <div className="pt-4 border-t border-white/5 space-y-2">
+              <div className="pt-4 border-t border-border-theme-secondary space-y-2">
                 <Link
                   href={`/${role}/profile`}
-                  className="flex items-center justify-center gap-3 p-4 rounded-2xl bg-white/10 text-white font-bold text-xs border border-white/10 shadow-lg active:scale-95 transition-transform"
+                  className="flex items-center justify-center gap-3 p-4 rounded-2xl bg-surface-secondary text-text-theme-primary font-bold text-xs border border-border-theme-primary shadow-lg active:scale-95 transition-transform"
                 >
                   <Icon name="user" size="xs" className="text-primary" />
                   <span>الملف الشخصي</span>
@@ -425,7 +425,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ role }) => {
             </div>
             
             {/* Arrow */}
-            <div className="w-6 h-6 bg-black/90 border-r border-b border-white/10 absolute -bottom-3 left-1/2 -translate-x-1/2 rotate-45 z-[-1]" />
+            <div className="w-6 h-6 bg-surface-primary border-r border-b border-border-theme-primary absolute -bottom-3 left-1/2 -translate-x-1/2 rotate-45 z-[-1]" />
           </div>
         </div>
       )}
@@ -438,7 +438,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ role }) => {
 
       {/* Main Nav Bar */}
       <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-md z-[200] lg:hidden">
-        <nav className="premium-glass premium-border rounded-[2rem] px-4 py-3 shadow-2xl flex items-center justify-between gap-1 backdrop-blur-3xl bg-black/40">
+        <nav className="premium-glass premium-border rounded-[2rem] px-4 py-3 shadow-2xl flex items-center justify-between gap-1 backdrop-blur-3xl bg-surface-primary/40">
           {visibleItems.map((item) => {
             const isActive = pathname === item.href;
             return (
@@ -446,7 +446,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ role }) => {
                 key={item.id}
                 href={item.href}
                 className={`relative flex-1 flex flex-col items-center justify-center gap-1.5 transition-all duration-500 py-1.5 ${
-                  isActive ? 'text-primary' : 'text-gray-light/40'
+                  isActive ? 'text-primary' : 'text-text-theme-muted'
                 }`}
               >
                 {isActive && (
@@ -461,7 +461,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ role }) => {
                    />
                 </div>
                 
-                <span className={`text-[9px] font-black tracking-tight transition-all duration-500 ${isActive ? 'opacity-100' : 'opacity-40'}`}>
+                <span className={`text-[9px] font-black tracking-tight transition-all duration-500 ${isActive ? 'opacity-100' : 'opacity-40 text-text-theme-muted'}`}>
                   {item.label}
                 </span>
 
@@ -474,7 +474,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ role }) => {
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className={`relative flex-1 flex flex-col items-center justify-center gap-1.5 py-1.5 ${
-                isMenuOpen ? 'text-primary' : 'text-gray-light/40'
+                isMenuOpen ? 'text-primary' : 'text-text-theme-muted'
               }`}
             >
               <div className={`relative flex items-center justify-center transition-transform duration-500 ${isMenuOpen ? 'scale-110 -translate-y-1 rotate-180' : 'active:scale-95'}`}>
@@ -484,7 +484,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ role }) => {
                  />
               </div>
               
-              <span className={`text-[9px] font-black tracking-tight transition-all duration-500 ${isMenuOpen ? 'opacity-100' : 'opacity-40'}`}>
+              <span className={`text-[9px] font-black tracking-tight transition-all duration-500 ${isMenuOpen ? 'opacity-100' : 'opacity-40 text-text-theme-muted'}`}>
                 المزيد
               </span>
             </button>

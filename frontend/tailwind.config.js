@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class',
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
@@ -25,6 +26,17 @@ export default {
         danger: 'var(--danger)',
         white: 'var(--white)',
         black: 'var(--black)',
+        
+        // Theme-aware variables
+        'surface-primary': 'var(--surface-primary)',
+        'surface-secondary': 'var(--surface-secondary)',
+        'surface-tertiary': 'var(--surface-tertiary)',
+        'surface-hover': 'var(--surface-hover)',
+        'text-theme-primary': 'var(--text-primary)',
+        'text-theme-secondary': 'var(--text-secondary)',
+        'text-theme-muted': 'var(--text-muted)',
+        'border-theme-primary': 'var(--border-primary)',
+        'border-theme-secondary': 'var(--border-secondary)',
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',

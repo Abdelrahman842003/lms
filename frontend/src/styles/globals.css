@@ -59,7 +59,9 @@
     "Helvetica Neue", Arial, sans-serif !important;
 }
 
-:root {
+/* Theme Custom Variables */
+:root,
+[data-theme="dark"] {
   --primary: #3249A9;
   --primary-light: #4263eb;
   --primary-dark: #283d8f;
@@ -110,7 +112,98 @@
   --premium-gradient-success: linear-gradient(135deg, #10b981 0%, #059669 100%);
   --premium-gradient-warning: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
   --premium-gradient-danger: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  --premium-gradient-glass: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+  
+  /* Theme-aware utility variables */
+  --surface-primary: #000000;
+  --surface-secondary: rgba(255, 255, 255, 0.05);
+  --surface-tertiary: rgba(255, 255, 255, 0.08);
+  --surface-hover: rgba(255, 255, 255, 0.1);
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.7);
+  --text-muted: rgba(255, 255, 255, 0.4);
+  --border-primary: rgba(255, 255, 255, 0.1);
+  --border-secondary: rgba(255, 255, 255, 0.06);
+  --overlay-bg: rgba(0, 0, 0, 0.7);
+  --grid-line: rgba(255, 255, 255, 0.02);
+  --input-bg: rgba(255, 255, 255, 0.03);
+  --input-border: rgba(255, 255, 255, 0.1);
+  --card-bg: rgba(16, 20, 38, 0.15);
+  --card-border: rgba(27, 197, 248, 0.12);
+  --card-border-hover: rgba(27, 197, 248, 0.5);
+  --navbar-bg: rgba(16, 20, 38, 0);
+  --navbar-bg-scrolled: rgba(16, 20, 38, 0.6);
+  --navbar-dropdown-bg: rgba(16, 20, 38, 0.95);
+  --modal-bg: #1a1f2e;
+  --sidebar-bg: linear-gradient(180deg, rgba(10,15,30,0.98) 0%, rgba(5,8,22,0.99) 100%);
+  --mobile-nav-bg: rgba(0,0,0,0.85);
+  --mobile-nav-border: rgba(255, 255, 255, 0.08);
 }
+
+[data-theme="light"] {
+  --primary: #3249A9;
+  --primary-light: #4263eb;
+  --primary-dark: #283d8f;
+  --secondary: #00b377;
+  --secondary-light: #5c6fee;
+  --secondary-dark: #3a4db5;
+  --dark: #F5F5F5;
+  --darker: #F5F5F5;
+  --light: #1e293b;
+  --gray: #6b7280;
+  --gray-light: #475569;
+  --gray-dark: #94a3b8;
+  --success: #059669;
+  --warning: #d97706;
+  --danger: #dc2626;
+  --white: #1e293b; /* Note: semantic flip for white text in dark mode -> dark text in light mode */
+  --black: #ffffff; /* semantic flip */
+  --seasonal-primary: #3249A9;
+  --seasonal-secondary: #00b377;
+  --seasonal-bg-start: #F5F5F5;
+  --seasonal-bg-end: #F5F5F5;
+
+  /* Glass effect variables */
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(0, 0, 0, 0.08);
+  --glass-shadow: rgba(0, 0, 0, 0.08);
+
+  /* Premium Design Tokens */
+  --premium-glass: rgba(255, 255, 255, 0.75);
+  --premium-border: rgba(0, 0, 0, 0.06);
+  --premium-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.08);
+  --premium-gradient-primary: linear-gradient(135deg, #3249A9 0%, #4263eb 100%);
+  --premium-gradient-success: linear-gradient(135deg, #059669 0%, #10b981 100%);
+  --premium-gradient-warning: linear-gradient(135deg, #d97706 0%, #f59e0b 100%);
+  --premium-gradient-danger: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+  --premium-gradient-glass: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.6) 100%);
+  
+  /* Theme-aware utility variables */
+  --surface-primary: #ffffff;
+  --surface-secondary: #f1f5f9;
+  --surface-tertiary: #e2e8f0;
+  --surface-hover: rgba(0, 0, 0, 0.04);
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --border-primary: rgba(0, 0, 0, 0.08);
+  --border-secondary: rgba(0, 0, 0, 0.04);
+  --overlay-bg: rgba(0, 0, 0, 0.4);
+  --grid-line: rgba(0, 0, 0, 0.02);
+  --input-bg: #ffffff;
+  --input-border: rgba(0, 0, 0, 0.12);
+  --card-bg: #ffffff;
+  --card-border: rgba(0, 0, 0, 0.06);
+  --card-border-hover: rgba(50, 73, 169, 0.3);
+  --navbar-bg: rgba(255, 255, 255, 0.5);
+  --navbar-bg-scrolled: rgba(255, 255, 255, 0.85);
+  --navbar-dropdown-bg: #ffffff;
+  --modal-bg: #ffffff;
+  --sidebar-bg: linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(248,249,252,0.99) 100%);
+  --mobile-nav-bg: rgba(255, 255, 255, 0.9);
+  --mobile-nav-border: rgba(0, 0, 0, 0.06);
+}
+
 
 * {
   margin: 0;
@@ -127,7 +220,7 @@ html {
 body {
   font-family: "Tajawal", system-ui, -apple-system, sans-serif;
   background: linear-gradient(135deg, var(--dark) 0%, var(--darker) 100%);
-  color: var(--white);
+  color: var(--text-primary);
   line-height: 1.6;
   overflow-x: hidden;
   position: relative;
@@ -504,10 +597,10 @@ body[data-season-theme="hijri_new_year"] .grid-pattern {
   top: 0;
   left: 0;
   background-image: linear-gradient(
-      rgba(255, 255, 255, 0.03) 1px,
+      var(--grid-line) 1px,
       transparent 1px
     ),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
   background-size: 50px 50px;
   background-position: center center;
   z-index: -1;
@@ -521,7 +614,7 @@ body[data-season-theme="hijri_new_year"] .grid-pattern {
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--surface-tertiary);
   border-radius: 100px;
 }
 
@@ -555,7 +648,7 @@ body[data-season-theme="hijri_new_year"] .grid-pattern {
 
 html, body {
   scrollbar-width: thin; /* Firefox */
-  scrollbar-color: var(--primary) rgba(255, 255, 255, 0.05); /* Firefox */
+  scrollbar-color: var(--primary) var(--surface-tertiary); /* Firefox */
   -ms-overflow-style: auto; /* IE and Edge */
 }
 
@@ -731,7 +824,7 @@ input:focus,
 textarea:focus,
 select:focus {
   outline: none;
-  background-color: rgba(255, 255, 255, 0.08) !important;
+  background-color: var(--surface-hover) !important;
   border-color: var(--primary) !important;
   box-shadow: 0 0 0 3px rgba(66, 99, 235, 0.15) !important;
 }
@@ -1023,8 +1116,8 @@ select:focus {
 input,
 textarea,
 select {
-  background-color: rgba(255, 255, 255, 0.03) !important;
-  border-color: rgba(255, 255, 255, 0.1) !important;
-  color: white !important;
+  background-color: var(--input-bg) !important;
+  border-color: var(--input-border) !important;
+  color: var(--text-primary) !important;
   backdrop-filter: blur(10px);
 }

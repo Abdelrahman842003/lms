@@ -20,12 +20,12 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({ isOpen, onClose, url, expires
     <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6">
       {/* Immersive Backdrop */}
       <div 
-        className="absolute inset-0 bg-black/80 backdrop-blur-xl animate-in fade-in duration-500"
+        className="absolute inset-0 bg-overlay-bg backdrop-blur-xl animate-in fade-in duration-500"
         onClick={onClose}
       />
 
       {/* Premium Modal Card */}
-      <div className="relative w-full max-w-sm bg-slate-950/90 border border-white/10 rounded-[3rem] shadow-2xl shadow-primary/10 overflow-hidden animate-in zoom-in-95 fade-in duration-500">
+      <div className="relative w-full max-w-sm bg-surface-primary border border-border-theme-primary rounded-[3rem] shadow-2xl shadow-primary/10 overflow-hidden animate-in zoom-in-95 fade-in duration-500">
         <div className="p-8 flex flex-col items-center">
           
           {/* Header Icon */}
@@ -34,8 +34,8 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({ isOpen, onClose, url, expires
           </div>
 
           {/* Titles */}
-          <h3 className="text-2xl font-black text-white tracking-tight text-center mb-2">{lectureTitle}</h3>
-          <p className="text-gray-light/40 text-xs font-bold uppercase tracking-widest mb-8">تسجيل الحضور عبر الرمز</p>
+          <h3 className="text-2xl font-black text-text-theme-primary tracking-tight text-center mb-2">{lectureTitle}</h3>
+          <p className="text-text-theme-muted text-xs font-bold uppercase tracking-widest mb-8">تسجيل الحضور عبر الرمز</p>
 
           {/* QR Code with Glowing Container */}
           <div className="relative group">
@@ -67,7 +67,7 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({ isOpen, onClose, url, expires
           {/* Action Button */}
           <button
             onClick={onClose}
-            className="w-full py-5 rounded-2xl bg-white/5 hover:bg-white/10 text-white font-black text-xs border border-white/10 transition-all active:scale-95 uppercase tracking-[0.2em]"
+            className="w-full py-5 rounded-2xl bg-surface-secondary hover:bg-surface-tertiary text-text-theme-primary font-black text-xs border border-border-theme-primary transition-all active:scale-95 uppercase tracking-[0.2em]"
           >
             إغلاق النافذة
           </button>

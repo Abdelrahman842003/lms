@@ -99,12 +99,9 @@ export const Button = BaseButton;
 export const Badge = BaseBadge;
 export const Skeleton = BaseSkeleton;
 
-// Export all UI components
-export { default as AvatarUpload } from './AvatarUpload';
 export { default as ConfirmationModal } from './ConfirmationModal';
 export { default as ImageCropModal } from './ImageCropModal';
 export { default as FormModal } from './FormModal';
-export { MonthDropdown } from './MonthDropdown';
 export { LoadingSpinner, LoadingState } from './LoadingSpinner';
 
 // Re-export Button from Button.tsx (preferred implementation)

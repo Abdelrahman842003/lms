@@ -96,20 +96,20 @@ export const ManualAttendanceModal: React.FC<ManualAttendanceModalProps> = ({
   return (
     <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
       {/* Immersive Backdrop */}
-      <div className="absolute inset-0 bg-black/80 backdrop-blur-2xl animate-in fade-in duration-500" onClick={onClose} />
+      <div className="absolute inset-0 bg-overlay-bg backdrop-blur-2xl animate-in fade-in duration-500" onClick={onClose} />
 
       {/* Premium Modal Card */}
-      <div className="relative w-full max-w-md bg-slate-950/90 border border-white/10 rounded-[3rem] shadow-2xl shadow-primary/10 overflow-hidden animate-in zoom-in-95 duration-500">
+      <div className="relative w-full max-w-md bg-surface-primary border border-border-theme-primary rounded-[3rem] shadow-2xl shadow-primary/10 overflow-hidden animate-in zoom-in-95 duration-500">
         
         {/* Header Section */}
         <div className="px-8 pt-8 pb-6 flex items-center justify-between">
           <div>
-            <h3 className="text-xl font-black text-white tracking-tight">تسجيل يدوي</h3>
+            <h3 className="text-xl font-black text-text-theme-primary tracking-tight">تسجيل يدوي</h3>
             <p className="text-[10px] font-bold text-primary uppercase tracking-widest mt-1">{lectureTitle}</p>
           </div>
           <button 
             onClick={onClose} 
-            className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white/40 hover:text-white transition-colors"
+            className="w-10 h-10 rounded-full bg-surface-secondary flex items-center justify-center text-text-theme-secondary hover:text-text-theme-primary transition-colors"
           >
             <Icon name="times" className="text-sm" />
           </button>
@@ -120,13 +120,13 @@ export const ManualAttendanceModal: React.FC<ManualAttendanceModalProps> = ({
           {/* Enhanced Search Area */}
           <div className="w-full relative group mb-8">
             <div className="absolute inset-y-0 right-5 flex items-center pointer-events-none">
-              <Icon name="search" className={`text-lg transition-colors ${searchQuery ? 'text-primary' : 'text-gray-light/20'}`} />
+              <Icon name="search" className={`text-lg transition-colors ${searchQuery ? 'text-primary' : 'text-text-theme-muted/40'}`} />
             </div>
             <input
               ref={inputRef}
               type="text"
               placeholder="اكتب رقم هاتف الطالب..."
-              className="w-full h-16 bg-white/5 border border-white/10 rounded-2xl pr-14 pl-6 text-white font-bold text-lg placeholder:text-gray-light/20 focus:bg-white/[0.08] focus:border-primary/50 focus:ring-0 transition-all outline-none"
+              className="w-full h-16 bg-surface-secondary border border-border-theme-primary rounded-2xl pr-14 pl-6 text-text-theme-primary font-bold text-lg placeholder:text-text-theme-muted/40 focus:bg-surface-tertiary focus:border-primary/50 focus:ring-0 transition-all outline-none"
               value={searchQuery}
               onChange={(e) => {
                 const val = e.target.value.replace(/[^0-9]/g, '').slice(0, 11);
@@ -143,7 +143,7 @@ export const ManualAttendanceModal: React.FC<ManualAttendanceModalProps> = ({
           {/* Results Area */}
           <div className="w-full min-h-[160px] flex flex-col items-center justify-center">
             {student ? (
-              <div className="w-full p-6 rounded-[2rem] bg-white/[0.03] border border-white/10 animate-in slide-in-from-bottom-4 duration-500">
+              <div className="w-full p-6 rounded-[2rem] bg-surface-secondary border border-border-theme-primary animate-in slide-in-from-bottom-4 duration-500">
                 <div className="flex items-center gap-4 mb-6">
                   <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-xl font-black text-white shadow-lg ${
                     student.gender === 'female' ? 'bg-gradient-to-br from-pink-500 to-rose-600' : 'bg-gradient-to-br from-blue-500 to-indigo-600'
@@ -151,7 +151,7 @@ export const ManualAttendanceModal: React.FC<ManualAttendanceModalProps> = ({
                     {student.name.charAt(0)}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h4 className="text-base font-black text-white truncate">{student.name}</h4>
+                    <h4 className="text-base font-black text-text-theme-primary truncate">{student.name}</h4>
                     <p className="text-xs font-bold text-gray-light/40 mt-1 uppercase tracking-widest">{student.phone}</p>
                   </div>
                 </div>

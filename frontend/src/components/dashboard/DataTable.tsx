@@ -123,12 +123,12 @@ export const DataTable: React.FC<DataTableProps> = ({
         <div className="table-search ux-flex ux-flex-col ux-sm-flex-row ux-justify-between ux-items-center ux-gap-4 ux-mb-4">
           {searchable && (
             <div className="table-search-wrapper flex-1 relative group">
-              <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-gray-light group-focus-within:text-primary transition-colors">
+              <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-text-theme-secondary group-focus-within:text-primary transition-colors">
                 <Icon name="search" size="sm" />
               </div>
               <input
                 type="text"
-                className="w-full bg-white/5 border border-white/10 focus:border-primary/50 focus:bg-white/10 rounded-xl py-3 pr-11 pl-4 text-white placeholder:text-gray-light/50 outline-none transition-all"
+                className="w-full bg-surface-secondary border border-border-theme-primary focus:border-primary/50 focus:bg-surface-tertiary rounded-xl py-3 pr-11 pl-4 text-text-theme-primary placeholder:text-text-theme-muted outline-none transition-all"
                 placeholder="بحث..."
                 value={onSearch ? undefined : searchQuery}
                 onChange={(e) => {
@@ -156,11 +156,11 @@ export const DataTable: React.FC<DataTableProps> = ({
         <div className={`${currentBreakpoint.mobile} ux-space-y-4`}>
           {isLoading ? (
             Array.from({ length: 3 }).map((_, index) => (
-              <div key={index} className="ux-bg-white-5 ux-rounded-xl ux-p-4 ux-animate-pulse">
-                <div className="ux-h-6 ux-bg-white-10 ux-rounded ux-w-3-4 ux-mb-3"></div>
+              <div key={index} className="bg-surface-secondary ux-rounded-xl ux-p-4 ux-animate-pulse">
+                <div className="ux-h-6 bg-surface-tertiary ux-rounded ux-w-3-4 ux-mb-3"></div>
                 <div className="ux-space-y-2">
-                  <div className="ux-h-4 ux-bg-white-10 ux-rounded ux-w-1-2"></div>
-                  <div className="ux-h-4 ux-bg-white-10 ux-rounded ux-w-2-3"></div>
+                  <div className="ux-h-4 bg-surface-tertiary ux-rounded ux-w-1-2"></div>
+                  <div className="ux-h-4 bg-surface-tertiary ux-rounded ux-w-2-3"></div>
                 </div>
               </div>
             ))
@@ -181,14 +181,14 @@ export const DataTable: React.FC<DataTableProps> = ({
       )}
 
       {/* Desktop Table */}
-      <div className="overflow-x-auto rounded-xl border border-white/5 bg-white/[0.02] backdrop-blur-md">
+      <div className="overflow-x-auto rounded-xl border border-border-theme-secondary bg-surface-secondary/40 backdrop-blur-md">
         <table className={`w-full text-right border-separate border-spacing-0 ${mobileRenderer ? currentBreakpoint.table : ''}`}>
           <thead>
-            <tr className="bg-white/5">
+            <tr className="bg-surface-secondary">
               {columns.map((column) => (
                 <th
                   key={column.key}
-                  className={`px-6 py-4 text-xs font-black uppercase tracking-wider text-gray-light border-b border-white/10 ${column.sortable ? 'cursor-pointer hover:text-white' : ''} ${column.className || ''}`}
+                  className={`px-6 py-4 text-xs font-black uppercase tracking-wider text-text-theme-secondary border-b border-border-theme-primary ${column.sortable ? 'cursor-pointer hover:text-text-theme-primary' : ''} ${column.className || ''}`}
                   onClick={() => column.sortable && handleSort(column.key)}
                 >
                   <div className="flex items-center gap-2">
@@ -203,7 +203,7 @@ export const DataTable: React.FC<DataTableProps> = ({
                   </div>
                 </th>
               ))}
-              {actions && actions.length > 0 && <th className="px-6 py-4 text-xs font-black uppercase tracking-wider text-gray-light border-b border-white/10">الإجراءات</th>}
+              {actions && actions.length > 0 && <th className="px-6 py-4 text-xs font-black uppercase tracking-wider text-text-theme-secondary border-b border-border-theme-primary">الإجراءات</th>}
             </tr>
           </thead>
           <tbody>
@@ -226,23 +226,23 @@ export const DataTable: React.FC<DataTableProps> = ({
               paginatedData.map((row, rowIndex) => (
                 <tr 
                   key={rowIndex} 
-                  className={`${rowClassName ? rowClassName(row) : ''} ${onRowClick ? 'ux-cursor-pointer ux-hover-bg-white-5 ux-transition-colors' : ''}`}
+                  className={`${rowClassName ? rowClassName(row) : ''} ${onRowClick ? 'ux-cursor-pointer hover:bg-surface-hover ux-transition-colors' : ''}`}
                   onClick={() => onRowClick && onRowClick(row)}
                 >
                   {columns.map((column) => (
-                    <td key={column.key} className={`px-6 py-4 text-sm text-white border-b border-white/5 group-hover:bg-white/[0.02] transition-colors ${column.className || ''}`}>
+                    <td key={column.key} className={`px-6 py-4 text-sm text-text-theme-primary border-b border-border-theme-secondary transition-colors ${column.className || ''}`}>
                       {column.render
                         ? column.render(row[column.key], row, rowIndex)
                         : row[column.key]}
                     </td>
                   ))}
                   {actions && actions.length > 0 && (
-                    <td className="px-6 py-4 border-b border-white/5 group-hover:bg-white/[0.02] transition-colors">
+                    <td className="px-6 py-4 border-b border-border-theme-secondary transition-colors">
                       <div className="actions-dropdown">
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-gray-light hover:text-white hover:border-primary/50 transition-all"
+                          className="w-9 h-9 rounded-lg bg-surface-secondary border border-border-theme-primary flex items-center justify-center text-text-theme-secondary hover:text-text-theme-primary hover:border-primary/50 transition-all"
                           onClick={(e) => {
                             e.stopPropagation();
                             const rect = e.currentTarget.getBoundingClientRect();

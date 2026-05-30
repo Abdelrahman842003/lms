@@ -5,8 +5,10 @@ import '@/styles/components.css'
 import '@/styles/layout.css'
 import { AuthProvider } from '@/contexts/EnhancedAuthContext'
 import { SettingsProvider } from '@/contexts/SettingsContext'
+import { ThemeProvider } from '@/contexts/ThemeContext'
 import { Toaster } from 'react-hot-toast'
 import ServiceWorkerCleanup from '@/components/ServiceWorkerCleanup'
+import ServiceWorkerRegister from '@/components/ServiceWorkerRegister'
 import InstallPrompt from '@/components/InstallPrompt'
 import MaintenanceGuard from '@/components/MaintenanceGuard';
 import SeasonalDecorations from '@/components/SeasonalDecorations';
@@ -127,8 +129,26 @@ export default async function RootLayout({
     };
 
     return (
-    <html lang="ar" dir="rtl" className="h-full" data-scroll-behavior="smooth">
+    <html lang="ar" dir="rtl" className="h-full" data-scroll-behavior="smooth" suppressHydrationWarning>
             <head>
+                {/* Prevent FOUC - set theme before render */}
+                <script dangerouslySetInnerHTML={{ __html: `
+                    (function() {
+                        try {
+                            var theme = localStorage.getItem('neetaq-theme');
+                            if (!theme) {
+                                var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                                theme = prefersDark ? 'dark' : 'light';
+                            }
+                            document.documentElement.setAttribute('data-theme', theme);
+                            if (theme === 'dark') {
+                                document.documentElement.classList.add('dark');
+                            } else {
+                                document.documentElement.classList.remove('dark');
+                            }
+                        } catch (e) {}
+                    })();
+                `}} />
                 <link rel="preconnect" href="https://fonts.googleapis.com" />
                 <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
                 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet" />
@@ -153,15 +173,17 @@ export default async function RootLayout({
             <body
                 className="max-w-[2000px] mx-auto"
                 data-season-theme={seasonalTheme.theme}
-                style={seasonalTheme.cssVariables as CSSProperties}
+                style={seasonalTheme.theme !== 'default' ? (seasonalTheme.cssVariables as CSSProperties) : undefined}
                 suppressHydrationWarning={true}
             >
                 <div className="grid-pattern" />
                 <SettingsProvider>
+                <ThemeProvider>
                 <SeasonalDecorations initialTheme={seasonalTheme.theme} />
                 <AuthProvider>
                 <OfflineProvider>
                 <VideoUploadProvider>
+                                    <ServiceWorkerRegister />
                   <ServiceWorkerCleanup />
                   <InstallPrompt />
                   <MaintenanceGuard maintenanceMode={maintenanceMode}>
@@ -174,6 +196,7 @@ export default async function RootLayout({
                 </VideoUploadProvider>
                 </OfflineProvider>
                 </AuthProvider>
+                </ThemeProvider>
                 </SettingsProvider>
             </body>
         </html>

@@ -18,9 +18,9 @@ export const DashboardCard: React.FC<DashboardCardProps> = ({
   noPadding = false
 }) => {
   return (
-    <div className={`premium-glass rounded-2xl border border-white/5 overflow-hidden ${className}`}>
+    <div className={`premium-glass rounded-2xl border border-border-theme-secondary overflow-hidden ${className}`}>
       {(title || action) && (
-        <div className="px-6 py-4 border-b border-white/5 flex items-center justify-between">
+        <div className="px-6 py-4 border-b border-border-theme-secondary flex items-center justify-between">
           {(title || icon) && (
             <div className="flex items-center gap-3">
               {icon && (
@@ -28,7 +28,7 @@ export const DashboardCard: React.FC<DashboardCardProps> = ({
                   <i className={icon}></i>
                 </div>
               )}
-              {title && <h2 className="text-lg font-bold text-white m-0">{title}</h2>}
+              {title && <h2 className="text-lg font-bold text-text-theme-primary m-0">{title}</h2>}
             </div>
           )}
           {action && <div className="flex-shrink-0">{action}</div>}
