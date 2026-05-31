@@ -10,13 +10,15 @@ export function useNetworkStatus() {
     // Set initial state
     setIsOnline(networkMonitor.isOnline);
 
-    // Subscribe to changes
-    const unsubscribe = networkMonitor.onStatusChange((status) => {
+    const handleChange = (status: boolean) => {
       setIsOnline(status);
-    });
+    };
+
+    // Subscribe to changes
+    networkMonitor.addListener(handleChange);
 
     return () => {
-      unsubscribe();
+      networkMonitor.removeListener(handleChange);
     };
   }, []);
 

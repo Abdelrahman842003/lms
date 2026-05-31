@@ -305,53 +305,56 @@ class ApiClient {
 
     if (!isOnline) {
       // 1. Handling GET request (read cache)
-      if (method === 'GET' && options.offlineConfig?.storeName) {
-        const storeName = options.offlineConfig.storeName;
-        const entityId = options.offlineConfig.entityId;
-        const targetStore = (stores as any)[storeName + 'Store'];
-        if (targetStore) {
-          console.log(`[ApiClient] Offline: Serving from store ${storeName}`);
-          if (entityId) {
-            const data = await targetStore.getById(entityId);
-            if (data !== undefined) return data as T;
-          } else {
-            const data = await targetStore.getAll();
-            return data as T;
+      if (method === 'GET') {
+        if (options.offlineConfig?.storeName) {
+          const storeName = options.offlineConfig.storeName;
+          const entityId = options.offlineConfig.entityId;
+          const targetStore = (stores as any)[storeName + 'Store'];
+          if (targetStore) {
+            console.log(`[ApiClient] Offline: Serving from store ${storeName}`);
+            if (entityId) {
+              const data = await targetStore.getById(entityId);
+              if (data !== undefined) return data as T;
+            } else {
+              const data = await targetStore.getAll();
+              return data as T;
+            }
           }
+          throw new ApiError('أنت غير متصل بالإنترنت والبيانات المطلوبة غير متوفرة محلياً.', 0);
         }
-        throw new ApiError('أنت غير متصل بالإنترنت والبيانات المطلوبة غير متوفرة محلياً.', 0);
+        // If NO offlineConfig, do nothing and let it proceed to fetch() for Service Worker caching
+      } else {
+        // 2. Handling mutations (write queue)
+        if ((method === 'POST' || method === 'PUT' || method === 'PATCH' || method === 'DELETE') && options.offlineConfig?.entityType) {
+          const entityType = options.offlineConfig.entityType;
+          const entityId = options.offlineConfig.entityId;
+          
+          const headers = this.buildHeaders(method, url, options);
+          const safeHeaders: Record<string, string> = {};
+          if (headers['X-Academy-Id']) safeHeaders['X-Academy-Id'] = headers['X-Academy-Id'];
+          if (headers['X-XSRF-TOKEN']) safeHeaders['X-XSRF-TOKEN'] = headers['X-XSRF-TOKEN'];
+          if (headers['Authorization']) safeHeaders['Authorization'] = headers['Authorization'];
+
+          console.log(`[ApiClient] Offline: Enqueuing mutation for ${entityType}`);
+          const queueId = await syncEngine.enqueue(
+            url,
+            method,
+            options.body ? JSON.parse(options.body as string) : {},
+            entityType,
+            entityId,
+            safeHeaders
+          );
+
+          return {
+            status: 'offline_queued',
+            message: 'تم حفظ العملية محلياً وسيتم مزامنتها تلقائياً عند اتصالك بالإنترنت.',
+            queueId,
+            id: entityId,
+          } as unknown as T;
+        }
+
+        throw new ApiError('يرجى الاتصال بالإنترنت لإجراء هذه العملية.', 0);
       }
-
-      // 2. Handling mutations (write queue)
-      if ((method === 'POST' || method === 'PUT' || method === 'PATCH' || method === 'DELETE') && options.offlineConfig?.entityType) {
-        const entityType = options.offlineConfig.entityType;
-        const entityId = options.offlineConfig.entityId;
-        
-        const headers = this.buildHeaders(method, url, options);
-        const safeHeaders: Record<string, string> = {};
-        if (headers['X-Academy-Id']) safeHeaders['X-Academy-Id'] = headers['X-Academy-Id'];
-        if (headers['X-XSRF-TOKEN']) safeHeaders['X-XSRF-TOKEN'] = headers['X-XSRF-TOKEN'];
-        if (headers['Authorization']) safeHeaders['Authorization'] = headers['Authorization'];
-
-        console.log(`[ApiClient] Offline: Enqueuing mutation for ${entityType}`);
-        const queueId = await syncEngine.enqueue(
-          url,
-          method,
-          options.body ? JSON.parse(options.body as string) : {},
-          entityType,
-          entityId,
-          safeHeaders
-        );
-
-        return {
-          status: 'offline_queued',
-          message: 'تم حفظ العملية محلياً وسيتم مزامنتها تلقائياً عند اتصالك بالإنترنت.',
-          queueId,
-          id: entityId,
-        } as unknown as T;
-      }
-
-      throw new ApiError('يرجى الاتصال بالإنترنت لإجراء هذه العملية.', 0);
     }
 
     // IMPORTANT: keep this dynamic so retries after CSRF/token refresh use fresh headers.

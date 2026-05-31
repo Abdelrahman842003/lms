@@ -105,29 +105,29 @@ function SortableItem({ id, text, index, onMoveUp, onMoveDown, isFirst, isLast }
       className={`relative group p-3 sm:p-4 mb-3 rounded-xl sm:rounded-2xl border transition-all duration-300 flex items-center gap-2.5 sm:gap-4 ${
         isDragging 
           ? 'bg-primary/20 border-primary shadow-[0_0_30px_rgba(66,99,235,0.3)] scale-[1.02] z-50' 
-          : 'bg-white/[0.03] border-white/10 hover:border-white/20 hover:bg-white/[0.06]'
+          : 'bg-surface-secondary hover:bg-surface-hover border-border-theme-secondary hover:border-border-theme-primary'
       }`}
     >
       <div 
         {...attributes} 
         {...listeners}
-        className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-white/5 border border-white/10 flex items-center justify-center cursor-grab active:cursor-grabbing hover:bg-white/10 transition-colors group/handle shrink-0"
+        className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-surface-tertiary border border-border-theme-secondary flex items-center justify-center cursor-grab active:cursor-grabbing hover:bg-surface-hover transition-colors group/handle shrink-0"
       >
-        <Icon name="grip-vertical" className="text-gray-500 group-hover/handle:text-primary-light" size="sm" />
+        <Icon name="grip-vertical" className="text-text-theme-muted group-hover/handle:text-primary-light" size="sm" />
       </div>
 
       <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-xs sm:text-sm font-bold text-primary-light shrink-0">
         {index + 1}
       </div>
       
-      <span className="flex-1 text-white font-medium text-sm sm:text-lg pr-1 min-w-0 truncate">{text}</span>
+      <span className="flex-1 text-text-theme-primary font-medium text-sm sm:text-lg pr-1 min-w-0 truncate">{text}</span>
 
       <div className="flex flex-col gap-1 shrink-0">
         <button
           onClick={(e) => { e.stopPropagation(); onMoveUp(); }}
           disabled={isFirst}
           className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition-all ${
-            isFirst ? 'opacity-20 cursor-not-allowed' : 'bg-white/5 hover:bg-primary/20 hover:text-primary-light text-gray-400'
+            isFirst ? 'opacity-20 cursor-not-allowed' : 'bg-surface-tertiary hover:bg-primary/20 hover:text-primary-light text-text-theme-secondary'
           }`}
         >
           <Icon name="chevron-up" size="xs" />
@@ -136,7 +136,7 @@ function SortableItem({ id, text, index, onMoveUp, onMoveDown, isFirst, isLast }
           onClick={(e) => { e.stopPropagation(); onMoveDown(); }}
           disabled={isLast}
           className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition-all ${
-            isLast ? 'opacity-20 cursor-not-allowed' : 'bg-white/5 hover:bg-primary/20 hover:text-primary-light text-gray-400'
+            isLast ? 'opacity-20 cursor-not-allowed' : 'bg-surface-tertiary hover:bg-primary/20 hover:text-primary-light text-text-theme-secondary'
           }`}
         >
           <Icon name="chevron-down" size="xs" />
@@ -419,8 +419,8 @@ export default function TakeExamPage() {
   if (showWarning) {
     return (
       <DashboardLayout role="student" user={user || undefined}>
-        <div className="fixed inset-0 bg-[#050811]/95 backdrop-blur-2xl flex items-center justify-center z-[1000] p-4 sm:p-5 overflow-y-auto">
-          <div className="bg-[#101426]/80 rounded-3xl sm:rounded-[48px] p-5 sm:p-10 md:p-14 max-w-[650px] w-full text-center border border-white/10 shadow-[0_32px_100px_rgba(0,0,0,0.8)] relative overflow-hidden my-auto">
+        <div className="fixed inset-0 bg-surface-secondary/95 dark:bg-[#050811]/95 backdrop-blur-2xl flex items-center justify-center z-[1000] p-4 sm:p-5 overflow-y-auto">
+          <div className="bg-surface-primary dark:bg-[#101426]/80 rounded-3xl sm:rounded-[48px] p-5 sm:p-10 md:p-14 max-w-[650px] w-full text-center border border-border-theme-primary shadow-2xl relative overflow-hidden my-auto">
             <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-danger via-warning to-danger"></div>
             <div className="absolute -top-24 -left-24 w-48 h-48 bg-danger/10 blur-[80px] rounded-full"></div>
             
@@ -428,7 +428,7 @@ export default function TakeExamPage() {
               <Icon name="exclamation-triangle" size="xl" className="text-danger" />
             </div>
             
-            <h2 className="text-white text-2xl sm:text-4xl mb-6 sm:mb-8 font-black tracking-tight drop-shadow-lg">
+            <h2 className="text-text-theme-primary text-2xl sm:text-4xl mb-6 sm:mb-8 font-black tracking-tight drop-shadow-lg">
               تنبيهات هامة قبل البدء
             </h2>
             
@@ -439,11 +439,11 @@ export default function TakeExamPage() {
                 { text: 'الخروج من الصفحة أو تصغيرها ينهي محاولتك فوراً', icon: 'times-circle', color: 'text-warning' },
                 { text: 'تم تعطيل كافة اختصارات النسخ واللصق والبحث', icon: 'lock', color: 'text-success' },
               ].map((item, idx) => (
-                <div key={idx} className="flex items-center gap-3 sm:gap-5 p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl bg-white/[0.03] border border-white/5 hover:border-white/10 transition-all group">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-white/5 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                <div key={idx} className="flex items-center gap-3 sm:gap-5 p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl bg-surface-secondary/50 dark:bg-white/[0.03] border border-border-theme-secondary hover:border-border-theme-primary transition-all group">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-surface-tertiary dark:bg-white/5 border border-border-theme-secondary flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
                     <Icon name={item.icon} className={item.color} size="sm" />
                   </div>
-                  <p className="text-gray-300 font-bold text-sm sm:text-base leading-relaxed">{item.text}</p>
+                  <p className="text-text-theme-secondary font-bold text-sm sm:text-base leading-relaxed">{item.text}</p>
                 </div>
               ))}
             </div>
@@ -452,7 +452,7 @@ export default function TakeExamPage() {
               <Button
                 variant="ghost"
                 onClick={() => router.push('/student/exams')}
-                className="flex-1 rounded-2xl sm:rounded-3xl border-white/10 hover:bg-white/5 text-gray-400 h-12 sm:h-16 text-base sm:text-lg font-bold justify-center"
+                className="flex-1 rounded-2xl sm:rounded-3xl border border-border-theme-primary hover:bg-surface-secondary text-text-theme-secondary h-12 sm:h-16 text-base sm:text-lg font-bold justify-center"
               >
                 رجوع
               </Button>
@@ -476,7 +476,7 @@ export default function TakeExamPage() {
       <DashboardLayout role="student" user={user || undefined}>
         <div className="flex flex-col items-center justify-center min-h-[70vh] p-5 text-center">
           {waiting ? (
-            <div className="max-w-xl w-full p-8 sm:p-12 rounded-3xl sm:rounded-[56px] bg-[#101426]/60 border border-white/10 backdrop-blur-3xl shadow-2xl relative overflow-hidden">
+            <div className="max-w-xl w-full p-8 sm:p-12 rounded-3xl sm:rounded-[56px] bg-surface-primary dark:bg-[#101426]/60 border border-border-theme-primary backdrop-blur-3xl shadow-2xl relative overflow-hidden">
               <div className="absolute top-0 left-0 w-full h-1.5 bg-primary animate-pulse"></div>
               <div className="relative w-28 h-28 sm:w-40 sm:h-40 mx-auto mb-6 sm:mb-10">
                 <div className="absolute inset-0 rounded-full border-4 border-primary/10 animate-ping"></div>
@@ -485,11 +485,11 @@ export default function TakeExamPage() {
                   {queuePosition}
                 </div>
               </div>
-              <h2 className="text-2xl sm:text-4xl font-black text-white mb-4 sm:mb-6 tracking-tight">قائمة الانتظار</h2>
-              <p className="text-gray-400 leading-relaxed text-base sm:text-xl font-medium">
+              <h2 className="text-2xl sm:text-4xl font-black text-text-theme-primary mb-4 sm:mb-6 tracking-tight">قائمة الانتظار</h2>
+              <p className="text-text-theme-secondary leading-relaxed text-base sm:text-xl font-medium">
                 هناك ضغط حالي، ترتيبك في الدخول هو <span className="text-primary-light font-black underline underline-offset-8">#{queuePosition}</span>.
                 <br />
-                <span className="text-gray-500 text-sm sm:text-base block mt-4">لا تغلق الصفحة، سيتم توجيهك تلقائياً...</span>
+                <span className="text-text-theme-muted text-sm sm:text-base block mt-4">لا تغلق الصفحة، سيتم توجيهك تلقائياً...</span>
               </p>
             </div>
           ) : (
@@ -498,7 +498,7 @@ export default function TakeExamPage() {
                 <div className="absolute inset-0 border-4 border-primary/20 rounded-full"></div>
                 <div className="absolute inset-0 border-4 border-t-primary rounded-full animate-spin"></div>
               </div>
-              <p className="text-lg sm:text-2xl text-gray-400 font-black tracking-widest animate-pulse uppercase font-mono">جاري تجهيز الأسئلة...</p>
+              <p className="text-lg sm:text-2xl text-text-theme-secondary font-black tracking-widest animate-pulse uppercase font-mono">جاري تجهيز الأسئلة...</p>
             </div>
           )}
         </div>
@@ -515,7 +515,7 @@ export default function TakeExamPage() {
     return (
       <DashboardLayout role="student" user={user || undefined}>
         <div className="max-w-3xl mx-auto py-8 sm:py-16 px-4 sm:px-6">
-          <div className="bg-[#101426]/60 backdrop-blur-3xl rounded-3xl sm:rounded-[56px] border border-white/10 p-6 sm:p-10 md:p-16 text-center shadow-[0_40px_100px_rgba(0,0,0,0.6)] relative overflow-hidden">
+          <div className="bg-surface-primary dark:bg-[#101426]/60 backdrop-blur-3xl rounded-3xl sm:rounded-[56px] border border-border-theme-primary p-6 sm:p-10 md:p-16 text-center shadow-[0_40px_100px_rgba(0,0,0,0.6)] relative overflow-hidden">
             <div className={`absolute top-0 left-0 w-full h-2 ${result?.terminated ? 'bg-danger' : isPassed ? 'bg-success shadow-[0_0_20px_rgba(16,185,129,0.5)]' : 'bg-warning shadow-[0_0_20px_rgba(245,158,11,0.5)]'}`}></div>
             
             <div className={`w-24 h-24 sm:w-32 sm:h-32 rounded-[30px] sm:rounded-[40px] flex items-center justify-center mx-auto mb-6 sm:mb-10 rotate-6 transition-transform hover:rotate-0 duration-500 shadow-2xl border-2 ${
@@ -525,7 +525,7 @@ export default function TakeExamPage() {
               <Icon name={result?.terminated ? 'ban' : isPassed ? 'trophy' : 'medal'} size="3x" className="drop-shadow-lg" />
             </div>
 
-            <h2 className="text-white text-2xl sm:text-4xl font-black mb-2 sm:mb-4 tracking-tight drop-shadow-md">
+            <h2 className="text-text-theme-primary text-2xl sm:text-4xl font-black mb-2 sm:mb-4 tracking-tight drop-shadow-md">
               {result?.terminated ? 'توقف الامتحان!' : isPassed ? 'أحسنت! لقد نجحت' : 'نتيجة الامتحان'}
             </h2>
             
@@ -536,27 +536,27 @@ export default function TakeExamPage() {
             )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-8 mb-8 sm:mb-12">
-              <div className="p-6 sm:p-10 rounded-2xl sm:rounded-[40px] bg-white/[0.03] border border-white/10 backdrop-blur-sm group hover:border-primary/30 transition-all hover:bg-white/[0.05]">
-                <p className="text-gray-500 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] mb-2 sm:mb-4">النسبة المئوية</p>
+              <div className="p-6 sm:p-10 rounded-2xl sm:rounded-[40px] bg-surface-secondary dark:bg-white/[0.03] border border-border-theme-primary backdrop-blur-sm group hover:border-primary/30 transition-all hover:bg-surface-hover dark:hover:bg-white/[0.05]">
+                <p className="text-text-theme-muted text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] mb-2 sm:mb-4">النسبة المئوية</p>
                 <div className={`text-4xl sm:text-6xl font-black mb-1 sm:mb-2 transition-transform group-hover:scale-110 ${isPassed ? 'text-success' : 'text-danger'} drop-shadow-glow`}>
                   {result?.percentage}%
                 </div>
-                <div className="text-gray-400 font-bold text-sm sm:text-xl">
+                <div className="text-text-theme-secondary font-bold text-sm sm:text-xl">
                   {result?.score} / {result?.max_score} نقطة
                 </div>
               </div>
               
-              <div className="p-6 sm:p-10 rounded-2xl sm:rounded-[40px] bg-white/[0.03] border border-white/10 backdrop-blur-sm">
-                <p className="text-gray-500 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] mb-4 sm:mb-6">تحليل الإجابات</p>
+              <div className="p-6 sm:p-10 rounded-2xl sm:rounded-[40px] bg-surface-secondary dark:bg-white/[0.03] border border-border-theme-primary backdrop-blur-sm">
+                <p className="text-text-theme-muted text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] mb-4 sm:mb-6">تحليل الإجابات</p>
                 <div className="flex items-center justify-around">
                   <div className="text-center group">
                     <div className="text-2xl sm:text-4xl font-black text-success group-hover:scale-125 transition-transform">{result?.correct_answers}</div>
-                    <p className="text-gray-500 text-[9px] sm:text-[10px] font-black mt-1 sm:mt-2">صحيحة</p>
+                    <p className="text-text-theme-muted text-[9px] sm:text-[10px] font-black mt-1 sm:mt-2">صحيحة</p>
                   </div>
-                  <div className="w-px h-8 sm:h-12 bg-white/10"></div>
+                  <div className="w-px h-8 sm:h-12 bg-border-theme-primary"></div>
                   <div className="text-center group">
                     <div className="text-2xl sm:text-4xl font-black text-danger group-hover:scale-125 transition-transform">{(result?.total_questions || 0) - (result?.correct_answers || 0)}</div>
-                    <p className="text-gray-500 text-[9px] sm:text-[10px] font-black mt-1 sm:mt-2">خاطئة</p>
+                    <p className="text-text-theme-muted text-[9px] sm:text-[10px] font-black mt-1 sm:mt-2">خاطئة</p>
                   </div>
                 </div>
               </div>
@@ -569,7 +569,7 @@ export default function TakeExamPage() {
                 }`}>
                   <Icon name={progress.trend === 'up' ? 'trending-up' : progress.trend === 'down' ? 'trending-down' : 'minus'} size="lg" />
                 </div>
-                <p className="text-gray-300 font-bold text-sm sm:text-xl leading-snug text-right">{progress.message}</p>
+                <p className="text-text-theme-primary font-bold text-sm sm:text-xl leading-snug text-right">{progress.message}</p>
               </div>
             )}
 
@@ -606,12 +606,12 @@ export default function TakeExamPage() {
         {/* Header Section */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6 mb-6 sm:mb-8">
           <div className="space-y-1.5 sm:space-y-2">
-            <h1 className="text-white text-xl sm:text-3xl font-black tracking-tight drop-shadow-lg">{attemptData?.exam?.title}</h1>
+            <h1 className="text-text-theme-primary text-xl sm:text-3xl font-black tracking-tight drop-shadow-lg">{attemptData?.exam?.title}</h1>
             <div className="flex items-center gap-2 sm:gap-3">
               <span className="px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl bg-primary/10 border border-primary/20 text-primary-light text-[9px] sm:text-[10px] font-black uppercase tracking-widest shadow-sm">
                 سؤال {attemptData?.progress?.current} من {attemptData?.progress?.total}
               </span>
-              <span className="text-gray-400 text-[10px] sm:text-xs font-bold bg-white/5 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl border border-white/5">{attemptData?.exam?.subject}</span>
+              <span className="text-text-theme-secondary text-[10px] sm:text-xs font-bold bg-surface-secondary px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl border border-border-theme-secondary">{attemptData?.exam?.subject}</span>
             </div>
           </div>
           
@@ -625,7 +625,7 @@ export default function TakeExamPage() {
         </div>
 
         {/* Elegant Progress Bar */}
-        <div className="relative h-2.5 sm:h-3 bg-white/5 rounded-full mb-6 sm:mb-10 overflow-hidden border border-white/5 p-[1px] shadow-inner">
+        <div className="relative h-2.5 sm:h-3 bg-surface-secondary rounded-full mb-6 sm:mb-10 overflow-hidden border border-border-theme-secondary p-[1px] shadow-inner">
           <div 
             className="h-full bg-gradient-to-r from-primary via-primary-light to-secondary rounded-full transition-all duration-700 ease-out shadow-[0_0_20px_rgba(66,99,235,0.4)] relative"
             style={{ width: `${getProgressPercentage()}%` }}
@@ -639,7 +639,7 @@ export default function TakeExamPage() {
           <div className="absolute -top-20 -left-20 w-64 h-64 bg-primary/10 blur-[100px] rounded-full -z-10 animate-pulse-slow"></div>
           <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-secondary/10 blur-[100px] rounded-full -z-10 animate-pulse-slow"></div>
           
-          <div className="bg-[#101426]/60 backdrop-blur-3xl rounded-3xl sm:rounded-[48px] border border-white/10 p-5 sm:p-8 md:p-14 shadow-[0_32px_80px_rgba(0,0,0,0.5)] relative overflow-hidden">
+          <div className="bg-surface-primary dark:bg-[#101426]/60 backdrop-blur-3xl rounded-3xl sm:rounded-[48px] border border-border-theme-primary p-5 sm:p-8 md:p-14 shadow-[0_32px_80px_rgba(0,0,0,0.5)] relative overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-3xl"></div>
             
             <div className="mb-8 sm:mb-12 relative">
@@ -647,7 +647,7 @@ export default function TakeExamPage() {
                 <div className="h-1 w-8 sm:w-12 bg-primary rounded-full"></div>
                 <span className="text-primary-light font-black text-[10px] sm:text-xs tracking-[0.2em] uppercase">السؤال {attemptData?.progress?.current}</span>
               </div>
-              <h3 className="text-white text-lg sm:text-2xl md:text-4xl font-black leading-[1.5] text-right drop-shadow-md">
+              <h3 className="text-text-theme-primary text-lg sm:text-2xl md:text-4xl font-black leading-[1.5] text-right drop-shadow-md">
                 {currentQuestion?.text}
               </h3>
             </div>
@@ -670,24 +670,24 @@ export default function TakeExamPage() {
                         className={`group relative flex items-center gap-3 sm:gap-5 p-3.5 sm:p-5 md:p-6 rounded-2xl sm:rounded-[32px] border-2 transition-all duration-300 text-right overflow-hidden ${
                           isSelected 
                             ? 'bg-primary/10 border-primary shadow-[0_12px_40px_rgba(66,99,235,0.2)] scale-[1.01]' 
-                            : 'bg-white/[0.03] border-white/5 hover:border-white/20 hover:bg-white/[0.08]'
+                            : 'bg-surface-secondary hover:bg-surface-hover border-border-theme-secondary hover:border-border-theme-primary'
                         }`}
                       >
                         <div className={`w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl border-2 flex items-center justify-center font-black text-sm sm:text-xl transition-all duration-300 shrink-0 ${
-                          isSelected ? 'bg-primary border-primary text-white shadow-lg' : 'bg-white/5 border-white/10 text-gray-500 group-hover:text-white'
+                          isSelected ? 'bg-primary border-primary text-[#ffffff] shadow-lg' : 'bg-surface-tertiary border border-border-theme-secondary text-text-theme-muted group-hover:text-text-theme-primary'
                         }`}>
                           {isQuestionType('true_false') ? (
                             <Icon name={option === 'صح' || option === 'True' || index === 0 ? 'check' : 'times'} size="sm" />
                           ) : letter}
                         </div>
-                        <span className={`text-base sm:text-xl font-bold transition-all pr-1 sm:pr-0 ${isSelected ? 'text-white' : 'text-gray-300 group-hover:text-white'}`}>
+                        <span className={`text-base sm:text-xl font-bold transition-all pr-1 sm:pr-0 ${isSelected ? 'text-text-theme-primary font-black' : 'text-text-theme-secondary group-hover:text-text-theme-primary'}`}>
                           {option}
                         </span>
                         
                         <div className={`absolute left-4 sm:left-8 w-6 h-6 sm:w-8 sm:h-8 rounded-full border-2 flex items-center justify-center transition-all duration-300 shrink-0 ${
-                          isSelected ? 'bg-primary border-primary scale-110' : 'border-white/10 opacity-0 group-hover:opacity-100'
+                          isSelected ? 'bg-primary border-primary scale-110' : 'border-border-theme-secondary opacity-0 group-hover:opacity-100'
                         }`}>
-                          {isSelected && <Icon name="check" size="xs" className="text-white" />}
+                          {isSelected && <Icon name="check" size="xs" className="text-[#ffffff]" />}
                         </div>
                       </button>
                     );

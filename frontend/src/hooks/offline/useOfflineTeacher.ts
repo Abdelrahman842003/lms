@@ -3,11 +3,6 @@
 import { useState, useCallback } from 'react';
 import { apiClient } from '@/lib/apiClient';
 import { useNetworkStatus } from './useNetworkStatus';
-import { 
-  studentsStore, 
-  lecturesStore, 
-  attendancesStore 
-} from '@/lib/offline/stores';
 
 export function useOfflineTeacher() {
   const { isOnline } = useNetworkStatus();
@@ -30,7 +25,7 @@ export function useOfflineTeacher() {
       { student_id: studentId, status },
       {
         offlineConfig: {
-          entityType: 'attendance',
+          entityType: 'attendances',
           entityId: `${lectureId}_${studentId}`
         }
       }
@@ -40,7 +35,7 @@ export function useOfflineTeacher() {
   const createLecture = useCallback(async (groupId: string, data: any) => {
     return apiClient.post(`/api/v1/teacher/groups/${groupId}/lectures`, data, {
       offlineConfig: {
-        entityType: 'lecture',
+        entityType: 'lectures',
         entityId: `new_lecture_${Date.now()}`
       }
     });

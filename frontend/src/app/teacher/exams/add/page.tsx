@@ -994,7 +994,7 @@ export default function AddExamPage() {
       {/* Finish Modal */}
       {showFinishModal && (
         <div className="fixed inset-0 bg-black/85 backdrop-blur-xl z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-300">
-          <div className="w-full max-w-[480px] bg-[#0b0f19]/95 border border-white/10 rounded-[2.5rem] shadow-[0_25px_60px_rgba(0,0,0,0.8)] overflow-hidden animate-in zoom-in-95 duration-300 relative">
+          <div className="w-full max-w-[480px] bg-black/95 dark:bg-[#0b0f19]/95 border border-white/10 rounded-[2.5rem] shadow-2xl dark:shadow-[0_25px_60px_rgba(0,0,0,0.8)] overflow-hidden animate-in zoom-in-95 duration-300 relative">
             
             {/* Ambient Background Glows */}
             <div className="absolute -top-24 -left-24 w-48 h-48 rounded-full bg-primary/15 blur-[80px] pointer-events-none" />
@@ -1088,7 +1088,7 @@ export default function AddExamPage() {
                         type="button"
                         onClick={() => setActualQuestionCount(Math.max(1, actualQuestionCount - 1))}
                         disabled={actualQuestionCount <= 1 || actualQuestionCount === questions.length}
-                        className="w-14 h-14 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center text-white hover:bg-white/10 hover:border-white/10 active:scale-95 disabled:opacity-30 disabled:pointer-events-none transition-all duration-200"
+                        className="w-14 h-14 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center text-theme-secondary hover:text-theme-primary hover:bg-white/10 hover:border-white/10 active:scale-95 disabled:opacity-30 disabled:pointer-events-none transition-all duration-200"
                       >
                         <Icon name="minus" />
                       </button>
@@ -1115,7 +1115,7 @@ export default function AddExamPage() {
                         type="button"
                         onClick={() => setActualQuestionCount(Math.min(questions.length - 1, actualQuestionCount + 1))}
                         disabled={actualQuestionCount >= questions.length - 1 || actualQuestionCount === questions.length}
-                        className="w-14 h-14 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center text-white hover:bg-white/10 hover:border-white/10 active:scale-95 disabled:opacity-30 disabled:pointer-events-none transition-all duration-200"
+                        className="w-14 h-14 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center text-theme-secondary hover:text-theme-primary hover:bg-white/10 hover:border-white/10 active:scale-95 disabled:opacity-30 disabled:pointer-events-none transition-all duration-200"
                       >
                         <Icon name="plus" />
                       </button>
@@ -1176,7 +1176,7 @@ export default function AddExamPage() {
                 <button
                   type="button"
                   onClick={() => setShowFinishModal(false)}
-                  className="w-full h-12 rounded-xl font-bold text-xs text-gray-light/40 hover:text-white hover:bg-white/5 transition-all duration-300"
+                  className="w-full h-12 rounded-xl font-bold text-xs text-gray-light/40 hover:text-theme-primary hover:bg-white/5 transition-all duration-300"
                 >
                   رجوع للتعديل
                 </button>

@@ -95,6 +95,23 @@ installSerwist({
         },
       },
     },
+    // Next.js App Router RSC Payloads
+    {
+      matcher: ({ request, url }: RouteHandlerCallbackOptions) => {
+        return url.searchParams.has("_rsc") || request.headers.get("RSC") === "1";
+      },
+      handler: "StaleWhileRevalidate",
+      options: {
+        cacheName: "serwist-rsc-payloads",
+        expiration: {
+          maxEntries: 100,
+          maxAgeSeconds: 24 * 60 * 60, // 24 hours
+        },
+        cacheableResponse: {
+          statuses: [0, 200],
+        },
+      },
+    },
     // API GET calls (Dashboard lists, categories, lectures, notes)
     {
       matcher: ({ url, request }: RouteHandlerCallbackOptions) => 

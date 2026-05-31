@@ -2,6 +2,7 @@ import { getDB, SyncQueueItem } from './db';
 import { networkMonitor } from './network-monitor';
 import { conflictResolver } from './conflict-resolver';
 import * as stores from './stores';
+import { getAccessToken, refreshAccessToken, isTokenExpired } from '@/lib/tokenManager';
 
 export interface SyncResult {
   success: boolean;
@@ -49,6 +50,27 @@ class SyncEngine {
     const store = tx.objectStore('syncQueue');
     const index = store.index('by-status');
     return await index.count('pending');
+  }
+
+  async getQueueStatus(): Promise<{ pending: number; inProgress: number; failed: number; conflict: number }> {
+    const db = await getDB();
+    const tx = db.transaction('syncQueue', 'readonly');
+    const store = tx.objectStore('syncQueue');
+    const index = store.index('by-status');
+    
+    const [pending, inProgress, failed, conflict] = await Promise.all([
+      index.count('pending'),
+      index.count('in-progress'),
+      index.count('failed'),
+      index.count('conflict')
+    ]);
+    
+    return {
+      pending,
+      inProgress,
+      failed,
+      conflict
+    };
   }
 
   /**
@@ -170,17 +192,29 @@ class SyncEngine {
     };
   }
 
-  /**
-   * Helper to send request to backend
-   */
   private async sendMutation(item: SyncQueueItem, db: any): Promise<boolean> {
     try {
       // Re-fetch token from manager if needed, headers should have Auth Bearer
+      if (isTokenExpired()) {
+        try {
+          await refreshAccessToken();
+        } catch (e) {
+          console.warn('[SyncEngine] Token refresh failed before sending mutation:', e);
+        }
+      }
+
+      const token = getAccessToken();
+      const authHeaders: Record<string, string> = {};
+      if (token) {
+        authHeaders['Authorization'] = `Bearer ${token}`;
+      }
+
       const response = await fetch(item.url, {
         method: item.method,
         headers: {
           'Content-Type': 'application/json',
           ...item.headers,
+          ...authHeaders,
           'X-Client-Timestamp': item.createdAt,
         },
         body: JSON.stringify(item.body),
@@ -266,7 +300,19 @@ class SyncEngine {
     if (!networkMonitor.isOnline) return;
 
     const db = await getDB();
-    const entityTypes = ['students', 'lectures', 'exams', 'notes', 'notifications'];
+    const typeNormalized = (userType || '').toLowerCase();
+    let entityTypes = ['notifications'];
+    if (typeNormalized.includes('teacher')) {
+      entityTypes = [...entityTypes, 'grades', 'groups', 'lectures', 'exams', 'notes', 'students'];
+    } else if (typeNormalized.includes('student')) {
+      entityTypes = [...entityTypes, 'studentTeachers', 'studentLectures', 'studentExams', 'studentPoints'];
+    } else if (typeNormalized.includes('academy')) {
+      entityTypes = [...entityTypes, 'academyTeachers', 'academyStudents', 'academyLectures'];
+    } else if (typeNormalized.includes('guardian') || typeNormalized.includes('parent')) {
+      entityTypes = [...entityTypes, 'children'];
+    } else {
+      entityTypes = [...entityTypes, 'students', 'lectures', 'exams', 'notes'];
+    }
     
     // Get last sync timestamps
     const syncRequests = await Promise.all(

@@ -116,9 +116,9 @@ export const LectureCard: React.FC<LectureCardProps> = ({
     const timeStr = lecture.recurrence_time || '00:00';
     const [hours, minutes] = timeStr.split(':').map(Number);
     
-    lecture.recurrence_days.forEach(dayStr => {
+    for (const dayStr of lecture.recurrence_days) {
       const dayNum = dayMap[dayStr.toLowerCase()];
-      if (dayNum === undefined) return;
+      if (dayNum === undefined) continue;
       
       const temp = new Date(now);
       temp.setHours(hours || 0, minutes || 0, 0, 0);
@@ -133,7 +133,7 @@ export const LectureCard: React.FC<LectureCardProps> = ({
         temp.setDate(now.getDate() + diff);
         nextDate = temp;
       }
-    });
+    }
     
     if (!nextDate) return null;
     
@@ -165,7 +165,7 @@ export const LectureCard: React.FC<LectureCardProps> = ({
     )}>
       {/* Background & Clipping Layer - Ultra Premium Glass */}
       <div className={cn(
-        "absolute inset-0 rounded-[2rem] bg-gradient-to-br from-white/[0.08] to-white/[0.02] backdrop-blur-xl border border-white/10 overflow-hidden shadow-2xl transition-all duration-500 group-hover:shadow-primary/20",
+        "absolute inset-0 rounded-[2rem] bg-gradient-to-br from-white/[0.7] to-white/[0.4] dark:from-white/[0.08] dark:to-white/[0.02] backdrop-blur-xl border border-black/[0.06] dark:border-white/10 overflow-hidden shadow-2xl transition-all duration-500 group-hover:shadow-primary/20",
         isActive && "border-success/50 shadow-[0_0_50px_rgba(16,185,129,0.15)] ring-1 ring-success/30"
       )}>
          <div className={cn(
@@ -181,39 +181,39 @@ export const LectureCard: React.FC<LectureCardProps> = ({
       <div className="relative z-10 flex flex-col p-6 h-full">
          {/* Top Section */}
          <div className="flex justify-between items-start mb-5">
-            <div className="flex items-center gap-2 bg-black/20 px-3 py-1.5 rounded-full border border-white/5 backdrop-blur-md">
+            <div className="flex items-center gap-2 bg-surface-secondary/80 dark:bg-black/20 px-3 py-1.5 rounded-full border border-border-theme-secondary backdrop-blur-md">
                <span className={cn("w-2 h-2 rounded-full", isActive ? 'bg-success shadow-[0_0_10px_var(--success)] animate-pulse' : status.variant === 'warning' ? 'bg-warning' : 'bg-gray-400')}></span>
-               <span className={cn("text-[11px] font-bold tracking-wide", isActive ? "text-success" : "text-white/70")}>{status.label}</span>
+               <span className={cn("text-[11px] font-bold tracking-wide", isActive ? "text-success" : "text-text-theme-secondary")}>{status.label}</span>
             </div>
 
             <div className="relative">
                <Button 
-                 variant="ghost" size="sm" 
-                 className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 hover:bg-white/15 text-white transition-all p-0 flex items-center justify-center group-hover:rotate-90 duration-300"
+                 variant="outline" size="sm" 
+                 className="w-9 h-9 rounded-xl !bg-surface-secondary hover:!bg-surface-hover !border-border-theme-primary !text-text-theme-primary transition-all p-0 flex items-center justify-center group-hover:rotate-90 duration-300"
                  onClick={onMenuToggle}
                >
                   <Icon name="ellipsis-v" />
                </Button>
                
                {isMenuOpen && (
-                  <div className="absolute left-0 mt-2 w-48 rounded-2xl bg-[#0f1121]/95 backdrop-blur-2xl border border-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.5)] overflow-hidden z-[999] py-2 flex flex-col animate-in fade-in zoom-in duration-200">
-                     <button className="flex items-center gap-3 px-4 py-3 text-sm text-white/80 hover:text-white hover:bg-white/5 transition-colors w-full text-right" onClick={(e) => { e.stopPropagation(); onViewAttendees(); }}>
+                  <div className="absolute left-0 mt-2 w-48 rounded-2xl bg-surface-primary/95 dark:bg-[#0f1121]/95 backdrop-blur-2xl border border-border-theme-primary shadow-[0_10px_40px_rgba(0,0,0,0.15)] dark:shadow-[0_10px_40px_rgba(0,0,0,0.5)] overflow-hidden z-[999] py-2 flex flex-col animate-in fade-in zoom-in duration-200">
+                     <button className="flex items-center gap-3 px-4 py-3 text-sm text-text-theme-secondary hover:text-text-theme-primary hover:bg-surface-hover transition-colors w-full text-right" onClick={(e) => { e.stopPropagation(); onViewAttendees(); }}>
                         <Icon name="clipboard-list" className="w-4 h-4 text-primary" /> <span>سجل الحضور</span>
                      </button>
                      {isActive && (
-                        <button className="flex items-center gap-3 px-4 py-3 text-sm text-white/80 hover:text-white hover:bg-white/5 transition-colors w-full text-right" onClick={(e) => { e.stopPropagation(); onManualAttendance(); }}>
+                        <button className="flex items-center gap-3 px-4 py-3 text-sm text-text-theme-secondary hover:text-text-theme-primary hover:bg-surface-hover transition-colors w-full text-right" onClick={(e) => { e.stopPropagation(); onManualAttendance(); }}>
                            <Icon name="user-check" className="w-4 h-4 text-success" /> <span>حضور يدوي</span>
                         </button>
                      )}
-                     <div className="h-px bg-white/5 my-1 w-[90%] mx-auto"></div>
-                     <button className="flex items-center gap-3 px-4 py-3 text-sm text-white/80 hover:text-white hover:bg-white/5 transition-colors w-full text-right" onClick={(e) => { e.stopPropagation(); onEdit(); }}>
+                     <div className="h-px bg-border-theme-secondary my-1 w-[90%] mx-auto"></div>
+                     <button className="flex items-center gap-3 px-4 py-3 text-sm text-text-theme-secondary hover:text-text-theme-primary hover:bg-surface-hover transition-colors w-full text-right" onClick={(e) => { e.stopPropagation(); onEdit(); }}>
                         <Icon name="edit" className="w-4 h-4 text-warning" /> <span>تعديل المحاضرة</span>
                      </button>
-                     <button className="flex items-center gap-3 px-4 py-3 text-sm text-white/80 hover:text-white hover:bg-white/5 transition-colors w-full text-right" onClick={(e) => { e.stopPropagation(); onCopy(); }}>
+                     <button className="flex items-center gap-3 px-4 py-3 text-sm text-text-theme-secondary hover:text-text-theme-primary hover:bg-surface-hover transition-colors w-full text-right" onClick={(e) => { e.stopPropagation(); onCopy(); }}>
                         <Icon name="copy" className="w-4 h-4 text-info" /> <span>نسخ البيانات</span>
                      </button>
-                     <div className="h-px bg-white/5 my-1 w-[90%] mx-auto"></div>
-                     <button className="flex items-center gap-3 px-4 py-3 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors w-full text-right" onClick={(e) => { e.stopPropagation(); onDelete(); }}>
+                     <div className="h-px bg-border-theme-secondary my-1 w-[90%] mx-auto"></div>
+                     <button className="flex items-center gap-3 px-4 py-3 text-sm text-danger hover:bg-danger/10 transition-colors w-full text-right" onClick={(e) => { e.stopPropagation(); onDelete(); }}>
                         <Icon name="trash" className="w-4 h-4" /> <span>حذف المحاضرة</span>
                      </button>
                   </div>
@@ -223,21 +223,21 @@ export const LectureCard: React.FC<LectureCardProps> = ({
 
          {/* Teacher & Title Section */}
          <div className="mb-5">
-            <h3 className="text-xl font-bold text-white mb-2 leading-tight group-hover:text-primary transition-colors line-clamp-2">{lecture.title}</h3>
-            <div className="flex items-center gap-2 text-white/50 text-xs font-medium">
+            <h3 className="text-xl font-bold text-text-theme-primary mb-2 leading-tight group-hover:text-primary transition-colors line-clamp-2">{lecture.title}</h3>
+            <div className="flex items-center gap-2 text-text-theme-muted text-xs font-medium">
                <Icon name="align-right" size="xs" />
                <span className="truncate">{lecture.current_session?.description || lecture.description || 'بدون وصف إضافي'}</span>
             </div>
          </div>
 
          {showTeacher && (
-           <div className="flex items-center gap-3 mb-6 bg-black/20 p-2.5 rounded-2xl border border-white/5 backdrop-blur-sm">
+           <div className="flex items-center gap-3 mb-6 bg-surface-secondary/80 dark:bg-black/20 p-2.5 rounded-2xl border border-border-theme-secondary backdrop-blur-sm">
               <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center border border-primary/20 text-primary shadow-inner">
                  <Icon name="chalkboard-teacher" />
               </div>
               <div className="flex flex-col overflow-hidden">
-                 <span className="text-[10px] text-white/40 font-semibold">المحاضر</span>
-                 <span className="text-sm text-white font-bold truncate tracking-wide">أ. {lecture.teacher?.name || 'غير محدد'}</span>
+                 <span className="text-[10px] text-text-theme-muted font-semibold">المحاضر</span>
+                 <span className="text-sm text-text-theme-primary font-bold truncate tracking-wide">أ. {lecture.teacher?.name || 'غير محدد'}</span>
               </div>
            </div>
          )}
@@ -252,7 +252,7 @@ export const LectureCard: React.FC<LectureCardProps> = ({
                   </div>
                   <div className="flex flex-col">
                     <span className="text-[10px] text-success/80 font-bold uppercase tracking-wider">ينتهي بعد</span>
-                    <span className="text-xl font-black text-white font-mono tracking-widest drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]">{timeLeft || '00:00:00'}</span>
+                    <span className="text-xl font-black text-text-theme-primary dark:text-white font-mono tracking-widest dark:drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]">{timeLeft || '00:00:00'}</span>
                   </div>
                </div>
             </div>
@@ -260,41 +260,41 @@ export const LectureCard: React.FC<LectureCardProps> = ({
 
          {/* Info Grid - Minimalist glass cells */}
          <div className="grid grid-cols-2 gap-3 mb-6">
-            <div className="flex items-center gap-3 bg-white/[0.04] p-3 rounded-2xl border border-white/[0.08] hover:bg-white/[0.08] transition-colors">
+            <div className="flex items-center gap-3 bg-white/[0.4] dark:bg-white/[0.04] p-3 rounded-2xl border border-black/[0.04] dark:border-white/[0.08] hover:bg-white/[0.6] dark:hover:bg-white/[0.08] transition-colors">
                <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center"><Icon name="calendar-alt" size="sm" className="text-blue-400" /></div>
                <div className="flex flex-col overflow-hidden">
-                  <span className="text-[10px] text-white/40 font-medium">النوع</span>
-                  <span className="text-xs text-white font-bold truncate">{lecture.is_recurring ? 'متكررة' : 'فردية'}</span>
+                  <span className="text-[10px] text-text-theme-muted font-medium">النوع</span>
+                  <span className="text-xs text-text-theme-primary font-bold truncate">{lecture.is_recurring ? 'متكررة' : 'فردية'}</span>
                </div>
             </div>
-            <div className="flex items-center gap-3 bg-white/[0.04] p-3 rounded-2xl border border-white/[0.08] hover:bg-white/[0.08] transition-colors">
+            <div className="flex items-center gap-3 bg-white/[0.4] dark:bg-white/[0.04] p-3 rounded-2xl border border-black/[0.04] dark:border-white/[0.08] hover:bg-white/[0.6] dark:hover:bg-white/[0.08] transition-colors">
                <div className="w-8 h-8 rounded-lg bg-orange-500/10 flex items-center justify-center"><Icon name="clock" size="sm" className="text-orange-400" /></div>
                <div className="flex flex-col">
-                  <span className="text-[10px] text-white/40 font-medium">الوقت</span>
-                  <span className="text-xs text-white font-bold">{lecture.time}</span>
+                  <span className="text-[10px] text-text-theme-muted font-medium">الوقت</span>
+                  <span className="text-xs text-text-theme-primary font-bold">{lecture.time}</span>
                </div>
             </div>
-            <div className="flex items-center gap-3 bg-white/[0.04] p-3 rounded-2xl border border-white/[0.08] hover:bg-white/[0.08] transition-colors">
+            <div className="flex items-center gap-3 bg-white/[0.4] dark:bg-white/[0.04] p-3 rounded-2xl border border-black/[0.04] dark:border-white/[0.08] hover:bg-white/[0.6] dark:hover:bg-white/[0.08] transition-colors">
                <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center"><Icon name="users" size="sm" className="text-purple-400" /></div>
                <div className="flex flex-col overflow-hidden">
-                  <span className="text-[10px] text-white/40 font-medium">المجموعة</span>
-                  <span className="text-xs text-white font-bold truncate">{lecture.group?.name || '-'}</span>
+                  <span className="text-[10px] text-text-theme-muted font-medium">المجموعة</span>
+                  <span className="text-xs text-text-theme-primary font-bold truncate">{lecture.group?.name || '-'}</span>
                </div>
             </div>
-            <div className="flex items-center gap-3 bg-white/[0.04] p-3 rounded-2xl border border-white/[0.08] hover:bg-white/[0.08] transition-colors">
+            <div className="flex items-center gap-3 bg-white/[0.4] dark:bg-white/[0.04] p-3 rounded-2xl border border-black/[0.04] dark:border-white/[0.08] hover:bg-white/[0.6] dark:hover:bg-white/[0.08] transition-colors">
                <div className="w-8 h-8 rounded-lg bg-pink-500/10 flex items-center justify-center"><Icon name="user-check" size="sm" className="text-pink-400" /></div>
                <div className="flex flex-col">
-                  <span className="text-[10px] text-white/40 font-medium">الحضور</span>
-                  <span className="text-xs text-white font-bold">{lecture.enrolled} طالب</span>
+                  <span className="text-[10px] text-text-theme-muted font-medium">الحضور</span>
+                  <span className="text-xs text-text-theme-primary font-bold">{lecture.enrolled} طالب</span>
                </div>
             </div>
          </div>
 
          {/* Recurrence Schedule details */}
          {lecture.is_recurring && (
-            <div className="mb-4 flex items-center gap-3 bg-teal-500/5 border border-teal-500/10 p-2.5 rounded-xl">
-               <Icon name="redo" size="xs" className="text-teal-400 ml-1" />
-               <span className="text-xs text-teal-100 font-medium truncate">{formatRecurrenceDays(lecture.recurrence_days)}</span>
+            <div className="mb-4 flex items-center gap-3 bg-teal-500/5 dark:bg-teal-500/10 border border-teal-500/10 dark:border-teal-500/20 p-2.5 rounded-xl">
+               <Icon name="redo" size="xs" className="text-teal-600 dark:text-teal-400 ml-1" />
+               <span className="text-xs text-teal-800 dark:text-teal-100 font-medium truncate">{formatRecurrenceDays(lecture.recurrence_days)}</span>
             </div>
          )}
 
@@ -302,7 +302,7 @@ export const LectureCard: React.FC<LectureCardProps> = ({
          {lecture.is_recurring && nextOccurrence && (
             <div className="mb-6 flex items-center justify-between bg-primary/5 border border-primary/10 p-3 rounded-xl">
                <span className="text-[10px] text-primary/70 font-bold uppercase">القادمة</span>
-               <span className="text-xs text-white font-bold truncate">{nextOccurrence}</span>
+               <span className="text-xs text-text-theme-primary font-bold truncate">{nextOccurrence}</span>
             </div>
          )}
 
@@ -310,26 +310,42 @@ export const LectureCard: React.FC<LectureCardProps> = ({
          {!lecture.is_recurring && (
             <div className="mb-6 flex items-center justify-between bg-primary/5 border border-primary/10 p-3 rounded-xl">
                <span className="text-[10px] text-primary/70 font-bold uppercase">التاريخ</span>
-               <span className="text-xs text-white font-bold truncate">{lecture.date}</span>
+               <span className="text-xs text-text-theme-primary font-bold truncate">{lecture.date}</span>
             </div>
          )}
 
          {/* Footer Actions */}
          {lecture.status !== 'منتهية' && (
-            <div className="mt-auto pt-4 border-t border-white/10">
+            <div className="mt-auto pt-4 border-t border-border-theme-secondary">
                {!isActive ? (
-                  <Button onClick={onActivate} className="w-full h-11 rounded-xl bg-white/10 hover:bg-primary hover:text-white text-white font-bold text-xs gap-2 transition-all duration-300 border border-white/10 hover:border-primary hover:shadow-[0_0_20px_rgba(66,99,235,0.4)]">
+                  <Button 
+                     onClick={onActivate} 
+                     variant="outline" 
+                     className="w-full h-11 rounded-xl !bg-primary/10 hover:!bg-primary !border-primary/20 hover:!border-primary !text-primary hover:!text-white font-bold text-xs gap-2 transition-all duration-300 hover:shadow-[0_0_20px_rgba(66,99,235,0.4)]"
+                  >
                      <Icon name="power-off" /> <span>بدء المحاضرة يدوياً</span>
                   </Button>
                ) : (
                   <div className="flex items-center gap-2">
-                     <Button onClick={onScan} className="flex-1 h-11 rounded-xl bg-white/5 border border-white/10 hover:bg-white/15 text-white font-bold text-xs gap-2 transition-all">
+                     <Button 
+                        onClick={onScan} 
+                        variant="outline" 
+                        className="flex-1 h-11 rounded-xl !bg-surface-secondary hover:!bg-surface-hover !border-border-theme-primary !text-text-theme-primary font-bold text-xs gap-2 transition-all"
+                     >
                         <Icon name="camera" /> <span>مسح</span>
                      </Button>
-                     <Button onClick={onQRCode} className="w-12 h-11 rounded-xl bg-white/5 border border-white/10 hover:bg-white/15 text-white font-bold text-xs flex items-center justify-center transition-all">
+                     <Button 
+                        onClick={onQRCode} 
+                        variant="outline" 
+                        className="w-12 h-11 rounded-xl !bg-surface-secondary hover:!bg-surface-hover !border-border-theme-primary !text-text-theme-primary font-bold text-xs flex items-center justify-center transition-all"
+                     >
                         <Icon name="qrcode" />
                      </Button>
-                     <Button onClick={onEnd} className="w-12 h-11 rounded-xl bg-red-500/10 border border-red-500/30 hover:bg-red-500 hover:text-white text-red-500 flex items-center justify-center transition-all duration-300 hover:shadow-[0_0_15px_rgba(239,68,68,0.5)]">
+                     <Button 
+                        onClick={onEnd} 
+                        variant="outline" 
+                        className="w-12 h-11 rounded-xl !bg-danger/10 hover:!bg-danger !border-danger/20 hover:!border-danger !text-danger hover:!text-white flex items-center justify-center transition-all duration-300 hover:shadow-[0_0_15px_rgba(239,68,68,0.5)]"
+                     >
                         <Icon name="stop" />
                      </Button>
                   </div>

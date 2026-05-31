@@ -299,51 +299,54 @@ export async function fetchApi<T = unknown>(
   const isOnline = networkMonitor.isOnline;
 
   if (!isOnline) {
-    if (method === 'GET' && offlineOptions.offlineConfig?.storeName) {
-      const storeName = offlineOptions.offlineConfig.storeName;
-      const entityId = offlineOptions.offlineConfig.entityId;
-      const targetStore = (stores as any)[storeName + 'Store'];
-      if (targetStore) {
-        console.log(`[fetchApi] Offline: Serving from store ${storeName}`);
-        if (entityId) {
-          const data = await targetStore.getById(entityId);
-          if (data !== undefined) return data as T;
-        } else {
-          const data = await targetStore.getAll();
-          return data as T;
+    if (method === 'GET') {
+      if (offlineOptions.offlineConfig?.storeName) {
+        const storeName = offlineOptions.offlineConfig.storeName;
+        const entityId = offlineOptions.offlineConfig.entityId;
+        const targetStore = (stores as any)[storeName + 'Store'];
+        if (targetStore) {
+          console.log(`[fetchApi] Offline: Serving from store ${storeName}`);
+          if (entityId) {
+            const data = await targetStore.getById(entityId);
+            if (data !== undefined) return data as T;
+          } else {
+            const data = await targetStore.getAll();
+            return data as T;
+          }
         }
+        throw new ApiError('أنت غير متصل بالإنترنت والبيانات المطلوبة غير متوفرة محلياً.', 0);
       }
-      throw new ApiError('أنت غير متصل بالإنترنت والبيانات المطلوبة غير متوفرة محلياً.', 0);
+      // If NO offlineConfig, do nothing and let it proceed to fetch() for Service Worker caching
+    } else {
+      if ((method === 'POST' || method === 'PUT' || method === 'PATCH' || method === 'DELETE') && offlineOptions.offlineConfig?.entityType) {
+        const entityType = offlineOptions.offlineConfig.entityType;
+        const entityId = offlineOptions.offlineConfig.entityId;
+        
+        const safeHeaders: Record<string, string> = {};
+        if (headers['X-Academy-Id']) safeHeaders['X-Academy-Id'] = headers['X-Academy-Id'];
+        if (headers['X-XSRF-TOKEN']) safeHeaders['X-XSRF-TOKEN'] = headers['X-XSRF-TOKEN'];
+        if (headers['Authorization']) safeHeaders['Authorization'] = headers['Authorization'];
+
+        console.log(`[fetchApi] Offline: Enqueuing mutation for ${entityType}`);
+        const queueId = await syncEngine.enqueue(
+          url,
+          method as any,
+          options.body ? JSON.parse(options.body as string) : {},
+          entityType,
+          entityId,
+          safeHeaders
+        );
+
+        return {
+          status: 'offline_queued',
+          message: 'تم حفظ العملية محلياً وسيتم مزامنتها تلقائياً عند اتصالك بالإنترنت.',
+          queueId,
+          id: entityId,
+        } as unknown as T;
+      }
+
+      throw new ApiError('يرجى الاتصال بالإنترنت لإجراء هذه العملية.', 0);
     }
-
-    if ((method === 'POST' || method === 'PUT' || method === 'PATCH' || method === 'DELETE') && offlineOptions.offlineConfig?.entityType) {
-      const entityType = offlineOptions.offlineConfig.entityType;
-      const entityId = offlineOptions.offlineConfig.entityId;
-      
-      const safeHeaders: Record<string, string> = {};
-      if (headers['X-Academy-Id']) safeHeaders['X-Academy-Id'] = headers['X-Academy-Id'];
-      if (headers['X-XSRF-TOKEN']) safeHeaders['X-XSRF-TOKEN'] = headers['X-XSRF-TOKEN'];
-      if (headers['Authorization']) safeHeaders['Authorization'] = headers['Authorization'];
-
-      console.log(`[fetchApi] Offline: Enqueuing mutation for ${entityType}`);
-      const queueId = await syncEngine.enqueue(
-        url,
-        method as any,
-        options.body ? JSON.parse(options.body as string) : {},
-        entityType,
-        entityId,
-        safeHeaders
-      );
-
-      return {
-        status: 'offline_queued',
-        message: 'تم حفظ العملية محلياً وسيتم مزامنتها تلقائياً عند اتصالك بالإنترنت.',
-        queueId,
-        id: entityId,
-      } as unknown as T;
-    }
-
-    throw new ApiError('يرجى الاتصال بالإنترنت لإجراء هذه العملية.', 0);
   }
 
   const executeRequest = async (): Promise<Response> => {
