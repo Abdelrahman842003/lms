@@ -81,8 +81,6 @@
   --black: #000000;
   --seasonal-primary: #4264ebab;
   --seasonal-secondary: #5b72e8;
-  --seasonal-bg-start: #000000;
-  --seasonal-bg-end: #000000;
 
   /* Glass effect variables */
   --glass-bg: rgba(255, 255, 255, 0.08);
@@ -160,8 +158,6 @@
   --black: #ffffff; /* semantic flip */
   --seasonal-primary: #3249A9;
   --seasonal-secondary: #00b377;
-  --seasonal-bg-start: #F5F5F5;
-  --seasonal-bg-end: #F5F5F5;
 
   /* Glass effect variables */
   --glass-bg: rgba(255, 255, 255, 0.7);
@@ -238,8 +234,18 @@ body[data-season-theme] {
   --secondary: var(--seasonal-secondary);
   --secondary-light: var(--seasonal-secondary);
   --secondary-dark: var(--seasonal-secondary);
-  --dark: var(--seasonal-bg-start);
-  --darker: var(--seasonal-bg-end);
+}
+
+[data-theme="dark"] body[data-season-theme],
+body[data-season-theme][data-theme="dark"] {
+  --dark: var(--seasonal-bg-start-dark);
+  --darker: var(--seasonal-bg-end-dark);
+}
+
+[data-theme="light"] body[data-season-theme],
+body[data-season-theme][data-theme="light"] {
+  --dark: var(--seasonal-bg-start-light);
+  --darker: var(--seasonal-bg-end-light);
 }
 
 /* Enhanced background with better visual depth */

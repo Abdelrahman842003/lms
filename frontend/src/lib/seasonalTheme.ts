@@ -8,8 +8,10 @@ export type SeasonalTheme =
 export interface SeasonalPalette {
   primary: string;
   secondary: string;
-  bg_start: string;
-  bg_end: string;
+  bg_start_dark: string;
+  bg_end_dark: string;
+  bg_start_light: string;
+  bg_end_light: string;
 }
 
 export interface SeasonalThemeResolution {
@@ -31,32 +33,42 @@ const DEFAULT_PALETTES: Record<SeasonalTheme, SeasonalPalette> = {
   default: {
     primary: '#4264ebab',
     secondary: '#5b72e8',
-    bg_start: '#000000',
-    bg_end: '#000000',
+    bg_start_dark: '#000000',
+    bg_end_dark: '#000000',
+    bg_start_light: '#F5F5F5',
+    bg_end_light: '#F5F5F5',
   },
   ramadan: {
     primary: '#14b8a6',
     secondary: '#f59e0b',
-    bg_start: '#041a1f',
-    bg_end: '#0f172a',
+    bg_start_dark: '#041a1f',
+    bg_end_dark: '#0f172a',
+    bg_start_light: '#e0f2fe',
+    bg_end_light: '#fef3c7',
   },
   eid: {
     primary: '#22c55e',
     secondary: '#06b6d4',
-    bg_start: '#052e16',
-    bg_end: '#0f172a',
+    bg_start_dark: '#052e16',
+    bg_end_dark: '#0f172a',
+    bg_start_light: '#dcfce7',
+    bg_end_light: '#cffafe',
   },
   gregorian_new_year: {
     primary: '#ef4444',
     secondary: '#facc15',
-    bg_start: '#1f0b24',
-    bg_end: '#09090b',
+    bg_start_dark: '#1f0b24',
+    bg_end_dark: '#09090b',
+    bg_start_light: '#fee2e2',
+    bg_end_light: '#fef08a',
   },
   hijri_new_year: {
     primary: '#22d3ee',
     secondary: '#818cf8',
-    bg_start: '#082f49',
-    bg_end: '#172554',
+    bg_start_dark: '#082f49',
+    bg_end_dark: '#172554',
+    bg_start_light: '#cffafe',
+    bg_end_light: '#e0e7ff',
   },
 };
 
@@ -122,14 +134,16 @@ export function resolveSeasonalThemeFromSettings(
       pickSetting(settings, 'seasonal_theme_secondary', 'seasonalThemeSecondary'),
       defaults.secondary
     ),
-    bg_start: normalizeColor(
+    bg_start_dark: normalizeColor(
       pickSetting(settings, 'seasonal_theme_bg_start', 'seasonalThemeBgStart'),
-      defaults.bg_start
+      defaults.bg_start_dark
     ),
-    bg_end: normalizeColor(
+    bg_end_dark: normalizeColor(
       pickSetting(settings, 'seasonal_theme_bg_end', 'seasonalThemeBgEnd'),
-      defaults.bg_end
+      defaults.bg_end_dark
     ),
+    bg_start_light: defaults.bg_start_light,
+    bg_end_light: defaults.bg_end_light,
   };
 
   const applyPrimary = themeEnabled
@@ -159,8 +173,10 @@ export function resolveSeasonalThemeFromSettings(
     cssVariables: {
       '--seasonal-primary': applyPrimary ? palette.primary : BASE_COLORS.primary,
       '--seasonal-secondary': applySecondary ? palette.secondary : BASE_COLORS.secondary,
-      '--seasonal-bg-start': applyBgStart ? palette.bg_start : BASE_COLORS.bg_start,
-      '--seasonal-bg-end': applyBgEnd ? palette.bg_end : BASE_COLORS.bg_end,
+      '--seasonal-bg-start-dark': applyBgStart ? palette.bg_start_dark : BASE_COLORS.bg_start_dark,
+      '--seasonal-bg-end-dark': applyBgEnd ? palette.bg_end_dark : BASE_COLORS.bg_end_dark,
+      '--seasonal-bg-start-light': applyBgStart ? palette.bg_start_light : BASE_COLORS.bg_start_light,
+      '--seasonal-bg-end-light': applyBgEnd ? palette.bg_end_light : BASE_COLORS.bg_end_light,
     },
   };
 }
