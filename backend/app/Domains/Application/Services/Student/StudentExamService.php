@@ -444,11 +444,11 @@ class StudentExamService
 
             $result = ExamResult::updateOrCreate(
                 [
-                    'exam_id' => $attempt->exam_id,
-                    'student_id' => $attempt->student_id,
+                    'attempt_id' => $attempt->id,
                 ],
                 [
-                    'attempt_id' => $attempt->id,
+                    'exam_id' => $attempt->exam_id,
+                    'student_id' => $attempt->student_id,
                     'score' => $score,
                     'percentage' => $percentage,
                 ]

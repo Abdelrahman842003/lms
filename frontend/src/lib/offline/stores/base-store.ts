@@ -1,6 +1,24 @@
 import { getDB, NeetaqSchema } from '../db';
 import { StoreNames } from 'idb';
 
+function getKeyPathForStore(storeName: string): string {
+  if (['academyDashboard', 'appSettings', 'syncMeta'].includes(storeName)) {
+    return 'key';
+  }
+  return 'id';
+}
+
+function generateUUID(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
 export class BaseOfflineStore<T> {
   constructor(protected storeName: StoreNames<NeetaqSchema>) {}
 
@@ -8,9 +26,43 @@ export class BaseOfflineStore<T> {
     return await getDB();
   }
 
-  async getAll(): Promise<T[]> {
+  private sanitizeItem(item: T): T {
+    if (!item || typeof item !== 'object') {
+      return item;
+    }
+
+    const keyPath = getKeyPathForStore(this.storeName);
+    const obj = item as any;
+
+    if (obj[keyPath] === undefined || obj[keyPath] === null || obj[keyPath] === '') {
+      // Key path is missing! Clone to avoid mutating original
+      const cloned = { ...item } as any;
+      if (this.storeName === 'academyDashboard') {
+        cloned[keyPath] = 'dashboard';
+      } else if (this.storeName === 'appSettings') {
+        cloned[keyPath] = 'settings';
+      } else {
+        const fallbackId = obj.key || obj._id || obj.code || obj.userId || obj.id;
+        if (fallbackId !== undefined && fallbackId !== null && fallbackId !== '') {
+          cloned[keyPath] = String(fallbackId);
+        } else {
+          console.warn(`[BaseOfflineStore] Store "${this.storeName}" requires key "${keyPath}", but it was missing in item. Auto-generating a temporary UUID.`, item);
+          cloned[keyPath] = generateUUID();
+        }
+      }
+      return cloned;
+    }
+
+    return item;
+  }
+
+  async getAll(): Promise<T[] | T | undefined> {
     const db = await this.getDB();
-    return (await db.getAll(this.storeName)) as T[];
+    const result = await db.getAll(this.storeName);
+    if (this.storeName === 'academyDashboard') {
+      return (result && result.length > 0 ? result[0] : undefined) as any;
+    }
+    return result as T[];
   }
 
   async getById(id: string): Promise<T | undefined> {
@@ -19,8 +71,9 @@ export class BaseOfflineStore<T> {
   }
 
   async put(item: T): Promise<void> {
+    const sanitized = this.sanitizeItem(item);
     const db = await this.getDB();
-    await db.put(this.storeName, item);
+    await db.put(this.storeName, sanitized);
   }
 
   async putMany(items: T[]): Promise<void> {
@@ -28,7 +81,8 @@ export class BaseOfflineStore<T> {
     const tx = db.transaction(this.storeName, 'readwrite');
     const store = tx.objectStore(this.storeName);
     for (const item of items) {
-      await store.put(item);
+      const sanitized = this.sanitizeItem(item);
+      await store.put(sanitized);
     }
     await tx.done;
   }

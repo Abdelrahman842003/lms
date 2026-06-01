@@ -16,6 +16,7 @@ interface DashboardLayoutProps {
   subtitle?: string;
   headerActions?: React.ReactNode;
   children: React.ReactNode;
+  hideNav?: boolean;
 }
 
 export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
@@ -25,20 +26,23 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   subtitle,
   headerActions,
   children,
+  hideNav = false,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
     <div className="dashboard-container-navbar">
       {/* Navbar */}
-      <Navbar
-        role={role}
-        user={user}
-        onMenuClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-      />
+      {!hideNav && (
+        <Navbar
+          role={role}
+          user={user}
+          onMenuClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+        />
+      )}
 
       {/* Main Content */}
-      <main className={`dashboard-main-navbar ${role !== 'parent' ? 'pb-32 lg:pb-0' : ''}`}>
+      <main className={`dashboard-main-navbar ${role !== 'parent' && !hideNav ? 'pb-32 lg:pb-0' : 'pb-0'} ${hideNav ? '!mt-0 !min-h-screen' : ''}`}>
         {/* Header */}
         {(title || headerActions) && (
           <div className="dashboard-header">
@@ -59,10 +63,10 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       </main>
 
       {/* Mobile Bottom Nav */}
-      {role !== 'parent' && <MobileBottomNav role={role} />}
+      {!hideNav && role !== 'parent' && <MobileBottomNav role={role} />}
 
       {/* Mobile Menu Overlay */}
-      {mobileMenuOpen && (
+      {!hideNav && mobileMenuOpen && (
         <div 
           className="mobile-menu-overlay" 
           onClick={() => setMobileMenuOpen(false)}

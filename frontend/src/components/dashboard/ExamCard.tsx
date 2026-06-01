@@ -122,7 +122,7 @@ export const ExamCard: React.FC<ExamCardProps> = ({
       <div className={`absolute inset-0 rounded-[2rem] overflow-hidden pointer-events-none transition-all duration-500 
         ${isActive 
           ? 'bg-gradient-to-br from-primary/20 via-primary/5 to-transparent border-2 border-primary/30 shadow-[0_0_40px_rgba(66,99,235,0.15)]' 
-          : 'bg-[#101426]/40 backdrop-blur-md border border-white/5 group-hover:border-white/20 shadow-2xl'
+          : 'bg-surface-primary dark:bg-[#101426]/40 backdrop-blur-md border border-border-theme-primary group-hover:border-primary/20 shadow-2xl'
         }`}
       >
         {/* Animated Glow Effect */}

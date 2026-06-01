@@ -37,13 +37,37 @@ export default function ConfirmationModal({
   const getVariantConfig = () => {
     switch (variant) {
       case 'danger':
-        return { icon: 'exclamation-triangle', color: 'text-rose-400', bg: 'bg-rose-500/10', border: 'border-rose-500/20', btn: 'destructive' as const };
+        return { 
+          icon: 'exclamation-triangle', 
+          color: 'text-red-500 dark:text-rose-400', 
+          bg: 'bg-red-50 dark:bg-rose-500/10', 
+          border: 'border-red-100 dark:border-rose-500/20', 
+          btn: 'destructive' as const 
+        };
       case 'success':
-        return { icon: 'check-circle', color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', btn: 'secondary' as const };
+        return { 
+          icon: 'check-circle', 
+          color: 'text-green-600 dark:text-emerald-400', 
+          bg: 'bg-green-50 dark:bg-emerald-500/10', 
+          border: 'border-green-100 dark:border-emerald-500/20', 
+          btn: 'secondary' as const 
+        };
       case 'warning':
-        return { icon: 'exclamation-circle', color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20', btn: 'primary' as const };
+        return { 
+          icon: 'exclamation-circle', 
+          color: 'text-amber-600 dark:text-amber-400', 
+          bg: 'bg-amber-50 dark:bg-amber-500/10', 
+          border: 'border-amber-100 dark:border-amber-500/20', 
+          btn: 'primary' as const 
+        };
       default:
-        return { icon: 'info-circle', color: 'text-primary', bg: 'bg-primary/10', border: 'border-primary/20', btn: 'primary' as const };
+        return { 
+          icon: 'info-circle', 
+          color: 'text-primary dark:text-primary-light', 
+          bg: 'bg-primary/5 dark:bg-primary/10', 
+          border: 'border-primary/10 dark:border-primary/20', 
+          btn: 'primary' as const 
+        };
     }
   };
 
@@ -53,12 +77,12 @@ export default function ConfirmationModal({
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-6">
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-300" 
+        className="absolute inset-0 bg-black/40 dark:bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-300" 
         onClick={onCancel}
       />
       
       {/* Modal Content */}
-      <div className="relative w-full max-w-md premium-glass premium-border rounded-[2.5rem] shadow-2xl shadow-black/60 overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
+      <div className="relative w-full max-w-md bg-[var(--modal-bg)] border border-border-theme-primary rounded-[2.5rem] shadow-2xl shadow-black/10 dark:shadow-black/60 overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
         
         {/* Top Accent Strip */}
         <div className={`h-1.5 w-full bg-gradient-to-r ${variant === 'danger' ? 'from-rose-600 to-rose-400' : 'from-primary to-purple-600'}`}></div>
@@ -70,8 +94,8 @@ export default function ConfirmationModal({
           </div>
 
           <div className="space-y-3">
-            <h3 className="text-2xl font-black text-white tracking-tight">{title}</h3>
-            <div className="text-gray-light/60 font-medium leading-relaxed">
+            <h3 className="text-2xl font-black text-text-theme-primary tracking-tight">{title}</h3>
+            <div className="text-text-theme-secondary font-medium leading-relaxed">
               {message}
             </div>
           </div>
@@ -81,7 +105,7 @@ export default function ConfirmationModal({
               <Button
                 variant="outline"
                 size="lg"
-                className="w-full rounded-2xl py-4 font-black text-gray-light/40 border-white/10 hover:bg-white/5 hover:text-white"
+                className="w-full rounded-2xl py-4 font-black"
                 onClick={onCancel}
                 disabled={isProcessing}
               >
@@ -108,7 +132,7 @@ export default function ConfirmationModal({
 
         {/* Close Button (Ghost) */}
         <button
-          className="absolute top-6 right-6 text-gray-light/20 hover:text-white transition-colors"
+          className="absolute top-6 right-6 text-text-theme-muted hover:text-text-theme-primary transition-colors"
           onClick={onCancel}
           disabled={isProcessing}
         >

@@ -491,7 +491,7 @@ export default function StudentAttendanceSection() {
       {isLoading ? (
         <div className="ux-grid ux-grid-cols-1 ux-md-grid-cols-2 ux-lg-grid-cols-3 ux-xl-grid-cols-4 ux-gap-6">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="ux-rounded-2xl ux-bg-101426-15 ux-border ux-border-white-10 ux-h-280px ux-flex ux-flex-col ux-gap-4 ux-p-6 ux-animate-pulse">
+            <div key={i} className="ux-rounded-2xl ux-bg-surface-secondary dark:ux-bg-white-5 ux-border ux-border-border-theme-primary ux-h-280px ux-flex ux-flex-col ux-gap-4 ux-p-6 ux-animate-pulse">
               <div className="ux-flex ux-justify-between ux-items-start">
                 <div className="ux-bg-white-10 ux-w-60 ux-h-6 ux-rounded"></div>
                 <div className="ux-bg-white-10 ux-w-20 ux-h-6 ux-rounded-xl"></div>

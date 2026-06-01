@@ -51,11 +51,11 @@ export default function GradeDetailsPage() {
       setIsLoading(true);
       // Pass the name as a filter to get detailed list
       const response = await academyService.getGrades(page, itemsPerPage, { name: gradeName });
-      console.log('DEBUG GRADES:', response.data.data);
-      setGrades(response.data.data);
-      setTotalPages(response.data.meta.last_page);
-      setTotalItems(response.data.meta.total);
-      setCurrentPage(response.data.meta.current_page);
+      console.log('DEBUG GRADES:', response.data);
+      setGrades(response.data || []);
+      setTotalPages(response.meta?.last_page || 1);
+      setTotalItems(response.meta?.total || 0);
+      setCurrentPage(response.meta?.current_page || 1);
     } catch (error) {
       console.error('Failed to fetch grades:', error);
     } finally {
@@ -68,7 +68,7 @@ export default function GradeDetailsPage() {
   }, [gradeName]);
 
   // Filter out grades without teachers (General/System grades)
-  const visibleGrades = grades.filter(grade => grade.teacher_id);
+  const visibleGrades = (grades || []).filter(grade => grade.teacher_id);
 
   // Stats
   const totalTeachers = visibleGrades.length;

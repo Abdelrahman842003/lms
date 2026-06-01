@@ -410,10 +410,21 @@ class ApiClient {
       const storeName = options.offlineConfig.storeName;
       const targetStore = (stores as any)[storeName + 'Store'];
       if (targetStore && parsedResult) {
-        if (Array.isArray(parsedResult)) {
-          targetStore.putMany(parsedResult).catch((err: any) => console.error(`[ApiClient] Auto-cache putMany failed for ${storeName}:`, err));
+        // Extract array from paginated response envelope if applicable
+        let itemsToCache = parsedResult;
+        if (
+          parsedResult &&
+          !Array.isArray(parsedResult) &&
+          typeof parsedResult === 'object' &&
+          Array.isArray((parsedResult as any).data)
+        ) {
+          itemsToCache = (parsedResult as any).data;
+        }
+
+        if (Array.isArray(itemsToCache)) {
+          targetStore.putMany(itemsToCache).catch((err: any) => console.error(`[ApiClient] Auto-cache putMany failed for ${storeName}:`, err));
         } else {
-          targetStore.put(parsedResult).catch((err: any) => console.error(`[ApiClient] Auto-cache put failed for ${storeName}:`, err));
+          targetStore.put(itemsToCache).catch((err: any) => console.error(`[ApiClient] Auto-cache put failed for ${storeName}:`, err));
         }
       }
     }

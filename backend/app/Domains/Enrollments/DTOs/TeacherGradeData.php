@@ -21,17 +21,22 @@ class TeacherGradeData
             name: $request->validated('name'),
             price: (float) $request->validated('price'),
             description: $request->validated('description'),
-            academy_id: $request->validated('academy_id'),
+            academy_id: $request->input('academy_id'),
         );
     }
 
     public function toArray(): array
     {
-        return array_filter([
+        $data = [
             'name' => $this->name,
             'price' => $this->price,
-            'description' => $this->description,
             'academy_id' => $this->academy_id,
-        ], fn($value) => !is_null($value));
+        ];
+
+        if (!is_null($this->description)) {
+            $data['description'] = $this->description;
+        }
+
+        return $data;
     }
 }

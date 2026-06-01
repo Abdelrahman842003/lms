@@ -351,17 +351,17 @@ export const VideoCard: React.FC<VideoCardProps> = ({
 
 export function VideoCardSkeleton() {
   return (
-    <div className="rounded-[2.5rem] border border-white/10 bg-[#101426]/60 p-3 space-y-4 animate-pulse">
-      <div className="aspect-video rounded-2xl bg-white/5" />
+    <div className="rounded-[2.5rem] border border-border-theme-primary bg-surface-primary dark:bg-[#101426]/60 p-3 space-y-4 animate-pulse">
+      <div className="aspect-video rounded-2xl bg-surface-secondary dark:bg-white/5" />
       <div className="p-4 space-y-4">
-        <div className="h-6 w-3/4 bg-white/5 rounded-lg" />
+        <div className="h-6 w-3/4 bg-surface-secondary dark:bg-white/5 rounded-lg" />
         <div className="space-y-2">
-          <div className="h-3 w-full bg-white/5 rounded" />
-          <div className="h-3 w-2/3 bg-white/5 rounded" />
+          <div className="h-3 w-full bg-surface-secondary dark:bg-white/5 rounded" />
+          <div className="h-3 w-2/3 bg-surface-secondary dark:bg-white/5 rounded" />
         </div>
         <div className="grid grid-cols-2 gap-2">
-          <div className="h-8 bg-white/5 rounded-xl" />
-          <div className="h-8 bg-white/5 rounded-xl" />
+          <div className="h-8 bg-surface-secondary dark:bg-white/5 rounded-xl" />
+          <div className="h-8 bg-surface-secondary dark:bg-white/5 rounded-xl" />
         </div>
         <div className="h-12 w-full bg-white/5 rounded-2xl" />
       </div>

@@ -131,7 +131,7 @@ export function VideoQuizStudent({ videoId, watchStatus, alreadyPassed, onQuizPa
   if (!shouldShow) return null;
   if (phase === 'loading' || quiz === undefined) {
     return (
-      <div className="rounded-2xl border border-white/10 bg-[#101426]/40 p-6 flex items-center justify-center gap-3 text-gray-400">
+      <div className="rounded-2xl border border-border-theme-primary bg-surface-primary dark:bg-[#101426]/40 p-6 flex items-center justify-center gap-3 text-text-secondary">
         <div className="w-5 h-5 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
         <span className="text-sm">جاري تحميل الاختبار…</span>
       </div>
@@ -243,7 +243,7 @@ export function VideoQuizStudent({ videoId, watchStatus, alreadyPassed, onQuizPa
 
   if (questions.length === 0) {
     return (
-      <div className="rounded-2xl border border-white/10 bg-[#101426]/40 p-6 text-center text-gray-500 text-sm">
+      <div className="rounded-2xl border border-border-theme-primary bg-surface-primary dark:bg-[#101426]/40 p-6 text-center text-text-secondary text-sm">
         الاختبار لا يحتوي أسئلة بعد
       </div>
     );
@@ -255,18 +255,18 @@ export function VideoQuizStudent({ videoId, watchStatus, alreadyPassed, onQuizPa
   const allAnswered = questions.every((q) => !!answers[q.id]);
 
   return (
-    <div className="rounded-2xl border border-primary/20 bg-gradient-to-b from-[#101426]/80 to-[#0a0f1e]/60 backdrop-blur-sm overflow-hidden">
+    <div className="rounded-2xl border border-primary/20 bg-surface-primary dark:bg-gradient-to-b dark:from-[#101426]/80 dark:to-[#0a0f1e]/60 backdrop-blur-sm overflow-hidden">
 
       {/* ── Header ── */}
-      <div className="px-5 pt-5 pb-4 border-b border-white/5 space-y-3">
+      <div className="px-5 pt-5 pb-4 border-b border-border-theme-primary space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-xl bg-primary/15 border border-primary/20 flex items-center justify-center">
               <Icon name="graduation-cap" className="text-primary" size="sm" />
             </div>
             <div>
-              <p className="text-white font-bold text-sm">{quiz.title}</p>
-              <p className="text-gray-500 text-xs">درجة النجاح: {quiz.passing_score}%</p>
+              <p className="text-text-primary font-bold text-sm">{quiz.title}</p>
+              <p className="text-text-secondary text-xs">درجة النجاح: {quiz.passing_score}%</p>
             </div>
           </div>
           <span className="text-xs text-gray-500">

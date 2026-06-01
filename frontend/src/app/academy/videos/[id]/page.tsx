@@ -291,12 +291,12 @@ export default function AcademyVideoDetailPage() {
               </div>
             </div>
           ) : (
-            <div className="aspect-video rounded-2xl border border-white/10 bg-[#101426]/60 flex flex-col items-center justify-center gap-4 text-gray-400">
-              <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center">
+            <div className="aspect-video rounded-2xl border border-border-theme-primary bg-surface-primary dark:bg-[#101426]/60 flex flex-col items-center justify-center gap-4 text-text-secondary">
+              <div className="w-20 h-20 rounded-full bg-surface-secondary dark:bg-white/5 flex items-center justify-center">
                 <Icon name={video.status === 'failed' ? 'exclamation-triangle' : 'clock'} className="text-4xl" />
               </div>
               <div className="text-center">
-                <p className="text-white font-medium">
+                <p className="text-text-primary font-medium">
                   {video.status === 'failed' ? 'فشل في معالجة الفيديو' : 'الفيديو قيد المعالجة'}
                 </p>
                 <p className="text-sm mt-1">

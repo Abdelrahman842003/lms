@@ -33,7 +33,7 @@ import { Button, FormModal, ConfirmationModal, Icon, Input, Textarea } from '@/c
 import toast from 'react-hot-toast';
 
 export default function TeacherLecturesPage() {
-  const { user } = useAuth();
+  const { user, selectedAcademy, isLoading: authLoading } = useAuth();
   const [lectures, setLectures] = useState<Lecture[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -63,20 +63,21 @@ export default function TeacherLecturesPage() {
   const [selectedStatus, setSelectedStatus] = useState('');
   
   useEffect(() => {
+    if (authLoading) return;
     const fetchData = async () => {
       try {
         const [gradesResponse, groupsResponse] = await Promise.all([
           getGrades(1, 100),
           getGroups(1, 100)
         ]);
-        setGrades(gradesResponse.data);
-        setGroups(groupsResponse.data || []);
+        setGrades(gradesResponse?.data || []);
+        setGroups(groupsResponse?.data || []);
       } catch (error) {
         console.error('Failed to fetch data:', error);
       }
     };
     fetchData();
-  }, []);
+  }, [selectedAcademy?.id, authLoading]);
   
   // QR Code State
   const [showQRModal, setShowQRModal] = useState(false);
@@ -117,11 +118,12 @@ export default function TeacherLecturesPage() {
   };
 
   useEffect(() => {
+    if (authLoading) return;
     const timer = setTimeout(() => {
       fetchLectures(1);
     }, 500);
     return () => clearTimeout(timer);
-  }, [searchQuery, selectedGroupId, selectedStatus]);
+  }, [searchQuery, selectedGroupId, selectedStatus, selectedAcademy?.id, authLoading]);
 
   const fetchLectures = async (page = 1) => {
     try {

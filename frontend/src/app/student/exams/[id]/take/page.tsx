@@ -102,32 +102,32 @@ function SortableItem({ id, text, index, onMoveUp, onMoveDown, isFirst, isLast }
     <div
       ref={setNodeRef}
       style={style}
-      className={`relative group p-3 sm:p-4 mb-3 rounded-xl sm:rounded-2xl border transition-all duration-300 flex items-center gap-2.5 sm:gap-4 ${
+      className={`relative group p-3.5 sm:p-4 mb-3 rounded-2xl border transition-all duration-300 flex items-center gap-3 sm:gap-4 ${
         isDragging 
-          ? 'bg-primary/20 border-primary shadow-[0_0_30px_rgba(66,99,235,0.3)] scale-[1.02] z-50' 
-          : 'bg-surface-secondary hover:bg-surface-hover border-border-theme-secondary hover:border-border-theme-primary'
+          ? 'bg-primary/10 border-primary shadow-[0_12px_30px_rgba(66,99,235,0.15)] scale-[1.02] z-50' 
+          : 'bg-surface-secondary/80 dark:bg-[#101426]/30 backdrop-blur-md border-border-theme-secondary hover:border-border-theme-primary hover:bg-surface-hover/80 shadow-sm'
       }`}
     >
       <div 
         {...attributes} 
         {...listeners}
-        className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-surface-tertiary border border-border-theme-secondary flex items-center justify-center cursor-grab active:cursor-grabbing hover:bg-surface-hover transition-colors group/handle shrink-0"
+        className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-surface-tertiary/80 border border-border-theme-secondary flex items-center justify-center cursor-grab active:cursor-grabbing hover:bg-surface-hover hover:border-primary-light/30 transition-all group/handle shrink-0 animate-pulse-slow"
       >
-        <Icon name="grip-vertical" className="text-text-theme-muted group-hover/handle:text-primary-light" size="sm" />
+        <Icon name="grip-vertical" className="text-text-theme-muted group-hover/handle:text-primary-light transition-colors" size="sm" />
       </div>
 
-      <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-xs sm:text-sm font-bold text-primary-light shrink-0">
+      <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-xs sm:text-sm font-black text-primary-light shrink-0">
         {index + 1}
       </div>
       
-      <span className="flex-1 text-text-theme-primary font-medium text-sm sm:text-lg pr-1 min-w-0 truncate">{text}</span>
+      <span className="flex-1 text-text-theme-primary font-bold text-sm sm:text-lg pr-2 min-w-0 line-clamp-2 text-right break-words overflow-hidden whitespace-normal">{text}</span>
 
-      <div className="flex flex-col gap-1 shrink-0">
+      <div className="flex flex-col gap-1 shrink-0 bg-surface-tertiary/50 dark:bg-black/20 p-1 rounded-xl border border-border-theme-secondary/40">
         <button
           onClick={(e) => { e.stopPropagation(); onMoveUp(); }}
           disabled={isFirst}
-          className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition-all ${
-            isFirst ? 'opacity-20 cursor-not-allowed' : 'bg-surface-tertiary hover:bg-primary/20 hover:text-primary-light text-text-theme-secondary'
+          className={`w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center transition-all ${
+            isFirst ? 'opacity-25 cursor-not-allowed text-text-theme-muted' : 'hover:bg-primary/25 hover:text-primary-light text-text-theme-secondary'
           }`}
         >
           <Icon name="chevron-up" size="xs" />
@@ -135,8 +135,8 @@ function SortableItem({ id, text, index, onMoveUp, onMoveDown, isFirst, isLast }
         <button
           onClick={(e) => { e.stopPropagation(); onMoveDown(); }}
           disabled={isLast}
-          className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition-all ${
-            isLast ? 'opacity-20 cursor-not-allowed' : 'bg-surface-tertiary hover:bg-primary/20 hover:text-primary-light text-text-theme-secondary'
+          className={`w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center transition-all ${
+            isLast ? 'opacity-25 cursor-not-allowed text-text-theme-muted' : 'hover:bg-primary/25 hover:text-primary-light text-text-theme-secondary'
           }`}
         >
           <Icon name="chevron-down" size="xs" />
@@ -169,7 +169,7 @@ export default function TakeExamPage() {
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
@@ -592,8 +592,8 @@ export default function TakeExamPage() {
   const isQuestionType = (type: string) => currentQuestion?.type === type;
 
   return (
-    <DashboardLayout role="student" user={user || undefined}>
-      <div ref={containerRef} className="max-w-4xl mx-auto p-4 sm:p-6 md:p-10 select-none min-h-screen">
+    <DashboardLayout role="student" user={user || undefined} hideNav>
+      <div ref={containerRef} className="max-w-4xl mx-auto pt-3 px-3 pb-36 sm:pt-6 sm:px-6 sm:pb-10 md:p-10 select-none min-h-screen">
         {/* Watermark (Preserved) */}
         <div className="fixed inset-0 pointer-events-none z-[9999] flex flex-wrap justify-around content-around opacity-[0.03] overflow-hidden">
           {Array.from({ length: 15 }).map((_, i) => (
@@ -603,8 +603,49 @@ export default function TakeExamPage() {
           ))}
         </div>
 
+        {/* Mobile Sticky Header */}
+        <div className="sticky top-0 z-40 -mx-3 px-4 py-3 bg-surface-primary/95 dark:bg-[#101426]/95 backdrop-blur-md border-b border-border-theme-secondary sm:hidden flex flex-col gap-2 shadow-sm">
+          {/* Row 1: Title & Timer */}
+          <div className="flex items-center justify-between gap-3 w-full">
+            <span className="text-text-theme-primary text-xs sm:text-sm font-black truncate max-w-[70%] text-right">
+              {attemptData?.exam?.title}
+            </span>
+            <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all duration-500 font-mono text-[11px] font-black shrink-0 ${
+              timeLeft <= 10 ? 'text-danger border-danger/30 bg-danger/10 shadow-[0_0_10px_rgba(255,91,91,0.2)]' :
+              timeLeft <= 30 ? 'text-warning border-warning/30 bg-warning/10' :
+              'text-success border-success/30 bg-success/10'
+            }`}>
+              <Icon name="clock" className={timeLeft <= 10 ? 'animate-bounce text-danger' : 'animate-pulse'} size="xs" />
+              <span>{formatTime(timeLeft)}</span>
+            </div>
+          </div>
+          
+          {/* Row 2: Progress & Badges */}
+          <div className="flex items-center justify-between gap-2 w-full">
+            <span className="px-2.5 py-1 rounded-lg bg-primary/10 border border-primary/20 text-primary-light text-[10px] font-black tracking-wider">
+              سؤال {attemptData?.progress?.current} من {attemptData?.progress?.total}
+            </span>
+            
+            <span className="px-2.5 py-1 rounded-lg bg-surface-secondary border border-border-theme-secondary text-text-theme-muted text-[10px] font-black">
+              {isQuestionType('mcq') && 'اختيار من متعدد'}
+              {isQuestionType('true_false') && 'صح أو خطأ'}
+              {isQuestionType('ordering') && 'ترتيب العناصر'}
+              {isQuestionType('matching') && 'توصيل العناصر'}
+              {!currentQuestion?.type && 'اختيار من متعدد'}
+            </span>
+          </div>
+          
+          {/* Progress line indicator */}
+          <div className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-surface-secondary overflow-hidden">
+            <div 
+              className="h-full bg-gradient-to-r from-primary via-primary-light to-secondary rounded-full transition-all duration-700 ease-out"
+              style={{ width: `${getProgressPercentage()}%` }}
+            />
+          </div>
+        </div>
+
         {/* Header Section */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6 mb-6 sm:mb-8">
+        <div className="hidden sm:flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6 mb-6 sm:mb-8">
           <div className="space-y-1.5 sm:space-y-2">
             <h1 className="text-text-theme-primary text-xl sm:text-3xl font-black tracking-tight drop-shadow-lg">{attemptData?.exam?.title}</h1>
             <div className="flex items-center gap-2 sm:gap-3">
@@ -612,6 +653,13 @@ export default function TakeExamPage() {
                 سؤال {attemptData?.progress?.current} من {attemptData?.progress?.total}
               </span>
               <span className="text-text-theme-secondary text-[10px] sm:text-xs font-bold bg-surface-secondary px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl border border-border-theme-secondary">{attemptData?.exam?.subject}</span>
+              <span className="text-text-theme-secondary text-[10px] sm:text-xs font-bold bg-surface-secondary px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl border border-border-theme-secondary">
+                {isQuestionType('mcq') && 'سؤال اختياري'}
+                {isQuestionType('true_false') && 'سؤال صح أو خطأ'}
+                {isQuestionType('ordering') && 'سؤال ترتيب'}
+                {isQuestionType('matching') && 'سؤال توصيل'}
+                {!currentQuestion?.type && 'سؤال اختياري'}
+              </span>
             </div>
           </div>
           
@@ -625,7 +673,7 @@ export default function TakeExamPage() {
         </div>
 
         {/* Elegant Progress Bar */}
-        <div className="relative h-2.5 sm:h-3 bg-surface-secondary rounded-full mb-6 sm:mb-10 overflow-hidden border border-border-theme-secondary p-[1px] shadow-inner">
+        <div className="hidden sm:block relative h-2.5 sm:h-3 bg-surface-secondary rounded-full mb-6 sm:mb-10 overflow-hidden border border-border-theme-secondary p-[1px] shadow-inner">
           <div 
             className="h-full bg-gradient-to-r from-primary via-primary-light to-secondary rounded-full transition-all duration-700 ease-out shadow-[0_0_20px_rgba(66,99,235,0.4)] relative"
             style={{ width: `${getProgressPercentage()}%` }}
@@ -635,19 +683,32 @@ export default function TakeExamPage() {
         </div>
 
         {/* Main Content Area */}
-        <div className="relative">
+        <div className="relative mt-3 sm:mt-0">
           <div className="absolute -top-20 -left-20 w-64 h-64 bg-primary/10 blur-[100px] rounded-full -z-10 animate-pulse-slow"></div>
           <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-secondary/10 blur-[100px] rounded-full -z-10 animate-pulse-slow"></div>
           
-          <div className="bg-surface-primary dark:bg-[#101426]/60 backdrop-blur-3xl rounded-3xl sm:rounded-[48px] border border-border-theme-primary p-5 sm:p-8 md:p-14 shadow-[0_32px_80px_rgba(0,0,0,0.5)] relative overflow-hidden">
+          <div 
+            key={attemptData?.progress?.current}
+            className="bg-surface-primary dark:bg-[#101426]/60 backdrop-blur-3xl rounded-3xl sm:rounded-[48px] border border-border-theme-primary p-4 sm:p-8 md:p-14 shadow-[0_32px_80px_rgba(0,0,0,0.5)] relative overflow-hidden animate-slide-in-right"
+          >
             <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-3xl"></div>
             
-            <div className="mb-8 sm:mb-12 relative">
-              <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
-                <div className="h-1 w-8 sm:w-12 bg-primary rounded-full"></div>
-                <span className="text-primary-light font-black text-[10px] sm:text-xs tracking-[0.2em] uppercase">السؤال {attemptData?.progress?.current}</span>
+            <div className="mb-6 sm:mb-12 relative">
+              <div className="flex items-center justify-between gap-3 mb-3 sm:mb-4">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="h-1 w-8 sm:w-12 bg-primary rounded-full"></div>
+                  <span className="text-primary-light font-black text-[10px] sm:text-xs tracking-[0.2em] uppercase">السؤال {attemptData?.progress?.current}</span>
+                </div>
+                
+                <span className="px-2.5 py-1 rounded-lg bg-surface-secondary border border-border-theme-secondary text-text-theme-muted text-[10px] sm:text-xs font-black">
+                  {isQuestionType('mcq') && 'اختيار من متعدد'}
+                  {isQuestionType('true_false') && 'صح أو خطأ'}
+                  {isQuestionType('ordering') && 'ترتيب العناصر'}
+                  {isQuestionType('matching') && 'توصيل العناصر'}
+                  {!currentQuestion?.type && 'اختيار من متعدد'}
+                </span>
               </div>
-              <h3 className="text-text-theme-primary text-lg sm:text-2xl md:text-4xl font-black leading-[1.5] text-right drop-shadow-md">
+              <h3 className="text-text-theme-primary text-xl sm:text-2xl md:text-4xl font-black leading-[1.5] text-right drop-shadow-md">
                 {currentQuestion?.text}
               </h3>
             </div>
@@ -667,27 +728,27 @@ export default function TakeExamPage() {
                         key={index}
                         disabled={submitting}
                         onClick={() => setSelectedAnswer(option)}
-                        className={`group relative flex items-center gap-3 sm:gap-5 p-3.5 sm:p-5 md:p-6 rounded-2xl sm:rounded-[32px] border-2 transition-all duration-300 text-right overflow-hidden ${
+                        className={`group relative flex items-center gap-3 sm:gap-5 p-3.5 sm:p-5 md:p-6 min-h-[56px] sm:min-h-[72px] rounded-2xl sm:rounded-[32px] border-2 transition-all duration-300 text-right overflow-hidden ${
                           isSelected 
-                            ? 'bg-primary/10 border-primary shadow-[0_12px_40px_rgba(66,99,235,0.2)] scale-[1.01]' 
-                            : 'bg-surface-secondary hover:bg-surface-hover border-border-theme-secondary hover:border-border-theme-primary'
+                            ? 'bg-primary/10 border-primary shadow-[0_8px_30px_rgba(66,99,235,0.12)] scale-[1.01]' 
+                            : 'bg-surface-secondary/60 hover:bg-surface-hover border-border-theme-secondary hover:border-border-theme-primary'
                         }`}
                       >
                         <div className={`w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl border-2 flex items-center justify-center font-black text-sm sm:text-xl transition-all duration-300 shrink-0 ${
-                          isSelected ? 'bg-primary border-primary text-[#ffffff] shadow-lg' : 'bg-surface-tertiary border border-border-theme-secondary text-text-theme-muted group-hover:text-text-theme-primary'
+                          isSelected ? 'bg-primary border-primary text-white shadow-[0_4px_12px_rgba(66,99,235,0.3)]' : 'bg-surface-tertiary border border-border-theme-secondary text-text-theme-muted group-hover:text-text-theme-primary'
                         }`}>
                           {isQuestionType('true_false') ? (
                             <Icon name={option === 'صح' || option === 'True' || index === 0 ? 'check' : 'times'} size="sm" />
                           ) : letter}
                         </div>
-                        <span className={`text-base sm:text-xl font-bold transition-all pr-1 sm:pr-0 ${isSelected ? 'text-text-theme-primary font-black' : 'text-text-theme-secondary group-hover:text-text-theme-primary'}`}>
+                        <span className={`text-base sm:text-xl font-bold transition-all pr-2 sm:pr-0 ${isSelected ? 'text-text-theme-primary font-black' : 'text-text-theme-secondary group-hover:text-text-theme-primary'}`}>
                           {option}
                         </span>
                         
                         <div className={`absolute left-4 sm:left-8 w-6 h-6 sm:w-8 sm:h-8 rounded-full border-2 flex items-center justify-center transition-all duration-300 shrink-0 ${
-                          isSelected ? 'bg-primary border-primary scale-110' : 'border-border-theme-secondary opacity-0 group-hover:opacity-100'
+                          isSelected ? 'bg-primary border-primary scale-110 shadow-md' : 'border-border-theme-secondary opacity-0 group-hover:opacity-100 group-hover:scale-100 scale-90'
                         }`}>
-                          {isSelected && <Icon name="check" size="xs" className="text-[#ffffff]" />}
+                          {isSelected && <Icon name="check" size="xs" className="text-white" />}
                         </div>
                       </button>
                     );
@@ -729,28 +790,69 @@ export default function TakeExamPage() {
               )}
             </div>
 
-            {/* Navigation / Submit */}
-            <div className="mt-8 sm:mt-16">
-              <Button
-                variant="primary"
-                onClick={() => submitAnswer(selectedAnswer)}
-                disabled={!selectedAnswer || submitting}
-                loading={submitting}
-                className={`w-full h-14 sm:h-20 rounded-2xl sm:rounded-[32px] text-base sm:text-xl font-black transition-all duration-500 relative overflow-hidden group/btn justify-center ${
-                  !selectedAnswer ? 'opacity-30 grayscale pointer-events-none' : 'shadow-[0_20px_50px_rgba(66,99,235,0.4)] hover:scale-[1.02] active:scale-[0.98]'
-                }`}
-              >
-                <span className="relative z-10">
-                  {submitting ? 'جاري الحفظ...' : (attemptData?.progress?.current === attemptData?.progress?.total ? 'إنهاء وتسليم الامتحان' : 'تأكيد الإجابة والانتقال التالي')}
-                </span>
-                <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary-light to-primary opacity-0 group-hover/btn:opacity-100 transition-opacity"></div>
-              </Button>
+            {/* Navigation / Submit (Desktop View) */}
+            <div className="hidden sm:block mt-8 sm:mt-16">
+              <div className="flex flex-col sm:flex-row-reverse gap-3 sm:gap-4">
+                <Button
+                  variant="primary"
+                  onClick={() => submitAnswer(selectedAnswer)}
+                  disabled={!selectedAnswer || submitting}
+                  loading={submitting}
+                  className={`flex-1 h-14 sm:h-20 rounded-2xl sm:rounded-[32px] text-base sm:text-xl font-black transition-all duration-300 relative overflow-hidden group/btn justify-center border-2 ${
+                    !selectedAnswer 
+                      ? 'bg-surface-secondary/50 dark:bg-white/[0.02] border-border-theme-secondary/45 text-text-theme-muted/40 cursor-not-allowed pointer-events-none' 
+                      : 'bg-primary border-primary text-white shadow-[0_20px_50px_rgba(66,99,235,0.3)] hover:scale-[1.02] active:scale-[0.98]'
+                  }`}
+                >
+                  <span className="relative z-10">
+                    {submitting ? 'جاري الحفظ...' : (attemptData?.progress?.current === attemptData?.progress?.total ? 'إنهاء وتسليم الامتحان' : 'تأكيد الإجابة والانتقال التالي')}
+                  </span>
+                  {selectedAnswer && (
+                    <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary-light to-primary opacity-0 group-hover/btn:opacity-100 transition-opacity"></div>
+                  )}
+                </Button>
+                
+                <Button
+                  variant="ghost"
+                  onClick={() => submitAnswer(null)}
+                  disabled={submitting}
+                  className="rounded-2xl sm:rounded-[32px] text-sm sm:text-lg font-bold border-2 border-border-theme-secondary hover:border-border-theme-primary text-text-theme-secondary hover:bg-surface-hover h-14 sm:h-20 px-6 sm:px-10 justify-center transition-all"
+                >
+                  تخطي السؤال
+                </Button>
+              </div>
               <div className="flex items-center justify-center gap-2 mt-4 sm:mt-6 text-gray-500">
                 <Icon name="info-circle" size="xs" />
                 <p className="text-center text-[10px] sm:text-xs font-bold tracking-wide uppercase">يرجى التأكد من الإجابة، لا يمكن العودة للأسئلة السابقة</p>
               </div>
             </div>
-          </div>
+
+          </div> {/* Closing Card */}
+        </div> {/* Closing relative wrapper */}
+
+        {/* Sticky Mobile Footer Panel (Mobile View) */}
+        <div className="sm:hidden fixed bottom-0 left-0 right-0 z-45 bg-surface-primary/95 dark:bg-[#101426]/95 backdrop-blur-md border-t border-border-theme-secondary p-3 flex gap-2 shadow-[0_-10px_30px_rgba(0,0,0,0.15)] animate-fade-in">
+          <Button
+            variant="primary"
+            onClick={() => submitAnswer(selectedAnswer)}
+            disabled={!selectedAnswer || submitting}
+            loading={submitting}
+            className={`flex-[2] h-12 rounded-xl text-sm font-black transition-all border ${
+              !selectedAnswer 
+                ? 'bg-surface-secondary/50 dark:bg-white/[0.02] border-border-theme-secondary/40 text-text-theme-muted/40 cursor-not-allowed pointer-events-none' 
+                : 'bg-primary border-primary text-white shadow-md'
+            }`}
+          >
+            {attemptData?.progress?.current === attemptData?.progress?.total ? 'إنهاء وتسليم' : 'تأكيد وتالي'}
+          </Button>
+          <Button
+            variant="ghost"
+            onClick={() => submitAnswer(null)}
+            disabled={submitting}
+            className="flex-1 h-12 rounded-xl text-xs font-bold border border-border-theme-secondary text-text-theme-secondary hover:bg-surface-hover"
+          >
+            تخطي
+          </Button>
         </div>
       </div>
     </DashboardLayout>

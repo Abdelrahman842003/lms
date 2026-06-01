@@ -152,8 +152,8 @@ export default function AcademyGroupsPage() {
 
   // Stats
   const totalGroups = totalItems;
-  const totalStudents = groups.reduce((sum, group) => sum + (group.students_count || 0), 0);
-  const activeGroups = groups.filter(g => (g.students_count || 0) > 0).length;
+  const totalStudents = (groups || []).reduce((sum, group) => sum + (group.students_count || 0), 0);
+  const activeGroups = (groups || []).filter(g => (g.students_count || 0) > 0).length;
   const avgStudentsPerGroup = totalGroups > 0 ? Math.round(totalStudents / totalGroups) : 0;
 
   useEffect(() => {
@@ -167,10 +167,10 @@ export default function AcademyGroupsPage() {
     try {
       setIsLoading(true);
       const response = await academyService.getGroups(page, itemsPerPage, { search: searchQuery });
-      setGroups(response.data.data);
-      setTotalPages(response.data.meta.last_page);
-      setTotalItems(response.data.meta.total);
-      setCurrentPage(response.data.meta.current_page);
+      setGroups(response.data || []);
+      setTotalPages(response.meta?.last_page || 1);
+      setTotalItems(response.meta?.total || 0);
+      setCurrentPage(response.meta?.current_page || 1);
     } catch (error) {
       // Error handled silently
     } finally {

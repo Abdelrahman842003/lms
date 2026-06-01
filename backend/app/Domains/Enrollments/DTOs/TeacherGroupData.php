@@ -25,7 +25,7 @@ class TeacherGroupData
             name: $request->validated('name'),
             grade_id: $request->validated('grade_id'),
             description: $request->validated('description'),
-            academy_id: $request->validated('academy_id'),
+            academy_id: $request->input('academy_id'),
             time: $request->validated('time'),
             days: $request->validated('days'),
             type: self::normalizeType($request->validated('type')),
@@ -43,15 +43,19 @@ class TeacherGroupData
 
     public function toArray(): array
     {
-        return array_filter([
+        $data = [
             'name' => $this->name,
-            'grade_id' => $this->grade_id,
-            'description' => $this->description,
             'academy_id' => $this->academy_id,
-            'time' => $this->time,
-            'days' => $this->days,
-            'type' => $this->type,
-            'price' => $this->price,
-        ], fn($value) => !is_null($value));
+        ];
+
+        // Only include optional fields if they are not null
+        if (!is_null($this->grade_id)) $data['grade_id'] = $this->grade_id;
+        if (!is_null($this->description)) $data['description'] = $this->description;
+        if (!is_null($this->time)) $data['time'] = $this->time;
+        if (!is_null($this->days)) $data['days'] = $this->days;
+        if (!is_null($this->type)) $data['type'] = $this->type;
+        if (!is_null($this->price)) $data['price'] = $this->price;
+
+        return $data;
     }
 }

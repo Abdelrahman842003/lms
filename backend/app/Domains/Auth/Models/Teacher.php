@@ -46,6 +46,11 @@ class Teacher extends Authenticatable
 
     protected $connection = 'mysql'; // Central DB
 
+    public function getConnectionName()
+    {
+        return app()->runningUnitTests() ? config('database.default') : $this->connection;
+    }
+
     protected $fillable = [
         'name',
         'phone',

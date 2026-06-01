@@ -21,7 +21,7 @@ export const InteractiveMatching: React.FC<InteractiveMatchingProps> = ({
   const [selectedPoint, setSelectedPoint] = useState<{ id: string; type: 'key' | 'val'; x: number; y: number } | null>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [lineCoords, setLineCoords] = useState<any[]>([]);
-  const [activeMobileKey, setActiveMobileKey] = useState<string | null>(null);
+  const [mobileSelected, setMobileSelected] = useState<{ id: string; type: 'key' | 'val' } | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   
   useEffect(() => {
@@ -38,8 +38,23 @@ export const InteractiveMatching: React.FC<InteractiveMatchingProps> = ({
   const memoKeys = useMemo(() => keys, [keys]);
   const memoValues = useMemo(() => values, [values]);
 
+  const getMatchColors = useCallback((index: number) => {
+    const colors = [
+      { bg: 'bg-indigo-500/10 dark:bg-indigo-500/20', border: 'border-indigo-500/40 dark:border-indigo-500/50 hover:border-indigo-500', text: 'text-indigo-600 dark:text-indigo-450', badge: 'bg-indigo-500', stroke: 'text-indigo-500', hex: '#6366f1' },
+      { bg: 'bg-emerald-500/10 dark:bg-emerald-500/20', border: 'border-emerald-500/40 dark:border-emerald-500/50 hover:border-emerald-500', text: 'text-emerald-600 dark:text-emerald-450', badge: 'bg-emerald-500', stroke: 'text-emerald-500', hex: '#10b981' },
+      { bg: 'bg-violet-500/10 dark:bg-violet-500/20', border: 'border-violet-500/40 dark:border-violet-500/50 hover:border-violet-500', text: 'text-violet-600 dark:text-violet-450', badge: 'bg-violet-500', stroke: 'text-violet-500', hex: '#8b5cf6' },
+      { bg: 'bg-amber-500/10 dark:bg-amber-500/20', border: 'border-amber-500/40 dark:border-amber-500/50 hover:border-amber-500', text: 'text-amber-600 dark:text-amber-450', badge: 'bg-amber-500', stroke: 'text-amber-500', hex: '#f59e0b' },
+      { bg: 'bg-rose-500/10 dark:bg-rose-500/20', border: 'border-rose-500/40 dark:border-rose-500/50 hover:border-rose-500', text: 'text-rose-600 dark:text-rose-450', badge: 'bg-rose-500', stroke: 'text-rose-500', hex: '#f43f5e' },
+    ];
+    return colors[index % colors.length];
+  }, []);
+
+  const getKeyForValue = useCallback((val: string) => {
+    return Object.keys(matches).find(k => matches[k] === val);
+  }, [matches]);
+
   const updateLineCoords = useCallback(() => {
-    if (!containerRef.current) return;
+    if (!containerRef.current || isMobile) return;
     
     const containerRect = containerRef.current.getBoundingClientRect();
     const newCoords = Object.entries(matches).map(([key, val]) => {
@@ -49,10 +64,12 @@ export const InteractiveMatching: React.FC<InteractiveMatchingProps> = ({
       if (keyEl && valEl) {
         const keyRect = keyEl.getBoundingClientRect();
         const valRect = valEl.getBoundingClientRect();
+        const matchIdx = keys.indexOf(key);
         
         return {
           key,
           val,
+          matchIdx,
           x1: keyRect.left - containerRect.left + keyRect.width / 2,
           y1: keyRect.top - containerRect.top + keyRect.height / 2,
           x2: valRect.left - containerRect.left + valRect.width / 2,
@@ -63,7 +80,7 @@ export const InteractiveMatching: React.FC<InteractiveMatchingProps> = ({
     }).filter(Boolean);
     
     setLineCoords(newCoords);
-  }, [matches]);
+  }, [matches, keys, isMobile]);
 
   useEffect(() => {
     updateLineCoords();
@@ -94,7 +111,7 @@ export const InteractiveMatching: React.FC<InteractiveMatchingProps> = ({
 
     if (!selectedPoint) {
       setSelectedPoint({ id, type, x, y });
-      setMousePos({ x, y }); // Initialize mousePos at the point
+      setMousePos({ x, y });
     } else {
       if (selectedPoint.type !== type) {
         const keyId = type === 'key' ? id : selectedPoint.id;
@@ -106,6 +123,24 @@ export const InteractiveMatching: React.FC<InteractiveMatchingProps> = ({
       }
     }
   };
+
+  const handleMobileClick = useCallback((id: string, type: 'key' | 'val') => {
+    if (disabled) return;
+    if (!mobileSelected) {
+      setMobileSelected({ id, type });
+    } else {
+      if (mobileSelected.id === id && mobileSelected.type === type) {
+        setMobileSelected(null);
+      } else if (mobileSelected.type !== type) {
+        const keyId = type === 'key' ? id : mobileSelected.id;
+        const valId = type === 'val' ? id : mobileSelected.id;
+        onMatch(keyId, valId);
+        setMobileSelected(null);
+      } else {
+        setMobileSelected({ id, type });
+      }
+    }
+  }, [disabled, mobileSelected, onMatch]);
 
   useEffect(() => {
     if (!selectedPoint) return;
@@ -123,226 +158,183 @@ export const InteractiveMatching: React.FC<InteractiveMatchingProps> = ({
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, [selectedPoint]);
 
-  const drawLine = (x1: number, y1: number, x2: number, y2: number, isGhost = false) => {
+  const drawLine = (x1: number, y1: number, x2: number, y2: number, isGhost = false, matchIdx = -1) => {
     const dx = x2 - x1;
     const curveWidth = Math.abs(dx) * 0.5;
     const cp1x = x1 - curveWidth;
     const cp2x = x2 + curveWidth;
     
+    const colors = matchIdx !== -1 ? getMatchColors(matchIdx) : null;
+    const strokeColor = isGhost ? 'rgba(66, 99, 235, 0.4)' : 'currentColor';
+    const textClass = isGhost ? 'animate-pulse text-primary-light' : (colors ? colors.stroke : 'text-primary-light');
+    
     return (
       <path
         d={`M ${x1} ${y1} C ${cp1x} ${y1}, ${cp2x} ${y2}, ${x2} ${y2}`}
         fill="none"
-        stroke={isGhost ? 'rgba(66, 99, 235, 0.4)' : 'currentColor'}
+        stroke={strokeColor}
         strokeWidth={isGhost ? 2 : 4}
         strokeDasharray={isGhost ? '8,8' : 'none'}
         strokeLinecap="round"
-        className={isGhost ? 'animate-pulse' : 'text-primary-light'}
+        className={`${textClass} transition-all duration-300`}
         style={isGhost ? {} : { filter: 'url(#glow)' }}
-        markerEnd={isGhost ? 'none' : 'url(#arrowhead)'}
+        markerEnd={isGhost ? 'none' : (matchIdx !== -1 ? `url(#arrowhead-${matchIdx % 5})` : 'url(#arrowhead-default)')}
       />
     );
   };
 
-  if (isMobile) {
-    return (
-      <div className="space-y-4 w-full mt-4 select-none bg-surface-secondary/30 dark:bg-[#0a0f1d]/40 rounded-2xl border border-border-theme-primary p-4 shadow-[0_20px_50px_rgba(0,0,0,0.3)]">
-        <div className="text-center mb-3">
-          <span className="px-3 py-1 rounded-full bg-surface-secondary border border-border-theme-secondary text-text-theme-secondary text-[10px] font-black tracking-widest uppercase shadow-sm">
-            قم بتوصيل العناصر التالية
+  const totalPairs = memoKeys.length;
+  const matchedPairsCount = Object.keys(matches).filter(k => matches[k]).length;
+  const remainingCount = totalPairs - matchedPairsCount;
+
+  return (
+    <div ref={containerRef} className="relative w-full mt-4 sm:mt-6 select-none bg-surface-secondary/30 dark:bg-[#0a0f1d]/40 rounded-3xl sm:rounded-[48px] border border-border-theme-primary p-3 sm:p-8 md:p-16 overflow-visible shadow-[0_20px_50px_rgba(0,0,0,0.3)]">
+      {/* Progress tracking header */}
+      <div className="flex items-center justify-between mb-4 sm:mb-8 bg-surface-secondary/50 dark:bg-black/20 px-4 py-3 rounded-2xl border border-border-theme-secondary/40">
+        <span className="text-xs sm:text-sm font-bold text-text-theme-secondary">توصيل العناصر المتطابقة</span>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] sm:text-xs font-bold text-text-theme-muted">المتبقي:</span>
+          <span className={`px-2.5 py-1 rounded-lg text-xs font-black ${remainingCount === 0 ? 'bg-success/15 text-success' : 'bg-primary/10 text-primary-light animate-pulse'}`}>
+            {remainingCount} من {totalPairs}
           </span>
         </div>
+      </div>
 
-        <div className="space-y-3">
-          {keys.map((key, kIdx) => {
-            const matchedVal = matches[key];
-            const isMatched = !!matchedVal;
-            const isSelected = activeMobileKey === key;
-
-            return (
-              <div 
-                key={kIdx} 
-                className={`p-3.5 rounded-xl border-2 transition-all duration-300 bg-surface-primary dark:bg-[#101426]/80 backdrop-blur-xl
-                  ${isSelected ? 'border-primary shadow-[0_0_20px_rgba(66,99,235,0.25)]' : isMatched ? 'border-emerald-500/30' : 'border-border-theme-secondary'}`}
+      {!isMobile && (
+        <svg className="absolute inset-0 w-full h-full pointer-events-none z-10 overflow-visible">
+          <defs>
+            <marker
+              id="arrowhead-default"
+              markerWidth="10"
+              markerHeight="7"
+              refX="9"
+              refY="3.5"
+              orient="auto"
+            >
+              <polygon points="0 0, 10 3.5, 0 7" fill="#4263eb" />
+            </marker>
+            {Array.from({ length: 5 }).map((_, i) => (
+              <marker
+                key={i}
+                id={`arrowhead-${i}`}
+                markerWidth="10"
+                markerHeight="7"
+                refX="9"
+                refY="3.5"
+                orient="auto"
               >
-                {/* Header of the Key Item */}
-                <div 
-                  onClick={() => setActiveMobileKey(isSelected ? null : key)}
-                  className="flex items-center justify-between cursor-pointer"
+                <polygon points="0 0, 10 3.5, 0 7" fill={getMatchColors(i).hex} />
+              </marker>
+            ))}
+            <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="4" result="blur" />
+              <feComposite in="SourceGraphic" in2="blur" operator="over" />
+            </filter>
+          </defs>
+          
+          {lineCoords.map((line) => (
+            <g key={`${line.key}-${line.val}`}>
+              {/* Thicker background path for neon effect */}
+              <path
+                d={`M ${line.x1} ${line.y1} C ${line.x1 - Math.abs(line.x2 - line.x1) * 0.5} ${line.y1}, ${line.x2 + Math.abs(line.x2 - line.x1) * 0.5} ${line.y2}, ${line.x2} ${line.y2}`}
+                fill="none"
+                stroke={line.matchIdx !== -1 ? getMatchColors(line.matchIdx).hex : "rgba(66, 99, 235, 0.15)"}
+                strokeOpacity="0.15"
+                strokeWidth="12"
+                strokeLinecap="round"
+              />
+              {drawLine(line.x1, line.y1, line.x2, line.y2, false, line.matchIdx)}
+            </g>
+          ))}
+
+          {selectedPoint && drawLine(selectedPoint.x, selectedPoint.y, mousePos.x, mousePos.y, true)}
+        </svg>
+      )}
+      
+      <div className="grid grid-cols-2 gap-3 sm:gap-16 md:gap-32 relative z-20">
+        {/* Right Column (Keys - Element / "العنصر") - First in RTL Grid */}
+        <div className="space-y-3 sm:space-y-6 text-right">
+          <div className="text-center mb-2 sm:mb-4">
+            <span className="px-3 py-1.5 sm:px-6 sm:py-2 rounded-xl sm:rounded-2xl bg-surface-secondary border border-border-theme-secondary text-text-theme-secondary text-[10px] sm:text-xs font-black uppercase tracking-[0.1em] sm:tracking-[0.3em] shadow-sm">العنصر</span>
+          </div>
+          {memoKeys.map((key, idx) => {
+            const isMatched = !!matches[key];
+            const matchIndex = keys.indexOf(key);
+            const isSelected = isMobile
+              ? (mobileSelected?.type === 'key' && mobileSelected.id === key)
+              : (selectedPoint?.type === 'key' && selectedPoint.id === key);
+            const colors = isMatched && matchIndex !== -1 ? getMatchColors(matchIndex) : null;
+            
+            return (
+              <div key={idx} className="flex items-center gap-2 sm:gap-4 md:gap-6 group">
+                <button
+                  type="button"
+                  onClick={(e) => isMobile ? handleMobileClick(key, 'key') : handlePointClick(key, 'key', e)}
+                  className={`flex-1 p-3.5 sm:p-5 md:p-6 min-h-[48px] sm:min-h-[64px] rounded-2xl sm:rounded-3xl border-2 transition-all duration-300 text-center font-bold text-sm sm:text-lg md:text-xl relative flex items-center justify-center ${
+                    isSelected ? 'bg-primary/20 border-primary shadow-[0_0_25px_rgba(66,99,235,0.25)] scale-[1.02] z-30 text-text-theme-primary font-black' :
+                    isMatched && colors ? `${colors.bg} ${colors.border} text-text-theme-primary shadow-sm` :
+                    'bg-surface-secondary border-border-theme-secondary hover:border-border-theme-primary text-text-theme-secondary hover:text-text-theme-primary hover:bg-surface-hover'
+                  }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <span className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center text-primary-light text-xs font-black">
-                      {kIdx + 1}
-                    </span>
-                    <span className="text-text-theme-primary font-bold text-sm">{key}</span>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    {isMatched ? (
-                      <span className="px-2.5 py-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold flex items-center gap-1.5 animate-in fade-in duration-300">
-                        <Icon name="check" className="text-[10px]" />
-                        <span>{matchedVal}</span>
-                      </span>
-                    ) : (
-                      <span className="px-2.5 py-0.5 rounded-lg bg-surface-secondary border border-border-theme-secondary text-text-theme-secondary text-xs font-bold flex items-center gap-1.5">
-                        <Icon name="link" className="text-[10px] text-text-theme-muted" />
-                        <span>توصيل</span>
-                      </span>
-                    )}
-                    <Icon 
-                      name="chevron-down" 
-                      className={`text-text-theme-muted text-[10px] transition-transform duration-300 ${isSelected ? 'rotate-180 text-primary-light' : ''}`} 
-                    />
-                  </div>
-                </div>
-
-                {/* Values Selection Tray */}
-                {isSelected && (
-                  <div className="mt-3 pt-3 border-t border-border-theme-secondary animate-in slide-in-from-top-4 duration-300">
-                    <p className="text-[9px] font-black text-text-theme-muted/50 uppercase tracking-widest mb-2 text-right">اختر المطابق:</p>
-                    <div className="grid grid-cols-2 gap-2">
-                      {values.map((val, vIdx) => {
-                        const isValMatched = Object.values(matches).includes(val);
-                        const isThisValMatched = matchedVal === val;
-                        
-                        return (
-                          <button
-                            key={vIdx}
-                            type="button"
-                            onClick={() => {
-                              onMatch(key, val);
-                              setActiveMobileKey(null);
-                            }}
-                            className={`p-2.5 rounded-lg border-2 text-center text-xs font-bold transition-all duration-200
-                              ${isThisValMatched 
-                                ? 'bg-emerald-500/10 border-emerald-500 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.15)]' 
-                                : isValMatched
-                                ? 'bg-surface-tertiary border-border-theme-secondary text-text-theme-muted opacity-60'
-                                : 'bg-surface-secondary border-border-theme-secondary text-text-theme-secondary hover:border-border-theme-primary'}`}
-                          >
-                            {val}
-                          </button>
-                        );
-                      })}
+                  <span className="truncate max-w-[80%]">{key}</span>
+                  {isMatched && matchIndex !== -1 && (
+                    <div className={`absolute left-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-black shadow-sm ${colors?.badge} animate-in zoom-in-50 duration-300`}>
+                      {matchIndex + 1}
                     </div>
-                  </div>
+                  )}
+                </button>
+                {!isMobile && (
+                  <div 
+                    ref={el => { keyRefs.current[key] = el; }}
+                    className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full border-2 sm:border-4 transition-all duration-300 flex-shrink-0 cursor-pointer ${
+                      isSelected || isMatched ? 'bg-primary border-primary-light shadow-[0_0_20px_rgba(66,99,235,0.8)] scale-110' : 'bg-surface-tertiary border-border-theme-secondary group-hover:border-primary/50'
+                    }`}
+                    onClick={(e) => handlePointClick(key, 'key', e)}
+                  />
                 )}
               </div>
             );
           })}
         </div>
-      </div>
-    );
-  }
 
-  return (
-    <div ref={containerRef} className="relative w-full mt-6 select-none bg-surface-secondary/30 dark:bg-[#0a0f1d]/40 rounded-3xl sm:rounded-[48px] border border-border-theme-primary p-4 sm:p-8 md:p-16 overflow-visible shadow-[0_20px_50px_rgba(0,0,0,0.3)]">
-      <svg className="absolute inset-0 w-full h-full pointer-events-none z-10 overflow-visible">
-        <defs>
-          <marker
-            id="arrowhead"
-            markerWidth="10"
-            markerHeight="7"
-            refX="9"
-            refY="3.5"
-            orient="auto"
-          >
-            <polygon points="0 0, 10 3.5, 0 7" fill="#4263eb" />
-          </marker>
-          <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="4" result="blur" />
-            <feComposite in="SourceGraphic" in2="blur" operator="over" />
-          </filter>
-        </defs>
-        
-        {lineCoords.map((line) => (
-          <g key={`${line.key}-${line.val}`}>
-             {/* Thicker background path for neon effect */}
-            <path
-                d={`M ${line.x1} ${line.y1} C ${line.x1 - Math.abs(line.x2 - line.x1) * 0.5} ${line.y1}, ${line.x2 + Math.abs(line.x2 - line.x1) * 0.5} ${line.y2}, ${line.x2} ${line.y2}`}
-                fill="none"
-                stroke="rgba(66, 99, 235, 0.15)"
-                strokeWidth="12"
-                strokeLinecap="round"
-            />
-            {drawLine(line.x1, line.y1, line.x2, line.y2)}
-          </g>
-        ))}
-
-        {selectedPoint && drawLine(selectedPoint.x, selectedPoint.y, mousePos.x, mousePos.y, true)}
-      </svg>
-
-      <div className="grid grid-cols-2 gap-4 sm:gap-16 md:gap-32 relative z-20">
-        {/* Left Column (Values) */}
-        <div className="space-y-4 sm:space-y-8">
-          <div className="text-center mb-4 sm:mb-8">
-              <span className="px-3 py-1.5 sm:px-6 sm:py-2 rounded-xl sm:rounded-2xl bg-surface-secondary border border-border-theme-secondary text-text-theme-secondary text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] sm:tracking-[0.4em] shadow-sm">المطابق</span>
+        {/* Left Column (Values - Match / "المطابق") - Second in RTL Grid */}
+        <div className="space-y-3 sm:space-y-6">
+          <div className="text-center mb-2 sm:mb-4">
+            <span className="px-3 py-1.5 sm:px-6 sm:py-2 rounded-xl sm:rounded-2xl bg-surface-secondary border border-border-theme-secondary text-text-theme-secondary text-[10px] sm:text-xs font-black uppercase tracking-[0.1em] sm:tracking-[0.3em] shadow-sm">المطابق</span>
           </div>
           {memoValues.map((val, idx) => {
-            const isMatched = Object.values(matches).includes(val);
-            const isSelected = selectedPoint?.type === 'val' && selectedPoint.id === val;
+            const matchedKey = getKeyForValue(val);
+            const isMatched = !!matchedKey;
+            const matchIndex = matchedKey ? keys.indexOf(matchedKey) : -1;
+            const isSelected = isMobile
+              ? (mobileSelected?.type === 'val' && mobileSelected.id === val)
+              : (selectedPoint?.type === 'val' && selectedPoint.id === val);
+            const colors = isMatched && matchIndex !== -1 ? getMatchColors(matchIndex) : null;
             
             return (
               <div key={idx} className="flex items-center gap-2 sm:gap-4 md:gap-6 group">
+                {!isMobile && (
+                  <div 
+                    ref={el => { valRefs.current[val] = el; }}
+                    className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full border-2 sm:border-4 transition-all duration-300 flex-shrink-0 cursor-pointer ${
+                      isSelected || isMatched ? 'bg-primary border-primary-light shadow-[0_0_20px_rgba(66,99,235,0.8)] scale-110' : 'bg-surface-tertiary border-border-theme-secondary group-hover:border-primary/50'
+                    }`}
+                    onClick={(e) => handlePointClick(val, 'val', e)}
+                  />
+                )}
                 <button
                   type="button"
-                  onClick={(e) => handlePointClick(val, 'val', e)}
-                  className={`flex-1 p-3 sm:p-5 md:p-6 rounded-2xl sm:rounded-3xl border-2 transition-all duration-500 text-center font-bold text-sm sm:text-lg md:text-xl relative ${
-                    isSelected ? 'bg-primary/20 border-primary shadow-[0_0_50px_rgba(66,99,235,0.4)] scale-[1.03] z-30 text-text-theme-primary' :
-                    isMatched ? 'bg-primary/10 border-primary/40 text-text-theme-primary shadow-[inset_0_0_30px_rgba(66,99,235,0.1)]' :
+                  onClick={(e) => isMobile ? handleMobileClick(val, 'val') : handlePointClick(val, 'val', e)}
+                  className={`flex-1 p-3.5 sm:p-5 md:p-6 min-h-[48px] sm:min-h-[64px] rounded-2xl sm:rounded-3xl border-2 transition-all duration-300 text-center font-bold text-sm sm:text-lg md:text-xl relative flex items-center justify-center ${
+                    isSelected ? 'bg-primary/20 border-primary shadow-[0_0_25px_rgba(66,99,235,0.25)] scale-[1.02] z-30 text-text-theme-primary font-black' :
+                    isMatched && colors ? `${colors.bg} ${colors.border} text-text-theme-primary shadow-sm` :
                     'bg-surface-secondary border-border-theme-secondary hover:border-border-theme-primary text-text-theme-secondary hover:text-text-theme-primary hover:bg-surface-hover'
                   }`}
                 >
-                  {val}
-                  {isMatched && (
-                    <div className="absolute -top-2 -left-2 sm:-top-3 sm:-left-3 w-6 h-6 sm:w-8 sm:h-8 bg-primary rounded-lg sm:rounded-xl flex items-center justify-center border-2 border-surface-primary shadow-2xl animate-in zoom-in-50 duration-300">
-                      <Icon name="check" size="xs" className="text-[#ffffff]" />
-                    </div>
-                  )}
-                </button>
-                <div 
-                  ref={el => { valRefs.current[val] = el; }}
-                  className={`w-5 h-5 sm:w-7 sm:h-7 rounded-full border-2 sm:border-4 transition-all duration-500 flex-shrink-0 cursor-pointer ${
-                    isSelected || isMatched ? 'bg-primary border-primary-light shadow-[0_0_30px_rgba(66,99,235,1)] scale-110 sm:scale-125' : 'bg-surface-tertiary border-border-theme-secondary group-hover:border-primary/50'
-                  }`}
-                  onClick={(e) => handlePointClick(val, 'val', e)}
-                />
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Right Column (Keys) */}
-        <div className="space-y-4 sm:space-y-8 text-right">
-          <div className="text-center mb-4 sm:mb-8">
-              <span className="px-3 py-1.5 sm:px-6 sm:py-2 rounded-xl sm:rounded-2xl bg-surface-secondary border border-border-theme-secondary text-text-theme-secondary text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] sm:tracking-[0.4em] shadow-sm">العنصر</span>
-          </div>
-          {memoKeys.map((key, idx) => {
-            const isMatched = !!matches[key];
-            const isSelected = selectedPoint?.type === 'key' && selectedPoint.id === key;
-            
-            return (
-              <div key={idx} className="flex items-center gap-2 sm:gap-4 md:gap-6 group">
-                <div 
-                  ref={el => { keyRefs.current[key] = el; }}
-                  className={`w-5 h-5 sm:w-7 sm:h-7 rounded-full border-2 sm:border-4 transition-all duration-500 flex-shrink-0 cursor-pointer ${
-                    isSelected || isMatched ? 'bg-primary border-primary-light shadow-[0_0_30px_rgba(66,99,235,1)] scale-110 sm:scale-125' : 'bg-surface-tertiary border-border-theme-secondary group-hover:border-primary/50'
-                  }`}
-                  onClick={(e) => handlePointClick(key, 'key', e)}
-                />
-                <button
-                  type="button"
-                  onClick={(e) => handlePointClick(key, 'key', e)}
-                  className={`flex-1 p-3 sm:p-5 md:p-6 rounded-2xl sm:rounded-3xl border-2 transition-all duration-500 text-center font-bold text-sm sm:text-lg md:text-xl relative ${
-                    isSelected ? 'bg-primary/20 border-primary shadow-[0_0_50px_rgba(66,99,235,0.4)] scale-[1.03] z-30 text-text-theme-primary' :
-                    isMatched ? 'bg-primary/10 border-primary/40 text-text-theme-primary shadow-[inset_0_0_30px_rgba(66,99,235,0.1)]' :
-                    'bg-surface-secondary border-border-theme-secondary hover:border-border-theme-primary text-text-theme-secondary hover:text-text-theme-primary hover:bg-surface-hover'
-                  }`}
-                >
-                  {key}
-                  {isMatched && (
-                    <div className="absolute -top-2 -right-2 sm:-top-3 sm:-right-3 w-6 h-6 sm:w-8 sm:h-8 bg-primary rounded-lg sm:rounded-xl flex items-center justify-center border-2 border-surface-primary shadow-2xl animate-in zoom-in-50 duration-300">
-                      <Icon name="check" size="xs" className="text-[#ffffff]" />
+                  <span className="truncate max-w-[80%]">{val}</span>
+                  {isMatched && matchIndex !== -1 && (
+                    <div className={`absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-black shadow-sm ${colors?.badge} animate-in zoom-in-50 duration-300`}>
+                      {matchIndex + 1}
                     </div>
                   )}
                 </button>

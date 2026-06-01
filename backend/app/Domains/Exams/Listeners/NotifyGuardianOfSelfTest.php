@@ -16,7 +16,8 @@ class NotifyGuardianOfSelfTest implements ShouldQueue
         $exam = $attempt->exam;
 
         // Only notify for self-tests
-        if ($exam->type->value !== 'self_test' && $exam->type !== 'self_test') {
+        $type = $exam->type instanceof \BackedEnum ? $exam->type->value : $exam->type;
+        if ($type !== 'self_test') {
             return;
         }
 

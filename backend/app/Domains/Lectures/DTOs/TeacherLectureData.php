@@ -62,8 +62,10 @@ final readonly class TeacherLectureData
             'recurrence_days' => $this->recurrenceDays,
             'recurrence_time' => $this->recurrenceTime,
             'duration_minutes' => $this->durationMinutes,
-            'academy_id' => $this->academyId,
         ], fn($value) => !is_null($value));
+
+        // Always include academy_id (null = independent mode)
+        $data['academy_id'] = $this->academyId;
 
         // Handle date/time logic if date is provided
         if ($this->date) {

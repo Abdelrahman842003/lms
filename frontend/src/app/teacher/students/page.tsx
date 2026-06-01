@@ -15,7 +15,7 @@ import Link from 'next/link';
 import toast from 'react-hot-toast';
 
 export default function StudentsPage() {
-  const { user } = useAuth();
+  const { user, selectedAcademy, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const [students, setStudents] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -39,18 +39,17 @@ export default function StudentsPage() {
   const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
+    if (authLoading) return;
     fetchStudents();
-  }, [currentPage, statusFilter, searchQuery]);
+  }, [currentPage, statusFilter, searchQuery, selectedAcademy?.id, authLoading]);
 
   const fetchStudents = async () => {
     try {
       setIsLoading(true);
       const response = await getTeacherStudents(currentPage, 10, searchQuery, statusFilter);
-      // Assuming response structure matches what we saw in secretaryService
-      // If getTeacherStudents returns the 'students' object directly:
-      setStudents(response.students || []);
-      setTotalPages(Math.ceil((response.total || 0) / 10));
-      setTotalItems(response.total || 0);
+      setStudents(response?.students || []);
+      setTotalPages(Math.ceil((response?.total || 0) / 10));
+      setTotalItems(response?.total || 0);
     } catch (error) {
       console.error('Failed to fetch students:', error);
     } finally {

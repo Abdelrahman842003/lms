@@ -213,6 +213,11 @@ export default function StudentProfilePage() {
       const result = await response.json();
 
       if (!response.ok) {
+        if (result.errors) {
+          // Collect validation errors into a single message
+          const errorMessages = Object.values(result.errors).flat().join('\\n');
+          throw new Error(errorMessages || result.message || 'فشل تحديث الملف الشخصي');
+        }
         throw new Error(result.message || 'فشل تحديث الملف الشخصي');
       }
 
@@ -289,6 +294,10 @@ export default function StudentProfilePage() {
       const data = await response.json();
 
       if (!response.ok) {
+        if (data.errors) {
+          const errorMessages = Object.values(data.errors).flat().join('\\n');
+          throw new Error(errorMessages || data.message || 'فشل تغيير كلمة المرور');
+        }
         throw new Error(data.message || 'فشل تغيير كلمة المرور');
       }
 

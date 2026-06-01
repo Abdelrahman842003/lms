@@ -34,8 +34,8 @@ const ScanAttendanceModal: React.FC<ScanAttendanceModalProps> = ({ isOpen, onClo
   };
 
   const getCameraErrorMessage = (error: any) => {
-    if (typeof window !== 'undefined' && !window.isSecureContext) {
-      return 'تشغيل الكاميرا يتطلب HTTPS أو localhost.';
+    if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1' && window.location.protocol !== 'https:') {
+      return 'تطبيق الكاميرا يتطلب اتصال آمن (HTTPS) أو استخدام Localhost. يرجى التأكد من الرابط.';
     }
 
     const name = String(error?.name || '').toLowerCase();

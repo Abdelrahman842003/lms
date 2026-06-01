@@ -12,7 +12,7 @@ import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { getGrades, createGrade, updateGrade, deleteGrade, Grade, CreateGradeData } from '@/services/gradeService';
 
 export default function GradesPage() {
-  const { user } = useAuth();
+  const { user, selectedAcademy, isLoading: authLoading } = useAuth();
   const [grades, setGrades] = useState<Grade[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -88,25 +88,27 @@ export default function GradesPage() {
 
   // Stats
   const totalGrades = totalItems;
-  const totalGroups = grades.reduce((sum, grade) => sum + grade.groups_count, 0);
-  const totalStudents = grades.reduce((sum, grade) => sum + grade.students_count, 0);
+  const totalGroups = (grades || []).reduce((sum, grade) => sum + (grade.groups_count || 0), 0);
+  const totalStudents = (grades || []).reduce((sum, grade) => sum + (grade.students_count || 0), 0);
   const avgStudentsPerGrade = totalGrades > 0 ? Math.round(totalStudents / totalGrades) : 0;
 
   useEffect(() => {
+    if (authLoading) return;
+
     const timer = setTimeout(() => {
       fetchGrades(1);
     }, 500);
     return () => clearTimeout(timer);
-  }, [searchQuery]);
+  }, [searchQuery, selectedAcademy?.id, authLoading]);
 
   const fetchGrades = async (page = 1) => {
     try {
       setIsLoading(true);
       const response = await getGrades(page, itemsPerPage, { search: searchQuery });
-      setGrades(response.data);
-      setTotalPages(response.meta.last_page);
-      setTotalItems(response.meta.total);
-      setCurrentPage(response.meta.current_page);
+      setGrades(response?.data || []);
+      setTotalPages(response?.meta?.last_page || 1);
+      setTotalItems(response?.meta?.total || 0);
+      setCurrentPage(response?.meta?.current_page || 1);
     } catch (error) {
       console.error('Failed to fetch grades:', error);
     } finally {

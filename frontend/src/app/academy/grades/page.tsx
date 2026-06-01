@@ -104,9 +104,9 @@ export default function AcademyGradesPage() {
   };
 
   // Stats
-  const totalGrades = totalItems; // This is now unique grade names count
-  const totalGroups = grades.reduce((sum, grade) => sum + (grade.groups_count || 0), 0);
-  const totalStudents = grades.reduce((sum, grade) => sum + (grade.students_count || 0), 0);
+  const totalGrades = totalItems;
+  const totalGroups = (grades || []).reduce((sum, grade) => sum + (grade.groups_count || 0), 0);
+  const totalStudents = (grades || []).reduce((sum, grade) => sum + (grade.students_count || 0), 0);
   const avgStudentsPerGrade = totalGrades > 0 ? Math.round(totalStudents / totalGrades) : 0;
 
   useEffect(() => {
@@ -121,10 +121,10 @@ export default function AcademyGradesPage() {
       setIsLoading(true);
       const response = await academyService.getGrades(page, itemsPerPage, searchQuery);
       // The API now returns grouped grades
-      setGrades(response.data.data);
-      setTotalPages(response.data.meta.last_page);
-      setTotalItems(response.data.meta.total);
-      setCurrentPage(response.data.meta.current_page);
+      setGrades(response.data || []);
+      setTotalPages(response.meta?.last_page || 1);
+      setTotalItems(response.meta?.total || 0);
+      setCurrentPage(response.meta?.current_page || 1);
     } catch (error) {
       // Error handled silently
     } finally {

@@ -501,10 +501,21 @@ export async function fetchApi<T = unknown>(
     const storeName = offlineOptions.offlineConfig.storeName;
     const targetStore = (stores as any)[storeName + 'Store'];
     if (targetStore && dataResult) {
-      if (Array.isArray(dataResult)) {
-        targetStore.putMany(dataResult).catch((err: any) => console.error(`[fetchApi] Auto-cache putMany failed for ${storeName}:`, err));
+      // Extract array from paginated response envelope if applicable
+      let itemsToCache = dataResult;
+      if (
+        dataResult &&
+        !Array.isArray(dataResult) &&
+        typeof dataResult === 'object' &&
+        Array.isArray((dataResult as any).data)
+      ) {
+        itemsToCache = (dataResult as any).data;
+      }
+
+      if (Array.isArray(itemsToCache)) {
+        targetStore.putMany(itemsToCache).catch((err: any) => console.error(`[fetchApi] Auto-cache putMany failed for ${storeName}:`, err));
       } else {
-        targetStore.put(dataResult).catch((err: any) => console.error(`[fetchApi] Auto-cache put failed for ${storeName}:`, err));
+        targetStore.put(itemsToCache).catch((err: any) => console.error(`[fetchApi] Auto-cache put failed for ${storeName}:`, err));
       }
     }
   }
