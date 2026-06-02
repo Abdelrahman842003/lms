@@ -227,7 +227,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-body[data-season-theme] {
+body[data-season-theme]:not([data-season-theme="default"]) {
   --primary: var(--seasonal-primary);
   --primary-light: var(--seasonal-primary);
   --primary-dark: var(--seasonal-primary);
@@ -236,14 +236,14 @@ body[data-season-theme] {
   --secondary-dark: var(--seasonal-secondary);
 }
 
-[data-theme="dark"] body[data-season-theme],
-body[data-season-theme][data-theme="dark"] {
+[data-theme="dark"] body[data-season-theme]:not([data-season-theme="default"]),
+body[data-season-theme]:not([data-season-theme="default"])[data-theme="dark"] {
   --dark: var(--seasonal-bg-start-dark);
   --darker: var(--seasonal-bg-end-dark);
 }
 
-[data-theme="light"] body[data-season-theme],
-body[data-season-theme][data-theme="light"] {
+[data-theme="light"] body[data-season-theme]:not([data-season-theme="default"]),
+body[data-season-theme]:not([data-season-theme="default"])[data-theme="light"] {
   --dark: var(--seasonal-bg-start-light);
   --darker: var(--seasonal-bg-end-light);
 }
