@@ -1127,3 +1127,38 @@ select {
   color: var(--text-primary) !important;
   backdrop-filter: blur(10px);
 }
+
+/* Fix Monaco Editor textarea visual and coordinate bugs */
+.code-lab-container textarea,
+.code-lab-container textarea:focus,
+.code-lab-container textarea.inputarea,
+.code-lab-container textarea.inputarea:focus,
+.monaco-editor textarea,
+.monaco-editor textarea:focus,
+.monaco-editor textarea.inputarea,
+.monaco-editor textarea.inputarea:focus,
+.code-lab-container .native-edit-context,
+.code-lab-container .native-edit-context:focus,
+.monaco-editor .native-edit-context,
+.monaco-editor .native-edit-context:focus {
+  background: transparent !important;
+  background-color: transparent !important;
+  color: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  opacity: 0 !important;
+  resize: none !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  position: absolute !important;
+  overflow: hidden !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  pointer-events: none !important;
+}
+
+
+

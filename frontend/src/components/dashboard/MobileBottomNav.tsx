@@ -250,8 +250,15 @@ const getNavItems = (role: string): NavItem[] => {
       icon: 'medal',
       href: '/student/achievements',
     },
+    {
+      id: 'code-lab',
+      label: 'معمل الأكواد',
+      icon: 'code',
+      href: '/student/code-lab',
+    },
   ];
 };
+
 
 export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ role }) => {
   const pathname = usePathname();

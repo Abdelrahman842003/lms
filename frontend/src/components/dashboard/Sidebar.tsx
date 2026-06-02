@@ -175,8 +175,15 @@ const getSidebarItems = (role: string): SidebarItem[] => {
       icon: 'fas fa-exclamation-circle',
       href: '/student/mistakes',
     },
+    {
+      id: 'code-lab',
+      label: 'معمل الأكواد',
+      icon: 'fas fa-code',
+      href: '/student/code-lab',
+    },
   ];
 };
+
 
 const getRoleLabel = (role: string): string => {
   const labels: Record<string, string> = {

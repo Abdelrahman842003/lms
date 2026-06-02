@@ -18,10 +18,10 @@ function generateCSPHeader() {
     "default-src 'self'",
     // Development needs 'unsafe-eval' for Next.js hot reload
     isDev
-      ? "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://static.cloudflareinsights.com"
-      : "script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com",
-    // Allow Google Fonts + cdnjs (Font Awesome) stylesheets
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com",
+      ? "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://static.cloudflareinsights.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com"
+      : "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://static.cloudflareinsights.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com",
+    // Allow Google Fonts + cdnjs (Font Awesome) stylesheets + jsDelivr (Monaco Editor CSS)
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net",
     // Allow Google Fonts + cdnjs (Font Awesome) font files
     "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com",
     "img-src 'self' data: https: blob: https://images.neetaq.com",
@@ -32,7 +32,7 @@ function generateCSPHeader() {
     isDev
       ? "connect-src 'self' https: http://127.0.0.1:* http://localhost:* wss: ws:"
       : "connect-src 'self' https: wss: ws:",
-    "worker-src 'self' blob:",
+    "worker-src 'self' blob: https://cdn.jsdelivr.net https://cdnjs.cloudflare.com",
     "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'",
