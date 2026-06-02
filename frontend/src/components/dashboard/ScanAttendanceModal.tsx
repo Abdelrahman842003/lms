@@ -15,6 +15,12 @@ const ScanAttendanceModal: React.FC<ScanAttendanceModalProps> = ({ isOpen, onClo
   const isScanningRef = useRef<boolean>(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
+  // Detect if running as installed PWA (standalone mode)
+  const isPWA = typeof window !== 'undefined' && (
+    window.matchMedia('(display-mode: standalone)').matches ||
+    (window.navigator as any).standalone === true
+  );
+
   const getQrBox = (viewfinderWidth: number, viewfinderHeight: number) => {
     const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
     const size = Math.floor(minEdge * 0.7);
@@ -28,6 +34,9 @@ const ScanAttendanceModal: React.FC<ScanAttendanceModalProps> = ({ isOpen, onClo
       return 'تشغيل الكاميرا يتطلب HTTPS أو localhost.';
     }
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      if (isPWA) {
+        return 'الكاميرا غير متاحة في وضع التطبيق. جرّب فتح الموقع من المتصفح مباشرة.';
+      }
       return 'الكاميرا غير مدعومة في هذا المتصفح.';
     }
     return null;
@@ -42,6 +51,9 @@ const ScanAttendanceModal: React.FC<ScanAttendanceModalProps> = ({ isOpen, onClo
     const message = String(error?.message || '').toLowerCase();
 
     if (name.includes('notallowed') || message.includes('permission') || message.includes('denied')) {
+      if (isPWA) {
+        return 'تعذر الوصول للكاميرا. اذهب لإعدادات جهازك ← التطبيقات ← ابحث عن المتصفح (Chrome) ← الأذونات ← فعّل الكاميرا.';
+      }
       return 'تعذر الوصول للكاميرا. تأكد من إعطاء الصلاحية من إعدادات المتصفح.';
     }
     if (name.includes('notfound') || message.includes('not found') || message.includes('no camera')) {
@@ -53,19 +65,41 @@ const ScanAttendanceModal: React.FC<ScanAttendanceModalProps> = ({ isOpen, onClo
     if (name.includes('overconstrained') || message.includes('constraints')) {
       return 'تعذر تهيئة الكاميرا بالإعدادات المطلوبة.';
     }
+    if (isPWA) {
+      return 'تعذر الوصول للكاميرا. جرّب فتح الموقع من المتصفح مباشرة بدلاً من التطبيق.';
+    }
     return 'تعذر الوصول للكاميرا. تأكد من إعطاء الصلاحية.';
   };
 
   useEffect(() => {
     let mounted = true;
 
+    const waitForMediaDevices = async (maxRetries = 3, delayMs = 500): Promise<boolean> => {
+      for (let i = 0; i < maxRetries; i++) {
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+          return true;
+        }
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+      }
+      return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+    };
+
     const startScanner = async () => {
       if (isOpen && !scannerRef.current && mounted && !isProcessing) {
         try {
-          // Small delay to ensure DOM is ready
-          await new Promise(resolve => setTimeout(resolve, 100));
+          // Longer delay in PWA standalone mode for DOM and API readiness
+          await new Promise(resolve => setTimeout(resolve, isPWA ? 600 : 100));
           
           if (!mounted) return;
+
+          // In PWA mode, navigator.mediaDevices may need time to initialize
+          if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            const available = await waitForMediaDevices(isPWA ? 5 : 2, 500);
+            if (!available) {
+              toast.error(getCameraSupportMessage() || 'الكاميرا غير متاحة.');
+              return;
+            }
+          }
 
           const supportMessage = getCameraSupportMessage();
           if (supportMessage) {
@@ -76,10 +110,12 @@ const ScanAttendanceModal: React.FC<ScanAttendanceModalProps> = ({ isOpen, onClo
           const scanner = new Html5Qrcode("attendance-reader");
           scannerRef.current = scanner;
 
-          // Request native permissions first to ensure dialog pops up on iOS
+          // Request native permissions first to ensure dialog pops up on iOS/Android
           try {
             if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-              const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+              const stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'environment' }
+              });
               stream.getTracks().forEach(track => track.stop());
             }
           } catch (permErr) {

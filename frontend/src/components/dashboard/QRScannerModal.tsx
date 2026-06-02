@@ -22,6 +22,12 @@ const QRScannerModal: React.FC<QRScannerModalProps> = ({ isOpen, onClose, onScan
   const [isProcessing, setIsProcessing] = useState(false);
   const [retryTrigger, setRetryTrigger] = useState(0);
 
+  // Detect if running as installed PWA (standalone mode)
+  const isPWA = typeof window !== 'undefined' && (
+    window.matchMedia('(display-mode: standalone)').matches ||
+    (window.navigator as any).standalone === true
+  );
+
   const getQrBox = (viewfinderWidth: number, viewfinderHeight: number) => {
     const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
     const size = Math.floor(minEdge * 0.7);
@@ -34,7 +40,12 @@ const QRScannerModal: React.FC<QRScannerModalProps> = ({ isOpen, onClose, onScan
     if (!window.isSecureContext) {
       return 'تشغيل الكاميرا يتطلب HTTPS أو الاتصال من localhost.';
     }
+    // In PWA standalone mode, navigator.mediaDevices may take a moment to initialize
+    // Return null to allow the retry mechanism to handle it
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      if (isPWA) {
+        return 'الكاميرا غير متاحة في وضع التطبيق. جرّب فتح الموقع من المتصفح مباشرة، أو استخدم خيار "رفع صورة QR" بالأسفل.';
+      }
       return 'الكاميرا غير مدعومة في هذا المتصفح أو التطبيق.';
     }
     return null;
@@ -49,16 +60,22 @@ const QRScannerModal: React.FC<QRScannerModalProps> = ({ isOpen, onClose, onScan
     const message = String(error?.message || '').toLowerCase();
 
     if (name.includes('notallowed') || message.includes('permission') || message.includes('denied')) {
+      if (isPWA) {
+        return 'تعذر الوصول للكاميرا. اذهب لإعدادات جهازك ← التطبيقات ← ابحث عن المتصفح (Chrome) ← الأذونات ← فعّل الكاميرا. أو جرّب فتح الموقع من المتصفح مباشرة.';
+      }
       return 'تعذر الوصول للكاميرا. تأكد من إعطاء الصلاحية من إعدادات المتصفح.';
     }
     if (name.includes('notfound') || message.includes('not found') || message.includes('no camera')) {
       return 'لم يتم العثور على كاميرا على هذا الجهاز.';
     }
     if (name.includes('notreadable') || message.includes('device in use')) {
-      return 'الكاميرا مستخدمة حالياً بواسطة تطبيق آخر.';
+      return 'الكاميرا مستخدمة حالياً بواسطة تطبيق آخر. أغلق أي تطبيق يستخدم الكاميرا وحاول مرة أخرى.';
     }
     if (name.includes('overconstrained') || message.includes('constraints')) {
       return 'تعذر تهيئة الكاميرا بالإعدادات المطلوبة.';
+    }
+    if (isPWA) {
+      return 'تعذر الوصول للكاميرا. جرّب فتح الموقع من المتصفح مباشرة بدلاً من التطبيق، أو استخدم خيار "رفع صورة QR".';
     }
     return 'تعذر الوصول للكاميرا. تأكد من إعطاء الصلاحية.';
   };
@@ -66,13 +83,33 @@ const QRScannerModal: React.FC<QRScannerModalProps> = ({ isOpen, onClose, onScan
   useEffect(() => {
     let mounted = true;
 
+    const waitForMediaDevices = async (maxRetries = 3, delayMs = 500): Promise<boolean> => {
+      for (let i = 0; i < maxRetries; i++) {
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+          return true;
+        }
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+      }
+      return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+    };
+
     const startScanner = async () => {
       if (isOpen && !scannerRef.current && mounted) {
         try {
           setCameraError(null);
-          // Wait for DOM to render
-          await new Promise(resolve => setTimeout(resolve, 300));
+          // Wait for DOM to render - longer delay in PWA standalone mode
+          await new Promise(resolve => setTimeout(resolve, isPWA ? 600 : 300));
           if (!mounted) return;
+
+          // In PWA mode, navigator.mediaDevices may need time to initialize
+          if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            const available = await waitForMediaDevices(isPWA ? 5 : 2, 500);
+            if (!available) {
+              const supportMessage = getCameraSupportMessage();
+              setCameraError(supportMessage || 'الكاميرا غير متاحة. جرّب خيار رفع صورة QR.');
+              return;
+            }
+          }
 
           const supportMessage = getCameraSupportMessage();
           if (supportMessage) {
@@ -83,10 +120,12 @@ const QRScannerModal: React.FC<QRScannerModalProps> = ({ isOpen, onClose, onScan
           const scanner = new Html5Qrcode("reader");
           scannerRef.current = scanner;
 
-          // Request native permissions first to ensure dialog pops up on iOS
+          // Request native permissions first to ensure dialog pops up on iOS/Android
           try {
             if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-              const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+              const stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'environment' }
+              });
               stream.getTracks().forEach(track => track.stop());
             }
           } catch (permErr) {
