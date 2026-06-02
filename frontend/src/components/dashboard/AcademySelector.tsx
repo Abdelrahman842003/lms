@@ -126,12 +126,12 @@ export function AcademySelector({ isOpen, onClose }: AcademySelectorProps) {
                       {academy.logo ? (
                         <img src={academy.logo} alt="" className="w-full h-full object-cover" />
                       ) : (
-                        <Icon name={academy.id === 'independent' ? 'user-tie' : 'building'} className={cn(isSelected ? "text-primary" : "text-white/40")} />
+                        <Icon name={academy.id === 'independent' ? 'user-tie' : 'building'} className={cn(isSelected ? "text-primary" : "text-gray-400")} />
                       )}
                     </div>
 
                     <div className="relative z-10 flex-1 text-right">
-                       <h4 className={cn("text-lg font-black tracking-tight mb-1", isSuspended ? "text-danger" : "text-white")}>
+                       <h4 className={cn("text-lg font-black tracking-tight mb-1", isSuspended ? "text-danger" : "text-gray-200")}>
                          {academy.name}
                        </h4>
                        <p className="text-[10px] font-black text-gray-light/20 uppercase tracking-widest">

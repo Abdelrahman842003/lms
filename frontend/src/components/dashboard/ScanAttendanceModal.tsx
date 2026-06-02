@@ -42,7 +42,7 @@ const ScanAttendanceModal: React.FC<ScanAttendanceModalProps> = ({ isOpen, onClo
     const message = String(error?.message || '').toLowerCase();
 
     if (name.includes('notallowed') || message.includes('permission') || message.includes('denied')) {
-      return 'تم رفض إذن الكاميرا. فعّل الإذن من إعدادات المتصفح.';
+      return 'تعذر الوصول للكاميرا. تأكد من إعطاء الصلاحية من إعدادات المتصفح.';
     }
     if (name.includes('notfound') || message.includes('not found') || message.includes('no camera')) {
       return 'لم يتم العثور على كاميرا على هذا الجهاز.';
@@ -53,7 +53,7 @@ const ScanAttendanceModal: React.FC<ScanAttendanceModalProps> = ({ isOpen, onClo
     if (name.includes('overconstrained') || message.includes('constraints')) {
       return 'تعذر تهيئة الكاميرا بالإعدادات المطلوبة.';
     }
-    return 'فشل الوصول إلى الكاميرا. يرجى التحقق من الأذونات.';
+    return 'تعذر الوصول للكاميرا. تأكد من إعطاء الصلاحية.';
   };
 
   useEffect(() => {
@@ -75,6 +75,17 @@ const ScanAttendanceModal: React.FC<ScanAttendanceModalProps> = ({ isOpen, onClo
 
           const scanner = new Html5Qrcode("attendance-reader");
           scannerRef.current = scanner;
+
+          // Request native permissions first to ensure dialog pops up on iOS
+          try {
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+              const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+              stream.getTracks().forEach(track => track.stop());
+            }
+          } catch (permErr) {
+            toast.error(getCameraErrorMessage(permErr));
+            return;
+          }
 
           const config = {
             fps: 10,

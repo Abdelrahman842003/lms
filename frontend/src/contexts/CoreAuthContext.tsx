@@ -9,6 +9,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import {
   loginTeacher,
   loginStudent,
@@ -85,6 +86,7 @@ export function CoreAuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const isRecoveringAuthRef = useRef(false);
 
   // Load user from localStorage on mount
@@ -265,6 +267,7 @@ export function CoreAuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
+    setIsLoggingOut(true);
     try {
       const userType = localStorage.getItem("userType") as
         | "teacher" | "student" | "secretary" | "academy" | "parent" | null;
@@ -292,6 +295,7 @@ export function CoreAuthProvider({ children }: { children: ReactNode }) {
     } finally {
       clearAuth();
       router.push("/login");
+      setTimeout(() => setIsLoggingOut(false), 500);
     }
   };
 
@@ -343,6 +347,7 @@ export function CoreAuthProvider({ children }: { children: ReactNode }) {
   return (
     <CoreAuthContext.Provider value={value}>
       {children}
+      {isLoggingOut && <LoadingSpinner fullPage text="جاري تسجيل الخروج..." />}
     </CoreAuthContext.Provider>
   );
 }

@@ -49,7 +49,7 @@ const QRScannerModal: React.FC<QRScannerModalProps> = ({ isOpen, onClose, onScan
     const message = String(error?.message || '').toLowerCase();
 
     if (name.includes('notallowed') || message.includes('permission') || message.includes('denied')) {
-      return 'تم رفض إذن الكاميرا. فعّل إذن الكاميرا للموقع من إعدادات المتصفح.';
+      return 'تعذر الوصول للكاميرا. تأكد من إعطاء الصلاحية من إعدادات المتصفح.';
     }
     if (name.includes('notfound') || message.includes('not found') || message.includes('no camera')) {
       return 'لم يتم العثور على كاميرا على هذا الجهاز.';
@@ -60,7 +60,7 @@ const QRScannerModal: React.FC<QRScannerModalProps> = ({ isOpen, onClose, onScan
     if (name.includes('overconstrained') || message.includes('constraints')) {
       return 'تعذر تهيئة الكاميرا بالإعدادات المطلوبة.';
     }
-    return 'فشل الوصول إلى الكاميرا. يرجى التحقق من الأذونات وتأكد من إعطاء الصلاحية.';
+    return 'تعذر الوصول للكاميرا. تأكد من إعطاء الصلاحية.';
   };
 
   useEffect(() => {
@@ -82,6 +82,17 @@ const QRScannerModal: React.FC<QRScannerModalProps> = ({ isOpen, onClose, onScan
 
           const scanner = new Html5Qrcode("reader");
           scannerRef.current = scanner;
+
+          // Request native permissions first to ensure dialog pops up on iOS
+          try {
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+              const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+              stream.getTracks().forEach(track => track.stop());
+            }
+          } catch (permErr) {
+            setCameraError(getCameraErrorMessage(permErr));
+            return;
+          }
 
           const config = { fps: 15, qrbox: getQrBox, aspectRatio: 1.0 };
           const onSuccess = (text: string) => { if (mounted) onScanSuccess(text); };
