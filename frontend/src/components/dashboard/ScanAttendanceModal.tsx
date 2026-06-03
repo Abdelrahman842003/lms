@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
 import toast from 'react-hot-toast';
 import * as teacherService from '@/services/teacherService';
@@ -10,16 +10,15 @@ interface ScanAttendanceModalProps {
   onScanSuccess?: () => void;
 }
 
+type CameraState = 'idle' | 'requesting' | 'scanning' | 'error';
+
 const ScanAttendanceModal: React.FC<ScanAttendanceModalProps> = ({ isOpen, onClose, onScanSuccess }) => {
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const isScanningRef = useRef<boolean>(false);
+  const isProcessingRef = useRef<boolean>(false);
   const [isProcessing, setIsProcessing] = useState(false);
-
-  // Detect if running as installed PWA (standalone mode)
-  const isPWA = typeof window !== 'undefined' && (
-    window.matchMedia('(display-mode: standalone)').matches ||
-    (window.navigator as any).standalone === true
-  );
+  const [cameraState, setCameraState] = useState<CameraState>('idle');
+  const [cameraError, setCameraError] = useState<string | null>(null);
 
   const getQrBox = (viewfinderWidth: number, viewfinderHeight: number) => {
     const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
@@ -28,207 +27,124 @@ const ScanAttendanceModal: React.FC<ScanAttendanceModalProps> = ({ isOpen, onClo
     return { width: bounded, height: bounded };
   };
 
-  const getCameraSupportMessage = () => {
-    if (typeof window === 'undefined') return null;
-    if (!window.isSecureContext) {
-      return 'تشغيل الكاميرا يتطلب HTTPS أو localhost.';
-    }
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      if (isPWA) {
-        return 'الكاميرا غير متاحة في وضع التطبيق. جرّب فتح الموقع من المتصفح مباشرة.';
-      }
-      return 'الكاميرا غير مدعومة في هذا المتصفح.';
-    }
-    return null;
-  };
-
   const getCameraErrorMessage = (error: any) => {
     if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1' && window.location.protocol !== 'https:') {
-      return 'تطبيق الكاميرا يتطلب اتصال آمن (HTTPS) أو استخدام Localhost. يرجى التأكد من الرابط.';
+      return 'تطبيق الكاميرا يتطلب اتصال آمن (HTTPS). يرجى التأكد من الرابط.';
     }
-
     const name = String(error?.name || '').toLowerCase();
     const message = String(error?.message || '').toLowerCase();
 
     if (name.includes('notallowed') || message.includes('permission') || message.includes('denied')) {
-      if (isPWA) {
-        return 'تعذر الوصول للكاميرا. اذهب لإعدادات جهازك ← التطبيقات ← ابحث عن المتصفح (Chrome) ← الأذونات ← فعّل الكاميرا.';
-      }
       return 'تعذر الوصول للكاميرا. تأكد من إعطاء الصلاحية من إعدادات المتصفح.';
     }
-    if (name.includes('notfound') || message.includes('not found') || message.includes('no camera')) {
-      return 'لم يتم العثور على كاميرا على هذا الجهاز.';
-    }
-    if (name.includes('notreadable') || message.includes('device in use')) {
-      return 'الكاميرا مستخدمة حالياً بواسطة تطبيق آخر.';
-    }
-    if (name.includes('overconstrained') || message.includes('constraints')) {
-      return 'تعذر تهيئة الكاميرا بالإعدادات المطلوبة.';
-    }
-    if (isPWA) {
-      return 'تعذر الوصول للكاميرا. جرّب فتح الموقع من المتصفح مباشرة بدلاً من التطبيق.';
-    }
-    return 'تعذر الوصول للكاميرا. تأكد من إعطاء الصلاحية.';
+    return 'تعذر تشغيل الكاميرا. يرجى إعادة المحاولة.';
   };
 
-  useEffect(() => {
-    let mounted = true;
-
-    const waitForMediaDevices = async (maxRetries = 3, delayMs = 500): Promise<boolean> => {
-      for (let i = 0; i < maxRetries; i++) {
-        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-          return true;
-        }
-        await new Promise(resolve => setTimeout(resolve, delayMs));
+  const stopScanner = useCallback(async () => {
+    if (scannerRef.current && isScanningRef.current) {
+      try {
+        await scannerRef.current.stop();
+        scannerRef.current.clear();
+      } catch (e) {
+        // ignore
       }
-      return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
-    };
+    }
+    scannerRef.current = null;
+    isScanningRef.current = false;
+  }, []);
 
-    const startScanner = async () => {
-      if (isOpen && !scannerRef.current && mounted && !isProcessing) {
-        try {
-          // Longer delay in PWA standalone mode for DOM and API readiness
-          await new Promise(resolve => setTimeout(resolve, isPWA ? 600 : 100));
+  const startCamera = useCallback(async () => {
+    setCameraState('requesting');
+    setCameraError(null);
+
+    if (typeof window !== 'undefined' && !window.isSecureContext) {
+      setCameraState('error');
+      setCameraError('تشغيل الكاميرا يتطلب HTTPS أو localhost.');
+      return;
+    }
+
+    await new Promise(resolve => setTimeout(resolve, 350));
+
+    try {
+      await stopScanner();
+
+      const scanner = new Html5Qrcode("attendance-reader");
+      scannerRef.current = scanner;
+
+      const config = { fps: 10, qrbox: getQrBox, aspectRatio: 1.0 };
+
+      const onSuccess = async (decodedText: string) => {
+        // حماية تضمن عدم إرسال الكود أكتر من مرة في نفس الوقت (ref بدل state عشان الـ closure)
+        if (isScanningRef.current && !isProcessingRef.current) {
+          isProcessingRef.current = true;
+          setIsProcessing(true);
           
-          if (!mounted) return;
-
-          // In PWA mode, navigator.mediaDevices may need time to initialize
-          if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            const available = await waitForMediaDevices(isPWA ? 5 : 2, 500);
-            if (!available) {
-              toast.error(getCameraSupportMessage() || 'الكاميرا غير متاحة.');
-              return;
-            }
-          }
-
-          const supportMessage = getCameraSupportMessage();
-          if (supportMessage) {
-            toast.error(supportMessage);
-            return;
-          }
-
-          const scanner = new Html5Qrcode("attendance-reader");
-          scannerRef.current = scanner;
-
-          // Request native permissions first to ensure dialog pops up on iOS/Android
           try {
-            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-              const stream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: 'environment' }
-              });
-              stream.getTracks().forEach(track => track.stop());
+            // 1. أوقف السكنر فوراً لمنع القراءة المتكررة
+            await stopScanner();
+            setCameraState('idle');
+
+            // 2. أرسل البيانات للـ API
+            const response = await teacherService.scanAttendance(decodedText);
+            
+            if (response.status && response.data) {
+              toast.success(response.data.message || 'تم تسجيل الحضور بنجاح');
+              if (onScanSuccess) onScanSuccess();
+              setTimeout(() => { onClose(); }, 800);
             }
-          } catch (permErr) {
-            toast.error(getCameraErrorMessage(permErr));
-            return;
+          } catch (error: any) {
+            const errorMessage = error?.response?.data?.message || error?.message || 'فشل تسجيل الحضور';
+            toast.error(errorMessage);
+            isProcessingRef.current = false;
+            setIsProcessing(false);
+            
+            // إعادة تشغيل الكاميرا تلقائياً إذا فشل الـ API بدون تعليق
+            startCamera();
           }
-
-          const config = {
-            fps: 10,
-            qrbox: getQrBox,
-            aspectRatio: 1.0
-          };
-
-          const onSuccess = async (decodedText: string) => {
-            if (mounted && !isProcessing) {
-              setIsProcessing(true);
-              
-              try {
-                // Stop scanner immediately
-                if (scannerRef.current && isScanningRef.current) {
-                  await scannerRef.current.stop();
-                  isScanningRef.current = false;
-                }
-
-                // Call API
-                const response = await teacherService.scanAttendance(decodedText);
-                
-                if (response.status && response.data) {
-                  toast.success(response.data.message || 'تم تسجيل الحضور بنجاح');
-                  
-                  // Call success callback
-                  if (onScanSuccess) {
-                    onScanSuccess();
-                  }
-                  
-                  // Close modal after short delay
-                  setTimeout(() => {
-                    if (mounted) {
-                      onClose();
-                    }
-                  }, 1000);
-                }
-              } catch (error: any) {
-                const errorMessage = error?.response?.data?.message || error?.message || 'فشل تسجيل الحضور';
-                toast.error(errorMessage);
-                
-                // Restart scanner after error
-                setIsProcessing(false);
-                if (mounted && scannerRef.current) {
-                  try {
-                    await scannerRef.current.start({ facingMode: "environment" }, config, onSuccess, () => {});
-                    isScanningRef.current = true;
-                  } catch (restartErr) {
-                  }
-                }
-              }
-            }
-          };
-
-          let lastError: any = null;
-
-          try {
-            // Attempt 1: Back Camera (Environment)
-            await scanner.start({ facingMode: "environment" }, config, onSuccess, () => {});
-            isScanningRef.current = true;
-            return;
-          } catch (err) {
-            lastError = err;
-          }
-
-          try {
-            // Attempt 2: User Camera (Front/Webcam)
-            await scanner.start({ facingMode: "user" }, config, onSuccess, () => {});
-            isScanningRef.current = true;
-            return;
-          } catch (err2) {
-            lastError = err2;
-          }
-
-          try {
-            // Attempt 3: First available camera ID
-            const devices = await Html5Qrcode.getCameras();
-            if (devices && devices.length > 0) {
-              await scanner.start(devices[0].id, config, onSuccess, () => {});
-              isScanningRef.current = true;
-              return;
-            }
-            lastError = new Error("No cameras found");
-          } catch (err3) {
-            lastError = err3;
-          }
-
-          toast.error(getCameraErrorMessage(lastError));
-        } catch (err) {
-          toast.error('حدث خطأ في تشغيل الماسح الضوئي');
         }
+      };
+
+      let lastError: any = null;
+
+      try {
+        await scanner.start({ facingMode: "environment" }, config, onSuccess, () => {});
+        isScanningRef.current = true;
+        setCameraState('scanning');
+        return;
+      } catch (err) {
+        lastError = err;
       }
-    };
 
-    startScanner();
+      try {
+        await scanner.start({ facingMode: "user" }, config, onSuccess, () => {});
+        isScanningRef.current = true;
+        setCameraState('scanning');
+        return;
+      } catch (err2) {
+        lastError = err2;
+      }
 
+      setCameraState('error');
+      setCameraError(getCameraErrorMessage(lastError));
+    } catch (err) {
+      setCameraState('error');
+      setCameraError('حدث خطأ في تشغيل الماسح الضوئي');
+    }
+  }, [onClose, onScanSuccess, stopScanner]);
+
+  // تشغيل الكاميرا أوتوماتيكياً فور فتح المودال
+  useEffect(() => {
+    if (isOpen) {
+      startCamera();
+    }
     return () => {
-      mounted = false;
-      if (scannerRef.current && isScanningRef.current) {
-        scannerRef.current.stop().then(() => {
-          scannerRef.current?.clear();
-          scannerRef.current = null;
-          isScanningRef.current = false;
-  }).catch(() => {
-  });
-      }
+      stopScanner();
+      setCameraState('idle');
+      setCameraError(null);
+      isProcessingRef.current = false;
+      setIsProcessing(false);
     };
-  }, [isOpen, onClose, onScanSuccess, isProcessing]);
+  }, [isOpen, startCamera, stopScanner]);
 
   if (!isOpen) return null;
 
@@ -238,17 +154,36 @@ const ScanAttendanceModal: React.FC<ScanAttendanceModalProps> = ({ isOpen, onClo
         <div className="ux-p-6">
           <div className="ux-flex ux-justify-between ux-items-center ux-mb-4">
             <h3 className="ux-text-xl ux-font-bold ux-text-white">تسجيل الحضور والانصراف</h3>
-            <button
-              onClick={onClose}
-              className="ux-text-gray-400 ux-hover-text-white"
-              disabled={isProcessing}
-            >
+            <button onClick={onClose} className="ux-text-gray-400 ux-hover-text-white" disabled={isProcessing}>
               <Icon name="times" />
             </button>
           </div>
           
-          <div className="ux-bg-black ux-rounded-lg ux-overflow-hidden ux-mb-4 ux-relative ux-min-h-300px ux-flex ux-items-center ux-justify-center">
+          <div className="ux-bg-black ux-rounded-lg ux-overflow-hidden ux-mb-4 ux-relative ux-min-h-[300px] ux-flex ux-items-center ux-justify-center">
             <div id="attendance-reader" className="ux-w-full ux-h-full"></div>
+
+            {cameraState === 'requesting' && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center z-10 bg-gray-900/95">
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-4 animate-pulse">
+                  <Icon name="spinner" className="text-xl animate-spin" />
+                </div>
+                <h4 className="text-sm font-bold text-white mb-2">جاري تشغيل الكاميرا تلقائياً...</h4>
+              </div>
+            )}
+
+            {cameraState === 'error' && cameraError && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center z-10 bg-gray-900/95">
+                <div className="w-16 h-16 rounded-full bg-rose-500/10 flex items-center justify-center text-rose-500 mb-4">
+                  <Icon name="exclamation-triangle" className="text-xl" />
+                </div>
+                <h4 className="text-sm font-bold text-white mb-2">تعذر تشغيل الكاميرا</h4>
+                <p className="text-xs text-gray-400 mb-4">{cameraError}</p>
+                <button onClick={startCamera} className="px-4 py-2 bg-primary text-white rounded-xl text-xs font-bold flex items-center gap-2">
+                  <Icon name="sync" />
+                  <span>إعادة المحاولة</span>
+                </button>
+              </div>
+            )}
           </div>
 
           <p className="ux-text-center ux-text-gray-400 ux-text-sm ux-mb-4">
@@ -258,16 +193,11 @@ const ScanAttendanceModal: React.FC<ScanAttendanceModalProps> = ({ isOpen, onClo
           {isProcessing && (
             <div className="ux-text-center ux-text-primary ux-mb-4 ux-flex ux-items-center ux-justify-center ux-gap-2">
               <LoadingSpinner size="sm" color="primary" />
-              <span>جاري المعالجة...</span>
+              <span>جاري تسجيل حضور الطالب...</span>
             </div>
           )}
 
-          <Button
-            variant="secondary"
-            onClick={onClose}
-            disabled={isProcessing}
-            className="ux-w-full"
-          >
+          <Button variant="secondary" onClick={onClose} disabled={isProcessing} className="ux-w-full">
             إلغاء
           </Button>
         </div>
