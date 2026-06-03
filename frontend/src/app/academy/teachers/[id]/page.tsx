@@ -66,7 +66,6 @@ export default function TeacherDetailsPage() {
   const stats = teacherData?.stats || {};
   const groups = teacherData?.groups || [];
   const grades = teacherData?.grades || [];
-  const grades = teacherData?.grades || [];
 
   // Columns for Groups Table
   const groupColumns = [
