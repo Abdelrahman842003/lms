@@ -10,6 +10,7 @@ use App\Domains\Enrollments\Models\Group;
 use App\Domains\Auth\Models\Student;
 use App\Domains\Subscriptions\Models\TeacherSubscription;
 use App\Domains\Subscriptions\Models\Subscription;
+use App\Domains\Subscriptions\Models\PaymentTransaction;
 use App\Domains\Subscriptions\Enums\SubscriptionStatus;
 use App\Domains\Auth\Models\Academy;
 use App\Domains\Lectures\Models\Lecture;
@@ -200,6 +201,14 @@ class Teacher extends Authenticatable
     public function subscriptions()
     {
         return $this->morphMany(Subscription::class, 'subscriber');
+    }
+
+    /**
+     * Payment transactions (polymorphic)
+     */
+    public function paymentTransactions()
+    {
+        return $this->morphMany(PaymentTransaction::class, 'payer');
     }
 
     public function latestSubscription()

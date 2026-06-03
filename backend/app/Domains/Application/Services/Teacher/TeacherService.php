@@ -44,13 +44,37 @@ class TeacherService
 
     public function createTeacher(array $data): Teacher
     {
-        return Teacher::create([
+        $trialDays = (int) \App\Domains\Application\Models\Setting::getValue('trial_period_days', '14');
+        $trialMaxStudents = (int) \App\Domains\Application\Models\Setting::getValue('trial_max_students', '50');
+
+        $teacher = Teacher::create([
             'name' => $data['name'],
             'phone' => $data['phone'],
             'password' => $data['password'],
             'subject' => $data['subject'] ?? null,
             'status' => $data['status'] ?? 'pending',
+            'plan_type' => 'trial',
+            'plan_expires_at' => now()->addDays($trialDays),
+            'plan_max_students' => $trialMaxStudents,
         ]);
+
+        // Create trial subscription record
+        \App\Domains\Subscriptions\Models\Subscription::create([
+            'subscriber_id' => $teacher->id,
+            'subscriber_type' => Teacher::class,
+            'type' => \App\Domains\Subscriptions\Enums\SubscriptionType::TEACHER->value,
+            'month' => now()->startOfMonth()->toDateString(),
+            'seats_count' => 0,
+            'quota_limit' => $trialMaxStudents,
+            'cost_per_seat' => 0.00,
+            'amount_due' => 0.00,
+            'amount_paid' => 0.00,
+            'status' => \App\Domains\Subscriptions\Enums\SubscriptionStatus::ACTIVE->value,
+            'notes' => "فترة تجربة مجانية - {$trialDays} يوم",
+            'request_type' => 'trial',
+        ]);
+
+        return $teacher;
     }
 
     public function updateTeacher(Teacher $teacher, array $data): Teacher

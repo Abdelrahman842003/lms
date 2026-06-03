@@ -13,7 +13,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Exception;
 
-class PaymentController extends Controller
+class SubscriptionPaymentController extends Controller
 {
     use \App\Domains\Application\Traits\ResolvesAcademy;
 

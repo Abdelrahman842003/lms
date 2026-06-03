@@ -248,6 +248,16 @@ class Subscription extends Model
         return $query->where('month', $monthStart);
     }
 
+    public function paymentTransactions(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(PaymentTransaction::class);
+    }
+
+    public function latestPayment(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(PaymentTransaction::class)->latestOfMany();
+    }
+
     /**
      * Scope for filtering
      */

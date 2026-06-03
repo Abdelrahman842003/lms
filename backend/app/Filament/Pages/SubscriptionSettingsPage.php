@@ -43,6 +43,11 @@ class SubscriptionSettingsPage extends Page implements HasForms
         'academy_storage_price_per_minute',
         'teacher_delivery_price_per_minute',
         'academy_delivery_price_per_minute',
+        'instapay_receiver_number',
+        'instapay_receiver_name',
+        'vodafone_cash_receiver_number',
+        'payment_instructions_ar',
+        'payment_expiry_hours',
     ];
 
     public ?array $data = [];
@@ -59,6 +64,11 @@ class SubscriptionSettingsPage extends Page implements HasForms
             'academy_storage_price_per_minute'  => Setting::getValue('academy_storage_price_per_minute', '0.5'),
             'teacher_delivery_price_per_minute' => Setting::getValue('teacher_delivery_price_per_minute', '0.1'),
             'academy_delivery_price_per_minute' => Setting::getValue('academy_delivery_price_per_minute', '0.1'),
+            'instapay_receiver_number'          => Setting::getValue('instapay_receiver_number', 'netaq@instapay'),
+            'instapay_receiver_name'            => Setting::getValue('instapay_receiver_name', 'منصة نطاق التعليمية'),
+            'vodafone_cash_receiver_number'     => Setting::getValue('vodafone_cash_receiver_number', '01012345678'),
+            'payment_instructions_ar'           => Setting::getValue('payment_instructions_ar', "يرجى تحويل مبلغ الاشتراك الموضح أدناه إلى أحد الحسابات التالية:\n1. إنستاباي: netaq@instapay (الاسم: منصة نطاق التعليمية)\n2. فودافون كاش: 01012345678\n\nبعد إتمام التحويل، يرجى كتابة اسم المرسل ورقم الهاتف المحول منه ورفع صورة واضحة لإيصال التحويل لتأكيد الاشتراك خلال 48 ساعة."),
+            'payment_expiry_hours'              => Setting::getValue('payment_expiry_hours', '48'),
         ]);
     }
 
@@ -143,6 +153,40 @@ class SubscriptionSettingsPage extends Page implements HasForms
                             ->color('primary')
                             ->action(fn () => $this->save()),
                     ]),
+
+                Section::make('إعدادات الدفع الذاتي (InstaPay / فودافون كاش)')
+                    ->icon('heroicon-o-credit-card')
+                    ->schema([
+                        TextInput::make('instapay_receiver_number')
+                            ->label('عنوان إنستاباي (InstaPay Address)')
+                            ->placeholder('netaq@instapay'),
+                        
+                        TextInput::make('instapay_receiver_name')
+                            ->label('اسم المستقبل في إنستاباي')
+                            ->placeholder('منصة نطاق التعليمية'),
+
+                        TextInput::make('vodafone_cash_receiver_number')
+                            ->label('رقم محفظة فودافون كاش')
+                            ->placeholder('01012345678'),
+
+                        TextInput::make('payment_expiry_hours')
+                            ->label('صلاحية طلب الدفع (بالساعات)')
+                            ->numeric()
+                            ->default(48),
+
+                        Textarea::make('payment_instructions_ar')
+                            ->label('تعليمات الدفع (بالعربية)')
+                            ->rows(4)
+                            ->columnSpanFull(),
+                    ])
+                    ->columns(2)
+                    ->footerActions([
+                        \Filament\Actions\Action::make('save_payments')
+                            ->label('حفظ إعدادات الدفع')
+                            ->icon('heroicon-m-banknotes')
+                            ->color('primary')
+                            ->action(fn () => $this->save()),
+                    ]),
             ]);
     }
 
@@ -160,7 +204,7 @@ class SubscriptionSettingsPage extends Page implements HasForms
                     ['key' => $key],
                     [
                         'value' => (string) $state[$key],
-                        'group' => 'subscription',
+                        'group' => in_array($key, ['instapay_receiver_number', 'instapay_receiver_name', 'vodafone_cash_receiver_number', 'payment_instructions_ar', 'payment_expiry_hours']) ? 'payment' : 'subscription',
                     ]
                 );
             }

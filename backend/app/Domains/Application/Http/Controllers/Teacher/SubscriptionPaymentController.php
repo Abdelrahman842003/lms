@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Domains\Application\Http\Controllers\Academy;
+namespace App\Domains\Application\Http\Controllers\Teacher;
 
 use App\Domains\Application\Http\Controllers\Controller;
 use App\Domains\Application\Http\Requests\Subscription\InitiatePaymentRequest;
@@ -13,9 +13,9 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Exception;
 
-class PaymentController extends Controller
+class SubscriptionPaymentController extends Controller
 {
-    use \App\Domains\Application\Traits\ResolvesAcademy;
+    use \App\Domains\Application\Traits\ResolvesTeacher;
 
     public function __construct(
         private readonly SelfServiceSubscriptionService $subscriptionService
@@ -38,9 +38,9 @@ class PaymentController extends Controller
 
     public function initiate(InitiatePaymentRequest $request): JsonResponse
     {
-        $academy = $this->getAcademyFromRequest($request);
-        if (!$academy) {
-            return $this->errorResponse('الأكاديمية غير موجودة', 404);
+        $teacher = $this->getTeacherFromRequest($request);
+        if (!$teacher) {
+            return $this->errorResponse('المعلم غير موجود', 404);
         }
 
         $validated = $request->validated();
@@ -48,7 +48,7 @@ class PaymentController extends Controller
         
         try {
             [$subscription, $transaction] = $this->subscriptionService->initiateSubscription(
-                $academy,
+                $teacher,
                 $package,
                 $validated['plan_type'],
                 $validated['payment_method'],
@@ -72,9 +72,9 @@ class PaymentController extends Controller
 
     public function uploadProof(string $paymentKey, Request $request): JsonResponse
     {
-        $academy = $this->getAcademyFromRequest($request);
-        if (!$academy) {
-            return $this->errorResponse('الأكاديمية غير موجودة', 404);
+        $teacher = $this->getTeacherFromRequest($request);
+        if (!$teacher) {
+            return $this->errorResponse('المعلم غير موجود', 404);
         }
 
         $request->validate([
@@ -82,7 +82,7 @@ class PaymentController extends Controller
         ]);
 
         $transaction = PaymentTransaction::where('payment_key', $paymentKey)
-            ->where('payer_id', $academy->id)
+            ->where('payer_id', $teacher->id)
             ->first();
 
         if (!$transaction) {
@@ -104,13 +104,13 @@ class PaymentController extends Controller
 
     public function status(string $paymentKey, Request $request): JsonResponse
     {
-        $academy = $this->getAcademyFromRequest($request);
-        if (!$academy) {
-            return $this->errorResponse('الأكاديمية غير موجودة', 404);
+        $teacher = $this->getTeacherFromRequest($request);
+        if (!$teacher) {
+            return $this->errorResponse('المعلم غير موجود', 404);
         }
 
         $transaction = PaymentTransaction::where('payment_key', $paymentKey)
-            ->where('payer_id', $academy->id)
+            ->where('payer_id', $teacher->id)
             ->with('subscription')
             ->first();
 
@@ -137,12 +137,12 @@ class PaymentController extends Controller
 
     public function history(Request $request): JsonResponse
     {
-        $academy = $this->getAcademyFromRequest($request);
-        if (!$academy) {
-            return $this->errorResponse('الأكاديمية غير موجودة', 404);
+        $teacher = $this->getTeacherFromRequest($request);
+        if (!$teacher) {
+            return $this->errorResponse('المعلم غير موجود', 404);
         }
 
-        $transactions = PaymentTransaction::where('payer_id', $academy->id)
+        $transactions = PaymentTransaction::where('payer_id', $teacher->id)
             ->orderByDesc('created_at')
             ->get()
             ->map(fn($t) => [

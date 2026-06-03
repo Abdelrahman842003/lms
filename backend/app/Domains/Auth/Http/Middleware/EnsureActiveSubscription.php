@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Auth\Http\Middleware;
 
 use App\Domains\Auth\Models\Teacher;
+use App\Domains\Auth\Models\Academy;
 use App\Domains\Auth\Models\Secretary;
 use Closure;
 use Illuminate\Http\Request;
@@ -24,9 +25,9 @@ class EnsureActiveSubscription
             return $next($request);
         }
 
-        // التحقق فقط للمدرسين والمنظمات التي لديها subscriptions
-        if ($user instanceof Teacher) {
-            if (! $this->hasActiveSubscription($user)) {
+        // التحقق فقط للمدرسين والأكاديميات التي لديها subscriptions
+        if ($user instanceof Teacher || $user instanceof Academy) {
+            if (! $user->hasActiveSubscription()) {
                 return response()->json([
                     'status'      => false,
                     'status_code' => 403,
@@ -37,10 +38,5 @@ class EnsureActiveSubscription
         }
 
         return $next($request);
-    }
-
-    private function hasActiveSubscription(Teacher $teacher): bool
-    {
-        return $teacher->hasActiveSubscription();
     }
 }

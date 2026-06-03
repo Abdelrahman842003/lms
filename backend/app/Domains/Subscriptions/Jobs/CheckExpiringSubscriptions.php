@@ -5,67 +5,52 @@ declare(strict_types=1);
 namespace App\Domains\Subscriptions\Jobs;
 
 use App\Domains\Subscriptions\Events\SubscriptionExpiringSoon;
-use App\Domains\Subscriptions\Models\Subscription;
-use App\Domains\Subscriptions\Enums\SubscriptionStatus;
-use App\Domains\Subscriptions\Enums\SubscriptionType;
+use App\Domains\Auth\Models\Teacher;
+use App\Domains\Auth\Models\Academy;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Carbon;
 
 /**
- * يفحص الاشتراكات التي ستنتهي خلال 7 أيام ويُطلق تحذيرات.
+ * يفحص الاشتراكات التي ستنتهي خلال 7 أو 3 أو 1 أيام ويُطلق تنبيهات الدفع.
  * يُشغَّل يومياً من Scheduler.
- *
- * @updated لاستخدام نموذج Subscription الموحد بدلاً من النماذج القديمة
  */
 class CheckExpiringSubscriptions implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    private const WARNING_DAYS = 7;
-
     public function handle(): void
     {
-        $this->checkSubscriptions(SubscriptionType::TEACHER);
-        $this->checkSubscriptions(SubscriptionType::ACADEMY);
-    }
+        $days = [7, 3, 1];
 
-    /**
-     * فحص اشتراكات نوع معين (Teacher أو Academy)
-     */
-    private function checkSubscriptions(SubscriptionType $type): void
-    {
-        Subscription::query()
-            ->where('subscriber_type', $type->value)
-            ->where('status', SubscriptionStatus::PAID->value)
-            ->whereNotNull('month')
-            ->whereBetween('month', [
-                now()->toDateString(),
-                now()->addDays(self::WARNING_DAYS)->toDateString()
-            ])
-            ->with('subscriber')
-            ->get()
-            ->each(function (Subscription $sub) use ($type) {
-                $subscriber = $sub->subscriber;
-                if (!$subscriber) {
-                    return;
-                }
+        foreach ($days as $day) {
+            $targetDate = now()->addDays($day)->toDateString();
 
-                // حساب الأيام المتبقية حتى نهاية الشهر
-                $monthEnd = Carbon::parse($sub->month)->endOfMonth();
-                $daysLeft = (int) now()->diffInDays($monthEnd, false);
-
-                // إطلاق التحذير فقط إذا كان ضمن فترة التحذير
-                if ($daysLeft <= self::WARNING_DAYS && $daysLeft >= 0) {
+            // المدرسين
+            Teacher::query()
+                ->whereDate('plan_expires_at', $targetDate)
+                ->get()
+                ->each(function (Teacher $teacher) use ($day) {
                     event(new SubscriptionExpiringSoon(
-                        subscriber:     $subscriber,
-                        daysLeft:       abs($daysLeft),
-                        subscriberType: $type->value === SubscriptionType::TEACHER->value ? 'teacher' : 'academy',
+                        subscriber:     $teacher,
+                        daysLeft:       $day,
+                        subscriberType: 'teacher',
                     ));
-                }
-            });
+                });
+
+            // الأكاديميات
+            Academy::query()
+                ->whereDate('plan_expires_at', $targetDate)
+                ->get()
+                ->each(function (Academy $academy) use ($day) {
+                    event(new SubscriptionExpiringSoon(
+                        subscriber:     $academy,
+                        daysLeft:       $day,
+                        subscriberType: 'academy',
+                    ));
+                });
+        }
     }
 }
