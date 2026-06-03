@@ -18,12 +18,12 @@ const QRScannerModal: React.FC<QRScannerModalProps> = ({ isOpen, onClose, onScan
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const isScanningRef = useRef<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const isStartingRef = useRef<boolean>(false);
+  const isMountedRef = useRef<boolean>(false); // مرجع للتأكد من حالة الـ Mount للمودال
 
   const [cameraState, setCameraState] = useState<CameraState>('idle');
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-
-
 
   const getQrBox = (viewfinderWidth: number, viewfinderHeight: number) => {
     const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
@@ -36,17 +36,21 @@ const QRScannerModal: React.FC<QRScannerModalProps> = ({ isOpen, onClose, onScan
     if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1' && window.location.protocol !== 'https:') {
       return 'تطبيق الكاميرا يتطلب اتصال آمن (HTTPS) أو استخدام Localhost. يرجى التأكد من الرابط.';
     }
+    const errorString = typeof error === 'string' ? error.toLowerCase() : '';
     const name = String(error?.name || '').toLowerCase();
-    const message = String(error?.message || '').toLowerCase();
+    const message = String(error?.message || errorString || '').toLowerCase();
 
     if (name.includes('notallowed') || message.includes('permission') || message.includes('denied')) {
       return 'تعذر الوصول للكاميرا. تأكد من إعطاء الصلاحية للكاميرا من إعدادات المتصفح نفسه.';
     }
-    if (name.includes('notfound') || message.includes('not found') || message.includes('no camera')) {
+    if (name.includes('notfound') || message.includes('not found') || message.includes('no camera') || message.includes('requested device not found')) {
       return 'لم يتم العثور على كاميرا على هذا الجهاز.';
     }
-    if (name.includes('notreadable') || message.includes('device in use')) {
+    if (name.includes('notreadable') || message.includes('device in use') || message.includes('could not start video source')) {
       return 'الكاميرا مستخدمة حالياً بواسطة تطبيق آخر. أغلق أي تطبيق يستخدم الكاميرا وحاول مرة أخرى.';
+    }
+    if (name.includes('overconstrained') || message.includes('overconstrained')) {
+       return 'الكاميرا المطلوبة غير متوفرة في هذا الجهاز.';
     }
     return 'تعذر الوصول للكاميرا. تأكد من إعطاء الصلاحية.';
   };
@@ -65,20 +69,54 @@ const QRScannerModal: React.FC<QRScannerModalProps> = ({ isOpen, onClose, onScan
   }, []);
 
   const startCamera = useCallback(async () => {
+    if (isStartingRef.current || !isMountedRef.current) return;
+    
+    isStartingRef.current = true;
     setCameraState('requesting');
     setCameraError(null);
 
     if (typeof window !== 'undefined' && !window.isSecureContext) {
       setCameraState('error');
       setCameraError('تشغيل الكاميرا يتطلب HTTPS أو الاتصال من localhost.');
+      isStartingRef.current = false;
       return;
     }
 
-    // انتطار بسيط لضمان أن الـ Div حصل له Mount في الـ DOM بالكامل
-    await new Promise(resolve => setTimeout(resolve, 350));
-
     try {
+      // انتظار بسيط لضمان رندر الـ Div
+      await new Promise(resolve => setTimeout(resolve, 350));
+      
+      // التشييك المرتد: لو المودال قفل أثناء الـ timeout اخرج فوراً
+      if (!isMountedRef.current) {
+        isStartingRef.current = false;
+        return;
+      }
+
       await stopScanner();
+
+      let cameras = [];
+      try {
+        cameras = await Html5Qrcode.getCameras();
+      } catch (err) {
+        if (isMountedRef.current) {
+          setCameraState('error');
+          setCameraError(getCameraErrorMessage(err));
+        }
+        isStartingRef.current = false;
+        return;
+      }
+
+      if (!isMountedRef.current) {
+        isStartingRef.current = false;
+        return;
+      }
+
+      if (!cameras || cameras.length === 0) {
+        setCameraState('error');
+        setCameraError('لم يتم العثور على كاميرا على هذا الجهاز.');
+        isStartingRef.current = false;
+        return;
+      }
 
       const scanner = new Html5Qrcode("reader");
       scannerRef.current = scanner;
@@ -86,40 +124,66 @@ const QRScannerModal: React.FC<QRScannerModalProps> = ({ isOpen, onClose, onScan
       const config = { fps: 15, qrbox: getQrBox, aspectRatio: 1.0 };
       const onSuccess = (text: string) => { onScanSuccess(text); };
 
-      let lastError: any = null;
+      const backCamera = cameras.find(c => c.label.toLowerCase().includes('back') || c.label.toLowerCase().includes('environment') || c.label.toLowerCase().includes('rear'));
+      const defaultCameraId = backCamera ? backCamera.id : cameras[cameras.length - 1].id;
 
       try {
-        await scanner.start({ facingMode: "environment" }, config, onSuccess, () => {});
-        isScanningRef.current = true;
-        setCameraState('scanning');
-        return;
+        await scanner.start(defaultCameraId, config, onSuccess, () => {});
+        if (isMountedRef.current) {
+          isScanningRef.current = true;
+          setCameraState('scanning');
+        }
       } catch (err) {
-        lastError = err;
+        // الفيرست فولباك لو الـ ID المباشر ضرب
+        try {
+          if (!isMountedRef.current) return;
+          await stopScanner();
+          const scanner2 = new Html5Qrcode("reader");
+          scannerRef.current = scanner2;
+          await scanner2.start({ facingMode: "environment" }, config, onSuccess, () => {});
+          if (isMountedRef.current) {
+            isScanningRef.current = true;
+            setCameraState('scanning');
+          }
+        } catch (err2) {
+           // السكند فولباك (الكاميرا الأمامية)
+           try {
+              if (!isMountedRef.current) return;
+              await stopScanner();
+              const scanner3 = new Html5Qrcode("reader");
+              scannerRef.current = scanner3;
+              await scanner3.start({ facingMode: "user" }, config, onSuccess, () => {});
+              if (isMountedRef.current) {
+                isScanningRef.current = true;
+                setCameraState('scanning');
+              }
+           } catch (err3) {
+              if (isMountedRef.current) {
+                setCameraState('error');
+                setCameraError(getCameraErrorMessage(err3));
+              }
+           }
+        }
       }
-
-      try {
-        await scanner.start({ facingMode: "user" }, config, onSuccess, () => {});
-        isScanningRef.current = true;
-        setCameraState('scanning');
-        return;
-      } catch (err2) {
-        lastError = err2;
-      }
-
-      setCameraState('error');
-      setCameraError(getCameraErrorMessage(lastError));
     } catch (err) {
-      setCameraState('error');
-      setCameraError('حدث خطأ في تشغيل الماسح الضوئي للكاميرا.');
+      if (isMountedRef.current) {
+        setCameraState('error');
+        setCameraError('حدث خطأ في تشغيل الماسح الضوئي للكاميرا.');
+      }
+    } finally {
+      isStartingRef.current = false;
     }
   }, [onScanSuccess, stopScanner]);
 
-  // هنا السحر: تشغيل تلقائي فوري بمجرد فتح المودال، و Cleanup كامل عند القفل
   useEffect(() => {
     if (isOpen) {
+      isMountedRef.current = true;
       startCamera();
     }
+    
     return () => {
+      isMountedRef.current = false;
+      isStartingRef.current = false;
       stopScanner();
       setCameraState('idle');
       setCameraError(null);

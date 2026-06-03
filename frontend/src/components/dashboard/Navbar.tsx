@@ -9,7 +9,6 @@ import { NotificationDropdown } from './NotificationDropdown';
 import { NavbarUploadManager } from './NavbarUploadManager';
 import { TeacherSelectionDropdown } from './TeacherSelectionDropdown';
 import { AcademySelector } from './AcademySelector';
-import ScanAttendanceModal from './ScanAttendanceModal';
 import { getTeacherAcademies } from '@/services/authService';
 import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/ui/Icon';
@@ -83,12 +82,6 @@ const getNavItems = (role: string): SidebarItem[] => {
             href: '/academy/grades',
           },
         ],
-      },
-      {
-        id: 'attendance',
-        label: 'الحضور والانصراف',
-        icon: 'calendar-check',
-        href: '/academy/attendance',
       },
       {
         id: 'student_lectures',
@@ -196,12 +189,6 @@ const getNavItems = (role: string): SidebarItem[] => {
         label: 'الفيديوهات التعليمية',
         icon: 'film',
         href: '/teacher/videos',
-      },
-      {
-        id: 'attendance',
-        label: 'الحضور والانصراف',
-        icon: 'calendar-check',
-        href: '/teacher/attendance',
       },
       {
         id: 'exams',
@@ -337,9 +324,6 @@ const secretaryPermissionMap: Record<string, string[]> = {
   
   // Reports
   reports: ['reports', 'stats', 'view reports'],
-
-  // Attendance (Mainly for Academy)
-  attendance: ['attendance'],
 };
 
 const filterNavItemsByPermissions = (items: SidebarItem[], permissions: any[]): SidebarItem[] => {
@@ -473,8 +457,6 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
           }
           return item;
         });
-    } else {
-      items = items.filter(item => item.id !== 'attendance');
     }
   }
 
@@ -484,7 +466,6 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
   const [isScrolled, setIsScrolled] = useState(false);
   const [hasAcademies, setHasAcademies] = useState(false);
   const [isAcademyModalOpen, setIsAcademyModalOpen] = useState(false);
-  const [isScanAttendanceModalOpen, setIsScanAttendanceModalOpen] = useState(false);
   
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navDropdownRef = useRef<HTMLDivElement>(null);
@@ -824,12 +805,6 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
       <AcademySelector 
         isOpen={isAcademyModalOpen}
         onClose={() => setIsAcademyModalOpen(false)}
-      />
-
-      {/* Scan Attendance Modal */}
-      <ScanAttendanceModal
-        isOpen={isScanAttendanceModalOpen}
-        onClose={() => setIsScanAttendanceModalOpen(false)}
       />
     </>
   );

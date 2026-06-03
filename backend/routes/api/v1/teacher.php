@@ -124,13 +124,7 @@ Route::middleware(['auth:sanctum', EnsureUserNotSuspended::class . ':teacher', E
     Route::get('subscription', [SubscriptionController::class, 'show']);
     Route::middleware('throttle:payments')->post('subscription/renew', [SubscriptionController::class, 'requestRenewal']);
     
-    // QR Code Attendance Scanning - Rate limited
-    Route::middleware('throttle:attendance')->group(function () {
-        Route::post('/scan/checkin', [\App\Domains\Application\Http\Controllers\Teacher\ScanController::class, 'checkin']);
-        Route::post('/scan/checkout', [\App\Domains\Application\Http\Controllers\Teacher\ScanController::class, 'checkout']);
-    });
-    Route::get('/scan/today-status', [\App\Domains\Application\Http\Controllers\Teacher\ScanController::class, 'todayStatus']);
-    
+
     // Videos Management - Upload rate limited
     Route::middleware('throttle:video-upload')->group(function () {
         Route::post('videos/initiate-upload', [VideoUploadController::class, 'initiateUpload']);

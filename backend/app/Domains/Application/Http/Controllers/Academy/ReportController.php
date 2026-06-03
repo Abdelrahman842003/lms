@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Domains\Application\Http\Controllers\Academy;
 
 use App\Domains\Application\Http\Controllers\Controller;
-use App\Domains\Application\Http\Requests\Academy\AttendanceReportRequest;
 use App\Domains\Application\Http\Requests\Academy\ExportReportRequest;
 use App\Domains\Application\Http\Requests\Academy\MonthlyReportRequest;
 use App\Domains\Application\Services\Academy\ReportService;
@@ -38,23 +37,6 @@ class ReportController extends Controller
         return null;
     }
 
-    public function attendanceReport(AttendanceReportRequest $request): JsonResponse
-    {
-        $academy = $this->getAcademy($request);
-        
-        if (!$academy) {
-            return $this->errorResponse('Unauthorized', 403);
-        }
-
-        $report = $this->service->generateAttendanceReport(
-            $academy,
-            $request->validated('date_from'),
-            $request->validated('date_to'),
-            $request->validated('teacher_id')
-        );
-
-        return $this->successResponse($report);
-    }
 
     public function teachersReport(Request $request): JsonResponse
     {

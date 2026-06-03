@@ -37,11 +37,7 @@ export default function AddSecretaryPage() {
       const response = await getPermissions();
       const permissionsList = Array.isArray(response) ? response : [];
         
-      // Show all except attendance which is for academies only
-      const teacherSidePermissions = permissionsList.filter(
-        (p: Permission) => p.name !== 'الحضور والانصراف'
-      );
-      setAvailablePermissions(teacherSidePermissions);
+      setAvailablePermissions(permissionsList);
     } catch (error) {
       console.error('Failed to fetch permissions:', error);
     }

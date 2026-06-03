@@ -33,7 +33,7 @@ class SecretaryAppPermissionsSeeder extends Seeder
             'videos'            => 'الفيديوهات التعليمية',
             'exams'             => 'الامتحانات',
             'reports'           => 'التقارير',
-            'attendance'        => 'الحضور والانصراف',
+
             'honor_roll'        => 'لوحة الشرف',
             'courses'           => 'الكورسات',
             'levels'            => 'المستويات',

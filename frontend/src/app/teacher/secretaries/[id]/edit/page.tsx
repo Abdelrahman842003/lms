@@ -44,12 +44,7 @@ export default function EditSecretaryPage() {
       const secretary = secretaryResponse.secretary;
       const permissionsList = Array.isArray(permissionsResponse) ? permissionsResponse : [];
 
-      // Filter out attendance for independent teachers
-      const filteredPermissions = permissionsList.filter(
-        (p: Permission) => p.name !== 'الحضور والانصراف'
-      );
-
-      setAvailablePermissions(filteredPermissions);
+      setAvailablePermissions(permissionsList);
       setFormData({
         name: secretary.name,
         phone: secretary.phone || '',

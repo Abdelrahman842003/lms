@@ -64,12 +64,6 @@ const getNavItems = (role: string): NavItem[] => {
         href: '/academy/grades',
       },
       {
-        id: 'attendance',
-        label: 'الحضور والانصراف',
-        icon: 'calendar-check',
-        href: '/academy/attendance',
-      },
-      {
         id: 'student_lectures',
         label: 'محاضرات الطلاب',
         icon: 'book-open',
@@ -155,16 +149,10 @@ const getNavItems = (role: string): NavItem[] => {
         href: `${base}/videos`,
       },
       {
-        id: 'attendance',
-        label: 'الحضور والانصراف',
-        icon: 'calendar-check',
-        href: `${base}/attendance`,
-      },
-      {
         id: 'exams',
         label: 'الامتحانات',
         icon: 'file-alt',
-        href: `${base}/exams`,
+        href: '/teacher/exams',
       },
       {
         id: 'question_bank',
@@ -302,8 +290,6 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ role }) => {
     const isAcademyMode = (selectedAcademy?.id && selectedAcademy.id !== 'independent') || isLoading;
     if (isAcademyMode) {
       items = items.filter(item => item.id !== 'reports');
-    } else {
-      items = items.filter(item => item.id !== 'attendance');
     }
   }
 

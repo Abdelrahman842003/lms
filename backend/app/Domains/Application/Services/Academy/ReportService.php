@@ -16,43 +16,8 @@ use Illuminate\Support\Facades\DB;
 class ReportService
 {
     public function __construct(
-        private AttendanceService $attendanceService
     ) {}
 
-    /**
-     * Generate attendance report for date range
-     */
-    public function generateAttendanceReport(
-        Academy $academy,
-        string $dateFrom,
-        string $dateTo,
-        ?string $teacherId = null
-    ): array {
-        $query = TeacherAttendanceLog::forAcademy($academy->id)
-            ->with('teacher')
-            ->dateRange($dateFrom, $dateTo)
-            ->orderBy('date', 'desc');
-
-        if ($teacherId) {
-            $query->forTeacher($teacherId);
-        }
-
-        $logs = $query->get();
-        $stats = $this->attendanceService->getStats($academy, $dateFrom, $dateTo);
-
-        return [
-            'academy' => [
-                'id' => $academy->id,
-                'name' => $academy->name,
-            ],
-            'period' => [
-                'from' => $dateFrom,
-                'to' => $dateTo,
-            ],
-            'logs' => $logs,
-            'stats' => $stats,
-        ];
-    }
 
     /**
      * Generate teachers report
@@ -72,30 +37,10 @@ class ReportService
             ->get();
         $teacherIds = $teachers->pluck('id')->toArray();
 
-        // Batch load all attendance logs for the period (avoids N+1)
-        $allLogs = TeacherAttendanceLog::forAcademy($academy->id)
-            ->whereIn('teacher_id', $teacherIds)
-            ->dateRange($startOfMonth, $endOfMonth)
-            ->get()
-            ->groupBy('teacher_id');
-
-        $teacherData = [];
         foreach ($teachers as $teacher) {
-            // Get pre-loaded logs for this teacher
-            $logs = $allLogs->get($teacher->id, collect());
-
-            $totalPresent = $logs->where('status', 'checked_out')->count();
-            $totalAbsent = $logs->where('status', 'absent')->count();
-            $totalDuration = $logs->sum('duration_minutes');
-
             $teacherData[] = [
                 'teacher' => $teacher,
                 'students_count' => $teacher->active_enrollments_count,
-                'attendance' => [
-                    'present' => $totalPresent,
-                    'absent' => $totalAbsent,
-                    'total_duration_minutes' => $totalDuration,
-                ],
             ];
         }
 
@@ -126,18 +71,7 @@ class ReportService
             $endDate = Carbon::createFromDate($year, $month, 1)->endOfMonth();
         }
 
-        // Get attendance logs for the period
-        $attendanceLogs = TeacherAttendanceLog::forAcademy($academy->id)
-            ->with('teacher')
-            ->dateRange($startDate->toDateString(), $endDate->toDateString())
-            ->orderBy('date', 'desc')
-            ->get();
-
-        $attendanceStats = $this->attendanceService->getStats(
-            $academy,
-            $startDate->toDateString(),
-            $endDate->toDateString()
-        );
+        // No attendance logs needed anymore
 
         $teachers = $academy->activeTeachers()
             ->withCount([
@@ -336,7 +270,6 @@ class ReportService
                 'total_exams_count' => $totalExamsCount,
                 'total_secretaries_count' => $totalSecretariesCount,
                 'total_payment_transactions' => $totalPaymentTransactions,
-                ...$attendanceStats['summary'] ?? [],
             ],
             'financial_details' => [
                 'total_revenue' => round((float) $totalRevenue, 2),
@@ -348,8 +281,6 @@ class ReportService
             ],
             'teachers_details' => $teachersDetails,
             'monthly_breakdown' => $monthlyBreakdown,
-            'attendance_logs' => $attendanceLogs,
-            'attendance_stats' => $attendanceStats,
             'billing' => $billing ? [
                 'total_cost' => $billing->total_cost,
                 'status' => $billing->status,

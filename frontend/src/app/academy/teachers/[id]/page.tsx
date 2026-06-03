@@ -19,7 +19,7 @@ export default function TeacherDetailsPage() {
 
   const [teacherData, setTeacherData] = useState<any>(null);
   const [hasFetched, setHasFetched] = useState(false);
-  const [activeTab, setActiveTab] = useState<'overview' | 'groups' | 'grades' | 'attendance'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'groups' | 'grades'>('overview');
 
   useEffect(() => {
     if (!authLoading && (!isAuthenticated || user?.userType !== 'academy')) {
@@ -66,7 +66,7 @@ export default function TeacherDetailsPage() {
   const stats = teacherData?.stats || {};
   const groups = teacherData?.groups || [];
   const grades = teacherData?.grades || [];
-  const attendance_logs = teacherData?.attendance_logs || [];
+  const grades = teacherData?.grades || [];
 
   // Columns for Groups Table
   const groupColumns = [
@@ -84,44 +84,6 @@ export default function TeacherDetailsPage() {
   const gradeColumns = [
     { key: 'name', label: 'الصف الدراسي', sortable: true },
     { key: 'students_count', label: 'عدد الطلاب', sortable: true },
-  ];
-
-  // Columns for Attendance Table
-  const attendanceColumns = [
-    { 
-      key: 'date', 
-      label: 'التاريخ', 
-      sortable: true,
-      render: (date: string) => new Date(date).toLocaleDateString('ar-EG')
-    },
-    { 
-      key: 'check_in', 
-      label: 'وقت الحضور',
-      render: (time: string) => time ? new Date(time).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) : '-'
-    },
-    { 
-      key: 'check_out', 
-      label: 'وقت الانصراف',
-      render: (time: string) => time ? new Date(time).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) : '-'
-    },
-    { 
-      key: 'duration_minutes', 
-      label: 'المدة (دقيقة)',
-      render: (duration: number) => duration ? `${duration} د` : '-'
-    },
-    {
-      key: 'status',
-      label: 'الحالة',
-      render: (status: string) => {
-        const statusMap: any = {
-          'checked_out': { label: 'حضور مكتمل', class: 'badge-success' },
-          'checked_in': { label: 'حاضر الآن', class: 'badge-primary' },
-          'absent': { label: 'غائب', class: 'badge-danger' },
-        };
-        const info = statusMap[status] || { label: status, class: 'badge-secondary' };
-        return <span className={`badge ${info.class}`}>{info.label}</span>;
-      }
-    }
   ];
 
   return (
@@ -178,12 +140,6 @@ export default function TeacherDetailsPage() {
           icon="graduation-cap"
           color="success"
         />
-        <StatCard
-          title="ساعات العمل (الشهر الحالي)"
-          value={stats.total_duration_formatted || '0h 0m'}
-          icon="clock"
-          color="warning"
-        />
       </div>
 
       {/* Tabs Navigation */}
@@ -192,7 +148,6 @@ export default function TeacherDetailsPage() {
           { id: 'overview', label: 'نظرة عامة', icon: 'chart-pie' },
           { id: 'groups', label: 'المجموعات', icon: 'users-class' },
           { id: 'grades', label: 'الصفوف الدراسية', icon: 'book' },
-          { id: 'attendance', label: 'سجل الحضور', icon: 'calendar-check' },
         ].map((tab) => (
           <button
             key={tab.id}
@@ -241,42 +196,6 @@ export default function TeacherDetailsPage() {
                 </div>
               )}
             </DashboardCard>
-
-            <DashboardCard title="آخر نشاط حضور" icon="history">
-              {attendance_logs && attendance_logs.length > 0 ? (
-                <div className="space-y-4">
-                  {attendance_logs.slice(0, 5).map((log: any) => (
-                    <div key={log.id} className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/5 hover:border-white/10 transition-colors">
-                      <div>
-                        <p className="text-white font-bold mb-1">
-                          {new Date(log.date).toLocaleDateString('ar-EG')}
-                        </p>
-                        <p className="text-xs text-gray-400 flex items-center gap-2">
-                          <span className="bg-white/5 px-2 py-0.5 rounded">
-                            {log.check_in ? new Date(log.check_in).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) : '-'} 
-                          </span>
-                          <Icon name="arrow-left" className="text-gray-600 text-[10px]" />
-                          <span className="bg-white/5 px-2 py-0.5 rounded">
-                            {log.check_out ? new Date(log.check_out).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) : '-'}
-                          </span>
-                        </p>
-                      </div>
-                      <span className={`px-3 py-1 text-xs font-bold rounded-lg ${
-                        log.status === 'checked_out' ? 'bg-green-500/20 text-green-400' : 
-                        log.status === 'absent' ? 'bg-red-500/20 text-red-400' : 'bg-blue-500/20 text-blue-400'
-                      }`}>
-                        {log.status === 'checked_out' ? 'مكتمل' : log.status === 'absent' ? 'غائب' : 'حاضر'}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-gray-400">
-                  <Icon name="history" className="text-4xl mb-3 opacity-30" />
-                  <p>لا يوجد سجل حضور</p>
-                </div>
-              )}
-            </DashboardCard>
           </div>
         )}
 
@@ -296,16 +215,6 @@ export default function TeacherDetailsPage() {
               columns={gradeColumns}
               data={grades || []}
               searchable={true}
-            />
-          </DashboardCard>
-        )}
-
-        {activeTab === 'attendance' && (
-          <DashboardCard title="سجل الحضور والانصراف" icon="calendar-alt">
-            <DataTable
-              columns={attendanceColumns}
-              data={attendance_logs || []}
-              searchable={false}
             />
           </DashboardCard>
         )}

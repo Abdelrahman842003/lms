@@ -5,7 +5,7 @@ use App\Domains\Application\Http\Controllers\Academy\AuthController as AcademyAu
 use App\Domains\Application\Http\Controllers\Academy\DashboardController;
 use App\Domains\Application\Http\Controllers\Academy\TeacherController;
 use App\Domains\Application\Http\Controllers\Academy\SecretaryController;
-use App\Domains\Application\Http\Controllers\Academy\AttendanceController;
+
 use App\Domains\Application\Http\Controllers\Academy\NotificationController;
 use App\Domains\Application\Http\Controllers\Academy\ReportController;
 use App\Domains\Application\Http\Controllers\Academy\AcademyReportController;
@@ -56,12 +56,7 @@ Route::middleware(['auth:sanctum', EnsureActiveSubscription::class])->prefix('ac
     Route::put('secretaries/{secretary}/toggle-status', [SecretaryController::class, 'toggleStatus']);
     Route::apiResource('secretaries', SecretaryController::class);
     
-    // Attendance Management
-    Route::get('attendance', [AttendanceController::class, 'index']);
-    Route::get('attendance/today', [AttendanceController::class, 'todayAttendance']);
-    Route::post('attendance/mark-absent', [AttendanceController::class, 'markAbsent']);
-    Route::put('attendance/{log}/notes', [AttendanceController::class, 'updateNotes']);
-    Route::get('attendance/stats', [AttendanceController::class, 'stats']);
+
     
     // Notifications - Rate limited to prevent spam
     Route::get('notifications', [NotificationController::class, 'index']);
@@ -75,7 +70,6 @@ Route::middleware(['auth:sanctum', EnsureActiveSubscription::class])->prefix('ac
     Route::middleware('throttle:voice-notifications')->post('notifications/voice', [NotificationController::class, 'storeVoice']);
     
     // Reports
-    Route::get('reports/attendance', [ReportController::class, 'attendanceReport']);
     Route::get('reports/teachers', [ReportController::class, 'teachersReport']);
     Route::get('reports/monthly', [ReportController::class, 'monthlyReport']);
 

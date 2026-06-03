@@ -243,58 +243,6 @@ export const deleteGroup = async (id: string) => {
   return response.data;
 };
 
-// ========== Attendance Management ==========
-export const getAttendanceLogs = async (params: {
-  page?: number;
-  per_page?: number;
-  teacher_id?: string;
-  date_from?: string;
-  date_to?: string;
-  status?: string;
-}) => {
-  const response = await axios.get(`${API_BASE_URL}/academy/attendance`, {
-    headers: getAuthHeaders(),
-    params,
-  });
-  return response.data;
-};
-
-export const getTodayAttendance = async () => {
-  const response = await axios.get(`${API_BASE_URL}/academy/attendance/today`, {
-    headers: getAuthHeaders(),
-  });
-  return response.data;
-};
-
-export const markAbsent = async (data: {
-  teacher_id: string;
-  date: string;
-  notes?: string;
-}) => {
-  const response = await axios.post(
-    `${API_BASE_URL}/academy/attendance/mark-absent`,
-    data,
-    { headers: getAuthHeaders() }
-  );
-  return response.data;
-};
-
-export const updateAttendanceNotes = async (logId: string, notes: string) => {
-  const response = await axios.put(
-    `${API_BASE_URL}/academy/attendance/${logId}/notes`,
-    { notes },
-    { headers: getAuthHeaders() }
-  );
-  return response.data;
-};
-
-export const getAttendanceStats = async (dateFrom: string, dateTo: string) => {
-  const response = await axios.get(`${API_BASE_URL}/academy/attendance/stats`, {
-    headers: getAuthHeaders(),
-    params: { date_from: dateFrom, date_to: dateTo },
-  });
-  return response.data;
-};
 
 // ========== Notifications ==========
 export const getNotifications = async (page = 1, perPage = 15, targetType?: string) => {
@@ -406,18 +354,6 @@ export const sendVoiceNotification = async (data: {
   return response.data;
 };
 
-// ========== Reports ==========
-export const getAttendanceReport = async (params: {
-  date_from: string;
-  date_to: string;
-  teacher_id?: string;
-}) => {
-  const response = await axios.get(`${API_BASE_URL}/academy/reports/attendance`, {
-    headers: getAuthHeaders(),
-    params,
-  });
-  return response.data;
-};
 
 
 
@@ -452,7 +388,7 @@ export const getFinancialReport = async (params: {
 };
 
 export const exportReportToPDF = async (params: {
-  report_type: 'attendance' | 'teachers' | 'monthly' | 'students' | 'financial';
+  report_type: 'teachers' | 'monthly' | 'students' | 'financial';
   month?: number;
   year?: number;
   date_from?: string;
@@ -840,13 +776,6 @@ export default {
   removeSecretary,
   checkPhoneAvailability,
   
-  // Attendance
-  getAttendanceLogs,
-  getTodayAttendance,
-  markAbsent,
-  updateAttendanceNotes,
-  getAttendanceStats,
-  
   // Notifications
   getNotifications,
   createNotification,
@@ -857,7 +786,6 @@ export default {
   getUnreadNotificationsCount,
   
   // Reports
-  getAttendanceReport,
 
   getMonthlyReport,
   getStudentsReport,
