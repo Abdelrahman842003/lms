@@ -275,18 +275,42 @@ export function CoreAuthProvider({ children }: { children: ReactNode }) {
       let fcmToken = null;
       try {
         const { getFcmToken } = await import("@/lib/firebase");
-        fcmToken = await getFcmToken();
+        
+        // Timeout to prevent hanging if Firebase/service worker is stuck
+        const timeoutPromise = new Promise<null>((resolve) => {
+          setTimeout(() => {
+            console.warn("FCM token retrieval timed out during logout");
+            resolve(null);
+          }, 2000);
+        });
+        
+        fcmToken = await Promise.race([
+          getFcmToken().catch((e: any) => {
+            console.error("getFcmToken error:", e);
+            return null;
+          }),
+          timeoutPromise
+        ]);
       } catch (e) {
         console.error("Failed to get FCM token for logout:", e);
       }
 
       if (userType) {
-        await apiLogout(userType, fcmToken);
+        // Timeout to prevent hanging if API is stuck
+        const logoutTimeout = new Promise<never>((_, reject) => {
+          setTimeout(() => reject(new Error("Logout API call timed out")), 5000);
+        });
+        
+        await Promise.race([
+          apiLogout(userType, fcmToken),
+          logoutTimeout
+        ]);
       }
 
       try {
         const { deleteFcmToken } = await import("@/lib/firebase");
-        await deleteFcmToken();
+        // Don't await this, let it run in the background
+        deleteFcmToken().catch((e: any) => console.error("Failed to delete FCM token:", e));
       } catch (e) {
         console.error("Failed to delete FCM token:", e);
       }
