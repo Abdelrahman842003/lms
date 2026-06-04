@@ -17,8 +17,6 @@ return new class extends Migration
             $table->foreign('group_id')->references('id')->on('groups')->nullOnDelete();
             $table->string('title');
             $table->text('description')->nullable();
-            $table->string('qr_code')->nullable()->unique();
-            $table->timestamp('qr_code_expires_at')->nullable();
             $table->dateTime('start_time')->nullable();
             $table->dateTime('end_time')->nullable();
             $table->boolean('is_active')->default(false);
@@ -28,9 +26,11 @@ return new class extends Migration
             $table->integer('duration_minutes')->nullable();
             $table->json('cancelled_dates')->nullable();
             $table->foreignUuid('parent_id')->nullable()->constrained('lectures')->nullOnDelete();
+            $table->unsignedInteger('version')->default(1);
             $table->timestamps();
 
             // Performance indexes
+            $table->index('updated_at');
             $table->index(['teacher_id', 'is_active'], 'lectures_teacher_active_index');
             $table->index(['grade_id', 'is_active'], 'lectures_grade_active_index');
             $table->index(['teacher_id', 'start_time', 'is_active'], 'idx_lectures_teacher_date');

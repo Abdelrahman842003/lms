@@ -329,24 +329,36 @@ class LectureService
         return $lecture;
     }
 
-    public function generateQrCode(Lecture $lecture): array
+    public function generateAttendanceCode(Lecture $lecture): array
     {
-        // Generate a signed token valid for 10 seconds (5s refresh + 5s buffer)
-        $payload = [
-            'lecture_id' => $lecture->id,
-            'expires_at' => Carbon::now()->addSeconds(10)->timestamp,
-            'salt' => Str::random(8),
-        ];
+        // Generate a random 6-digit code
+        $code = (string) random_int(100000, 999999);
 
-        $token = Crypt::encryptString(json_encode($payload));
+        // Ensure uniqueness (in the extremely rare case of collision)
+        while (\Illuminate\Support\Facades\Cache::has('attendance_code:' . $code)) {
+            $code = (string) random_int(100000, 999999);
+        }
 
-        // Return the full URL that the student should visit
-        $url = config('app.url').'/student/attend?token='.$token;
+        // Store the code mapped to lecture ID for 4 hours
+        \Illuminate\Support\Facades\Cache::put('attendance_code:' . $code, $lecture->id, now()->addHours(4));
+        
+        // Keep track of the active code for this lecture so we can invalidate it
+        \Illuminate\Support\Facades\Cache::put('lecture_active_attendance_code:' . $lecture->id, $code, now()->addHours(4));
 
         return [
-            'qr_code_url' => $url,
-            'expires_at' => Carbon::now()->addSeconds(10),
+            'code' => $code,
+            'expires_at' => Carbon::now()->addHours(4),
         ];
+    }
+
+    public function invalidateAttendanceCode(Lecture $lecture): void
+    {
+        $code = \Illuminate\Support\Facades\Cache::get('lecture_active_attendance_code:' . $lecture->id);
+        
+        if ($code) {
+            \Illuminate\Support\Facades\Cache::forget('attendance_code:' . $code);
+            \Illuminate\Support\Facades\Cache::forget('lecture_active_attendance_code:' . $lecture->id);
+        }
     }
 
     public function recordAttendance(Lecture $lecture, string $studentId): array

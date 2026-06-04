@@ -114,9 +114,18 @@ class LecturePolicy
     }
 
     /**
-     * Determine whether the user can generate QR code for the lecture.
+     * Determine whether the user can generate attendance code for the lecture.
      */
-    public function generateQrCode(Teacher|Secretary $user, Lecture $lecture): bool
+    public function generateAttendanceCode(Teacher|Secretary $user, Lecture $lecture): bool
+    {
+        $teacher = $this->resolveTeacher($user);
+        return $teacher && $lecture->teacher_id === $teacher->id;
+    }
+
+    /**
+     * Determine whether the user can invalidate attendance code for the lecture.
+     */
+    public function invalidateAttendanceCode(Teacher|Secretary $user, Lecture $lecture): bool
     {
         $teacher = $this->resolveTeacher($user);
         return $teacher && $lecture->teacher_id === $teacher->id;

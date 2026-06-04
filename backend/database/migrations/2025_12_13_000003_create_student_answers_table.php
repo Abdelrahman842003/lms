@@ -12,6 +12,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->foreignUuid('exam_attempt_id')->constrained('exam_attempts')->onDelete('cascade');
             $table->foreignUuid('question_id')->constrained('questions')->onDelete('cascade');
+            $table->json('question_snapshot')->nullable();
             $table->text('answer')->nullable(); // Null if time expired without answer
             $table->boolean('is_correct')->default(false);
             $table->timestamp('answered_at')->nullable();

@@ -9,8 +9,6 @@ import { ImageCropModal, ConfirmationModal, Skeleton, Button, LoadingSpinner, Ic
 import { Input } from '@/components/ui/Input';
 import { toast } from 'react-hot-toast';
 
-import QRCode from 'react-qr-code';
-
 export default function StudentProfilePage() {
   const { user, isLoading, updateUser } = useAuth();
   const [isEditing, setIsEditing] = React.useState(false);
@@ -318,33 +316,6 @@ export default function StudentProfilePage() {
     }
   };
 
-  const downloadQRCode = () => {
-    const svg = document.getElementById("student-qr-code");
-    if (!svg) return;
-
-    const svgData = new XMLSerializer().serializeToString(svg);
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    const img = new Image();
-    
-    img.onload = () => {
-      canvas.width = img.width;
-      canvas.height = img.height;
-      if (ctx) {
-        ctx.fillStyle = "white";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, 0, 0);
-        const pngFile = canvas.toDataURL("image/png");
-        const downloadLink = document.createElement("a");
-        downloadLink.download = `student-qr-${user?.id}.png`;
-        downloadLink.href = pngFile;
-        downloadLink.click();
-      }
-    };
-
-    img.src = "data:image/svg+xml;base64," + btoa(svgData);
-  };
-
   return (
     <DashboardLayout
       role="student"
@@ -514,37 +485,6 @@ export default function StudentProfilePage() {
           </div>
 
         </DashboardCard>
-
-        {/* QR Code Card */}
-        <DashboardCard
-          title="رمز الحضور"
-          icon="fas fa-qrcode"
-          action={
-            <Button
-              variant="primary"
-              onClick={downloadQRCode}
-            >
-              <Icon name="download" className="ml-2" />
-              <span>تحميل الرمز</span>
-            </Button>
-          }
-        >
-          <div className="py-8 flex flex-col items-center justify-center gap-6">
-            <div className="p-4 bg-white rounded-xl shadow-sm">
-              <QRCode
-                id="student-qr-code"
-                value={`student:${user?.id || ''}`}
-                size={200}
-                level="H"
-              />
-            </div>
-            <p className="text-gray-light text-center max-w-md">
-              هذا الرمز خاص بك. يمكنك استخدامه لتسجيل الحضور عند المحاضر في حال عدم توفر الإنترنت.
-            </p>
-          </div>
-        </DashboardCard>
-
-
 
         {/* Change Password Card */}
         <DashboardCard

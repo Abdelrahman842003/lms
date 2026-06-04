@@ -16,22 +16,22 @@ class MarkAttendanceRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'token' => 'required|string|min:5',
+            'code' => 'required|string|size:6',
         ];
     }
 
     public function messages(): array
     {
         return [
-            'token.required' => 'كود الحضور مطلوب',
-            'token.min' => 'كود الحضور غير صحيح',
+            'code.required' => 'كود الحضور مطلوب',
+            'code.size' => 'كود الحضور يجب أن يكون 6 أرقام',
         ];
     }
 
     public function prepareForValidation()
     {
         $this->merge([
-            'token' => clean_input($this->input('token')),
+            'code' => clean_input($this->input('code')),
         ]);
     }
 }

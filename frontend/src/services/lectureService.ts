@@ -161,9 +161,15 @@ export const deleteLecture = async (id: string): Promise<void> => {
   });
 };
 
-export const generateQrCode = async (id: string): Promise<{ qr_code_url: string; expires_at: string }> => {
-  return await fetchApi(`/api/teacher/lectures/${id}/qr-code`, {
+export const generateAttendanceCode = async (id: string): Promise<{ code: string; expires_at: string }> => {
+  return await fetchApi(`/api/teacher/lectures/${id}/attendance-code`, {
     method: 'POST',
+  });
+};
+
+export const invalidateAttendanceCode = async (id: string): Promise<{ message: string }> => {
+  return await fetchApi(`/api/teacher/lectures/${id}/attendance-code`, {
+    method: 'DELETE',
   });
 };
 
@@ -174,10 +180,10 @@ export const recordAttendance = async (lectureId: string, studentId: string): Pr
   });
 };
 
-export const markStudentAttendance = async (token: string): Promise<{ message: string; lecture: string }> => {
+export const markStudentAttendance = async (code: string): Promise<{ message: string; lecture: string }> => {
   return await fetchApi('/student/attend', {
     method: 'POST',
-    body: JSON.stringify({ token }),
+    body: JSON.stringify({ code }),
   });
 };
 

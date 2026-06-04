@@ -40,20 +40,47 @@ class StudentAttendanceService
     }
 
     /**
-     * Mark attendance for a student using QR code
+     * Mark attendance for a student using 6-digit code
      */
-    public function markAttendance(Student $student, string $token): array
+    public function markAttendance(Student $student, string $code): array
     {
-        $lecture = $this->validateQrCode($token);
+        $lockoutKey = "attendance_lockout:{$student->id}";
+        $failuresKey = "attendance_failures:{$student->id}";
+
+        if (\Illuminate\Support\Facades\Cache::has($lockoutKey)) {
+            $lockoutEnd = \Illuminate\Support\Facades\Cache::get($lockoutKey);
+            $remainingSeconds = max(0, $lockoutEnd - now()->timestamp);
+            
+            if ($remainingSeconds > 0) {
+                $minutes = ceil($remainingSeconds / 60);
+                throw new DomainException("تم إيقافك مؤقتاً بسبب كثرة المحاولات الخاطئة. يرجى المحاولة بعد {$minutes} دقيقة.");
+            } else {
+                \Illuminate\Support\Facades\Cache::forget($lockoutKey);
+            }
+        }
+
+        $lecture = $this->validateAttendanceCode($code);
 
         if (!$lecture) {
-            throw new DomainException('Invalid QR code');
+            $failures = (int) \Illuminate\Support\Facades\Cache::get($failuresKey, 0) + 1;
+            \Illuminate\Support\Facades\Cache::put($failuresKey, $failures, now()->addHours(24));
+
+            if ($failures >= 6) {
+                \Illuminate\Support\Facades\Cache::put($lockoutKey, now()->addMinutes(60)->timestamp, now()->addMinutes(60));
+                \Illuminate\Support\Facades\Cache::forget($failuresKey);
+                throw new DomainException("تم إيقافك لمدة 60 دقيقة بسبب تجاوز الحد الأقصى للمحاولات الخاطئة.");
+            } elseif ($failures === 3) {
+                \Illuminate\Support\Facades\Cache::put($lockoutKey, now()->addMinutes(3)->timestamp, now()->addMinutes(3));
+                throw new DomainException("تم إيقافك لمدة 3 دقائق بسبب تكرار المحاولات الخاطئة.");
+            }
+
+            $remaining = ($failures < 3) ? 3 - $failures : 6 - $failures;
+            throw new DomainException("كود غير صحيح. المتبقي لك {$remaining} محاولة قبل الإيقاف.");
         }
 
-        // Check if QR code is expired
-        if ($this->isQrCodeExpired($lecture, $token)) {
-            throw new DomainException('QR code has expired');
-        }
+        // Clear failures on success
+        \Illuminate\Support\Facades\Cache::forget($failuresKey);
+        \Illuminate\Support\Facades\Cache::forget($lockoutKey);
 
         // Check if student already marked attendance for this lecture today
         $existing = Attendance::where('lecture_id', $lecture->id)
@@ -142,40 +169,16 @@ class StudentAttendanceService
     }
 
     /**
-     * Validate QR code and return lecture
+     * Validate 6-digit attendance code and return lecture
      */
-    private function validateQrCode(string $token): ?Lecture
+    private function validateAttendanceCode(string $code): ?Lecture
     {
-        $lecture = null;
+        $lectureId = \Illuminate\Support\Facades\Cache::get('attendance_code:' . $code);
 
-        try {
-            $decrypted = Crypt::decryptString($token);
-            $payload = json_decode($decrypted, true);
-            
-            if (is_array($payload) && isset($payload['lecture_id']) && isset($payload['expires_at'])) {
-                if (Carbon::now()->timestamp > $payload['expires_at']) {
-                    return null; // Expired
-                }
-                $lecture = Lecture::find($payload['lecture_id']);
-            }
-        } catch (\Exception $e) {
-            // Fallback to legacy static QR code
-            $lecture = Lecture::where('qr_code', $token)->first();
+        if (!$lectureId) {
+            return null;
         }
 
-        return $lecture;
-    }
-
-    /**
-     * Check if QR code is expired
-     */
-    private function isQrCodeExpired(Lecture $lecture, string $token): bool
-    {
-        // For legacy codes, check expiration from DB
-        if ($lecture->qr_code === $token && $lecture->qr_code_expires_at) {
-            return Carbon::now()->greaterThan($lecture->qr_code_expires_at);
-        }
-
-        return false;
+        return Lecture::find($lectureId);
     }
 }

@@ -25,10 +25,12 @@ return new class extends Migration
             $table->date('subscription_end')->nullable();
             $table->text('teacher_notes')->nullable();
             
+            $table->unsignedInteger('version')->default(1);
             $table->timestamps();
             $table->softDeletes();
             
             // Indexes for performance
+            $table->index('updated_at');
             $table->index('student_id');
             $table->index('teacher_id');
             $table->index('academy_id');

@@ -40,10 +40,10 @@ class StudentAttendanceController extends Controller
     public function markAttendance(MarkAttendanceRequest $request): JsonResponse
     {
         $student = $request->user();
-        $token = $request->validated('token');
+        $code = $request->validated('code');
 
         try {
-            $result = $this->attendanceService->markAttendance($student, $token);
+            $result = $this->attendanceService->markAttendance($student, $code);
 
             if ($result['status'] === 'queued') {
                 return $this->successResponse([
@@ -69,8 +69,15 @@ class StudentAttendanceController extends Controller
             $errorMessage = match($e->getMessage()) {
                 'Invalid QR code' => 'رمز QR غير صالح',
                 'QR code has expired' => 'رمز QR منتهي',
-                default => 'حدث خطأ أثناء تسجيل الحضور',
+                'Invalid or expired attendance code' => 'كود الحضور غير صالح أو منتهي الصلاحية',
+                default => 'حدث خطأ أثناء تسجيل الحضور: ' . $e->getMessage(),
             };
+
+            \Illuminate\Support\Facades\Log::error('Attendance Error: ' . $e->getMessage(), [
+                'student_id' => $student->id,
+                'code' => $code,
+                'trace' => $e->getTraceAsString()
+            ]);
 
             return $this->errorResponse($errorMessage, 400);
         }

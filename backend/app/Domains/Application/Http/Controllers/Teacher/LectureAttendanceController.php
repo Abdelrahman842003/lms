@@ -20,13 +20,22 @@ class LectureAttendanceController extends Controller
         private LectureService $service
     ) {}
 
-    public function generateQrCode(Request $request, Lecture $lecture): JsonResponse
+    public function generateAttendanceCode(Request $request, Lecture $lecture): JsonResponse
     {
-        Gate::authorize('generateQrCode', $lecture);
+        Gate::authorize('generateAttendanceCode', $lecture);
 
-        $result = $this->service->generateQrCode($lecture);
+        $result = $this->service->generateAttendanceCode($lecture);
 
         return $this->successResponse($result);
+    }
+
+    public function invalidateAttendanceCode(Request $request, Lecture $lecture): JsonResponse
+    {
+        Gate::authorize('invalidateAttendanceCode', $lecture);
+
+        $this->service->invalidateAttendanceCode($lecture);
+
+        return $this->successResponse(['message' => 'Attendance code invalidated successfully']);
     }
 
     public function recordAttendance(RecordAttendanceRequest $request, Lecture $lecture): JsonResponse

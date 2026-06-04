@@ -27,8 +27,10 @@ return new class extends Migration
             $table->string('gender')->default(\App\Domains\Auth\Enums\StudentGender::MALE->value);
             $table->string('education_type')->nullable();
             
+            $table->unsignedInteger('version')->default(1);
             $table->timestamps();
             
+            $table->index('updated_at');
             $table->index('phone');
             $table->index('parent_phone');
             $table->index('guardian_id');

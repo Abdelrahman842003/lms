@@ -20,8 +20,8 @@ return new class extends Migration
             $table->string('terminated_reason')->nullable(); // 'visibility_change', 'screen_resize', 'time_expired'
             $table->timestamps();
 
-            // Prevent multiple attempts
-            $table->unique(['exam_id', 'student_id']);
+            $table->index('exam_id');
+            $table->index('student_id');
         });
     }
 

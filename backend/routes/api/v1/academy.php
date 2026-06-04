@@ -93,7 +93,8 @@ Route::middleware(['auth:sanctum', EnsureActiveSubscription::class])->prefix('ac
     Route::put('lectures/{lecture}/toggle-active', [LectureController::class, 'toggleActive']);
     Route::post('lectures/{lecture}/end', [LectureController::class, 'endLecture']);
     Route::post('lectures/{lecture}/cancel-session', [LectureController::class, 'cancelSession']);
-    Route::post('lectures/{lecture}/qr-code', [LectureController::class, 'generateQrCode']);
+    Route::post('lectures/{lecture}/attendance-code', [LectureController::class, 'generateAttendanceCode']);
+    Route::delete('lectures/{lecture}/attendance-code', [LectureController::class, 'invalidateAttendanceCode']);
     Route::post('lectures/{lecture}/attendance', [LectureController::class, 'recordAttendance']);
     Route::get('lectures/{lecture}/attendees', [LectureController::class, 'getAttendees']);
     Route::get('lectures/{lecture}/sessions', [LectureSessionController::class, 'index']);

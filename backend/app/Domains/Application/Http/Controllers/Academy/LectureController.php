@@ -156,7 +156,7 @@ class LectureController extends Controller
         ]);
     }
 
-    public function generateQrCode(Request $request, Lecture $lecture): JsonResponse
+    public function generateAttendanceCode(Request $request, Lecture $lecture): JsonResponse
     {
         $academy = $this->getAcademy($request);
         if (!$academy) {
@@ -167,9 +167,25 @@ class LectureController extends Controller
             return $this->errorResponse('Unauthorized', 403);
         }
 
-        $qrData = $this->service->generateQrCode($lecture);
+        $codeData = $this->service->generateAttendanceCode($lecture);
 
-        return $this->successResponse($qrData);
+        return $this->successResponse($codeData);
+    }
+
+    public function invalidateAttendanceCode(Request $request, Lecture $lecture): JsonResponse
+    {
+        $academy = $this->getAcademy($request);
+        if (!$academy) {
+            return $this->errorResponse('Unauthorized', 403);
+        }
+
+        if (!$this->canAccessLecture($academy, $lecture)) {
+            return $this->errorResponse('Unauthorized', 403);
+        }
+
+        $this->service->invalidateAttendanceCode($lecture);
+
+        return $this->successResponse(['message' => 'Attendance code invalidated successfully']);
     }
 
     public function getAttendees(Request $request, Lecture $lecture): JsonResponse

@@ -18,7 +18,10 @@ return new class extends Migration
             $table->decimal('price', 8, 2)->nullable();
             $table->string('time')->nullable();
             $table->string('days')->nullable();
+            $table->unsignedInteger('version')->default(1);
             $table->timestamps();
+            
+            $table->index('updated_at');
         });
     }
 

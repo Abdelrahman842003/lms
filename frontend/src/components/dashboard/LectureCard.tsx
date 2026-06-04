@@ -328,18 +328,11 @@ export const LectureCard: React.FC<LectureCardProps> = ({
                ) : (
                   <div className="flex items-center gap-2">
                      <Button 
-                        onClick={onScan} 
+                        onClick={onQRCode} 
                         variant="outline" 
                         className="flex-1 h-11 rounded-xl !bg-surface-secondary hover:!bg-surface-hover !border-border-theme-primary !text-text-theme-primary font-bold text-xs gap-2 transition-all"
                      >
-                        <Icon name="camera" /> <span>مسح</span>
-                     </Button>
-                     <Button 
-                        onClick={onQRCode} 
-                        variant="outline" 
-                        className="w-12 h-11 rounded-xl !bg-surface-secondary hover:!bg-surface-hover !border-border-theme-primary !text-text-theme-primary font-bold text-xs flex items-center justify-center transition-all"
-                     >
-                        <Icon name="qrcode" />
+                        <Icon name="dialpad" /> <span>رقم الحضور</span>
                      </Button>
                      <Button 
                         onClick={onEnd} 

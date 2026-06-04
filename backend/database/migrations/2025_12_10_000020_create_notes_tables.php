@@ -18,9 +18,11 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->boolean('is_active')->default(true);
 
+            $table->unsignedInteger('version')->default(1);
             $table->timestamps();
             $table->softDeletes();
 
+            $table->index('updated_at');
             $table->index(['academy_id', 'is_active']);
             $table->index(['teacher_id', 'is_active']);
         });

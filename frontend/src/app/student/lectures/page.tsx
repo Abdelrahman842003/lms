@@ -8,7 +8,7 @@ import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { fetchApi } from '@/services/authService';
 import { Skeleton, Button, Icon } from '@/components/ui/index';
 import { Lecture, markStudentAttendance } from '@/services/lectureService';
-import QRScannerModal from '@/components/dashboard/QRScannerModal';
+import { CodeEntryModal } from '@/components/dashboard';
 import toast from 'react-hot-toast';
 
 // Extend Lecture type to include iso properties if they are missing in the base type
@@ -25,41 +25,27 @@ export default function StudentLecturesPage() {
   const [attendance, setAttendance] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
-  // Scanner State
-  const [showScannerModal, setShowScannerModal] = useState(false);
-  const [selectedLectureForScan, setSelectedLectureForScan] = useState<Lecture | null>(null);
+  // Code Entry State
+  const [showCodeModal, setShowCodeModal] = useState(false);
+  const [selectedLectureForCode, setSelectedLectureForCode] = useState<Lecture | null>(null);
 
-  const handleScanSuccess = async (decodedText: string) => {
-    if (!selectedLectureForScan) return;
+  const handleCodeSubmit = async (code: string) => {
+    if (!selectedLectureForCode) return;
 
     try {
-      // Extract token if decodedText is a URL
-      let token = decodedText;
-      try {
-        const url = new URL(decodedText);
-        const tokenParam = url.searchParams.get('token');
-        if (tokenParam) {
-          token = tokenParam;
-        }
-      } catch (e) {
-        // Not a URL, treat as raw token
-      }
-
-      const response = await markStudentAttendance(token);
+      const response = await markStudentAttendance(code);
       toast.success(`تم تسجيل الحضور بنجاح في محاضرة: ${response.lecture}`);
       
       // Update local attendance state to reflect change immediately
-      if (selectedLectureForScan) {
-        setAttendance(prev => [...prev, {
-          id: Date.now().toString(), // Temporary ID
-          lecture_id: selectedLectureForScan.id,
-          status: 'present',
-          created_at: new Date().toISOString(),
-          lecture: selectedLectureForScan
-        }]);
-      }
+      setAttendance(prev => [...prev, {
+        id: Date.now().toString(), // Temporary ID
+        lecture_id: selectedLectureForCode.id,
+        status: 'present',
+        created_at: new Date().toISOString(),
+        lecture: selectedLectureForCode
+      }]);
 
-      setShowScannerModal(false);
+      setShowCodeModal(false);
     } catch (error: any) {
       console.error('Failed to record attendance:', error);
       toast.error(error.message || 'فشل تسجيل الحضور');
@@ -207,11 +193,11 @@ export default function StudentLecturesPage() {
                         </div>
                       ) : (
                         <Button 
-                          onClick={() => { setSelectedLectureForScan(lecture); setShowScannerModal(true); }}
+                          onClick={() => { setSelectedLectureForCode(lecture); setShowCodeModal(true); }}
                           className="w-full h-14 rounded-2xl bg-rose-500 hover:bg-rose-600 text-white font-black shadow-xl shadow-rose-500/20 gap-3"
                         >
-                          <Icon name="qrcode" />
-                          <span>تسجيل الحضور (Scan QR)</span>
+                          <Icon name="dialpad" />
+                          <span>تسجيل الحضور</span>
                         </Button>
                       )}
                     </div>
@@ -299,12 +285,11 @@ export default function StudentLecturesPage() {
         )}
       </div>
 
-      <QRScannerModal
-        isOpen={showScannerModal}
-        onClose={() => setShowScannerModal(false)}
-        onScanSuccess={handleScanSuccess}
-        lectureTitle={(selectedLectureForScan as ExtendedLecture | null)?.display_title || selectedLectureForScan?.title || ''}
-        instructions="وجه الكاميرا نحو رمز QR الخاص بالمحاضرة لتسجيل الحضور"
+      <CodeEntryModal
+        isOpen={showCodeModal}
+        onClose={() => setShowCodeModal(false)}
+        onSubmit={handleCodeSubmit}
+        lectureTitle={(selectedLectureForCode as ExtendedLecture | null)?.display_title || selectedLectureForCode?.title || ''}
       />
     </DashboardLayout>
   );

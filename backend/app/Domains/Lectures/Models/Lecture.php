@@ -33,8 +33,6 @@ class Lecture extends Model
         'description',
         'start_time',
         'end_time',
-        'qr_code',
-        'qr_code_expires_at',
         'is_recurring',
         'recurrence_days',
         'recurrence_time',
@@ -50,7 +48,6 @@ class Lecture extends Model
         return [
             'start_time' => 'datetime',
             'end_time' => 'datetime',
-            'qr_code_expires_at' => 'datetime',
             'is_active' => 'boolean',
             'is_recurring' => 'boolean',
             'recurrence_days' => 'array',

@@ -18,6 +18,11 @@ return new class extends Migration
             $table->integer('exam_max_points')->default(50);
             $table->integer('exam_retake_bonus')->default(20);
             $table->integer('exam_first_place_bonus')->default(25);
+            $table->integer('exam_fail_deduction')->default(10);
+            $table->integer('exam_passing_percentage')->default(50);
+            $table->integer('question_easy_points')->default(1);
+            $table->integer('question_medium_points')->default(2);
+            $table->integer('question_hard_points')->default(3);
             $table->integer('streak_5_bonus')->default(15);
             $table->integer('streak_10_bonus')->default(30);
             

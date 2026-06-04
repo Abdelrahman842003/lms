@@ -12,7 +12,8 @@ import {
   deleteLecture,
   Lecture,
   CreateLectureData,
-  generateQrCode,
+  generateAttendanceCode,
+  invalidateAttendanceCode,
   recordAttendance,
   toggleLectureActive,
   endLecture,
@@ -21,8 +22,7 @@ import {
 import { initializeEcho } from '@/lib/echo';
 import { getGrades } from '@/services/gradeService';
 import { getGroups, Group } from '@/services/groupService';
-import QRCodeModal from '@/components/dashboard/QRCodeModal';
-import QRScannerModal from '@/components/dashboard/QRScannerModal';
+import { AttendanceCodeModal } from '@/components/dashboard';
 import { LectureCard } from '@/components/dashboard/LectureCard';
 import { ManualAttendanceModal } from '@/components/dashboard/ManualAttendanceModal';
 import { LectureSessionsModal } from '@/components/dashboard/LectureSessionsModal';
@@ -79,15 +79,10 @@ export default function TeacherLecturesPage() {
     fetchData();
   }, [selectedAcademy?.id, authLoading]);
   
-  // QR Code State
-  const [showQRModal, setShowQRModal] = useState(false);
-  const [qrCodeUrl, setQrCodeUrl] = useState('');
-  const [qrCodeExpiresAt, setQrCodeExpiresAt] = useState<string | null>(null);
-  const [selectedLectureForQR, setSelectedLectureForQR] = useState<Lecture | null>(null);
-
-  // Scanner State
-  const [showScannerModal, setShowScannerModal] = useState(false);
-  const [selectedLectureForScan, setSelectedLectureForScan] = useState<Lecture | null>(null);
+  // Attendance Code State
+  const [showCodeModal, setShowCodeModal] = useState(false);
+  const [attendanceCode, setAttendanceCode] = useState<string | null>(null);
+  const [selectedLectureForCode, setSelectedLectureForCode] = useState<Lecture | null>(null);
 
   // Activation State
   const [showActivationModal, setShowActivationModal] = useState(false);
@@ -256,29 +251,22 @@ export default function TeacherLecturesPage() {
     };
   }, [user?.id, currentPage, searchQuery, selectedGroupId, selectedStatus]);
 
-  // Poll for dynamic QR code every 5 seconds
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    
-    if (showQRModal && selectedLectureForQR) {
-      const fetchQR = async () => {
-        try {
-          const response = await generateQrCode(selectedLectureForQR.id);
-          setQrCodeUrl(response.qr_code_url);
-          setQrCodeExpiresAt(response.expires_at);
-        } catch (error) {
-          console.error('Failed to refresh QR code:', error);
-        }
-      };
+  const handleCodeModalClose = async () => {
+    setShowCodeModal(false);
+    setAttendanceCode(null);
+  };
 
-      // Initial fetch is done on click, so we just set interval
-      interval = setInterval(fetchQR, 5000);
+  const handleAttendanceCodeClick = async (lecture: Lecture) => {
+    try {
+      setSelectedLectureForCode(lecture);
+      const response = await generateAttendanceCode(lecture.id);
+      setAttendanceCode(response.code);
+      setShowCodeModal(true);
+    } catch (error) {
+      console.error('Failed to generate attendance code:', error);
+      toast.error('Failed to generate attendance code');
     }
-
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [showQRModal, selectedLectureForQR]);
+  };
 
   const handleAddClick = () => {
     router.push('/teacher/lectures/create');
@@ -378,56 +366,6 @@ export default function TeacherLecturesPage() {
       setIsSubmitting(false);
     }
   };
-
-  const handleQRCodeClick = async (lecture: Lecture) => {
-    try {
-      setSelectedLectureForQR(lecture);
-      // If lecture already has a valid QR code, use it (optimization)
-      // But for now, let's always generate a new one or fetch the existing one to ensure validity
-      const response = await generateQrCode(lecture.id);
-      setQrCodeUrl(response.qr_code_url);
-      setQrCodeExpiresAt(response.expires_at);
-      setShowQRModal(true);
-    } catch (error) {
-      console.error('Failed to generate QR code:', error);
-      toast.error('Failed to generate QR code');
-    }
-  };
-
-  const handleScanClick = (lecture: Lecture) => {
-    setSelectedLectureForScan(lecture);
-    setShowScannerModal(true);
-  };
-
-  const [isScanningProcessing, setIsScanningProcessing] = useState(false);
-
-  const handleScanSuccess = async (decodedText: string) => {
-    if (!selectedLectureForScan || isScanningProcessing) return;
-
-    setIsScanningProcessing(true);
-    try {
-      // Parse student ID from QR code (format: "student:UUID")
-      let studentId = decodedText;
-      if (decodedText.startsWith('student:')) {
-        studentId = decodedText.replace('student:', '');
-      }
-
-      await recordAttendance(selectedLectureForScan.id, studentId);
-      toast.success('تم تسجيل الحضور بنجاح');
-      setShowScannerModal(false); 
-    } catch (error: any) {
-      console.error('Failed to record attendance:', error);
-      // Don't close modal on error, just show toast
-      toast.error(error.message || 'فشل تسجيل الحضور');
-      
-      // Add a small delay before allowing next scan to prevent spamming
-      await new Promise(resolve => setTimeout(resolve, 2000));
-    } finally {
-      setIsScanningProcessing(false);
-    }
-  };
-
-
 
   const handleActivateClick = (lecture: Lecture) => {
     setSelectedLectureForActivation(lecture);
@@ -683,8 +621,7 @@ export default function TeacherLecturesPage() {
                 setOpenMenuId(null);
               }}
               onActivate={() => handleActivateClick(lecture)}
-              onScan={() => handleScanClick(lecture)}
-              onQRCode={() => handleQRCodeClick(lecture)}
+              onQRCode={() => handleAttendanceCodeClick(lecture)}
               onEnd={() => handleEndLectureClick(lecture)}
               onManualAttendance={() => {
                 handleManualAttendanceClick(lecture);
@@ -926,13 +863,12 @@ export default function TeacherLecturesPage() {
         isProcessing={isSubmitting}
         variant="danger"
       />
-      {/* QR Code Modal */}
-      <QRCodeModal
-        isOpen={showQRModal}
-        onClose={() => setShowQRModal(false)}
-        url={qrCodeUrl}
-        expiresAt={qrCodeExpiresAt}
-        lectureTitle={selectedLectureForQR?.title || ''}
+      {/* Attendance Code Modal */}
+      <AttendanceCodeModal
+        isOpen={showCodeModal}
+        onClose={handleCodeModalClose}
+        code={attendanceCode}
+        lectureTitle={selectedLectureForCode?.title || ''}
       />
 
       {/* QR Scanner Modal */}

@@ -13,6 +13,8 @@ return new class extends Migration
             $table->foreignUuid('teacher_id')->constrained('teachers')->onDelete('cascade');
             $table->foreignUuid('academy_id')->nullable()->constrained()->nullOnDelete();
             $table->string('title');
+            $table->string('type')->default('manual'); // manual, dynamic, self_test
+            $table->json('dynamic_settings')->nullable();
             $table->string('subject');
             $table->integer('max_score');
             $table->integer('actual_question_count')->default(10);
@@ -24,9 +26,11 @@ return new class extends Migration
             $table->integer('duration'); // Duration in minutes
             $table->foreignUuid('grade_id')->nullable()->constrained('grades')->onDelete('set null');
             $table->foreignUuid('group_id')->nullable()->constrained('groups')->onDelete('set null');
+            $table->unsignedInteger('version')->default(1);
             $table->timestamps();
 
             // Performance indexes
+            $table->index('updated_at');
             $table->index(['teacher_id', 'is_active'], 'exams_teacher_active_index');
             $table->index(['teacher_id', 'is_active'], 'exams_teacher_is_active_index');
             $table->index(['grade_id', 'group_id'], 'exams_grade_group_index');

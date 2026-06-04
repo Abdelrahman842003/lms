@@ -10,18 +10,42 @@ return new class extends Migration
     {
         Schema::create('questions', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('exam_id')->constrained()->cascadeOnDelete();
+            $table->foreignUuid('exam_id')->nullable()->constrained()->cascadeOnDelete();
+            $table->foreignUuid('teacher_id')->nullable()->constrained('teachers')->cascadeOnDelete();
+            $table->foreignUuid('grade_id')->nullable()->constrained('grades')->cascadeOnDelete();
+            $table->string('subject')->nullable()->index();
             $table->text('text');
             $table->string('type')->default('mcq');
+            $table->string('difficulty')->default('medium'); // easy, medium, hard
+            $table->json('tags')->nullable();
             $table->json('options');
             $table->text('correct_answer');
             $table->integer('duration')->default(60); // Duration in seconds
+            
+            // Statistics
+            $table->integer('usage_count')->default(0);
+            $table->integer('correct_answers_count')->default(0);
+            $table->integer('total_answers_count')->default(0);
+            $table->integer('average_time')->default(0); // in seconds
+            
             $table->timestamps();
+        });
+
+        Schema::create('exam_question', function (Blueprint $table) {
+            $table->id();
+            $table->foreignUuid('exam_id')->constrained()->cascadeOnDelete();
+            $table->foreignUuid('question_id')->constrained()->cascadeOnDelete();
+            $table->integer('order')->default(0);
+            $table->integer('points')->nullable(); // Optional override
+            $table->timestamps();
+
+            $table->unique(['exam_id', 'question_id']);
         });
     }
 
     public function down(): void
     {
+        Schema::dropIfExists('exam_question');
         Schema::dropIfExists('questions');
     }
 };

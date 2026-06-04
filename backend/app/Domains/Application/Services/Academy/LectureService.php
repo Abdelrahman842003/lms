@@ -124,9 +124,14 @@ class LectureService
         $this->teacherLectureService->endLecture($lecture);
     }
 
-    public function generateQrCode(Lecture $lecture): array
+    public function generateAttendanceCode(Lecture $lecture): array
     {
-        return $this->teacherLectureService->generateQrCode($lecture);
+        return $this->teacherLectureService->generateAttendanceCode($lecture);
+    }
+
+    public function invalidateAttendanceCode(Lecture $lecture): void
+    {
+        $this->teacherLectureService->invalidateAttendanceCode($lecture);
     }
 
     public function getAttendees(Lecture $lecture, array $filters): array
