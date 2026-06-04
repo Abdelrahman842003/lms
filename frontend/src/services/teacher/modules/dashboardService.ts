@@ -11,7 +11,9 @@ import type { AcademyInfo } from '@/types/auth.types';
  */
 export async function getTeacherDashboardStats(academyId?: string | null): Promise<unknown> {
   const params = academyId ? `?academy_id=${academyId}` : '';
-  return await fetchApi(`/api/teacher/dashboard/stats${params}`);
+  return await fetchApi(`/api/teacher/dashboard/stats${params}`, {
+    offlineConfig: { storeName: 'academyDashboard' }
+  });
 }
 
 /**
@@ -21,14 +23,18 @@ export async function getTeacherRecentStudents(limit: number = 5, academyId?: st
   const params = new URLSearchParams();
   params.append('limit', limit.toString());
   if (academyId) params.append('academy_id', academyId);
-  return await fetchApi(`/api/teacher/dashboard/students?${params}`);
+  return await fetchApi(`/api/teacher/dashboard/students?${params}`, {
+    offlineConfig: { storeName: 'students' }
+  });
 }
 
 /**
  * Get teacher's upcoming lectures
  */
 export async function getTeacherUpcomingLectures(limit: number = 3): Promise<unknown> {
-  return await fetchApi(`/api/teacher/dashboard/lectures?limit=${limit}`);
+  return await fetchApi(`/api/teacher/dashboard/lectures?limit=${limit}`, {
+    offlineConfig: { storeName: 'lectures' }
+  });
 }
 
 /**

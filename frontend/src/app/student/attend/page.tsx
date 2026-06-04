@@ -23,6 +23,12 @@ function AttendanceContent() {
     if (authLoading) return;
 
     if (!user) {
+      // If offline, don't redirect — let them try to attend anyway
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        setStatus('error');
+        setMessage('أنت غير متصل بالإنترنت ولم يتم تسجيل دخولك. اتصل بالإنترنت أولاً.');
+        return;
+      }
       // Redirect to login if not authenticated, preserving the return URL
       const returnUrl = encodeURIComponent(`/student/attend?token=${token}`);
       router.push(`/login?returnUrl=${returnUrl}`);
@@ -78,6 +84,42 @@ function AttendanceContent() {
   }, [status, user?.id]);
 
   const markAttendance = async () => {
+    // Helper to enqueue attendance for later sync
+    const enqueueForSync = async (): Promise<boolean> => {
+      try {
+        const { syncEngine } = await import('@/lib/offline/sync-engine');
+        await syncEngine.enqueue(
+          `${API_BASE_URL}/api/v1/student/attend`,
+          'POST',
+          { token },
+          'studentAttendance',
+          undefined,
+          {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${getAuthToken()}`,
+          }
+        );
+        return true;
+      } catch (e) {
+        console.error('Failed to enqueue attendance:', e);
+        return false;
+      }
+    };
+
+    // Offline fallback: queue attendance for later sync
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      const queued = await enqueueForSync();
+      if (queued) {
+        setStatus('success');
+        setMessage('تم حفظ الحضور محلياً وسيتم مزامنته تلقائياً عند اتصالك بالإنترنت.');
+      } else {
+        setStatus('error');
+        setMessage('فشل حفظ الحضور محلياً. حاول مرة أخرى.');
+      }
+      return;
+    }
+
     try {
       const authToken = getAuthToken();
       const response = await fetch(`${API_BASE_URL}/api/v1/student/attend`, {
@@ -104,14 +146,32 @@ function AttendanceContent() {
         setStatus('success');
         setMessage(data.message || 'تم تسجيل الحضور بنجاح!');
         setLectureTitle(data.lecture || '');
+      } else if (response.status === 404 || response.status === 422) {
+        // Server doesn't know this code — possibly teacher hasn't synced yet
+        // Queue for retry so it succeeds when teacher's code syncs
+        const queued = await enqueueForSync();
+        if (queued) {
+          setStatus('success');
+          setMessage('تم حفظ الحضور وسيتم التحقق منه تلقائياً. قد يكون المدرس لم يتصل بالإنترنت بعد.');
+        } else {
+          setStatus('error');
+          setMessage(data.message || 'فشل تسجيل الحضور.');
+        }
       } else {
         setStatus('error');
         setMessage(data.message || 'فشل تسجيل الحضور.');
       }
     } catch (error) {
-      console.error('Attendance error:', error);
-      setStatus('error');
-      setMessage('حدث خطأ أثناء تسجيل الحضور.');
+      // Network error — queue for later sync
+      const queued = await enqueueForSync();
+      if (queued) {
+        setStatus('success');
+        setMessage('تم حفظ الحضور محلياً وسيتم مزامنته تلقائياً عند اتصالك بالإنترنت.');
+      } else {
+        console.error('Attendance error:', error);
+        setStatus('error');
+        setMessage('حدث خطأ أثناء تسجيل الحضور.');
+      }
     }
   };
 

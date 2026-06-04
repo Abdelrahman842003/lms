@@ -29,9 +29,9 @@ function AcademyDashboard() {
   });
   const [isLoading, setIsLoading] = React.useState(true);
 
-  // Redirect if not authenticated or not academy
+  // Redirect if not authenticated or not academy (skip if offline)
   React.useEffect(() => {
-    if (!authLoading && (!isAuthenticated || user?.userType !== 'academy')) {
+    if (!authLoading && (!isAuthenticated || user?.userType !== 'academy') && navigator.onLine) {
       router.push('/login');
     }
   }, [isAuthenticated, user, authLoading, router]);

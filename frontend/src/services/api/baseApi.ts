@@ -270,7 +270,14 @@ export async function csrf(): Promise<void> {
  */
 export async function fetchApi<T = unknown>(
   endpoint: string,
-  options: RequestInit = {},
+  options: RequestInit & {
+    offlineConfig?: {
+      storeName?: string;
+      entityId?: string;
+      entityType?: string;
+      skipCache?: boolean;
+    };
+  } = {},
   skipAuthEvent: boolean = false
 ): Promise<T> {
   // Ensure endpoint is valid
@@ -287,14 +294,7 @@ export async function fetchApi<T = unknown>(
     body: options.body,
   });
 
-  const offlineOptions = options as RequestInit & {
-    offlineConfig?: {
-      storeName?: string;
-      entityId?: string;
-      entityType?: string;
-      skipCache?: boolean;
-    };
-  };
+  const offlineOptions = options;
 
   const isOnline = networkMonitor.isOnline;
 

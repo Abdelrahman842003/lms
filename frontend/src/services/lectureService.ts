@@ -162,12 +162,40 @@ export const deleteLecture = async (id: string): Promise<void> => {
 };
 
 export const generateAttendanceCode = async (id: string): Promise<{ code: string; expires_at: string }> => {
+  // Check if offline — generate code locally
+  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+    const code = String(Math.floor(100000 + Math.random() * 900000)); // 6-digit random
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 minutes
+
+    // Store in IndexedDB for later sync
+    try {
+      const { syncEngine } = await import('@/lib/offline/sync-engine');
+      await syncEngine.enqueue(
+        `${API_BASE_URL}/api/v1/teacher/lectures/${id}/attendance-code`,
+        'POST',
+        { offline_generated_code: code, lecture_id: id, expires_at: expiresAt },
+        'attendance',
+        id
+      );
+    } catch (e) {
+      console.warn('[generateAttendanceCode] Failed to enqueue for sync:', e);
+    }
+
+    return { code, expires_at: expiresAt };
+  }
+
   return await fetchApi(`/api/teacher/lectures/${id}/attendance-code`, {
     method: 'POST',
   });
 };
 
 export const invalidateAttendanceCode = async (id: string): Promise<{ message: string }> => {
+  // If offline, just return success — code was generated locally anyway
+  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+    console.log('[invalidateAttendanceCode] Offline: code invalidated locally');
+    return { message: 'تم إلغاء الكود محلياً' };
+  }
+
   return await fetchApi(`/api/teacher/lectures/${id}/attendance-code`, {
     method: 'DELETE',
   });
@@ -188,6 +216,27 @@ export const markStudentAttendance = async (code: string): Promise<{ message: st
 };
 
 export const toggleLectureActive = async (id: string, is_active?: boolean): Promise<{ message: string; is_active: boolean }> => {
+  // Offline: return optimistic result + queue for sync
+  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+    const newState = typeof is_active === 'boolean' ? is_active : true;
+    try {
+      const { syncEngine } = await import('@/lib/offline/sync-engine');
+      await syncEngine.enqueue(
+        `${API_BASE_URL}/api/v1/teacher/lectures/${id}/toggle-active`,
+        'PUT',
+        typeof is_active === 'boolean' ? { is_active } : {},
+        'lectureActivation',
+        id,
+      );
+    } catch (e) {
+      console.warn('[toggleLectureActive] Failed to enqueue:', e);
+    }
+    return {
+      message: newState ? 'تم تفعيل المحاضرة محلياً' : 'تم إيقاف المحاضرة محلياً',
+      is_active: newState,
+    };
+  }
+
   return await fetchApi(`/api/teacher/lectures/${id}/toggle-active`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
@@ -196,6 +245,23 @@ export const toggleLectureActive = async (id: string, is_active?: boolean): Prom
 };
 
 export const endLecture = async (id: string): Promise<Lecture> => {
+  // Offline: return optimistic result + queue for sync
+  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+    try {
+      const { syncEngine } = await import('@/lib/offline/sync-engine');
+      await syncEngine.enqueue(
+        `${API_BASE_URL}/api/v1/teacher/lectures/${id}/end`,
+        'POST',
+        {},
+        'lectureEnd',
+        id,
+      );
+    } catch (e) {
+      console.warn('[endLecture] Failed to enqueue:', e);
+    }
+    return { id, is_active: false, status: 'منتهية' } as unknown as Lecture;
+  }
+
   const res = await fetchApi<{ lecture: Lecture }>(`/api/teacher/lectures/${id}/end`, {
     method: 'POST',
   });

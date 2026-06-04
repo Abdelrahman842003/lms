@@ -35,7 +35,9 @@ import type { ReportParams } from '@/types/api.types';
  */
 export async function getTeacherDashboardStats(academyId?: string | null): Promise<unknown> {
   const params = academyId ? `?academy_id=${academyId}` : '';
-  return await fetchApi(`${ENDPOINTS.TEACHER_DASHBOARD_STATS}${params}`);
+  return await fetchApi(`${ENDPOINTS.TEACHER_DASHBOARD_STATS}${params}`, {
+    offlineConfig: { storeName: 'academyDashboard' }
+  });
 }
 
 /**
@@ -45,14 +47,18 @@ export async function getTeacherRecentStudents(limit: number = 5, academyId?: st
   const params = new URLSearchParams();
   params.append('limit', limit.toString());
   if (academyId) params.append('academy_id', academyId);
-  return await fetchApi(`${ENDPOINTS.TEACHER_DASHBOARD_STUDENTS}?${params}`);
+  return await fetchApi(`${ENDPOINTS.TEACHER_DASHBOARD_STUDENTS}?${params}`, {
+    offlineConfig: { storeName: 'students' }
+  });
 }
 
 /**
  * Get teacher's upcoming lectures
  */
 export async function getTeacherUpcomingLectures(limit: number = 3): Promise<unknown> {
-  return await fetchApi(`${ENDPOINTS.TEACHER_DASHBOARD_LECTURES}?limit=${limit}`);
+  return await fetchApi(`${ENDPOINTS.TEACHER_DASHBOARD_LECTURES}?limit=${limit}`, {
+    offlineConfig: { storeName: 'lectures' }
+  });
 }
 
 /**
@@ -89,7 +95,9 @@ export async function getTeacherStudents(
     ...(status && { status }),
   });
 
-  const res = await fetchApi<any>(`/teacher/students?${queryParams}`);
+  const res = await fetchApi<any>(`/teacher/students?${queryParams}`, {
+    offlineConfig: { storeName: 'students' }
+  });
   const studentsData = res.students?.data || res.students || [];
   const total = res.students?.meta?.total || res.students?.total || res.total || 0;
   
@@ -222,7 +230,9 @@ export async function createTeacherStudentPayment(
  * Get all grades
  */
 export async function getGrades(): Promise<Grade[]> {
-  return await fetchApi('/teacher/grades');
+  return await fetchApi('/teacher/grades', {
+    offlineConfig: { storeName: 'grades' }
+  });
 }
 
 /**
@@ -264,7 +274,9 @@ export async function deleteGrade(id: string): Promise<unknown> {
  * Get all groups
  */
 export async function getGroups(): Promise<Group[]> {
-  return await fetchApi('/teacher/groups');
+  return await fetchApi('/teacher/groups', {
+    offlineConfig: { storeName: 'groups' }
+  });
 }
 
 /**
@@ -306,7 +318,9 @@ export async function deleteGroup(id: string): Promise<unknown> {
  * Get all lectures
  */
 export async function getLectures(): Promise<Lecture[]> {
-  const res = await fetchApi<{ lectures: Lecture[] }>('/teacher/lectures');
+  const res = await fetchApi<{ lectures: Lecture[] }>('/teacher/lectures', {
+    offlineConfig: { storeName: 'lectures' }
+  });
   return res.lectures;
 }
 
@@ -370,7 +384,9 @@ export async function getExams(
     ...(filters?.date_to && { date_to: filters.date_to }),
   });
 
-  return await fetchApi(`/api/teacher/exams?${queryParams}`);
+  return await fetchApi(`/api/teacher/exams?${queryParams}`, {
+    offlineConfig: { storeName: 'exams' }
+  });
 }
 
 /**

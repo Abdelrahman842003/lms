@@ -11,7 +11,9 @@ const API_BASE_URL = getVersionedApiUrl();
 
 // ========== Dashboard ==========
 export const getDashboardStats = async () => {
-  return await fetchApi<any>('/academy/dashboard');
+  return await fetchApi<any>('/academy/dashboard', {
+    offlineConfig: { storeName: 'academyDashboard' }
+  });
 };
 
 // ========== Teachers Management ==========

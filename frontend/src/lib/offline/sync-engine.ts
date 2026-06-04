@@ -233,6 +233,20 @@ class SyncEngine {
 
       // Handle other validation or bad request errors (don't retry, mark failed)
       if (response.status >= 400 && response.status < 500 && response.status !== 401 && response.status !== 419) {
+        // Special case: studentAttendance items should retry on 404/422
+        // because the teacher may not have synced their offline code yet
+        if (item.entityType === 'studentAttendance' && (response.status === 404 || response.status === 422)) {
+          item.retryCount++;
+          if (item.retryCount >= (item.maxRetries + 3)) { // extra retries for attendance
+            item.status = 'failed';
+            item.errorMessage = 'الكود غير موجود على السيرفر بعد عدة محاولات';
+          } else {
+            item.status = 'pending'; // retry later
+          }
+          await db.put('syncQueue', item);
+          return false;
+        }
+
         const errData = await response.json().catch(() => ({}));
         item.status = 'failed';
         item.errorMessage = errData.message || `Client Error ${response.status}`;

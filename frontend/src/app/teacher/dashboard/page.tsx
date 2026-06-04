@@ -10,8 +10,6 @@ import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { initializeEcho } from '@/lib/echo';
 import { getAccessToken } from '@/lib/tokenManager';
 
-
-
 export default function TeacherDashboard() {
   const { user, selectedAcademy, isLoading: authLoading, isAuthenticated } = useAuth();
 

@@ -43,7 +43,9 @@ export default function ParentDashboard() {
         const summaries = await Promise.all(
           children.map(async (child) => {
             try {
-              const data = await fetchApi(`/parent/children/${child.id}/summary?period=month&date=${new Date().toISOString().split('T')[0]}`);
+              const data = await fetchApi<any>(`/parent/children/${child.id}/summary?period=month&date=${new Date().toISOString().split('T')[0]}`, {
+                offlineConfig: { storeName: 'childSummaries', entityId: String(child.id) }
+              });
               
               // Calculate aggregated stats
               const stats = data.teachers?.reduce(

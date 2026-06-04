@@ -159,6 +159,14 @@ export function CoreAuthProvider({ children }: { children: ReactNode }) {
           clearAuth();
         } else if (apiError.status === 403 && apiError.data?.error === 'ACCOUNT_RESTRICTED') {
           router.push("/suspended");
+        } else if (apiError.status === 0 || !navigator.onLine) {
+          // Offline — keep the cached user to allow offline navigation
+          console.warn("CoreAuthContext: Offline, using cached user data");
+          if (cachedUser) {
+            setUser(cachedUser);
+            setAuthCookie(AUTH_COOKIES.AUTH_STATE, "true");
+            setAuthCookie(AUTH_COOKIES.USER_ROLE, cachedUser.userType);
+          }
         }
       } finally {
         setIsLoading(false);
@@ -169,6 +177,12 @@ export function CoreAuthProvider({ children }: { children: ReactNode }) {
 
     // Listen for auth events
     const handleUnauthorized = async () => {
+      // If offline, don't force logout — keep cached session
+      if (!navigator.onLine) {
+        console.warn("CoreAuthContext: Offline, skipping unauthorized redirect");
+        return;
+      }
+
       if (isRecoveringAuthRef.current) {
         return;
       }

@@ -75,6 +75,14 @@ const AttendanceCodeModal: React.FC<AttendanceCodeModalProps> = ({ isOpen, onClo
             </div>
           </div>
 
+          {/* Offline indicator */}
+          {typeof navigator !== 'undefined' && !navigator.onLine && (
+            <div className="w-full mb-4 px-4 py-3 rounded-xl bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 text-xs text-center font-medium flex items-center justify-center gap-2">
+              <Icon name="wifi-slash" size="xs" />
+              <span>أنت أوفلاين — الكود تم توليده محلياً وسيتم مزامنته لاحقاً</span>
+            </div>
+          )}
+
           <p className="text-gray-600 dark:text-text-theme-muted text-xs sm:text-sm text-center mb-10 px-4 leading-relaxed font-medium bg-gray-50 dark:bg-surface-secondary/50 p-4 rounded-xl border border-gray-200 dark:border-border-theme-secondary">
             شارك هذا الرقم مع الطلاب المتواجدين الآن.<br/>
             <span className="text-danger font-bold inline-flex items-center gap-1 mt-2">
