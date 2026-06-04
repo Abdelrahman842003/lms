@@ -32,7 +32,7 @@ export default function StudentDashboard() {
         try {
             const timestamp = new Date().getTime();
             const dashboardResponse = await fetchApi<any>(`/student/dashboard?teacher_id=${selectedTeacher.teacher_id}&t=${timestamp}`, {
-              offlineConfig: { storeName: 'studentLectures' }
+              offlineConfig: { storeName: 'studentDashboard' }
             });
             if (dashboardResponse) {
                 setStats(dashboardResponse.stats || {
@@ -53,7 +53,16 @@ export default function StudentDashboard() {
       // Load lectures from ALL teachers
       if (user && user.teachers && user.teachers.length > 0) {
         try {
-            const lecturePromises = user.teachers.map(teacher => 
+            // Deduplicate teachers by teacher_id to prevent double fetching and duplicate keys
+            const uniqueTeachersMap = new Map<string, any>();
+            user.teachers.forEach((t: any) => {
+              if (t.teacher_id && !uniqueTeachersMap.has(t.teacher_id)) {
+                uniqueTeachersMap.set(t.teacher_id, t);
+              }
+            });
+            const uniqueTeachers = Array.from(uniqueTeachersMap.values());
+
+            const lecturePromises = uniqueTeachers.map(teacher => 
         fetchApi<{ data: any[] }>(`/student/lectures?teacher_id=${teacher.teacher_id}`, {
               offlineConfig: { storeName: 'studentLectures' }
             })

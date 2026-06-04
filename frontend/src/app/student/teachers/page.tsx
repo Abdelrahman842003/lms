@@ -10,9 +10,8 @@ import { LoadingSpinner, Icon } from '@/components/ui/index';
 
 export default function StudentTeachersPage() {
   const router = useRouter();
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, selectedTeacher, selectTeacher, isLoading: authLoading } = useAuth();
   const [teachers, setTeachers] = useState<TeacherInfo[]>([]);
-  const [selectedTeacher, setSelectedTeacher] = useState<string | null>(null);
   const [suspendedTeacher, setSuspendedTeacher] = useState<TeacherInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -36,16 +35,12 @@ export default function StudentTeachersPage() {
     setIsLoading(false);
   }, [user, authLoading, router]);
 
-  const handleSelectTeacher = (teacherId: string) => {
-    const teacher = teachers.find(t => t.teacher_id === teacherId);
-    if (teacher?.is_suspended) {
+  const handleSelectTeacher = (teacher: TeacherInfo) => {
+    if (teacher.is_suspended) {
       setSuspendedTeacher(teacher);
       return;
     }
-    setSelectedTeacher(teacherId);
-    // Store selected teacher in localStorage
-    localStorage.setItem('selectedTeacherId', teacherId);
-    // Navigate to dashboard
+    selectTeacher(teacher);
     router.push('/student/dashboard');
   };
 
@@ -98,55 +93,64 @@ export default function StudentTeachersPage() {
           </div>
         ) : (
           <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-5">
-            {teachers.map((teacher) => (
-              <div
-                key={teacher.teacher_id}
-                className={`group bg-white/3 border border-white/8 rounded-2xl p-6 transition-all duration-300 flex flex-col items-center text-center relative 
-                  ${teacher.is_suspended 
-                    ? 'opacity-60 cursor-not-allowed grayscale' 
-                    : 'cursor-pointer hover:-translate-y-1 hover:border-primary hover:shadow-[0_10px_40px_rgba(66,99,235,0.2)]'
-                  } 
-                  ${selectedTeacher === teacher.teacher_id ? 'border-primary bg-primary/10' : ''}`}
-                onClick={() => handleSelectTeacher(teacher.teacher_id)}
-              >
-                <div className="w-20 h-20 rounded-full overflow-hidden mb-4 border-[3px] border-white/10">
-                  {teacher.teacher_avatar ? (
-                    <img src={teacher.teacher_avatar} alt={teacher.teacher_name} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary to-secondary text-white text-[2rem]">
-                      <Icon name="user" />
+            {teachers.map((teacher) => {
+              const isSelected = selectedTeacher
+                ? (selectedTeacher.enrollment_id && teacher.enrollment_id
+                    ? selectedTeacher.enrollment_id === teacher.enrollment_id
+                    : (selectedTeacher.teacher_id === teacher.teacher_id &&
+                       selectedTeacher.grade_name === teacher.grade_name &&
+                       selectedTeacher.group_name === teacher.group_name))
+                : false;
+              return (
+                <div
+                  key={teacher.enrollment_id || `${teacher.teacher_id}_${teacher.grade_name || ''}_${teacher.group_name || ''}`}
+                  className={`group bg-white/3 border border-white/8 rounded-2xl p-6 transition-all duration-300 flex flex-col items-center text-center relative 
+                    ${teacher.is_suspended 
+                      ? 'opacity-60 cursor-not-allowed grayscale' 
+                      : 'cursor-pointer hover:-translate-y-1 hover:border-primary hover:shadow-[0_10px_40px_rgba(66,99,235,0.2)]'
+                    } 
+                    ${isSelected ? 'border-primary bg-primary/10' : ''}`}
+                  onClick={() => handleSelectTeacher(teacher)}
+                >
+                  <div className="w-20 h-20 rounded-full overflow-hidden mb-4 border-[3px] border-white/10">
+                    {teacher.teacher_avatar ? (
+                      <img src={teacher.teacher_avatar} alt={teacher.teacher_name} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary to-secondary text-white text-[2rem]">
+                        <Icon name="user" />
+                      </div>
+                    )}
+                  </div>
+                  {teacher.is_suspended && (
+                    <div className="absolute top-4 right-4 text-red-500 bg-white/10 p-2 rounded-full">
+                      <Icon name="ban" />
                     </div>
                   )}
-                </div>
-                {teacher.is_suspended && (
-                  <div className="absolute top-4 right-4 text-red-500 bg-white/10 p-2 rounded-full">
-                    <Icon name="ban" />
+                  <div className="mb-4">
+                    <h3 className="text-white text-xl mb-2">{teacher.teacher_name}</h3>
+                    {teacher.grade_name && (
+                      <p className="text-gray-light text-sm flex items-center justify-center gap-1.5 mb-1">
+                        <Icon name="graduation-cap" />
+                        {teacher.grade_name}
+                      </p>
+                    )}
+                    {teacher.group_name && (
+                      <p className="text-gray-light text-sm flex items-center justify-center gap-1.5 mb-1">
+                        <Icon name="users" />
+                        {teacher.group_name}
+                      </p>
+                    )}
                   </div>
-                )}
-                <div className="mb-4">
-                  <h3 className="text-white text-xl mb-2">{teacher.teacher_name}</h3>
-                  {teacher.grade_name && (
-                    <p className="text-gray-light text-sm flex items-center justify-center gap-1.5 mb-1">
-                      <Icon name="graduation-cap" />
-                      {teacher.grade_name}
-                    </p>
-                  )}
-                  {teacher.group_name && (
-                    <p className="text-gray-light text-sm flex items-center justify-center gap-1.5 mb-1">
-                      <Icon name="users" />
-                      {teacher.group_name}
-                    </p>
-                  )}
+                  <div className="bg-[rgba(0,214,143,0.1)] rounded-xl p-[12px_20px] flex flex-col items-center mb-3">
+                    <span className="text-xs text-gray-light">الرصيد</span>
+                    <span className="text-xl font-bold text-success">{teacher.balance} ج.م</span>
+                  </div>
+                  <div className="absolute left-5 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                    <Icon name="arrow-left" />
+                  </div>
                 </div>
-                <div className="bg-[rgba(0,214,143,0.1)] rounded-xl p-[12px_20px] flex flex-col items-center mb-3">
-                  <span className="text-xs text-gray-light">الرصيد</span>
-                  <span className="text-xl font-bold text-success">{teacher.balance} ج.م</span>
-                </div>
-                <div className="absolute left-5 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-                  <Icon name="arrow-left" />
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

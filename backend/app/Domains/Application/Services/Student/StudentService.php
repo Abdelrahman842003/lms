@@ -37,7 +37,7 @@ class StudentService
     public function getEnrolledTeachers(Student $student): array
     {
         return $student->enrollments()
-            ->with(['teacher:id,name,avatar_key,status', 'teacher.tenantPlan', 'grade:id,name', 'group:id,name'])
+            ->with(['teacher:id,name,avatar_key,status', 'teacher.tenantPlan', 'grade:id,name', 'group:id,name', 'academy:id,name'])
             ->get()
             ->map(function ($enrollment) {
                 $enrollmentStatus = (string) $enrollment->status;
@@ -58,6 +58,8 @@ class StudentService
                     'status' => $enrollmentStatus,
                     'days_left' => $enrollment->days_left,
                     'enrolled_at' => $enrollment->created_at,
+                    'academy_id' => $enrollment->academy_id ? (string) $enrollment->academy_id : null,
+                    'academy_name' => $enrollment->academy?->name,
                 ];
             })
             ->toArray();

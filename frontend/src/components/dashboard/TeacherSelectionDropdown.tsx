@@ -271,7 +271,7 @@ const TeacherList = ({ teachers, selectedTeacher, onSelect }: { teachers: any[],
             <div className="teacher-dropdown-nested-wrap">
               {academy.teachers.map(teacher => (
                 <TeacherItem 
-                  key={teacher.teacher_id} 
+                  key={teacher.enrollment_id || `${teacher.teacher_id}_${teacher.grade_name || ''}_${teacher.group_name || ''}`} 
                   teacher={teacher} 
                   selectedTeacher={selectedTeacher} 
                   onSelect={onSelect} 
@@ -286,7 +286,7 @@ const TeacherList = ({ teachers, selectedTeacher, onSelect }: { teachers: any[],
       {/* Independent Teachers */}
       {grouped.independent.map(teacher => (
         <TeacherItem 
-          key={teacher.teacher_id} 
+          key={teacher.enrollment_id || `${teacher.teacher_id}_${teacher.grade_name || ''}_${teacher.group_name || ''}`} 
           teacher={teacher} 
           selectedTeacher={selectedTeacher} 
           onSelect={onSelect} 
@@ -297,8 +297,14 @@ const TeacherList = ({ teachers, selectedTeacher, onSelect }: { teachers: any[],
 };
 
 const TeacherItem = ({ teacher, selectedTeacher, onSelect, isNested = false }: { teacher: any, selectedTeacher: any, onSelect: (t: any) => void, isNested?: boolean }) => {
-  const isSelected = selectedTeacher?.teacher_id === teacher.teacher_id && 
-                     (selectedTeacher?.academy_id || null) === (teacher.academy_id || null);
+  const isSelected = selectedTeacher
+    ? (selectedTeacher.enrollment_id && teacher.enrollment_id
+        ? selectedTeacher.enrollment_id === teacher.enrollment_id
+        : (selectedTeacher.teacher_id === teacher.teacher_id &&
+           (selectedTeacher.academy_id || null) === (teacher.academy_id || null) &&
+           selectedTeacher.grade_name === teacher.grade_name &&
+           selectedTeacher.group_name === teacher.group_name))
+    : false;
 
   return (
     <div 

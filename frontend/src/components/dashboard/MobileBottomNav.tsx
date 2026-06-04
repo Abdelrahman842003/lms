@@ -333,8 +333,42 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ role }) => {
 
   if (items.length === 0 || role === 'parent') return null;
 
-  const visibleItems = items.slice(0, 3);
-  const hiddenItems = items.slice(3);
+  // Find the active item based on current pathname
+  const activeItem = items.find(item => {
+    if (item.id === 'dashboard') {
+      return pathname === item.href;
+    }
+    return pathname === item.href || pathname.startsWith(item.href + '/');
+  });
+
+  let visibleItems: NavItem[] = [];
+  let hiddenItems: NavItem[] = [];
+
+  const dashboardItem = items.find(item => item.id === 'dashboard') || items[0];
+
+  if (activeItem && activeItem.id !== 'dashboard') {
+    // Current screen is open and it is not dashboard
+    visibleItems.push(dashboardItem);
+    visibleItems.push(activeItem);
+    
+    // Find a third item from the default list (items[1] or items[2])
+    const defaultSecond = items[1];
+    const defaultThird = items[2];
+    
+    if (defaultSecond && defaultSecond.id !== activeItem.id) {
+      visibleItems.push(defaultSecond);
+    } else if (defaultThird) {
+      visibleItems.push(defaultThird);
+    }
+    
+    // Hidden items are all items not in visibleItems
+    hiddenItems = items.filter(item => !visibleItems.some(v => v.id === item.id));
+  } else {
+    // On dashboard or no active item matched, show default first 3
+    visibleItems = items.slice(0, 3);
+    hiddenItems = items.slice(3);
+  }
+  
   const hasMore = hiddenItems.length > 0;
 
   const handleLogout = async () => {

@@ -85,7 +85,9 @@ export function SelectionProvider({ children }: { children: ReactNode }) {
       if (currentSelected) {
         const parsedCurrent = JSON.parse(currentSelected);
         const updatedCurrent = user.teachers.find(
-          (t: any) => t.teacher_id === parsedCurrent.teacher_id
+          (t: any) => t.enrollment_id && parsedCurrent.enrollment_id
+            ? t.enrollment_id === parsedCurrent.enrollment_id
+            : t.teacher_id === parsedCurrent.teacher_id
         );
 
         // If current is still valid, keep it. Otherwise switch to best.

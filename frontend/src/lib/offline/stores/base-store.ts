@@ -2,7 +2,7 @@ import { getDB, NeetaqSchema } from '../db';
 import { StoreNames } from 'idb';
 
 function getKeyPathForStore(storeName: string): string {
-  if (['academyDashboard', 'appSettings', 'syncMeta'].includes(storeName)) {
+  if (['academyDashboard', 'studentDashboard', 'appSettings', 'syncMeta'].includes(storeName)) {
     return 'key';
   }
   return 'id';
@@ -37,7 +37,7 @@ export class BaseOfflineStore<T> {
     if (obj[keyPath] === undefined || obj[keyPath] === null || obj[keyPath] === '') {
       // Key path is missing! Clone to avoid mutating original
       const cloned = { ...item } as any;
-      if (this.storeName === 'academyDashboard') {
+      if (this.storeName === 'academyDashboard' || this.storeName === 'studentDashboard') {
         cloned[keyPath] = 'dashboard';
       } else if (this.storeName === 'appSettings') {
         cloned[keyPath] = 'settings';
@@ -59,7 +59,7 @@ export class BaseOfflineStore<T> {
   async getAll(): Promise<T[] | T | undefined> {
     const db = await this.getDB();
     const result = await db.getAll(this.storeName);
-    if (this.storeName === 'academyDashboard') {
+    if (this.storeName === 'academyDashboard' || this.storeName === 'studentDashboard') {
       return (result && result.length > 0 ? result[0] : undefined) as any;
     }
     return result as T[];

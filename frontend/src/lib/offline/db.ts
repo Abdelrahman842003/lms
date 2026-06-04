@@ -64,6 +64,7 @@ export interface NeetaqSchema extends DBSchema {
   studentExams: { key: string; value: any };
   studentPoints: { key: string; value: any };
   studentMistakes: { key: string; value: any };
+  studentDashboard: { key: string; value: any };
 
   // Academy Stores
   academyTeachers: { key: string; value: any };
@@ -77,7 +78,7 @@ export interface NeetaqSchema extends DBSchema {
 }
 
 const DB_NAME = 'neetaq-offline-db';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 let dbPromise: Promise<IDBPDatabase<NeetaqSchema>> | null = null;
 
@@ -88,44 +89,66 @@ export function getDB(): Promise<IDBPDatabase<NeetaqSchema>> {
 
   if (!dbPromise) {
     dbPromise = openDB<NeetaqSchema>(DB_NAME, DB_VERSION, {
-      upgrade(db) {
+      upgrade(db, oldVersion, _newVersion, transaction) {
+        // Safe check-and-create helper to prevent ConstraintErrors on existing stores
+        const createStoreIfMissing = (name: string, options: any) => {
+          if (!db.objectStoreNames.contains(name as any)) {
+            return db.createObjectStore(name as any, options);
+          }
+          return null;
+        };
+
         // Meta & Queue
-        db.createObjectStore('syncMeta', { keyPath: 'key' });
-        const queueStore = db.createObjectStore('syncQueue', { keyPath: 'id' });
-        queueStore.createIndex('by-status', 'status');
-        queueStore.createIndex('by-created', 'createdAt');
+        createStoreIfMissing('syncMeta', { keyPath: 'key' });
+        if (!db.objectStoreNames.contains('syncQueue')) {
+          const queueStore = db.createObjectStore('syncQueue', { keyPath: 'id' });
+          queueStore.createIndex('by-status', 'status');
+          queueStore.createIndex('by-created', 'createdAt');
+        }
 
         // Shared
-        db.createObjectStore('notifications', { keyPath: 'id' });
-        db.createObjectStore('userProfile', { keyPath: 'id' });
-        db.createObjectStore('appSettings', { keyPath: 'key' });
+        createStoreIfMissing('notifications', { keyPath: 'id' });
+        createStoreIfMissing('userProfile', { keyPath: 'id' });
+        createStoreIfMissing('appSettings', { keyPath: 'key' });
 
         // Teacher
-        db.createObjectStore('students', { keyPath: 'id' });
-        db.createObjectStore('grades', { keyPath: 'id' });
-        db.createObjectStore('groups', { keyPath: 'id' });
-        db.createObjectStore('lectures', { keyPath: 'id' });
-        db.createObjectStore('attendances', { keyPath: 'id' });
-        db.createObjectStore('exams', { keyPath: 'id' });
-        db.createObjectStore('payments', { keyPath: 'id' });
-        db.createObjectStore('notes', { keyPath: 'id' });
+        createStoreIfMissing('students', { keyPath: 'id' });
+        createStoreIfMissing('grades', { keyPath: 'id' });
+        createStoreIfMissing('groups', { keyPath: 'id' });
+        createStoreIfMissing('lectures', { keyPath: 'id' });
+        createStoreIfMissing('attendances', { keyPath: 'id' });
+        createStoreIfMissing('exams', { keyPath: 'id' });
+        createStoreIfMissing('payments', { keyPath: 'id' });
+        createStoreIfMissing('notes', { keyPath: 'id' });
 
         // Student
-        db.createObjectStore('studentTeachers', { keyPath: 'id' });
-        db.createObjectStore('studentLectures', { keyPath: 'id' });
-        db.createObjectStore('studentExams', { keyPath: 'id' });
-        db.createObjectStore('studentPoints', { keyPath: 'id' });
-        db.createObjectStore('studentMistakes', { keyPath: 'id' });
+        createStoreIfMissing('studentTeachers', { keyPath: 'id' });
+        createStoreIfMissing('studentLectures', { keyPath: 'id' });
+        createStoreIfMissing('studentExams', { keyPath: 'id' });
+        createStoreIfMissing('studentPoints', { keyPath: 'id' });
+        createStoreIfMissing('studentMistakes', { keyPath: 'id' });
 
         // Academy
-        db.createObjectStore('academyTeachers', { keyPath: 'id' });
-        db.createObjectStore('academyStudents', { keyPath: 'id' });
-        db.createObjectStore('academyLectures', { keyPath: 'id' });
-        db.createObjectStore('academyDashboard', { keyPath: 'key' });
+        createStoreIfMissing('academyTeachers', { keyPath: 'id' });
+        createStoreIfMissing('academyStudents', { keyPath: 'id' });
+        createStoreIfMissing('academyLectures', { keyPath: 'id' });
+        createStoreIfMissing('academyDashboard', { keyPath: 'key' });
 
         // Guardian
-        db.createObjectStore('children', { keyPath: 'id' });
-        db.createObjectStore('childSummaries', { keyPath: 'id' });
+        createStoreIfMissing('children', { keyPath: 'id' });
+        createStoreIfMissing('childSummaries', { keyPath: 'id' });
+
+        // Version 2 additions: studentDashboard
+        createStoreIfMissing('studentDashboard', { keyPath: 'key' });
+
+        // Migration: If upgrading from version 1 to 2, clear studentLectures to remove the corrupted dashboard object.
+        if (oldVersion === 1 && transaction) {
+          try {
+            transaction.objectStore('studentLectures').clear();
+          } catch (err) {
+            console.error('Failed to clear studentLectures store during upgrade:', err);
+          }
+        }
       },
     });
   }

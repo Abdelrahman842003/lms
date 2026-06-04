@@ -16,6 +16,7 @@ export const studentLecturesStore = new BaseOfflineStore<any>('studentLectures')
 export const studentExamsStore = new BaseOfflineStore<any>('studentExams');
 export const studentPointsStore = new BaseOfflineStore<any>('studentPoints');
 export const studentMistakesStore = new BaseOfflineStore<any>('studentMistakes');
+export const studentDashboardStore = new BaseOfflineStore<any>('studentDashboard');
 
 // === Academy Stores ===
 export const academyTeachersStore = new BaseOfflineStore<any>('academyTeachers');
@@ -38,6 +39,7 @@ export async function clearAllOfflineStores() {
     studentsStore, gradesStore, groupsStore, lecturesStore, attendancesStore,
     examsStore, paymentsStore, notesStore, studentTeachersStore,
     studentLecturesStore, studentExamsStore, studentPointsStore, studentMistakesStore,
+    studentDashboardStore,
     academyTeachersStore, academyStudentsStore, academyLecturesStore, academyDashboardStore,
     childrenStore, childSummariesStore, notificationsStore, userProfileStore, appSettingsStore
   ];
