@@ -871,14 +871,6 @@ export default function TeacherLecturesPage() {
         lectureTitle={selectedLectureForCode?.title || ''}
       />
 
-      {/* QR Scanner Modal */}
-      <QRScannerModal
-        isOpen={showScannerModal}
-        onClose={() => setShowScannerModal(false)}
-        onScanSuccess={handleScanSuccess}
-        lectureTitle={selectedLectureForScan?.title || ''}
-      />
-
       {/* Activation Confirmation Modal */}
       <ConfirmationModal
         isOpen={showActivationModal && !!selectedLectureForActivation}

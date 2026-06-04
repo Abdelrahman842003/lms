@@ -55,7 +55,21 @@ export function clearAuthCookie(name: string): void {
   if (typeof document === 'undefined') return;
   const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
   const secure = isHttps ? '; Secure' : '';
-  document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT${secure}`;
+  
+  // Standard clear
+  document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax${secure}`;
+  
+  // Try with domain
+  const domain = window.location.hostname;
+  document.cookie = `${name}=; path=/; domain=${domain}; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax${secure}`;
+  
+  // Try with wildcard root domain if applicable
+  const parts = domain.split('.');
+  if (parts.length > 1) {
+    const rootDomain = parts.slice(-2).join('.');
+    document.cookie = `${name}=; path=/; domain=.${rootDomain}; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax${secure}`;
+    document.cookie = `${name}=; path=/; domain=${rootDomain}; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax${secure}`;
+  }
 }
 
 /**

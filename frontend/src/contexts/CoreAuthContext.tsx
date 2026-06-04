@@ -294,7 +294,7 @@ export function CoreAuthProvider({ children }: { children: ReactNode }) {
       console.error("Logout API call failed:", error);
     } finally {
       clearAuth();
-      router.push("/login");
+      window.location.href = "/login";
       setTimeout(() => setIsLoggingOut(false), 500);
     }
   };
