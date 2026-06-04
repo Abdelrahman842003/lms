@@ -36,7 +36,7 @@ function StudentNotificationsContent() {
         ...n,
         title: n.data?.title || 'بدون عنوان',
         message: n.data?.message || '',
-        sender_name: n.data?.sender_name || 'النظام',
+        sender_name: `${n.data?.sender_name || 'النظام'}${n.data?.academy_name ? ` (${n.data.academy_name})` : ''}`,
       }));
     }
     return (notifications || []).filter(n => n.recipient_type === 'admin');

@@ -310,7 +310,14 @@ const TeacherItem = ({ teacher, selectedTeacher, onSelect, isNested = false }: {
     </div>
     <div className="teacher-item-main">
       <div className="teacher-item-header">
-        <h4 className="teacher-item-name">{teacher.teacher_name}</h4>
+        <h4 className="teacher-item-name">
+          {teacher.teacher_name}
+          {!isNested && teacher.academy_name && (
+            <span className="text-xs opacity-75 mr-2">
+              ({teacher.academy_name})
+            </span>
+          )}
+        </h4>
         {teacher.status === 'grace_period' && (
           <span className="teacher-item-state warning">فترة سماح</span>
         )}

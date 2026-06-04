@@ -489,6 +489,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ role
                         {notification.data.sender_name && (
                           <span className="notification-dropdown-tag sender-tag">
                             {notification.data.sender_name}
+                            {notification.data.academy_name && ` (${notification.data.academy_name})`}
                             {notification.data.sender_subject && ` - ${notification.data.sender_subject}`}
                           </span>
                         )}
