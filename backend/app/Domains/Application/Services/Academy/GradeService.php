@@ -130,12 +130,15 @@ class GradeService
     public function bulkUpdateName(Academy $academy, string $oldName, string $newName): int
     {
         $result = Grade::where('name', $oldName)
-            ->whereHas('teacher', function ($q) use ($academy) {
-                $q->where('teachers.status', 'active')
-                  ->whereHas('academies', function ($q2) use ($academy) {
-                      $q2->where('academy_id', $academy->id)
-                         ->where('academy_teacher.is_active', true);
-                  });
+            ->where(function ($query) use ($academy) {
+                $query->where('academy_id', $academy->id)
+                      ->orWhereHas('teacher', function ($q) use ($academy) {
+                          $q->where('teachers.status', 'active')
+                            ->whereHas('academies', function ($q2) use ($academy) {
+                                $q2->where('academy_id', $academy->id)
+                                   ->where('academy_teacher.is_active', true);
+                            });
+                      });
             })
             ->update(['name' => $newName]);
 
@@ -150,12 +153,15 @@ class GradeService
     public function bulkDelete(Academy $academy, string $name): int
     {
         $result = Grade::where('name', $name)
-            ->whereHas('teacher', function ($q) use ($academy) {
-                $q->where('teachers.status', 'active')
-                  ->whereHas('academies', function ($q2) use ($academy) {
-                      $q2->where('academy_id', $academy->id)
-                         ->where('academy_teacher.is_active', true);
-                  });
+            ->where(function ($query) use ($academy) {
+                $query->where('academy_id', $academy->id)
+                      ->orWhereHas('teacher', function ($q) use ($academy) {
+                          $q->where('teachers.status', 'active')
+                            ->whereHas('academies', function ($q2) use ($academy) {
+                                $q2->where('academy_id', $academy->id)
+                                   ->where('academy_teacher.is_active', true);
+                            });
+                      });
             })
             ->delete();
 
