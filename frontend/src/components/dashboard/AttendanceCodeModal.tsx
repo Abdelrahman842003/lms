@@ -52,7 +52,7 @@ const AttendanceCodeModal: React.FC<AttendanceCodeModalProps> = ({ isOpen, onClo
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#ffffff]/50 dark:via-[#ffffff]/10 to-transparent -translate-x-full animate-[shimmer_2s_infinite]" />
               
               {code ? (
-                <div className="flex gap-2 sm:gap-3 dir-ltr">
+                <div className="flex gap-2 sm:gap-3" dir="ltr">
                   {code.split('').map((digit, index) => (
                     <div 
                       key={index}

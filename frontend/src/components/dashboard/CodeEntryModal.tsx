@@ -76,7 +76,7 @@ const CodeEntryModal: React.FC<CodeEntryModalProps> = ({ isOpen, onClose, onSubm
                 {/* Shine effect */}
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#ffffff]/50 dark:via-[#ffffff]/10 to-transparent -translate-x-full animate-[shimmer_2s_infinite]" />
                 
-                <div className="relative flex gap-2 sm:gap-3 dir-ltr">
+                <div className="relative flex gap-2 sm:gap-3" dir="ltr">
                   {/* The visible boxes */}
                   {[0, 1, 2, 3, 4, 5].map((index) => {
                     const digit = code[index] || '';
@@ -100,6 +100,7 @@ const CodeEntryModal: React.FC<CodeEntryModalProps> = ({ isOpen, onClose, onSubm
                     value={code}
                     onChange={(e) => setCode(e.target.value.replace(/[^0-9]/g, ''))}
                     className="absolute inset-0 w-full h-full opacity-0 cursor-text text-transparent outline-none z-10"
+                    dir="ltr"
                     autoFocus
                     disabled={isSubmitting}
                   />
