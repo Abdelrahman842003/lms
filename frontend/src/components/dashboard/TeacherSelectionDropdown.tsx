@@ -296,42 +296,48 @@ const TeacherList = ({ teachers, selectedTeacher, onSelect }: { teachers: any[],
   );
 };
 
-const TeacherItem = ({ teacher, selectedTeacher, onSelect, isNested = false }: { teacher: any, selectedTeacher: any, onSelect: (t: any) => void, isNested?: boolean }) => (
-  <div 
-    className={`teacher-dropdown-item ${selectedTeacher?.teacher_id === teacher.teacher_id ? 'teacher-dropdown-item-selected' : ''} ${isNested ? 'teacher-dropdown-item-nested' : ''} ${(teacher.status === 'expired' || teacher.status === 'inactive') ? 'teacher-dropdown-item-disabled' : ''}`}
-    onClick={() => onSelect(teacher)}
-  >
-    <div className="teacher-item-avatar">
-      {teacher.teacher_avatar ? (
-        <img src={teacher.teacher_avatar} alt="" className="teacher-item-avatar-img" />
-      ) : (
-        <span className="teacher-item-avatar-placeholder"><Icon name="chalkboard-teacher" /></span>
-      )}
-    </div>
-    <div className="teacher-item-main">
-      <div className="teacher-item-header">
-        <h4 className="teacher-item-name">
-          {teacher.teacher_name}
-          {!isNested && teacher.academy_name && (
-            <span className="text-xs opacity-75 mr-2">
-              ({teacher.academy_name})
-            </span>
-          )}
-        </h4>
-        {teacher.status === 'grace_period' && (
-          <span className="teacher-item-state warning">فترة سماح</span>
-        )}
-        {teacher.status === 'expired' && (
-          <span className="teacher-item-state danger">منتهي</span>
+const TeacherItem = ({ teacher, selectedTeacher, onSelect, isNested = false }: { teacher: any, selectedTeacher: any, onSelect: (t: any) => void, isNested?: boolean }) => {
+  const isSelected = selectedTeacher?.teacher_id === teacher.teacher_id && 
+                     (selectedTeacher?.academy_id || null) === (teacher.academy_id || null);
+
+  return (
+    <div 
+      className={`teacher-dropdown-item ${isSelected ? 'teacher-dropdown-item-selected' : ''} ${isNested ? 'teacher-dropdown-item-nested' : ''} ${(teacher.status === 'expired' || teacher.status === 'inactive') ? 'teacher-dropdown-item-disabled' : ''}`}
+      onClick={() => onSelect(teacher)}
+    >
+      <div className="teacher-item-avatar">
+        {teacher.teacher_avatar ? (
+          <img src={teacher.teacher_avatar} alt="" className="teacher-item-avatar-img" />
+        ) : (
+          <span className="teacher-item-avatar-placeholder"><Icon name="chalkboard-teacher" /></span>
         )}
       </div>
-      <p className="teacher-item-meta">
-        {teacher.grade_name} - {teacher.group_name}
-        {teacher.subject && ` • ${teacher.subject}`}
-      </p>
+      <div className="teacher-item-main">
+        <div className="teacher-item-header">
+          <h4 className="teacher-item-name">
+            {teacher.teacher_name}
+            {!isNested && teacher.academy_name && (
+              <span className="text-xs opacity-75 mr-2">
+                ({teacher.academy_name})
+              </span>
+            )}
+          </h4>
+          {teacher.status === 'grace_period' && (
+            <span className="teacher-item-state warning">فترة سماح</span>
+          )}
+          {teacher.status === 'expired' && (
+            <span className="teacher-item-state danger">منتهي</span>
+          )}
+        </div>
+        <p className="teacher-item-meta">
+          {teacher.grade_name} - {teacher.group_name}
+          {teacher.subject && ` • ${teacher.subject}`}
+        </p>
+      </div>
+      {isSelected && (
+        <span className="teacher-item-check"><Icon name="check-circle" /></span>
+      )}
     </div>
-    {selectedTeacher?.teacher_id === teacher.teacher_id && (
-      <span className="teacher-item-check"><Icon name="check-circle" /></span>
-    )}
-  </div>
-);
+  );
+};
+
