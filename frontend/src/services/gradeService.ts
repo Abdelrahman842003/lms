@@ -8,6 +8,7 @@ export interface Grade {
   price: number;
   created_at: string;
   teacher_id?: string | null;
+  teacher_profile_id?: string | number | null;
   teacher?: {
     id: string;
     name: string;

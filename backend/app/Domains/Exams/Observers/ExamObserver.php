@@ -16,7 +16,16 @@ class ExamObserver
      */
     public function created(Exam $exam): void
     {
-        CacheService::forgetExam($exam->id, $exam->teacher_id);
+        $teacherId = null;
+        if ($exam->teacher_profile_id) {
+            $profile = \App\Domains\Auth\Models\TeacherProfile::find($exam->teacher_profile_id);
+            if ($profile) {
+                $teacherId = $profile->teacher_id;
+            }
+        }
+        if ($teacherId) {
+            CacheService::forgetExam($exam->id, $teacherId);
+        }
         $this->scheduleExamActivation($exam);
     }
 
@@ -25,7 +34,16 @@ class ExamObserver
      */
     public function updated(Exam $exam): void
     {
-        CacheService::forgetExam($exam->id, $exam->teacher_id);
+        $teacherId = null;
+        if ($exam->teacher_profile_id) {
+            $profile = \App\Domains\Auth\Models\TeacherProfile::find($exam->teacher_profile_id);
+            if ($profile) {
+                $teacherId = $profile->teacher_id;
+            }
+        }
+        if ($teacherId) {
+            CacheService::forgetExam($exam->id, $teacherId);
+        }
         
         // Reschedule if date or duration changed
         if ($exam->wasChanged(['date', 'duration'])) {
@@ -38,7 +56,16 @@ class ExamObserver
      */
     public function deleted(Exam $exam): void
     {
-        CacheService::forgetExam($exam->id, $exam->teacher_id);
+        $teacherId = null;
+        if ($exam->teacher_profile_id) {
+            $profile = \App\Domains\Auth\Models\TeacherProfile::find($exam->teacher_profile_id);
+            if ($profile) {
+                $teacherId = $profile->teacher_id;
+            }
+        }
+        if ($teacherId) {
+            CacheService::forgetExam($exam->id, $teacherId);
+        }
     }
 
     /**

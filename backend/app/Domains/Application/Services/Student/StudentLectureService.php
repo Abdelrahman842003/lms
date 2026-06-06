@@ -13,17 +13,17 @@ class StudentLectureService
     /**
      * Get lectures for a specific teacher
      */
-    public function getLectures(Student $student, string $teacherId, int $perPage = 10): LengthAwarePaginator
+    public function getLectures(Student $student, string $teacherProfileId, int $perPage = 10): LengthAwarePaginator
     {
         // Get student's enrollments for this teacher to find their grades
         $enrollments = $student->enrollments()
-            ->where('teacher_id', $teacherId)
+            ->where('teacher_profile_id', $teacherProfileId)
             ->where('is_active', true)
             ->get();
 
         $gradeIds = $enrollments->pluck('grade_id')->filter()->unique()->values();
 
-        $lectures = Lecture::where('teacher_id', $teacherId)
+        $lectures = Lecture::where('teacher_profile_id', $teacherProfileId)
             ->where(function($query) use ($gradeIds) {
                 $query->whereIn('grade_id', $gradeIds)
                       ->orWhereNull('grade_id');

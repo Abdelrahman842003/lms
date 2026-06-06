@@ -30,9 +30,9 @@ class NotificationController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
         
-        $notifications = SentNotification::where('teacher_id', $teacher->id)
+        $notifications = SentNotification::where('teacher_profile_id', $teacher->id)
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($notification) {
@@ -63,7 +63,7 @@ class NotificationController extends Controller
 
     public function store(SendNotificationRequest $request): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
         $validated = $request->validated();
 
         $recipients = $this->notificationService->getRecipients(
@@ -117,7 +117,7 @@ class NotificationController extends Controller
      */
     public function storeVoice(StoreVoiceNotificationRequest $request): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
 
         try {
             $voiceFile = $request->file('voice');
@@ -157,7 +157,7 @@ class NotificationController extends Controller
 
             // Log the sent notification
             $sentNotification = SentNotification::create([
-                'teacher_id' => $teacher->id,
+                'teacher_profile_id' => $teacher->id,
                 'title' => $request->input('title'),
                 'message' => '[رسالة صوتية]',
                 'recipient_type' => $request->input('recipient_type'),
@@ -188,7 +188,7 @@ class NotificationController extends Controller
             return $this->errorResponse($e->getMessage(), 422);
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error('Voice Notification Error: ' . $e->getMessage(), [
-                'teacher_id' => $teacher->id,
+                'teacher_profile_id' => $teacher->id,
                 'exception' => $e
             ]);
             
@@ -202,7 +202,7 @@ class NotificationController extends Controller
 
     public function markAsRead(Request $request, $id): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
         $notification = $teacher->notifications()->where('id', $id)->first();
 
         if ($notification) {

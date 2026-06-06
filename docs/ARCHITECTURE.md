@@ -4,6 +4,18 @@
 
 This Laravel Backend LMS project follows **Domain-Driven Design (DDD)** principles to organize code around business domains rather than technical layers. The architecture separates business logic from infrastructure concerns, making the codebase more maintainable and testable.
 
+## Core Architectural Principle: Workspace Isolation (Multi-Tenancy)
+
+> **CRITICAL RULE (قاعدة شديدة الأهمية):**
+> لا يوجد أي كيان تعليمي في النظام مرتبط مباشرة بالمستخدم (User).
+> جميع الكيانات التعليمية ترتبط بـ Teacher Profile / Workspace فقط.
+> الـ User هو وسيلة تسجيل دخول فقط.
+> أما البيانات الفعلية فتعيش داخل Workspace مستقل ومعزول بالكامل.
+
+**Independent Teacher vs. Academy Teacher Identity (`Teacher Profile`):**
+A single teacher login can have multiple isolated Workspaces (e.g., one Independent Profile, and multiple Academy Profiles). 
+Therefore, entities such as `students`, `lectures`, `exams`, `groups`, `classes`, `question_banks`, `reports`, `notifications`, and support `tickets` MUST be linked to a `teacher_profile_id` (or equivalent workspace identifier) and **never** directly to a `user_id` or `teacher_id`. This ensures absolute data isolation between an independent teacher's dashboard (statistics, exams, students) and their academy-affiliated data.
+
 ## Domain Structure
 
 The application is organized into the following domains located in `backend/app/Domains/`:

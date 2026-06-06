@@ -21,7 +21,7 @@ export const getAcademySnapshot = async (filters?: AcademyReportFilters): Promis
     headers: getAuthHeaders(),
     params: filters,
   });
-  return response.data.data;
+  return response.data;
 };
 
 export const getStudentDistribution = async (filters?: AcademyReportFilters): Promise<StudentDistribution> => {
@@ -29,7 +29,7 @@ export const getStudentDistribution = async (filters?: AcademyReportFilters): Pr
     headers: getAuthHeaders(),
     params: filters,
   });
-  return response.data.data;
+  return response.data;
 };
 
 export const getTeacherPerformance = async (
@@ -43,7 +43,7 @@ export const getTeacherPerformance = async (
     headers: getAuthHeaders(),
     params: { ...filters, page, per_page: perPage, sort_column: sortColumn, sort_direction: sortDirection },
   });
-  return response.data.data;
+  return response.data;
 };
 
 export const getAttendanceQuality = async (filters?: AcademyReportFilters): Promise<AttendanceQuality> => {
@@ -51,7 +51,7 @@ export const getAttendanceQuality = async (filters?: AcademyReportFilters): Prom
     headers: getAuthHeaders(),
     params: filters,
   });
-  return response.data.data;
+  return response.data;
 };
 
 export const getSessionExecution = async (
@@ -63,14 +63,14 @@ export const getSessionExecution = async (
     headers: getAuthHeaders(),
     params: { ...filters, page, per_page: perPage },
   });
-  return response.data.data;
+  return response.data;
 };
 
 export const getSubscriptionUsage = async (): Promise<SubscriptionUsage> => {
   const response = await axios.get(`${API_BASE_URL}/academy/reports/subscription-usage`, {
     headers: getAuthHeaders(),
   });
-  return response.data.data;
+  return response.data;
 };
 
 export const getTimeComparison = async (filters?: AcademyReportFilters): Promise<TimeComparison> => {
@@ -78,7 +78,7 @@ export const getTimeComparison = async (filters?: AcademyReportFilters): Promise
     headers: getAuthHeaders(),
     params: filters,
   });
-  return response.data.data;
+  return response.data;
 };
 
 export const getAcademyAlerts = async (filters?: AcademyReportFilters): Promise<AcademyAlert[]> => {
@@ -86,7 +86,7 @@ export const getAcademyAlerts = async (filters?: AcademyReportFilters): Promise<
     headers: getAuthHeaders(),
     params: filters,
   });
-  return response.data.data;
+  return response.data;
 };
 
 export const getAcademyReportOverview = async (filters?: AcademyReportFilters): Promise<AcademyReportOverview> => {
@@ -94,5 +94,5 @@ export const getAcademyReportOverview = async (filters?: AcademyReportFilters): 
     headers: getAuthHeaders(),
     params: filters,
   });
-  return response.data.data;
+  return response.data;
 };

@@ -13,7 +13,6 @@ use App\Domains\Subscriptions\Models\Subscription;
 use App\Domains\Subscriptions\Enums\SubscriptionStatus;
 use App\Domains\Auth\Models\Academy;
 use App\Domains\Lectures\Models\Lecture;
-use App\Domains\Application\Models\TeacherAttendanceLog;
 use App\Domains\Auth\Models\Secretary;
 use App\Domains\Application\Traits\HasDeviceTokens;
 use App\Domains\Subscriptions\Traits\HasSubscriptionStatus;
@@ -121,55 +120,153 @@ class Teacher extends Authenticatable
         return $baseUrl . '/' . $key;
     }
 
-    // Many-to-Many Relationships via Enrollment
+    /**
+     * Get all workspaces / profiles for this teacher.
+     */
+    public function profiles()
+    {
+        return $this->hasMany(TeacherProfile::class, 'teacher_id');
+    }
+
+    /**
+     * Get all enrollments across all profiles.
+     */
     public function enrollments()
     {
-        return $this->hasMany(Enrollment::class);
+        return $this->hasManyThrough(
+            \App\Domains\Enrollments\Models\Enrollment::class,
+            TeacherProfile::class,
+            'teacher_id',
+            'teacher_profile_id',
+            'id',
+            'id'
+        );
     }
 
-    public function students()
-    {
-        return $this->belongsToMany(Student::class, 'enrollments')
-            ->withPivot(['grade_id', 'group_id', 'balance', 'is_active', 'subscription_start', 'subscription_end', 'teacher_notes', 'academy_id'])
-            ->withTimestamps();
-    }
-
+    /**
+     * Get active enrollments across all profiles.
+     */
     public function activeEnrollments()
     {
-        return $this->enrollments()->where('is_active', true);
+        return $this->enrollments()->where('enrollments.is_active', true);
     }
 
-    public function activeStudents()
-    {
-        return $this->students()->wherePivot('is_active', true);
-    }
-
-    // Get enrollment for specific student
-    public function enrollmentFor(Student $student): ?Enrollment
-    {
-        return $this->enrollments()->where('student_id', $student->id)->first();
-    }
-
-    public function secretaries()
-    {
-        return $this->belongsToMany(Secretary::class, 'secretary_teacher')
-            ->withPivot('permissions')
-            ->withTimestamps();
-    }
-
-    public function lectures()
-    {
-        return $this->hasMany(Lecture::class);
-    }
-
+    /**
+     * Get grades across all profiles.
+     */
     public function grades()
     {
-        return $this->hasMany(Grade::class);
+        return $this->hasManyThrough(
+            \App\Domains\Enrollments\Models\Grade::class,
+            TeacherProfile::class,
+            'teacher_id',
+            'teacher_profile_id',
+            'id',
+            'id'
+        );
     }
 
+    /**
+     * Get groups across all profiles.
+     */
     public function groups()
     {
-        return $this->hasMany(Group::class);
+        return $this->hasManyThrough(
+            \App\Domains\Enrollments\Models\Group::class,
+            TeacherProfile::class,
+            'teacher_id',
+            'teacher_profile_id',
+            'id',
+            'id'
+        );
+    }
+
+    /**
+     * Get lectures across all profiles.
+     */
+    public function lectures()
+    {
+        return $this->hasManyThrough(
+            \App\Domains\Lectures\Models\Lecture::class,
+            TeacherProfile::class,
+            'teacher_id',
+            'teacher_profile_id',
+            'id',
+            'id'
+        );
+    }
+
+    /**
+     * Get exams across all profiles.
+     */
+    public function exams()
+    {
+        return $this->hasManyThrough(
+            \App\Domains\Exams\Models\Exam::class,
+            TeacherProfile::class,
+            'teacher_id',
+            'teacher_profile_id',
+            'id',
+            'id'
+        );
+    }
+
+    /**
+     * Get questions across all profiles.
+     */
+    public function questions()
+    {
+        return $this->hasManyThrough(
+            \App\Domains\Exams\Models\Question::class,
+            TeacherProfile::class,
+            'teacher_id',
+            'teacher_profile_id',
+            'id',
+            'id'
+        );
+    }
+
+    /**
+     * Get payment logs across all profiles.
+     */
+    public function paymentLogs()
+    {
+        return $this->hasManyThrough(
+            \App\Domains\Subscriptions\Models\PaymentLog::class,
+            TeacherProfile::class,
+            'teacher_id',
+            'teacher_profile_id',
+            'id',
+            'id'
+        );
+    }
+
+    /**
+     * Get students enrolled in any of this teacher's profiles.
+     */
+    public function students()
+    {
+        $pivotTable = '(select enrollments.*, teacher_profiles.teacher_id from enrollments join teacher_profiles on enrollments.teacher_profile_id = teacher_profiles.id where enrollments.deleted_at is null) as enrollments';
+        
+        $query = $this->newRelatedInstance(Student::class)->newQuery();
+        
+        return new class($query, $this, $pivotTable, 'teacher_id', 'student_id', 'id', 'id', 'students') extends \Illuminate\Database\Eloquent\Relations\BelongsToMany {
+            protected function resolveTableName($table)
+            {
+                return new \Illuminate\Database\Query\Expression($table);
+            }
+
+            public function qualifyPivotColumn($column)
+            {
+                if ($this->query->getQuery()->getGrammar()->isExpression($column)) {
+                    return $column;
+                }
+
+                return str_contains($column, '.')
+                    ? $column
+                    : 'enrollments.'.$column;
+            }
+        };
     }
     public function scopeFilter($query, array $filters)
     {
@@ -251,13 +348,7 @@ class Teacher extends Authenticatable
         return $this->academies()->wherePivot('is_active', true);
     }
 
-    /**
-     * Attendance logs for this teacher
-     */
-    public function attendanceLogs()
-    {
-        return $this->hasMany(TeacherAttendanceLog::class);
-    }
+
 
     /**
      * Check if teacher has any active academy connections

@@ -130,7 +130,7 @@ class ReportService
         $activeStudents = $teacher->enrollments->where('is_active', true)->count();
 
         // Total months paid in period from PaymentLog (student payments)
-        $billableMonths = PaymentLog::where('teacher_id', $teacher->id)
+        $billableMonths = PaymentLog::where('teacher_profile_id', $teacher->id)
             ->where('status', 'confirmed')
             ->whereBetween('confirmed_at', [$startDate, $endDate])
             ->sum('months');
@@ -144,7 +144,7 @@ class ReportService
         $teacherPaidAmount = (float) ($teacher->paid_amount ?? 0);
 
         // Source 2: PaymentLog (student-to-teacher payments)
-        $paymentLogPayments = (float) PaymentLog::where('teacher_id', $teacher->id)
+        $paymentLogPayments = (float) PaymentLog::where('teacher_profile_id', $teacher->id)
             ->where('status', 'confirmed')
             ->whereBetween('confirmed_at', [$startDate, $endDate])
             ->sum('amount');
@@ -179,13 +179,13 @@ class ReportService
         $effectivePaidAmount = max($teacherPaidAmount, $subscriptionsPaid);
 
         // Pending payments
-        $pendingPayments = PaymentLog::where('teacher_id', $teacher->id)
+        $pendingPayments = PaymentLog::where('teacher_profile_id', $teacher->id)
             ->where('status', 'pending')
             ->where('expires_at', '>', now())
             ->sum('amount');
 
         // Last payment date - check PaymentLog first, then subscriptions
-        $lastPayment = PaymentLog::where('teacher_id', $teacher->id)
+        $lastPayment = PaymentLog::where('teacher_profile_id', $teacher->id)
             ->where('status', 'confirmed')
             ->orderBy('confirmed_at', 'desc')
             ->first();
@@ -198,7 +198,7 @@ class ReportService
         }
 
         // First payment date (subscription start)
-        $firstPayment = PaymentLog::where('teacher_id', $teacher->id)
+        $firstPayment = PaymentLog::where('teacher_profile_id', $teacher->id)
             ->where('status', 'confirmed')
             ->orderBy('confirmed_at', 'asc')
             ->first();
@@ -217,7 +217,7 @@ class ReportService
         }
 
         // Paying students count (unique students who paid in this period)
-        $payingStudentsCount = PaymentLog::where('teacher_id', $teacher->id)
+        $payingStudentsCount = PaymentLog::where('teacher_profile_id', $teacher->id)
             ->where('status', 'confirmed')
             ->whereBetween('confirmed_at', [$startDate, $endDate])
             ->distinct('student_id')
@@ -376,16 +376,16 @@ class ReportService
         $totalAcademyStudents = count(array_unique($uniqueStudentIds));
 
         // Get teacher IDs for this academy
-        $teacherIds = $teachers->pluck('id')->toArray();
+        $teacherProfileIds = $teachers->pluck('id')->toArray();
 
         // Calculate total months paid (subscriptions) in the period
-        $totalMonthsPaid = PaymentLog::whereIn('teacher_id', $teacherIds)
+        $totalMonthsPaid = PaymentLog::whereIn('teacher_profile_id', $teacherProfileIds)
             ->where('status', 'confirmed')
             ->whereBetween('confirmed_at', [$startDate, $endDate])
             ->sum('months');
 
         // Count total payment transactions (confirmed payments)
-        $totalPaymentTransactions = PaymentLog::whereIn('teacher_id', $teacherIds)
+        $totalPaymentTransactions = PaymentLog::whereIn('teacher_profile_id', $teacherProfileIds)
             ->where('status', 'confirmed')
             ->whereBetween('confirmed_at', [$startDate, $endDate])
             ->count();
@@ -394,7 +394,7 @@ class ReportService
         $subscriptionFee = (float) $academy->subscription_fee;
 
         // Calculate confirmed payments from PaymentLog
-        $confirmedPayments = PaymentLog::whereIn('teacher_id', $teacherIds)
+        $confirmedPayments = PaymentLog::whereIn('teacher_profile_id', $teacherProfileIds)
             ->where('status', 'confirmed')
             ->whereBetween('confirmed_at', [$startDate, $endDate])
             ->sum('amount');
@@ -434,7 +434,7 @@ class ReportService
         $paymentStatus = $this->calculatePaymentStatus($subscriptionFee, $effectivePaidAmount);
 
         // Monthly breakdown
-        $monthlyData = $this->getMonthlyBreakdownForAcademy($teacherIds, $startDate, $endDate, $academy);
+        $monthlyData = $this->getMonthlyBreakdownForAcademy($teacherProfileIds, $startDate, $endDate, $academy);
 
         $summary = new AcademyReportSummaryData(
             totalTeachers: $totalTeachers,
@@ -525,10 +525,10 @@ class ReportService
 
         $reportType = $filters['report_type'] ?? 'summary';
         $academyIds = collect($filters['academy_ids'] ?? [])->filter()->values();
-        $teacherIds = collect($filters['teacher_ids'] ?? [])->filter()->values();
+        $teacherProfileIds = collect($filters['teacher_profile_ids'] ?? [])->filter()->values();
 
         $selectedAcademyIds = ($reportType === 'summary' || $reportType === 'academies') ? $academyIds : collect();
-        $selectedTeacherIds = ($reportType === 'summary' || $reportType === 'teachers') ? $teacherIds : collect();
+        $selectedTeacherIds = ($reportType === 'summary' || $reportType === 'teachers') ? $teacherProfileIds : collect();
 
         $independentTeachersQuery = $this->independentTeachersQuery();
 
@@ -541,9 +541,9 @@ class ReportService
             $academiesQuery->whereIn('id', $selectedAcademyIds->all());
         }
 
-        $teacherIdsFromAcademies = collect();
+        $teacherProfileIdsFromAcademies = collect();
         if ($reportType === 'academies' || $reportType === 'summary') {
-            $teacherIdsFromAcademies = Academy::query()
+            $teacherProfileIdsFromAcademies = Academy::query()
                 ->when(
                     $selectedAcademyIds->isNotEmpty(),
                     fn (Builder $q): Builder => $q->whereIn('id', $selectedAcademyIds->all())
@@ -565,7 +565,7 @@ class ReportService
                 ->values();
         }
 
-        $teacherScopeIds = $teacherIdsFromAcademies
+        $teacherScopeIds = $teacherProfileIdsFromAcademies
             ->merge($selectedIndependentTeacherIds)
             ->unique()
             ->values();
@@ -588,7 +588,7 @@ class ReportService
 
         $enrollmentsQuery = Enrollment::query();
         if ($scopedTeacherIds !== null) {
-            $enrollmentsQuery->whereIn('teacher_id', $scopedTeacherIds->all());
+            $enrollmentsQuery->whereIn('teacher_profile_id', $scopedTeacherIds->all());
         }
         if ($selectedAcademyIds->isNotEmpty() && $reportType === 'academies') {
             $enrollmentsQuery->whereIn('academy_id', $selectedAcademyIds->all());
@@ -612,7 +612,7 @@ class ReportService
             ->whereBetween('confirmed_at', [$startDate, $endDate]);
 
         if ($scopedTeacherIds !== null) {
-            $paymentsQuery->whereIn('teacher_id', $scopedTeacherIds->all());
+            $paymentsQuery->whereIn('teacher_profile_id', $scopedTeacherIds->all());
         }
 
         if ($selectedAcademyIds->isNotEmpty() && $reportType === 'academies') {
@@ -622,7 +622,7 @@ class ReportService
         }
 
         if ($reportType === 'teachers') {
-            $paymentsQuery->whereIn('teacher_id', $selectedIndependentTeacherIds->all());
+            $paymentsQuery->whereIn('teacher_profile_id', $selectedIndependentTeacherIds->all());
         }
 
         // 2. Subscriptions (Months Paid) Calculation
@@ -707,7 +707,7 @@ class ReportService
             'report_type' => $reportType,
             'filters' => [
                 'academy_ids' => $selectedAcademyIds->all(),
-                'teacher_ids' => $selectedTeacherIds->all(),
+                'teacher_profile_ids' => $selectedTeacherIds->all(),
             ],
             'generated_at' => now()->format('Y-m-d H:i:s'),
         ];
@@ -733,16 +733,16 @@ class ReportService
         // Get payment totals per teacher in one query
         $paymentsByTeacher = PaymentLog::where('status', 'confirmed')
             ->whereBetween('confirmed_at', [$startDate, $endDate])
-            ->selectRaw('teacher_id, SUM(amount) as total_paid')
-            ->groupBy('teacher_id')
-            ->pluck('total_paid', 'teacher_id');
+            ->selectRaw('teacher_profile_id, SUM(amount) as total_paid')
+            ->groupBy('teacher_profile_id')
+            ->pluck('total_paid', 'teacher_profile_id');
 
         // Get months paid per teacher for revenue calculation
         $monthsByTeacher = PaymentLog::where('status', 'confirmed')
             ->whereBetween('confirmed_at', [$startDate, $endDate])
-            ->selectRaw('teacher_id, SUM(months) as total_months')
-            ->groupBy('teacher_id')
-            ->pluck('total_months', 'teacher_id');
+            ->selectRaw('teacher_profile_id, SUM(months) as total_months')
+            ->groupBy('teacher_profile_id')
+            ->pluck('total_months', 'teacher_profile_id');
 
         // Get subscription fees per teacher
         $subscriptionFeesByTeacher = Teacher::pluck('subscription_fee', 'id');
@@ -783,7 +783,7 @@ class ReportService
      * Get monthly breakdown for academy (list of teachers)
      * NOW SAME AS TEACHER: Uses AcademySubscription as Source of Truth
      */
-    private function getMonthlyBreakdownForAcademy(array $teacherIds, Carbon $startDate, Carbon $endDate, ?Academy $academy = null): array
+    private function getMonthlyBreakdownForAcademy(array $teacherProfileIds, Carbon $startDate, Carbon $endDate, ?Academy $academy = null): array
     {
         $months = [];
         $currentMonth = $startDate->copy()->startOfMonth();
@@ -797,7 +797,7 @@ class ReportService
             $queryStart = $monthStart->lt($startDate) ? $startDate->copy()->startOfDay() : $monthStart;
             $queryEnd = $monthEnd->gt($endDate) ? $endDate->copy()->endOfDay() : $monthEnd->endOfDay();
 
-            $newEnrollments = Enrollment::whereIn('teacher_id', $teacherIds)
+            $newEnrollments = Enrollment::whereIn('teacher_profile_id', $teacherProfileIds)
                 ->whereBetween('created_at', [$queryStart, $queryEnd])
                 ->count();
 
@@ -819,7 +819,7 @@ class ReportService
                 $status = $subscription->status->value ?? 'pending';
             } else {
                 // Fallback: Calculate on the fly (Seat System)
-                $query = Enrollment::whereIn('teacher_id', $teacherIds)
+                $query = Enrollment::whereIn('teacher_profile_id', $teacherProfileIds)
                     ->withTrashed()
                     ->where('created_at', '<=', $monthEnd)
                     ->where(function($q) use ($monthStart) {
@@ -884,7 +884,7 @@ class ReportService
                     : (string) $subscription->status;
             } else {
                 // Fallback: Calculate on the fly (Potential Revenue - Seat System)
-                $query = Enrollment::where('teacher_id', $teacher->id)
+                $query = Enrollment::where('teacher_profile_id', $teacher->id)
                     ->withTrashed()
                     ->where('created_at', '<=', $monthEnd)
                     ->where(function($q) use ($monthStart) {
@@ -919,7 +919,7 @@ class ReportService
     /**
      * Get monthly breakdown of enrollments and payments
      */
-    private function getMonthlyBreakdown(string|array|null $teacherId, Carbon $startDate, Carbon $endDate, string $type): array
+    private function getMonthlyBreakdown(string|array|null $teacherProfileId, Carbon $startDate, Carbon $endDate, string $type): array
     {
         $months = [];
 
@@ -936,12 +936,12 @@ class ReportService
             $enrollmentsQuery = Enrollment::query();
             $paymentsQuery = PaymentLog::where('status', 'confirmed');
 
-            if (is_array($teacherId) && !empty($teacherId)) {
-                $enrollmentsQuery->whereIn('teacher_id', $teacherId);
-                $paymentsQuery->whereIn('teacher_id', $teacherId);
-            } elseif (is_string($teacherId) && $teacherId !== '') {
-                $enrollmentsQuery->where('teacher_id', $teacherId);
-                $paymentsQuery->where('teacher_id', $teacherId);
+            if (is_array($teacherProfileId) && !empty($teacherProfileId)) {
+                $enrollmentsQuery->whereIn('teacher_profile_id', $teacherProfileId);
+                $paymentsQuery->whereIn('teacher_profile_id', $teacherProfileId);
+            } elseif (is_string($teacherProfileId) && $teacherProfileId !== '') {
+                $enrollmentsQuery->where('teacher_profile_id', $teacherProfileId);
+                $paymentsQuery->where('teacher_profile_id', $teacherProfileId);
             }
 
             $newEnrollments = (clone $enrollmentsQuery)

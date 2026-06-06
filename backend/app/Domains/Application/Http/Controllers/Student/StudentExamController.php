@@ -23,10 +23,10 @@ class StudentExamController extends Controller
     public function index(GetExamsRequest $request): JsonResponse
     {
         $student = $request->user();
-        $teacherId = $request->validated('teacher_id');
+        $teacherProfileId = $request->validated('teacher_profile_id');
         $perPage = (int) $request->input('per_page', 10);
 
-        $exams = $this->examService->getExams($student, $teacherId, $perPage);
+        $exams = $this->examService->getExams($student, $teacherProfileId, $perPage);
 
         return $this->successResponse(
             StudentExamResource::collection($exams)->response()->getData(true)

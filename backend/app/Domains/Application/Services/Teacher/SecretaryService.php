@@ -6,6 +6,7 @@ namespace App\Domains\Application\Services\Teacher;
 
 use App\Domains\Auth\Models\Secretary;
 use App\Domains\Auth\Models\Teacher;
+use App\Domains\Auth\Models\TeacherProfile;
 use App\Domains\Application\Exceptions\DomainException;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Hash;
@@ -13,7 +14,7 @@ use Illuminate\Support\Facades\DB;
 
 class SecretaryService
 {
-    public function getSecretaries(Teacher $teacher, int $perPage = 10, array $filters = []): LengthAwarePaginator
+    public function getSecretaries(TeacherProfile $teacher, int $perPage = 10, array $filters = []): LengthAwarePaginator
     {
         $query = $teacher->secretaries()
             ->latest();
@@ -37,7 +38,7 @@ class SecretaryService
         return Secretary::where('phone', $phone)->first();
     }
 
-    public function createOrAttach(Teacher $teacher, array $data): array
+    public function createOrAttach(TeacherProfile $teacher, array $data): array
     {
         return DB::transaction(function () use ($teacher, $data) {
             $secretary = Secretary::where('phone', $data['phone'])->first();
@@ -78,7 +79,7 @@ class SecretaryService
         });
     }
 
-    public function update(Teacher $teacher, string $id, array $data): Secretary
+    public function update(TeacherProfile $teacher, string $id, array $data): Secretary
     {
         $secretary = $teacher->secretaries()->findOrFail($id);
 
@@ -96,19 +97,19 @@ class SecretaryService
         return $secretary;
     }
 
-    public function detach(Teacher $teacher, string $id): void
+    public function detach(TeacherProfile $teacher, string $id): void
     {
         $teacher->secretaries()->detach($id);
     }
 
-    public function updatePermissions(Teacher $teacher, string $id, array $permissions): void
+    public function updatePermissions(TeacherProfile $teacher, string $id, array $permissions): void
     {
         $teacher->secretaries()->updateExistingPivot($id, [
             'permissions' => json_encode($permissions)
         ]);
     }
 
-    public function toggleStatus(Teacher $teacher, string $id): Secretary
+    public function toggleStatus(TeacherProfile $teacher, string $id): Secretary
     {
         $secretary = $teacher->secretaries()->findOrFail($id);
 

@@ -100,32 +100,24 @@ class Student extends Authenticatable
     }
 
     /**
-     * Primary teacher relationship (direct foreign key)
+     * All enrolled teacher workspaces (many-to-many through enrollments)
      */
-    public function teacher()
+    public function teacherProfiles()
     {
-        return $this->belongsTo(Teacher::class, 'teacher_id');
-    }
-
-    /**
-     * All enrolled teachers (many-to-many through enrollments)
-     */
-    public function teachers()
-    {
-        return $this->belongsToMany(Teacher::class, 'enrollments')
+        return $this->belongsToMany(TeacherProfile::class, 'enrollments', 'student_id', 'teacher_profile_id')
             ->withPivot(['grade_id', 'group_id', 'balance', 'is_active', 'subscription_start', 'subscription_end', 'teacher_notes'])
             ->withTimestamps();
     }
 
     public function groups()
     {
-        return $this->belongsToMany(Group::class, 'enrollments')
-            ->withPivot(['teacher_id', 'grade_id', 'balance', 'is_active', 'subscription_start', 'subscription_end', 'teacher_notes'])
+        return $this->belongsToMany(Group::class, 'enrollments', 'student_id', 'group_id')
+            ->withPivot(['teacher_profile_id', 'grade_id', 'balance', 'is_active', 'subscription_start', 'subscription_end', 'teacher_notes'])
             ->withTimestamps();
     }
 
     /**
-     * Academies through enrollments (via teacher -> academy_teacher)
+     * Academies through enrollments
      */
     public function academies()
     {
@@ -134,12 +126,40 @@ class Student extends Authenticatable
     }
 
     /**
+     * Teachers through enrollments and teacher profiles
+     */
+    public function teachers()
+    {
+        $pivotTable = '(select enrollments.*, teacher_profiles.teacher_id from enrollments join teacher_profiles on enrollments.teacher_profile_id = teacher_profiles.id where enrollments.deleted_at is null) as enrollments';
+        
+        $query = $this->newRelatedInstance(Teacher::class)->newQuery();
+        
+        return new class($query, $this, $pivotTable, 'student_id', 'teacher_id', 'id', 'id', 'teachers') extends \Illuminate\Database\Eloquent\Relations\BelongsToMany {
+            protected function resolveTableName($table)
+            {
+                return new \Illuminate\Database\Query\Expression($table);
+            }
+
+            public function qualifyPivotColumn($column)
+            {
+                if ($this->query->getQuery()->getGrammar()->isExpression($column)) {
+                    return $column;
+                }
+
+                return str_contains($column, '.')
+                    ? $column
+                    : 'enrollments.'.$column;
+            }
+        };
+    }
+
+    /**
      * Grades through enrollments
      */
     public function grades()
     {
         return $this->belongsToMany(\App\Domains\Enrollments\Models\Grade::class, 'enrollments')
-            ->withPivot(['teacher_id', 'group_id', 'balance', 'is_active'])
+            ->withPivot(['teacher_profile_id', 'group_id', 'balance', 'is_active'])
             ->withTimestamps();
     }
 
@@ -149,35 +169,32 @@ class Student extends Authenticatable
     }
 
     /**
-     * Get enrollment for specific teacher
-     * يستخدم cache إذا كانت enrollments محملة مسبقاً لتجنب queries زائدة
+     * Get enrollment for specific teacher profile
      */
-    public function enrollmentFor(Teacher $teacher): ?Enrollment
+    public function enrollmentFor(TeacherProfile $profile): ?Enrollment
     {
-        // تحقق إذا كانت enrollments محملة مسبقاً
         if ($this->relationLoaded('enrollments')) {
-            return $this->enrollments->firstWhere('teacher_id', $teacher->id);
+            return $this->enrollments->firstWhere('teacher_profile_id', $profile->id);
         }
 
-        return $this->enrollments()->where('teacher_id', $teacher->id)->first();
+        return $this->enrollments()->where('teacher_profile_id', $profile->id)->first();
     }
 
-    // Kept for backward compatibility - will get grade from enrollment
-    public function getGradeForTeacher(Teacher $teacher): ?\App\Domains\Enrollments\Models\Grade
+    public function getGradeForProfile(TeacherProfile $profile): ?\App\Domains\Enrollments\Models\Grade
     {
-        $enrollment = $this->enrollmentFor($teacher);
+        $enrollment = $this->enrollmentFor($profile);
         return $enrollment?->grade;
     }
 
-    public function getGroupForTeacher(Teacher $teacher): ?Group
+    public function getGroupForProfile(TeacherProfile $profile): ?Group
     {
-        $enrollment = $this->enrollmentFor($teacher);
+        $enrollment = $this->enrollmentFor($profile);
         return $enrollment?->group;
     }
 
-    public function getBalanceForTeacher(Teacher $teacher): float
+    public function getBalanceForProfile(TeacherProfile $profile): float
     {
-        $enrollment = $this->enrollmentFor($teacher);
+        $enrollment = $this->enrollmentFor($profile);
         return $enrollment?->balance ?? 0;
     }
 

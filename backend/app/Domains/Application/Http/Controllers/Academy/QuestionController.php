@@ -22,14 +22,22 @@ class QuestionController extends Controller
             return $this->errorResponse('Unauthorized', 403);
         }
 
-        // Get IDs of teachers belonging to this academy
-        $teacherIds = $academy->teachers()->pluck('teachers.id')->toArray();
+        // Get IDs of teacher profiles belonging to this academy
+        $teacherProfileIds = $academy->profiles()->pluck('id')->toArray();
         
-        $query = Question::whereIn('teacher_id', $teacherIds)
+        $query = Question::whereIn('teacher_profile_id', $teacherProfileIds)
             ->whereHas('grade', fn ($g) => $g->where('academy_id', $academy->id));
 
-        if ($request->has('teacher_id')) {
-            $query->where('teacher_id', $request->input('teacher_id'));
+        if ($request->has('teacher_profile_id') || $request->has('teacher_id')) {
+            $teacherId = $request->input('teacher_profile_id') ?? $request->input('teacher_id');
+            $profile = \App\Domains\Auth\Models\TeacherProfile::where('academy_id', $academy->id)
+                ->where(function ($q) use ($teacherId) {
+                    $q->where('id', $teacherId)
+                      ->orWhere('uuid', $teacherId)
+                      ->orWhere('teacher_id', $teacherId);
+                })
+                ->first();
+            $query->where('teacher_profile_id', $profile ? $profile->id : $teacherId);
         }
 
         if ($request->has('grade_id')) {
@@ -58,7 +66,7 @@ class QuestionController extends Controller
                   });
         }]);
 
-        $questions = $query->with('teacher:id,name')->latest()->paginate((int) $request->input('per_page', 15));
+        $questions = $query->with('teacher:teachers.id,name')->latest()->paginate((int) $request->input('per_page', 15));
 
         return $this->successResponse($questions);
     }
@@ -73,7 +81,7 @@ class QuestionController extends Controller
         $data = $request->validated();
         
         // Ensure teacher belongs to academy
-        if (!$academy->teachers()->where('teachers.id', $data['teacher_id'])->exists()) {
+        if (!$academy->profiles()->where('id', $data['teacher_profile_id'])->exists()) {
             return $this->errorResponse('المدرس المختار لا ينتمي لهذه الأكاديمية', 403);
         }
 
@@ -99,7 +107,7 @@ class QuestionController extends Controller
         }
 
         // Ensure teacher belongs to academy
-        if (!$academy->teachers()->where('teachers.id', $question->teacher_id)->exists()) {
+        if (!$academy->profiles()->where('id', $question->teacher_profile_id)->exists()) {
             return $this->errorResponse('غير مصرح لك بعرض هذا السؤال', 403);
         }
 
@@ -111,7 +119,7 @@ class QuestionController extends Controller
             })->exists();
 
         $question->is_locked = $isLocked;
-        $question->load('teacher:id,name');
+        $question->load('teacher:teachers.id,name');
 
         return $this->successResponse($question);
     }
@@ -124,14 +132,14 @@ class QuestionController extends Controller
         }
 
         // Ensure current question's teacher belongs to academy
-        if (!$academy->teachers()->where('teachers.id', $question->teacher_id)->exists()) {
+        if (!$academy->profiles()->where('id', $question->teacher_profile_id)->exists()) {
             return $this->errorResponse('غير مصرح لك بتعديل هذا السؤال', 403);
         }
 
         $data = $request->validated();
 
-        // If updating teacher_id, ensure new teacher also belongs to academy
-        if (isset($data['teacher_id']) && !$academy->teachers()->where('teachers.id', $data['teacher_id'])->exists()) {
+        // If updating teacher_profile_id, ensure new teacher also belongs to academy
+        if (isset($data['teacher_profile_id']) && !$academy->profiles()->where('id', $data['teacher_profile_id'])->exists()) {
             return $this->errorResponse('المدرس الجديد المختار لا ينتمي لهذه الأكاديمية', 403);
         }
 
@@ -160,7 +168,7 @@ class QuestionController extends Controller
         }
 
         // Ensure teacher belongs to academy
-        if (!$academy->teachers()->where('teachers.id', $question->teacher_id)->exists()) {
+        if (!$academy->profiles()->where('id', $question->teacher_profile_id)->exists()) {
             return $this->errorResponse('غير مصرح لك بحذف هذا السؤال', 403);
         }
 

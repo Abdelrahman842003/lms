@@ -32,7 +32,7 @@ class StudentController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
         
         $perPage = (int) $request->input('per_page', 10);
         $search = $request->input('search');
@@ -55,7 +55,7 @@ class StudentController extends Controller
         $student = $this->service->searchByPhone($validated['phone']);
         
         if ($student) {
-            $teacher = $this->getTeacherFromRequest($request);
+            $teacher = $this->getProfileFromRequest($request);
             
             // Get academy context from the request
             $academyId = $request->header('X-Academy-Id') ?? ($validated['academy_id'] ?? null);
@@ -72,8 +72,8 @@ class StudentController extends Controller
             
             // Check if already enrolled with this teacher IN THE SAME CONTEXT
             $enrollmentQuery = Enrollment::where('student_id', $student->id)
-                ->where('teacher_id', $teacher->id)
-                ->with(['academy:id', 'teacher:id']);
+                ->where('teacher_profile_id', $teacher->id)
+                ->with(['academy:id', 'teacher:teachers.id']);
             
             // Filter by academy context
             if ($academyIdFromGrade) {
@@ -112,7 +112,7 @@ class StudentController extends Controller
     public function store(StoreStudentRequest $request): JsonResponse
     {
         try {
-            $teacher = $this->getTeacherFromRequest($request);
+            $teacher = $this->getProfileFromRequest($request);
             $validated = $request->validated();
             
             // Get academy context from header
@@ -156,11 +156,11 @@ class StudentController extends Controller
      */
     public function show(Request $request, string $id): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
         
         // Find enrollment by student_id
         $enrollment = Enrollment::with(['student', 'grade', 'group'])
-            ->where('teacher_id', $teacher->id)
+            ->where('teacher_profile_id', $teacher->id)
             ->where('student_id', $id)
             ->firstOrFail();
 
@@ -198,10 +198,10 @@ class StudentController extends Controller
      */
     public function update(UpdateStudentRequest $request, string $id): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
         
         $enrollment = Enrollment::with(['student'])
-            ->where('teacher_id', $teacher->id)
+            ->where('teacher_profile_id', $teacher->id)
             ->where('student_id', $id)
             ->firstOrFail();
             
@@ -239,11 +239,11 @@ class StudentController extends Controller
      */
     public function destroy(Request $request, string $id): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
         
-        $enrollment = Enrollment::where('teacher_id', $teacher->id)
+        $enrollment = Enrollment::where('teacher_profile_id', $teacher->id)
             ->where('student_id', $id)
-            ->with(['academy:id', 'teacher:id'])
+            ->with(['academy:id', 'teacher:teachers.id'])
             ->firstOrFail();
         
         // Authorization check
@@ -261,7 +261,7 @@ class StudentController extends Controller
      */
     public function statistics(Request $request): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
         $stats = $this->service->getStatistics($teacher);
 
         return $this->successResponse($stats);
@@ -272,10 +272,10 @@ class StudentController extends Controller
      */
     public function updatePermissions(UpdatePermissionsRequest $request, string $id): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
         
-        $enrollment = Enrollment::with(['student', 'academy:id', 'teacher:id'])
-            ->where('teacher_id', $teacher->id)
+        $enrollment = Enrollment::with(['student', 'academy:id', 'teacher:teachers.id'])
+            ->where('teacher_profile_id', $teacher->id)
             ->where('student_id', $id)
             ->firstOrFail();
 
@@ -292,11 +292,11 @@ class StudentController extends Controller
      */
     public function toggleStatus(Request $request, string $id): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
         
-        $enrollment = Enrollment::where('teacher_id', $teacher->id)
+        $enrollment = Enrollment::where('teacher_profile_id', $teacher->id)
             ->where('student_id', $id)
-            ->with(['academy:id', 'teacher:id'])
+            ->with(['academy:id', 'teacher:teachers.id'])
             ->firstOrFail();
 
         $this->service->toggleStatus($enrollment);
@@ -312,10 +312,10 @@ class StudentController extends Controller
      */
     public function activationDetails(Request $request, string $id): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
         
         $enrollment = Enrollment::with(['student', 'grade', 'group'])
-            ->where('teacher_id', $teacher->id)
+            ->where('teacher_profile_id', $teacher->id)
             ->where('student_id', $id)
             ->firstOrFail();
 
@@ -329,11 +329,11 @@ class StudentController extends Controller
      */
     public function activate(Request $request, string $id): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
         
-        $enrollment = Enrollment::where('teacher_id', $teacher->id)
+        $enrollment = Enrollment::where('teacher_profile_id', $teacher->id)
             ->where('student_id', $id)
-            ->with(['academy:id', 'teacher:id'])
+            ->with(['academy:id', 'teacher:teachers.id'])
             ->firstOrFail();
 
         $result = $this->service->activate($enrollment, $request->all());

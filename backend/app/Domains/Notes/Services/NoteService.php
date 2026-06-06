@@ -16,9 +16,25 @@ class NoteService
 
     public function initiateNote(array $data, array $files): array
     {
+        // Determine ownership
+        $ownerType = null;
+        $ownerId = null;
+        if (!empty($data['academy_id'])) {
+            $ownerType = \App\Domains\Auth\Models\Academy::class;
+            $ownerId = $data['academy_id'];
+        } elseif (!empty($data['teacher_profile_id'])) {
+            $profile = \App\Domains\Auth\Models\TeacherProfile::find($data['teacher_profile_id']);
+            if ($profile) {
+                $ownerType = \App\Domains\Auth\Models\Teacher::class;
+                $ownerId = $profile->teacher_id;
+            }
+        }
+
         $note = Note::create([
             'academy_id' => $data['academy_id'] ?? null,
-            'teacher_id' => $data['teacher_id'],
+            'teacher_profile_id' => $data['teacher_profile_id'] ?? null,
+            'owner_type' => $ownerType,
+            'owner_id' => $ownerId,
             'grade_id' => $data['grade_id'],
             'title' => $data['title'],
             'description' => $data['description'] ?? null,

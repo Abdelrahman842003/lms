@@ -45,10 +45,10 @@ class StoreNotificationRequest extends FormRequest
             $targetIdRules[] = 'prohibited';
             $targetIdsRules[] = 'prohibited';
         } elseif ($targetType === 'teachers') {
-            $targetIdRules[] = Rule::exists('academy_teacher', 'teacher_id')
+            $targetIdRules[] = Rule::exists('academy_teacher', 'teacher_profile_id')
                 ->where(static fn ($query) => $query->where('academy_id', $academyId));
 
-            $targetIdsItemRules[] = Rule::exists('academy_teacher', 'teacher_id')
+            $targetIdsItemRules[] = Rule::exists('academy_teacher', 'teacher_profile_id')
                 ->where(static fn ($query) => $query->where('academy_id', $academyId));
         } elseif ($targetType === 'secretaries') {
             $targetIdRules[] = Rule::exists('academy_secretary', 'secretary_id')

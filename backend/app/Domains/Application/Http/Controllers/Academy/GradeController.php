@@ -48,11 +48,28 @@ class GradeController extends Controller
         }
 
         $perPage = (int) $request->input('per_page', 10);
-        $filters = $request->only(['teacher_id', 'name']);
+        $filters = [];
+        if ($request->has('teacher_profile_id')) {
+            $filters['teacher_profile_id'] = $request->input('teacher_profile_id');
+        } elseif ($request->has('teacher_id')) {
+            $teacherId = $request->input('teacher_id');
+            $profile = \App\Domains\Auth\Models\TeacherProfile::where('academy_id', $academy->id)
+                ->where(function ($q) use ($teacherId) {
+                    $q->where('id', $teacherId)
+                      ->orWhere('uuid', $teacherId)
+                      ->orWhere('teacher_id', $teacherId);
+                })
+                ->first();
+            $filters['teacher_profile_id'] = $profile ? $profile->id : $teacherId;
+        }
+        
+        if ($request->has('name')) {
+            $filters['name'] = $request->input('name');
+        }
         
         $result = $this->service->getGrades($academy, $filters, $perPage);
 
-        // If result is a collection (teacher_id filter), return simple data
+        // If result is a collection (teacher_profile_id filter), return simple data
         if ($result instanceof \Illuminate\Support\Collection) {
             return $this->successResponse([
                 'data' => $result

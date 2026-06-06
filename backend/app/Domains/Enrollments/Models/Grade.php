@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace App\Domains\Enrollments\Models;
 
 use App\Domains\Auth\Models\Teacher;
+use App\Domains\Support\Traits\UsesTeacherProfileScope;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Grade extends Model
 {
-    use HasFactory, HasUuids;
+    use HasFactory, HasUuids, UsesTeacherProfileScope;
 
     protected static function newFactory()
     {
@@ -25,14 +26,11 @@ class Grade extends Model
     protected $fillable = [
         'name',
         'price',
-        'teacher_id',
+        'teacher_profile_id',
         'academy_id',
     ];
 
-    public function teacher()
-    {
-        return $this->belongsTo(Teacher::class);
-    }
+    // The teacherProfile relation is provided by the UsesTeacherProfileScope trait.
 
     public function groups()
     {

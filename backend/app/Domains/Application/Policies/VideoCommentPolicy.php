@@ -69,7 +69,7 @@ class VideoCommentPolicy extends BasePolicy
         // Teacher/Secretary can update comments on their videos
         $teacher = $this->resolveTeacher($user);
         if ($teacher && $model->video) {
-            return $model->video->teacher_id === $teacher->id;
+            return $this->ownsProfileResource($teacher, $model->video->teacher_profile_id);
         }
 
         // Academy can update comments on their academy's videos
@@ -94,7 +94,7 @@ class VideoCommentPolicy extends BasePolicy
         // Teacher/Secretary can delete comments on their videos
         $teacher = $this->resolveTeacher($user);
         if ($teacher && $model->video) {
-            return $model->video->teacher_id === $teacher->id;
+            return $this->ownsProfileResource($teacher, $model->video->teacher_profile_id);
         }
 
         // Academy can delete comments on their academy's videos

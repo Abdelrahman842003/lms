@@ -16,7 +16,7 @@ class UpdateTeacherRequest extends FormRequest
 
     public function rules(): array
     {
-        $teacherId = $this->route('teacher') ?? $this->route('id');
+        $teacherProfileId = $this->route('teacher') ?? $this->route('id');
 
         return [
             'name' => ['required', 'string', 'min:3'],
@@ -24,7 +24,7 @@ class UpdateTeacherRequest extends FormRequest
                 'required',
                 'string',
                 'regex:/^01[0-9]{9}$/',
-                Rule::unique('teachers', 'phone')->ignore($teacherId),
+                Rule::unique('teachers', 'phone')->ignore($teacherProfileId),
             ],
             'password' => ['nullable', 'string', 'min:6'],
             'subject' => ['nullable', 'string', 'max:255'],

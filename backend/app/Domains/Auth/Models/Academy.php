@@ -17,7 +17,6 @@ use Illuminate\Foundation\Auth\Access\Authorizable;
 use App\Domains\Subscriptions\Models\Subscription;
 use App\Domains\Subscriptions\Models\AcademySubscription;
 use App\Domains\Subscriptions\Enums\SubscriptionStatus;
-use App\Domains\Application\Models\TeacherAttendanceLog;
 use App\Domains\Subscriptions\Traits\HasSubscriptionStatus;
 use App\Domains\Subscriptions\Traits\HasTenantPlan;
 use App\Domains\Enrollments\Models\Group;
@@ -122,6 +121,14 @@ class Academy extends Model implements AuthenticatableContract, AuthorizableCont
     }
 
     /**
+     * Teacher profiles associated with this academy
+     */
+    public function profiles()
+    {
+        return $this->hasMany(TeacherProfile::class, 'academy_id');
+    }
+
+    /**
      * Groups belonging to this academy
      */
     public function groups()
@@ -157,13 +164,7 @@ class Academy extends Model implements AuthenticatableContract, AuthorizableCont
         return $this->hasMany(AcademySubscription::class);
     }
 
-    /**
-     * Attendance logs
-     */
-    public function attendanceLogs()
-    {
-        return $this->hasMany(TeacherAttendanceLog::class);
-    }
+
 
     /**
      * Get total students count across all teachers (Active only)
@@ -171,14 +172,14 @@ class Academy extends Model implements AuthenticatableContract, AuthorizableCont
      */
     public function getTotalStudentsCountAttribute(): int
     {
-        $teacherIds = $this->activeTeachers()->pluck('teachers.id');
+        $profileIds = $this->profiles()->pluck('id');
 
-        if ($teacherIds->isEmpty()) {
+        if ($profileIds->isEmpty()) {
             return 0;
         }
 
         return \Illuminate\Support\Facades\DB::table('enrollments')
-            ->whereIn('teacher_id', $teacherIds)
+            ->whereIn('teacher_profile_id', $profileIds)
             ->where('academy_id', $this->id)
             ->where('is_active', true)
             ->distinct('student_id')
@@ -190,10 +191,14 @@ class Academy extends Model implements AuthenticatableContract, AuthorizableCont
      */
     public function getTotalEnrollmentsCountAttribute()
     {
-        $teacherIds = $this->teachers()->pluck('teachers.id')->toArray();
-        
+        $profileIds = $this->profiles()->pluck('id');
+
+        if ($profileIds->isEmpty()) {
+            return 0;
+        }
+
         return \Illuminate\Support\Facades\DB::table('enrollments')
-            ->whereIn('teacher_id', $teacherIds)
+            ->whereIn('teacher_profile_id', $profileIds)
             ->where('academy_id', $this->id)
             ->count();
     }
@@ -240,12 +245,16 @@ class Academy extends Model implements AuthenticatableContract, AuthorizableCont
      */
     public function getQuotaUsage(): array
     {
-        $teacherIds = $this->activeTeachers()->pluck('teachers.id')->toArray();
-        $currentEnrollments = \Illuminate\Support\Facades\DB::table('enrollments')
-            ->whereIn('teacher_id', $teacherIds)
-            ->where('academy_id', $this->id)
-            ->where('is_active', true)
-            ->count();
+        $profileIds = $this->profiles()->pluck('id');
+        
+        $currentEnrollments = 0;
+        if (!$profileIds->isEmpty()) {
+            $currentEnrollments = \Illuminate\Support\Facades\DB::table('enrollments')
+                ->whereIn('teacher_profile_id', $profileIds)
+                ->where('academy_id', $this->id)
+                ->where('is_active', true)
+                ->count();
+        }
 
         return [
             'used' => $currentEnrollments,

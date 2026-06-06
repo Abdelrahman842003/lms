@@ -286,11 +286,10 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ role }) => {
     items = items.filter(item => item.id !== 'videos');
   }
 
-  if (role === 'teacher') {
-    const isAcademyMode = (selectedAcademy?.id && selectedAcademy.id !== 'independent') || isLoading;
-    if (isAcademyMode) {
-      items = items.filter(item => item.id !== 'reports');
-    }
+  const isAcademyMode = role === 'teacher' && ((selectedAcademy?.id && selectedAcademy.id !== 'independent') || isLoading);
+
+  if (isAcademyMode) {
+    items = items.filter(item => item.id !== 'reports');
   }
 
   const menuRef = useRef<HTMLDivElement>(null);
@@ -421,7 +420,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ role }) => {
                   <span>الملف الشخصي</span>
                 </Link>
 
-                {role === 'teacher' && (
+                {role === 'teacher' && !isAcademyMode && (
                   <Link
                     href="/teacher/subscription"
                     className="flex items-center justify-center gap-3 p-4 rounded-2xl bg-amber-500/10 text-amber-400 font-bold text-xs border border-amber-500/10 shadow-lg active:scale-95 transition-transform"

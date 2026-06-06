@@ -33,7 +33,7 @@ Route::middleware('throttle:register')->post('/register/teacher', [\App\Domains\
 Route::post('/login/teacher', [TeacherAuthController::class, 'login'])
     ->middleware(['throttle:auth', 'auth.cookies']);
 
-Route::middleware(['auth:sanctum', EnsureUserNotSuspended::class . ':teacher', EnsureActiveSubscription::class])->prefix('teacher')->name('teacher.')->group(function () {
+Route::middleware(['auth:sanctum', EnsureUserNotSuspended::class . ':teacher', EnsureActiveSubscription::class, 'profile.context'])->prefix('teacher')->name('teacher.')->group(function () {
     Route::post('/logout', [TeacherAuthController::class, 'logout']);
     Route::get('/me', [TeacherAuthController::class, 'me']);
     Route::post('/change-password', [TeacherAuthController::class, 'changePassword']);

@@ -29,9 +29,9 @@ class LectureFilter extends BaseFilter
         $query->where('group_id', $value);
     }
 
-    protected function filterTeacherId(Builder $query, string $value): void
+    protected function filterTeacherProfileId(Builder $query, string $value): void
     {
-        $query->where('teacher_id', $value);
+        $query->where('teacher_profile_id', $value);
     }
 
     protected function filterStatus(Builder $query, string $value): void

@@ -62,7 +62,7 @@ class VideoQuizAttemptPolicy extends BasePolicy
         // Teacher/Secretary can view attempts on their videos
         $teacher = $this->resolveTeacher($user);
         if ($teacher && $model->quiz && $model->quiz->video) {
-            return $model->quiz->video->teacher_id === $teacher->id;
+            return $this->ownsProfileResource($teacher, $model->quiz->video->teacher_profile_id);
         }
 
         // Academy can view attempts on their videos

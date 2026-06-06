@@ -16,29 +16,29 @@ use Illuminate\Support\Facades\DB;
 
 final class TeacherGroupQueryService
 {
-    public function activeGroupsCount(Teacher $teacher, TeacherReportFilters $filters): int
+    public function activeGroupsCount($teacher, TeacherReportFilters $filters): int
     {
-        $query = Group::where('teacher_id', $teacher->id);
+        $query = $teacher->groups();
         
         if ($filters->groupId) {
-            $query->where('id', $filters->groupId);
+            $query->where('groups.id', $filters->groupId);
         }
 
         return $query->whereHas('enrollments', fn($q) => $q->where('is_active', true))
             ->count();
     }
 
-    public function perGroupMetrics(Teacher $teacher, TeacherReportFilters $filters): array
+    public function perGroupMetrics($teacher, TeacherReportFilters $filters): array
     {
-        $groupQuery = Group::where('teacher_id', $teacher->id);
-        if ($filters->groupId) $groupQuery->where('id', $filters->groupId);
-        $groupIds = $groupQuery->pluck('id');
+        $groupQuery = $teacher->groups();
+        if ($filters->groupId) $groupQuery->where('groups.id', $filters->groupId);
+        $groupIds = $groupQuery->pluck('groups.id');
 
-        $totalActiveQuery = Enrollment::where('teacher_id', $teacher->id)->where('is_active', true);
-        if ($filters->groupId) $totalActiveQuery->where('group_id', $filters->groupId);
+        $totalActiveQuery = $teacher->enrollments()->where('enrollments.is_active', true);
+        if ($filters->groupId) $totalActiveQuery->where('enrollments.group_id', $filters->groupId);
         $totalActive = $totalActiveQuery->count();
 
-        $totalIncomeQuery = PaymentLog::where('teacher_id', $teacher->id)
+        $totalIncomeQuery = $teacher->paymentLogs()
             ->where('status', 'confirmed')
             ->whereBetween('confirmed_at', [$filters->base->period->startAt, $filters->base->period->endAt]);
         if ($filters->groupId) {
@@ -47,19 +47,18 @@ final class TeacherGroupQueryService
         $totalIncome = (float) $totalIncomeQuery->sum('amount');
 
         // Single query: students per group
-        $studentsPerGroup = Enrollment::where('teacher_id', $teacher->id)
-            ->whereIn('group_id', $groupIds)
-            ->select('group_id',
+        $studentsPerGroup = $teacher->enrollments()
+            ->whereIn('enrollments.group_id', $groupIds)
+            ->select('enrollments.group_id',
                 DB::raw('COUNT(*) as students_count'),
-                DB::raw('SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) as active_students'),
+                DB::raw('SUM(CASE WHEN enrollments.is_active = 1 THEN 1 ELSE 0 END) as active_students'),
             )
-            ->groupBy('group_id')
+            ->groupBy('enrollments.group_id')
             ->get()
             ->keyBy('group_id');
 
         // Single query: sessions per group
         $sessionsPerGroup = LectureSession::join('lectures', 'lecture_sessions.lecture_id', '=', 'lectures.id')
-            ->where('lectures.teacher_id', $teacher->id)
             ->whereIn('lectures.group_id', $groupIds)
             ->where('lecture_sessions.is_cancelled', false)
             ->whereBetween('lecture_sessions.date', [$filters->base->period->startAt, $filters->base->period->endAt])
@@ -71,7 +70,6 @@ final class TeacherGroupQueryService
         // Single query: attendance per group
         $attendancePerGroup = Attendance::join('lecture_sessions', 'attendances.lecture_session_id', '=', 'lecture_sessions.id')
             ->join('lectures', 'lecture_sessions.lecture_id', '=', 'lectures.id')
-            ->where('lectures.teacher_id', $teacher->id)
             ->whereIn('lectures.group_id', $groupIds)
             ->where('lecture_sessions.is_cancelled', false)
             ->whereBetween('lecture_sessions.date', [$filters->base->period->startAt, $filters->base->period->endAt])
@@ -83,7 +81,7 @@ final class TeacherGroupQueryService
             ->get()
             ->keyBy('group_id');
 
-        $groups = Group::where('teacher_id', $teacher->id)->whereIn('id', $groupIds)->get();
+        $groups = $teacher->groups()->whereIn('groups.id', $groupIds)->get();
         $result = [];
 
         foreach ($groups as $group) {

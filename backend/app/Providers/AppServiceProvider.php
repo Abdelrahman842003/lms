@@ -63,7 +63,6 @@ use App\Domains\Subscriptions\Models\TeacherSubscription;
 use App\Domains\Application\Models\DailyVoiceLimit;
 use App\Domains\Application\Models\Setting;
 use App\Domains\Application\Models\SyncError;
-use App\Domains\Application\Models\TeacherAttendanceLog;
 use App\Domains\Videos\Models\Video;
 use App\Domains\Videos\Models\VideoAccessGrant;
 use App\Domains\Videos\Models\VideoAccessLog;
@@ -119,7 +118,6 @@ use App\Domains\Application\Policies\StudentAnswerPolicy;
 use App\Domains\Application\Policies\StudentPointPolicy;
 use App\Domains\Application\Policies\SubscriptionPolicy;
 use App\Domains\Application\Policies\SyncErrorPolicy;
-use App\Domains\Application\Policies\TeacherAttendanceLogPolicy;
 use App\Domains\Application\Policies\TeacherPolicy;
 use App\Domains\Application\Policies\TeacherSubscriptionPolicy;
 use App\Domains\Application\Policies\VideoAccessGrantPolicy;
@@ -255,7 +253,6 @@ class AppServiceProvider extends ServiceProvider
             'App\Models\PaymentLog'         => \App\Domains\Subscriptions\Models\PaymentLog::class,
             'App\Models\Setting'            => \App\Domains\Application\Models\Setting::class,
             'App\Models\SyncError'          => \App\Domains\Application\Models\SyncError::class,
-            'App\Models\TeacherAttendanceLog' => \App\Domains\Application\Models\TeacherAttendanceLog::class,
             'App\Models\DailyVoiceLimit'    => \App\Domains\Application\Models\DailyVoiceLimit::class,
             'App\Models\Video'              => \App\Domains\Videos\Models\Video::class,
             'App\Models\VideoAttachment'    => \App\Domains\Videos\Models\VideoAttachment::class,
@@ -316,7 +313,6 @@ class AppServiceProvider extends ServiceProvider
         // Support Domain
         Gate::policy(Setting::class, SettingPolicy::class);
         Gate::policy(SyncError::class, SyncErrorPolicy::class);
-        Gate::policy(TeacherAttendanceLog::class, TeacherAttendanceLogPolicy::class);
         Gate::policy(DailyVoiceLimit::class, DailyVoiceLimitPolicy::class);
 
         // Videos Domain

@@ -5,9 +5,10 @@ declare(strict_types=1);
 namespace App\Domains\Videos\Models;
 
 use App\Domains\Auth\Models\Student;
-use App\Domains\Auth\Models\Teacher;
+use App\Domains\Auth\Models\TeacherProfile;
 use App\Domains\Enrollments\Models\Enrollment;
 use App\Domains\Enrollments\Models\Group;
+use App\Domains\Support\Traits\UsesTeacherProfileScope;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -17,11 +18,12 @@ class VideoAccessGrant extends Model
 {
     use HasFactory;
     use HasUuids;
+    use UsesTeacherProfileScope;
 
     protected $fillable = [
         'video_id',
         'student_id',
-        'teacher_id',
+        'teacher_profile_id',
         'enrollment_id',
         'granted_group_id',
         'granted_at',
@@ -49,10 +51,7 @@ class VideoAccessGrant extends Model
         return $this->belongsTo(Student::class);
     }
 
-    public function teacher(): BelongsTo
-    {
-        return $this->belongsTo(Teacher::class);
-    }
+    // The teacherProfile relation is provided by the UsesTeacherProfileScope trait.
 
     public function enrollment(): BelongsTo
     {

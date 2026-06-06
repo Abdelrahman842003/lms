@@ -17,7 +17,7 @@ class UpdateExamRequest extends FormRequest
 
     public function rules(): array
     {
-        return [
+        $rules = [
             'title' => 'required|string|max:255',
             'type' => 'nullable|string|in:manual,dynamic,self_test',
             'dynamic_settings' => 'nullable|array',
@@ -39,6 +39,15 @@ class UpdateExamRequest extends FormRequest
             'question_ids' => 'nullable|array',
             'question_ids.*' => 'exists:questions,id',
         ];
+
+        // For Academy or Secretary, teacher can be supplied
+        $user = auth()->user();
+        if ($user instanceof \App\Domains\Auth\Models\Academy || $user instanceof \App\Domains\Auth\Models\Secretary) {
+            $rules['teacher_profile_id'] = 'sometimes|exists:teacher_profiles,id';
+            $rules['teacher_id'] = 'sometimes';
+        }
+
+        return $rules;
     }
 
     public function messages(): array
@@ -66,5 +75,7 @@ class UpdateExamRequest extends FormRequest
             'title' => clean_input($this->input('title')),
             'subject' => clean_input($this->input('subject')),
         ]);
+
+        $this->merge(\App\Domains\Application\Traits\ResolvesTeacher::resolveTeacherInput($this));
     }
 }

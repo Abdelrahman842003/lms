@@ -8,6 +8,7 @@ use App\Domains\Auth\Models\Academy;
 use App\Domains\Auth\Models\Student;
 use App\Domains\Auth\Models\Teacher;
 use App\Domains\Enrollments\Services\EnrollmentStatusService;
+use App\Domains\Support\Traits\UsesTeacherProfileScope;
 use Closure;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -16,7 +17,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Enrollment extends Model
 {
-    use HasFactory, HasUuids, SoftDeletes;
+    use HasFactory, HasUuids, SoftDeletes, UsesTeacherProfileScope;
 
     /**
      * Static resolver for the status service.
@@ -48,7 +49,7 @@ class Enrollment extends Model
 
     protected $fillable = [
         'student_id',
-        'teacher_id',
+        'teacher_profile_id',
         'grade_id',
         'group_id',
         'academy_id',
@@ -114,9 +115,21 @@ class Enrollment extends Model
         return $this->belongsTo(Student::class);
     }
 
+    // The teacherProfile relation is provided by the UsesTeacherProfileScope trait.
+
+    /**
+     * Relationship to the base Teacher through the TeacherProfile.
+     */
     public function teacher()
     {
-        return $this->belongsTo(Teacher::class);
+        return $this->hasOneThrough(
+            Teacher::class,
+            \App\Domains\Auth\Models\TeacherProfile::class,
+            'id',
+            'id',
+            'teacher_profile_id',
+            'teacher_id'
+        );
     }
 
     public function grade()
@@ -145,9 +158,9 @@ class Enrollment extends Model
         return $query->where('is_active', true);
     }
 
-    public function scopeForTeacher($query, $teacherId)
+    public function scopeForProfile($query, $profileId)
     {
-        return $query->where('teacher_id', $teacherId);
+        return $query->where('teacher_profile_id', $profileId);
     }
 
     // Note: Filtering logic moved to \App\Domains\Application\Filters\EnrollmentFilter

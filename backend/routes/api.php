@@ -80,7 +80,7 @@ Route::prefix('v1')->group(function () {
     // ============================================
     // Sync Routes (Offline Support)
     // ============================================
-    Route::middleware('auth:sanctum')->group(function () {
+    Route::middleware(['auth:sanctum', 'profile.context'])->group(function () {
         Route::get('/sync/pull', [\App\Domains\Application\Http\Controllers\Api\SyncController::class, 'pull']);
     });
 

@@ -11,28 +11,69 @@ use Illuminate\Http\Request;
 trait ResolvesTeacher
 {
     /**
-     * Resolve the effective teacher from the request user.
+     * Resolve the active teacher profile from the request.
      * 
      * @param Request $request
-     * @return Teacher|null
+     * @return \App\Domains\Auth\Models\TeacherProfile|null
      */
-    protected function getTeacherFromRequest(Request $request): ?Teacher
+    protected function getProfileFromRequest(Request $request): ?\App\Domains\Auth\Models\TeacherProfile
     {
-        $user = $request->user();
+        return $request->attributes->get('active_profile') ?? (app()->bound('currentProfile') ? app('currentProfile') : null);
+    }
 
-        if (!$user) {
-            return null;
+    /**
+     * Alias for getProfileFromRequest to support legacy controller resolution.
+     */
+    protected function getTeacherFromRequest(Request $request): ?\App\Domains\Auth\Models\TeacherProfile
+    {
+        return $this->getProfileFromRequest($request);
+    }
+
+    /**
+     * Resolve and normalize teacher_id and teacher_profile_id inputs for FormRequests.
+     */
+    public static function resolveTeacherInput(Request $request): array
+    {
+        $mergeData = [];
+        $user = auth()->user();
+        $academyId = null;
+        if ($user instanceof \App\Domains\Auth\Models\Academy) {
+            $academyId = $user->id;
+        } elseif ($user instanceof \App\Domains\Auth\Models\Secretary) {
+            $academy = $user->academies()->first();
+            if ($academy) {
+                $academyId = $academy->id;
+            }
         }
 
-        if ($user instanceof Teacher) {
-            return $user;
+        if ($academyId) {
+            if ($request->has('teacher_id') && !$request->has('teacher_profile_id')) {
+                $teacherId = $request->input('teacher_id');
+                if ($teacherId) {
+                    $profile = \App\Domains\Auth\Models\TeacherProfile::where('academy_id', $academyId)
+                        ->where(function ($q) use ($teacherId) {
+                            $q->where('id', $teacherId)
+                              ->orWhere('uuid', $teacherId)
+                              ->orWhere('teacher_id', $teacherId);
+                        })
+                        ->first();
+                    if ($profile) {
+                        $mergeData['teacher_profile_id'] = (string) $profile->id;
+                    }
+                }
+            } elseif ($request->has('teacher_profile_id') && !$request->has('teacher_id')) {
+                $profileId = $request->input('teacher_profile_id');
+                if ($profileId) {
+                    $profile = \App\Domains\Auth\Models\TeacherProfile::where('id', $profileId)
+                        ->orWhere('uuid', $profileId)
+                        ->first();
+                    if ($profile) {
+                        $mergeData['teacher_id'] = $profile->teacher_id;
+                    }
+                }
+            }
         }
-
-        if ($user instanceof Secretary) {
-            // For now, return the first associated teacher.
-            return $user->teachers()->first();
-        }
-
-        return null;
+        return $mergeData;
     }
 }
+

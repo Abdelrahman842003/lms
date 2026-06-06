@@ -5,8 +5,9 @@ declare(strict_types=1);
 namespace App\Domains\Subscriptions\Models;
 
 use App\Domains\Auth\Models\Student;
-use App\Domains\Auth\Models\Teacher;
+use App\Domains\Auth\Models\TeacherProfile;
 use App\Domains\Enrollments\Models\Enrollment;
+use App\Domains\Support\Traits\UsesTeacherProfileScope;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -15,13 +16,13 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class PaymentLog extends Model
 {
-    use HasFactory, HasUuids;
+    use HasFactory, HasUuids, UsesTeacherProfileScope;
 
     protected $fillable = [
         'client_side_uuid',
         'enrollment_id',
         'student_id',
-        'teacher_id',
+        'teacher_profile_id',
         'amount',
         'months',
         'discount',
@@ -66,10 +67,7 @@ class PaymentLog extends Model
         return $this->belongsTo(Student::class);
     }
 
-    public function teacher(): BelongsTo
-    {
-        return $this->belongsTo(Teacher::class);
-    }
+    // The teacherProfile relation is provided by the UsesTeacherProfileScope trait.
 
     public function enrollment(): BelongsTo
     {
@@ -112,18 +110,10 @@ class PaymentLog extends Model
     {
         return $query->where('status', 'expired')
                      ->orWhere(function ($q) {
-                         $q->where('status', 'pending')
-                           ->where('expires_at', '<=', now());
-                     });
-    }
-
-    /**
-     * Filter by teacher
-     */
-    public function scopeForTeacher($query, string $teacherId)
-    {
-        return $query->where('teacher_id', $teacherId);
-    }
+                          $q->where('status', 'pending')
+                            ->where('expires_at', '<=', now());
+                      });
+     }
 
     /**
      * Filter by student
@@ -157,9 +147,9 @@ class PaymentLog extends Model
 
             // Check uniqueness per student (not system-wide)
             $exists = self::where('confirmation_code', $code)
-                         ->where('student_id', $studentId)
-                         ->where('status', 'pending')
-                         ->exists();
+                          ->where('student_id', $studentId)
+                          ->where('status', 'pending')
+                          ->exists();
         } while ($exists);
 
         return $code;

@@ -49,15 +49,15 @@ class SummaryController extends Controller
 
         $date = Carbon::parse($validated['date'] ?? now());
         $period = $validated['period'] ?? 'day';
-        $teacherId = $validated['teacher_id'] ?? null;
+        $teacherProfileId = $validated['teacher_profile_id'] ?? null;
 
         // Get enrollments (optionally filtered by teacher)
         $enrollmentsQuery = Enrollment::where('student_id', $student->id)
             ->where('is_active', true)
-            ->with(['teacher', 'grade', 'group', 'academy:id', 'teacher:id']);
+            ->with(['teacher', 'grade', 'group', 'academy:id']);
 
-        if ($teacherId) {
-            $enrollmentsQuery->where('teacher_id', $teacherId);
+        if ($teacherProfileId) {
+            $enrollmentsQuery->where('teacher_profile_id', $teacherProfileId);
         }
 
         $enrollments = $enrollmentsQuery->get();

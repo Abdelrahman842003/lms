@@ -327,6 +327,12 @@ export async function fetchApi<T = unknown>(
         if (headers['X-XSRF-TOKEN']) safeHeaders['X-XSRF-TOKEN'] = headers['X-XSRF-TOKEN'];
         if (headers['Authorization']) safeHeaders['Authorization'] = headers['Authorization'];
 
+        // Only enqueue if body is a string (JSON). FormData/Blobs are not supported yet.
+        if (options.body && typeof options.body !== 'string') {
+          console.warn(`[fetchApi] Offline: Enqueuing skipped for non-string body type on ${entityType}`);
+          throw new ApiError('يرجى الاتصال بالإنترنت لإجراء هذه العملية (الملفات غير مدعومة في وضع عدم الاتصال).', 0);
+        }
+
         console.log(`[fetchApi] Offline: Enqueuing mutation for ${entityType}`);
         const queueId = await syncEngine.enqueue(
           url,

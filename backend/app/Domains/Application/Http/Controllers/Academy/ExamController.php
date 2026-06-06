@@ -48,12 +48,12 @@ class ExamController extends Controller
                 return $this->errorResponse('Unauthorized', 403);
             }
 
-            // Manually fetch teacher model since resolving from request might look for authenticated teacher
-            $teacherId = $request->input('teacher_id');
-            $teacher = $academy->teachers()->find($teacherId);
+            // Fetch profile
+            $teacherProfileId = $request->input('teacher_profile_id');
+            $profile = $academy->profiles()->find($teacherProfileId);
 
-            if (!$teacher) {
-                return $this->errorResponse('Teacher not found in this academy', 404);
+            if (!$profile) {
+                return $this->errorResponse('Teacher profile not found in this academy', 404);
             }
 
             $request->merge(['academy_id_override' => $academy->id]);
@@ -64,7 +64,7 @@ class ExamController extends Controller
             $dateConflict = $this->service->checkDateConflicts(
                 $data->grade_id,
                 $data->date,
-                $teacher->id
+                $profile->id
             );
             
             if ($dateConflict) {
@@ -75,7 +75,7 @@ class ExamController extends Controller
                 $warning = "تنبيه: يوجد امتحان في نفس التاريخ للمدرس: {$teacherNames}. قد يؤثر على {$dateConflict['affected_students_count']} طالب مشترك.";
             }
 
-            $exam = $this->service->createExam($teacher, $data);
+            $exam = $this->service->createExam($profile, $data);
 
             $response = [
                 'exam' => new ExamResource($exam)
@@ -101,7 +101,7 @@ class ExamController extends Controller
 
         $perPage = (int) $request->input('per_page', 10);
         $search = $request->input('search');
-        $teacherId = $request->input('teacher_id');
+        $teacherProfileId = $request->input('teacher_profile_id');
         $status = $request->input('status');
 
         $query = Exam::query()
@@ -112,8 +112,8 @@ class ExamController extends Controller
             $query->where('title', 'like', "%{$search}%");
         }
 
-        if ($teacherId) {
-            $query->where('teacher_id', $teacherId);
+        if ($teacherProfileId) {
+            $query->where('teacher_profile_id', $teacherProfileId);
         }
 
         if ($status === 'active') {
@@ -168,7 +168,7 @@ class ExamController extends Controller
             $dateConflict = $this->service->checkDateConflicts(
                 $data->grade_id,
                 $data->date,
-                $exam->teacher_id,
+                $exam->teacher_profile_id,
                 $exam->id
             );
 

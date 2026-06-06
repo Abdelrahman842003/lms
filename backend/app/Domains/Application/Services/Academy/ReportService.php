@@ -7,7 +7,6 @@ namespace App\Domains\Application\Services\Academy;
 use App\Domains\Auth\Models\Academy;
 use App\Domains\Lectures\Models\Lecture;
 use App\Domains\Exams\Models\Exam;
-use App\Domains\Application\Models\TeacherAttendanceLog;
 use Carbon\Carbon;
 use App\Domains\Application\Models\Setting;
 use App\Domains\Subscriptions\Models\PaymentLog;
@@ -35,7 +34,7 @@ class ReportService
                   ->where('is_active', true);
             }])
             ->get();
-        $teacherIds = $teachers->pluck('id')->toArray();
+        $teacherProfileIds = $teachers->pluck('id')->toArray();
 
         foreach ($teachers as $teacher) {
             $teacherData[] = [
@@ -82,7 +81,7 @@ class ReportService
                 'secretaries'
             ])
             ->get();
-        $teacherIds = $teachers->pluck('id')->toArray();
+        $teacherProfileIds = $teachers->pluck('id')->toArray();
         
         // Calculate totals efficiently
         $totalStudents = $teachers->sum('active_enrollments_count');
@@ -90,13 +89,13 @@ class ReportService
         // Get teacher revenue breakdown in one query
         $teacherRevenues = DB::table('enrollments')
             ->join('grades', 'enrollments.grade_id', '=', 'grades.id')
-            ->whereIn('enrollments.teacher_id', $teacherIds)
+            ->whereIn('enrollments.teacher_profile_id', $teacherProfileIds)
             ->where('enrollments.academy_id', $academy->id)
             ->whereBetween('enrollments.created_at', [$startDate, $endDate])
             ->where('enrollments.is_active', 1)
-            ->selectRaw('enrollments.teacher_id, SUM(grades.price) as revenue')
-            ->groupBy('enrollments.teacher_id')
-            ->pluck('revenue', 'teacher_id');
+            ->selectRaw('enrollments.teacher_profile_id, SUM(grades.price) as revenue')
+            ->groupBy('enrollments.teacher_profile_id')
+            ->pluck('revenue', 'teacher_profile_id');
 
         $totalRevenue = $teacherRevenues->sum();
 
@@ -117,18 +116,18 @@ class ReportService
 
         // Get active subscriptions count in one query (filtered by selected period)
         $activeSubscriptionCounts = DB::table('enrollments')
-            ->whereIn('teacher_id', $teacherIds)
+            ->whereIn('teacher_profile_id', $teacherProfileIds)
             ->where('academy_id', $academy->id)
             ->whereBetween('created_at', [$startDate, $endDate])
             ->where('is_active', 1)
-            ->selectRaw('teacher_id, COUNT(*) as count')
-            ->groupBy('teacher_id')
-            ->pluck('count', 'teacher_id');
+            ->selectRaw('teacher_profile_id, COUNT(*) as count')
+            ->groupBy('teacher_profile_id')
+            ->pluck('count', 'teacher_profile_id');
 
         // Update teachersDetails with subscription counts
         foreach ($teachersDetails as $key => $detail) {
-            $teacherId = $teachers[$key]->id;
-            $teachersDetails[$key]['active_subscriptions'] = $activeSubscriptionCounts[$teacherId] ?? 0;
+            $teacherProfileId = $teachers[$key]->id;
+            $teachersDetails[$key]['active_subscriptions'] = $activeSubscriptionCounts[$teacherProfileId] ?? 0;
         }
 
         // Calculate monthly breakdown
@@ -137,7 +136,7 @@ class ReportService
             // Group by month for the whole year
             $monthlyStats = DB::table('enrollments')
                 ->join('grades', 'enrollments.grade_id', '=', 'grades.id')
-                ->whereIn('enrollments.teacher_id', $teacherIds)
+                ->whereIn('enrollments.teacher_profile_id', $teacherProfileIds)
                 ->where('enrollments.academy_id', $academy->id)
                 ->whereYear('enrollments.created_at', $year)
                 ->where('enrollments.is_active', 1)
@@ -161,7 +160,7 @@ class ReportService
             $monthlyBreakdown[] = [
                 'month_name' => Carbon::createFromDate($year, $month, 1)->locale('ar')->monthName . ' ' . $year,
                 'new_subscriptions_count' => DB::table('enrollments')
-                    ->whereIn('teacher_id', $teacherIds)
+                    ->whereIn('teacher_profile_id', $teacherProfileIds)
                     ->where('enrollments.academy_id', $academy->id)
                     ->whereBetween('created_at', [$startDate, $endDate])
                     ->where('is_active', 1)
@@ -174,7 +173,7 @@ class ReportService
         $academyStudentPrice = (float) Setting::getValue('academy_student_price', 0);
         
         // Count total payment transactions in the period (for informational purposes)
-        $totalPaymentTransactions = PaymentLog::whereIn('payment_logs.teacher_id', $teacherIds)
+        $totalPaymentTransactions = PaymentLog::whereIn('payment_logs.teacher_profile_id', $teacherProfileIds)
             ->join('enrollments', 'payment_logs.enrollment_id', '=', 'enrollments.id')
             ->where('enrollments.academy_id', $academy->id)
             ->whereBetween('payment_logs.confirmed_at', [$startDate, $endDate])
@@ -182,7 +181,7 @@ class ReportService
             ->count();
             
         // Platform Fees = Total Active Seats * Price
-        $totalSeatsQuery = \App\Domains\Enrollments\Models\Enrollment::whereIn('teacher_id', $teacherIds)
+        $totalSeatsQuery = \App\Domains\Enrollments\Models\Enrollment::whereIn('teacher_profile_id', $teacherProfileIds)
             ->where('academy_id', $academy->id)
             ->withTrashed()
             ->where('created_at', '<=', $endDate)
@@ -209,7 +208,7 @@ class ReportService
         
         // Total unique students (distinct student IDs) in the selected period
         $totalStudentsCount = \DB::table('enrollments')
-            ->whereIn('teacher_id', $teacherIds)
+            ->whereIn('teacher_profile_id', $teacherProfileIds)
             ->where('academy_id', $academy->id)
             ->whereBetween('created_at', [$startDate, $endDate])
             ->where('is_active', true)
@@ -219,7 +218,7 @@ class ReportService
         // Linked students count (Total active enrollments) in the selected period
         // Logic: Count all active enrollments that existed by the end of the period
         $linkedStudentsCount = \DB::table('enrollments')
-            ->whereIn('teacher_id', $teacherIds)
+            ->whereIn('teacher_profile_id', $teacherProfileIds)
             ->where('academy_id', $academy->id)
             ->where('created_at', '<=', $endDate)
             ->where('is_active', true)
@@ -231,7 +230,7 @@ class ReportService
             ->count();
 
         // Total exams in the period
-        $totalExamsCount = Exam::whereIn('teacher_id', $teacherIds)
+        $totalExamsCount = Exam::whereIn('teacher_profile_id', $teacherProfileIds)
             ->whereBetween('date', [$startDate, $endDate])
             ->count();
 
@@ -241,7 +240,7 @@ class ReportService
         // Subscription-based model (no monthly billing)
         
         // Restore this for 'total_confirmed_payments' field in response (Student Payments)
-        $totalConfirmedPayments = PaymentLog::whereIn('payment_logs.teacher_id', $teacherIds)
+        $totalConfirmedPayments = PaymentLog::whereIn('payment_logs.teacher_profile_id', $teacherProfileIds)
             ->join('enrollments', 'payment_logs.enrollment_id', '=', 'enrollments.id')
             ->where('enrollments.academy_id', $academy->id)
             ->whereBetween('payment_logs.confirmed_at', [$startDate, $endDate])

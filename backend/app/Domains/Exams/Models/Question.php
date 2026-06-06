@@ -6,6 +6,7 @@ namespace App\Domains\Exams\Models;
 
 use App\Domains\Auth\Models\Teacher;
 use App\Domains\Exams\Enums\QuestionType;
+use App\Domains\Support\Traits\UsesTeacherProfileScope;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -13,11 +14,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Question extends Model
 {
-    use HasUuids;
+    use HasUuids, UsesTeacherProfileScope;
 
     protected $fillable = [
         'exam_id', // Kept for backward compatibility
-        'teacher_id',
+        'teacher_profile_id',
+        'owner_type',
+        'owner_id',
         'grade_id',
         'subject',
         'text',
@@ -55,9 +58,14 @@ class Question extends Model
             ->withTimestamps();
     }
 
-    public function teacher(): BelongsTo
+    // The teacherProfile relation is provided by the UsesTeacherProfileScope trait.
+
+    /**
+     * Get the owning model of the question (e.g. Teacher or Academy).
+     */
+    public function owner()
     {
-        return $this->belongsTo(Teacher::class);
+        return $this->morphTo();
     }
 
     public function grade(): BelongsTo

@@ -56,79 +56,79 @@ class CacheService
 
     // =================== Gamification Cache ====================
 
-    public static function getGamificationSettings(string|int $teacherId, callable $callback): mixed
+    public static function getGamificationSettings(string|int $teacherProfileId, callable $callback): mixed
     {
-        return self::getStore(['teacher_' . $teacherId, 'settings'])->remember(
-            "teacher:{$teacherId}:gamification_settings",
+        return self::getStore(['teacher_' . $teacherProfileId, 'settings'])->remember(
+            "teacher:{$teacherProfileId}:gamification_settings",
             self::TTL_LONG,
             $callback
         );
     }
 
-    public static function forgetGamificationSettings(string|int $teacherId): void
+    public static function forgetGamificationSettings(string|int $teacherProfileId): void
     {
-        self::getStore(['teacher_' . $teacherId, 'settings'])->forget("teacher:{$teacherId}:gamification_settings");
+        self::getStore(['teacher_' . $teacherProfileId, 'settings'])->forget("teacher:{$teacherProfileId}:gamification_settings");
     }
 
     // =================== Leaderboard Cache ====================
 
-    public static function getWeeklyLeaderboard(string|int $teacherId, callable $callback): mixed
+    public static function getWeeklyLeaderboard(string|int $teacherProfileId, callable $callback): mixed
     {
-        return self::getStore(['teacher_' . $teacherId, 'leaderboard'])->remember(
-            "teacher:{$teacherId}:leaderboard:weekly",
+        return self::getStore(['teacher_' . $teacherProfileId, 'leaderboard'])->remember(
+            "teacher:{$teacherProfileId}:leaderboard:weekly",
             self::TTL_SHORT,
             $callback
         );
     }
 
-    public static function getAllTimeLeaderboard(string|int $teacherId, callable $callback): mixed
+    public static function getAllTimeLeaderboard(string|int $teacherProfileId, callable $callback): mixed
     {
-        return self::getStore(['teacher_' . $teacherId, 'leaderboard'])->remember(
-            "teacher:{$teacherId}:leaderboard:all_time",
+        return self::getStore(['teacher_' . $teacherProfileId, 'leaderboard'])->remember(
+            "teacher:{$teacherProfileId}:leaderboard:all_time",
             self::TTL_SHORT,
             $callback
         );
     }
 
-    public static function forgetLeaderboards(string|int $teacherId): void
+    public static function forgetLeaderboards(string|int $teacherProfileId): void
     {
         try {
-            Cache::tags(['teacher_' . $teacherId, 'leaderboard'])->flush();
+            Cache::tags(['teacher_' . $teacherProfileId, 'leaderboard'])->flush();
         } catch (\BadMethodCallException $e) {
         }
     }
 
     // =================== Teacher Cache (General) ====================
 
-    public static function getTeacherDashboardStats(string|int $teacherId, callable $callback, ?string $academyId = null): array
+    public static function getTeacherDashboardStats(string|int $teacherProfileId, callable $callback, ?string $academyId = null): array
     {
-        $key = "teacher:{$teacherId}:dashboard:stats";
+        $key = "teacher:{$teacherProfileId}:dashboard:stats";
         if ($academyId) {
             $key .= ":academy:{$academyId}";
         } elseif ($academyId === 'independent') {
             $key .= ":independent";
         }
 
-        return self::getStore(['teacher_' . $teacherId])->remember(
+        return self::getStore(['teacher_' . $teacherProfileId])->remember(
             $key,
             self::TTL_SHORT,
             $callback
         );
     }
 
-    public static function getTeacherGrades(string|int $teacherId, callable $callback): mixed
+    public static function getTeacherGrades(string|int $teacherProfileId, callable $callback): mixed
     {
-        return self::getStore(['teacher_' . $teacherId])->remember(
-            "teacher:{$teacherId}:grades",
+        return self::getStore(['teacher_' . $teacherProfileId])->remember(
+            "teacher:{$teacherProfileId}:grades",
             self::TTL_MEDIUM,
             $callback
         );
     }
 
-    public static function getTeacherGroups(string|int $teacherId, callable $callback): mixed
+    public static function getTeacherGroups(string|int $teacherProfileId, callable $callback): mixed
     {
-        return self::getStore(['teacher_' . $teacherId])->remember(
-            "teacher:{$teacherId}:groups",
+        return self::getStore(['teacher_' . $teacherProfileId])->remember(
+            "teacher:{$teacherProfileId}:groups",
             self::TTL_MEDIUM,
             $callback
         );
@@ -148,30 +148,30 @@ class CacheService
         self::getStore(['academy_' . $academyId])->forget("academy:{$academyId}:grades");
     }
 
-    public static function forgetTeacherCache(string|int $teacherId): void
+    public static function forgetTeacherCache(string|int $teacherProfileId): void
     {
         try {
-            Cache::tags(['teacher_' . $teacherId])->flush();
+            Cache::tags(['teacher_' . $teacherProfileId])->flush();
         } catch (\BadMethodCallException $e) {
         }
     }
 
-    public static function forgetTeacherDashboard(string|int $teacherId): void
+    public static function forgetTeacherDashboard(string|int $teacherProfileId): void
     {
         try {
-            Cache::tags(['teacher_' . $teacherId])->flush();
+            Cache::tags(['teacher_' . $teacherProfileId])->flush();
         } catch (\BadMethodCallException $e) {
         }
     }
 
-    public static function forgetTeacherGrades(string|int $teacherId): void
+    public static function forgetTeacherGrades(string|int $teacherProfileId): void
     {
-        self::getStore(['teacher_' . $teacherId])->forget("teacher:{$teacherId}:grades");
+        self::getStore(['teacher_' . $teacherProfileId])->forget("teacher:{$teacherProfileId}:grades");
     }
 
-    public static function forgetTeacherGroups(string|int $teacherId): void
+    public static function forgetTeacherGroups(string|int $teacherProfileId): void
     {
-        self::getStore(['teacher_' . $teacherId])->forget("teacher:{$teacherId}:groups");
+        self::getStore(['teacher_' . $teacherProfileId])->forget("teacher:{$teacherProfileId}:groups");
     }
 
     // =================== Student Cache ====================
@@ -214,36 +214,36 @@ class CacheService
 
     // =================== Mistakes Cache ====================
 
-    public static function getMistakesStats(string|int $studentId, string|int $teacherId, callable $callback): mixed
+    public static function getMistakesStats(string|int $studentId, string|int $teacherProfileId, callable $callback): mixed
     {
-        return self::getStore(['student_' . $studentId, 'teacher_' . $teacherId])->remember(
-            "student:{$studentId}:teacher:{$teacherId}:mistakes_stats",
+        return self::getStore(['student_' . $studentId, 'teacher_' . $teacherProfileId])->remember(
+            "student:{$studentId}:teacher:{$teacherProfileId}:mistakes_stats",
             self::TTL_SHORT,
             $callback
         );
     }
 
-    public static function forgetMistakesStats(string|int $studentId, string|int $teacherId): void
+    public static function forgetMistakesStats(string|int $studentId, string|int $teacherProfileId): void
     {
         try {
-            Cache::tags(['student_' . $studentId, 'teacher_' . $teacherId])->flush();
+            Cache::tags(['student_' . $studentId, 'teacher_' . $teacherProfileId])->flush();
         } catch (\BadMethodCallException $e) {
         }
     }
 
     // =================== Bulk Invalidation ====================
 
-    public static function forgetAllTeacherCache(string|int $teacherId): void
+    public static function forgetAllTeacherCache(string|int $teacherProfileId): void
     {
-        self::forgetTeacherCache($teacherId);
+        self::forgetTeacherCache($teacherProfileId);
     }
 
     // =================== Lectures Cache ====================
 
-    public static function getTeacherLectures(string|int $teacherId, callable $callback): mixed
+    public static function getTeacherLectures(string|int $teacherProfileId, callable $callback): mixed
     {
-        return self::getStore(['teacher_' . $teacherId, 'lectures'])->remember(
-            "teacher:{$teacherId}:lectures",
+        return self::getStore(['teacher_' . $teacherProfileId, 'lectures'])->remember(
+            "teacher:{$teacherProfileId}:lectures",
             self::TTL_SHORT,
             $callback
         );
@@ -258,18 +258,18 @@ class CacheService
         );
     }
 
-    public static function forgetLecture(string|int $lectureId, string|int $teacherId): void
+    public static function forgetLecture(string|int $lectureId, string|int $teacherProfileId): void
     {
         self::getStore(['lecture_' . $lectureId])->forget("lecture:{$lectureId}:attendees");
-        self::getStore(['teacher_' . $teacherId, 'lectures'])->forget("teacher:{$teacherId}:lectures");
+        self::getStore(['teacher_' . $teacherProfileId, 'lectures'])->forget("teacher:{$teacherProfileId}:lectures");
     }
 
     // =================== Exams Cache ====================
 
-    public static function getTeacherExams(string|int $teacherId, callable $callback): mixed
+    public static function getTeacherExams(string|int $teacherProfileId, callable $callback): mixed
     {
-        return self::getStore(['teacher_' . $teacherId, 'exams'])->remember(
-            "teacher:{$teacherId}:exams",
+        return self::getStore(['teacher_' . $teacherProfileId, 'exams'])->remember(
+            "teacher:{$teacherProfileId}:exams",
             self::TTL_SHORT,
             $callback
         );
@@ -298,13 +298,13 @@ class CacheService
         );
     }
 
-    public static function forgetExam(string|int $examId, string|int $teacherId): void
+    public static function forgetExam(string|int $examId, string|int $teacherProfileId): void
     {
         try {
             Cache::tags(['exam_' . $examId])->flush();
         } catch (\BadMethodCallException $e) {
         }
-        self::getStore(['teacher_' . $teacherId, 'exams'])->forget("teacher:{$teacherId}:exams");
+        self::getStore(['teacher_' . $teacherProfileId, 'exams'])->forget("teacher:{$teacherProfileId}:exams");
     }
 
     // =================== Academy Cache ====================

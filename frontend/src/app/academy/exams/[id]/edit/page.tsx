@@ -179,7 +179,15 @@ export default function EditAcademyExamPage({ params }: { params: Promise<{ id: 
         if (tId) {
           try {
             const gradesData = await getGrades(1, 100, { teacher_id: tId });
-            setGrades(gradesData.data?.data || []);
+            let gradesList = [];
+            if (gradesData?.data?.data && Array.isArray(gradesData.data.data)) {
+              gradesList = gradesData.data.data;
+            } else if (gradesData?.data && Array.isArray(gradesData.data)) {
+              gradesList = gradesData.data;
+            } else if (Array.isArray(gradesData)) {
+              gradesList = gradesData;
+            }
+            setGrades(gradesList);
           } catch (e) {
             console.error('Error fetching grades:', e);
           }
@@ -189,7 +197,15 @@ export default function EditAcademyExamPage({ params }: { params: Promise<{ id: 
         if (gId) {
           try {
             const groupsData = await getGroups(1, 100, { grade_id: gId });
-            setGroups(groupsData.data?.data || []);
+            let groupsList = [];
+            if (groupsData?.data?.data && Array.isArray(groupsData.data.data)) {
+              groupsList = groupsData.data.data;
+            } else if (groupsData?.data && Array.isArray(groupsData.data)) {
+              groupsList = groupsData.data;
+            } else if (Array.isArray(groupsData)) {
+              groupsList = groupsData;
+            }
+            setGroups(groupsList);
           } catch (e) {
             console.error('Error fetching groups:', e);
           }
@@ -254,7 +270,15 @@ export default function EditAcademyExamPage({ params }: { params: Promise<{ id: 
       
       try {
         const gradesData = await getGrades(1, 100, { teacher_id: teacherId });
-        setGrades(gradesData.data?.data || []);
+        let gradesList = [];
+        if (gradesData?.data?.data && Array.isArray(gradesData.data.data)) {
+          gradesList = gradesData.data.data;
+        } else if (gradesData?.data && Array.isArray(gradesData.data)) {
+          gradesList = gradesData.data;
+        } else if (Array.isArray(gradesData)) {
+          gradesList = gradesData;
+        }
+        setGrades(gradesList);
       } catch (error) {
         console.error('Error fetching grades:', error);
         toast.error('حدث خطأ أثناء تحميل الصفوف الدراسية');
@@ -278,7 +302,15 @@ export default function EditAcademyExamPage({ params }: { params: Promise<{ id: 
       
       try {
         const groupsData = await getGroups(1, 100, { grade_id: gradeId });
-        setGroups(groupsData.data?.data || []);
+        let groupsList = [];
+        if (groupsData?.data?.data && Array.isArray(groupsData.data.data)) {
+          groupsList = groupsData.data.data;
+        } else if (groupsData?.data && Array.isArray(groupsData.data)) {
+          groupsList = groupsData.data;
+        } else if (Array.isArray(groupsData)) {
+          groupsList = groupsData;
+        }
+        setGroups(groupsList);
       } catch (error) {
         console.error('Error fetching groups:', error);
         toast.error('حدث خطأ أثناء تحميل المجموعات');

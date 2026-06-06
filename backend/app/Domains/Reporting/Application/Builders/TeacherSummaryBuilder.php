@@ -29,7 +29,7 @@ final readonly class TeacherSummaryBuilder
     /**
      * @return array<int, KpiCardResult>
      */
-    public function build(Teacher $teacher, TeacherScope $scope, TeacherReportFilters $filters): array
+    public function build($teacher, TeacherScope $scope, TeacherReportFilters $filters): array
     {
         $totalStudents = $this->studentQuery->totalLinkedStudents($teacher, $filters);
         $activeStudents = $this->studentQuery->activeStudentsCount($teacher, $filters);

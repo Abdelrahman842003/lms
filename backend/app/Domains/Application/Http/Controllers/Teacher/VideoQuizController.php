@@ -43,7 +43,7 @@ class VideoQuizController extends Controller
     {
         Gate::authorize('update', $video);
 
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
 
         try {
             $quiz = $this->quizService->createQuiz($video, $teacher, $request->validated());

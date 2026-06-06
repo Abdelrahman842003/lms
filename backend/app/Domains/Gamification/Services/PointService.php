@@ -28,7 +28,7 @@ class PointService
      */
     public function awardAttendancePoints(Student $student, Lecture $lecture): ?PointTransaction
     {
-        $teacherId = $lecture->teacher_id;
+        $teacherId = $lecture->teacher_profile_id;
         $settings  = CacheService::getGamificationSettings(
             $teacherId,
             fn() => GamificationSetting::getOrCreate($teacherId)
@@ -40,7 +40,7 @@ class PointService
 
         // Check if already awarded for this lecture
         $exists = PointTransaction::where('student_id', $student->id)
-            ->where('teacher_id', $teacherId)
+            ->where('teacher_profile_id', $teacherId)
             ->where('reference_type', Lecture::class)
             ->where('reference_id', $lecture->id)
             ->where('type', PointTransaction::TYPE_ATTENDANCE)
@@ -77,7 +77,7 @@ class PointService
     public function awardExamPoints(Student $student, ExamResult $result): ?PointTransaction
     {
         $exam      = $result->exam;
-        $teacherId = $exam->teacher_id;
+        $teacherId = $exam->teacher_profile_id;
         $settings  = CacheService::getGamificationSettings(
             $teacherId,
             fn() => GamificationSetting::getOrCreate($teacherId)
@@ -89,7 +89,7 @@ class PointService
 
         // Check if already awarded for this exam result
         $exists = PointTransaction::where('student_id', $student->id)
-            ->where('teacher_id', $teacherId)
+            ->where('teacher_profile_id', $teacherId)
             ->where('reference_type', ExamResult::class)
             ->where('reference_id', $result->id)
             ->where('type', PointTransaction::TYPE_EXAM_SCORE)
@@ -124,9 +124,10 @@ class PointService
     /**
      * Award manual bonus points from teacher
      */
-    public function awardManualBonus(Student $student, Teacher $teacher, int $points, string $description): PointTransaction
+    public function awardManualBonus(Student $student, mixed $teacher, int $points, string $description): PointTransaction
     {
-        $studentPoints = StudentPoint::getOrCreate($student->id, $teacher->id);
+        $teacherId = $teacher->teacher_profile_id ?? $teacher->id;
+        $studentPoints = StudentPoint::getOrCreate($student->id, $teacherId);
 
         return $studentPoints->addPoints(
             $points,
@@ -142,7 +143,7 @@ class PointService
      */
     public function awardRaw(
         Student $student,
-        string $teacherId,
+        string|int $teacherId,
         int $points,
         string $type,
         ?string $referenceType = null,
@@ -152,7 +153,7 @@ class PointService
         // فحص التكرار الأساسي (إذا كان هناك reference)
         if ($referenceType && $referenceId) {
             $exists = PointTransaction::where('student_id', $student->id)
-                ->where('teacher_id', $teacherId)
+                ->where('teacher_profile_id', $teacherId)
                 ->where('reference_type', $referenceType)
                 ->where('reference_id', $referenceId)
                 ->where('type', $type)
@@ -160,7 +161,7 @@ class PointService
 
             if ($exists) {
                 return PointTransaction::where('student_id', $student->id)
-                    ->where('teacher_id', $teacherId)
+                    ->where('teacher_profile_id', $teacherId)
                     ->where('reference_type', $referenceType)
                     ->where('reference_id', $referenceId)
                     ->where('type', $type)
@@ -182,7 +183,7 @@ class PointService
     /**
      * Get weekly leaderboard for a teacher
      */
-    public function getWeeklyLeaderboard(string $teacherId, ?int $limit = null): Collection
+    public function getWeeklyLeaderboard(string|int $teacherId, ?int $limit = null): Collection
     {
         return CacheService::getWeeklyLeaderboard($teacherId, function () use ($teacherId, $limit) {
             $settings = CacheService::getGamificationSettings(
@@ -191,11 +192,11 @@ class PointService
             );
             $limit = $limit ?? $settings->leaderboard_size;
 
-            return PointTransaction::where('teacher_id', $teacherId)
+            return PointTransaction::withoutGlobalScopes()->where('teacher_profile_id', $teacherId)
                 ->where('created_at', '>=', now()->startOfWeek())
-                ->select('student_id', DB::raw('SUM(points) as weekly_points'))
-                ->groupBy('student_id')
-                ->orderByDesc('weekly_points')
+                ->select('point_transactions.student_id', DB::raw('SUM(points) as weekly_points'))
+                ->groupBy('point_transactions.student_id')
+                ->orderByRaw('SUM(points) DESC')
                 ->with('student:id,name,avatar_key')
                 ->limit($limit)
                 ->get()
@@ -204,13 +205,13 @@ class PointService
                         'rank'          => $index + 1,
                         'student_id'    => $item->student_id,
                         'student'       => [
-                            'id'         => $item->student->id,
-                            'name'       => $item->student->name,
-                            'avatar_key' => $item->student->avatar_key
+                            'id'         => $item->student?->id ?? $item->student_id,
+                            'name'       => $item->student?->name ?? 'طالب غير معروف',
+                            'avatar_key' => ($item->student && $item->student->avatar_key)
                                 ? app(ImageService::class)->getUrl($item->student->avatar_key)
                                 : null,
                         ],
-                        'weekly_points' => (int) $item->weekly_points,
+                        'weekly_points' => (int) ($item->weekly_points ?? 0),
                     ];
                 });
         });
@@ -220,41 +221,41 @@ class PointService
      * Get weekly leaderboard for a teacher (paginated)
      */
     public function getWeeklyLeaderboardPaginated(
-        string $teacherId,
+        string|int $teacherId,
         int $perPage = 15,
         ?string $academyId = null,
         ?string $gradeId = null,
         ?string $groupId = null
     ): \Illuminate\Contracts\Pagination\LengthAwarePaginator {
-        $query = PointTransaction::where('teacher_id', $teacherId)
+        $query = PointTransaction::withoutGlobalScopes()->where('teacher_profile_id', $teacherId)
             ->where('created_at', '>=', now()->startOfWeek())
-            ->select('student_id', DB::raw('SUM(points) as weekly_points'))
-            ->groupBy('student_id')
-            ->orderByDesc('weekly_points')
+            ->select('point_transactions.student_id', DB::raw('SUM(points) as weekly_points'))
+            ->groupBy('point_transactions.student_id')
+            ->orderByRaw('SUM(points) DESC')
             ->with('student:id,name,avatar_key');
 
         // Filter by academy via student's enrollment (direct academy_id)
         if ($academyId === 'independent') {
             $query->whereHas('student.enrollments', function ($q) use ($teacherId) {
-                $q->where('teacher_id', $teacherId)->whereNull('academy_id');
+                $q->where('teacher_profile_id', $teacherId)->whereNull('academy_id');
             });
         } elseif ($academyId) {
             $query->whereHas('student.enrollments', function ($q) use ($teacherId, $academyId) {
-                $q->where('teacher_id', $teacherId)->where('academy_id', $academyId);
+                $q->where('teacher_profile_id', $teacherId)->where('academy_id', $academyId);
             });
         }
 
         // Filter by grade
         if ($gradeId) {
             $query->whereHas('student.enrollments', function ($q) use ($teacherId, $gradeId) {
-                $q->where('teacher_id', $teacherId)->where('grade_id', $gradeId);
+                $q->where('teacher_profile_id', $teacherId)->where('grade_id', $gradeId);
             });
         }
 
         // Filter by group
         if ($groupId) {
             $query->whereHas('student.enrollments', function ($q) use ($teacherId, $groupId) {
-                $q->where('teacher_id', $teacherId)->where('group_id', $groupId);
+                $q->where('teacher_profile_id', $teacherId)->where('group_id', $groupId);
             });
         }
 
@@ -267,13 +268,13 @@ class PointService
                 'rank'          => $rank,
                 'student_id'    => $item->student_id,
                 'student'       => [
-                    'id'         => $item->student->id,
-                    'name'       => $item->student->name,
-                    'avatar_key' => $item->student->avatar_key
+                    'id'         => $item->student?->id ?? $item->student_id,
+                    'name'       => $item->student?->name ?? 'طالب غير معروف',
+                    'avatar_key' => ($item->student && $item->student->avatar_key)
                         ? app(ImageService::class)->getUrl($item->student->avatar_key)
                         : null,
                 ],
-                'weekly_points' => (int) $item->weekly_points,
+                'weekly_points' => (int) ($item->weekly_points ?? 0),
             ];
         });
 
@@ -283,7 +284,7 @@ class PointService
     /**
      * Get leaderboard for last 3 months
      */
-    public function getLast3MonthsLeaderboard(string $teacherId, ?int $limit = null): Collection
+    public function getLast3MonthsLeaderboard(string|int $teacherId, ?int $limit = null): Collection
     {
         $settings = CacheService::getGamificationSettings(
             $teacherId,
@@ -291,7 +292,7 @@ class PointService
         );
         $limit = $limit ?? $settings->leaderboard_size;
 
-        return PointTransaction::where('teacher_id', $teacherId)
+        return PointTransaction::where('teacher_profile_id', $teacherId)
             ->where('created_at', '>=', now()->subMonths(3))
             ->select('student_id', DB::raw('SUM(points) as total_points'))
             ->groupBy('student_id')
@@ -304,13 +305,13 @@ class PointService
                     'rank'         => $index + 1,
                     'student_id'   => $item->student_id,
                     'student'      => [
-                        'id'         => $item->student->id,
-                        'name'       => $item->student->name,
-                        'avatar_key' => $item->student->avatar_key
+                        'id'         => $item->student?->id ?? $item->student_id,
+                        'name'       => $item->student?->name ?? 'طالب غير معروف',
+                        'avatar_key' => ($item->student && $item->student->avatar_key)
                             ? app(ImageService::class)->getUrl($item->student->avatar_key)
                             : null,
                     ],
-                    'total_points' => (int) $item->total_points,
+                    'total_points' => (int) ($item->total_points ?? 0),
                 ];
             });
     }
@@ -318,7 +319,7 @@ class PointService
     /**
      * Get all-time leaderboard for a teacher
      */
-    public function getAllTimeLeaderboard(string $teacherId, ?int $limit = null): Collection
+    public function getAllTimeLeaderboard(string|int $teacherId, ?int $limit = null): Collection
     {
         return CacheService::getAllTimeLeaderboard($teacherId, function () use ($teacherId, $limit) {
             $settings = CacheService::getGamificationSettings(
@@ -327,7 +328,7 @@ class PointService
             );
             $limit = $limit ?? $settings->leaderboard_size;
 
-            return StudentPoint::where('teacher_id', $teacherId)
+            return StudentPoint::withoutGlobalScopes()->where('teacher_profile_id', $teacherId)
                 ->orderByDesc('total_points')
                 ->with('student:id,name,avatar_key')
                 ->limit($limit)
@@ -337,13 +338,13 @@ class PointService
                         'rank'         => $index + 1,
                         'student_id'   => $item->student_id,
                         'student'      => [
-                            'id'         => $item->student->id,
-                            'name'       => $item->student->name,
-                            'avatar_key' => $item->student->avatar_key
+                            'id'         => $item->student?->id ?? $item->student_id,
+                            'name'       => $item->student?->name ?? 'طالب غير معروف',
+                            'avatar_key' => ($item->student && $item->student->avatar_key)
                                 ? app(ImageService::class)->getUrl($item->student->avatar_key)
                                 : null,
                         ],
-                        'total_points' => $item->total_points,
+                        'total_points' => (int) ($item->total_points ?? 0),
                     ];
                 });
         });
@@ -353,38 +354,38 @@ class PointService
      * Get all-time leaderboard for a teacher (paginated)
      */
     public function getAllTimeLeaderboardPaginated(
-        string $teacherId,
+        string|int $teacherId,
         int $perPage = 15,
         ?string $academyId = null,
         ?string $gradeId = null,
         ?string $groupId = null
     ): \Illuminate\Contracts\Pagination\LengthAwarePaginator {
-        $query = StudentPoint::where('teacher_id', $teacherId)
+        $query = StudentPoint::withoutGlobalScopes()->where('teacher_profile_id', $teacherId)
             ->orderByDesc('total_points')
             ->with('student:id,name,avatar_key');
 
         // Filter by academy via student's enrollment (direct academy_id)
         if ($academyId === 'independent') {
             $query->whereHas('student.enrollments', function ($q) use ($teacherId) {
-                $q->where('teacher_id', $teacherId)->whereNull('academy_id');
+                $q->where('teacher_profile_id', $teacherId)->whereNull('academy_id');
             });
         } elseif ($academyId) {
             $query->whereHas('student.enrollments', function ($q) use ($teacherId, $academyId) {
-                $q->where('teacher_id', $teacherId)->where('academy_id', $academyId);
+                $q->where('teacher_profile_id', $teacherId)->where('academy_id', $academyId);
             });
         }
 
         // Filter by grade
         if ($gradeId) {
             $query->whereHas('student.enrollments', function ($q) use ($teacherId, $gradeId) {
-                $q->where('teacher_id', $teacherId)->where('grade_id', $gradeId);
+                $q->where('teacher_profile_id', $teacherId)->where('grade_id', $gradeId);
             });
         }
 
         // Filter by group
         if ($groupId) {
             $query->whereHas('student.enrollments', function ($q) use ($teacherId, $groupId) {
-                $q->where('teacher_id', $teacherId)->where('group_id', $groupId);
+                $q->where('teacher_profile_id', $teacherId)->where('group_id', $groupId);
             });
         }
 
@@ -413,27 +414,27 @@ class PointService
     /**
      * Get student's points and rank for a specific teacher
      */
-    public function getStudentStats(string $studentId, string $teacherId): array
+    public function getStudentStats(string $studentId, string|int $teacherId): array
     {
         $studentPoints = StudentPoint::getOrCreate($studentId, $teacherId);
 
         // Calculate rank
-        $rank = StudentPoint::where('teacher_id', $teacherId)
+        $rank = StudentPoint::withoutGlobalScopes()->where('teacher_profile_id', $teacherId)
             ->where('total_points', '>', $studentPoints->total_points)
             ->count() + 1;
 
         // Get weekly points
-        $weeklyPoints = PointTransaction::where('student_id', $studentId)
-            ->where('teacher_id', $teacherId)
+        $weeklyPoints = PointTransaction::withoutGlobalScopes()->where('student_id', $studentId)
+            ->where('teacher_profile_id', $teacherId)
             ->where('created_at', '>=', now()->startOfWeek())
             ->sum('points');
 
         // Calculate weekly rank
-        $weeklyRank = PointTransaction::where('teacher_id', $teacherId)
+        $weeklyRank = PointTransaction::withoutGlobalScopes()->where('teacher_profile_id', $teacherId)
             ->where('created_at', '>=', now()->startOfWeek())
-            ->select('student_id', DB::raw('SUM(points) as weekly_points'))
-            ->groupBy('student_id')
-            ->having('weekly_points', '>', $weeklyPoints)
+            ->select('point_transactions.student_id', DB::raw('SUM(points) as weekly_points'))
+            ->groupBy('point_transactions.student_id')
+            ->havingRaw('SUM(points) > ?', [$weeklyPoints])
             ->get()
             ->count() + 1;
 
@@ -459,7 +460,7 @@ class PointService
         $query = PointTransaction::query()
             ->join('enrollments', function ($join) {
                 $join->on('point_transactions.student_id', '=', 'enrollments.student_id')
-                    ->on('point_transactions.teacher_id', '=', 'enrollments.teacher_id');
+                    ->on('point_transactions.teacher_profile_id', '=', 'enrollments.teacher_profile_id');
             })
             ->where('enrollments.academy_id', $academyId)
             ->where('point_transactions.created_at', '>=', now()->startOfWeek())
@@ -468,7 +469,7 @@ class PointService
                 DB::raw('SUM(point_transactions.points) as weekly_points')
             )
             ->groupBy('point_transactions.student_id')
-            ->orderByDesc('weekly_points')
+            ->orderByRaw('SUM(point_transactions.points) DESC')
             ->with('student:id,name,avatar_key');
 
         // Filter by grade ID
@@ -496,13 +497,13 @@ class PointService
                 'rank'          => $rank,
                 'student_id'    => $item->student_id,
                 'student'       => [
-                    'id'         => $item->student->id,
-                    'name'       => $item->student->name,
-                    'avatar_key' => $item->student->avatar_key
+                    'id'         => $item->student?->id ?? $item->student_id,
+                    'name'       => $item->student?->name ?? 'طالب غير معروف',
+                    'avatar_key' => ($item->student && $item->student->avatar_key)
                         ? app(ImageService::class)->getUrl($item->student->avatar_key)
                         : null,
                 ],
-                'weekly_points' => (int) $item->weekly_points,
+                'weekly_points' => (int) ($item->weekly_points ?? 0),
             ];
         });
 
@@ -522,7 +523,7 @@ class PointService
         $query = StudentPoint::query()
             ->join('enrollments', function ($join) {
                 $join->on('student_points.student_id', '=', 'enrollments.student_id')
-                    ->on('student_points.teacher_id', '=', 'enrollments.teacher_id');
+                    ->on('student_points.teacher_profile_id', '=', 'enrollments.teacher_profile_id');
             })
             ->where('enrollments.academy_id', $academyId)
             ->select(
@@ -558,13 +559,13 @@ class PointService
                 'rank'         => $rank,
                 'student_id'   => $item->student_id,
                 'student'      => [
-                    'id'         => $item->student->id,
-                    'name'       => $item->student->name,
-                    'avatar_key' => $item->student->avatar_key
+                    'id'         => $item->student?->id ?? $item->student_id,
+                    'name'       => $item->student?->name ?? 'طالب غير معروف',
+                    'avatar_key' => ($item->student && $item->student->avatar_key)
                         ? app(ImageService::class)->getUrl($item->student->avatar_key)
                         : null,
                 ],
-                'total_points' => (int) $item->total_points,
+                'total_points' => (int) ($item->total_points ?? 0),
             ];
         });
 
@@ -612,7 +613,7 @@ class PointService
         $endOfMonth   = now()->endOfMonth();
 
         // Get all lectures this month for this teacher
-        $totalLectures = Lecture::where('teacher_id', $teacherId)
+        $totalLectures = Lecture::where('teacher_profile_id', $teacherId)
             ->whereBetween('start_time', [$startOfMonth, $endOfMonth])
             ->where('start_time', '<=', now())
             ->count();
@@ -624,7 +625,7 @@ class PointService
         // Get student's attendance this month
         $attendedLectures = Attendance::where('student_id', $studentPoints->student_id)
             ->whereHas('lecture', function ($query) use ($teacherId, $startOfMonth, $endOfMonth) {
-                $query->where('teacher_id', $teacherId)
+                $query->where('teacher_profile_id', $teacherId)
                     ->whereBetween('start_time', [$startOfMonth, $endOfMonth]);
             })
             ->where('status', 'present')
@@ -633,7 +634,7 @@ class PointService
         // If perfect attendance and not already awarded this month
         if ($attendedLectures >= $totalLectures) {
             $alreadyAwarded = PointTransaction::where('student_id', $studentPoints->student_id)
-                ->where('teacher_id', $teacherId)
+                ->where('teacher_profile_id', $teacherId)
                 ->where('type', PointTransaction::TYPE_PERFECT_MONTH)
                 ->whereBetween('created_at', [$startOfMonth, $endOfMonth])
                 ->exists();
@@ -668,7 +669,7 @@ class PointService
         // Award bonus for 2nd+ successful attempt
         if ($successfulAttempts >= 2) {
             $alreadyAwarded = PointTransaction::where('student_id', $studentPoints->student_id)
-                ->where('teacher_id', $studentPoints->teacher_id)
+                ->where('teacher_profile_id', $studentPoints->teacher_profile_id)
                 ->where('type', PointTransaction::TYPE_EXAM_RETAKE_BONUS)
                 ->where('reference_type', ExamResult::class)
                 ->where('reference_id', $result->id)
@@ -701,7 +702,7 @@ class PointService
         if ($result->percentage >= $highestScore) {
             // Check if already awarded for this exam - use subquery for better safety
             $alreadyAwarded = PointTransaction::where('student_id', $studentPoints->student_id)
-                ->where('teacher_id', $studentPoints->teacher_id)
+                ->where('teacher_profile_id', $studentPoints->teacher_profile_id)
                 ->where('type', PointTransaction::TYPE_EXAM_FIRST_PLACE)
                 ->where('reference_type', ExamResult::class)
                 ->whereExists(function ($query) use ($exam) {

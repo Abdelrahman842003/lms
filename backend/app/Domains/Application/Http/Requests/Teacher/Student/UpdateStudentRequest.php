@@ -72,7 +72,7 @@ class UpdateStudentRequest extends FormRequest
                     // We need to find the enrollment to get the current grade_id
                     // Note: This query might be duplicated in controller, but it's safe for validation
                     $enrollment = \Illuminate\Support\Facades\DB::table('enrollments')
-                        ->where('teacher_id', $teacher->id)
+                        ->where('teacher_profile_id', $teacher->id)
                         ->where('student_id', $studentId)
                         ->first();
                         

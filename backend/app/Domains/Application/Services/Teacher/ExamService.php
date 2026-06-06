@@ -22,9 +22,9 @@ class ExamService
     // Cache for target students to avoid duplicate queries
     private array $targetStudentsCache = [];
 
-    public function getExams(Teacher $teacher, int $perPage = 10, array $filters = [], ?string $academyId = null)
+    public function getExams(\App\Domains\Auth\Models\TeacherProfile $teacher, int $perPage = 10, array $filters = [], ?string $academyId = null)
     {
-        $query = Exam::where('teacher_id', $teacher->id)
+        $query = Exam::where('teacher_profile_id', $teacher->id)
             ->with(['grade', 'group', 'results.student'])
             ->withCount('questions')
             ->orderBy('is_active', 'desc')
@@ -49,7 +49,7 @@ class ExamService
         return $query->paginate($perPage);
     }
 
-    public function createExam(Teacher $teacher, TeacherExamData $data): Exam
+    public function createExam(\App\Domains\Auth\Models\TeacherProfile $teacher, TeacherExamData $data): Exam
     {
         return DB::transaction(function () use ($teacher, $data) {
             // Type might not be in DTO if it's legacy, default to manual
@@ -57,7 +57,7 @@ class ExamService
             $dynamicSettings = property_exists($data, 'dynamic_settings') ? $data->dynamic_settings : null;
 
             $exam = Exam::create([
-                'teacher_id' => $teacher->id,
+                'teacher_profile_id' => $teacher->id,
                 'academy_id' => $data->academy_id,
                 'title' => $data->title,
                 'type' => $type,
@@ -120,7 +120,7 @@ class ExamService
     /**
      * Generates questions from the question bank for a dynamic exam and syncs them to the pivot table.
      */
-    private function generateDynamicQuestions(Exam $exam, Teacher $teacher, array $settings): void
+    private function generateDynamicQuestions(Exam $exam, \App\Domains\Auth\Models\TeacherProfile $teacher, array $settings): void
     {
         $pivotData = [];
         $order = 0;
@@ -132,7 +132,7 @@ class ExamService
             }
 
             // Query bank for this teacher, grade, subject & difficulty
-            $query = Question::where('teacher_id', $teacher->id)
+            $query = Question::where('teacher_profile_id', $teacher->id)
                 ->where('grade_id', $exam->grade_id)
                 ->where('subject', $exam->subject)
                 ->where('difficulty', $difficulty);
@@ -189,7 +189,7 @@ class ExamService
      * Sync questions to the exam_question pivot table.
      * Handles both pre-existing question_ids and new question objects that need creation.
      */
-    private function syncQuestions(Exam $exam, Teacher $teacher, ?array $questions, ?array $questionIds): void
+    private function syncQuestions(Exam $exam, \App\Domains\Auth\Models\TeacherProfile $teacher, ?array $questions, ?array $questionIds): void
     {
         $pivotData = [];
         $order = 0;
@@ -223,7 +223,7 @@ class ExamService
                     $newId = Str::uuid()->toString();
                     $newQuestionsToInsert[] = [
                         'id' => $newId,
-                        'teacher_id' => $teacher->id,
+                        'teacher_profile_id' => $teacher->id,
                         'grade_id' => $exam->grade_id,
                         'subject' => $exam->subject,
                         'exam_id' => $exam->id, // Legacy compat
@@ -258,7 +258,7 @@ class ExamService
 
         $conflictingExams = Exam::where('is_active', true)
             ->where('id', '!=', $exam->id)
-            ->where('teacher_id', '!=', $exam->teacher_id)
+            ->where('teacher_profile_id', '!=', $exam->teacher_profile_id)
             ->where('grade_id', $exam->grade_id)
             ->whereHas('teacher', function ($q) use ($targetStudentIds) {
                 $q->whereHas('enrollments', function ($eq) use ($targetStudentIds) {
@@ -266,7 +266,7 @@ class ExamService
                         ->where('is_active', true);
                 });
             })
-            ->with('teacher:id,name')
+            ->with('teacher:teachers.id,name')
             ->get();
 
         if ($conflictingExams->isEmpty()) {
@@ -280,9 +280,10 @@ class ExamService
         ];
     }
 
-    public function checkDateConflicts(string $gradeId, string $date, string $teacherId, ?string $examId = null): ?array
+    public function checkDateConflicts(string $gradeId, string $date, int|string $teacherProfileId, ?string $examId = null): ?array
     {
-        $targetStudentIds = Enrollment::where('teacher_id', $teacherId)
+        $teacherProfileId = (string) $teacherProfileId;
+        $targetStudentIds = Enrollment::where('teacher_profile_id', $teacherProfileId)
             ->where('grade_id', $gradeId)
             ->where('is_active', true)
             ->pluck('student_id')
@@ -293,7 +294,7 @@ class ExamService
         }
 
         $query = Exam::whereDate('date', $date)
-            ->where('teacher_id', '!=', $teacherId)
+            ->where('teacher_profile_id', '!=', $teacherProfileId)
             ->where('grade_id', $gradeId)
             ->whereHas('teacher', function ($q) use ($targetStudentIds) {
                 $q->whereHas('enrollments', function ($eq) use ($targetStudentIds) {
@@ -301,7 +302,7 @@ class ExamService
                         ->where('is_active', true);
                 });
             })
-            ->with('teacher:id,name');
+            ->with('teacher:teachers.id,name');
 
         if ($examId) {
             $query->where('id', '!=', $examId);
@@ -322,7 +323,7 @@ class ExamService
 
     private function getTargetStudentIds(Exam $exam): array
     {
-        $query = Enrollment::where('teacher_id', $exam->teacher_id)
+        $query = Enrollment::where('teacher_profile_id', $exam->teacher_profile_id)
             ->where('grade_id', $exam->grade_id)
             ->where('is_active', true);
 
@@ -458,7 +459,7 @@ class ExamService
 
         $query = \App\Domains\Auth\Models\Student::select('students.*')
             ->join('enrollments', 'students.id', '=', 'enrollments.student_id')
-            ->where('enrollments.teacher_id', $exam->teacher_id)
+            ->where('enrollments.teacher_profile_id', $exam->teacher_profile_id)
             ->where('enrollments.is_active', true);
 
         if ($exam->grade_id) {

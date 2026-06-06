@@ -68,7 +68,7 @@ export default function GradeDetailsPage() {
   }, [gradeName]);
 
   // Filter out grades without teachers (General/System grades)
-  const visibleGrades = (grades || []).filter(grade => grade.teacher_id);
+  const visibleGrades = (grades || []).filter(grade => grade.teacher_profile_id || grade.teacher_id);
 
   // Stats
   const totalTeachers = visibleGrades.length;
@@ -148,7 +148,7 @@ export default function GradeDetailsPage() {
               <Icon name="user" />
             </div>
           )}
-          <span>{row.teacher?.name || (row.teacher_id ? 'جاري التحميل...' : 'عام (بدون مدرس)')}</span>
+          <span>{row.teacher?.name || (row.teacher_profile_id || row.teacher_id ? 'جاري التحميل...' : 'عام (بدون مدرس)')}</span>
         </div>
       ),
     },

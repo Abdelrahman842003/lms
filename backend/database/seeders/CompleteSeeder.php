@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Domains\Auth\Models\Secretary;
 use App\Domains\Auth\Models\Student;
 use App\Domains\Auth\Models\Teacher;
+use App\Domains\Auth\Models\TeacherProfile;
 use App\Domains\Enrollments\Models\Enrollment;
 use App\Domains\Enrollments\Models\Grade;
 use App\Domains\Enrollments\Models\Group;
@@ -28,7 +29,7 @@ use Carbon\Carbon;
 
 /**
  * Complete Seeder - Generates full test scenario:
- * - 3 Teachers
+ * - 3 Teachers (with profiles)
  * - 10 Students (Egyptian numbers)
  * - All students enrolled with all teachers
  * - Full data (lectures, exams, etc.) for all teachers
@@ -49,34 +50,44 @@ class CompleteSeeder extends Seeder
         foreach ($teachers as $teacher) {
             $this->command->info("👨‍🏫 Processing Teacher: {$teacher->name}...");
 
-            // 3. Create Secretaries for this teacher
-            $this->createSecretaries($teacher);
+            // Create Independent Profile
+            $profile = TeacherProfile::firstOrCreate(
+                ['teacher_id' => $teacher->id, 'type' => 'independent'],
+                [
+                    'display_name' => $teacher->name . ' - مستقل',
+                    'slug' => \Illuminate\Support\Str::slug($teacher->name) . '-independent-' . substr($teacher->id, 0, 4),
+                    'status' => 'ACTIVE',
+                ]
+            );
+
+            // 3. Create Secretaries for this teacher profile
+            $this->createSecretaries($profile);
             
-            // 4. Create Grades and Groups for this teacher
-            $grades = $this->createGrades($teacher);
-            $groups = $this->createGroups($teacher, $grades);
+            // 4. Create Grades and Groups for this teacher profile
+            $grades = $this->createGrades($profile);
+            $groups = $this->createGroups($profile, $grades);
             
-            // 5. Enroll ALL students with this teacher
-            $this->enrollStudents($teacher, $students, $grades, $groups);
+            // 5. Enroll ALL students with this teacher profile
+            $this->enrollStudents($profile, $students, $grades, $groups);
             
             // 6. Create Lectures and Attendance
-            $lectures = $this->createLectures($teacher, $grades);
+            $lectures = $this->createLectures($profile, $grades);
             $this->createAttendance($lectures, $students, $faker);
             
             // 7. Create Exams with Questions
-            $exams = $this->createExamsWithQuestions($teacher, $grades, $faker);
+            $exams = $this->createExamsWithQuestions($profile, $grades, $faker);
             
             // 8. Create Exam Attempts and Results
             $this->createExamAttempts($exams, $students, $faker);
             
             // 9. Create Gamification System
-            $this->createGamification($teacher, $students);
+            $this->createGamification($profile, $students);
             
             // 10. Create Payments
-            $this->createPayments($teacher, $students, $faker);
+            $this->createPayments($profile, $students, $faker);
             
             // 11. Create Failed Questions
-            $this->createFailedQuestions($teacher, $students, $exams);
+            $this->createFailedQuestions($profile, $students, $exams);
         }
         
         // 12. Create Activity Logs (Global/Mixed)
@@ -123,7 +134,7 @@ class CompleteSeeder extends Seeder
         
         $students = [];
         for ($i = 1; $i <= 10; $i++) {
-            $pad = str_pad($i, 2, '0', STR_PAD_LEFT);
+            $pad = str_pad((string)$i, 2, '0', STR_PAD_LEFT);
             $parentPhone = "011123456$pad";
             
             // Create or get guardian with realistic name
@@ -149,44 +160,44 @@ class CompleteSeeder extends Seeder
         return $students;
     }
 
-    private function createSecretaries(Teacher $teacher): void
+    private function createSecretaries(TeacherProfile $profile): void
     {
         static $secCounter = 1;
-        $secPhone = "012" . str_pad($secCounter++, 8, '0', STR_PAD_LEFT);
+        $secPhone = "012" . str_pad((string)$secCounter++, 8, '0', STR_PAD_LEFT);
         Secretary::firstOrCreate(
-            ['phone' => $secPhone, 'teacher_id' => $teacher->id],
+            ['phone' => $secPhone, 'teacher_profile_id' => $profile->id],
             [
-                'name' => "Secretary for {$teacher->name}",
+                'name' => "Secretary for {$profile->display_name}",
                 'password' => Hash::make('password'),
             ]
         );
     }
 
-    private function createGrades(Teacher $teacher): array
+    private function createGrades(TeacherProfile $profile): array
     {
         $gradeNames = ['1st Secondary', '2nd Secondary', '3rd Secondary'];
         $grades = [];
         
         foreach ($gradeNames as $name) {
             $grades[] = Grade::firstOrCreate(
-                ['name' => $name, 'teacher_id' => $teacher->id]
+                ['name' => $name, 'teacher_profile_id' => $profile->id]
             );
         }
         return $grades;
     }
 
-    private function createGroups(Teacher $teacher, array $grades): array
+    private function createGroups(TeacherProfile $profile, array $grades): array
     {
         $groups = [];
         foreach ($grades as $grade) {
             $groups[] = Group::firstOrCreate(
-                ['name' => "Group A - {$grade->name}", 'teacher_id' => $teacher->id, 'grade_id' => $grade->id]
+                ['name' => "Group A - {$grade->name}", 'teacher_profile_id' => $profile->id, 'grade_id' => $grade->id]
             );
         }
         return $groups;
     }
 
-    private function enrollStudents(Teacher $teacher, array $students, array $grades, array $groups): void
+    private function enrollStudents(TeacherProfile $profile, array $students, array $grades, array $groups): void
     {
         foreach ($students as $i => $student) {
             // Distribute students across grades/groups cyclically
@@ -194,7 +205,7 @@ class CompleteSeeder extends Seeder
             $groupIndex = $i % count($groups);
             
             Enrollment::firstOrCreate(
-                ['student_id' => $student->id, 'teacher_id' => $teacher->id],
+                ['student_id' => $student->id, 'teacher_profile_id' => $profile->id],
                 [
                     'grade_id' => $grades[$gradeIndex]->id,
                     'group_id' => $groups[$groupIndex]->id,
@@ -207,7 +218,7 @@ class CompleteSeeder extends Seeder
         }
     }
 
-    private function createLectures(Teacher $teacher, array $grades): array
+    private function createLectures(TeacherProfile $profile, array $grades): array
     {
         $lectures = [];
         
@@ -215,7 +226,7 @@ class CompleteSeeder extends Seeder
         for ($i = 1; $i <= 3; $i++) {
             $date = Carbon::now()->subDays($i * 3);
             $lectures[] = Lecture::firstOrCreate(
-                ['title' => "Lecture $i - Physics", 'teacher_id' => $teacher->id],
+                ['title' => "Lecture $i - Physics", 'teacher_profile_id' => $profile->id],
                 [
                     'description' => "Chapter $i explanation",
                     'grade_id' => $grades[array_rand($grades)]->id,
@@ -229,7 +240,7 @@ class CompleteSeeder extends Seeder
         for ($i = 1; $i <= 2; $i++) {
             $date = Carbon::now()->addDays($i * 2);
             $lectures[] = Lecture::firstOrCreate(
-                ['title' => "Upcoming Lecture $i", 'teacher_id' => $teacher->id],
+                ['title' => "Upcoming Lecture $i", 'teacher_profile_id' => $profile->id],
                 [
                     'description' => 'New topic',
                     'grade_id' => $grades[array_rand($grades)]->id,
@@ -256,13 +267,13 @@ class CompleteSeeder extends Seeder
         }
     }
 
-    private function createExamsWithQuestions(Teacher $teacher, array $grades, $faker): array
+    private function createExamsWithQuestions(TeacherProfile $profile, array $grades, $faker): array
     {
         $exams = [];
         
         foreach ($grades as $index => $grade) {
             $exam = Exam::firstOrCreate(
-                ['title' => "Monthly Exam - {$grade->name}", 'teacher_id' => $teacher->id],
+                ['title' => "Monthly Exam - {$grade->name}", 'teacher_profile_id' => $profile->id],
                 [
                     'subject' => 'Physics',
                     'max_score' => 50,
@@ -335,10 +346,10 @@ class CompleteSeeder extends Seeder
         }
     }
 
-    private function createGamification(Teacher $teacher, array $students): void
+    private function createGamification(TeacherProfile $profile, array $students): void
     {
         GamificationSetting::firstOrCreate(
-            ['teacher_id' => $teacher->id],
+            ['teacher_profile_id' => $profile->id],
             [
                 'attendance_points' => 10,
                 'perfect_month_bonus' => 30,
@@ -355,7 +366,7 @@ class CompleteSeeder extends Seeder
         
         foreach ($students as $student) {
             StudentPoint::firstOrCreate(
-                ['student_id' => $student->id, 'teacher_id' => $teacher->id],
+                ['student_id' => $student->id, 'teacher_profile_id' => $profile->id],
                 [
                     'total_points' => rand(50, 500),
                     'attendance_streak' => rand(0, 10),
@@ -363,7 +374,7 @@ class CompleteSeeder extends Seeder
             );
             
             PointTransaction::firstOrCreate(
-                ['student_id' => $student->id, 'teacher_id' => $teacher->id, 'type' => 'attendance'],
+                ['student_id' => $student->id, 'teacher_profile_id' => $profile->id, 'type' => 'attendance'],
                 [
                     'points' => 10,
                     'description' => 'Lecture Attendance',
@@ -372,19 +383,19 @@ class CompleteSeeder extends Seeder
         }
     }
 
-    private function createPayments(Teacher $teacher, array $students, $faker): void
+    private function createPayments(TeacherProfile $profile, array $students, $faker): void
     {
         $statuses = ['pending', 'confirmed', 'expired'];
         
         foreach (array_slice($students, 0, 3) as $index => $student) {
             $enrollment = Enrollment::where('student_id', $student->id)
-                ->where('teacher_id', $teacher->id)
+                ->where('teacher_profile_id', $profile->id)
                 ->first();
             
             if (!$enrollment) continue;
             
             PaymentLog::firstOrCreate(
-                ['student_id' => $student->id, 'teacher_id' => $teacher->id, 'confirmation_code' => 'TEST-' . substr($teacher->id, 0, 8) . '-' . $index],
+                ['student_id' => $student->id, 'teacher_profile_id' => $profile->id, 'confirmation_code' => 'TEST-' . substr((string)$profile->id, 0, 8) . '-' . $index],
                 [
                     'enrollment_id' => $enrollment->id,
                     'client_side_uuid' => $faker->uuid(),
@@ -393,14 +404,14 @@ class CompleteSeeder extends Seeder
                     'payment_method' => 'cash',
                     'expires_at' => Carbon::now()->addDays(7),
                     'confirmed_at' => $statuses[$index % 3] === 'confirmed' ? Carbon::now() : null,
-                    'received_by_type' => 'App\\Models\\Teacher',
-                    'received_by_id' => $teacher->id,
+                    'received_by_type' => 'App\\Domains\\Auth\\Models\\TeacherProfile',
+                    'received_by_id' => $profile->id,
                 ]
             );
         }
     }
 
-    private function createFailedQuestions(Teacher $teacher, array $students, array $exams): void
+    private function createFailedQuestions(TeacherProfile $profile, array $students, array $exams): void
     {
         foreach (array_slice($students, 0, 3) as $student) {
             foreach ($exams as $exam) {
@@ -410,7 +421,7 @@ class CompleteSeeder extends Seeder
                     FailedQuestion::firstOrCreate(
                         ['student_id' => $student->id, 'question_id' => $question->id],
                         [
-                            'teacher_id' => $teacher->id,
+                            'teacher_profile_id' => $profile->id,
                             'exam_id' => $exam->id,
                             'student_answer' => 'Option A',
                             'times_failed' => rand(1, 3),
@@ -428,14 +439,15 @@ class CompleteSeeder extends Seeder
         
         foreach (array_slice($students, 0, 5) as $student) {
             $enrollment = Enrollment::where('student_id', $student->id)->first();
+            if (!$enrollment) continue;
             
             foreach ($actions as $action) {
                 StudentActivityLog::firstOrCreate(
-                    ['student_id' => $student->id, 'action' => $action, 'enrollment_id' => $enrollment?->id],
+                    ['student_id' => $student->id, 'action' => $action, 'enrollment_id' => $enrollment->id],
                     [
                         'data' => json_encode(['note' => "Student performed: $action"]),
-                        'performed_by_type' => 'App\\Models\\Teacher',
-                        'performed_by_id' => $enrollment?->teacher_id,
+                        'performed_by_type' => 'App\\Domains\\Auth\\Models\\TeacherProfile',
+                        'performed_by_id' => $enrollment->teacher_profile_id,
                     ]
                 );
             }
@@ -448,6 +460,7 @@ class CompleteSeeder extends Seeder
         $this->command->info('📊 Seeding Summary:');
         $this->command->info('========================');
         $this->command->info('👨‍🏫 Teachers: ' . Teacher::count());
+        $this->command->info('👨‍🏫 Teacher Profiles: ' . TeacherProfile::count());
         $this->command->info('👩‍💼 Secretaries: ' . Secretary::count());
         $this->command->info('👨‍🎓 Students: ' . Student::count());
         $this->command->info('📝 Enrollments: ' . Enrollment::count());

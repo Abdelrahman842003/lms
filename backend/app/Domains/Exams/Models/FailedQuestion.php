@@ -5,20 +5,21 @@ declare(strict_types=1);
 namespace App\Domains\Exams\Models;
 
 use App\Domains\Auth\Models\Student;
-use App\Domains\Auth\Models\Teacher;
+use App\Domains\Auth\Models\TeacherProfile;
+use App\Domains\Support\Traits\UsesTeacherProfileScope;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class FailedQuestion extends Model
 {
-    use HasUuids;
+    use HasUuids, UsesTeacherProfileScope;
 
     protected $table = 'student_failed_questions';
 
     protected $fillable = [
         'student_id',
-        'teacher_id',
+        'teacher_profile_id',
         'question_id',
         'exam_id',
         'student_answer',
@@ -38,10 +39,7 @@ class FailedQuestion extends Model
         return $this->belongsTo(Student::class);
     }
 
-    public function teacher(): BelongsTo
-    {
-        return $this->belongsTo(Teacher::class);
-    }
+    // The teacherProfile relation is provided by the UsesTeacherProfileScope trait.
 
     public function question(): BelongsTo
     {
@@ -59,14 +57,6 @@ class FailedQuestion extends Model
     public function scopeUnmastered($query)
     {
         return $query->where('is_mastered', false);
-    }
-
-    /**
-     * Scope for specific teacher
-     */
-    public function scopeForTeacher($query, string $teacherId)
-    {
-        return $query->where('teacher_id', $teacherId);
     }
 
     /**

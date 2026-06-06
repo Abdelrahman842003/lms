@@ -7,6 +7,7 @@ namespace App\Domains\Exams\Models;
 use App\Domains\Auth\Models\Teacher;
 use App\Domains\Enrollments\Models\Grade;
 use App\Domains\Enrollments\Models\Group;
+use App\Domains\Support\Traits\UsesTeacherProfileScope;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -16,7 +17,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Exam extends Model
 {
-    use HasFactory, HasUuids;
+    use HasFactory, HasUuids, UsesTeacherProfileScope;
 
     protected static function newFactory()
     {
@@ -24,7 +25,7 @@ class Exam extends Model
     }
 
     protected $fillable = [
-        'teacher_id',
+        'teacher_profile_id',
         'academy_id',
         'title',
         'type', // manual, dynamic, self_test
@@ -58,10 +59,7 @@ class Exam extends Model
         return $this->hasMany(ExamAttempt::class);
     }
 
-    public function teacher(): BelongsTo
-    {
-        return $this->belongsTo(Teacher::class);
-    }
+    // The teacherProfile relation is provided by the UsesTeacherProfileScope trait.
 
     public function grade(): BelongsTo
     {

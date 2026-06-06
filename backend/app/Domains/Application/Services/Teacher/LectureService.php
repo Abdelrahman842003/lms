@@ -28,7 +28,7 @@ class LectureService
     public function getLectures($teacher, int $perPage = 10, array $filters = [], ?string $academyId = null): LengthAwarePaginator
     {
         $query = Lecture::query()
-            ->where('teacher_id', $teacher->id)
+            ->where('teacher_profile_id', $teacher->id)
             ->with(['grade', 'group'])
             ->withCount('attendances')
             ->orderByRaw('
@@ -82,8 +82,8 @@ class LectureService
 
     public function deleteLecture(Lecture $lecture): ?bool
     {
-        // Store teacher_id before deletion for broadcasting
-        $teacherId = $lecture->teacher_id;
+        // Store teacher_profile_id before deletion for broadcasting
+        $teacherProfileId = $lecture->teacher_profile_id;
         $lectureId = $lecture->id;
 
         $result = $lecture->delete();
@@ -95,7 +95,7 @@ class LectureService
             // Create a temporary lecture object for broadcasting
             $tempLecture = new Lecture;
             $tempLecture->id = $lectureId;
-            $tempLecture->teacher_id = $teacherId;
+            $tempLecture->teacher_profile_id = $teacherProfileId;
             $tempLecture->is_active = false;
             $tempLecture->exists = false;
             LectureUpdated::dispatch($tempLecture, 'deleted');

@@ -39,8 +39,9 @@ final class AcademyTeacherQueries
 
     public function getTeacherStudentLoad(Academy $academy, ?AcademyReportFilters $filters = null): array
     {
-        $query = Enrollment::where('academy_id', $academy->id)
-            ->join('teachers', 'enrollments.teacher_id', '=', 'teachers.id');
+        $query = Enrollment::where('enrollments.academy_id', $academy->id)
+            ->join('teacher_profiles', 'enrollments.teacher_profile_id', '=', 'teacher_profiles.id')
+            ->join('teachers', 'teacher_profiles.teacher_id', '=', 'teachers.id');
 
         if ($filters) {
             $query = $this->applyEntityFilters($query, $filters);
@@ -69,59 +70,68 @@ final class AcademyTeacherQueries
         if ($filters) {
             $teacherQuery = $this->applyEntityFilters($teacherQuery, $filters);
         }
-        $teacherIds = $teacherQuery->pluck('teachers.id');
+        $teachers = $teacherQuery->get();
+        $teacherIds = $teachers->pluck('id');
 
-        // Single query: enrollment counts per teacher
+        // Map teacher IDs to profile IDs for this academy
+        $teacherProfileMap = DB::table('teacher_profiles')
+            ->where('academy_id', $academy->id)
+            ->whereIn('teacher_id', $teacherIds)
+            ->pluck('id', 'teacher_id');
+        
+        $profileIds = $teacherProfileMap->values();
+
+        // Single query: enrollment counts per profile
         $enrollmentQuery = Enrollment::where('academy_id', $academy->id)
-            ->whereIn('teacher_id', $teacherIds);
+            ->whereIn('teacher_profile_id', $profileIds);
         
         if ($filters) {
             $enrollmentQuery = $this->applyEnrollmentFilters($enrollmentQuery, $filters);
         }
 
-        $enrollmentCounts = $enrollmentQuery->select('teacher_id',
+        $enrollmentCounts = $enrollmentQuery->select('teacher_profile_id',
                 DB::raw('COUNT(DISTINCT student_id) as linked_students'),
                 DB::raw('COUNT(DISTINCT CASE WHEN is_active = 1 THEN student_id END) as active_students'),
             )
-            ->groupBy('teacher_id')
+            ->groupBy('teacher_profile_id')
             ->get()
-            ->keyBy('teacher_id');
+            ->keyBy('teacher_profile_id');
 
-        // Single query: attendance counts per teacher
+        // Single query: attendance counts per profile
         $attendanceQuery = Attendance::join('lectures', 'attendances.lecture_id', '=', 'lectures.id')
             ->where('lectures.academy_id', $academy->id)
-            ->whereIn('lectures.teacher_id', $teacherIds)
+            ->whereIn('lectures.teacher_profile_id', $profileIds)
             ->whereBetween('lectures.start_time', [$period->startAt->toDateTimeString(), $period->endAt->toDateTimeString()]);
         
         if ($filters) {
             $attendanceQuery = $this->applyAttendanceFilters($attendanceQuery, $filters);
         }
 
-        $attendanceCounts = $attendanceQuery->select('lectures.teacher_id',
+        $attendanceCounts = $attendanceQuery->select('lectures.teacher_profile_id',
                 DB::raw('COUNT(*) as total_attendances'),
                 DB::raw('SUM(CASE WHEN attendances.status = \'present\' THEN 1 ELSE 0 END) as present_attendances'),
             )
-            ->groupBy('lectures.teacher_id')
+            ->groupBy('lectures.teacher_profile_id')
             ->get()
-            ->keyBy('teacher_id');
+            ->keyBy('teacher_profile_id');
 
-        // Single query: groups count per teacher
+        // Single query: groups count per profile
         $groupsQuery = DB::table('groups')
-            ->whereIn('teacher_id', $teacherIds)
+            ->whereIn('teacher_profile_id', $profileIds)
             ->where('academy_id', $academy->id);
         
         if ($filters && $filters->groupId) {
             $groupsQuery->where('id', $filters->groupId);
         }
 
-        $groupsCounts = $groupsQuery->select('teacher_id', DB::raw('COUNT(*) as groups_count'))
-            ->groupBy('teacher_id')
+        $groupsCounts = $groupsQuery->select('teacher_profile_id', DB::raw('COUNT(*) as groups_count'))
+            ->groupBy('teacher_profile_id')
             ->get()
-            ->keyBy('teacher_id');
+            ->keyBy('teacher_profile_id');
 
-        // Single query: delivered sessions per teacher
+        // Single query: delivered sessions per profile
         $sessionsQuery = Lecture::where('academy_id', $academy->id)
-            ->whereIn('teacher_id', $teacherIds)
+            ->whereIn('teacher_profile_id', $profileIds)
             ->where('is_active', true)
             ->whereBetween('start_time', [$period->startAt->toDateTimeString(), $period->endAt->toDateTimeString()]);
 
@@ -129,20 +139,22 @@ final class AcademyTeacherQueries
             $sessionsQuery = $this->applyLectureFilters($sessionsQuery, $filters);
         }
 
-        $sessionsCounts = $sessionsQuery->select('teacher_id', DB::raw('COUNT(*) as delivered_sessions'))
-            ->groupBy('teacher_id')
+        $sessionsCounts = $sessionsQuery->select('teacher_profile_id', DB::raw('COUNT(*) as delivered_sessions'))
+            ->groupBy('teacher_profile_id')
             ->get()
-            ->keyBy('teacher_id');
+            ->keyBy('teacher_profile_id');
 
-        $teachers = $academy->activeTeachers()->get();
         $rows = [];
 
         foreach ($teachers as $teacher) {
-            $enrollments = $enrollmentCounts->get($teacher->id);
+            $profileId = $teacherProfileMap->get($teacher->id);
+            if (!$profileId) continue;
+
+            $enrollments = $enrollmentCounts->get($profileId);
             $linkedStudents = (int) ($enrollments?->linked_students ?? 0);
             $activeStudents = (int) ($enrollments?->active_students ?? 0);
 
-            $attendance = $attendanceCounts->get($teacher->id);
+            $attendance = $attendanceCounts->get($profileId);
             $totalAttendances = (int) ($attendance?->total_attendances ?? 0);
             $presentAttendances = (int) ($attendance?->present_attendances ?? 0);
 
@@ -155,8 +167,8 @@ final class AcademyTeacherQueries
                 'linked_students' => $linkedStudents,
                 'active_students' => $activeStudents,
                 'attendance_pct' => $attendancePct,
-                'groups_count' => (int) ($groupsCounts->get($teacher->id)?->groups_count ?? 0),
-                'delivered_sessions' => (int) ($sessionsCounts->get($teacher->id)?->delivered_sessions ?? 0),
+                'groups_count' => (int) ($groupsCounts->get($profileId)?->groups_count ?? 0),
+                'delivered_sessions' => (int) ($sessionsCounts->get($profileId)?->delivered_sessions ?? 0),
             ];
         }
 
@@ -167,7 +179,7 @@ final class AcademyTeacherQueries
     {
         $baseQuery = function ($q) use ($academy, $teacherId, $period, $filters) {
             $q->where('academy_id', $academy->id)
-                ->where('teacher_id', $teacherId)
+                ->where('teacher_profile_id', $teacherId)
                 ->whereBetween('start_time', [
                     $period->startAt->toDateTimeString(),
                     $period->endAt->toDateTimeString(),
@@ -198,7 +210,7 @@ final class AcademyTeacherQueries
     private function applyEnrollmentFilters($query, AcademyReportFilters $filters)
     {
         return $query
-            ->when($filters->teacherId, fn ($q) => $q->where('teacher_id', $filters->teacherId))
+            ->when($filters->teacherId, fn ($q) => $q->where('teacher_profile_id', $filters->teacherId))
             ->when($filters->groupId, fn ($q) => $q->where('group_id', $filters->groupId))
             ->when($filters->gradeId, fn ($q) => $q->where('grade_id', $filters->gradeId))
             ->when($filters->studentStatus === 'active', fn ($q) => $q->where('is_active', true))
@@ -209,7 +221,7 @@ final class AcademyTeacherQueries
     private function applyLectureFilters($query, AcademyReportFilters $filters)
     {
         return $query
-            ->when($filters->teacherId, fn ($q) => $q->where('teacher_id', $filters->teacherId))
+            ->when($filters->teacherId, fn ($q) => $q->where('teacher_profile_id', $filters->teacherId))
             ->when($filters->groupId, fn ($q) => $q->where('group_id', $filters->groupId))
             ->when($filters->gradeId, fn ($q) => $q->where('grade_id', $filters->gradeId))
             ->when($filters->sessionStatus, function ($q) use ($filters) {
@@ -222,7 +234,7 @@ final class AcademyTeacherQueries
     private function applyAttendanceFilters($query, AcademyReportFilters $filters)
     {
         return $query
-            ->when($filters->teacherId, fn ($q) => $q->where('lectures.teacher_id', $filters->teacherId))
+            ->when($filters->teacherId, fn ($q) => $q->where('lectures.teacher_profile_id', $filters->teacherId))
             ->when($filters->groupId, fn ($q) => $q->where('lectures.group_id', $filters->groupId))
             ->when($filters->gradeId, fn ($q) => $q->where('lectures.grade_id', $filters->gradeId));
     }

@@ -15,7 +15,7 @@ final readonly class TeacherGroupBreakdownBuilder
         private TeacherGroupQueryService $groupQuery,
     ) {}
 
-    public function build(Teacher $teacher, TeacherScope $scope, TeacherReportFilters $filters): array
+    public function build($teacher, TeacherScope $scope, TeacherReportFilters $filters): array
     {
         $groups = $this->groupQuery->perGroupMetrics($teacher, $filters);
 

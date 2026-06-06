@@ -82,13 +82,13 @@ class StudentController extends Controller
             return $this->errorResponse('Unauthorized', 403);
         }
 
-        $teacherIds = $academy->activeTeachers()->pluck('teachers.id');
+        $teacherProfileIds = $academy->activeTeachers()->pluck('teachers.id');
 
         // Find student - $id could be student_id or enrollment_id
         $student = Student::find($id);
         if (!$student) {
             // Try to find by enrollment_id
-            $enrollment = Enrollment::with(['academy:id', 'teacher:id'])->find($id);
+            $enrollment = Enrollment::with(['academy:id', 'teacher:teachers.id'])->find($id);
             if ($enrollment) {
                 $student = $enrollment->student;
             }
@@ -99,7 +99,7 @@ class StudentController extends Controller
         }
 
         // Get all enrollments for this student within this academy
-        $enrollments = Enrollment::with(['grade', 'group', 'teacher', 'academy:id', 'teacher:id'])
+        $enrollments = Enrollment::with(['grade', 'group', 'teacher', 'academy:id'])
             ->where('student_id', $student->id)
             ->where('academy_id', $academy->id)
             ->get();
@@ -111,7 +111,7 @@ class StudentController extends Controller
         // Get enrolled teachers with their prices
         $enrolledTeachers = $enrollments->map(function ($enrollment) {
             return [
-                'id' => $enrollment->teacher_id,
+                'id' => $enrollment->teacher_profile_id,
                 'name' => $enrollment->teacher?->name,
                 'grade_id' => $enrollment->grade_id,
                 'grade_name' => $enrollment->grade?->name,
@@ -125,7 +125,7 @@ class StudentController extends Controller
         });
 
         $history = \App\Domains\Subscriptions\Models\PaymentLog::where('student_id', $student->id)
-            ->with(['teacher:id,name'])
+            ->with(['teacher:teachers.id,name'])
             ->latest()
             ->get()
             ->map(function ($log) {
@@ -191,11 +191,11 @@ class StudentController extends Controller
             return $this->errorResponse('Unauthorized', 403);
         }
 
-        $teacherIds = $academy->activeTeachers()->pluck('teachers.id');
+        $teacherProfileIds = $academy->activeTeachers()->pluck('teachers.id');
 
         // Find the enrollment (id could be enrollment_id)
         $enrollment = Enrollment::with('student')
-            ->whereIn('teacher_id', $teacherIds)
+            ->whereIn('teacher_profile_id', $teacherProfileIds)
             ->where(function ($q) use ($id) {
                 $q->where('id', $id)->orWhere('student_id', $id);
             })
@@ -221,10 +221,10 @@ class StudentController extends Controller
             return $this->errorResponse('Unauthorized', 403);
         }
 
-        $teacherIds = $academy->activeTeachers()->pluck('teachers.id');
+        $teacherProfileIds = $academy->activeTeachers()->pluck('teachers.id');
 
-        $enrollment = Enrollment::whereIn('teacher_id', $teacherIds)
-            ->with(['academy:id', 'teacher:id'])
+        $enrollment = Enrollment::whereIn('teacher_profile_id', $teacherProfileIds)
+            ->with(['academy:id', 'teacher:teachers.id'])
             ->where(function ($q) use ($id) {
                 $q->where('id', $id)->orWhere('student_id', $id);
             })
@@ -250,19 +250,19 @@ class StudentController extends Controller
         }
 
         $query = Enrollment::where('academy_id', $academy->id)
-            ->with(['academy:id', 'teacher:id'])
+            ->with(['academy:id', 'teacher:teachers.id'])
             ->where(function ($q) use ($id) {
                 $q->where('id', $id)->orWhere('student_id', $id);
             });
 
-        if ($request->has('teacher_id')) {
-            $query->where('teacher_id', $request->teacher_id);
+        if ($request->has('teacher_profile_id')) {
+            $query->where('teacher_profile_id', $request->teacher_profile_id);
         }
 
         Log::info('Toggle Status Debug', [
             'academy_id' => $academy->id,
             'id_param' => $id,
-            'teacher_id_param' => $request->teacher_id,
+            'teacher_id_param' => $request->teacher_profile_id,
             'sql' => $query->toSql(),
             'bindings' => $query->getBindings(),
         ]);
@@ -278,7 +278,7 @@ class StudentController extends Controller
 
         return $this->successResponse([
             'is_active' => $enrollment->is_active,
-            'teacher_id' => $enrollment->teacher_id,
+            'teacher_profile_id' => $enrollment->teacher_profile_id,
         ], $enrollment->is_active ? 'تم تفعيل حساب الطالب بنجاح' : 'تم تعطيل حساب الطالب بنجاح');
     }
 

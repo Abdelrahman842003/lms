@@ -26,7 +26,7 @@ class GradeController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
         $perPage = (int) $request->input('per_page', 10);
         $filters = $request->only(['search']);
         $academyId = $request->header('X-Academy-Id');
@@ -40,7 +40,7 @@ class GradeController extends Controller
 
     public function store(StoreGradeRequest $request): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
         $academyId = $request->header('X-Academy-Id');
         
         // Only set academy_id if teacher is actually affiliated with that academy
@@ -48,7 +48,7 @@ class GradeController extends Controller
         if ($academyId && $academyId !== 'independent') {
             // Check if teacher belongs to this academy using the pivot table
             $teacherBelongsToAcademy = DB::table('academy_teacher')
-                ->where('teacher_id', $teacher->id)
+                ->where('teacher_profile_id', $teacher->id)
                 ->where('academy_id', $academyId)
                 ->where('is_active', true)
                 ->exists();

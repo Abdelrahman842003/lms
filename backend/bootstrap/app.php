@@ -28,6 +28,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'auth.cookies' => \App\Domains\Auth\Http\Middleware\SetAuthCookies::class,
             'throttle.login' => \App\Domains\Auth\Http\Middleware\LoginThrottleMiddleware::class,
+            'profile.context' => \App\Domains\Auth\Http\Middleware\CurrentProfileMiddleware::class,
             // Rate limiting middleware aliases
             'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
             'api.throttle' => \App\Domains\Application\Http\Middleware\ApiRateLimiter::class,

@@ -55,7 +55,7 @@ class AdminNotification extends Notification implements ShouldBroadcast
         if (isset($this->data['is_voice']) && $this->data['is_voice']) {
             $notification->icon('heroicon-o-speaker-wave')
                 ->actions([
-                    \Filament\Notifications\Actions\Action::make('listen')
+                    \Filament\Actions\Action::make('listen')
                         ->label('استماع للرسالة الصوتية')
                         ->url($this->data['voice_url'])
                         ->openUrlInNewTab(),
@@ -81,18 +81,6 @@ class AdminNotification extends Notification implements ShouldBroadcast
     }
 
     /**
-     * Get the channels the event should broadcast on.
-     *
-     * @return array<int, \Illuminate\Broadcasting\Channel>
-     */
-    public function broadcastOn(): array
-    {
-        return [
-            new \Illuminate\Broadcasting\PrivateChannel('notifications.admin.' . ($this->data['admin_id'] ?? '*')),
-        ];
-    }
-
-    /**
      * Get the broadcastable representation of the notification.
      */
     public function toBroadcast(object $notifiable): \Illuminate\Notifications\Messages\BroadcastMessage
@@ -105,11 +93,7 @@ class AdminNotification extends Notification implements ShouldBroadcast
             'sender_role' => $this->senderRole,
             'data' => $this->data,
             'created_at' => now()->toISOString(),
-        ]))->onConnection('reverb') // Optional: specify connection if needed
-           ->onQueue('notifications')
-           ->allChannels([
-               new \Illuminate\Broadcasting\PrivateChannel('notifications.admin.' . $notifiable->id),
-           ]);
+        ]))->onQueue('notifications');
     }
 
     /**

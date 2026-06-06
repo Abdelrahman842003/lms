@@ -25,7 +25,7 @@ class NoteController extends Controller
         $teacher = $this->getTeacherFromRequest($request);
         $academyId = $request->header('X-Academy-Id') ?? $request->input('academy_id');
         
-        $query = Note::where('teacher_id', $teacher->id)
+        $query = Note::where('teacher_profile_id', $teacher->id)
             ->with(['grade', 'groups', 'attachments']);
 
         if ($academyId === 'independent') {
@@ -59,7 +59,7 @@ class NoteController extends Controller
         if ($academyId && $academyId !== 'independent') {
             // Check if teacher belongs to this academy using the pivot table
             $teacherBelongsToAcademy = \Illuminate\Support\Facades\DB::table('academy_teacher')
-                ->where('teacher_id', $teacher->id)
+                ->where('teacher_id', $teacher->teacher_id)
                 ->where('academy_id', $academyId)
                 ->where('is_active', true)
                 ->exists();
@@ -91,7 +91,7 @@ class NoteController extends Controller
 
         $payload = $this->noteService->initiateNote([
             'academy_id' => $resolvedAcademyId,
-            'teacher_id' => $teacher->id,
+            'teacher_profile_id' => $teacher->id,
             'grade_id' => $request->input('grade_id'),
             'title' => $request->input('title'),
             'description' => $request->input('description'),
@@ -104,7 +104,7 @@ class NoteController extends Controller
     {
         $teacher = $this->getTeacherFromRequest($request);
 
-        if ((string) $note->teacher_id !== (string) $teacher->id) {
+        if ((string) $note->teacher_profile_id !== (string) $teacher->id) {
             abort(403);
         }
 
@@ -133,7 +133,7 @@ class NoteController extends Controller
     {
         $teacher = $this->getTeacherFromRequest($request);
         
-        if ((string) $note->teacher_id !== (string) $teacher->id) {
+        if ((string) $note->teacher_profile_id !== (string) $teacher->id) {
             abort(403);
         }
 
@@ -148,7 +148,7 @@ class NoteController extends Controller
     {
         $teacher = $this->getTeacherFromRequest($request);
 
-        if ((string) $note->teacher_id !== (string) $teacher->id) {
+        if ((string) $note->teacher_profile_id !== (string) $teacher->id) {
             abort(403);
         }
 

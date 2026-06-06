@@ -43,7 +43,7 @@ class VideoQuizPolicy extends BasePolicy
         // Teacher/Secretary can view quizzes on their videos
         $teacher = $this->resolveTeacher($user);
         if ($teacher && $model->video) {
-            return $model->video->teacher_id === $teacher->id;
+            return $this->ownsProfileResource($teacher, $model->video->teacher_profile_id);
         }
 
         // Academy can view quizzes on their videos
@@ -78,7 +78,7 @@ class VideoQuizPolicy extends BasePolicy
         // Teacher/Secretary can update quizzes on their videos
         $teacher = $this->resolveTeacher($user);
         if ($teacher && $model->video) {
-            return $model->video->teacher_id === $teacher->id;
+            return $this->ownsProfileResource($teacher, $model->video->teacher_profile_id);
         }
 
         // Academy can update quizzes on their videos
@@ -103,7 +103,7 @@ class VideoQuizPolicy extends BasePolicy
         // Teacher/Secretary can delete quizzes on their videos
         $teacher = $this->resolveTeacher($user);
         if ($teacher && $model->video) {
-            return $model->video->teacher_id === $teacher->id;
+            return $this->ownsProfileResource($teacher, $model->video->teacher_profile_id);
         }
 
         // Academy can delete quizzes on their videos

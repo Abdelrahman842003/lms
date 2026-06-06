@@ -66,7 +66,7 @@ class PointCalculator
      * @param string|null $teacherId Teacher ID (extracted from context if not provided)
      * @return PointTransaction|null
      */
-    public function awardPoints(Student $student, mixed $context, ?string $teacherId = null): ?PointTransaction
+    public function awardPoints(Student $student, mixed $context, string|int|null $teacherId = null): ?PointTransaction
     {
         $strategy = $this->findStrategyFor($context);
 
@@ -158,7 +158,7 @@ class PointCalculator
      */
     private function isDuplicate(
         Student $student,
-        string $teacherId,
+        string|int $teacherId,
         PointCalculationStrategyInterface $strategy,
         mixed $context
     ): bool {
@@ -170,7 +170,7 @@ class PointCalculator
         }
 
         return PointTransaction::where('student_id', $student->id)
-            ->where('teacher_id', $teacherId)
+            ->where('teacher_profile_id', $teacherId)
             ->where('reference_type', $referenceType)
             ->where('reference_id', $referenceId)
             ->where('type', $strategy->getTransactionType())
@@ -182,13 +182,17 @@ class PointCalculator
      */
     private function extractTeacherId(mixed $context): ?string
     {
+        if (isset($context->teacher_profile_id)) {
+            return (string) $context->teacher_profile_id;
+        }
+
         if (isset($context->teacher_id)) {
-            return $context->teacher_id;
+            return (string) $context->teacher_id;
         }
 
         // For ExamResult, get teacher from exam
         if (method_exists($context, 'exam') && $context->exam) {
-            return $context->exam->teacher_id ?? null;
+            return (string) ($context->exam->teacher_profile_id ?? $context->exam->teacher_id ?? null);
         }
 
         return null;

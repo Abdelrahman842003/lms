@@ -21,7 +21,7 @@ class MistakesService
         Exam $exam,
         ?string $studentAnswer = null
     ): FailedQuestion {
-        $teacherId = $exam->teacher_id;
+        $teacherProfileId = $exam->teacher_profile_id;
 
         /** @var FailedQuestion|null $failedQuestion */
         $failedQuestion = FailedQuestion::where('student_id', $student->id)
@@ -39,7 +39,7 @@ class MistakesService
                 ]);
             }
 
-            \App\Domains\Application\Services\CacheService::forgetMistakesStats($student->id, $teacherId);
+            \App\Domains\Application\Services\CacheService::forgetMistakesStats($student->id, $teacherProfileId);
             return $failedQuestion;
         }
 
@@ -47,7 +47,7 @@ class MistakesService
         try {
             $created = FailedQuestion::create([
                 'student_id' => $student->id,
-                'teacher_id' => $teacherId,
+                'teacher_profile_id' => $teacherProfileId,
                 'question_id' => $question->id,
                 'exam_id' => $exam->id,
                 'student_answer' => $studentAnswer,
@@ -62,14 +62,14 @@ class MistakesService
                 
                 if ($failedQuestion) {
                     $failedQuestion->incrementFailed($studentAnswer);
-                    \App\Domains\Application\Services\CacheService::forgetMistakesStats($student->id, $teacherId);
+                    \App\Domains\Application\Services\CacheService::forgetMistakesStats($student->id, $teacherProfileId);
                     return $failedQuestion;
                 }
             }
             throw $e;
         }
 
-        \App\Domains\Application\Services\CacheService::forgetMistakesStats($student->id, $teacherId);
+        \App\Domains\Application\Services\CacheService::forgetMistakesStats($student->id, $teacherProfileId);
 
         return $created;
     }
@@ -77,10 +77,10 @@ class MistakesService
     /**
      * Get student's mistakes for a teacher
      */
-    public function getMistakes(string $studentId, string $teacherId): Collection
+    public function getMistakes(string $studentId, string $teacherProfileId): Collection
     {
         $query = FailedQuestion::where('student_id', $studentId)
-            ->where('teacher_id', $teacherId)
+            ->where('teacher_profile_id', $teacherProfileId)
             ->with(['question', 'exam:id,title,subject']);
 
         // Always unmastered now
@@ -113,15 +113,15 @@ class MistakesService
     /**
      * Get statistics about mistakes
      */
-    public function getStats(string $studentId, string $teacherId): array
+    public function getStats(string $studentId, string $teacherProfileId): array
     {
-        return \App\Domains\Application\Services\CacheService::getMistakesStats($studentId, $teacherId, function () use ($studentId, $teacherId) {
+        return \App\Domains\Application\Services\CacheService::getMistakesStats($studentId, $teacherProfileId, function () use ($studentId, $teacherProfileId) {
             $total = FailedQuestion::where('student_id', $studentId)
-                ->where('teacher_id', $teacherId)
+                ->where('teacher_profile_id', $teacherProfileId)
                 ->count();
 
             $mastered = FailedQuestion::where('student_id', $studentId)
-                ->where('teacher_id', $teacherId)
+                ->where('teacher_profile_id', $teacherProfileId)
                 ->where('is_mastered', true)
                 ->count();
 
@@ -129,7 +129,7 @@ class MistakesService
 
             // Get most failed exams/subjects
             $byExam = FailedQuestion::where('student_id', $studentId)
-                ->where('teacher_id', $teacherId)
+                ->where('teacher_profile_id', $teacherProfileId)
                 ->unmastered()
                 ->with('exam:id,title,subject')
                 ->get()
@@ -167,7 +167,7 @@ class MistakesService
         }
 
         $failedQuestion->markAsMastered();
-        \App\Domains\Application\Services\CacheService::forgetMistakesStats($studentId, $failedQuestion->teacher_id);
+        \App\Domains\Application\Services\CacheService::forgetMistakesStats($studentId, $failedQuestion->teacher_profile_id);
 
         return true;
     }

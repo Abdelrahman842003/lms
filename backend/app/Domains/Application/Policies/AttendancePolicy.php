@@ -52,7 +52,7 @@ class AttendancePolicy extends BasePolicy
         // Teacher/Secretary can view attendance for their lectures
         $teacher = $this->resolveTeacher($user);
         if ($teacher && $model->lecture) {
-            return $model->lecture->teacher_id === $teacher->id;
+            return $this->ownsProfileResource($teacher, $model->lecture->teacher_profile_id);
         }
 
         // Academy can view attendance for their lectures
@@ -86,7 +86,7 @@ class AttendancePolicy extends BasePolicy
         // Teacher/Secretary can update attendance for their lectures
         $teacher = $this->resolveTeacher($user);
         if ($teacher && $model->lecture) {
-            return $model->lecture->teacher_id === $teacher->id;
+            return $this->ownsProfileResource($teacher, $model->lecture->teacher_profile_id);
         }
 
         // Academy can update attendance for their lectures

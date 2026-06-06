@@ -8,6 +8,7 @@ use App\Domains\Enrollments\DTOs\GradeData;
 use App\Domains\Enrollments\Models\Grade;
 use App\Domains\Auth\Models\Academy;
 use App\Domains\Auth\Models\Teacher;
+use App\Domains\Auth\Models\TeacherProfile;
 use App\Domains\Application\Services\CacheService;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
@@ -21,13 +22,13 @@ class GradeService
         // Filter strictly by academy_id to ensure only academy-specific grades are shown
         $query = Grade::where('academy_id', $academy->id)->whereNotNull('academy_id');
 
-        // Filter by teacher_id if provided
-        if (isset($filters['teacher_id']) && $filters['teacher_id']) {
+        // Filter by teacher_profile_id if provided
+        if (isset($filters['teacher_profile_id']) && $filters['teacher_profile_id']) {
             return $query->where(function($q) use ($filters) {
-                    $q->where('teacher_id', $filters['teacher_id'])
-                      ->orWhereNull('teacher_id');
+                    $q->where('teacher_profile_id', $filters['teacher_profile_id'])
+                      ->orWhereNull('teacher_profile_id');
                 })
-                ->select('id', 'name', 'price', 'teacher_id')
+                ->select('id', 'name', 'price', 'teacher_profile_id')
                 ->get()
                 ->unique('name')
                 ->values();
@@ -50,7 +51,7 @@ class GradeService
             return [
                 'id' => $group->first()->id, // Add ID from first grade in group
                 'name' => $name,
-                'teachers_count' => $group->pluck('teacher_id')->filter()->unique()->count(),
+                'teachers_count' => $group->pluck('teacher_profile_id')->filter()->unique()->count(),
                 'groups_count' => $group->sum('groups_count'),
                 'students_count' => $group->sum('enrollments_count'),
                 'created_at' => $group->first()->created_at,
@@ -72,34 +73,77 @@ class GradeService
 
     public function createGrade(Academy $academy, GradeData $data): Grade
     {
-        // If teacher_id is provided, verify it belongs to academy and is active
+        $profile = null;
         if ($data->teacherId) {
-            $teacher = Teacher::where('id', $data->teacherId)
-                ->where('teachers.status', 'active')
-                ->whereHas('academies', function ($q) use ($academy) {
-                    $q->where('academy_id', $academy->id)
-                      ->where('academy_teacher.is_active', true);
-                })->firstOrFail();
+            // Find profile directly by id/uuid, or by teacher_id
+            $profile = TeacherProfile::where('academy_id', $academy->id)
+                ->where(function ($q) use ($data) {
+                    $q->where('id', $data->teacherId)
+                      ->orWhere('uuid', $data->teacherId)
+                      ->orWhere('teacher_id', $data->teacherId);
+                })
+                ->first();
 
-            $grade = $teacher->grades()->create([
-                'name' => $data->name,
-                'price' => $data->price,
-                'academy_id' => $academy->id,
-            ]);
+            if (!$profile) {
+                // Check if teacher is linked and active, and if so create profile
+                $teacher = Teacher::where('id', $data->teacherId)
+                    ->where('teachers.status', 'active')
+                    ->whereHas('academies', function ($q) use ($academy) {
+                        $q->where('academy_id', $academy->id)
+                          ->where('academy_teacher.is_active', true);
+                    })->first();
+
+                if ($teacher) {
+                    $profile = TeacherProfile::create([
+                        'teacher_id' => $teacher->id,
+                        'academy_id' => $academy->id,
+                        'type' => 'academy',
+                        'display_name' => $teacher->name . ' - ' . $academy->name,
+                        'slug' => \Illuminate\Support\Str::slug($teacher->name) . '-' . \Illuminate\Support\Str::slug($academy->name) . '-' . substr($teacher->id, 0, 4),
+                        'status' => 'ACTIVE'
+                    ]);
+                }
+            }
+
+            if ($profile) {
+                // Ensure teacher user status is active and linked to the academy
+                $teacher = $profile->teacher;
+                if ($teacher && $teacher->status === \App\Domains\Auth\Enums\TeacherStatus::ACTIVE) {
+                    $isLinked = $academy->teachers()
+                        ->where('teacher_id', $teacher->id)
+                        ->where('academy_teacher.is_active', true)
+                        ->exists();
+
+                    if ($isLinked) {
+                        $grade = $profile->grades()->create([
+                            'name' => $data->name,
+                            'price' => $data->price,
+                            'academy_id' => $academy->id,
+                        ]);
+                        
+                        // Clear cache after creating a grade
+                        CacheService::forgetAcademyGrades($academy->id);
+                        return $grade;
+                    }
+                }
+            }
+            
+            // If we couldn't resolve a valid linked active teacher profile, throw exception
+            throw new \Illuminate\Database\Eloquent\ModelNotFoundException('المدرس غير موجود أو غير نشط في هذه الأكاديمية');
         } else {
             // Create a global grade for this academy
             $grade = new Grade();
             $grade->id = Str::uuid()->toString();
             $grade->name = $data->name;
             $grade->price = $data->price;
-            $grade->teacher_id = null;
+            $grade->teacher_profile_id = null;
             $grade->academy_id = $academy->id;
             $grade->save();
+            
+            // Clear cache after creating a grade
+            CacheService::forgetAcademyGrades($academy->id);
+            return $grade;
         }
-
-        // Clear cache after creating a grade
-        CacheService::forgetAcademyGrades($academy->id);
-        return $grade;
     }
 
     public function updateGrade(Academy $academy, Grade $grade, GradeData $data): Grade

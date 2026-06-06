@@ -10,7 +10,7 @@ readonly class PaymentData
 {
     public function __construct(
         public string $student_id,
-        public string $teacher_id,
+        public string $teacher_profile_id,
         public int $months,
         public float $discount,
         public ?string $notes,
@@ -22,7 +22,7 @@ readonly class PaymentData
     {
         return new self(
             student_id: $request->validated('student_id'),
-            teacher_id: $request->validated('teacher_id'),
+            teacher_profile_id: (string) $request->validated('teacher_profile_id'),
             months: (int) $request->validated('months'),
             discount: (float) ($request->validated('discount') ?? 0),
             notes: $request->validated('notes'),
@@ -35,7 +35,7 @@ readonly class PaymentData
     {
         return [
             'student_id' => $this->student_id,
-            'teacher_id' => $this->teacher_id,
+            'teacher_profile_id' => $this->teacher_profile_id,
             'months' => $this->months,
             'discount' => $this->discount,
             'notes' => $this->notes,

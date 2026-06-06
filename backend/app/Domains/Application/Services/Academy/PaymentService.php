@@ -31,7 +31,7 @@ class PaymentService
         // Find enrollment with relationships
         $enrollment = Enrollment::with(['grade', 'group'])
             ->where('student_id', $data->student_id)
-            ->where('teacher_id', $data->teacher_id)
+            ->where('teacher_profile_id', $data->teacher_profile_id)
             ->first();
 
         if (!$enrollment) {
@@ -112,7 +112,7 @@ class PaymentService
                 'client_side_uuid' => $data->client_side_uuid,
                 'enrollment_id' => $enrollment->id,
                 'student_id' => $data->student_id,
-                'teacher_id' => $data->teacher_id,
+                'teacher_profile_id' => $data->teacher_profile_id,
                 'amount' => $totalAmount,
                 'months' => $months,
                 'discount' => $discount,

@@ -25,7 +25,7 @@ class PaymentLogController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
         $perPage = (int) $request->input('per_page', 20);
         $filters = $request->only(['status', 'search']);
 
@@ -41,7 +41,7 @@ class PaymentLogController extends Controller
      */
     public function pending(Request $request): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
         $payments = $this->service->getPending($teacher);
 
         return $this->successResponse([
@@ -55,7 +55,7 @@ class PaymentLogController extends Controller
     public function store(StorePaymentRequest $request): JsonResponse
     {
         $validated = $request->validated();
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
 
         try {
             $result = $this->service->createPayment($teacher, $validated);
@@ -76,7 +76,7 @@ class PaymentLogController extends Controller
     public function syncBatch(SyncPaymentRequest $request): JsonResponse
     {
         $validated = $request->validated();
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
         
         $results = $this->service->syncBatch($teacher, $validated['payments']);
 
@@ -88,7 +88,7 @@ class PaymentLogController extends Controller
      */
     public function show(Request $request, string $id): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
 
         $payment = PaymentLog::forTeacher($teacher->id)
             ->with(['student:id,name,phone', 'enrollment'])
@@ -104,7 +104,7 @@ class PaymentLogController extends Controller
      */
     public function cancel(Request $request, string $id): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
 
         try {
             $this->service->cancel($teacher, $id);
@@ -121,7 +121,7 @@ class PaymentLogController extends Controller
      */
     public function statistics(Request $request): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
         $stats = $this->service->getStatistics($teacher);
 
         return $this->successResponse($stats);

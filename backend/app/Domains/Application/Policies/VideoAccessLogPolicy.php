@@ -47,7 +47,7 @@ class VideoAccessLogPolicy extends BasePolicy
         // Teacher/Secretary can view logs for their videos
         $teacher = $this->resolveTeacher($user);
         if ($teacher && $model->video) {
-            return $model->video->teacher_id === $teacher->id;
+            return $this->ownsProfileResource($teacher, $model->video->teacher_profile_id);
         }
 
         // Academy can view logs for their academy's videos

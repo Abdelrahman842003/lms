@@ -22,22 +22,22 @@ class MistakesController extends Controller
     public function index(Request $request): JsonResponse
     {
         $request->validate([
-            'teacher_id' => 'required|uuid|exists:teachers,id',
+            'teacher_profile_id' => 'required|uuid|exists:teachers,id',
         ]);
 
         $student = $request->user();
 
         Log::debug('Fetching mistakes for student', [
             'student_id' => $student->id,
-            'teacher_id' => $request->teacher_id,
+            'teacher_profile_id' => $request->teacher_profile_id,
         ]);
 
         $mistakes = $this->mistakesService->getMistakes(
             $student->id,
-            $request->teacher_id
+            $request->teacher_profile_id
         );
 
-        $stats = $this->mistakesService->getStats($student->id, $request->teacher_id);
+        $stats = $this->mistakesService->getStats($student->id, $request->teacher_profile_id);
 
         return $this->successResponse([
             'mistakes' => $mistakes,

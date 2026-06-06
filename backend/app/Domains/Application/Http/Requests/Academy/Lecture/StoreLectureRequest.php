@@ -16,7 +16,8 @@ class StoreLectureRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'teacher_id' => ['required', 'uuid', 'exists:teachers,id'],
+            'teacher_id' => ['required_without:teacher_profile_id', 'exists:teachers,id'],
+            'teacher_profile_id' => ['required_without:teacher_id', 'exists:teacher_profiles,id'],
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'grade_id' => ['required', 'uuid', 'exists:grades,id'],
@@ -42,8 +43,10 @@ class StoreLectureRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'teacher_id.required' => 'المدرس مطلوب',
+            'teacher_id.required_without' => 'المدرس مطلوب',
             'teacher_id.exists' => 'المدرس المختار غير موجود',
+            'teacher_profile_id.required_without' => 'المدرس مطلوب',
+            'teacher_profile_id.exists' => 'المدرس المختار غير موجود',
             'title.required' => 'عنوان المحاضرة مطلوب',
             'grade_id.required' => 'الصف الدراسي مطلوب',
             'grade_id.exists' => 'الصف الدراسي المختار غير موجود',
@@ -54,5 +57,10 @@ class StoreLectureRequest extends FormRequest
             'duration_minutes.min' => 'مدة المحاضرة يجب أن تكون دقيقة واحدة على الأقل',
             'duration_minutes.max' => 'مدة المحاضرة يجب ألا تتجاوز 480 دقيقة',
         ];
+    }
+
+    public function prepareForValidation(): void
+    {
+        $this->merge(\App\Domains\Application\Traits\ResolvesTeacher::resolveTeacherInput($this));
     }
 }

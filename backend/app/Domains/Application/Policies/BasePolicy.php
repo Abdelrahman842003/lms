@@ -215,6 +215,28 @@ abstract class BasePolicy
     }
 
     /**
+     * Check if the teacher owns the resource via their profiles.
+     *
+     * @param  mixed  $teacher  The resolved teacher
+     * @param  mixed  $profileId  The teacher_profile_id from the model
+     */
+    protected function ownsProfileResource($teacher, $profileId): bool
+    {
+        if (!$teacher || !$profileId) {
+            return false;
+        }
+
+        // Check against active profile first for performance
+        $activeProfile = request()->attributes->get('active_profile');
+        if ($activeProfile && (string)$activeProfile->id === (string)$profileId) {
+            return true;
+        }
+
+        // Fallback: check if the profile belongs to the teacher
+        return $teacher->profiles()->where('id', $profileId)->exists();
+    }
+
+    /**
      * Check if the user is an Academy type.
      *
      * @param  mixed  $user  The authenticated user

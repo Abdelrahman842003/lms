@@ -63,7 +63,7 @@ class StudentPointPolicy extends BasePolicy
         $teacher = $this->resolveTeacher($user);
         if ($teacher) {
             return \App\Domains\Enrollments\Models\Enrollment::where('student_id', $model->student_id)
-                ->where('teacher_id', $teacher->id)
+                ->whereIn('teacher_profile_id', $teacher->profiles()->pluck('id'))
                 ->exists();
         }
 

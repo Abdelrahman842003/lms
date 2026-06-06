@@ -36,8 +36,24 @@ export default function AcademyCreateNotePage() {
           getLectureTeachers(),
         ]);
 
-        const gradesList = gradesResponse?.data?.data || [];
-        const groupsList = groupsResponse?.data?.data || [];
+        let gradesList = [];
+        if (gradesResponse?.data?.data && Array.isArray(gradesResponse.data.data)) {
+          gradesList = gradesResponse.data.data;
+        } else if (gradesResponse?.data && Array.isArray(gradesResponse.data)) {
+          gradesList = gradesResponse.data;
+        } else if (Array.isArray(gradesResponse)) {
+          gradesList = gradesResponse;
+        }
+
+        let groupsList = [];
+        if (groupsResponse?.data?.data && Array.isArray(groupsResponse.data.data)) {
+          groupsList = groupsResponse.data.data;
+        } else if (groupsResponse?.data && Array.isArray(groupsResponse.data)) {
+          groupsList = groupsResponse.data;
+        } else if (Array.isArray(groupsResponse)) {
+          groupsList = groupsResponse;
+        }
+
         const teachersList = teachersResponse?.data?.teachers || [];
 
         setGrades(gradesList.map((item: any) => ({ id: String(item.id), name: item.name })));

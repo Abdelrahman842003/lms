@@ -22,7 +22,7 @@ class SecretaryController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
         $perPage = (int) $request->input('per_page', 10);
         $filters = $request->only(['search', 'status']);
 
@@ -56,7 +56,7 @@ class SecretaryController extends Controller
 
     public function store(StoreSecretaryRequest $request): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
         $validated = $request->validated();
 
         try {
@@ -73,7 +73,7 @@ class SecretaryController extends Controller
 
     public function show(Request $request, string $id): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
         $secretary = $teacher->secretaries()->findOrFail($id);
         
         // Get permissions from pivot
@@ -87,7 +87,7 @@ class SecretaryController extends Controller
 
     public function update(UpdateSecretaryRequest $request, string $id): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
         $validated = $request->validated();
 
         $secretary = $this->service->update($teacher, $id, $validated);
@@ -100,7 +100,7 @@ class SecretaryController extends Controller
 
     public function destroy(Request $request, string $id): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
         $this->service->detach($teacher, $id);
 
         return $this->successResponse([
@@ -110,7 +110,7 @@ class SecretaryController extends Controller
 
     public function updatePermissions(UpdatePermissionsRequest $request, string $id): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
         $this->service->updatePermissions($teacher, $id, $request->validated()['permissions'] ?? []);
 
         return $this->successResponse([
@@ -121,7 +121,7 @@ class SecretaryController extends Controller
 
     public function toggleStatus(Request $request, string $id): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
         $secretary = $this->service->toggleStatus($teacher, $id);
 
         return $this->successResponse([

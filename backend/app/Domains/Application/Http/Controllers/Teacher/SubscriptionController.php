@@ -19,7 +19,7 @@ class SubscriptionController extends Controller
 
     public function show(Request $request): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
         if (! $teacher) {
             return $this->errorResponse('المعلم غير موجود', 404);
         }
@@ -48,7 +48,7 @@ class SubscriptionController extends Controller
 
     public function requestRenewal(RequestRenewalRequest $request): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
         if (! $teacher) {
             return $this->errorResponse('المعلم غير موجود', 404);
         }

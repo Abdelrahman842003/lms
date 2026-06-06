@@ -18,7 +18,8 @@ class StoreAcademyQuestionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'teacher_id' => ['required', 'uuid', 'exists:teachers,id'],
+            'teacher_id' => ['required_without:teacher_profile_id', 'exists:teachers,id'],
+            'teacher_profile_id' => ['required_without:teacher_id', 'exists:teacher_profiles,id'],
             'grade_id' => ['required', 'uuid', 'exists:grades,id'],
             'subject' => ['nullable', 'string', 'max:255'],
             'text' => ['required', 'string'],
@@ -30,5 +31,10 @@ class StoreAcademyQuestionRequest extends FormRequest
             'tags' => ['nullable', 'array'],
             'tags.*' => ['string'],
         ];
+    }
+
+    public function prepareForValidation(): void
+    {
+        $this->merge(\App\Domains\Application\Traits\ResolvesTeacher::resolveTeacherInput($this));
     }
 }

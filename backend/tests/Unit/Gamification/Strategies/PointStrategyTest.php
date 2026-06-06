@@ -32,7 +32,7 @@ class PointStrategyTest extends TestCase
 
     private function createSettings(array $overrides = []): GamificationSetting
     {
-        $settings = Mockery::mock(GamificationSetting::class);
+        $settings = Mockery::mock(GamificationSetting::class)->makePartial();
         $settings->is_enabled = $overrides['is_enabled'] ?? true;
         $settings->attendance_points = $overrides['attendance_points'] ?? 10;
         $settings->video_points = $overrides['video_points'] ?? 5;
@@ -47,8 +47,8 @@ class PointStrategyTest extends TestCase
     public function attendance_strategy_supports_lecture_context(): void
     {
         $strategy = new AttendancePointStrategy();
-        $lecture = Mockery::mock(Lecture::class);
-        $examResult = Mockery::mock(ExamResult::class);
+        $lecture = Mockery::mock(Lecture::class)->makePartial();
+        $examResult = Mockery::mock(ExamResult::class)->makePartial();
 
         $this->assertTrue($strategy->supports($lecture));
         $this->assertFalse($strategy->supports($examResult));
@@ -58,8 +58,8 @@ class PointStrategyTest extends TestCase
     public function exam_strategy_supports_exam_result_context(): void
     {
         $strategy = new ExamPointStrategy();
-        $examResult = Mockery::mock(ExamResult::class);
-        $lecture = Mockery::mock(Lecture::class);
+        $examResult = Mockery::mock(ExamResult::class)->makePartial();
+        $lecture = Mockery::mock(Lecture::class)->makePartial();
 
         $this->assertTrue($strategy->supports($examResult));
         $this->assertFalse($strategy->supports($lecture));
@@ -69,8 +69,8 @@ class PointStrategyTest extends TestCase
     public function video_strategy_supports_video_context(): void
     {
         $strategy = new VideoPointStrategy();
-        $video = Mockery::mock(Video::class);
-        $lecture = Mockery::mock(Lecture::class);
+        $video = Mockery::mock(Video::class)->makePartial();
+        $lecture = Mockery::mock(Lecture::class)->makePartial();
 
         $this->assertTrue($strategy->supports($video));
         $this->assertFalse($strategy->supports($lecture));
@@ -82,8 +82,8 @@ class PointStrategyTest extends TestCase
         $strategy = new ManualBonusStrategy();
         
         $this->assertTrue($strategy->supports(null));
-        $this->assertTrue($strategy->supports(Mockery::mock(Lecture::class)));
-        $this->assertTrue($strategy->supports(Mockery::mock(ExamResult::class)));
+        $this->assertTrue($strategy->supports(Mockery::mock(Lecture::class)->makePartial()));
+        $this->assertTrue($strategy->supports(Mockery::mock(ExamResult::class)->makePartial()));
     }
 
     #[Test]
@@ -91,7 +91,7 @@ class PointStrategyTest extends TestCase
     {
         $strategy = new AttendancePointStrategy();
         $student = Mockery::mock(Student::class);
-        $lecture = Mockery::mock(Lecture::class);
+        $lecture = Mockery::mock(Lecture::class)->makePartial();
         $settings = $this->createSettings(['attendance_points' => 15]);
 
         $points = $strategy->calculate($student, $lecture, $settings);
@@ -105,7 +105,7 @@ class PointStrategyTest extends TestCase
         $strategy = new ExamPointStrategy();
         $student = Mockery::mock(Student::class);
         
-        $examResult = Mockery::mock(ExamResult::class);
+        $examResult = Mockery::mock(ExamResult::class)->makePartial();
         $examResult->percentage = 80;
         
         $settings = $this->createSettings();
@@ -121,7 +121,7 @@ class PointStrategyTest extends TestCase
     {
         $strategy = new VideoPointStrategy();
         $student = Mockery::mock(Student::class);
-        $video = Mockery::mock(Video::class);
+        $video = Mockery::mock(Video::class)->makePartial();
         $settings = $this->createSettings(['video_points' => 20]);
 
         $points = $strategy->calculate($student, $video, $settings);
@@ -169,7 +169,7 @@ class PointStrategyTest extends TestCase
     {
         $strategy = new AttendancePointStrategy();
         
-        $lecture = Mockery::mock(Lecture::class);
+        $lecture = Mockery::mock(Lecture::class)->makePartial();
         $lecture->title = 'Test Lecture';
         
         $description = $strategy->generateDescription($lecture, 10);
@@ -182,10 +182,10 @@ class PointStrategyTest extends TestCase
     {
         $strategy = new ExamPointStrategy();
         
-        $exam = Mockery::mock(\App\Domains\Exams\Models\Exam::class);
+        $exam = Mockery::mock(\App\Domains\Exams\Models\Exam::class)->makePartial();
         $exam->title = 'Final Exam';
         
-        $examResult = Mockery::mock(ExamResult::class);
+        $examResult = Mockery::mock(ExamResult::class)->makePartial();
         $examResult->exam = $exam;
         $examResult->percentage = 95;
         
@@ -230,8 +230,8 @@ class PointStrategyTest extends TestCase
         $calculator->registerStrategy(new AttendancePointStrategy());
         $calculator->registerStrategy(new ExamPointStrategy());
         
-        $lecture = Mockery::mock(Lecture::class);
-        $examResult = Mockery::mock(ExamResult::class);
+        $lecture = Mockery::mock(Lecture::class)->makePartial();
+        $examResult = Mockery::mock(ExamResult::class)->makePartial();
         
         $lectureStrategy = $calculator->findStrategyFor($lecture);
         $examStrategy = $calculator->findStrategyFor($examResult);
@@ -260,7 +260,7 @@ class PointStrategyTest extends TestCase
         $calculator->registerStrategy(new AttendancePointStrategy());
         
         $student = Mockery::mock(Student::class);
-        $lecture = Mockery::mock(Lecture::class);
+        $lecture = Mockery::mock(Lecture::class)->makePartial();
         $settings = $this->createSettings(['attendance_points' => 25]);
         
         $points = $calculator->calculatePoints($student, $lecture, $settings);
@@ -276,9 +276,9 @@ class PointStrategyTest extends TestCase
         $videoStrategy = new VideoPointStrategy();
         $manualStrategy = new ManualBonusStrategy();
         
-        $lecture = Mockery::mock(Lecture::class);
-        $examResult = Mockery::mock(ExamResult::class);
-        $video = Mockery::mock(Video::class);
+        $lecture = Mockery::mock(Lecture::class)->makePartial();
+        $examResult = Mockery::mock(ExamResult::class)->makePartial();
+        $video = Mockery::mock(Video::class)->makePartial();
         
         $this->assertEquals(Lecture::class, $attendanceStrategy->getReferenceType($lecture));
         $this->assertEquals(ExamResult::class, $examStrategy->getReferenceType($examResult));
@@ -294,14 +294,14 @@ class PointStrategyTest extends TestCase
         $videoStrategy = new VideoPointStrategy();
         $manualStrategy = new ManualBonusStrategy();
         
-        $lecture = Mockery::mock(Lecture::class);
-        $lecture->id = 'lecture-123';
+        $lecture = Mockery::mock(Lecture::class)->makePartial();
+        $lecture->shouldReceive('getAttribute')->with('id')->andReturn('lecture-123');
         
-        $examResult = Mockery::mock(ExamResult::class);
-        $examResult->id = 'exam-456';
+        $examResult = Mockery::mock(ExamResult::class)->makePartial();
+        $examResult->shouldReceive('getAttribute')->with('id')->andReturn('exam-456');
         
-        $video = Mockery::mock(Video::class);
-        $video->id = 'video-789';
+        $video = Mockery::mock(Video::class)->makePartial();
+        $video->shouldReceive('getAttribute')->with('id')->andReturn('video-789');
         
         $this->assertEquals('lecture-123', $attendanceStrategy->getReferenceId($lecture));
         $this->assertEquals('exam-456', $examStrategy->getReferenceId($examResult));

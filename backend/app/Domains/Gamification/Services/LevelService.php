@@ -86,7 +86,7 @@ class LevelService
 
         if ($teacherId) {
             $totalPoints = (int) StudentPoint::where('student_id', $student->id)
-                ->where('teacher_id', $teacherId)
+                ->where('teacher_profile_id', $teacherId)
                 ->sum('total_points');
         } else {
             $totalPoints = (int) $student->getTotalPointsAcrossTeachers();
@@ -130,9 +130,9 @@ class LevelService
         }
 
         // Points breakdown per teacher
-        $pointsQuery = StudentPoint::where('student_id', $student->id)->with('teacher:id,name,avatar_key');
+        $pointsQuery = StudentPoint::where('student_id', $student->id)->with('teacher:teachers.id,name,avatar_key');
         if ($teacherId) {
-            $pointsQuery->where('teacher_id', $teacherId);
+            $pointsQuery->where('teacher_profile_id', $teacherId);
         }
         $pointsBreakdown = $pointsQuery->get()
             ->map(fn ($sp) => [

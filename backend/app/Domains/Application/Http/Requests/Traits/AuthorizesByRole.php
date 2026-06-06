@@ -143,13 +143,13 @@ trait AuthorizesByRole
         }
 
         // Check direct teacher ownership
-        if (isset($resource->teacher_id) && $resource->teacher_id === $user->id) {
+        if (isset($resource->teacher_profile_id) && $resource->teacher_profile_id === $user->id) {
             return true;
         }
 
         // Check via secretary relationship
-        if (method_exists($user, 'teachers') && isset($resource->teacher_id)) {
-            return $user->teachers()->where('teachers.id', $resource->teacher_id)->exists();
+        if (method_exists($user, 'teachers') && isset($resource->teacher_profile_id)) {
+            return $user->teachers()->where('teachers.id', $resource->teacher_profile_id)->exists();
         }
 
         return false;

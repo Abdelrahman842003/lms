@@ -26,7 +26,7 @@ class StudentLectureController extends Controller
         
         $lectures = $this->lectureService->getLectures(
             $student,
-            $request->validated('teacher_id'),
+            $request->validated('teacher_profile_id'),
             $perPage
         );
 

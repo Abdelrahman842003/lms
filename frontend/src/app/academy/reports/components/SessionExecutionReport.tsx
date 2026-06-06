@@ -115,6 +115,7 @@ export default function SessionExecutionReport({ data, loading, onPageChange }: 
           itemsPerPage={sessions.pagination.per_page}
           totalItems={sessions.pagination.total}
           currentPage={sessions.pagination.page}
+          totalPages={sessions.pagination.last_page}
           onPageChange={onPageChange}
         />
       </div>

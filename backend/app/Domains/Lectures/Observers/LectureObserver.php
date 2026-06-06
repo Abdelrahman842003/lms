@@ -17,7 +17,16 @@ class LectureObserver
      */
     public function created(Lecture $lecture): void
     {
-        CacheService::forgetLecture($lecture->id, $lecture->teacher_id);
+        $teacherId = null;
+        if ($lecture->teacher_profile_id) {
+            $profile = \App\Domains\Auth\Models\TeacherProfile::find($lecture->teacher_profile_id);
+            if ($profile) {
+                $teacherId = $profile->teacher_id;
+            }
+        }
+        if ($teacherId) {
+            CacheService::forgetLecture($lecture->id, $teacherId);
+        }
         $this->syncLecture($lecture);
     }
 
@@ -26,7 +35,16 @@ class LectureObserver
      */
     public function updated(Lecture $lecture): void
     {
-        CacheService::forgetLecture($lecture->id, $lecture->teacher_id);
+        $teacherId = null;
+        if ($lecture->teacher_profile_id) {
+            $profile = \App\Domains\Auth\Models\TeacherProfile::find($lecture->teacher_profile_id);
+            if ($profile) {
+                $teacherId = $profile->teacher_id;
+            }
+        }
+        if ($teacherId) {
+            CacheService::forgetLecture($lecture->id, $teacherId);
+        }
 
         if ($lecture->wasChanged(['is_recurring', 'recurrence_days', 'recurrence_time', 'duration_minutes', 'start_time', 'end_time'])) {
             $this->syncLecture($lecture);
@@ -38,7 +56,16 @@ class LectureObserver
      */
     public function deleted(Lecture $lecture): void
     {
-        CacheService::forgetLecture($lecture->id, $lecture->teacher_id);
+        $teacherId = null;
+        if ($lecture->teacher_profile_id) {
+            $profile = \App\Domains\Auth\Models\TeacherProfile::find($lecture->teacher_profile_id);
+            if ($profile) {
+                $teacherId = $profile->teacher_id;
+            }
+        }
+        if ($teacherId) {
+            CacheService::forgetLecture($lecture->id, $teacherId);
+        }
         // Note: Delayed jobs will still run but handle() should check if lecture exists
     }
 

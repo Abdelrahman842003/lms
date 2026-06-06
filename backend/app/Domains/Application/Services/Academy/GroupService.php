@@ -35,8 +35,8 @@ class GroupService
                 $q->where('name', $filters['grade_name']);
             });
         })
-        ->when(isset($filters['teacher_id']), function ($query) use ($filters) {
-            $query->where('teacher_id', $filters['teacher_id']);
+        ->when(isset($filters['teacher_profile_id']), function ($query) use ($filters) {
+            $query->where('teacher_profile_id', $filters['teacher_profile_id']);
         })
         ->with(['teacher', 'grade'])
         ->withCount('enrollments')
@@ -55,11 +55,16 @@ class GroupService
             })->firstOrFail();
         /** @var Teacher $teacher */
 
+        // Resolve the teacher's profile for this academy
+        $profile = \App\Domains\Auth\Models\TeacherProfile::where('teacher_id', $teacher->id)
+            ->where('academy_id', $academy->id)
+            ->first();
+
         // If grade_id is provided, verify it belongs to the teacher OR the academy
         if ($data->gradeId) {
             $grade = \App\Domains\Enrollments\Models\Grade::where('id', $data->gradeId)
-                ->where(function ($query) use ($teacher, $academy) {
-                    $query->where('teacher_id', $teacher->id)
+                ->where(function ($query) use ($profile, $academy) {
+                    $query->where('teacher_profile_id', $profile ? $profile->id : null)
                           ->orWhere('academy_id', $academy->id);
                 })->first();
 
@@ -68,11 +73,17 @@ class GroupService
             }
         }
 
-        // Create the group with academy_id
+        // Create the group with academy_id and teacher_profile_id
         $groupData = $data->toArray();
         $groupData['academy_id'] = $academy->id;
+        if ($profile) {
+            $groupData['teacher_profile_id'] = $profile->id;
+        }
 
-        $group = $teacher->groups()->create($groupData);
+        // Unset teacher_id as it's not a database column
+        unset($groupData['teacher_id']);
+
+        $group = Group::create($groupData);
         
         // Load relationships and counts
         $group->load(['teacher', 'grade'])->loadCount('enrollments');
@@ -86,7 +97,7 @@ class GroupService
         if ($data->gradeId && $data->gradeId !== $group->grade_id) {
             $grade = \App\Domains\Enrollments\Models\Grade::where('id', $data->gradeId)
                 ->where(function ($query) use ($group, $academy) {
-                    $query->where('teacher_id', $group->teacher_id)
+                    $query->where('teacher_profile_id', $group->teacher_profile_id)
                           ->orWhere('academy_id', $academy->id);
                 })->first();
 
@@ -95,7 +106,10 @@ class GroupService
             }
         }
 
-        $group->update($data->toArray());
+        $groupData = $data->toArray();
+        unset($groupData['teacher_id']);
+
+        $group->update($groupData);
 
         return $group;
     }

@@ -18,7 +18,8 @@ class UpdateAcademyQuestionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'teacher_id' => ['sometimes', 'uuid', 'exists:teachers,id'],
+            'teacher_id' => ['sometimes', 'exists:teachers,id'],
+            'teacher_profile_id' => ['sometimes', 'exists:teacher_profiles,id'],
             'grade_id' => ['sometimes', 'uuid', 'exists:grades,id'],
             'subject' => ['sometimes', 'string', 'max:255'],
             'text' => ['sometimes', 'string'],
@@ -30,5 +31,10 @@ class UpdateAcademyQuestionRequest extends FormRequest
             'tags' => ['nullable', 'array'],
             'tags.*' => ['string'],
         ];
+    }
+
+    public function prepareForValidation(): void
+    {
+        $this->merge(\App\Domains\Application\Traits\ResolvesTeacher::resolveTeacherInput($this));
     }
 }

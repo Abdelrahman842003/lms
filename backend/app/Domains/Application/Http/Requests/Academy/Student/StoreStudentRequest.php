@@ -50,7 +50,8 @@ class StoreStudentRequest extends BaseAuthorizedRequest
             'phone' => ['nullable', 'string', 'max:20'],
             'parent_phone' => ['nullable', 'string', 'max:20'],
             'password' => ['nullable', 'string', 'min:6'],
-            'teacher_id' => ['required', 'exists:teachers,id'],
+            'teacher_id' => ['required_without:teacher_profile_id', 'exists:teachers,id'],
+            'teacher_profile_id' => ['required_without:teacher_id', 'exists:teacher_profiles,id'],
             'grade_id' => ['nullable', 'exists:grades,id'],
             'group_id' => ['nullable', 'exists:groups,id'],
             'gender' => ['nullable', 'in:male,female'],
@@ -68,11 +69,18 @@ class StoreStudentRequest extends BaseAuthorizedRequest
     {
         return [
             'name.required' => 'اسم الطالب مطلوب',
-            'teacher_id.required' => 'المدرس مطلوب',
+            'teacher_id.required_without' => 'المدرس مطلوب',
             'teacher_id.exists' => 'المدرس المختار غير موجود',
+            'teacher_profile_id.required_without' => 'المدرس مطلوب',
+            'teacher_profile_id.exists' => 'المدرس المختار غير موجود',
             'grade_id.exists' => 'الصف الدراسي المختار غير موجود',
             'group_id.exists' => 'المجموعة المختارة غير موجودة',
             'password.min' => 'كلمة المرور يجب أن تكون 6 أحرف على الأقل',
         ];
+    }
+
+    public function prepareForValidation(): void
+    {
+        $this->merge(\App\Domains\Application\Traits\ResolvesTeacher::resolveTeacherInput($this));
     }
 }

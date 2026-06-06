@@ -4,76 +4,75 @@ declare(strict_types=1);
 
 namespace App\Domains\Exams\Policies;
 
-use App\Domains\Auth\Models\Secretary;
-use App\Domains\Auth\Models\Teacher;
+use App\Domains\Application\Policies\BasePolicy;
 use App\Domains\Exams\Models\Exam;
+use Illuminate\Database\Eloquent\Model;
 
 /**
  * Authorization policy for Exam model.
  *
  * Centralizes authorization logic for exam CRUD, results viewing, and copying.
- * Supports both Teacher and Secretary users via resolveTeacher().
+ * Supports Teacher, Secretary, and Academy users.
  */
-class ExamPolicy
+class ExamPolicy extends BasePolicy
 {
-    /**
-     * Resolve the effective teacher from the user.
-     */
-    private function resolveTeacher(Teacher|Secretary $user): ?Teacher
+    protected function getResourceName(): string
     {
-        if ($user instanceof Teacher) {
-            return $user;
-        }
-
-        if ($user instanceof Secretary) {
-            return $user->teachers()->first();
-        }
-
-        return null;
+        return 'exams';
     }
 
     /**
      * Determine whether the user can view the exam.
      */
-    public function view(Teacher|Secretary $user, Exam $exam): bool
+    public function view($user, Model $model): bool
     {
+        if (!$model instanceof Exam) {
+            return false;
+        }
         $teacher = $this->resolveTeacher($user);
-        return $teacher && $exam->teacher_id === $teacher->id;
+        return $teacher && $this->ownsProfileResource($teacher, $model->teacher_profile_id);
     }
 
     /**
      * Determine whether the user can update the exam.
      */
-    public function update(Teacher|Secretary $user, Exam $exam): bool
+    public function update($user, Model $model): bool
     {
+        if (!$model instanceof Exam) {
+            return false;
+        }
         $teacher = $this->resolveTeacher($user);
-        return $teacher && $exam->teacher_id === $teacher->id;
+        return $teacher && $this->ownsProfileResource($teacher, $model->teacher_profile_id);
     }
 
     /**
      * Determine whether the user can delete the exam.
      */
-    public function delete(Teacher|Secretary $user, Exam $exam): bool
+    public function delete($user, Model $model): bool
     {
+        if (!$model instanceof Exam) {
+            return false;
+        }
         $teacher = $this->resolveTeacher($user);
-        return $teacher && $exam->teacher_id === $teacher->id;
+        return $teacher && $this->ownsProfileResource($teacher, $model->teacher_profile_id);
     }
 
     /**
      * Determine whether the user can view exam results.
      */
-    public function viewResults(Teacher|Secretary $user, Exam $exam): bool
+    public function viewResults($user, Exam $exam): bool
     {
         $teacher = $this->resolveTeacher($user);
-        return $teacher && $exam->teacher_id === $teacher->id;
+        return $teacher && $this->ownsProfileResource($teacher, $exam->teacher_profile_id);
     }
 
     /**
      * Determine whether the user can copy the exam.
      */
-    public function copy(Teacher|Secretary $user, Exam $exam): bool
+    public function copy($user, Exam $exam): bool
     {
         $teacher = $this->resolveTeacher($user);
-        return $teacher && $exam->teacher_id === $teacher->id;
+        return $teacher && $this->ownsProfileResource($teacher, $exam->teacher_profile_id);
     }
 }
+

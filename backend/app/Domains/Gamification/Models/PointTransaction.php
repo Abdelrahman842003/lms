@@ -6,7 +6,8 @@ namespace App\Domains\Gamification\Models;
 
 use App\Domains\Gamification\Enums\PointTransactionType;
 use App\Domains\Auth\Models\Student;
-use App\Domains\Auth\Models\Teacher;
+use App\Domains\Auth\Models\TeacherProfile;
+use App\Domains\Support\Traits\UsesTeacherProfileScope;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,7 +15,7 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class PointTransaction extends Model
 {
-    use HasUuids;
+    use HasUuids, UsesTeacherProfileScope;
 
     // Keep constants for backward compatibility
     const TYPE_ATTENDANCE = 'attendance';
@@ -26,6 +27,7 @@ class PointTransaction extends Model
     const TYPE_STREAK_10 = 'streak_10';
     const TYPE_MANUAL_BONUS = 'manual_bonus';
     // Video constants
+    const TYPE_VIDEO             = 'video_watched'; // For backward compatibility
     const TYPE_VIDEO_WATCHED     = 'video_watched';
     const TYPE_VIDEO_QUIZ_PASSED  = 'video_quiz_passed';
     const TYPE_VIDEO_QUIZ_PERFECT = 'video_quiz_perfect';
@@ -33,7 +35,7 @@ class PointTransaction extends Model
 
     protected $fillable = [
         'student_id',
-        'teacher_id',
+        'teacher_profile_id',
         'type',
         'points',
         'reference_type',
@@ -86,10 +88,7 @@ class PointTransaction extends Model
         return $this->belongsTo(Student::class);
     }
 
-    public function teacher(): BelongsTo
-    {
-        return $this->belongsTo(Teacher::class);
-    }
+    // The teacherProfile relation is provided by the UsesTeacherProfileScope trait.
 
     public function reference(): MorphTo
     {

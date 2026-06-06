@@ -6,7 +6,6 @@ use Illuminate\Database\Seeder;
 use App\Domains\Auth\Models\Academy;
 use App\Domains\Auth\Models\Secretary;
 use App\Domains\Auth\Models\Teacher;
-use App\Domains\Application\Models\TeacherAttendanceLog;
 use App\Domains\Notifications\Models\AcademyNotification;
 use Illuminate\Support\Facades\Hash;
 use Carbon\Carbon;
@@ -96,46 +95,7 @@ class NajahAcademySeeder extends Seeder
 
         $this->command->info('Created/Linked 2 secretaries');
 
-        // 4. Create Attendance Logs (Past 7 days)
-        $this->command->info('Generating attendance logs...');
-        foreach ($teachers as $teacher) {
-            for ($i = 0; $i < 7; $i++) {
-                $date = Carbon::today()->subDays($i);
-                
-                if (TeacherAttendanceLog::forAcademy($academy->id)
-                    ->forTeacher($teacher->id)
-                    ->whereDate('date', $date)
-                    ->exists()) {
-                    continue;
-                }
 
-                // Random attendance pattern
-                $rand = rand(1, 10);
-                if ($rand <= 7) { // 70% present
-                    $checkIn = $date->copy()->setTime(rand(8, 10), rand(0, 59));
-                    $checkOut = $date->copy()->setTime(rand(14, 16), rand(0, 59));
-                    
-                    TeacherAttendanceLog::create([
-                        'academy_id' => $academy->id,
-                        'teacher_id' => $teacher->id,
-                        'date' => $date,
-                        'checked_in_at' => $checkIn,
-                        'checked_out_at' => $checkOut,
-                        'status' => 'checked_out',
-                        'notes' => 'حضور منتظم',
-                    ]);
-                } elseif ($rand <= 9) { // 20% absent
-                    TeacherAttendanceLog::create([
-                        'academy_id' => $academy->id,
-                        'teacher_id' => $teacher->id,
-                        'date' => $date,
-                        'status' => 'absent',
-                        'notes' => 'غياب بدون عذر',
-                    ]);
-                }
-                // 10% no record (weekend or day off)
-            }
-        }
 
         // 5. Create Notifications
         $this->command->info('Creating notifications...');

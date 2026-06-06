@@ -6,6 +6,7 @@ namespace App\Domains\Application\Services;
 
 use App\Domains\Auth\Models\Student;
 use App\Domains\Auth\Models\Teacher;
+use App\Domains\Auth\Models\TeacherProfile;
 use App\Domains\Auth\Models\Academy;
 use App\Domains\Auth\Models\Guardian;
 use Illuminate\Support\Facades\DB;
@@ -21,7 +22,13 @@ class SyncService
         $result = [];
 
         if ($user instanceof Teacher) {
-            $result = $this->pullForTeacher($user, $sinceData);
+            $profile = app()->bound('currentProfile') ? app('currentProfile') : null;
+            if (!$profile) {
+                $profile = $user->profiles()->where('type', 'independent')->first();
+            }
+            if ($profile) {
+                $result = $this->pullForTeacher($profile, $sinceData);
+            }
         } elseif ($user instanceof Student) {
             $result = $this->pullForStudent($user, $sinceData);
         } elseif ($user instanceof Academy) {
@@ -33,13 +40,13 @@ class SyncService
         return $result;
     }
 
-    private function pullForTeacher(Teacher $teacher, array $sinceData): array
+    private function pullForTeacher(TeacherProfile $profile, array $sinceData): array
     {
         $results = [];
 
         // 1. Grades
         $since = isset($sinceData['grades']) ? Carbon::parse($sinceData['grades']) : null;
-        $query = DB::table('grades')->where('teacher_id', $teacher->id);
+        $query = DB::table('grades')->where('teacher_profile_id', $profile->id);
         if ($since) {
             $query->where('updated_at', '>', $since);
         }
@@ -47,7 +54,7 @@ class SyncService
 
         // 2. Groups
         $since = isset($sinceData['groups']) ? Carbon::parse($sinceData['groups']) : null;
-        $query = DB::table('groups')->where('teacher_id', $teacher->id);
+        $query = DB::table('groups')->where('teacher_profile_id', $profile->id);
         if ($since) {
             $query->where('updated_at', '>', $since);
         }
@@ -55,7 +62,7 @@ class SyncService
 
         // 3. Lectures
         $since = isset($sinceData['lectures']) ? Carbon::parse($sinceData['lectures']) : null;
-        $query = DB::table('lectures')->where('teacher_id', $teacher->id);
+        $query = DB::table('lectures')->where('teacher_profile_id', $profile->id);
         if ($since) {
             $query->where('updated_at', '>', $since);
         }
@@ -63,7 +70,7 @@ class SyncService
 
         // 4. Exams
         $since = isset($sinceData['exams']) ? Carbon::parse($sinceData['exams']) : null;
-        $query = DB::table('exams')->where('teacher_id', $teacher->id);
+        $query = DB::table('exams')->where('teacher_profile_id', $profile->id);
         if ($since) {
             $query->where('updated_at', '>', $since);
         }
@@ -71,7 +78,7 @@ class SyncService
 
         // 5. Notes
         $since = isset($sinceData['notes']) ? Carbon::parse($sinceData['notes']) : null;
-        $query = DB::table('notes')->where('teacher_id', $teacher->id);
+        $query = DB::table('notes')->where('teacher_profile_id', $profile->id);
         if ($since) {
             $query->where('updated_at', '>', $since);
         }
@@ -81,7 +88,7 @@ class SyncService
         $since = isset($sinceData['students']) ? Carbon::parse($sinceData['students']) : null;
         $query = DB::table('students')
             ->join('enrollments', 'students.id', '=', 'enrollments.student_id')
-            ->where('enrollments.teacher_id', $teacher->id)
+            ->where('enrollments.teacher_profile_id', $profile->id)
             ->select('students.*', 'enrollments.grade_id', 'enrollments.group_id', 'enrollments.is_active');
         if ($since) {
             $query->where('students.updated_at', '>', $since);
@@ -98,9 +105,10 @@ class SyncService
         // 1. studentTeachers
         $since = isset($sinceData['studentTeachers']) ? Carbon::parse($sinceData['studentTeachers']) : null;
         $query = DB::table('teachers')
-            ->join('enrollments', 'teachers.id', '=', 'enrollments.teacher_id')
+            ->join('teacher_profiles', 'teachers.id', '=', 'teacher_profiles.teacher_id')
+            ->join('enrollments', 'teacher_profiles.id', '=', 'enrollments.teacher_profile_id')
             ->where('enrollments.student_id', $student->id)
-            ->select('teachers.id', 'teachers.name', 'teachers.subject');
+            ->select('teacher_profiles.id', 'teachers.name', 'teachers.subject');
         if ($since) {
             $query->where('teachers.updated_at', '>', $since);
         }
@@ -150,7 +158,8 @@ class SyncService
         // 1. academyTeachers
         $since = isset($sinceData['academyTeachers']) ? Carbon::parse($sinceData['academyTeachers']) : null;
         $query = DB::table('teachers')
-            ->join('academy_teacher', 'teachers.id', '=', 'academy_teacher.teacher_id')
+            ->join('teacher_profiles', 'teachers.id', '=', 'teacher_profiles.teacher_id')
+            ->join('academy_teacher', 'teacher_profiles.id', '=', 'academy_teacher.teacher_profile_id')
             ->where('academy_teacher.academy_id', $academy->id)
             ->select('teachers.*');
         if ($since) {

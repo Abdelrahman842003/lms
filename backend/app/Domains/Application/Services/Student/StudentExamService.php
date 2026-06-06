@@ -81,9 +81,9 @@ class StudentExamService
     /**
      * Get exams for a student and teacher
      */
-    public function getExams(Student $student, string $teacherId, int $perPage = 10): \Illuminate\Contracts\Pagination\LengthAwarePaginator
+    public function getExams(Student $student, string $teacherProfileId, int $perPage = 10): \Illuminate\Contracts\Pagination\LengthAwarePaginator
     {
-        $query = Exam::where('teacher_id', $teacherId)
+        $query = Exam::where('teacher_profile_id', $teacherProfileId)
             ->with(['results' => function ($q) use ($student) {
                 $q->where('student_id', $student->id);
             }])

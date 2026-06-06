@@ -20,7 +20,7 @@ final readonly class TeacherIncomeTrendBuilder
         private TrendCalculationService $trendService,
     ) {}
 
-    public function build(Teacher $teacher, TeacherScope $scope, TeacherReportFilters $filters): array
+    public function build($teacher, TeacherScope $scope, TeacherReportFilters $filters): array
     {
         $period = $filters->base->period;
         $months = 12; // Default fallback

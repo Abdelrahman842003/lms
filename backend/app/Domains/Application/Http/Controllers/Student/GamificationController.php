@@ -26,12 +26,12 @@ class GamificationController extends Controller
         $student = $request->user();
 
         $points = StudentPoint::where('student_id', $student->id)
-            ->with('teacher:id,name,avatar_key')
+            ->with('teacher:teachers.id,name,avatar_key')
             ->get()
             ->map(function ($point) {
-                $stats = $this->pointService->getStudentStats($point->student_id, $point->teacher_id);
+                $stats = $this->pointService->getStudentStats($point->student_id, $point->teacher_profile_id);
                 return [
-                    'teacher_id' => $point->teacher_id,
+                    'teacher_profile_id' => $point->teacher_profile_id,
                     'teacher' => $point->teacher,
                     'total_points' => $point->total_points,
                     'weekly_points' => $stats['weekly_points'],
@@ -46,12 +46,12 @@ class GamificationController extends Controller
     /**
      * Get student's points for a specific teacher
      */
-    public function show(Request $request, string $teacherId): JsonResponse
+    public function show(Request $request, string $teacherProfileId): JsonResponse
     {
         $student = $request->user();
-        $stats = $this->pointService->getStudentStats($student->id, $teacherId);
+        $stats = $this->pointService->getStudentStats($student->id, $teacherProfileId);
         
-        $settings = GamificationSetting::getOrCreate($teacherId);
+        $settings = GamificationSetting::getOrCreate($teacherProfileId);
 
         return $this->successResponse([
             'total_points' => $stats['total_points'],
@@ -65,12 +65,12 @@ class GamificationController extends Controller
     /**
      * Get student's point transaction history
      */
-    public function history(Request $request, string $teacherId): JsonResponse
+    public function history(Request $request, string $teacherProfileId): JsonResponse
     {
         $student = $request->user();
 
         $transactions = PointTransaction::where('student_id', $student->id)
-            ->where('teacher_id', $teacherId)
+            ->where('teacher_profile_id', $teacherProfileId)
             ->orderByDesc('created_at')
             ->paginate(20);
 
@@ -80,10 +80,10 @@ class GamificationController extends Controller
     /**
      * Get weekly leaderboard for a teacher
      */
-    public function leaderboard(Request $request, string $teacherId): JsonResponse
+    public function leaderboard(Request $request, string $teacherProfileId): JsonResponse
     {
         $student = $request->user();
-        $settings = GamificationSetting::getOrCreate($teacherId);
+        $settings = GamificationSetting::getOrCreate($teacherProfileId);
 
         if (!$settings->show_leaderboard) {
             return $this->errorResponse('لوحة الشرف غير متاحة', 403);
@@ -91,10 +91,10 @@ class GamificationController extends Controller
 
         $limit = 5;
 
-        $weeklyLeaderboard = $this->pointService->getWeeklyLeaderboard($teacherId, $limit);
-        $allTimeLeaderboard = $this->pointService->getAllTimeLeaderboard($teacherId, $limit);
+        $weeklyLeaderboard = $this->pointService->getWeeklyLeaderboard($teacherProfileId, $limit);
+        $allTimeLeaderboard = $this->pointService->getAllTimeLeaderboard($teacherProfileId, $limit);
         
-        $myStats = $this->pointService->getStudentStats($student->id, $teacherId);
+        $myStats = $this->pointService->getStudentStats($student->id, $teacherProfileId);
 
         return $this->successResponse([
             'weekly' => $weeklyLeaderboard,

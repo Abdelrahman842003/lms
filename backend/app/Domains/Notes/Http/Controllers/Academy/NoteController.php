@@ -46,10 +46,19 @@ class NoteController extends Controller
         ]);
 
         $academyId = $this->resolveAcademyId($request);
+        $teacherId = $request->input('teacher_id');
+
+        $profile = \App\Domains\Auth\Models\TeacherProfile::where('teacher_id', $teacherId)
+            ->where('academy_id', $academyId)
+            ->first();
+
+        if (!$profile) {
+            return $this->errorResponse('المدرس غير مرتبط بهذه الأكاديمية', 400);
+        }
 
         $payload = $this->noteService->initiateNote([
             'academy_id' => $academyId,
-            'teacher_id' => $request->input('teacher_id'),
+            'teacher_profile_id' => $profile->id,
             'grade_id' => $request->input('grade_id'),
             'title' => $request->input('title'),
             'description' => $request->input('description'),

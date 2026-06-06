@@ -105,7 +105,8 @@ final class AcademySessionQueries
                 $period->startAt->toDateTimeString(),
                 $period->endAt->toDateTimeString(),
             ])
-            ->join('teachers', 'lectures.teacher_id', '=', 'teachers.id')
+            ->join('teacher_profiles', 'lectures.teacher_profile_id', '=', 'teacher_profiles.id')
+            ->join('teachers', 'teacher_profiles.teacher_id', '=', 'teachers.id')
             ->leftJoin('groups', 'lectures.group_id', '=', 'groups.id');
 
         if ($filters) {
@@ -138,7 +139,12 @@ final class AcademySessionQueries
     private function applyFilters($query, AcademyReportFilters $filters)
     {
         return $query
-            ->when($filters->teacherId, fn ($q) => $q->where('teacher_id', $filters->teacherId))
+            ->when($filters->teacherId, function ($q) use ($filters) {
+                if (!$this->isJoined($q, 'teacher_profiles')) {
+                    $q->join('teacher_profiles', 'lectures.teacher_profile_id', '=', 'teacher_profiles.id');
+                }
+                $q->where('teacher_profiles.teacher_id', $filters->teacherId);
+            })
             ->when($filters->groupId, fn ($q) => $q->where('group_id', $filters->groupId))
             ->when($filters->gradeId, fn ($q) => $q->where('grade_id', $filters->gradeId))
             ->when($filters->sessionStatus, function ($q) use ($filters) {
@@ -146,5 +152,16 @@ final class AcademySessionQueries
                  if ($filters->sessionStatus === 'cancelled') return $q->where('is_active', false);
                  return $q;
             });
+    }
+
+    private function isJoined($query, string $table): bool
+    {
+        $joins = $query->getQuery()->joins ?? [];
+        foreach ($joins as $join) {
+            if ($join->table === $table) {
+                return true;
+            }
+        }
+        return false;
     }
 }

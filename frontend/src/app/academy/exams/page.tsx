@@ -105,10 +105,36 @@ export default function AcademyExamsPage() {
         search: searchQuery,
         teacher_id: selectedTeacherId || undefined
       });
-      setExams(response.data);
-      setTotalPages(response.meta.last_page);
-      setTotalItems(response.meta.total);
-      setCurrentPage(response.meta.current_page);
+      let examsList = [];
+      let lastPage = 1;
+      let total = 0;
+      let currentPageNum = 1;
+
+      if (response) {
+        if (response.data && Array.isArray(response.data)) {
+          examsList = response.data;
+          if (response.meta) {
+            lastPage = response.meta.last_page || 1;
+            total = response.meta.total || 0;
+            currentPageNum = response.meta.current_page || 1;
+          }
+        } else if (response.data?.data && Array.isArray(response.data.data)) {
+          examsList = response.data.data;
+          const meta = response.data.meta || response.meta;
+          if (meta) {
+            lastPage = meta.last_page || 1;
+            total = meta.total || 0;
+            currentPageNum = meta.current_page || 1;
+          }
+        } else if (Array.isArray(response)) {
+          examsList = response;
+        }
+      }
+
+      setExams(examsList);
+      setTotalPages(lastPage);
+      setTotalItems(total);
+      setCurrentPage(currentPageNum);
     } catch (error) {
       console.error('Error fetching exams:', error);
       toast.error('حدث خطأ أثناء تحميل الامتحانات');

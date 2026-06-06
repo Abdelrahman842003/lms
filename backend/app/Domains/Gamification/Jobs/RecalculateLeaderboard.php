@@ -41,7 +41,7 @@ class RecalculateLeaderboard implements ShouldQueue
     {
         $size = $setting->leaderboard_size ?? 5;
 
-        $leaderboard = StudentPoint::where('teacher_id', $setting->teacher_id)
+        $leaderboard = StudentPoint::where('teacher_profile_id', $setting->teacher_profile_id)
             ->orderByDesc('total_points')
             ->limit($size)
             ->with('student:id,name')
@@ -56,7 +56,7 @@ class RecalculateLeaderboard implements ShouldQueue
             ->all();
 
         Cache::put(
-            "leaderboard.teacher.{$setting->teacher_id}",
+            "leaderboard.teacher.{$setting->teacher_profile_id}",
             $leaderboard,
             now()->addMinutes(65),
         );

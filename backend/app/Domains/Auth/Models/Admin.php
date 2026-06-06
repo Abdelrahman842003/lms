@@ -58,4 +58,9 @@ class Admin extends Authenticatable implements FilamentUser
     {
         return true;
     }
+
+    public function receivesBroadcastNotificationsOn(): string
+    {
+        return 'notifications.admin.' . $this->id;
+    }
 }

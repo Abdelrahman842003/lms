@@ -43,7 +43,7 @@ class LectureSessionPolicy extends BasePolicy
         // Teacher/Secretary can view sessions for their lectures
         $teacher = $this->resolveTeacher($user);
         if ($teacher && $model->lecture) {
-            return $model->lecture->teacher_id === $teacher->id;
+            return $this->ownsProfileResource($teacher, $model->lecture->teacher_profile_id);
         }
 
         // Academy can view sessions for their lectures
@@ -78,7 +78,7 @@ class LectureSessionPolicy extends BasePolicy
         // Teacher/Secretary can update sessions for their lectures
         $teacher = $this->resolveTeacher($user);
         if ($teacher && $model->lecture) {
-            return $model->lecture->teacher_id === $teacher->id;
+            return $this->ownsProfileResource($teacher, $model->lecture->teacher_profile_id);
         }
 
         // Academy can update sessions for their lectures

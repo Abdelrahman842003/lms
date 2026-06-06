@@ -11,49 +11,49 @@ use Carbon\CarbonImmutable;
 
 final class TeacherStudentQueryService
 {
-    public function totalLinkedStudents(Teacher $teacher, TeacherReportFilters $filters): int
+    public function totalLinkedStudents($teacher, TeacherReportFilters $filters): int
     {
-        $query = Enrollment::where('teacher_id', $teacher->id)
-            ->where('created_at', '<=', $filters->base->period->endAt);
+        $query = $teacher->enrollments()
+            ->where('enrollments.created_at', '<=', $filters->base->period->endAt);
 
         $query = $this->applyFilters($query, $filters);
 
         return $query->count();
     }
 
-    public function activeStudentsCount(Teacher $teacher, TeacherReportFilters $filters): int
+    public function activeStudentsCount($teacher, TeacherReportFilters $filters): int
     {
-        $query = Enrollment::where('teacher_id', $teacher->id)
+        $query = $teacher->enrollments()
             ->where('is_active', true)
-            ->where('created_at', '<=', $filters->base->period->endAt);
+            ->where('enrollments.created_at', '<=', $filters->base->period->endAt);
 
         $query = $this->applyFilters($query, $filters);
 
         return $query->count();
     }
 
-    public function inactiveStudentsCount(Teacher $teacher, TeacherReportFilters $filters): int
+    public function inactiveStudentsCount($teacher, TeacherReportFilters $filters): int
     {
-        $query = Enrollment::where('teacher_id', $teacher->id)
+        $query = $teacher->enrollments()
             ->where('is_active', false)
-            ->where('created_at', '<=', $filters->base->period->endAt);
+            ->where('enrollments.created_at', '<=', $filters->base->period->endAt);
 
         $query = $this->applyFilters($query, $filters);
 
         return $query->count();
     }
 
-    public function newStudentsInPeriod(Teacher $teacher, TeacherReportFilters $filters): int
+    public function newStudentsInPeriod($teacher, TeacherReportFilters $filters): int
     {
-        $query = Enrollment::where('teacher_id', $teacher->id)
-            ->whereBetween('created_at', [$filters->base->period->startAt, $filters->base->period->endAt]);
+        $query = $teacher->enrollments()
+            ->whereBetween('enrollments.created_at', [$filters->base->period->startAt, $filters->base->period->endAt]);
 
         $query = $this->applyFilters($query, $filters);
 
         return $query->count();
     }
 
-    public function monthlyStudentActivityTrend(Teacher $teacher, TeacherReportFilters $filters, int $months = 12): array
+    public function monthlyStudentActivityTrend($teacher, TeacherReportFilters $filters, int $months = 12): array
     {
         $series = [];
         $current = CarbonImmutable::now()->subMonthsNoOverflow($months - 1)->startOfMonth();
@@ -62,9 +62,9 @@ final class TeacherStudentQueryService
             $monthStart = $current->addMonthsNoOverflow($i);
             $monthEnd = $monthStart->endOfMonth();
 
-            $query = Enrollment::where('teacher_id', $teacher->id)
+            $query = $teacher->enrollments()
                 ->where('is_active', true)
-                ->where('created_at', '<=', $monthEnd);
+                ->where('enrollments.created_at', '<=', $monthEnd);
             
             $query = $this->applyFilters($query, $filters);
 

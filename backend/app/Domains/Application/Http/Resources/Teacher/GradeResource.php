@@ -17,7 +17,8 @@ class GradeResource extends JsonResource
             'price' => (float) $this->price,
             'groups_count' => (int) ($this->groups_count ?? 0),
             'students_count' => (int) ($this->enrollments_count ?? 0),
-            'teacher_id' => $this->teacher_id,
+            'teacher_profile_id' => $this->teacher_profile_id,
+            'teacher_id' => $this->teacher_profile_id,
             'teacher' => $this->whenLoaded('teacher', fn() => [
                 'id' => $this->teacher->id,
                 'name' => $this->teacher->name,

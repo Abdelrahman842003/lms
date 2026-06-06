@@ -6,6 +6,7 @@ namespace App\Domains\Media\Services;
 
 use App\Domains\Application\Exceptions\DomainException;
 use App\Domains\Auth\Models\Academy;
+use App\Domains\Auth\Models\Admin;
 use App\Domains\Auth\Models\Guardian;
 use App\Domains\Auth\Models\Secretary;
 use App\Domains\Auth\Models\Student;
@@ -23,20 +24,29 @@ class AvatarService
 
     private function getImageKeyColumn(string $type): string
     {
-        return $type === 'academy' ? 'logo_key' : 'avatar_key';
+        if ($type === 'academy') {
+            return 'logo_key';
+        }
+
+        return 'avatar_key';
     }
 
     /**
      * Upload avatar for a user
      *
-     * @param mixed        $user (Teacher|Student|Secretary|Guardian)
-     * @param string       $type (teacher|student|secretary|parent)
+     * @param mixed        $user (Teacher|Student|Secretary|Guardian|Admin)
+     * @param string       $type (teacher|student|secretary|parent|admin)
      * @param UploadedFile $file
      * @return array
      */
     public function uploadAvatar($user, string $type, UploadedFile $file): array
     {
         $imageKeyColumn = $this->getImageKeyColumn($type);
+
+        // Check if the user model actually has this column
+        if (!array_key_exists($imageKeyColumn, $user->getAttributes()) && !in_array($imageKeyColumn, $user->getFillable())) {
+             throw new DomainException('User type does not support avatars');
+        }
 
         // Delete old avatar if exists
         if ($user->{$imageKeyColumn}) {
@@ -66,8 +76,8 @@ class AvatarService
     /**
      * Delete avatar for a user
      *
-     * @param mixed  $user (Teacher|Student|Secretary|Guardian)
-     * @param string $type (teacher|student|secretary|parent)
+     * @param mixed  $user (Teacher|Student|Secretary|Guardian|Admin)
+     * @param string $type (teacher|student|secretary|parent|admin)
      * @return bool
      */
     public function deleteAvatar($user, string $type): bool
@@ -93,13 +103,22 @@ class AvatarService
     /**
      * Get avatar URL for a user
      *
-     * @param mixed  $user (Teacher|Student|Secretary|Guardian)
-     * @param string $type (teacher|student|secretary|parent)
+     * @param mixed  $user (Teacher|Student|Secretary|Guardian|Admin)
+     * @param string $type (teacher|student|secretary|parent|admin)
      * @return string|null
      */
     public function getAvatarUrl($user, string $type): ?string
     {
         $imageKeyColumn = $this->getImageKeyColumn($type);
+
+        // Check if attribute exists on the model
+        try {
+            if (!isset($user->{$imageKeyColumn})) {
+                return null;
+            }
+        } catch (\Exception $e) {
+            return null;
+        }
 
         if (!$user->{$imageKeyColumn}) {
             return null;
@@ -127,6 +146,8 @@ class AvatarService
             return 'parent';
         } elseif ($user instanceof Academy) {
             return 'academy';
+        } elseif ($user instanceof Admin) {
+            return 'admin';
         }
 
         throw new DomainException('Invalid user type');

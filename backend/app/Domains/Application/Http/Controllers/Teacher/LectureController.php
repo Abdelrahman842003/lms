@@ -30,7 +30,7 @@ class LectureController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
         $perPage = (int) $request->input('per_page', 10);
         $filters = $request->only(['search', 'date_from', 'date_to', 'group_id', 'status']);
         $academyId = $request->header('X-Academy-Id') ?? $request->input('academy_id');
@@ -46,14 +46,14 @@ class LectureController extends Controller
     public function store(StoreLectureRequest $request): JsonResponse
     {
         try {
-            $teacher = $this->getTeacherFromRequest($request);
+            $teacher = $this->getProfileFromRequest($request);
             $academyId = $request->header('X-Academy-Id') ?? $request->input('academy_id');
             
             $resolvedAcademyId = null;
             if ($academyId && $academyId !== 'independent') {
                 // Check if teacher belongs to this academy using pivot
                 $teacherBelongsToAcademy = \Illuminate\Support\Facades\DB::table('academy_teacher')
-                    ->where('teacher_id', $teacher->id)
+                    ->where('teacher_profile_id', $teacher->id)
                     ->where('academy_id', $academyId)
                     ->where('is_active', true)
                     ->exists();

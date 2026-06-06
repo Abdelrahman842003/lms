@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Application\Services\Teacher;
 
 use App\Domains\Auth\Models\Teacher;
+use App\Domains\Auth\Models\TeacherProfile;
 use App\Domains\Application\Services\CacheService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
@@ -24,13 +25,13 @@ class DashboardService
         return $query->where('academy_id', $academyId);
     }
 
-    public function getStats(Teacher $teacher, ?string $academyId): array
+    public function getStats(TeacherProfile $teacher, ?string $academyId): array
     {
 
         return CacheService::getTeacherDashboardStats($teacher->id, function () use ($teacher, $academyId) {
             // Get total students
             $enrollmentsQuery = \App\Domains\Enrollments\Models\Enrollment::query()
-                ->where('teacher_id', $teacher->id)
+                ->where('teacher_profile_id', $teacher->id)
                 ->where('is_active', true);
             $this->applyContextFilter($enrollmentsQuery, $academyId);
             $totalStudents = (clone $enrollmentsQuery)
@@ -47,7 +48,7 @@ class DashboardService
             $totalGroups = $groupsQuery->count();
 
             // Get total exams
-            $examsQuery = \App\Domains\Exams\Models\Exam::where('teacher_id', $teacher->id);
+            $examsQuery = \App\Domains\Exams\Models\Exam::where('teacher_profile_id', $teacher->id);
             $this->applyContextFilter($examsQuery, $academyId);
             $totalExams = $examsQuery->count();
 
@@ -100,16 +101,16 @@ class DashboardService
         }, $academyId);
     }
 
-    public function getRecentStudents(Teacher $teacher, ?string $academyId, int $limit = 5): Collection
+    public function getRecentStudents(TeacherProfile $teacher, ?string $academyId, int $limit = 5): Collection
     {
-        $query = \App\Domains\Enrollments\Models\Enrollment::where('teacher_id', $teacher->id)
+        $query = \App\Domains\Enrollments\Models\Enrollment::where('teacher_profile_id', $teacher->id)
             ->with([
                 'student:id,name,phone,avatar_key',
                 'grade:id,name',
                 'group:id,name',
                 'academy:id',
                 'academy.tenantPlan',
-                'teacher:id',
+                'teacher',
                 'teacher.tenantPlan',
             ]);
 
@@ -122,7 +123,7 @@ class DashboardService
         return $enrollments;
     }
 
-    public function getUpcomingLectures(Teacher $teacher, ?string $academyId, int $limit = 4): Collection
+    public function getUpcomingLectures(TeacherProfile $teacher, ?string $academyId, int $limit = 4): Collection
     {
         $query = $teacher->lectures()
             ->where('start_time', '>', now())
@@ -155,8 +156,9 @@ class DashboardService
             });
     }
 
-    public function getTeacherAcademies(Teacher $teacher): Collection
+    public function getTeacherAcademies(TeacherProfile $profile): Collection
     {
+        $teacher = $profile->teacher;
         $academies = $teacher->academies()
             ->withPivot(['is_active'])
             ->get()

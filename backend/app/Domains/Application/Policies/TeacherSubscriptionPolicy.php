@@ -29,7 +29,7 @@ class TeacherSubscriptionPolicy extends BasePolicy
 
         // Teacher owns their subscriptions
         if ($user instanceof Teacher) {
-            return $model->teacher_id === $user->id;
+            return $this->ownsProfileResource($user, $model->teacher_profile_id);
         }
 
         return false;
@@ -54,7 +54,7 @@ class TeacherSubscriptionPolicy extends BasePolicy
 
         // Teacher can view their own subscriptions
         if ($user instanceof Teacher) {
-            return $model->teacher_id === $user->id;
+            return $this->ownsProfileResource($user, $model->teacher_profile_id);
         }
 
         return false;

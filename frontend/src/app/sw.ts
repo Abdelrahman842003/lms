@@ -112,25 +112,6 @@ installSerwist({
         },
       },
     },
-    // API GET calls (Dashboard lists, categories, lectures, notes)
-    {
-      matcher: ({ url, request }: RouteHandlerCallbackOptions) => 
-        url.pathname.includes("/api/v1/") && 
-        request.method === "GET" &&
-        !url.pathname.includes("/auth/token") &&
-        !url.pathname.includes("/public-settings") && // bypass settings cache for real-time toggle
-        !url.pathname.includes("/csrf-cookie"),
-      handler: "StaleWhileRevalidate",
-      options: {
-        cacheName: "serwist-api-get",
-        expiration: {
-          maxEntries: 100,
-          maxAgeSeconds: 24 * 60 * 60, // 24 hours
-        },
-        cacheableResponse: {
-          statuses: [0, 200],
-        },
-      },
-    },
+
   ],
 });

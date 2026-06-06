@@ -62,7 +62,7 @@ class StudentAnswerPolicy extends BasePolicy
         // Teacher/Secretary can view answers on their exams
         $teacher = $this->resolveTeacher($user);
         if ($teacher && $model->exam) {
-            return $model->exam->teacher_id === $teacher->id;
+            return $this->ownsProfileResource($teacher, $model->exam->teacher_profile_id);
         }
 
         // Academy can view answers on their exams

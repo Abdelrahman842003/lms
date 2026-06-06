@@ -17,7 +17,8 @@ class StorePaymentRequest extends FormRequest
     {
         return [
             'student_id' => ['required', 'string', 'exists:students,id'],
-            'teacher_id' => ['required', 'string', 'exists:teachers,id'],
+            'teacher_id' => ['required_without:teacher_profile_id', 'exists:teachers,id'],
+            'teacher_profile_id' => ['required_without:teacher_id', 'exists:teacher_profiles,id'],
             'months' => ['required', 'integer', 'min:1'],
             'discount' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'notes' => ['nullable', 'string', 'max:500'],
@@ -31,8 +32,10 @@ class StorePaymentRequest extends FormRequest
         return [
             'student_id.required' => 'الطالب مطلوب',
             'student_id.exists' => 'الطالب غير موجود',
-            'teacher_id.required' => 'المدرس مطلوب',
+            'teacher_id.required_without' => 'المدرس مطلوب',
             'teacher_id.exists' => 'المدرس غير موجود',
+            'teacher_profile_id.required_without' => 'المدرس مطلوب',
+            'teacher_profile_id.exists' => 'المدرس غير موجود',
             'months.required' => 'عدد الشهور مطلوب',
             'months.integer' => 'عدد الشهور يجب أن يكون رقماً صحيحاً',
             'months.min' => 'عدد الشهور يجب أن يكون 1 على الأقل',
@@ -43,5 +46,10 @@ class StorePaymentRequest extends FormRequest
             'client_side_uuid.required' => 'معرف العملية مطلوب',
             'client_side_uuid.uuid' => 'معرف العملية غير صحيح',
         ];
+    }
+
+    public function prepareForValidation(): void
+    {
+        $this->merge(\App\Domains\Application\Traits\ResolvesTeacher::resolveTeacherInput($this));
     }
 }

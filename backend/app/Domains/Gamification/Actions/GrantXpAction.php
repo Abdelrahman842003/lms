@@ -36,7 +36,7 @@ final class GrantXpAction
     ): int {
         // جلب إعدادات Gamification للمدرس
         $settings = GamificationSetting::firstOrCreate(
-            ['teacher_id' => $teacherId],
+            ['teacher_profile_id' => $teacherId],
             GamificationSetting::DEFAULTS,
         );
 
@@ -58,7 +58,7 @@ final class GrantXpAction
             // 2. تسجيل Transaction
             PointTransaction::create([
                 'student_id'     => $studentId,
-                'teacher_id'     => $teacherId,
+                'teacher_profile_id' => $teacherId,
                 'type'           => $type,
                 'points'         => $xp,
                 'reference_type' => $type,

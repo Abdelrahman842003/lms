@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Application\Services\Teacher;
 
-use App\Domains\Auth\Models\Teacher;
+use App\Domains\Auth\Models\TeacherProfile;
 use App\Domains\Enrollments\DTOs\TeacherGradeData;
 use App\Domains\Enrollments\Models\Grade;
 use App\Domains\Application\Filters\GradeFilter;
@@ -16,7 +16,7 @@ class GradeService
 {
     use HasAcademyFilter;
 
-    public function getGrades(Teacher $teacher, int $perPage = 10, array $filters = [], ?string $academyId = null): LengthAwarePaginator
+    public function getGrades(TeacherProfile $teacher, int $perPage = 10, array $filters = [], ?string $academyId = null): LengthAwarePaginator
     {
         $query = $teacher->grades()
             ->withCount(['groups', 'enrollments'])
@@ -35,7 +35,7 @@ class GradeService
         return $query->paginate($perPage);
     }
 
-    public function createGrade(Teacher $teacher, TeacherGradeData $data): Grade
+    public function createGrade(TeacherProfile $teacher, TeacherGradeData $data): Grade
     {
         $grade = $teacher->grades()->create($data->toArray());
         // Clear cache after creating a grade
@@ -48,18 +48,18 @@ class GradeService
     {
         $grade->update($data->toArray());
         // Clear cache after updating a grade
-        CacheService::forgetTeacherGrades($grade->teacher_id);
+        CacheService::forgetTeacherGrades($grade->teacher_profile_id);
 
         return $grade;
     }
 
     public function deleteGrade(Grade $grade): ?bool
     {
-        $teacherId = $grade->teacher_id;
+        $teacherProfileId = $grade->teacher_profile_id;
         $result = $grade->delete();
         // Clear cache after deleting a grade
-        if ($result && $teacherId) {
-            CacheService::forgetTeacherGrades($teacherId);
+        if ($result && $teacherProfileId) {
+            CacheService::forgetTeacherGrades($teacherProfileId);
         }
 
         return $result;

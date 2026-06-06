@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace App\Domains\Application\Services\Teacher;
 
 use App\Domains\Application\Models\SyncError;
-use App\Domains\Auth\Models\Teacher;
+use App\Domains\Auth\Models\TeacherProfile;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 
 class SyncErrorService
 {
-    public function listErrors(Teacher $teacher, array $filters, int $perPage = 20): LengthAwarePaginator
+    public function listErrors(TeacherProfile $teacher, array $filters, int $perPage = 20): LengthAwarePaginator
     {
         $query = SyncError::forUser($teacher->id);
 
@@ -32,12 +32,12 @@ class SyncErrorService
         return $query->latest()->paginate($perPage);
     }
 
-    public function getError(Teacher $teacher, string $id): SyncError
+    public function getError(TeacherProfile $teacher, string $id): SyncError
     {
         return SyncError::forUser($teacher->id)->findOrFail($id);
     }
 
-    public function resolveError(Teacher $teacher, string $id, ?string $notes = null): SyncError
+    public function resolveError(TeacherProfile $teacher, string $id, ?string $notes = null): SyncError
     {
         $error = SyncError::forUser($teacher->id)
             ->unresolved()
@@ -48,12 +48,12 @@ class SyncErrorService
         return $error->fresh();
     }
 
-    public function getUnresolvedCount(Teacher $teacher): int
+    public function getUnresolvedCount(TeacherProfile $teacher): int
     {
         return SyncError::forUser($teacher->id)->unresolved()->count();
     }
 
-    public function bulkResolveErrors(Teacher $teacher, array $ids, ?string $notes = null): int
+    public function bulkResolveErrors(TeacherProfile $teacher, array $ids, ?string $notes = null): int
     {
         return SyncError::forUser($teacher->id)
             ->unresolved()

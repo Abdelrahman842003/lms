@@ -57,10 +57,11 @@ class TeacherController extends Controller
     {
         $academy = $request->user();
 
-        // If teacher_id is provided, we link existing teacher
-        if ($request->has('teacher_id')) {
+        // If teacher_id or teacher_profile_id is provided, we link existing teacher
+        if ($request->has('teacher_id') || $request->has('teacher_profile_id')) {
             try {
-                $teacherId = $request->validated('teacher_id');
+                $validated = $request->validated();
+                $teacherId = $validated['teacher_id'] ?? $validated['teacher_profile_id'];
                 
                 $teacher = $this->service->addTeacher($academy, $teacherId);
                 

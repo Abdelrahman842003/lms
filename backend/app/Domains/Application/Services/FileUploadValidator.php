@@ -39,6 +39,11 @@ class FileUploadValidator
             'video/webm',
             'application/octet-stream',
             'audio/x-matroska',
+            'video/x-matroska',
+            'video/ogg',
+            'application/ogg',
+            'application/x-ogg',
+            'audio/x-opus+ogg',
         ],
     ];
 
@@ -172,14 +177,14 @@ class FileUploadValidator
             'mp4' => ['video/mp4', 'audio/mp4'],
             'mov' => ['video/quicktime'],
             'avi' => ['video/x-msvideo'],
-            'webm' => ['video/webm', 'audio/webm', 'audio/x-matroska'],
+            'webm' => ['video/webm', 'audio/webm', 'audio/x-matroska', 'video/x-matroska', 'audio/ogg', 'video/ogg', 'application/ogg'],
             // Audio
             'mp3' => ['audio/mpeg'],
             'wav' => ['audio/wav'],
-            'ogg' => ['audio/ogg'],
-            'weba' => ['audio/webm', 'video/webm', 'audio/x-matroska'],
-            'm4a' => ['audio/x-m4a', 'audio/mp4'],
-            'opus' => ['audio/opus', 'audio/ogg'],
+            'ogg' => ['audio/ogg', 'video/ogg', 'application/ogg', 'application/x-ogg', 'audio/x-opus+ogg', 'audio/webm', 'video/webm'],
+            'weba' => ['audio/webm', 'video/webm', 'audio/x-matroska', 'video/x-matroska', 'audio/ogg', 'video/ogg', 'application/ogg'],
+            'm4a' => ['audio/x-m4a', 'audio/mp4', 'video/mp4'],
+            'opus' => ['audio/opus', 'audio/ogg', 'video/ogg', 'application/ogg', 'application/x-ogg', 'audio/x-opus+ogg'],
             // Documents
             'pdf' => ['application/pdf'],
             'doc' => ['application/msword'],

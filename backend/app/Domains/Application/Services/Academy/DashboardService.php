@@ -7,7 +7,6 @@ namespace App\Domains\Application\Services\Academy;
 use App\Domains\Auth\Models\Academy;
 use App\Domains\Enrollments\Models\Enrollment;
 use App\Domains\Media\Services\ImageService;
-use App\Domains\Application\Models\TeacherAttendanceLog;
 use App\Domains\Application\Services\CacheService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -29,7 +28,7 @@ class DashboardService
 
         // Get total enrollments (links) and unique students for linked academy teachers
         $enrollmentsQuery = Enrollment::query()
-            ->whereIn('teacher_id', $linkedTeacherIds)
+            ->whereIn('teacher_profile_id', $linkedTeacherIds)
             ->where('academy_id', $academy->id)
             ->where('is_active', true);
 
@@ -38,32 +37,23 @@ class DashboardService
             ->distinct('student_id')
             ->count('student_id');
 
-        // Get today's attendance
-        $today = Carbon::today();
-        $todayAttendance = TeacherAttendanceLog::forAcademy($academy->id)
-            ->whereDate('date', $today)
-            ->get();
+        // Attendance logs are no longer used.
+        $checkedInToday = 0;
+        $checkedOutToday = 0;
 
-        $checkedInToday = $todayAttendance->where('status', 'checked_in')->count();
-        $checkedOutToday = $todayAttendance->where('status', 'checked_out')->count();
-
-        // Get this month's attendance stats
+        // Get this month's start and end dates
         $startOfMonth = Carbon::now()->startOfMonth();
         $endOfMonth = Carbon::now()->endOfMonth();
-        
-        $monthlyAttendance = TeacherAttendanceLog::forAcademy($academy->id)
-            ->dateRange($startOfMonth, $endOfMonth)
-            ->get();
 
-        $monthlyPresent = $monthlyAttendance->where('status', 'checked_out')->count();
-        $monthlyAbsent = $monthlyAttendance->where('status', 'absent')->count();
+        $monthlyPresent = 0;
+        $monthlyAbsent = 0;
 
         // --- Revenue Statistics ---
         // Use all currently linked teachers in this academy.
-        $teacherIds = $linkedTeacherIds;
+        $teacherProfileIds = $linkedTeacherIds;
         
         // Current Month Revenue
-        $currentMonthRevenue = \App\Domains\Subscriptions\Models\PaymentLog::whereIn('teacher_id', $teacherIds)
+        $currentMonthRevenue = \App\Domains\Subscriptions\Models\PaymentLog::whereIn('teacher_profile_id', $teacherProfileIds)
             ->confirmed()
             ->whereBetween('confirmed_at', [$startOfMonth, $endOfMonth])
             ->sum('amount');
@@ -75,7 +65,7 @@ class DashboardService
             $monthStart = $date->copy()->startOfMonth();
             $monthEnd = $date->copy()->endOfMonth();
             
-            $revenue = \App\Domains\Subscriptions\Models\PaymentLog::whereIn('teacher_id', $teacherIds)
+            $revenue = \App\Domains\Subscriptions\Models\PaymentLog::whereIn('teacher_profile_id', $teacherProfileIds)
                 ->confirmed()
                 ->whereBetween('confirmed_at', [$monthStart, $monthEnd])
                 ->sum('amount');
@@ -107,14 +97,14 @@ class DashboardService
             ->get();
 
         // Pre-load student counts for all teachers to avoid N+1 queries
-        $teacherIds = $recentTeachers->pluck('id');
+        $teacherProfileIds = $recentTeachers->pluck('id');
         $studentCounts = Enrollment::query()
-            ->select('teacher_id', DB::raw('COUNT(*) as students_count'))
+            ->select('teacher_profile_id', DB::raw('COUNT(*) as students_count'))
             ->where('academy_id', $academy->id)
             ->where('is_active', true)
-            ->whereIn('teacher_id', $teacherIds)
-            ->groupBy('teacher_id')
-            ->pluck('students_count', 'teacher_id')
+            ->whereIn('teacher_profile_id', $teacherProfileIds)
+            ->groupBy('teacher_profile_id')
+            ->pluck('students_count', 'teacher_profile_id')
             ->toArray();
 
         // Transform recent teachers

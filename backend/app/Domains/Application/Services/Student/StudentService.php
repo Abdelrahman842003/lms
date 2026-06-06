@@ -37,7 +37,7 @@ class StudentService
     public function getEnrolledTeachers(Student $student): array
     {
         return $student->enrollments()
-            ->with(['teacher:id,name,avatar_key,status', 'teacher.tenantPlan', 'grade:id,name', 'group:id,name', 'academy:id,name'])
+            ->with(['teacher:teachers.id,name,avatar_key,teachers.status', 'teacher.tenantPlan', 'grade:id,name', 'group:id,name', 'academy:id,name'])
             ->get()
             ->map(function ($enrollment) {
                 $enrollmentStatus = (string) $enrollment->status;
@@ -46,7 +46,7 @@ class StudentService
 
                 return [
                     'enrollment_id' => $enrollment->id,
-                    'teacher_id' => $enrollment->teacher_id,
+                    'teacher_profile_id' => $enrollment->teacher_profile_id,
                     'teacher_name' => $enrollment->teacher->name,
                     'teacher_avatar' => $enrollment->teacher->avatar_url ?? null,
                     'is_teacher_suspended' => $isTeacherSuspended,
@@ -72,7 +72,7 @@ class StudentService
     {
         $enrollments = $student->enrollments()
             ->with([
-                'teacher:id,name,avatar_key,status',
+                'teacher:teachers.id,name,avatar_key,teachers.status',
                 'teacher.tenantPlan',
                 'teacher.academies:id,name',
                 'grade:id,name',
@@ -92,7 +92,7 @@ class StudentService
 
             $teacherData = [
                 'enrollment_id' => $enrollment->id,
-                'teacher_id' => $enrollment->teacher_id,
+                'teacher_profile_id' => $enrollment->teacher_profile_id,
                 'teacher_name' => $enrollment->teacher->name,
                 'teacher_avatar' => $enrollment->teacher->avatar_url ?? null,
                 'is_teacher_suspended' => $isTeacherSuspended,
@@ -135,11 +135,11 @@ class StudentService
     /**
      * Get student dashboard for a specific teacher
      */
-    public function getTeacherDashboard(Student $student, string $teacherId): array
+    public function getTeacherDashboard(Student $student, string $teacherProfileId): array
     {
         $enrollment = $student->enrollments()
             ->with(['teacher', 'grade', 'group'])
-            ->where('teacher_id', $teacherId)
+            ->where('teacher_profile_id', $teacherProfileId)
             ->where('is_active', true)
             ->firstOrFail();
 
@@ -153,8 +153,8 @@ class StudentService
 
         // Get exams for this teacher
         $examResults = $student->examResults()
-            ->whereHas('exam', function ($q) use ($teacherId) {
-                $q->where('teacher_id', $teacherId);
+            ->whereHas('exam', function ($q) use ($teacherProfileId) {
+                $q->where('teacher_profile_id', $teacherProfileId);
             })
             ->with('exam:id,title,date,max_score')
             ->latest()
@@ -174,8 +174,8 @@ class StudentService
 
         // Get attendance for this teacher
         $attendances = $student->attendances()
-            ->whereHas('lecture', function ($q) use ($teacherId) {
-                $q->where('teacher_id', $teacherId);
+            ->whereHas('lecture', function ($q) use ($teacherProfileId) {
+                $q->where('teacher_profile_id', $teacherProfileId);
             })
             ->with('lecture:id,title,date')
             ->latest()

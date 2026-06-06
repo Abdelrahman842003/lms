@@ -45,7 +45,20 @@ class GroupController extends Controller
             return $this->errorResponse('Unauthorized', null, 403);
         }
         $perPage = (int) $request->input('per_page', 10);
-        $filters = $request->only(['search', 'grade_id', 'grade_name', 'teacher_id']);
+        $filters = $request->only(['search', 'grade_id', 'grade_name']);
+        if ($request->has('teacher_profile_id')) {
+            $filters['teacher_profile_id'] = $request->input('teacher_profile_id');
+        } elseif ($request->has('teacher_id')) {
+            $teacherId = $request->input('teacher_id');
+            $profile = \App\Domains\Auth\Models\TeacherProfile::where('academy_id', $academy->id)
+                ->where(function ($q) use ($teacherId) {
+                    $q->where('id', $teacherId)
+                      ->orWhere('uuid', $teacherId)
+                      ->orWhere('teacher_id', $teacherId);
+                })
+                ->first();
+            $filters['teacher_profile_id'] = $profile ? $profile->id : $teacherId;
+        }
         
         $groups = $this->service->getGroups($academy, $filters, $perPage);
 

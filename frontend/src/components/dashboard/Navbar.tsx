@@ -10,7 +10,6 @@ import { NavbarUploadManager } from './NavbarUploadManager';
 import { TeacherSelectionDropdown } from './TeacherSelectionDropdown';
 import { AcademySelector } from './AcademySelector';
 import { getTeacherAcademies } from '@/services/authService';
-import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/ui/Icon';
 import { ThemeToggle } from './ThemeToggle';
 
@@ -436,12 +435,11 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
     items = items.filter(item => item.id === 'dashboard');
   }
   
-  if (role === 'teacher') {
-    const isAcademyMode = (selectedAcademy?.id && selectedAcademy.id !== 'independent') || isLoading;
-    
-    if (isAcademyMode) {
-      items = items
-        .filter(item => item.id !== 'reports') // Remove Reports
+  const isAcademyMode = role === 'teacher' && ((selectedAcademy?.id && selectedAcademy.id !== 'independent') || isLoading);
+  
+  if (isAcademyMode) {
+    items = items
+      .filter(item => item.id !== 'reports') // Remove Reports
         .map(item => {
           if (item.id === 'question_bank') {
             return { ...item, href: '/academy/questions' };
@@ -458,7 +456,6 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
           return item;
         });
     }
-  }
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [activeSubMenu, setActiveSubMenu] = useState<string | null>(null);
@@ -650,7 +647,7 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
                         </Link>
                       )}
 
-                      {role === 'teacher' && (
+                      {role === 'teacher' && !isAcademyMode && (
                         <Link
                           href="/teacher/subscription"
                           className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-gray-light/60 hover:text-white hover:bg-white/5 transition-all"

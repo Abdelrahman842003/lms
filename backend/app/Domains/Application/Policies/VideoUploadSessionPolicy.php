@@ -31,7 +31,7 @@ class VideoUploadSessionPolicy extends BasePolicy
 
         // Teacher owns their upload sessions
         if ($user instanceof Teacher) {
-            return $model->teacher_id === $user->id;
+            return $this->ownsProfileResource($user, $model->teacher_profile_id);
         }
 
         // Academy owns their upload sessions
@@ -64,13 +64,13 @@ class VideoUploadSessionPolicy extends BasePolicy
 
         // Teacher can view their own sessions
         if ($user instanceof Teacher) {
-            return $model->teacher_id === $user->id;
+            return $this->ownsProfileResource($user, $model->teacher_profile_id);
         }
 
         // Secretary can view their teacher's sessions
         $teacher = $this->resolveTeacher($user);
         if ($teacher) {
-            return $model->teacher_id === $teacher->id;
+            return $this->ownsProfileResource($teacher, $model->teacher_profile_id);
         }
 
         // Academy can view their own sessions
@@ -107,7 +107,7 @@ class VideoUploadSessionPolicy extends BasePolicy
 
         // Teacher can delete their own sessions
         if ($user instanceof Teacher) {
-            return $model->teacher_id === $user->id;
+            return $this->ownsProfileResource($user, $model->teacher_profile_id);
         }
 
         // Academy can delete their own sessions

@@ -43,7 +43,7 @@ class QuestionPolicy extends BasePolicy
         // Teacher/Secretary can view questions on their exams
         $teacher = $this->resolveTeacher($user);
         if ($teacher && $model->exam) {
-            return $model->exam->teacher_id === $teacher->id;
+            return $this->ownsProfileResource($teacher, $model->exam->teacher_profile_id);
         }
 
         // Academy can view questions on their exams
@@ -78,7 +78,7 @@ class QuestionPolicy extends BasePolicy
         // Teacher/Secretary can update questions on their exams
         $teacher = $this->resolveTeacher($user);
         if ($teacher && $model->exam) {
-            return $model->exam->teacher_id === $teacher->id;
+            return $this->ownsProfileResource($teacher, $model->exam->teacher_profile_id);
         }
 
         // Academy can update questions on their exams

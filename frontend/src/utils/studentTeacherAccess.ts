@@ -62,7 +62,7 @@ function normalizeTeacherItem(value: unknown): TeacherInfo | null {
     return null;
   }
 
-  const teacherId = value.teacher_id ?? value.id;
+  const teacherId = value.teacher_id ?? value.teacher_profile_id ?? value.id;
   if (teacherId === undefined || teacherId === null) {
     return null;
   }

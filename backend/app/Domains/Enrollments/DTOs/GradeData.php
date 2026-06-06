@@ -19,7 +19,7 @@ readonly class GradeData
         return new self(
             name: $request->validated('name'),
             price: (float) $request->validated('price'),
-            teacherId: $request->validated('teacher_id'),
+            teacherId: $request->validated('teacher_id') ?? $request->validated('teacher_profile_id'),
         );
     }
 

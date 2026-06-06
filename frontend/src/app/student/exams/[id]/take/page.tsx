@@ -684,8 +684,11 @@ export default function TakeExamPage() {
 
         {/* Main Content Area */}
         <div className="relative mt-3 sm:mt-0">
-          <div className="absolute -top-20 -left-20 w-64 h-64 bg-primary/10 blur-[100px] rounded-full -z-10 animate-pulse-slow"></div>
-          <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-secondary/10 blur-[100px] rounded-full -z-10 animate-pulse-slow"></div>
+          {/* Background Glow Container (Contained to prevent horizontal layout overflow) */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none -z-10 rounded-3xl sm:rounded-[48px]">
+            <div className="absolute -top-20 -left-20 w-64 h-64 bg-primary/10 blur-[100px] rounded-full animate-pulse-slow"></div>
+            <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-secondary/10 blur-[100px] rounded-full animate-pulse-slow"></div>
+          </div>
           
           <div 
             key={attemptData?.progress?.current}

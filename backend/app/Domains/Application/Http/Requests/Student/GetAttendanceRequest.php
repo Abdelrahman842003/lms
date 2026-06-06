@@ -24,7 +24,17 @@ class GetAttendanceRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'teacher_id' => 'required|uuid|exists:teachers,id',
+            'teacher_profile_id' => [
+                'required',
+                function ($attribute, $value, $fail) {
+                    $exists = \App\Domains\Auth\Models\TeacherProfile::where('id', $value)
+                        ->orWhere('uuid', $value)
+                        ->exists();
+                    if (!$exists) {
+                        $fail('المدرس غير موجود');
+                    }
+                }
+            ],
             'per_page' => 'nullable|integer|min:1|max:100',
         ];
     }
@@ -35,9 +45,9 @@ class GetAttendanceRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'teacher_id.required' => 'معرف المدرس مطلوب',
-            'teacher_id.uuid' => 'معرف المدرس غير صالح',
-            'teacher_id.exists' => 'المدرس غير موجود',
+            'teacher_profile_id.required' => 'معرف المدرس مطلوب',
+            'teacher_profile_id.uuid' => 'معرف المدرس غير صالح',
+            'teacher_profile_id.exists' => 'المدرس غير موجود',
             'per_page.integer' => 'عدد العناصر يجب أن يكون رقماً',
             'per_page.min' => 'عدد العناصر يجب أن يكون على الأقل 1',
             'per_page.max' => 'عدد العناصر يجب أن يكون على الأكثر 100',

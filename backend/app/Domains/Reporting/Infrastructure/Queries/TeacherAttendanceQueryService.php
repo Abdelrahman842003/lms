@@ -15,11 +15,11 @@ use Illuminate\Support\Facades\DB;
 
 final class TeacherAttendanceQueryService
 {
-    public function overallAttendanceRate(Teacher $teacher, TeacherReportFilters $filters): float
+    public function overallAttendanceRate($teacher, TeacherReportFilters $filters): float
     {
-        $lectureQuery = Lecture::where('teacher_id', $teacher->id);
+        $lectureQuery = $teacher->lectures();
         if ($filters->groupId) $lectureQuery->where('group_id', $filters->groupId);
-        $lectureIds = $lectureQuery->pluck('id');
+        $lectureIds = $lectureQuery->pluck('lectures.id');
 
         $sessionIds = LectureSession::whereIn('lecture_id', $lectureIds)
             ->where('is_cancelled', false)
@@ -39,16 +39,15 @@ final class TeacherAttendanceQueryService
         return round(($present / $total) * 100, 2);
     }
 
-    public function attendanceByGroup(Teacher $teacher, TeacherReportFilters $filters): array
+    public function attendanceByGroup($teacher, TeacherReportFilters $filters): array
     {
-        $groupQuery = Group::where('teacher_id', $teacher->id);
-        if ($filters->groupId) $groupQuery->where('id', $filters->groupId);
-        $groupIds = $groupQuery->pluck('id');
+        $groupQuery = $teacher->groups();
+        if ($filters->groupId) $groupQuery->where('groups.id', $filters->groupId);
+        $groupIds = $groupQuery->pluck('groups.id');
 
         // Single query: attendance counts per group
         $attendanceCounts = Attendance::join('lecture_sessions', 'attendances.lecture_session_id', '=', 'lecture_sessions.id')
             ->join('lectures', 'lecture_sessions.lecture_id', '=', 'lectures.id')
-            ->where('lectures.teacher_id', $teacher->id)
             ->whereIn('lectures.group_id', $groupIds)
             ->where('lecture_sessions.is_cancelled', false)
             ->whereBetween('lecture_sessions.date', [$filters->base->period->startAt, $filters->base->period->endAt])
@@ -62,7 +61,6 @@ final class TeacherAttendanceQueryService
 
         // Single query: sessions count per group
         $sessionsCounts = LectureSession::join('lectures', 'lecture_sessions.lecture_id', '=', 'lectures.id')
-            ->where('lectures.teacher_id', $teacher->id)
             ->whereIn('lectures.group_id', $groupIds)
             ->where('lecture_sessions.is_cancelled', false)
             ->whereBetween('lecture_sessions.date', [$filters->base->period->startAt, $filters->base->period->endAt])
@@ -72,15 +70,15 @@ final class TeacherAttendanceQueryService
             ->keyBy('group_id');
 
         // Single query: active students per group
-        $studentsCounts = Enrollment::where('teacher_id', $teacher->id)
-            ->whereIn('group_id', $groupIds)
-            ->where('is_active', true)
-            ->select('group_id', DB::raw('COUNT(*) as students_count'))
-            ->groupBy('group_id')
+        $studentsCounts = $teacher->enrollments()
+            ->whereIn('enrollments.group_id', $groupIds)
+            ->where('enrollments.is_active', true)
+            ->select('enrollments.group_id', DB::raw('COUNT(*) as students_count'))
+            ->groupBy('enrollments.group_id')
             ->get()
             ->keyBy('group_id');
 
-        $groups = Group::where('teacher_id', $teacher->id)->whereIn('id', $groupIds)->get();
+        $groups = $teacher->groups()->whereIn('groups.id', $groupIds)->get();
         $result = [];
 
         foreach ($groups as $group) {
@@ -103,7 +101,7 @@ final class TeacherAttendanceQueryService
         return $result;
     }
 
-    public function bestAndWorstGroup(Teacher $teacher, TeacherReportFilters $filters): array
+    public function bestAndWorstGroup($teacher, TeacherReportFilters $filters): array
     {
         $byGroup = $this->attendanceByGroup($teacher, $filters);
 
@@ -117,7 +115,7 @@ final class TeacherAttendanceQueryService
         ];
     }
 
-    public function attendanceChangeFromPrevious(Teacher $teacher, TeacherReportFilters $filters): ?float
+    public function attendanceChangeFromPrevious($teacher, TeacherReportFilters $filters): ?float
     {
         if (!$filters->base->hasComparison() || $filters->base->comparisonPeriod === null) {
             return null;

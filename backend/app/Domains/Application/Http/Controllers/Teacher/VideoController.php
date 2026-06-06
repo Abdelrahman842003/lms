@@ -43,7 +43,7 @@ class VideoController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
         $context = $this->actorResolver->resolveIndependentTeacher($teacher);
 
         $videos = $this->lifecycle->listForOwner(
@@ -57,7 +57,7 @@ class VideoController extends Controller
 
     public function store(StoreVideoRequest $request): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
         Gate::authorize('createIndependent', Video::class);
 
         $context = $this->actorResolver->resolveIndependentTeacher($teacher);
@@ -72,7 +72,7 @@ class VideoController extends Controller
 
     public function show(Request $request, Video $video): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
         Gate::authorize('view', $video);
 
         $video->load([
@@ -92,7 +92,7 @@ class VideoController extends Controller
 
     public function update(UpdateVideoRequest $request, Video $video): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
         Gate::authorize('update', $video);
 
         $updated = $this->lifecycle->updateVideo($video, UpdateVideoData::fromArray($request->validated()), $teacher);
@@ -130,7 +130,7 @@ class VideoController extends Controller
 
     public function uploadAttachments(UploadAttachmentsRequest $request, Video $video): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
         Gate::authorize('update', $video);
 
         $updated = $this->lifecycle->addAttachments(
@@ -146,7 +146,7 @@ class VideoController extends Controller
 
     public function deleteAttachment(Request $request, Video $video, VideoAttachment $attachment): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
         Gate::authorize('update', $video);
 
         if ((string) $attachment->video_id !== (string) $video->id) {
@@ -160,7 +160,7 @@ class VideoController extends Controller
 
     public function destroy(Request $request, Video $video): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
         Gate::authorize('delete', $video);
 
         $this->lifecycle->delete($video, $teacher);
@@ -172,7 +172,7 @@ class VideoController extends Controller
 
     public function retryProcessing(Request $request, Video $video): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
         Gate::authorize('update', $video);
 
         $this->lifecycle->retryProcessing($video);
@@ -184,7 +184,7 @@ class VideoController extends Controller
 
     public function publish(Request $request, Video $video): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
         Gate::authorize('publish', $video);
 
         $published = $this->lifecycle->publish($video, $teacher);
@@ -196,7 +196,7 @@ class VideoController extends Controller
 
     public function thumbnail(Request $request, Video $video): RedirectResponse|StreamedResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
         Gate::authorize('view', $video);
 
         if (! $video->thumbnail_path) {
@@ -218,7 +218,7 @@ class VideoController extends Controller
 
     public function thumbnailUrl(Request $request, Video $video): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
         Gate::authorize('view', $video);
 
         if (! $video->thumbnail_path) {
@@ -240,7 +240,7 @@ class VideoController extends Controller
 
     public function stream(Request $request, Video $video): RedirectResponse|StreamedResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
         Gate::authorize('view', $video);
 
         if (! $video->processed_path) {
@@ -267,7 +267,7 @@ class VideoController extends Controller
 
     public function streamUrl(Request $request, Video $video): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
         Gate::authorize('view', $video);
 
         if (! $video->processed_path) {
@@ -296,7 +296,7 @@ class VideoController extends Controller
 
     public function comments(Request $request, Video $video): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
         Gate::authorize('manageComments', $video);
 
         $comments = $video->comments()
@@ -309,7 +309,7 @@ class VideoController extends Controller
 
     public function hideComment(Request $request, Video $video, string $commentId): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
         Gate::authorize('manageComments', $video);
 
         $comment = VideoComment::query()->where('video_id', $video->id)->withTrashed()->findOrFail($commentId);
@@ -322,7 +322,7 @@ class VideoController extends Controller
 
     public function deleteComment(Request $request, Video $video, string $commentId): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
         Gate::authorize('manageComments', $video);
 
         $comment = VideoComment::query()->where('video_id', $video->id)->withTrashed()->findOrFail($commentId);

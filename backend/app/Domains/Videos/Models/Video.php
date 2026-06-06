@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace App\Domains\Videos\Models;
 
 use App\Domains\Auth\Models\Academy;
-use App\Domains\Auth\Models\Teacher;
+use App\Domains\Auth\Models\TeacherProfile;
 use App\Domains\Enrollments\Models\Grade;
 use App\Domains\Enrollments\Models\Group;
 use App\Domains\Lectures\Models\Lecture;
 use App\Domains\Videos\Enums\VideoOwnerType;
 use App\Domains\Videos\Enums\VideoProcessingStatus;
 use App\Domains\Videos\Enums\VideoStatus;
+use App\Domains\Support\Traits\UsesTeacherProfileScope;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -27,6 +28,7 @@ class Video extends Model
     use HasFactory;
     use HasUuids;
     use SoftDeletes;
+    use UsesTeacherProfileScope;
 
     protected static function newFactory()
     {
@@ -39,7 +41,7 @@ class Video extends Model
         'owner_id',
         'uploader_type',
         'uploader_id',
-        'teacher_reference_id',
+        'teacher_profile_id',
         'teacher_reference_name',
         'academy_id',
         'grade_id',
@@ -100,10 +102,7 @@ class Video extends Model
         return $this->morphTo(__FUNCTION__, 'published_by_type', 'published_by_id');
     }
 
-    public function teacherReference(): BelongsTo
-    {
-        return $this->belongsTo(Teacher::class, 'teacher_reference_id');
-    }
+    // The teacherProfile relation is provided by the UsesTeacherProfileScope trait.
 
     public function academy(): BelongsTo
     {

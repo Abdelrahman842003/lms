@@ -42,10 +42,10 @@ class AcademyStudentResource extends JsonResource
             'status' => $bestStatus,
             'days_left' => $bestDaysLeft,
             'trial_days_left' => $bestTrialDaysLeft,
-            'teachers_count' => $enrollments->unique('teacher_id')->count(),
+            'teachers_count' => $enrollments->unique('teacher_profile_id')->count(),
             'teachers' => $enrollments->map(function ($enrollment) {
                 return [
-                    'id' => $enrollment->teacher_id,
+                    'id' => $enrollment->teacher_profile_id,
                     'name' => $enrollment->teacher?->name,
                     'grade_name' => $enrollment->grade?->name,
                     'group_name' => $enrollment->group?->name,

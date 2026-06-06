@@ -48,7 +48,7 @@ trait ResolvesOwnedResources
         if (method_exists($user, 'isAcademy') && $user->isAcademy()) {
             $query->where('academy_id', $user->academy->id ?? $user->id);
         } elseif (method_exists($user, 'isTeacher') && $user->isTeacher()) {
-            $query->where('teacher_id', $user->teacher->id);
+            $query->where('teacher_profile_id', $user->teacher->id);
         } else {
             $query->where($ownerColumn, $user->id);
         }
@@ -77,14 +77,14 @@ trait ResolvesOwnedResources
      * 
      * @param string $modelClass The fully qualified model class name
      * @param int|string $id The resource ID to find
-     * @param int $teacherId The teacher ID that must own the resource
+     * @param int $teacherProfileId The teacher ID that must own the resource
      * @return Model
      * @throws ModelNotFoundException
      */
-    protected function findOwnedByTeacher(string $modelClass, int|string $id, int $teacherId): Model
+    protected function findOwnedByTeacher(string $modelClass, int|string $id, int $teacherProfileId): Model
     {
         return $modelClass::where('id', $id)
-            ->where('teacher_id', $teacherId)
+            ->where('teacher_profile_id', $teacherProfileId)
             ->firstOrFail();
     }
 
@@ -112,7 +112,7 @@ trait ResolvesOwnedResources
         } elseif (method_exists($user, 'isTeacher') && $user->isTeacher()) {
             // Teacher can see students enrolled with them
             $query->whereHas('enrollments', function ($q) use ($user) {
-                $q->where('teacher_id', $user->teacher->id);
+                $q->where('teacher_profile_id', $user->teacher->id);
             });
         } elseif (method_exists($user, 'isGuardian') && $user->isGuardian()) {
             // Guardian can see their own children
@@ -141,7 +141,7 @@ trait ResolvesOwnedResources
         if (method_exists($user, 'isAcademy') && $user->isAcademy()) {
             $query->where('academy_id', $user->academy->id ?? $user->id);
         } elseif (method_exists($user, 'isTeacher') && $user->isTeacher()) {
-            $query->where('teacher_id', $user->teacher->id);
+            $query->where('teacher_profile_id', $user->teacher->id);
         }
         
         return $query->firstOrFail();
@@ -185,7 +185,7 @@ trait ResolvesOwnedResources
         if (method_exists($user, 'isAcademy') && $user->isAcademy()) {
             $query->where('academy_id', $user->academy->id ?? $user->id);
         } elseif (method_exists($user, 'isTeacher') && $user->isTeacher()) {
-            $query->where('teacher_id', $user->teacher->id);
+            $query->where('teacher_profile_id', $user->teacher->id);
         }
         
         return $query->firstOrFail();
@@ -194,15 +194,15 @@ trait ResolvesOwnedResources
     /**
      * Find a teacher belonging to the authenticated academy.
      * 
-     * @param int|string $teacherId The teacher ID to find
+     * @param int|string $teacherProfileId The teacher ID to find
      * @return \App\Domains\Auth\Models\Teacher
      * @throws ModelNotFoundException
      */
-    protected function findOwnedTeacher(int|string $teacherId): \App\Domains\Auth\Models\Teacher
+    protected function findOwnedTeacher(int|string $teacherProfileId): \App\Domains\Auth\Models\Teacher
     {
         $user = Auth::user();
         
-        $query = \App\Domains\Auth\Models\Teacher::where('id', $teacherId);
+        $query = \App\Domains\Auth\Models\Teacher::where('id', $teacherProfileId);
         
         if (method_exists($user, 'isAcademy') && $user->isAcademy()) {
             // Teacher must be associated with this academy
@@ -230,7 +230,7 @@ trait ResolvesOwnedResources
         if (method_exists($user, 'isAcademy') && $user->isAcademy()) {
             $query->where('academy_id', $user->academy->id ?? $user->id);
         } elseif (method_exists($user, 'isTeacher') && $user->isTeacher()) {
-            $query->where('teacher_id', $user->teacher->id);
+            $query->where('teacher_profile_id', $user->teacher->id);
         }
         
         return $query->firstOrFail();
@@ -299,7 +299,7 @@ trait ResolvesOwnedResources
         }
         
         if (method_exists($user, 'isTeacher') && $user->isTeacher()) {
-            return isset($model->teacher_id) && $model->teacher_id === $user->teacher->id;
+            return isset($model->teacher_profile_id) && $model->teacher_profile_id === $user->teacher->id;
         }
         
         return isset($model->{$ownerColumn}) && $model->{$ownerColumn} === $user->id;

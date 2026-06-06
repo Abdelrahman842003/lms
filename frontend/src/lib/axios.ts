@@ -103,14 +103,15 @@ export const axiosWrapper = {
   post: async (url: string, data?: any, config?: any) => {
     const finalUrl = buildUrlWithParams(url, config?.params);
     const entityType = detectEntityType(finalUrl);
+    const isFormData = typeof FormData !== 'undefined' && data instanceof FormData;
     
     const fetchOptions: any = {
       method: 'POST',
       headers: config?.headers,
-      body: data ? JSON.stringify(data) : undefined,
+      body: isFormData ? data : (data ? JSON.stringify(data) : undefined),
     };
     
-    if (entityType) {
+    if (entityType && !isFormData) {
       fetchOptions.offlineConfig = {
         entityType,
         entityId: data?.id || `new_${entityType}_${Date.now()}`
@@ -124,14 +125,15 @@ export const axiosWrapper = {
   put: async (url: string, data?: any, config?: any) => {
     const finalUrl = buildUrlWithParams(url, config?.params);
     const entityType = detectEntityType(finalUrl);
+    const isFormData = typeof FormData !== 'undefined' && data instanceof FormData;
     
     const fetchOptions: any = {
       method: 'PUT',
       headers: config?.headers,
-      body: data ? JSON.stringify(data) : undefined,
+      body: isFormData ? data : (data ? JSON.stringify(data) : undefined),
     };
     
-    if (entityType) {
+    if (entityType && !isFormData) {
       fetchOptions.offlineConfig = {
         entityType,
         entityId: url.split('/').pop() || `update_${entityType}_${Date.now()}`

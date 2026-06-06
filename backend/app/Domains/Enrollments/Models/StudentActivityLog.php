@@ -52,7 +52,7 @@ class StudentActivityLog extends Model
         ?string $enrollmentId = null,
         ?array $data = null,
         ?string $performedByType = null,
-        ?string $performedById = null
+        string|int|null $performedById = null
     ): self {
         return self::create([
             'student_id' => $studentId,

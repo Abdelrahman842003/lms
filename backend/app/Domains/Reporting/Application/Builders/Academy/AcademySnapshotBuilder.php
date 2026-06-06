@@ -36,7 +36,9 @@ final readonly class AcademySnapshotBuilder
         $totalTeachers = $this->teacherQueries->getActiveTeachers($academy, $filters);
 
         $groupsQuery = $academy->groups();
-        if ($filters->teacherId) $groupsQuery->where('teacher_id', $filters->teacherId);
+        if ($filters->teacherId) {
+            $groupsQuery->whereHas('teacherProfile', fn($q) => $q->where('teacher_id', $filters->teacherId));
+        }
         if ($filters->groupId) $groupsQuery->where('id', $filters->groupId);
         if ($filters->gradeId) $groupsQuery->where('grade_id', $filters->gradeId);
         $activeGroups = $groupsQuery->count();

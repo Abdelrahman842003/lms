@@ -24,7 +24,7 @@ class SyncErrorController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
         $perPage = (int) $request->input('per_page', 20);
         
         $filters = [
@@ -44,7 +44,7 @@ class SyncErrorController extends Controller
      */
     public function show(Request $request, string $id): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
         $error = $this->service->getError($teacher, $id);
 
         return $this->successResponse([
@@ -57,7 +57,7 @@ class SyncErrorController extends Controller
      */
     public function resolve(ResolveSyncErrorRequest $request, string $id): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
         $validated = $request->validated();
 
         try {
@@ -77,7 +77,7 @@ class SyncErrorController extends Controller
      */
     public function unresolvedCount(Request $request): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
         $count = $this->service->getUnresolvedCount($teacher);
 
         return $this->successResponse([
@@ -90,7 +90,7 @@ class SyncErrorController extends Controller
      */
     public function bulkResolve(BulkResolveSyncErrorRequest $request): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
         $validated = $request->validated();
 
         $count = $this->service->bulkResolveErrors($teacher, $validated['ids'], $validated['notes'] ?? null);

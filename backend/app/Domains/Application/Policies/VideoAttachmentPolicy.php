@@ -39,7 +39,7 @@ class VideoAttachmentPolicy extends BasePolicy
             // Teacher/Secretary can view their video attachments
             $teacher = $this->resolveTeacher($user);
             if ($teacher) {
-                return $model->video->teacher_id === $teacher->id;
+                return $this->ownsProfileResource($teacher, $model->video->teacher_profile_id);
             }
 
             // Academy can view their academy's video attachments
@@ -66,7 +66,7 @@ class VideoAttachmentPolicy extends BasePolicy
         // Teacher/Secretary can update their video attachments
         $teacher = $this->resolveTeacher($user);
         if ($teacher && $model->video) {
-            return $model->video->teacher_id === $teacher->id;
+            return $this->ownsProfileResource($teacher, $model->video->teacher_profile_id);
         }
 
         // Academy can update their academy's video attachments
@@ -86,7 +86,7 @@ class VideoAttachmentPolicy extends BasePolicy
         // Teacher/Secretary can delete their video attachments
         $teacher = $this->resolveTeacher($user);
         if ($teacher && $model->video) {
-            return $model->video->teacher_id === $teacher->id;
+            return $this->ownsProfileResource($teacher, $model->video->teacher_profile_id);
         }
 
         // Academy can delete their academy's video attachments

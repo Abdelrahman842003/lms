@@ -15,7 +15,7 @@ class StudentDashboardRequest extends FormRequest
     public function rules()
     {
         return [
-            'teacher_id' => 'required|exists:teachers,id',
+            'teacher_profile_id' => 'required|exists:teacher_profiles,id',
         ];
     }
 }

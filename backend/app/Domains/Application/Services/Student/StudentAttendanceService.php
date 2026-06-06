@@ -28,11 +28,11 @@ class StudentAttendanceService
     /**
      * Get attendance records for a student and teacher
      */
-    public function getAttendances(Student $student, string $teacherId, int $perPage = 10)
+    public function getAttendances(Student $student, string $teacherProfileId, int $perPage = 10)
     {
         return $student->attendances()
-            ->whereHas('lecture', function ($q) use ($teacherId) {
-                $q->where('teacher_id', $teacherId);
+            ->whereHas('lecture', function ($q) use ($teacherProfileId) {
+                $q->where('teacher_profile_id', $teacherProfileId);
             })
             ->with(['lecture:id,title,start_time'])
             ->latest()

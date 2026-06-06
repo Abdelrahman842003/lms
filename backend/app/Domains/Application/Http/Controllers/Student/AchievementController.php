@@ -29,17 +29,17 @@ class AchievementController extends Controller
         }
 
         $validated = $request->validate([
-            'teacher_id' => ['nullable', 'string', 'uuid'],
+            'teacher_profile_id' => ['nullable', 'string', 'uuid'],
         ]);
 
-        $teacherId = $validated['teacher_id'] ?? null;
+        $teacherProfileId = $validated['teacher_profile_id'] ?? null;
 
         try {
-            $achievements = $this->levelService->getStudentAchievements($student, $teacherId);
+            $achievements = $this->levelService->getStudentAchievements($student, $teacherProfileId);
         } catch (\Throwable $e) {
             Log::error('Failed to fetch student achievements', [
                 'student_id' => $student->id,
-                'teacher_id' => $teacherId,
+                'teacher_profile_id' => $teacherProfileId,
                 'error' => $e->getMessage(),
             ]);
 

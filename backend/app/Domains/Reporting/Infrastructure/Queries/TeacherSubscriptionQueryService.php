@@ -10,7 +10,7 @@ use App\Domains\Reporting\Domain\ValueObjects\TeacherReportFilters;
 
 final class TeacherSubscriptionQueryService
 {
-    public function planUsagePercentage(Teacher $teacher, TeacherReportFilters $filters): float
+    public function planUsagePercentage($teacher, TeacherReportFilters $filters): float
     {
         $limit = $teacher->plan_max_students;
 
@@ -18,24 +18,24 @@ final class TeacherSubscriptionQueryService
             return 0.0;
         }
 
-        $usedQuery = Enrollment::where('teacher_id', $teacher->id)
-            ->where('is_active', true);
+        $usedQuery = $teacher->enrollments()
+            ->where('enrollments.is_active', true);
         
-        if ($filters->groupId) $usedQuery->where('group_id', $filters->groupId);
+        if ($filters->groupId) $usedQuery->where('enrollments.group_id', $filters->groupId);
 
         $used = $usedQuery->count();
 
         return round(($used / $limit) * 100, 2);
     }
 
-    public function planDetails(Teacher $teacher, TeacherReportFilters $filters): array
+    public function planDetails($teacher, TeacherReportFilters $filters): array
     {
         $limit = $teacher->plan_max_students;
         $isUnlimited = ($teacher->is_unlimited_students ?? false) || $limit === null || $limit <= 0;
 
-        $usedQuery = Enrollment::where('teacher_id', $teacher->id)
-            ->where('is_active', true);
-        if ($filters->groupId) $usedQuery->where('group_id', $filters->groupId);
+        $usedQuery = $teacher->enrollments()
+            ->where('enrollments.is_active', true);
+        if ($filters->groupId) $usedQuery->where('enrollments.group_id', $filters->groupId);
         $usedSlots = $usedQuery->count();
 
         $usagePct = $isUnlimited ? 0.0 : $this->planUsagePercentage($teacher, $filters);

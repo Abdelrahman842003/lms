@@ -21,6 +21,12 @@ class StoreTeacherRequest extends FormRequest
             ];
         }
 
+        if ($this->has('teacher_profile_id')) {
+            return [
+                'teacher_profile_id' => ['required', 'string', 'exists:teachers,id'],
+            ];
+        }
+
         return [
             'name' => ['required', 'string', 'min:3'],
             'phone' => ['required', 'string', 'regex:/^01[0-9]{9}$/', 'unique:teachers,phone'],
@@ -34,6 +40,8 @@ class StoreTeacherRequest extends FormRequest
         return [
             'teacher_id.required' => 'معرف المدرس مطلوب',
             'teacher_id.exists' => 'المدرس غير موجود',
+            'teacher_profile_id.required' => 'معرف المدرس مطلوب',
+            'teacher_profile_id.exists' => 'المدرس غير موجود',
             'name.required' => 'الاسم مطلوب',
             'name.string' => 'الاسم يجب أن يكون نصاً',
             'name.min' => 'الاسم يجب أن يكون 3 أحرف على الأقل',

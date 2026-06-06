@@ -82,7 +82,15 @@ export default function AcademyGroupsPage() {
       const fetchTeacherGrades = async () => {
         try {
           const response = await academyService.getGrades(1, 100, { teacher_id: formData.teacher_id });
-          setGrades(response.data?.data || []);
+          let gradesList = [];
+          if (response?.data?.data && Array.isArray(response.data.data)) {
+            gradesList = response.data.data;
+          } else if (response?.data && Array.isArray(response.data)) {
+            gradesList = response.data;
+          } else if (Array.isArray(response)) {
+            gradesList = response;
+          }
+          setGrades(gradesList);
         } catch (error) {
           setGrades([]);
         }
@@ -518,7 +526,7 @@ export default function AcademyGroupsPage() {
         title="تأكيد الحذف"
         message={
           <div>
-            <p className="text-gray-300">هل أنت متأكد من حذف المجموعة "{selectedGroup?.name}"؟</p>
+            <p className="text-gray-300">هل أنت متأكد من حذف المجموعة &quot;{selectedGroup?.name}&quot;؟</p>
             <p className="text-red-500 mt-2 text-sm">
               سيتم حذف جميع البيانات المرتبطة بهذه المجموعة.
             </p>

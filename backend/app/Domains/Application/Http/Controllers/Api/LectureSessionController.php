@@ -18,7 +18,7 @@ class LectureSessionController extends Controller
         
         // 1. If user is Teacher, must own the lecture
         if ($user instanceof \App\Domains\Auth\Models\Teacher) {
-            if ($user->id !== $lecture->teacher_id) {
+            if ($user->id !== $lecture->teacher_profile_id) {
                 return response()->json(['message' => 'Unauthorized'], 403);
             }
         }
@@ -59,7 +59,7 @@ class LectureSessionController extends Controller
         
         // 1. If user is Teacher, must own the lecture
         if ($user instanceof \App\Domains\Auth\Models\Teacher) {
-            if ($user->id !== $lecture->teacher_id) {
+            if ($user->id !== $lecture->teacher_profile_id) {
                 return response()->json(['message' => 'Unauthorized'], 403);
             }
         }

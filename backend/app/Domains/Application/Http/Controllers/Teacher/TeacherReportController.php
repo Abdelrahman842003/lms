@@ -28,7 +28,7 @@ class TeacherReportController extends Controller
         $startDate = Carbon::parse($validated['start_date'])->startOfDay();
         $endDate = Carbon::parse($validated['end_date'])->endOfDay();
 
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
         $report = $this->reportService->getTeacherReport($teacher, $startDate, $endDate);
 
         return $this->successResponse($report);

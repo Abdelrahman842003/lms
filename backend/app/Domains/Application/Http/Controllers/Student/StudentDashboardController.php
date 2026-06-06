@@ -23,10 +23,10 @@ class StudentDashboardController extends Controller
         // Validation handled by FormRequest
 
         $student = $request->user();
-        $teacherId = $request->teacher_id;
+        $teacherProfileId = $request->teacher_profile_id;
 
         // Validate Teacher & Enrollment Status
-        $validationResult = $this->dashboardService->validateTeacherAndGetEnrollment($student, $teacherId);
+        $validationResult = $this->dashboardService->validateTeacherAndGetEnrollment($student, $teacherProfileId);
         
         if (!$validationResult) {
              return $this->errorResponse('المدرس غير موجود أو تم تعليقه', 403);
@@ -35,20 +35,20 @@ class StudentDashboardController extends Controller
         $enrollment = $validationResult['enrollment'];
 
         // Get mistakes count (unmastered)
-        $mistakesStats = $this->mistakesService->getStats($student->id, $teacherId);
+        $mistakesStats = $this->mistakesService->getStats($student->id, $teacherProfileId);
         $mistakesCount = $mistakesStats['pending'] ?? 0;
 
         // Get total points
-        $totalPoints = $this->dashboardService->getStudentPoints($student, $teacherId);
+        $totalPoints = $this->dashboardService->getStudentPoints($student, $teacherProfileId);
 
         // Get teacher stats
-        $teacherStats = $this->dashboardService->getTeacherStats($student, $teacherId);
+        $teacherStats = $this->dashboardService->getTeacherStats($student, $teacherProfileId);
 
         // Get upcoming lectures
-        $upcomingLectures = $this->dashboardService->getUpcomingLectures($teacherId, 3);
+        $upcomingLectures = $this->dashboardService->getUpcomingLectures($teacherProfileId, 3);
 
         // Get latest news (mixed feed of attendance and exams)
-        $latestNews = $this->dashboardService->getLatestNews($student, $teacherId, 5);
+        $latestNews = $this->dashboardService->getLatestNews($student, $teacherProfileId, 5);
 
         return $this->successResponse([
             'stats' => [

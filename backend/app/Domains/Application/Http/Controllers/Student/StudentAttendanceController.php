@@ -24,10 +24,10 @@ class StudentAttendanceController extends Controller
     public function index(GetAttendanceRequest $request): JsonResponse
     {
         $student = $request->user();
-        $teacherId = $request->validated('teacher_id');
+        $teacherProfileId = $request->validated('teacher_profile_id');
         $perPage = (int) $request->input('per_page', 10);
 
-        $attendances = $this->attendanceService->getAttendances($student, $teacherId, $perPage);
+        $attendances = $this->attendanceService->getAttendances($student, $teacherProfileId, $perPage);
 
         return $this->successResponse(
             StudentAttendanceResource::collection($attendances)->response()->getData(true)

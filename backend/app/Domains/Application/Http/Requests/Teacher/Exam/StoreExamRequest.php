@@ -17,7 +17,7 @@ class StoreExamRequest extends FormRequest
 
     public function rules(): array
     {
-        return [
+        $rules = [
             'title' => 'required|string|max:255',
             'type' => 'nullable|string|in:manual,dynamic,self_test',
             'dynamic_settings' => 'nullable|array',
@@ -44,6 +44,15 @@ class StoreExamRequest extends FormRequest
             'question_ids' => 'nullable|array',
             'question_ids.*' => 'exists:questions,id',
         ];
+
+        // For Academy or Secretary, teacher is required
+        $user = auth()->user();
+        if ($user instanceof \App\Domains\Auth\Models\Academy || $user instanceof \App\Domains\Auth\Models\Secretary) {
+            $rules['teacher_profile_id'] = 'required_without:teacher_id|exists:teacher_profiles,id';
+            $rules['teacher_id'] = 'required_without:teacher_profile_id';
+        }
+
+        return $rules;
     }
 
     public function messages(): array
@@ -65,6 +74,8 @@ class StoreExamRequest extends FormRequest
             'time_per_question.min' => 'مدة السؤال يجب أن تكون 10 ثوانٍ على الأقل',
             'time_per_question.max' => 'مدة السؤال يجب ألا تتجاوز 10 دقائق',
             'questions.required_if' => 'الأسئلة مطلوبة في حالة الامتحان اليدوي',
+            'teacher_profile_id.required_without' => 'المدرس مطلوب',
+            'teacher_id.required_without' => 'المدرس مطلوب',
         ];
     }
 
@@ -74,5 +85,7 @@ class StoreExamRequest extends FormRequest
             'title' => clean_input($this->input('title')),
             'subject' => clean_input($this->input('subject')),
         ]);
+
+        $this->merge(\App\Domains\Application\Traits\ResolvesTeacher::resolveTeacherInput($this));
     }
 }

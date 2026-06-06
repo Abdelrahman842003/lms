@@ -72,7 +72,7 @@ class ExamController extends Controller
         $filters = $request->only(['search', 'date_from', 'date_to']);
         $academyId = $request->header('X-Academy-Id') ?? $request->input('academy_id');
         
-        $exams = $this->service->getExams($this->getTeacherFromRequest($request), $perPage, $filters, $academyId);
+        $exams = $this->service->getExams($this->getProfileFromRequest($request), $perPage, $filters, $academyId);
 
         return $this->successResponse(
             ExamResource::collection($exams)->response()->getData(true)
@@ -82,14 +82,14 @@ class ExamController extends Controller
     public function store(StoreExamRequest $request): JsonResponse
     {
         try {
-            $teacher = $this->getTeacherFromRequest($request);
+            $teacher = $this->getProfileFromRequest($request);
             $academyId = $request->header('X-Academy-Id') ?? $request->input('academy_id');
             
             $resolvedAcademyId = null;
             if ($academyId && $academyId !== 'independent') {
                 // Check if teacher belongs to this academy using pivot
                 $teacherBelongsToAcademy = \Illuminate\Support\Facades\DB::table('academy_teacher')
-                    ->where('teacher_id', $teacher->id)
+                    ->where('teacher_profile_id', $teacher->id)
                     ->where('academy_id', $academyId)
                     ->where('is_active', true)
                     ->exists();
@@ -165,7 +165,7 @@ class ExamController extends Controller
 
     public function update(UpdateExamRequest $request, Exam $exam): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
         
         Gate::authorize('update', $exam);
 

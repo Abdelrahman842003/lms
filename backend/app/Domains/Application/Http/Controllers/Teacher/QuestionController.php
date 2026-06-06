@@ -19,10 +19,10 @@ class QuestionController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
         $academyId = $request->header('X-Academy-Id') ?? $request->input('academy_id');
         
-        $query = Question::where('teacher_id', $teacher->id);
+        $query = Question::where('teacher_profile_id', $teacher->id);
 
         if ($academyId === 'independent') {
             $query->where(function ($q) {
@@ -70,11 +70,11 @@ class QuestionController extends Controller
 
     public function store(StoreQuestionRequest $request): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
         $academyId = $request->header('X-Academy-Id') ?? $request->input('academy_id');
         
         $data = $request->validated();
-        $data['teacher_id'] = $teacher->id;
+        $data['teacher_profile_id'] = $teacher->id;
 
         // Ensure grade belongs to the correct context
         if ($academyId && $academyId !== 'independent') {
@@ -102,8 +102,8 @@ class QuestionController extends Controller
 
     public function show(Request $request, Question $question): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
-        if ($question->teacher_id !== $teacher->id) {
+        $teacher = $this->getProfileFromRequest($request);
+        if ($question->teacher_profile_id !== $teacher->id) {
             return $this->errorResponse('غير مصرح لك بعرض هذا السؤال', 403);
         }
 
@@ -121,8 +121,8 @@ class QuestionController extends Controller
 
     public function update(UpdateQuestionRequest $request, Question $question): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
-        if ($question->teacher_id !== $teacher->id) {
+        $teacher = $this->getProfileFromRequest($request);
+        if ($question->teacher_profile_id !== $teacher->id) {
             return $this->errorResponse('غير مصرح لك بتعديل هذا السؤال', 403);
         }
 
@@ -145,8 +145,8 @@ class QuestionController extends Controller
 
     public function destroy(Request $request, Question $question): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
-        if ($question->teacher_id !== $teacher->id) {
+        $teacher = $this->getProfileFromRequest($request);
+        if ($question->teacher_profile_id !== $teacher->id) {
             return $this->errorResponse('غير مصرح لك بحذف هذا السؤال', 403);
         }
 

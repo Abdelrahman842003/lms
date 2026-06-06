@@ -40,19 +40,19 @@ class StudentDashboardService
         $stats['average_exam_score'] = $examResults->avg('percentage') ?? 0;
 
         // Get upcoming lectures (active lectures for enrolled teachers)
-        $teacherIds = $enrollments->pluck('teacher_id');
+        $teacherProfileIds = $enrollments->pluck('teacher_profile_id');
         
-        $stats['upcoming_lectures'] = Lecture::whereIn('teacher_id', $teacherIds)
+        $stats['upcoming_lectures'] = Lecture::whereIn('teacher_profile_id', $teacherProfileIds)
             ->where('is_active', true)
-            ->with('teacher:id,name,avatar_key')
+            ->with('teacher:teachers.id,name,avatar_key')
             ->latest()
             ->take(5)
             ->get();
 
         // Get upcoming exams (active exams)
-        $stats['upcoming_exams'] = Exam::whereIn('teacher_id', $teacherIds)
+        $stats['upcoming_exams'] = Exam::whereIn('teacher_profile_id', $teacherProfileIds)
             ->where('is_active', true)
-            ->with('teacher:id,name,avatar_key')
+            ->with('teacher:teachers.id,name,avatar_key')
             ->latest()
             ->take(5)
             ->get();
@@ -60,31 +60,31 @@ class StudentDashboardService
         return $stats;
     }
 
-    public function getTeacherStats(Student $student, string $teacherId)
+    public function getTeacherStats(Student $student, string $teacherProfileId)
     {
         // Verify enrollment
         $enrollment = Enrollment::where('student_id', $student->id)
-            ->where('teacher_id', $teacherId)
+            ->where('teacher_profile_id', $teacherProfileId)
             ->where('is_active', true)
-            ->with(['academy:id', 'teacher:id'])
+            ->with(['academy:id', 'teacher:teachers.id'])
             ->firstOrFail();
 
         // Count lectures directly in DB
-        $totalLectures = Lecture::where('teacher_id', $teacherId)->count();
+        $totalLectures = Lecture::where('teacher_profile_id', $teacherProfileId)->count();
 
         // Count attendance directly in DB using join
         $attendanceCount = Attendance::where('student_id', $student->id)
             ->where('status', 'present')
-            ->whereHas('lecture', fn($q) => $q->where('teacher_id', $teacherId))
+            ->whereHas('lecture', fn($q) => $q->where('teacher_profile_id', $teacherProfileId))
             ->count();
 
         // Get exam stats directly in DB
         $examStats = ExamResult::where('student_id', $student->id)
-            ->whereHas('exam', fn($q) => $q->where('teacher_id', $teacherId))
+            ->whereHas('exam', fn($q) => $q->where('teacher_profile_id', $teacherProfileId))
             ->selectRaw('COUNT(*) as count, COALESCE(AVG(percentage), 0) as avg')
             ->first();
 
-        $totalExams = Exam::where('teacher_id', $teacherId)->count();
+        $totalExams = Exam::where('teacher_profile_id', $teacherProfileId)->count();
 
         return [
             'attendance_rate' => $totalLectures > 0 ? round(($attendanceCount / $totalLectures) * 100) : 0,
@@ -101,12 +101,12 @@ class StudentDashboardService
     /**
      * Validate teacher and get enrollment for dashboard
      */
-    public function validateTeacherAndGetEnrollment(Student $student, string $teacherId): ?array
+    public function validateTeacherAndGetEnrollment(Student $student, string $teacherProfileId): ?array
     {
         // Get Enrollment (for Balance & Status)
         $enrollment = Enrollment::where('student_id', $student->id)
-            ->where('teacher_id', $teacherId)
-            ->with(['academy:id', 'academy.tenantPlan', 'teacher:id,status', 'teacher.tenantPlan'])
+            ->where('teacher_profile_id', $teacherProfileId)
+            ->with(['academy:id', 'academy.tenantPlan', 'teacher:teachers.id,teachers.status', 'teacher.tenantPlan'])
             ->first();
 
         if (!$enrollment || !$enrollment->is_active) {
@@ -135,10 +135,10 @@ class StudentDashboardService
     /**
      * Get student points for a teacher
      */
-    public function getStudentPoints(Student $student, string $teacherId): int
+    public function getStudentPoints(Student $student, string $teacherProfileId): int
     {
         $pointsRecord = StudentPoint::where('student_id', $student->id)
-            ->where('teacher_id', $teacherId)
+            ->where('teacher_profile_id', $teacherProfileId)
             ->first();
         return $pointsRecord ? $pointsRecord->total_points : 0;
     }
@@ -146,9 +146,9 @@ class StudentDashboardService
     /**
      * Get upcoming lectures for a teacher
      */
-    public function getUpcomingLectures(string $teacherId, int $limit = 3): array
+    public function getUpcomingLectures(string $teacherProfileId, int $limit = 3): array
     {
-        return Lecture::where('teacher_id', $teacherId)
+        return Lecture::where('teacher_profile_id', $teacherProfileId)
             ->where('start_time', '>=', Carbon::today())
             ->orderBy('start_time')
             ->take($limit)
@@ -168,11 +168,11 @@ class StudentDashboardService
     /**
      * Get recent attendance records
      */
-    public function getRecentAttendance(Student $student, string $teacherId, int $limit = 5): array
+    public function getRecentAttendance(Student $student, string $teacherProfileId, int $limit = 5): array
     {
         return $student->attendances()
-            ->whereHas('lecture', function ($q) use ($teacherId) {
-                $q->where('teacher_id', $teacherId);
+            ->whereHas('lecture', function ($q) use ($teacherProfileId) {
+                $q->where('teacher_profile_id', $teacherProfileId);
             })
             ->with('lecture:id,title')
             ->latest()
@@ -194,9 +194,9 @@ class StudentDashboardService
     /**
      * Get recent exam results
      */
-    public function getRecentExams(Student $student, string $teacherId, int $limit = 5): array
+    public function getRecentExams(Student $student, string $teacherProfileId, int $limit = 5): array
     {
-        return Exam::where('teacher_id', $teacherId)
+        return Exam::where('teacher_profile_id', $teacherProfileId)
             ->whereHas('results', function ($q) use ($student) {
                 $q->where('student_id', $student->id);
             })
@@ -224,10 +224,10 @@ class StudentDashboardService
     /**
      * Get latest news (mixed feed of attendance and exams)
      */
-    public function getLatestNews(Student $student, string $teacherId, int $limit = 5): array
+    public function getLatestNews(Student $student, string $teacherProfileId, int $limit = 5): array
     {
-        $recentAttendance = collect($this->getRecentAttendance($student, $teacherId, $limit));
-        $recentExams = collect($this->getRecentExams($student, $teacherId, $limit));
+        $recentAttendance = collect($this->getRecentAttendance($student, $teacherProfileId, $limit));
+        $recentExams = collect($this->getRecentExams($student, $teacherProfileId, $limit));
 
         // Merge and sort by timestamp desc
         return $recentAttendance->concat($recentExams)

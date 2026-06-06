@@ -6,7 +6,7 @@ namespace App\Domains\Application\Services\Teacher;
 
 use App\Domains\Application\Exceptions\DomainException;
 use App\Domains\Auth\Models\Student;
-use App\Domains\Auth\Models\Teacher;
+use App\Domains\Auth\Models\TeacherProfile;
 use App\Domains\Enrollments\Models\Enrollment;
 use App\Domains\Enrollments\Models\StudentActivityLog;
 use App\Domains\Subscriptions\Exceptions\QuotaExceededException;
@@ -27,7 +27,7 @@ class StudentService
     public function getStudents($teacher, $perPage = 10, $search = null, $status = null, ?string $academyId = null)
     {
         $query = Enrollment::with(['student', 'grade', 'group'])
-            ->where('teacher_id', $teacher->id)
+            ->where('teacher_profile_id', $teacher->id)
             ->latest();
 
         // Apply filters using Filter class
@@ -52,7 +52,7 @@ class StudentService
      * Create or attach a student to a teacher
      * Smart flow: if student exists (by phone), attach; otherwise create
      */
-    public function createStudent(Teacher $teacher, array $data): array
+    public function createStudent(TeacherProfile $teacher, array $data): array
     {
         return DB::transaction(function () use ($teacher, $data) {
             $existingStudent = null;
@@ -75,7 +75,7 @@ class StudentService
 
                 // Check if already enrolled with this teacher IN THE SAME CONTEXT (academy or independent)
                 $existingEnrollment = Enrollment::where('student_id', $existingStudent->id)
-                    ->where('teacher_id', $teacher->id);
+                    ->where('teacher_profile_id', $teacher->id);
 
                 // Filter by academy context
                 if ($academyIdFromContext) {
@@ -181,7 +181,7 @@ class StudentService
             // Create enrollment
             $enrollment = Enrollment::create([
                 'student_id' => $student->id,
-                'teacher_id' => $teacher->id,
+                'teacher_profile_id' => $teacher->id,
                 'grade_id' => $data['grade_id'] ?? null,
                 'group_id' => $data['group_id'] ?? null,
                 'academy_id' => $academyId,
@@ -194,7 +194,7 @@ class StudentService
                 $student->id,
                 StudentActivityAction::ENROLLED->value,
                 $enrollment->id,
-                ['teacher_id' => $teacher->id, 'is_new_student' => $isNewStudent],
+                ['teacher_profile_id' => $teacher->id, 'is_new_student' => $isNewStudent],
                 'Teacher',
                 $teacher->id
             );
@@ -302,7 +302,7 @@ class StudentService
             $enrollment->student_id,
             StudentActivityAction::UNENROLLED->value,
             $enrollment->id,
-            ['teacher_id' => $enrollment->teacher_id]
+            ['teacher_profile_id' => $enrollment->teacher_profile_id]
         );
 
         return $enrollment->delete();
@@ -328,7 +328,7 @@ class StudentService
     /**
      * Get statistics for teacher dashboard
      */
-    public function getStatistics(Teacher $teacher): array
+    public function getStatistics(TeacherProfile $teacher): array
     {
         // Total enrolled students
         $totalStudents = $teacher->enrollments()->count();
@@ -345,7 +345,7 @@ class StudentService
         // Top Grade by enrollment count
         $topGrade = $teacher->grades()
             ->withCount(['enrollments' => function ($q) use ($teacher) {
-                $q->where('teacher_id', $teacher->id);
+                $q->where('teacher_profile_id', $teacher->id);
             }])
             ->orderByDesc('enrollments_count')
             ->first();
@@ -353,7 +353,7 @@ class StudentService
         // Top Group by enrollment count
         $topGroup = $teacher->groups()
             ->withCount(['enrollments' => function ($q) use ($teacher) {
-                $q->where('teacher_id', $teacher->id);
+                $q->where('teacher_profile_id', $teacher->id);
             }])
             ->orderByDesc('enrollments_count')
             ->first();
@@ -458,7 +458,7 @@ class StudentService
                 \App\Domains\Subscriptions\Models\PaymentLog::create([
                     'client_side_uuid' => \Illuminate\Support\Str::uuid(),
                     'enrollment_id' => $enrollment->id,
-                    'teacher_id' => $enrollment->teacher_id,
+                    'teacher_profile_id' => $enrollment->teacher_profile_id,
                     'student_id' => $enrollment->student_id,
                     'amount' => $paidAmount,
                     'status' => 'confirmed',
@@ -500,7 +500,7 @@ class StudentService
         $endDate = now()->endOfMonth();
 
         // Fetch all payments in one query instead of per-month
-        $payments = \App\Domains\Subscriptions\Models\PaymentLog::where('teacher_id', $enrollment->teacher_id)
+        $payments = \App\Domains\Subscriptions\Models\PaymentLog::where('teacher_profile_id', $enrollment->teacher_profile_id)
             ->where('student_id', $enrollment->student_id)
             ->where('status', 'confirmed')
             ->whereBetween('confirmed_at', [$startDate, $endDate])

@@ -8,7 +8,7 @@ use App\Domains\Auth\Models\Admin;
 use App\Domains\Notifications\Services\NotificationSettingsService;
 use App\Domains\Notifications\Models\SentNotification;
 use App\Domains\Auth\Models\Student;
-use App\Domains\Auth\Models\Teacher;
+use App\Domains\Auth\Models\TeacherProfile;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 
@@ -24,7 +24,7 @@ class NotificationService
      *
      * @param int $limit Maximum number of recipients to return (0 = no limit)
      */
-    public function getRecipients(Teacher $teacher, string $recipientType, ?string $gradeId = null, ?string $groupId = null, int $limit = 500): Collection
+    public function getRecipients(TeacherProfile $teacher, string $recipientType, ?string $gradeId = null, ?string $groupId = null, int $limit = 500): Collection
     {
         $guardianColumns = ['id', 'phone'];
         $studentColumns = ['id', 'name', 'phone', 'guardian_id'];
@@ -33,13 +33,13 @@ class NotificationService
             'all' => Student::with(['guardian:' . implode(',', $guardianColumns)])
                 ->select($studentColumns)
                 ->whereHas('enrollments', function ($q) use ($teacher) {
-                    $q->where('teacher_id', $teacher->id)
+                    $q->where('teacher_profile_id', $teacher->id)
                       ->where('is_active', true);
                 }),
             'grade' => Student::with(['guardian:' . implode(',', $guardianColumns)])
                 ->select($studentColumns)
                 ->whereHas('enrollments', function ($q) use ($teacher, $gradeId) {
-                    $q->where('teacher_id', $teacher->id)
+                    $q->where('teacher_profile_id', $teacher->id)
                       ->where('grade_id', $gradeId)
                       ->where('is_active', true);
                 }),
@@ -47,7 +47,7 @@ class NotificationService
                 ->select($studentColumns)
                 ->whereHas('enrollments', function ($q) use ($teacher, $groupId) {
                     $q->where('group_id', $groupId)
-                      ->where('teacher_id', $teacher->id)
+                      ->where('teacher_profile_id', $teacher->id)
                       ->where('is_active', true);
                 }),
             'admin' => Admin::select(['id', 'name', 'username']),
@@ -66,10 +66,10 @@ class NotificationService
         return $query->get();
     }
 
-    public function logNotification(Teacher $teacher, array $data, int $recipientCount): SentNotification
+    public function logNotification(TeacherProfile $teacher, array $data, int $recipientCount): SentNotification
     {
         return SentNotification::create([
-            'teacher_id' => $teacher->id,
+            'teacher_profile_id' => $teacher->id,
             'title' => $data['title'],
             'message' => $data['message'],
             'recipient_type' => $data['recipient_type'],
@@ -77,7 +77,7 @@ class NotificationService
         ]);
     }
 
-    public function sendToParents(Collection $students, Teacher $teacher, array $data): void
+    public function sendToParents(Collection $students, TeacherProfile $teacher, array $data): void
     {
         if ($this->notificationSettings->isTypeBlocked('guardian')) {
             return;

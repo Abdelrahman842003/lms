@@ -15,10 +15,12 @@ class AcademyReportRequest extends FormRequest
 
     public function rules(): array
     {
+        $presets = 'today,last_7_days,this_month,last_month,last_3_months,this_year,custom_range';
         return [
-            'preset' => 'sometimes|string|in:today,last_7_days,this_month,last_month,last_3_months,this_year,custom_range',
-            'start_at' => 'required_if:preset,custom_range|date',
-            'end_at' => 'required_if:preset,custom_range|date|after_or_equal:start_at',
+            'preset' => 'sometimes|string|in:' . $presets,
+            'range' => 'sometimes|string|in:' . $presets,
+            'start_at' => 'required_if:preset,custom_range|required_if:range,custom_range|date',
+            'end_at' => 'required_if:preset,custom_range|required_if:range,custom_range|date|after_or_equal:start_at',
             'comparison_mode' => 'sometimes|string|in:previous_period,same_period_last_year',
             'teacher_id' => 'sometimes|string|uuid',
             'grade_id' => 'sometimes|string|uuid',
@@ -36,6 +38,7 @@ class AcademyReportRequest extends FormRequest
     {
         return [
             'preset.in' => 'قيمة الفترة غير صالحة',
+            'range.in' => 'قيمة الفترة غير صالحة',
             'start_at.required_if' => 'تاريخ البداية مطلوب للنطاق المخصص',
             'start_at.date' => 'صيغة تاريخ البداية غير صحيحةة',
             'end_at.required_if' => 'تاريخ النهاية مطلوب للنطاق المخصص',
@@ -51,7 +54,7 @@ class AcademyReportRequest extends FormRequest
     public function filters(): array
     {
         return array_filter([
-            'preset' => $this->input('preset'),
+            'preset' => $this->input('preset') ?? $this->input('range'),
             'start_at' => $this->input('start_at'),
             'end_at' => $this->input('end_at'),
             'comparison_mode' => $this->input('comparison_mode'),

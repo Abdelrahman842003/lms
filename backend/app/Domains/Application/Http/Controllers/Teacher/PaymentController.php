@@ -24,7 +24,7 @@ class PaymentController extends Controller
     public function store(StorePaymentRequest $request): JsonResponse
     {
         try {
-            $teacher = $this->getTeacherFromRequest($request);
+            $teacher = $this->getProfileFromRequest($request);
             $data = TeacherPaymentData::fromRequest($request);
             
             $result = $this->service->createPayment($teacher, $data);

@@ -4,17 +4,24 @@ declare(strict_types=1);
 
 namespace App\Domains\Gamification\Models;
 
-use App\Domains\Auth\Models\Teacher;
+use App\Domains\Auth\Models\TeacherProfile;
+use App\Domains\Support\Traits\UsesTeacherProfileScope;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class GamificationSetting extends Model
 {
-    use HasUuids;
+    use HasFactory, HasUuids, UsesTeacherProfileScope;
+
+    protected static function newFactory()
+    {
+        return \Database\Factories\GamificationSettingFactory::new();
+    }
 
     protected $fillable = [
-        'teacher_id',
+        'teacher_profile_id',
         'attendance_points',
         'perfect_month_bonus',
         'exam_max_points',
@@ -87,29 +94,26 @@ class GamificationSetting extends Model
         'video_first_watch_bonus'  => 5,
     ];
 
-    public function teacher(): BelongsTo
-    {
-        return $this->belongsTo(Teacher::class);
-    }
+    // The teacherProfile relation is provided by the UsesTeacherProfileScope trait.
 
     /**
-     * Get or create settings for a teacher with defaults from global settings
+     * Get or create settings for a teacher profile with defaults from global settings
      */
-    public static function getOrCreate(string $teacherId): self
+    public static function getOrCreate(string|int $teacherProfileId): self
     {
-        $settings = self::where('teacher_id', $teacherId)->first();
+        $settings = self::where('teacher_profile_id', $teacherProfileId)->first();
         
         if (!$settings) {
-            $settings = new self(['teacher_id' => $teacherId]);
-        }
-
-        // ملء القيم من الإعدادات العامة
-        foreach (self::DEFAULTS as $key => $defaultValue) {
-            $globalValue = \App\Domains\Application\Models\Setting::getValue('gamification_' . $key);
-            if ($globalValue !== null) {
-                $settings->{$key} = is_numeric($globalValue) ? (int) $globalValue : $globalValue;
-            } else {
-                $settings->{$key} = $defaultValue;
+            $settings = new self(['teacher_profile_id' => $teacherProfileId]);
+            
+            // ملء القيم من الإعدادات العامة فقط في حالة الإنشاء الجديد
+            foreach (self::DEFAULTS as $key => $defaultValue) {
+                $globalValue = \App\Domains\Application\Models\Setting::getValue('gamification_' . $key);
+                if ($globalValue !== null) {
+                    $settings->{$key} = is_numeric($globalValue) ? (int) $globalValue : $globalValue;
+                } else {
+                    $settings->{$key} = $defaultValue;
+                }
             }
         }
 

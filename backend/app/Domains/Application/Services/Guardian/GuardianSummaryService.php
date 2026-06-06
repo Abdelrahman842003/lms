@@ -15,28 +15,28 @@ class GuardianSummaryService
 {
     public function getChildSummary(Student $student, array $options = []): array
     {
-        $teacherId = $options['teacher_id'] ?? null;
+        $teacherProfileId = $options['teacher_profile_id'] ?? null;
         $dateFrom = isset($options['date_from']) ? Carbon::parse($options['date_from']) : Carbon::now()->subMonth();
         $dateTo = isset($options['date_to']) ? Carbon::parse($options['date_to']) : Carbon::now();
 
-        if (!$teacherId) {
+        if (!$teacherProfileId) {
             // If no teacher specified, get summary for all teachers
-            // For now, let's just return empty or require teacher_id
+            // For now, let's just return empty or require teacher_profile_id
             // The controller validation should handle this, but let's be safe
             return [];
         }
 
         return [
-            'attendance' => $this->getAttendanceData($teacherId, $student->id, $dateFrom, $dateTo),
-            'exams' => $this->getExamsData($teacherId, $student->id, $dateFrom, $dateTo),
-            'ranking' => $this->getRankingData($teacherId, $student->id),
+            'attendance' => $this->getAttendanceData($teacherProfileId, $student->id, $dateFrom, $dateTo),
+            'exams' => $this->getExamsData($teacherProfileId, $student->id, $dateFrom, $dateTo),
+            'ranking' => $this->getRankingData($teacherProfileId, $student->id),
         ];
     }
 
-    public function getAttendanceData(string $teacherId, string $studentId, Carbon $start, Carbon $end): array
+    public function getAttendanceData(string $teacherProfileId, string $studentId, Carbon $start, Carbon $end): array
     {
         // Get all lectures in range
-        $lectures = Lecture::where('teacher_id', $teacherId)
+        $lectures = Lecture::where('teacher_profile_id', $teacherProfileId)
             ->whereBetween('created_at', [$start, $end])
             ->where('is_active', false) // Only ended lectures count for stats usually
             ->get();
@@ -81,10 +81,10 @@ class GuardianSummaryService
         ];
     }
 
-    public function getExamsData(string $teacherId, string $studentId, Carbon $start, Carbon $end): array
+    public function getExamsData(string $teacherProfileId, string $studentId, Carbon $start, Carbon $end): array
     {
         // Get exams in range
-        $exams = Exam::where('teacher_id', $teacherId)
+        $exams = Exam::where('teacher_profile_id', $teacherProfileId)
             ->whereBetween('date', [$start->format('Y-m-d'), $end->format('Y-m-d')])
             ->get();
 
@@ -132,14 +132,14 @@ class GuardianSummaryService
         ];
     }
 
-    public function getRankingData(string $teacherId, string $studentId): array
+    public function getRankingData(string $teacherProfileId, string $studentId): array
     {
         // Calculate total points or average score for ranking
         // Optimized: Single query with GROUP BY instead of N+1 queries
         
         // Get all active student IDs for this teacher in one query
-        $studentIds = Student::whereHas('enrollments', function ($q) use ($teacherId) {
-            $q->where('teacher_id', $teacherId)->where('is_active', true);
+        $studentIds = Student::whereHas('enrollments', function ($q) use ($teacherProfileId) {
+            $q->where('teacher_profile_id', $teacherProfileId)->where('is_active', true);
         })->pluck('id');
 
         $totalStudents = $studentIds->count();
@@ -153,8 +153,8 @@ class GuardianSummaryService
 
         // Single query to get average percentage for all students at once
         $rankings = ExamResult::whereIn('student_id', $studentIds)
-            ->whereHas('exam', function ($q) use ($teacherId) {
-                $q->where('teacher_id', $teacherId);
+            ->whereHas('exam', function ($q) use ($teacherProfileId) {
+                $q->where('teacher_profile_id', $teacherProfileId);
             })
             ->select('student_id', \Illuminate\Support\Facades\DB::raw('AVG(percentage) as average'))
             ->groupBy('student_id')

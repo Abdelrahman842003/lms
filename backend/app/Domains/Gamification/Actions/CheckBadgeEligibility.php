@@ -24,7 +24,7 @@ final class CheckBadgeEligibility
         }
 
         if ($attendedDays >= $totalDays) {
-            $settings = GamificationSetting::where('teacher_id', $teacherId)->first();
+            $settings = GamificationSetting::where('teacher_profile_id', $teacherId)->first();
 
             if ($settings?->is_enabled) {
                 BadgeEarned::dispatch(

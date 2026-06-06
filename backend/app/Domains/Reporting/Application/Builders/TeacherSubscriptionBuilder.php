@@ -15,7 +15,7 @@ final readonly class TeacherSubscriptionBuilder
         private TeacherSubscriptionQueryService $subscriptionQuery,
     ) {}
 
-    public function build(Teacher $teacher, TeacherScope $scope, TeacherReportFilters $filters): array
+    public function build($teacher, TeacherScope $scope, TeacherReportFilters $filters): array
     {
         $details = $this->subscriptionQuery->planDetails($teacher, $filters);
 

@@ -39,7 +39,7 @@ final readonly class GenerateTeacherReportAction
         private TeacherSubscriptionQueryService $subscriptionQueryService,
     ) {}
 
-    public function execute(Teacher $teacher, array $input): array
+    public function execute($teacher, array $input): array
     {
         $baseFilters = $this->buildContext->execute($input);
 
@@ -51,7 +51,7 @@ final readonly class GenerateTeacherReportAction
         );
 
         $scope = TeacherScope::fromRequest(
-            teacherId: $teacher->id,
+            teacherId: (string) $teacher->id,
             groupId: $filters->groupId,
         );
 
@@ -82,7 +82,7 @@ final readonly class GenerateTeacherReportAction
         ];
     }
 
-    private function buildAlertContext(Teacher $teacher, TeacherScope $scope, TeacherReportFilters $filters, array $sections): array
+    private function buildAlertContext($teacher, TeacherScope $scope, TeacherReportFilters $filters, array $sections): array
     {
         $incomeTrends = $sections['income_trends'] ?? [];
         $attendance = $sections['attendance'] ?? [];

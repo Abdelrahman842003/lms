@@ -27,19 +27,32 @@ class GamificationController extends Controller
      */
     public function leaderboard(Request $request): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
-        $perPage = (int) $request->input('per_page', 15);
-        $academyId = $request->header('X-Academy-Id');
-        $gradeId = $request->input('grade_id');
-        $groupId = $request->input('group_id');
-        
-        $weeklyLeaderboard = $this->pointService->getWeeklyLeaderboardPaginated($teacher->id, $perPage, $academyId, $gradeId, $groupId);
-        $allTimeLeaderboard = $this->pointService->getAllTimeLeaderboardPaginated($teacher->id, $perPage, $academyId, $gradeId, $groupId);
+        try {
+            $teacher = $this->getProfileFromRequest($request);
+            if (!$teacher) {
+                return $this->errorResponse('لم يتم العثور على سياق المدرس', 404);
+            }
 
-        return $this->successResponse([
-            'weekly' => $weeklyLeaderboard,
-            'all_time' => $allTimeLeaderboard,
-        ]);
+            $perPage = (int) $request->input('per_page', 15);
+            $academyId = $request->header('X-Academy-Id');
+            $gradeId = $request->input('grade_id');
+            $groupId = $request->input('group_id');
+            
+            $weeklyLeaderboard = $this->pointService->getWeeklyLeaderboardPaginated($teacher->id, $perPage, $academyId, $gradeId, $groupId);
+            $allTimeLeaderboard = $this->pointService->getAllTimeLeaderboardPaginated($teacher->id, $perPage, $academyId, $gradeId, $groupId);
+
+            return $this->successResponse([
+                'weekly' => $weeklyLeaderboard,
+                'all_time' => $allTimeLeaderboard,
+            ]);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Gamification leaderboard error: ' . $e->getMessage(), [
+                'exception' => $e,
+                'teacher_id' => isset($teacher) ? $teacher->id : null,
+                'trace' => $e->getTraceAsString()
+            ]);
+            return $this->errorResponse('حدث خطأ أثناء تحميل لوحة الشرف: ' . $e->getMessage(), 500);
+        }
     }
 
     /**
@@ -47,7 +60,10 @@ class GamificationController extends Controller
      */
     public function settings(Request $request): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
+        if (!$teacher) {
+            return $this->errorResponse('لم يتم العثور على سياق المدرس', 404);
+        }
         $settings = GamificationSetting::getOrCreate($teacher->id);
 
         return $this->successResponse($settings);
@@ -58,7 +74,10 @@ class GamificationController extends Controller
      */
     public function updateSettings(UpdateGamificationSettingsRequest $request): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
+        if (!$teacher) {
+            return $this->errorResponse('لم يتم العثور على سياق المدرس', 404);
+        }
         
         $settings = GamificationSetting::getOrCreate($teacher->id);
         $settings->update($request->validated());
@@ -71,7 +90,10 @@ class GamificationController extends Controller
      */
     public function awardBonus(AwardBonusRequest $request): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
+        if (!$teacher) {
+            return $this->errorResponse('لم يتم العثور على سياق المدرس', 404);
+        }
         $data = $request->validated();
 
         $student = Student::findOrFail($data['student_id']);
@@ -96,7 +118,10 @@ class GamificationController extends Controller
      */
     public function studentPoints(Request $request, string $studentId): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
+        if (!$teacher) {
+            return $this->errorResponse('لم يتم العثور على سياق المدرس', 404);
+        }
         
         $stats = $this->pointService->getStudentStats($studentId, $teacher->id);
 

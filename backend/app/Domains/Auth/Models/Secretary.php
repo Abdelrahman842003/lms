@@ -11,14 +11,13 @@ use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Spatie\Permission\Traits\HasRoles;
 use App\Domains\Application\Traits\HasDeviceTokens;
-use App\Domains\Auth\Models\Academy;
-
+use App\Domains\Support\Traits\UsesTeacherProfileScope;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
 
 class Secretary extends Authenticatable
 {
-    use HasFactory, Notifiable, HasApiTokens, HasUuids, HasRoles, HasDeviceTokens, LogsActivity;
+    use HasFactory, Notifiable, HasApiTokens, HasUuids, HasRoles, HasDeviceTokens, LogsActivity, UsesTeacherProfileScope;
 
     public function getActivitylogOptions(): LogOptions
     {
@@ -39,6 +38,7 @@ class Secretary extends Authenticatable
         'avatar_key',
         'password',
         'is_active',
+        'teacher_profile_id',
     ];
 
     protected $hidden = [
@@ -58,7 +58,7 @@ class Secretary extends Authenticatable
 
     public function teachers()
     {
-        return $this->belongsToMany(Teacher::class, 'secretary_teacher')
+        return $this->belongsToMany(TeacherProfile::class, 'secretary_teacher', 'secretary_id', 'teacher_profile_id')
             ->withPivot('permissions')
             ->withTimestamps();
     }

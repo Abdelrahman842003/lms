@@ -7,6 +7,7 @@ namespace App\Domains\Enrollments\Models;
 use App\Domains\Auth\Models\Academy;
 use App\Domains\Auth\Models\Teacher;
 use App\Domains\Enrollments\Enums\GroupType;
+use App\Domains\Support\Traits\UsesTeacherProfileScope;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -15,7 +16,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Group extends Model
 {
-    use HasFactory, HasUuids;
+    use HasFactory, HasUuids, UsesTeacherProfileScope;
 
     protected static function newFactory()
     {
@@ -36,7 +37,7 @@ class Group extends Model
     protected $fillable = [
         'name',
         'grade_id',
-        'teacher_id',
+        'teacher_profile_id',
         'academy_id',
         'time',
         'days',
@@ -44,10 +45,7 @@ class Group extends Model
         'price',
     ];
 
-    public function teacher(): BelongsTo
-    {
-        return $this->belongsTo(Teacher::class);
-    }
+    // The teacherProfile relation is provided by the UsesTeacherProfileScope trait.
 
     public function grade(): BelongsTo
     {

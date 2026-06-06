@@ -8,6 +8,7 @@ use App\Domains\Auth\Models\Academy;
 use App\Domains\Auth\Models\Teacher;
 use App\Domains\Enrollments\Models\Grade;
 use App\Domains\Enrollments\Models\Group;
+use App\Domains\Support\Traits\UsesTeacherProfileScope;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -17,7 +18,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Lecture extends Model
 {
-    use HasFactory, HasUuids;
+    use HasFactory, HasUuids, UsesTeacherProfileScope;
 
     protected static function newFactory()
     {
@@ -25,7 +26,7 @@ class Lecture extends Model
     }
 
     protected $fillable = [
-        'teacher_id',
+        'teacher_profile_id',
         'academy_id',
         'grade_id',
         'group_id',
@@ -55,10 +56,7 @@ class Lecture extends Model
         ];
     }
 
-    public function teacher(): BelongsTo
-    {
-        return $this->belongsTo(Teacher::class);
-    }
+    // The teacherProfile relation is provided by the UsesTeacherProfileScope trait.
 
     public function academy(): BelongsTo
     {
@@ -107,13 +105,8 @@ class Lecture extends Model
 
     public function scopeForAcademyTeachers($query, $academyId)
     {
-        // Get lectures from teachers belonging to this academy using direct join
-        return $query->join('teachers', 'lectures.teacher_id', '=', 'teachers.id')
-            ->join('academy_teacher', function ($join) use ($academyId) {
-                $join->on('teachers.id', '=', 'academy_teacher.teacher_id')
-                    ->where('academy_teacher.academy_id', $academyId)
-                    ->where('academy_teacher.is_active', true);
-            })
-            ->select('lectures.*');
+        return $query->whereHas('teacherProfile', function ($q) use ($academyId) {
+            $q->where('academy_id', $academyId)->where('status', 'ACTIVE');
+        });
     }
 }

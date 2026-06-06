@@ -101,11 +101,16 @@ class StudentService
                 $student = Student::create($studentData);
             }
 
+            // Resolve the teacher's profile for this academy
+            $profile = \App\Domains\Auth\Models\TeacherProfile::where('teacher_id', $teacher->id)
+                ->where('academy_id', $academy->id)
+                ->first();
+            $profileId = $profile ? $profile->id : null;
+
             // Check if already enrolled with this teacher IN THIS ACADEMY
             $enrollment = Enrollment::where('student_id', $student->id)
-                ->where('teacher_id', $teacher->id)
+                ->where('teacher_profile_id', $profileId)
                 ->where('academy_id', $academy->id)
-                ->with(['academy:id', 'academy.tenantPlan', 'teacher:id', 'teacher.tenantPlan'])
                 ->first();
 
             if ($enrollment) {
@@ -118,7 +123,7 @@ class StudentService
             } else {
                 $enrollment = Enrollment::create([
                     'student_id' => $student->id,
-                    'teacher_id' => $teacher->id,
+                    'teacher_profile_id' => $profileId,
                     'academy_id' => $academy->id,
                     'grade_id' => $data->gradeId,
                     'group_id' => $data->groupId,
@@ -187,7 +192,7 @@ class StudentService
     public function getStatistics(Academy $academy): array
     {
         $baseQuery = Enrollment::where('academy_id', $academy->id)
-            ->with(['academy:id', 'academy.tenantPlan', 'teacher:id', 'teacher.tenantPlan']);
+            ->with(['academy:id', 'academy.tenantPlan', 'teacher:teachers.id', 'teacher.tenantPlan']);
 
         // Get unique students count
         $totalStudents = Student::whereHas('enrollments', function ($q) use ($academy) {

@@ -34,13 +34,13 @@ class DynamicExamGenerator
             if ($exam->type === 'self_test' || $exam->type->value === 'self_test') {
                 // For self-tests, use the student's current grade for this teacher
                 $enrollment = \App\Domains\Enrollments\Models\Enrollment::where('student_id', $studentId)
-                    ->where('teacher_id', $exam->teacher_id)
+                    ->where('teacher_profile_id', $exam->teacher_profile_id)
                     ->first();
                 $gradeId = $enrollment?->grade_id;
             }
 
             // 1. Select Questions dynamically
-            $questions = $this->selectionService->selectForStudent($exam->teacher_id, $studentId, $config, $gradeId);
+            $questions = $this->selectionService->selectForStudent($exam->teacher_profile_id, $studentId, $config, $gradeId);
 
             if ($questions->isEmpty()) {
                 throw new \Exception("لا يمكن توليد الامتحان لعدم وجود أسئلة متاحة.");
@@ -94,15 +94,15 @@ class DynamicExamGenerator
     /**
      * Helper to retrieve or create the master 'Self Test' exam for a teacher
      */
-    public function getOrCreateSelfTestMasterExam(string $teacherId): Exam
+    public function getOrCreateSelfTestMasterExam(string $teacherProfileId): Exam
     {
-        $exam = Exam::where('teacher_id', $teacherId)
+        $exam = Exam::where('teacher_profile_id', $teacherProfileId)
             ->where('type', 'self_test')
             ->first();
 
         if (!$exam) {
             $exam = Exam::create([
-                'teacher_id' => $teacherId,
+                'teacher_profile_id' => $teacherProfileId,
                 'title' => 'اختبر نفسك',
                 'type' => 'self_test',
                 'subject' => 'تدريب عام',

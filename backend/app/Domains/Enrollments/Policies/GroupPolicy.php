@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Domains\Enrollments\Policies;
 
-use App\Domains\Auth\Models\Secretary;
-use App\Domains\Auth\Models\Teacher;
+use App\Domains\Application\Policies\BasePolicy;
 use App\Domains\Enrollments\Models\Group;
+use Illuminate\Database\Eloquent\Model;
 
 /**
  * Authorization policy for Group model.
@@ -14,48 +14,47 @@ use App\Domains\Enrollments\Models\Group;
  * Centralizes authorization logic for group CRUD operations,
  * supporting both Teacher and Secretary users via resolveTeacher().
  */
-class GroupPolicy
+class GroupPolicy extends BasePolicy
 {
-    /**
-     * Resolve the effective teacher from the user.
-     */
-    private function resolveTeacher(Teacher|Secretary $user): ?Teacher
+    protected function getResourceName(): string
     {
-        if ($user instanceof Teacher) {
-            return $user;
-        }
-
-        if ($user instanceof Secretary) {
-            return $user->teachers()->first();
-        }
-
-        return null;
+        return 'groups';
     }
 
     /**
      * Determine whether the user can view the group.
      */
-    public function view(Teacher|Secretary $user, Group $group): bool
+    public function view($user, Model $model): bool
     {
+        if (!$model instanceof Group) {
+            return false;
+        }
         $teacher = $this->resolveTeacher($user);
-        return $teacher && $group->teacher_id === $teacher->id;
+        return $teacher && $this->ownsProfileResource($teacher, $model->teacher_profile_id);
     }
 
     /**
      * Determine whether the user can update the group.
      */
-    public function update(Teacher|Secretary $user, Group $group): bool
+    public function update($user, Model $model): bool
     {
+        if (!$model instanceof Group) {
+            return false;
+        }
         $teacher = $this->resolveTeacher($user);
-        return $teacher && $group->teacher_id === $teacher->id;
+        return $teacher && $this->ownsProfileResource($teacher, $model->teacher_profile_id);
     }
 
     /**
      * Determine whether the user can delete the group.
      */
-    public function delete(Teacher|Secretary $user, Group $group): bool
+    public function delete($user, Model $model): bool
     {
+        if (!$model instanceof Group) {
+            return false;
+        }
         $teacher = $this->resolveTeacher($user);
-        return $teacher && $group->teacher_id === $teacher->id;
+        return $teacher && $this->ownsProfileResource($teacher, $model->teacher_profile_id);
     }
 }
+

@@ -9,7 +9,7 @@ use App\Domains\Subscriptions\DTOs\TeacherPaymentData;
 use App\Domains\Enrollments\Models\Enrollment;
 use App\Domains\Subscriptions\Models\PaymentLog;
 use App\Domains\Application\Models\Setting;
-use App\Domains\Auth\Models\Teacher;
+use App\Domains\Auth\Models\TeacherProfile;
 use Illuminate\Support\Facades\DB;
 
 class PaymentService
@@ -17,7 +17,7 @@ class PaymentService
     /**
      * إنشاء دفعة جديدة (نظام الدفع الكامل للمدرس المستقل)
      */
-    public function createPayment(Teacher $teacher, TeacherPaymentData $data): array
+    public function createPayment(TeacherProfile $teacher, TeacherPaymentData $data): array
     {
         // Idempotency check
         $existing = PaymentLog::where('client_side_uuid', $data->client_side_uuid)->first();
@@ -32,7 +32,7 @@ class PaymentService
         // Find enrollment with relationships
         $enrollment = Enrollment::with(['grade', 'group'])
             ->where('student_id', $data->student_id)
-            ->where('teacher_id', $teacher->id)
+            ->where('teacher_profile_id', $teacher->id)
             ->first();
 
         if (!$enrollment) {
@@ -111,7 +111,7 @@ class PaymentService
                 'client_side_uuid' => $data->client_side_uuid,
                 'enrollment_id' => $enrollment->id,
                 'student_id' => $data->student_id,
-                'teacher_id' => $teacher->id,
+                'teacher_profile_id' => $teacher->id,
                 'amount' => $totalAmount,
                 'months' => $months,
                 'discount' => $discount,

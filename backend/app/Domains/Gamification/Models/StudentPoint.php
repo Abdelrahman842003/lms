@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace App\Domains\Gamification\Models;
 
 use App\Domains\Auth\Models\Student;
-use App\Domains\Auth\Models\Teacher;
+use App\Domains\Auth\Models\TeacherProfile;
+use App\Domains\Support\Traits\UsesTeacherProfileScope;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -13,11 +14,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class StudentPoint extends Model
 {
-    use HasUuids;
+    use HasUuids, UsesTeacherProfileScope;
 
     protected $fillable = [
         'student_id',
-        'teacher_id',
+        'teacher_profile_id',
         'attendance_streak',
         'total_points',
     ];
@@ -35,24 +36,33 @@ class StudentPoint extends Model
         return $this->belongsTo(Student::class);
     }
 
-    public function teacher(): BelongsTo
+    // The teacherProfile relation is provided by the UsesTeacherProfileScope trait.
+
+    public function teacher()
     {
-        return $this->belongsTo(Teacher::class);
+        return $this->hasOneThrough(
+            \App\Domains\Auth\Models\Teacher::class,
+            TeacherProfile::class,
+            'id', // Local key on teacher_profiles...
+            'id', // Local key on teachers...
+            'teacher_profile_id', // Foreign key on student_points...
+            'teacher_id' // Foreign key on teacher_profiles...
+        );
     }
 
     public function transactions(): HasMany
     {
         return $this->hasMany(PointTransaction::class, 'student_id', 'student_id')
-            ->where('teacher_id', $this->getAttribute('teacher_id'));
+            ->where('teacher_profile_id', $this->getAttribute('teacher_profile_id'));
     }
 
     /**
-     * Get or create student points record for a student-teacher pair
+     * Get or create student points record for a student-profile pair
      */
-    public static function getOrCreate(string $studentId, string $teacherId): self
+    public static function getOrCreate(string $studentId, string|int $teacherProfileId): self
     {
         return self::firstOrCreate(
-            ['student_id' => $studentId, 'teacher_id' => $teacherId],
+            ['student_id' => $studentId, 'teacher_profile_id' => $teacherProfileId],
             ['total_points' => 0, 'attendance_streak' => 0]
         );
     }
@@ -66,7 +76,7 @@ class StudentPoint extends Model
 
         $transaction = PointTransaction::create([
             'student_id' => $this->student_id,
-            'teacher_id' => $this->teacher_id,
+            'teacher_profile_id' => $this->teacher_profile_id,
             'type' => $type,
             'points' => $points,
             'reference_type' => $referenceType,
@@ -110,9 +120,9 @@ class StudentPoint extends Model
     /**
      * Scope for leaderboard query
      */
-    public function scopeLeaderboard($query, string $teacherId, int $limit = 5)
+    public function scopeLeaderboard($query, int $teacherProfileId, int $limit = 5)
     {
-        return $query->where('teacher_id', $teacherId)
+        return $query->where('teacher_profile_id', $teacherProfileId)
             ->orderByDesc('total_points')
             ->with('student:id,name,avatar_key')
             ->limit($limit);
@@ -121,9 +131,9 @@ class StudentPoint extends Model
     /**
      * Get weekly leaderboard (points earned this week)
      */
-    public static function weeklyLeaderboard(string $teacherId, int $limit = 5)
+    public static function weeklyLeaderboard(int $teacherProfileId, int $limit = 5)
     {
-        return PointTransaction::where('teacher_id', $teacherId)
+        return PointTransaction::where('teacher_profile_id', $teacherProfileId)
             ->where('created_at', '>=', now()->startOfWeek())
             ->selectRaw('student_id, SUM(points) as weekly_points')
             ->groupBy('student_id')

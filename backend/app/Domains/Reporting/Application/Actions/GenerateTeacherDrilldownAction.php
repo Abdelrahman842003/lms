@@ -15,7 +15,7 @@ final readonly class GenerateTeacherDrilldownAction
         private DrilldownRegistry $registry,
     ) {}
 
-    public function execute(Teacher $teacher, string $drilldownKey, Request $request): JsonResponse
+    public function execute($teacher, string $drilldownKey, Request $request): JsonResponse
     {
         $descriptor = $this->registry->get($drilldownKey);
 

@@ -27,7 +27,7 @@ class GroupController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
         $perPage = (int) $request->input('per_page', 10);
         $filters = $request->only(['search', 'grade_id']);
         $academyId = $request->header('X-Academy-Id') ?? $request->input('academy_id');
@@ -62,14 +62,14 @@ class GroupController extends Controller
 
     public function store(StoreGroupRequest $request): JsonResponse
     {
-        $teacher = $this->getTeacherFromRequest($request);
+        $teacher = $this->getProfileFromRequest($request);
         $academyId = $request->header('X-Academy-Id');
         
         // Set academy_id based on context
         if ($academyId && $academyId !== 'independent') {
             // Check if teacher belongs to this academy
             $teacherBelongsToAcademy = DB::table('academy_teacher')
-                ->where('teacher_id', $teacher->id)
+                ->where('teacher_profile_id', $teacher->id)
                 ->where('academy_id', $academyId)
                 ->where('is_active', true)
                 ->exists();

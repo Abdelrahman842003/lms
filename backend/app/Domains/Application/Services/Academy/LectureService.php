@@ -40,6 +40,10 @@ class LectureService
     {
         // Verify teacher belongs to this academy
         $teacher = Teacher::find($data->teacherId);
+        if (!$teacher) {
+            throw new DomainException('المدرس المختار غير موجود');
+        }
+
         $belongsToAcademy = $teacher->academies()
             ->where('academies.id', $academy->id)
             ->where('academy_teacher.is_active', true)
@@ -48,6 +52,11 @@ class LectureService
         if (! $belongsToAcademy) {
             throw new DomainException('المدرس لا ينتمي لهذه الأكاديمية');
         }
+
+        // Resolve the teacher's profile for this academy
+        $profile = \App\Domains\Auth\Models\TeacherProfile::where('teacher_id', $teacher->id)
+            ->where('academy_id', $academy->id)
+            ->first();
 
         $lectureData = $data->toArray();
 
@@ -60,6 +69,12 @@ class LectureService
         }
 
         $lectureData['academy_id'] = $academy->id;
+        if ($profile) {
+            $lectureData['teacher_profile_id'] = $profile->id;
+        }
+
+        // Unset teacher_id as it's not a database column anymore
+        unset($lectureData['teacher_id']);
 
         $lecture = Lecture::create($lectureData);
         $lecture->load(['teacher', 'grade', 'group']);
@@ -84,6 +99,9 @@ class LectureService
             unset($lectureData['date']);
         }
 
+        // Unset teacher_id as it's not a database column anymore
+        unset($lectureData['teacher_id']);
+
         $lecture->update($lectureData);
         $freshLecture = $lecture->fresh(['teacher', 'grade', 'group']);
 
@@ -95,8 +113,8 @@ class LectureService
 
     public function deleteLecture(Lecture $lecture): void
     {
-        // Store teacher_id and academy_id before deletion for broadcasting
-        $teacherId = $lecture->teacher_id;
+        // Store teacher_profile_id and academy_id before deletion for broadcasting
+        $teacherProfileId = $lecture->teacher_profile_id;
         $academyId = $lecture->academy_id;
         $lectureId = $lecture->id;
 
@@ -105,7 +123,7 @@ class LectureService
         // Broadcast lecture deleted event
         $tempLecture = new Lecture;
         $tempLecture->id = $lectureId;
-        $tempLecture->teacher_id = $teacherId;
+        $tempLecture->teacher_profile_id = $teacherProfileId;
         $tempLecture->academy_id = $academyId;
         $tempLecture->is_active = false;
         $tempLecture->exists = false;

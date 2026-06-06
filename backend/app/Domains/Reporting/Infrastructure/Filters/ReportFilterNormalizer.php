@@ -36,11 +36,12 @@ final readonly class ReportFilterNormalizer
 
     private function resolvePreset(array $input): ReportingPeriodPreset
     {
-        if (! isset($input['preset'])) {
+        $presetVal = $input['preset'] ?? $input['range'] ?? null;
+        if ($presetVal === null) {
             return ReportingPeriodPreset::ThisMonth;
         }
 
-        return ReportingPeriodPreset::from($input['preset']);
+        return ReportingPeriodPreset::from($presetVal);
     }
 
     private function resolveComparisonMode(array $input): ?ComparisonMode

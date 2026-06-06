@@ -17,7 +17,8 @@ class StoreGroupRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'teacher_id' => ['required', 'exists:teachers,id'],
+            'teacher_id' => ['required_without:teacher_profile_id', 'exists:teachers,id'],
+            'teacher_profile_id' => ['required_without:teacher_id', 'exists:teacher_profiles,id'],
             'grade_id' => ['nullable', 'exists:grades,id'],
             'time' => ['nullable', 'string'],
             'days' => ['nullable', 'string'],
@@ -32,8 +33,10 @@ class StoreGroupRequest extends FormRequest
             'name.required' => 'اسم المجموعة مطلوب',
             'name.string' => 'اسم المجموعة يجب أن يكون نصاً',
             'name.max' => 'اسم المجموعة يجب ألا يتجاوز 255 حرفاً',
-            'teacher_id.required' => 'المدرس مطلوب',
+            'teacher_id.required_without' => 'المدرس مطلوب',
             'teacher_id.exists' => 'المدرس المختار غير موجود',
+            'teacher_profile_id.required_without' => 'المدرس مطلوب',
+            'teacher_profile_id.exists' => 'المدرس المختار غير موجود',
             'grade_id.exists' => 'الصف الدراسي المختار غير موجود',
             'type.required' => 'نوع المجموعة مطلوب',
             'type.in' => 'نوع المجموعة غير صحيح',
@@ -49,8 +52,10 @@ class StoreGroupRequest extends FormRequest
             $type = 'public';
         }
 
-        $this->merge([
+        $mergeData = array_merge([
             'type' => $type,
-        ]);
+        ], \App\Domains\Application\Traits\ResolvesTeacher::resolveTeacherInput($this));
+
+        $this->merge($mergeData);
     }
 }

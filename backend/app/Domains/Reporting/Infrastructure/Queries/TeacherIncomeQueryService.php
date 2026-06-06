@@ -12,9 +12,9 @@ use Illuminate\Support\Facades\DB;
 
 final class TeacherIncomeQueryService
 {
-    public function currentPeriodIncome(Teacher $teacher, TeacherReportFilters $filters): float
+    public function currentPeriodIncome($teacher, TeacherReportFilters $filters): float
     {
-        $query = PaymentLog::where('teacher_id', $teacher->id)
+        $query = $teacher->paymentLogs()
             ->where('status', 'confirmed')
             ->whereBetween('confirmed_at', [$filters->base->period->startAt, $filters->base->period->endAt]);
         
@@ -25,9 +25,9 @@ final class TeacherIncomeQueryService
         return (float) $query->sum('amount');
     }
 
-    public function previousPeriodIncome(Teacher $teacher, TeacherReportFilters $filters): float
+    public function previousPeriodIncome($teacher, TeacherReportFilters $filters): float
     {
-        $query = PaymentLog::where('teacher_id', $teacher->id)
+        $query = $teacher->paymentLogs()
             ->where('status', 'confirmed');
         
         if ($filters->groupId) {
@@ -46,12 +46,12 @@ final class TeacherIncomeQueryService
         return (float) $query->whereBetween('confirmed_at', [$filters->base->comparisonPeriod->startAt, $filters->base->comparisonPeriod->endAt])->sum('amount');
     }
 
-    public function yearToDateIncome(Teacher $teacher, TeacherReportFilters $filters): float
+    public function yearToDateIncome($teacher, TeacherReportFilters $filters): float
     {
         $yearStart = $filters->base->period->startAt->startOfYear();
         $yearEnd = $filters->base->period->endAt;
 
-        $query = PaymentLog::where('teacher_id', $teacher->id)
+        $query = $teacher->paymentLogs()
             ->where('status', 'confirmed')
             ->whereBetween('confirmed_at', [$yearStart, $yearEnd]);
         
@@ -62,12 +62,12 @@ final class TeacherIncomeQueryService
         return (float) $query->sum('amount');
     }
 
-    public function monthlyIncomeBuckets(Teacher $teacher, TeacherReportFilters $filters, int $months = 12): array
+    public function monthlyIncomeBuckets($teacher, TeacherReportFilters $filters, int $months = 12): array
     {
         $endMonth = $filters->base->period->endAt->startOfMonth();
         $startMonth = $endMonth->subMonthsNoOverflow($months - 1)->startOfMonth();
 
-        $query = PaymentLog::where('teacher_id', $teacher->id)
+        $query = $teacher->paymentLogs()
             ->where('status', 'confirmed')
             ->whereBetween('confirmed_at', [$startMonth, $endMonth->endOfMonth()]);
         

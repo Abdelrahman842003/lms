@@ -7,9 +7,9 @@ namespace App\Domains\Application\Services\Academy;
 use App\Domains\Application\Exceptions\DomainException;
 use App\Domains\Auth\Models\Academy;
 use App\Domains\Auth\Models\Teacher;
+use App\Domains\Auth\Models\TeacherProfile;
 use App\Domains\Enrollments\Models\Enrollment;
 use App\Domains\Media\Services\ImageService;
-use App\Domains\Application\Models\TeacherAttendanceLog;
 use App\Domains\Application\Services\CacheService;
 use Carbon\Carbon;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -100,6 +100,21 @@ class TeacherService
             'is_active' => true,
             'joined_at' => Carbon::now(),
         ]);
+
+        // Create the academy profile for this teacher
+        $teacher = Teacher::find($teacherId);
+        if ($teacher) {
+            TeacherProfile::firstOrCreate([
+                'teacher_id' => $teacher->id,
+                'academy_id' => $academy->id,
+            ], [
+                'type' => 'academy',
+                'display_name' => $teacher->name . ' - ' . $academy->name,
+                'slug' => \Illuminate\Support\Str::slug($teacher->name) . '-' . \Illuminate\Support\Str::slug($academy->name) . '-' . substr($teacher->id, 0, 4),
+                'status' => 'ACTIVE'
+            ]);
+        }
+
         $this->clearAcademyDashboardCache($academy);
 
         // Reload teacher with pivot data and all columns
@@ -132,6 +147,17 @@ class TeacherService
             'is_active' => true,
             'joined_at' => Carbon::now(),
         ]);
+
+        // Create the academy profile for this teacher
+        TeacherProfile::create([
+            'teacher_id' => $teacher->id,
+            'academy_id' => $academy->id,
+            'type' => 'academy',
+            'display_name' => $teacher->name . ' - ' . $academy->name,
+            'slug' => \Illuminate\Support\Str::slug($teacher->name) . '-' . \Illuminate\Support\Str::slug($academy->name) . '-' . substr($teacher->id, 0, 4),
+            'status' => 'ACTIVE'
+        ]);
+
         $this->clearAcademyDashboardCache($academy);
 
         // Reload teacher with pivot data and all columns
@@ -234,42 +260,18 @@ class TeacherService
             })
             ->values();
 
-        $attendanceLogs = TeacherAttendanceLog::forAcademy($academy->id)
-            ->forTeacher($teacher->id)
-            ->dateRange($dateFrom, $dateTo)
-            ->orderBy('date', 'desc')
-            ->get()
-            ->map(function ($log) {
-                $checkIn = $log->checked_in_at?->toISOString();
-                $checkOut = $log->checked_out_at?->toISOString();
+        $attendanceLogs = collect();
 
-                return [
-                    'id' => $log->id,
-                    'date' => $log->date?->toDateString(),
-                    'check_in' => $checkIn,
-                    'check_out' => $checkOut,
-                    'checked_in_at' => $checkIn,
-                    'checked_out_at' => $checkOut,
-                    'status' => $this->normalizeEnumValue($log->status),
-                    'notes' => $log->notes,
-                    'duration_minutes' => (int) ($log->duration_minutes ?? 0),
-                    'duration_formatted' => $log->duration_formatted,
-                    'created_at' => $log->created_at?->toISOString(),
-                ];
-            })
-            ->values();
-
-        $studentsCount = Enrollment::query()
-            ->where('teacher_id', $teacher->id)
+        $studentsCount = $teacher->enrollments()
             ->where('academy_id', $academy->id)
             ->where('is_active', true)
             ->distinct('student_id')
             ->count('student_id');
 
         // Calculate stats
-        $totalPresent = $attendanceLogs->where('status', 'checked_out')->count();
-        $totalAbsent = $attendanceLogs->where('status', 'absent')->count();
-        $totalDuration = $attendanceLogs->sum('duration_minutes');
+        $totalPresent = 0;
+        $totalAbsent = 0;
+        $totalDuration = 0;
         $imageService = app(ImageService::class);
 
         return [

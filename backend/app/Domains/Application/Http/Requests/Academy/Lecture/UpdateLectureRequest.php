@@ -16,7 +16,8 @@ class UpdateLectureRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'teacher_id' => ['sometimes', 'uuid', 'exists:teachers,id'],
+            'teacher_id' => ['sometimes', 'exists:teachers,id'],
+            'teacher_profile_id' => ['sometimes', 'exists:teacher_profiles,id'],
             'title' => ['sometimes', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'grade_id' => ['sometimes', 'uuid', 'exists:grades,id'],
@@ -33,7 +34,13 @@ class UpdateLectureRequest extends FormRequest
     {
         return [
             'teacher_id.exists' => 'المدرس المختار غير موجود',
+            'teacher_profile_id.exists' => 'المدرس المختار غير موجود',
             'grade_id.exists' => 'الصف الدراسي المختار غير موجود',
         ];
+    }
+
+    public function prepareForValidation(): void
+    {
+        $this->merge(\App\Domains\Application\Traits\ResolvesTeacher::resolveTeacherInput($this));
     }
 }

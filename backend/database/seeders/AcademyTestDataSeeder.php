@@ -6,7 +6,6 @@ use Illuminate\Database\Seeder;
 use App\Domains\Auth\Models\Academy;
 use App\Domains\Auth\Models\Secretary;
 use App\Domains\Auth\Models\Teacher;
-use App\Domains\Application\Models\TeacherAttendanceLog;
 use App\Domains\Notifications\Models\AcademyNotification;
 use Illuminate\Support\Facades\Hash;
 use Carbon\Carbon;
@@ -61,58 +60,7 @@ class AcademyTestDataSeeder extends Seeder
 
         $this->command->info('Created 2 secretaries');
 
-        // Get academy teachers
-        $teachers = $academy->activeTeachers()->take(3)->get();
-        
-        if ($teachers->isEmpty()) {
-            $this->command->warn('No teachers found in academy. Skipping attendance logs.');
-        } else {
-            // Create attendance logs for the past 7 days
-            $this->command->info('Creating attendance logs...');
-            $createdLogs = 0;
 
-            foreach ($teachers as $teacher) {
-                for ($i = 0; $i < 7; $i++) {
-                    $date = Carbon::today()->subDays($i);
-                    
-                    // Skip if log already exists
-                    if (TeacherAttendanceLog::forAcademy($academy->id)
-                        ->forTeacher($teacher->id)
-                        ->whereDate('date', $date)
-                        ->exists()) {
-                        continue;
-                    }
-
-                    // 80% chance of attendance
-                    if (rand(1, 10) <= 8) {
-                        $checkedIn = $date->copy()->setTime(8, rand(0, 59));
-                        $checkedOut = $date->copy()->setTime(16, rand(0, 59));
-
-                        TeacherAttendanceLog::create([
-                            'academy_id' => $academy->id,
-                            'teacher_id' => $teacher->id,
-                            'date' => $date,
-                            'checked_in_at' => $checkedIn,
-                            'checked_out_at' => $checkedOut,
-                            'status' => 'checked_out',
-                            'notes' => 'حضور تجريبي',
-                        ]);
-                    } else {
-                        TeacherAttendanceLog::create([
-                            'academy_id' => $academy->id,
-                            'teacher_id' => $teacher->id,
-                            'date' => $date,
-                            'status' => 'absent',
-                            'notes' => 'غياب تجريبي',
-                        ]);
-                    }
-                    
-                    $createdLogs++;
-                }
-            }
-
-            $this->command->info("Created {$createdLogs} attendance logs");
-        }
 
         // Create notifications
         $this->command->info('Creating notifications...');

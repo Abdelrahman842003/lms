@@ -17,7 +17,7 @@ class GuardianSummaryRequest extends FormRequest
         return [
             'date' => 'nullable|date',
             'period' => 'nullable|in:day,month',
-            'teacher_id' => 'nullable|uuid',
+            'teacher_profile_id' => 'nullable|uuid',
         ];
     }
 }

@@ -18,7 +18,8 @@ class StoreGradeRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'price' => ['required', 'numeric', 'min:0'],
-            'teacher_id' => ['nullable', 'exists:teachers,id'],
+            'teacher_id' => ['nullable', 'string', 'exists:teachers,id'],
+            'teacher_profile_id' => ['nullable', 'string', 'exists:teacher_profiles,id'],
         ];
     }
 
@@ -32,6 +33,7 @@ class StoreGradeRequest extends FormRequest
             'price.numeric' => 'سعر الصف الدراسي يجب أن يكون رقماً',
             'price.min' => 'سعر الصف الدراسي لا يمكن أن يكون أقل من 0',
             'teacher_id.exists' => 'المدرس المختار غير موجود',
+            'teacher_profile_id.exists' => 'المدرس المختار غير موجود',
         ];
     }
 }

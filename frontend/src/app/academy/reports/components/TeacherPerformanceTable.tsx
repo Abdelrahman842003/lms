@@ -86,6 +86,7 @@ export default function TeacherPerformanceTable({ data, loading, onSort, onPageC
         itemsPerPage={data.pagination.per_page}
         totalItems={data.pagination.total}
         currentPage={data.pagination.page}
+        totalPages={data.pagination.last_page}
         onPageChange={onPageChange}
       />
     </DashboardCard>

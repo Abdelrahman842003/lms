@@ -22,6 +22,7 @@ class ExportReportRequest extends FormRequest
             'month' => 'required_if:report_type,monthly|integer|min:0|max:12',
             'year' => 'required_if:report_type,monthly|integer|min:2020',
             'teacher_id' => 'nullable|exists:teachers,id',
+            'teacher_profile_id' => 'nullable|exists:teacher_profiles,id',
         ];
     }
 
@@ -34,6 +35,13 @@ class ExportReportRequest extends FormRequest
             'date_to.required_if' => 'تاريخ النهاية مطلوب لتقرير الحضور',
             'month.required_if' => 'الشهر مطلوب للتقرير الشهري',
             'year.required_if' => 'السنة مطلوبة للتقرير الشهري',
+            'teacher_id.exists' => 'المدرس غير موجود',
+            'teacher_profile_id.exists' => 'المدرس غير موجود',
         ];
+    }
+
+    public function prepareForValidation(): void
+    {
+        $this->merge(\App\Domains\Application\Traits\ResolvesTeacher::resolveTeacherInput($this));
     }
 }

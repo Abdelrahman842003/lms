@@ -4,39 +4,28 @@ declare(strict_types=1);
 
 namespace App\Domains\Lectures\Policies;
 
-use App\Domains\Auth\Models\Secretary;
-use App\Domains\Auth\Models\Teacher;
+use App\Domains\Application\Policies\BasePolicy;
 use App\Domains\Lectures\Models\Lecture;
+use Illuminate\Database\Eloquent\Model;
 
 /**
  * Authorization policy for Lecture model.
  *
  * Centralizes authorization logic for lecture operations including
  * CRUD, attendance, QR code generation, and session management.
- * Supports both Teacher and Secretary users via resolveTeacher().
+ * Supports Teacher, Secretary, and Academy users.
  */
-class LecturePolicy
+class LecturePolicy extends BasePolicy
 {
-    /**
-     * Resolve the effective teacher from the user.
-     */
-    private function resolveTeacher(Teacher|Secretary $user): ?Teacher
+    protected function getResourceName(): string
     {
-        if ($user instanceof Teacher) {
-            return $user;
-        }
-
-        if ($user instanceof Secretary) {
-            return $user->teachers()->first();
-        }
-
-        return null;
+        return 'lectures';
     }
 
     /**
      * Determine whether the user can create lectures.
      */
-    public function create(Teacher|Secretary $user): bool
+    public function create($user): bool
     {
         return $this->resolveTeacher($user) !== null;
     }
@@ -44,99 +33,109 @@ class LecturePolicy
     /**
      * Determine whether the user can view the lecture.
      */
-    public function view(Teacher|Secretary $user, Lecture $lecture): bool
+    public function view($user, Model $model): bool
     {
+        if (!$model instanceof Lecture) {
+            return false;
+        }
         $teacher = $this->resolveTeacher($user);
-        return $teacher && $lecture->teacher_id === $teacher->id;
+        return $teacher && $this->ownsProfileResource($teacher, $model->teacher_profile_id);
     }
 
     /**
      * Determine whether the user can update the lecture.
      */
-    public function update(Teacher|Secretary $user, Lecture $lecture): bool
+    public function update($user, Model $model): bool
     {
+        if (!$model instanceof Lecture) {
+            return false;
+        }
         $teacher = $this->resolveTeacher($user);
-        return $teacher && $lecture->teacher_id === $teacher->id;
+        return $teacher && $this->ownsProfileResource($teacher, $model->teacher_profile_id);
     }
 
     /**
      * Determine whether the user can delete the lecture.
      */
-    public function delete(Teacher|Secretary $user, Lecture $lecture): bool
+    public function delete($user, Model $model): bool
     {
+        if (!$model instanceof Lecture) {
+            return false;
+        }
         $teacher = $this->resolveTeacher($user);
-        return $teacher && $lecture->teacher_id === $teacher->id;
+        return $teacher && $this->ownsProfileResource($teacher, $model->teacher_profile_id);
     }
 
     /**
      * Determine whether the user can toggle lecture active status.
      */
-    public function toggleActive(Teacher|Secretary $user, Lecture $lecture): bool
+    public function toggleActive($user, Lecture $lecture): bool
     {
         $teacher = $this->resolveTeacher($user);
-        return $teacher && $lecture->teacher_id === $teacher->id;
+        return $teacher && $this->ownsProfileResource($teacher, $lecture->teacher_profile_id);
     }
 
     /**
      * Determine whether the user can end a lecture.
      */
-    public function endLecture(Teacher|Secretary $user, Lecture $lecture): bool
+    public function endLecture($user, Lecture $lecture): bool
     {
         $teacher = $this->resolveTeacher($user);
-        return $teacher && $lecture->teacher_id === $teacher->id;
+        return $teacher && $this->ownsProfileResource($teacher, $lecture->teacher_profile_id);
     }
 
     /**
      * Determine whether the user can view lecture attendees.
      */
-    public function viewAttendees(Teacher|Secretary $user, Lecture $lecture): bool
+    public function viewAttendees($user, Lecture $lecture): bool
     {
         $teacher = $this->resolveTeacher($user);
-        return $teacher && $lecture->teacher_id === $teacher->id;
+        return $teacher && $this->ownsProfileResource($teacher, $lecture->teacher_profile_id);
     }
 
     /**
      * Determine whether the user can export lecture attendees.
      */
-    public function exportAttendees(Teacher|Secretary $user, Lecture $lecture): bool
+    public function exportAttendees($user, Lecture $lecture): bool
     {
         $teacher = $this->resolveTeacher($user);
-        return $teacher && $lecture->teacher_id === $teacher->id;
+        return $teacher && $this->ownsProfileResource($teacher, $lecture->teacher_profile_id);
     }
 
     /**
      * Determine whether the user can cancel a lecture session.
      */
-    public function cancelSession(Teacher|Secretary $user, Lecture $lecture): bool
+    public function cancelSession($user, Lecture $lecture): bool
     {
         $teacher = $this->resolveTeacher($user);
-        return $teacher && $lecture->teacher_id === $teacher->id;
+        return $teacher && $this->ownsProfileResource($teacher, $lecture->teacher_profile_id);
     }
 
     /**
      * Determine whether the user can generate attendance code for the lecture.
      */
-    public function generateAttendanceCode(Teacher|Secretary $user, Lecture $lecture): bool
+    public function generateAttendanceCode($user, Lecture $lecture): bool
     {
         $teacher = $this->resolveTeacher($user);
-        return $teacher && $lecture->teacher_id === $teacher->id;
+        return $teacher && $this->ownsProfileResource($teacher, $lecture->teacher_profile_id);
     }
 
     /**
      * Determine whether the user can invalidate attendance code for the lecture.
      */
-    public function invalidateAttendanceCode(Teacher|Secretary $user, Lecture $lecture): bool
+    public function invalidateAttendanceCode($user, Lecture $lecture): bool
     {
         $teacher = $this->resolveTeacher($user);
-        return $teacher && $lecture->teacher_id === $teacher->id;
+        return $teacher && $this->ownsProfileResource($teacher, $lecture->teacher_profile_id);
     }
 
     /**
      * Determine whether the user can record attendance for the lecture.
      */
-    public function recordAttendance(Teacher|Secretary $user, Lecture $lecture): bool
+    public function recordAttendance($user, Lecture $lecture): bool
     {
         $teacher = $this->resolveTeacher($user);
-        return $teacher && $lecture->teacher_id === $teacher->id;
+        return $teacher && $this->ownsProfileResource($teacher, $lecture->teacher_profile_id);
     }
 }
+

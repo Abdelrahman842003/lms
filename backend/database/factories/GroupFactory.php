@@ -2,7 +2,7 @@
 
 namespace Database\Factories;
 
-use App\Domains\Auth\Models\Teacher;
+use App\Domains\Auth\Models\TeacherProfile;
 use App\Domains\Enrollments\Models\Grade;
 use App\Domains\Enrollments\Models\Group;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -23,7 +23,7 @@ class GroupFactory extends Factory
     {
         return [
             'name' => fake()->unique()->word() . ' Group',
-            'teacher_id' => Teacher::factory(),
+            'teacher_profile_id' => TeacherProfile::factory(),
             'grade_id' => Grade::factory(),
         ];
     }

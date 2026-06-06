@@ -22,18 +22,18 @@ class SelfTestController extends Controller
     public function availableCounts(Request $request): JsonResponse
     {
         $request->validate([
-            'teacher_id' => 'required|exists:teachers,id',
+            'teacher_profile_id' => 'required|exists:teachers,id',
         ]);
 
-        $teacherId = $request->input('teacher_id');
+        $teacherProfileId = $request->input('teacher_profile_id');
         $student = $request->user();
 
         // Get student's grade for this teacher
         $enrollment = \App\Domains\Enrollments\Models\Enrollment::where('student_id', $student->id)
-            ->where('teacher_id', $teacherId)
+            ->where('teacher_profile_id', $teacherProfileId)
             ->first();
         
-        $query = \App\Domains\Exams\Models\Question::where('teacher_id', $teacherId);
+        $query = \App\Domains\Exams\Models\Question::where('teacher_profile_id', $teacherProfileId);
 
         if ($enrollment?->grade_id) {
             $query->where('grade_id', $enrollment->grade_id);
@@ -58,15 +58,15 @@ class SelfTestController extends Controller
     public function history(Request $request): JsonResponse
     {
         $request->validate([
-            'teacher_id' => 'required|exists:teachers,id',
+            'teacher_profile_id' => 'required|exists:teachers,id',
         ]);
 
         $student = $request->user();
-        $teacherId = $request->input('teacher_id');
+        $teacherProfileId = $request->input('teacher_profile_id');
 
         $attempts = \App\Domains\Exams\Models\ExamAttempt::where('student_id', $student->id)
-            ->whereHas('exam', function ($query) use ($teacherId) {
-                $query->where('teacher_id', $teacherId)
+            ->whereHas('exam', function ($query) use ($teacherProfileId) {
+                $query->where('teacher_profile_id', $teacherProfileId)
                     ->where('type', 'self_test');
             })
             ->with(['result', 'exam'])
@@ -85,14 +85,14 @@ class SelfTestController extends Controller
     public function start(Request $request): JsonResponse
     {
         $request->validate([
-            'teacher_id' => 'required|exists:teachers,id',
+            'teacher_profile_id' => 'required|exists:teachers,id',
             'easy_count' => 'required|integer|min:0',
             'medium_count' => 'required|integer|min:0',
             'hard_count' => 'required|integer|min:0',
         ]);
 
         $student = $request->user();
-        $teacherId = $request->input('teacher_id');
+        $teacherProfileId = $request->input('teacher_profile_id');
 
         $totalRequested = $request->input('easy_count') + $request->input('medium_count') + $request->input('hard_count');
         if ($totalRequested <= 0) {
@@ -103,7 +103,7 @@ class SelfTestController extends Controller
         }
 
         // Rate limiting to prevent spam (e.g. 5 attempts per day per teacher per student)
-        $rateLimitKey = 'self_test_' . $student->id . '_' . $teacherId;
+        $rateLimitKey = 'self_test_' . $student->id . '_' . $teacherProfileId;
         if (RateLimiter::tooManyAttempts($rateLimitKey, 5)) {
             $seconds = RateLimiter::availableIn($rateLimitKey);
             return $this->errorResponse("لقد تجاوزت الحد المسموح به. يرجى المحاولة بعد {$seconds} ثانية.", 429);
@@ -116,7 +116,7 @@ class SelfTestController extends Controller
         ];
 
         try {
-            $masterExam = $this->examGenerator->getOrCreateSelfTestMasterExam($teacherId);
+            $masterExam = $this->examGenerator->getOrCreateSelfTestMasterExam($teacherProfileId);
             
             // Set dynamic config for this specific generation call without saving to the master exam
             $masterExam->dynamic_settings = $config;

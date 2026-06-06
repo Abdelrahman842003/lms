@@ -192,7 +192,7 @@ class VideoAuthorizationService
         $groupIds = collect($video->groups ?? [])->pluck('id')->filter()->values();
 
         $query = Enrollment::query()
-            ->with('teacher:id,status')
+            ->with('teacher:teachers.id,teachers.status')
             ->where('student_id', $student->id)
             ->where('grade_id', $video->grade_id)
             ->where('is_active', true)

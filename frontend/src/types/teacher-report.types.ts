@@ -142,7 +142,7 @@ export interface TeacherDrilldownResponse {
   };
 }
 
-export type PeriodPreset = 'today' | 'last_7_days' | 'this_month' | 'last_month' | 'last_3_months' | 'this_year' | 'custom';
+export type PeriodPreset = 'today' | 'last_7_days' | 'this_month' | 'last_month' | 'last_3_months' | 'this_year' | 'custom_range';
 export type ComparisonMode = 'previous_period' | 'same_period_last_year';
 
 export interface TeacherReportFilters {

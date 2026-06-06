@@ -57,11 +57,27 @@ export default function CreateLecturePage() {
       try {
         // Fetch grades for the selected teacher
         const gradesResponse = await academyService.getGrades(1, 100, { teacher_id: formData.teacher_id });
-        setGrades(gradesResponse.data?.data || []);
+        let gradesList = [];
+        if (gradesResponse?.data?.data && Array.isArray(gradesResponse.data.data)) {
+          gradesList = gradesResponse.data.data;
+        } else if (gradesResponse?.data && Array.isArray(gradesResponse.data)) {
+          gradesList = gradesResponse.data;
+        } else if (Array.isArray(gradesResponse)) {
+          gradesList = gradesResponse;
+        }
+        setGrades(gradesList);
         
         // Fetch groups for the selected teacher
         const groupsResponse = await academyService.getGroups(1, 100, { teacher_id: formData.teacher_id });
-        setGroups(groupsResponse.data?.data || []);
+        let groupsList = [];
+        if (groupsResponse?.data?.data && Array.isArray(groupsResponse.data.data)) {
+          groupsList = groupsResponse.data.data;
+        } else if (groupsResponse?.data && Array.isArray(groupsResponse.data)) {
+          groupsList = groupsResponse.data;
+        } else if (Array.isArray(groupsResponse)) {
+          groupsList = groupsResponse;
+        }
+        setGroups(groupsList);
         
         // Reset grade and group selection when teacher changes
         setFormData(prev => ({ ...prev, grade_id: '', group_id: '' }));

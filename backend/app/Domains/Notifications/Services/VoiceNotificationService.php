@@ -21,9 +21,6 @@ class VoiceNotificationService
      */
     public const MAX_FILE_SIZE = 2097152;
 
-    /**
-     * Allowed MIME types (base types, without codec specification)
-     */
     public const ALLOWED_MIMES = [
         'audio/webm',
         'audio/ogg',
@@ -34,6 +31,12 @@ class VoiceNotificationService
         'audio/x-m4a',
         'video/webm',              // Some browsers report WebM audio as video/webm
         'application/octet-stream', // Fallback for some browsers
+        'audio/x-matroska',
+        'video/x-matroska',
+        'video/ogg',
+        'application/ogg',
+        'application/x-ogg',
+        'audio/x-opus+ogg',
     ];
 
     /**

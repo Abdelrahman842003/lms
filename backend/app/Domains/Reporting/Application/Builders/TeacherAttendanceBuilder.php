@@ -16,7 +16,7 @@ final readonly class TeacherAttendanceBuilder
         private TeacherAttendanceQueryService $attendanceQuery,
     ) {}
 
-    public function build(Teacher $teacher, TeacherScope $scope, TeacherReportFilters $filters): array
+    public function build($teacher, TeacherScope $scope, TeacherReportFilters $filters): array
     {
         $overallRate = $this->attendanceQuery->overallAttendanceRate($teacher, $filters);
         $byGroup = $this->attendanceQuery->attendanceByGroup($teacher, $filters);

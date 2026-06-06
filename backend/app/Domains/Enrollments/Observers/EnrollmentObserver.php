@@ -9,13 +9,14 @@ use App\Domains\Application\Services\CacheService;
 
 class EnrollmentObserver
 {
-    /**
-     * Handle the Enrollment "created" event.
-     * Invalidate teacher dashboard when new student enrolls.
-     */
     public function created(Enrollment $enrollment): void
     {
-        CacheService::forgetTeacherDashboard($enrollment->teacher_id);
+        if ($enrollment->teacher_profile_id) {
+            $profile = \App\Domains\Auth\Models\TeacherProfile::find($enrollment->teacher_profile_id);
+            if ($profile) {
+                CacheService::forgetTeacherDashboard($profile->teacher_id);
+            }
+        }
     }
 
     /**
@@ -23,7 +24,12 @@ class EnrollmentObserver
      */
     public function updated(Enrollment $enrollment): void
     {
-        CacheService::forgetTeacherDashboard($enrollment->teacher_id);
+        if ($enrollment->teacher_profile_id) {
+            $profile = \App\Domains\Auth\Models\TeacherProfile::find($enrollment->teacher_profile_id);
+            if ($profile) {
+                CacheService::forgetTeacherDashboard($profile->teacher_id);
+            }
+        }
     }
 
     /**
@@ -31,6 +37,11 @@ class EnrollmentObserver
      */
     public function deleted(Enrollment $enrollment): void
     {
-        CacheService::forgetTeacherDashboard($enrollment->teacher_id);
+        if ($enrollment->teacher_profile_id) {
+            $profile = \App\Domains\Auth\Models\TeacherProfile::find($enrollment->teacher_profile_id);
+            if ($profile) {
+                CacheService::forgetTeacherDashboard($profile->teacher_id);
+            }
+        }
     }
 }

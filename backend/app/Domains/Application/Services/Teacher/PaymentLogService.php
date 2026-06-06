@@ -8,14 +8,14 @@ use App\Domains\Application\Exceptions\DomainException;
 use App\Domains\Enrollments\Models\Enrollment;
 use App\Domains\Subscriptions\Models\PaymentLog;
 use App\Domains\Application\Models\SyncError;
-use App\Domains\Auth\Models\Teacher;
+use App\Domains\Auth\Models\TeacherProfile;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
 class PaymentLogService
 {
-    public function getPayments(Teacher $teacher, int $perPage = 20, array $filters = []): LengthAwarePaginator
+    public function getPayments(TeacherProfile $teacher, int $perPage = 20, array $filters = []): LengthAwarePaginator
     {
         $query = PaymentLog::forTeacher($teacher->id)
             ->with('student:id,name,phone');
@@ -41,7 +41,7 @@ class PaymentLogService
         return $query->latest()->paginate($perPage);
     }
 
-    public function getPending(Teacher $teacher): Collection
+    public function getPending(TeacherProfile $teacher): Collection
     {
         return PaymentLog::pending()
             ->forTeacher($teacher->id)
@@ -50,7 +50,7 @@ class PaymentLogService
             ->get();
     }
 
-    public function createPayment(Teacher $teacher, array $data): array
+    public function createPayment(TeacherProfile $teacher, array $data): array
     {
         // Idempotency check
         $existing = PaymentLog::where('client_side_uuid', $data['client_side_uuid'])->first();
@@ -65,8 +65,8 @@ class PaymentLogService
 
         // Find enrollment
         $enrollment = Enrollment::where('student_id', $data['student_id'])
-            ->where('teacher_id', $teacher->id)
-            ->with(['academy:id', 'academy.tenantPlan', 'teacher:id', 'teacher.tenantPlan'])
+            ->where('teacher_profile_id', $teacher->id)
+            ->with(['academy:id', 'academy.tenantPlan', 'teacher:teachers.id', 'teacher.tenantPlan'])
             ->first();
 
         if (!$enrollment) {
@@ -80,7 +80,7 @@ class PaymentLogService
             'client_side_uuid' => $data['client_side_uuid'],
             'enrollment_id' => $enrollment->id,
             'student_id' => $data['student_id'],
-            'teacher_id' => $teacher->id,
+            'teacher_profile_id' => $teacher->id,
             'amount' => $data['amount'],
             'confirmation_code' => $code,
             'status' => 'pending',
@@ -98,7 +98,7 @@ class PaymentLogService
         ];
     }
 
-    public function syncBatch(Teacher $teacher, array $payments): array
+    public function syncBatch(TeacherProfile $teacher, array $payments): array
     {
         $results = ['success' => [], 'errors' => []];
 
@@ -117,8 +117,8 @@ class PaymentLogService
 
                     // Find enrollment
                     $enrollment = Enrollment::where('student_id', $paymentData['student_id'])
-                        ->where('teacher_id', $teacher->id)
-                        ->with(['academy:id', 'academy.tenantPlan', 'teacher:id', 'teacher.tenantPlan'])
+                        ->where('teacher_profile_id', $teacher->id)
+                        ->with(['academy:id', 'academy.tenantPlan', 'teacher:teachers.id', 'teacher.tenantPlan'])
                         ->first();
 
                     if (!$enrollment) {
@@ -130,7 +130,7 @@ class PaymentLogService
                         'client_side_uuid' => $paymentData['client_side_uuid'],
                         'enrollment_id' => $enrollment->id,
                         'student_id' => $paymentData['student_id'],
-                        'teacher_id' => $teacher->id,
+                        'teacher_profile_id' => $teacher->id,
                         'amount' => $paymentData['amount'],
                         'confirmation_code' => $paymentData['confirmation_code'],
                         'status' => 'pending',
@@ -168,7 +168,7 @@ class PaymentLogService
         return $results;
     }
 
-    public function cancel(Teacher $teacher, string $id): void
+    public function cancel(TeacherProfile $teacher, string $id): void
     {
         $payment = PaymentLog::forTeacher($teacher->id)
             ->where('status', 'pending')
@@ -177,7 +177,7 @@ class PaymentLogService
         $payment->update(['status' => 'cancelled']);
     }
 
-    public function getStatistics(Teacher $teacher): array
+    public function getStatistics(TeacherProfile $teacher): array
     {
         $stats = PaymentLog::forTeacher($teacher->id)
             ->selectRaw("
