@@ -15,7 +15,8 @@ return new class extends Migration
             $table->id(); // bigint unsigned auto_increment primary key
             $table->uuid('uuid')->unique();
             $table->foreignUuid('teacher_id')->constrained('teachers')->onDelete('cascade');
-            $table->foreignUuid('academy_id')->nullable()->constrained('academies')->onDelete('cascade');
+            $table->string('academy_id', 36)->nullable();
+            $table->foreign('academy_id')->references('id')->on('academies')->onDelete('cascade');
             $table->enum('type', ['independent', 'academy'])->default('independent');
             $table->string('display_name');
             $table->string('slug')->unique();
