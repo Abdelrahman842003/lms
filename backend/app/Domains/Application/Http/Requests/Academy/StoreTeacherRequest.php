@@ -23,7 +23,18 @@ class StoreTeacherRequest extends FormRequest
 
         if ($this->has('teacher_profile_id')) {
             return [
-                'teacher_profile_id' => ['required', 'string', 'exists:teachers,id'],
+                'teacher_profile_id' => [
+                    'required',
+                    'string',
+                    function ($attribute, $value, $fail) {
+                        $exists = \App\Domains\Auth\Models\TeacherProfile::where('id', $value)
+                            ->orWhere('uuid', $value)
+                            ->exists();
+                        if (!$exists) {
+                            $fail('المدرس غير موجود');
+                        }
+                    }
+                ],
             ];
         }
 

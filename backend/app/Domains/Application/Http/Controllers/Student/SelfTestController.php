@@ -21,11 +21,29 @@ class SelfTestController extends Controller
      */
     public function availableCounts(Request $request): JsonResponse
     {
+        if (!$request->has('teacher_profile_id') && $request->has('teacher_id')) {
+            $request->merge(['teacher_profile_id' => $request->input('teacher_id')]);
+        }
+
         $request->validate([
-            'teacher_profile_id' => 'required|exists:teachers,id',
+            'teacher_profile_id' => [
+                'required',
+                function ($attribute, $value, $fail) {
+                    $exists = \App\Domains\Auth\Models\TeacherProfile::where('id', $value)
+                        ->orWhere('uuid', $value)
+                        ->exists();
+                    if (!$exists) {
+                        $fail('المدرس غير موجود');
+                    }
+                }
+            ],
         ]);
 
-        $teacherProfileId = $request->input('teacher_profile_id');
+        $teacherProfileInput = $request->input('teacher_profile_id');
+        $teacherProfile = \App\Domains\Auth\Models\TeacherProfile::where('id', $teacherProfileInput)
+            ->orWhere('uuid', $teacherProfileInput)
+            ->first();
+        $teacherProfileId = $teacherProfile->id;
         $student = $request->user();
 
         // Get student's grade for this teacher
@@ -57,12 +75,30 @@ class SelfTestController extends Controller
      */
     public function history(Request $request): JsonResponse
     {
+        if (!$request->has('teacher_profile_id') && $request->has('teacher_id')) {
+            $request->merge(['teacher_profile_id' => $request->input('teacher_id')]);
+        }
+
         $request->validate([
-            'teacher_profile_id' => 'required|exists:teachers,id',
+            'teacher_profile_id' => [
+                'required',
+                function ($attribute, $value, $fail) {
+                    $exists = \App\Domains\Auth\Models\TeacherProfile::where('id', $value)
+                        ->orWhere('uuid', $value)
+                        ->exists();
+                    if (!$exists) {
+                        $fail('المدرس غير موجود');
+                    }
+                }
+            ],
         ]);
 
         $student = $request->user();
-        $teacherProfileId = $request->input('teacher_profile_id');
+        $teacherProfileInput = $request->input('teacher_profile_id');
+        $teacherProfile = \App\Domains\Auth\Models\TeacherProfile::where('id', $teacherProfileInput)
+            ->orWhere('uuid', $teacherProfileInput)
+            ->first();
+        $teacherProfileId = $teacherProfile->id;
 
         $attempts = \App\Domains\Exams\Models\ExamAttempt::where('student_id', $student->id)
             ->whereHas('exam', function ($query) use ($teacherProfileId) {
@@ -84,15 +120,33 @@ class SelfTestController extends Controller
      */
     public function start(Request $request): JsonResponse
     {
+        if (!$request->has('teacher_profile_id') && $request->has('teacher_id')) {
+            $request->merge(['teacher_profile_id' => $request->input('teacher_id')]);
+        }
+
         $request->validate([
-            'teacher_profile_id' => 'required|exists:teachers,id',
+            'teacher_profile_id' => [
+                'required',
+                function ($attribute, $value, $fail) {
+                    $exists = \App\Domains\Auth\Models\TeacherProfile::where('id', $value)
+                        ->orWhere('uuid', $value)
+                        ->exists();
+                    if (!$exists) {
+                        $fail('المدرس غير موجود');
+                    }
+                }
+            ],
             'easy_count' => 'required|integer|min:0',
             'medium_count' => 'required|integer|min:0',
             'hard_count' => 'required|integer|min:0',
         ]);
 
         $student = $request->user();
-        $teacherProfileId = $request->input('teacher_profile_id');
+        $teacherProfileInput = $request->input('teacher_profile_id');
+        $teacherProfile = \App\Domains\Auth\Models\TeacherProfile::where('id', $teacherProfileInput)
+            ->orWhere('uuid', $teacherProfileInput)
+            ->first();
+        $teacherProfileId = $teacherProfile->id;
 
         $totalRequested = $request->input('easy_count') + $request->input('medium_count') + $request->input('hard_count');
         if ($totalRequested <= 0) {

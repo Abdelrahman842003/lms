@@ -21,23 +21,42 @@ class MistakesController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
+        if (!$request->has('teacher_profile_id') && $request->has('teacher_id')) {
+            $request->merge(['teacher_profile_id' => $request->input('teacher_id')]);
+        }
+
         $request->validate([
-            'teacher_profile_id' => 'required|uuid|exists:teachers,id',
+            'teacher_profile_id' => [
+                'required',
+                function ($attribute, $value, $fail) {
+                    $exists = \App\Domains\Auth\Models\TeacherProfile::where('id', $value)
+                        ->orWhere('uuid', $value)
+                        ->exists();
+                    if (!$exists) {
+                        $fail('المدرس غير موجود');
+                    }
+                }
+            ],
         ]);
 
         $student = $request->user();
+        $teacherProfileInput = $request->input('teacher_profile_id');
+        $teacherProfile = \App\Domains\Auth\Models\TeacherProfile::where('id', $teacherProfileInput)
+            ->orWhere('uuid', $teacherProfileInput)
+            ->first();
+        $teacherProfileId = $teacherProfile->id;
 
         Log::debug('Fetching mistakes for student', [
             'student_id' => $student->id,
-            'teacher_profile_id' => $request->teacher_profile_id,
+            'teacher_profile_id' => $teacherProfileId,
         ]);
 
         $mistakes = $this->mistakesService->getMistakes(
             $student->id,
-            $request->teacher_profile_id
+            $teacherProfileId
         );
 
-        $stats = $this->mistakesService->getStats($student->id, $request->teacher_profile_id);
+        $stats = $this->mistakesService->getStats($student->id, $teacherProfileId);
 
         return $this->successResponse([
             'mistakes' => $mistakes,

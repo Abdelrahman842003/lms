@@ -61,7 +61,18 @@ class TeacherController extends Controller
         if ($request->has('teacher_id') || $request->has('teacher_profile_id')) {
             try {
                 $validated = $request->validated();
-                $teacherId = $validated['teacher_id'] ?? $validated['teacher_profile_id'];
+                $teacherId = $validated['teacher_id'] ?? null;
+
+                if (!$teacherId && isset($validated['teacher_profile_id'])) {
+                    $profile = \App\Domains\Auth\Models\TeacherProfile::where('id', $validated['teacher_profile_id'])
+                        ->orWhere('uuid', $validated['teacher_profile_id'])
+                        ->first();
+                    $teacherId = $profile?->teacher_id;
+                }
+
+                if (!$teacherId) {
+                    return $this->errorResponse('المدرس غير موجود', 404);
+                }
                 
                 $teacher = $this->service->addTeacher($academy, $teacherId);
                 

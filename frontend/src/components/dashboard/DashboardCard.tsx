@@ -20,7 +20,7 @@ export const DashboardCard: React.FC<DashboardCardProps> = ({
   return (
     <div className={`premium-glass rounded-2xl border border-border-theme-secondary overflow-hidden ${className}`}>
       {(title || action) && (
-        <div className="px-6 py-4 border-b border-border-theme-secondary flex items-center justify-between">
+        <div className="px-6 py-4 border-b border-border-theme-secondary flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
           {(title || icon) && (
             <div className="flex items-center gap-3">
               {icon && (

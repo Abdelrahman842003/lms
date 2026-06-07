@@ -289,13 +289,14 @@ function StudentNotificationsContent() {
         title="سجل الإخطارات والدعم"
         icon="fas fa-list"
         action={
-          <div className="flex gap-3 flex-wrap">
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
             <Button
               onClick={() => {
                 setFormData(prev => ({ ...prev, recipient_type: 'admin' }));
                 setShowModal(true);
               }}
               variant="primary"
+              className="w-full sm:w-auto"
             >
               <Icon name="headset" className="ml-2" />
               <span>تواصل مع الدعم</span>
@@ -308,7 +309,7 @@ function StudentNotificationsContent() {
               ]}
               value={filter}
               onChange={(value) => setFilter(value as 'received' | 'sent_to_developer')}
-              className="w-auto min-w-[220px]"
+              className="w-full sm:min-w-[220px] sm:w-auto"
             />
           </div>
         }
