@@ -27,7 +27,7 @@ return new class extends Migration
 
             // Virtual column + unique index to enforce exactly one independent profile per teacher
             $table->tinyInteger('independent_sentinel')
-                ->virtualAs('(IF(academy_id IS NULL, 1, NULL))');
+                ->virtualAs('(case when academy_id is null then 1 else null end)');
             
             $table->unique(['teacher_id', 'independent_sentinel'], 'teacher_independent_profile_unique');
         });
