@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('student_failed_questions', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('student_id')->constrained()->cascadeOnDelete();
-            $table->foreignUuid('teacher_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('teacher_profile_id')->constrained('teacher_profiles')->cascadeOnDelete();
             $table->foreignUuid('question_id')->constrained()->cascadeOnDelete();
             $table->foreignUuid('exam_id')->constrained()->cascadeOnDelete();
             $table->string('student_answer')->nullable();
@@ -21,7 +21,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->unique(['student_id', 'question_id']);
-            $table->index(['student_id', 'teacher_id', 'is_mastered']);
+            $table->index(['student_id', 'teacher_profile_id', 'is_mastered'], 'student_failed_questions_student_profile_is_mastered_index');
         });
     }
 

@@ -11,7 +11,12 @@ return new class extends Migration
         Schema::create('questions', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('exam_id')->nullable()->constrained()->cascadeOnDelete();
-            $table->foreignUuid('teacher_id')->nullable()->constrained('teachers')->cascadeOnDelete();
+            $table->foreignId('teacher_profile_id')->nullable()->constrained('teacher_profiles')->cascadeOnDelete();
+            
+            // Polymorphic ownership columns
+            $table->string('owner_type', 64)->nullable();
+            $table->uuid('owner_id')->nullable();
+            $table->index(['owner_type', 'owner_id']);
             $table->foreignUuid('grade_id')->nullable()->constrained('grades')->cascadeOnDelete();
             $table->string('subject')->nullable()->index();
             $table->text('text');

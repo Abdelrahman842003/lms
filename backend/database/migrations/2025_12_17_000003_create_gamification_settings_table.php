@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('gamification_settings', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('teacher_id')->unique()->constrained()->cascadeOnDelete();
+            $table->foreignId('teacher_profile_id')->unique()->constrained('teacher_profiles')->cascadeOnDelete();
             
             // Point values (all customizable per teacher)
             $table->integer('attendance_points')->default(10);

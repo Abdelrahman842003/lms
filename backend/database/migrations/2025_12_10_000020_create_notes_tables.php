@@ -11,8 +11,13 @@ return new class extends Migration
         Schema::create('notes', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->uuid('academy_id')->nullable()->index();
-            $table->foreignUuid('teacher_id')->constrained('teachers')->cascadeOnDelete();
+            $table->foreignId('teacher_profile_id')->constrained('teacher_profiles')->cascadeOnDelete();
             $table->foreignUuid('grade_id')->constrained('grades')->cascadeOnDelete();
+            
+            // Polymorphic ownership columns
+            $table->string('owner_type', 64)->nullable();
+            $table->uuid('owner_id')->nullable();
+            $table->index(['owner_type', 'owner_id']);
             
             $table->string('title');
             $table->text('description')->nullable();
@@ -24,7 +29,7 @@ return new class extends Migration
 
             $table->index('updated_at');
             $table->index(['academy_id', 'is_active']);
-            $table->index(['teacher_id', 'is_active']);
+            $table->index(['teacher_profile_id', 'is_active'], 'notes_profile_is_active_index');
         });
 
         Schema::create('note_group_targets', function (Blueprint $table) {

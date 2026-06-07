@@ -13,7 +13,7 @@ return new class extends Migration
             
             // Foreign Keys
             $table->foreignUuid('student_id')->constrained('students')->onDelete('cascade');
-            $table->foreignUuid('teacher_id')->constrained('teachers')->onDelete('cascade');
+            $table->foreignId('teacher_profile_id')->constrained('teacher_profiles')->onDelete('cascade');
             $table->foreignUuid('grade_id')->nullable()->constrained('grades')->onDelete('set null');
             $table->foreignUuid('group_id')->nullable()->constrained('groups')->onDelete('set null');
             $table->uuid('academy_id')->nullable(); // Will add foreign key later
@@ -32,15 +32,13 @@ return new class extends Migration
             // Indexes for performance
             $table->index('updated_at');
             $table->index('student_id');
-            $table->index('teacher_id');
+            $table->index('teacher_profile_id');
             $table->index('academy_id');
-            $table->index(['teacher_id', 'is_active'], 'enrollments_teacher_active_index');
+            $table->index(['teacher_profile_id', 'is_active'], 'enrollments_profile_active_index');
             $table->index(['student_id', 'is_active'], 'enrollments_student_active_index');
             $table->index(['grade_id', 'is_active'], 'enrollments_grade_active_index');
-            $table->index(['teacher_id', 'grade_id', 'is_active'], 'idx_enrollments_lookup');
-            $table->index(['academy_id', 'teacher_id', 'is_active'], 'enrollments_academy_teacher_active_index');
-            // Allow same student-teacher pair in different contexts (academy vs independent)
-            $table->unique(['student_id', 'teacher_id', 'academy_id'], 'enrollment_context_unique');
+            $table->index(['teacher_profile_id', 'grade_id', 'is_active'], 'idx_enrollments_profile_lookup');
+            $table->unique(['student_id', 'teacher_profile_id'], 'student_profile_unique');
         });
     }
 

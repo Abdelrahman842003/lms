@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('lectures', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('teacher_id')->constrained('teachers')->onDelete('cascade');
+            $table->foreignId('teacher_profile_id')->constrained('teacher_profiles')->onDelete('cascade');
             $table->foreignUuid('academy_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignUuid('grade_id')->constrained('grades')->cascadeOnDelete();
             $table->uuid('group_id')->nullable();
@@ -31,10 +31,10 @@ return new class extends Migration
 
             // Performance indexes
             $table->index('updated_at');
-            $table->index(['teacher_id', 'is_active'], 'lectures_teacher_active_index');
+            $table->index(['teacher_profile_id', 'is_active'], 'lectures_profile_active_index');
             $table->index(['grade_id', 'is_active'], 'lectures_grade_active_index');
-            $table->index(['teacher_id', 'start_time', 'is_active'], 'idx_lectures_teacher_date');
-            $table->index(['teacher_id', 'start_time'], 'lectures_teacher_start_time_index');
+            $table->index(['teacher_profile_id', 'start_time', 'is_active'], 'idx_lectures_profile_date');
+            $table->index(['teacher_profile_id', 'start_time'], 'lectures_profile_start_time_index');
             $table->index(['academy_id', 'start_time'], 'lectures_academy_start_time_index');
             $table->index('is_active', 'lectures_is_active_index');
             $table->index('grade_id', 'lectures_grade_id_index');

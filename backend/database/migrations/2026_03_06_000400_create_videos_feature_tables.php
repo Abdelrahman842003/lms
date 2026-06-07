@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('uploader_type', 64)->nullable();
             $table->uuid('uploader_id')->nullable();
 
-            $table->foreignUuid('teacher_reference_id')->nullable()->constrained('teachers')->nullOnDelete();
+            $table->foreignId('teacher_profile_id')->nullable()->constrained('teacher_profiles')->cascadeOnDelete();
             $table->string('teacher_reference_name')->nullable();
             $table->uuid('academy_id')->nullable()->index();
 
@@ -57,7 +57,7 @@ return new class extends Migration
             $table->index(['owner_type', 'owner_id']);
             $table->index(['status', 'published_at']);
             $table->index(['academy_id', 'status']);
-            $table->index(['teacher_reference_id', 'status']);
+            $table->index(['teacher_profile_id', 'status'], 'videos_profile_status_index');
         });
 
         Schema::create('video_group_targets', function (Blueprint $table) {
@@ -88,7 +88,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->foreignUuid('video_id')->constrained('videos')->cascadeOnDelete();
             $table->foreignUuid('student_id')->constrained('students')->cascadeOnDelete();
-            $table->foreignUuid('teacher_id')->nullable()->constrained('teachers')->nullOnDelete();
+            $table->foreignId('teacher_profile_id')->nullable()->constrained('teacher_profiles')->cascadeOnDelete();
             $table->foreignUuid('enrollment_id')->nullable()->constrained('enrollments')->nullOnDelete();
             $table->foreignUuid('granted_group_id')->nullable()->constrained('groups')->nullOnDelete();
             $table->timestamp('granted_at');

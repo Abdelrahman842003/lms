@@ -11,13 +11,13 @@ return new class extends Migration
         Schema::create('student_points', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('student_id')->constrained()->cascadeOnDelete();
-            $table->foreignUuid('teacher_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('teacher_profile_id')->constrained('teacher_profiles')->cascadeOnDelete();
             $table->integer('total_points')->default(0);
             $table->integer('attendance_streak')->default(0); // Current streak count
             $table->timestamps();
 
-            $table->unique(['student_id', 'teacher_id']);
-            $table->index(['teacher_id', 'total_points']); // For leaderboard queries
+            $table->unique(['student_id', 'teacher_profile_id'], 'student_profile_points_unique');
+            $table->index(['teacher_profile_id', 'total_points'], 'student_points_profile_total_points_index'); // For leaderboard queries
         });
     }
 

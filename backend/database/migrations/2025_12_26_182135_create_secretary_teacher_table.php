@@ -11,11 +11,11 @@ return new class extends Migration
         Schema::create('secretary_teacher', function (Blueprint $table) {
             $table->id();
             $table->foreignUuid('secretary_id')->constrained('secretaries')->cascadeOnDelete();
-            $table->foreignUuid('teacher_id')->constrained('teachers')->cascadeOnDelete();
+            $table->foreignId('teacher_profile_id')->constrained('teacher_profiles')->cascadeOnDelete();
             $table->json('permissions')->nullable();
             $table->timestamps();
 
-            $table->unique(['secretary_id', 'teacher_id']);
+            $table->unique(['secretary_id', 'teacher_profile_id'], 'secretary_profile_unique');
         });
 
     }

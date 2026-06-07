@@ -16,7 +16,7 @@ return new class extends Migration
             $table->uuid('client_side_uuid')->unique(); // Idempotency key
             $table->uuid('enrollment_id');
             $table->uuid('student_id');
-            $table->uuid('teacher_id');
+            $table->unsignedBigInteger('teacher_profile_id');
             $table->decimal('amount', 10, 2);
             $table->unsignedInteger('months')->default(1);
             $table->decimal('discount', 5, 2)->default(0);
@@ -41,17 +41,17 @@ return new class extends Migration
 
             // Indexes for performance
             $table->index(['student_id', 'status']);
-            $table->index(['teacher_id', 'status']);
+            $table->index(['teacher_profile_id', 'status'], 'payment_logs_profile_status_index');
             $table->index(['confirmation_code', 'student_id']); // Code lookup per student
-            $table->index(['teacher_id', 'status', 'confirmed_at'], 'idx_payment_logs_confirmed');
-            $table->index(['student_id', 'teacher_id', 'status'], 'idx_payment_logs_student');
-            $table->index(['teacher_id', 'status', 'confirmed_at'], 'payment_logs_teacher_status_date_index');
+            $table->index(['teacher_profile_id', 'status', 'confirmed_at'], 'idx_payment_logs_profile_confirmed');
+            $table->index(['student_id', 'teacher_profile_id', 'status'], 'idx_payment_logs_profile_student');
+            $table->index(['teacher_profile_id', 'status', 'confirmed_at'], 'payment_logs_profile_status_date_index');
             $table->index(['student_id', 'created_at'], 'payment_logs_student_index');
 
             // Foreign keys
             $table->foreign('enrollment_id')->references('id')->on('enrollments')->onDelete('cascade');
             $table->foreign('student_id')->references('id')->on('students')->onDelete('cascade');
-            $table->foreign('teacher_id')->references('id')->on('teachers')->onDelete('cascade');
+            $table->foreign('teacher_profile_id')->references('id')->on('teacher_profiles')->onDelete('cascade');
         });
     }
 

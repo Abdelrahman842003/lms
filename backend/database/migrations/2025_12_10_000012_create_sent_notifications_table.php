@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('sent_notifications', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('teacher_id')->nullable()->constrained('teachers')->onDelete('cascade');
+            $table->foreignId('teacher_profile_id')->nullable()->constrained('teacher_profiles')->onDelete('cascade');
             $table->foreignUuid('admin_id')->nullable()->constrained('admins')->onDelete('cascade');
             $table->foreignUuid('student_id')->nullable()->constrained('students')->onDelete('cascade');
             $table->string('title');

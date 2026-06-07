@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('exams', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('teacher_id')->constrained('teachers')->onDelete('cascade');
+            $table->foreignId('teacher_profile_id')->constrained('teacher_profiles')->onDelete('cascade');
             $table->foreignUuid('academy_id')->nullable()->constrained()->nullOnDelete();
             $table->string('title');
             $table->string('type')->default('manual'); // manual, dynamic, self_test
@@ -31,8 +31,7 @@ return new class extends Migration
 
             // Performance indexes
             $table->index('updated_at');
-            $table->index(['teacher_id', 'is_active'], 'exams_teacher_active_index');
-            $table->index(['teacher_id', 'is_active'], 'exams_teacher_is_active_index');
+            $table->index(['teacher_profile_id', 'is_active'], 'exams_profile_active_index');
             $table->index(['grade_id', 'group_id'], 'exams_grade_group_index');
             $table->index('is_active', 'exams_is_active_index');
             $table->index('date', 'exams_date_index');

@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('secretaries', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('teacher_id')->nullable()->constrained('teachers')->cascadeOnDelete();
+            $table->foreignId('teacher_profile_id')->nullable()->constrained('teacher_profiles')->cascadeOnDelete();
             $table->string('name');
             $table->string('phone')->nullable()->unique();
             $table->string('password');
@@ -20,7 +20,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->index('phone');
-            $table->index('teacher_id');
+            $table->index('teacher_profile_id');
         });
     }
 

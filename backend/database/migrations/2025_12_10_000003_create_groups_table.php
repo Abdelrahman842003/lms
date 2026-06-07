@@ -12,7 +12,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->string('name');
             $table->foreignUuid('grade_id')->nullable()->constrained('grades')->onDelete('set null');
-            $table->foreignUuid('teacher_id')->constrained('teachers')->onDelete('cascade');
+            $table->foreignId('teacher_profile_id')->constrained('teacher_profiles')->cascadeOnDelete();
             $table->uuid('academy_id')->nullable();
             $table->string('type')->default(\App\Domains\Enrollments\Enums\GroupType::PUBLIC->value);
             $table->decimal('price', 8, 2)->nullable();
