@@ -59,6 +59,7 @@ trait ResolvesTeacher
                         ->first();
                     if ($profile) {
                         $mergeData['teacher_profile_id'] = (string) $profile->id;
+                        $mergeData['teacher_id'] = $profile->teacher_id;
                     }
                 }
             } elseif ($request->has('teacher_profile_id') && !$request->has('teacher_id')) {
@@ -69,6 +70,7 @@ trait ResolvesTeacher
                         ->first();
                     if ($profile) {
                         $mergeData['teacher_id'] = $profile->teacher_id;
+                        $mergeData['teacher_profile_id'] = (string) $profile->id;
                     }
                 }
             }
