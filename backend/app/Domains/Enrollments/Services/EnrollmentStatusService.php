@@ -68,7 +68,7 @@ class EnrollmentStatusService
 
         // Check trial period for new enrollments (not yet activated)
         if (!$enrollment->is_active && !$enrollment->subscription_end) {
-            $trialEndDate = $enrollment->created_at->copy()->addDays($trialPeriodDays)->startOfDay();
+            $trialEndDate = ($enrollment->created_at ?? now())->copy()->addDays($trialPeriodDays)->startOfDay();
 
             if ($today <= $trialEndDate) {
                 return 'trial';
@@ -84,7 +84,7 @@ class EnrollmentStatusService
 
         // Active but no subscription yet - check trial period
         if (!$enrollment->subscription_end) {
-            $trialEndDate = $enrollment->created_at->copy()->addDays($trialPeriodDays)->startOfDay();
+            $trialEndDate = ($enrollment->created_at ?? now())->copy()->addDays($trialPeriodDays)->startOfDay();
 
             if ($today <= $trialEndDate) {
                 return 'trial';
@@ -141,7 +141,7 @@ class EnrollmentStatusService
 
         // Trial from creation (new enrollment, not activated OR active but no subscription)
         if (!$enrollment->subscription_end) {
-            return $enrollment->created_at->copy()
+            return ($enrollment->created_at ?? now())->copy()
                 ->addDays($trialPeriodDays);
         }
 

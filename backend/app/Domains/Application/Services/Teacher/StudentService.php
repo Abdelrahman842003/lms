@@ -496,7 +496,7 @@ class StudentService
     public function getSubscriptionHistory(Enrollment $enrollment): array
     {
         $history = [];
-        $startDate = $enrollment->created_at->startOfMonth();
+        $startDate = ($enrollment->created_at ?? now())->copy()->startOfMonth();
         $endDate = now()->endOfMonth();
 
         // Fetch all payments in one query instead of per-month
