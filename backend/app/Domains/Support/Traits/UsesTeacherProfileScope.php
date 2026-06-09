@@ -25,6 +25,15 @@ trait UsesTeacherProfileScope
     }
 
     /**
+     * Retrieve the model for a bound value.
+     * We bypass global scopes because authorization is handled explicitly in controllers.
+     */
+    public function resolveRouteBinding($value, $field = null)
+    {
+        return $this->withoutGlobalScopes()->where($field ?? $this->getRouteKeyName(), $value)->firstOrFail();
+    }
+
+    /**
      * Relationship to the TeacherProfile.
      */
     public function teacherProfile()
