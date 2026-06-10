@@ -30,7 +30,7 @@ use App\Domains\Auth\Http\Middleware\EnsureActiveSubscription;
 Route::prefix('academy')->name('academy.')->group(function () {
     Route::post('/login', [AcademyAuthController::class, 'login'])
         ->middleware(['throttle:auth', 'auth.cookies']);
-    Route::middleware('auth:sanctum')->group(function () {
+    Route::middleware(['auth:sanctum', 'user.type:academy'])->group(function () {
         Route::post('/logout', [AcademyAuthController::class, 'logout']);
         Route::get('/me', [AcademyAuthController::class, 'me']);
         Route::put('/profile', [AcademyAuthController::class, 'updateProfile']);
@@ -41,7 +41,7 @@ Route::prefix('academy')->name('academy.')->group(function () {
 // ============================================
 // Academy Routes (Secretary Access)
 // ============================================
-Route::middleware(['auth:sanctum', EnsureActiveSubscription::class])->prefix('academy')->name('academy.')->group(function () {
+Route::middleware(['auth:sanctum', 'user.type:academy,secretary', EnsureActiveSubscription::class])->prefix('academy')->name('academy.')->group(function () {
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'getStats']);
     

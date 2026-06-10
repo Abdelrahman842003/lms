@@ -496,7 +496,7 @@ export const endLecture = async (id: string) => {
 
 export const generateLectureQrCode = async (id: string) => {
   const response = await axios.post(
-    `${API_BASE_URL}/academy/lectures/${id}/qr-code`,
+    `${API_BASE_URL}/academy/lectures/${id}/attendance-code`,
     {},
     { headers: getAuthHeaders() }
   );

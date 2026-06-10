@@ -34,6 +34,13 @@ class LectureFilter extends BaseFilter
         $query->where('teacher_profile_id', $value);
     }
 
+    protected function filterTeacherId(Builder $query, string $value): void
+    {
+        $query->whereHas('teacherProfile', function ($q) use ($value) {
+            $q->where('teacher_id', $value);
+        });
+    }
+
     protected function filterStatus(Builder $query, string $value): void
     {
         match ($value) {

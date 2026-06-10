@@ -9,6 +9,7 @@ use App\Domains\Application\Http\Requests\Student\MarkAttendanceRequest;
 use App\Domains\Application\Http\Requests\Student\GetAttendanceRequest;
 use App\Domains\Application\Http\Resources\Student\StudentAttendanceResource;
 use App\Domains\Application\Services\Student\StudentAttendanceService;
+use App\Domains\Application\Exceptions\LockoutException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -65,6 +66,8 @@ class StudentAttendanceController extends Controller
                 'lecture' => $result['lecture']->title,
                 'points_earned' => $result['point_transaction']?->points ?? 0,
             ]);
+        } catch (LockoutException $e) {
+            return $e->render();
         } catch (\Exception $e) {
             $errorMessage = match($e->getMessage()) {
                 'Invalid QR code' => 'رمز QR غير صالح',

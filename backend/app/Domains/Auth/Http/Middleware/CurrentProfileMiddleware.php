@@ -85,13 +85,31 @@ class CurrentProfileMiddleware
                     ?? $request->input('teacher_id')
                     ?? $request->query('teacher_id');
                     
-                if ($profileId) {
-                    $profile = TeacherProfile::where('id', $profileId)
-                        ->orWhere('uuid', $profileId)
-                        ->first();
+                    if ($profileId) {
+                        $profile = TeacherProfile::where('id', $profileId)
+                            ->orWhere('uuid', $profileId)
+                            ->first();
+                    }
+                } elseif ($user instanceof \App\Domains\Auth\Models\Secretary) {
+                    // Resolve from request input/query/route parameters (ID or UUID)
+                    $profileId = $request->input('teacher_profile_id') 
+                        ?? $request->query('teacher_profile_id') 
+                        ?? $request->route('teacher_profile_id')
+                        ?? $request->route('teacher') // for route parameters like {teacher}
+                        ?? $request->input('teacher_id')
+                        ?? $request->query('teacher_id');
+                        
+                    if ($profileId) {
+                        $profile = TeacherProfile::where('id', $profileId)
+                            ->orWhere('uuid', $profileId)
+                            ->first();
+                    }
+                    
+                    if (!$profile) {
+                        $profile = $user->teachers()->first();
+                    }
                 }
             }
-        }
 
         if ($profile) {
             // Verify status
@@ -118,6 +136,23 @@ class CurrentProfileMiddleware
                     return response()->json([
                         'message' => 'You are not enrolled in this workspace profile.',
                         'error' => 'NOT_ENROLLED_IN_WORKSPACE'
+                    ], 403);
+                }
+            } elseif ($user instanceof \App\Domains\Auth\Models\Secretary) {
+                // Ensure secretary is linked to this profile
+                $isLinked = $user->teachers()->where('teacher_profiles.id', $profile->id)->exists();
+                if (!$isLinked) {
+                    return response()->json([
+                        'message' => 'Unauthorized workspace profile for secretary.',
+                        'error' => 'UNAUTHORIZED_WORKSPACE'
+                    ], 403);
+                }
+                
+                // Ensure the profile is independent as per requirements
+                if ($profile->type !== 'independent') {
+                    return response()->json([
+                        'message' => 'Secretaries can only access independent teacher profiles.',
+                        'error' => 'UNAUTHORIZED_WORKSPACE_TYPE'
                     ], 403);
                 }
             }

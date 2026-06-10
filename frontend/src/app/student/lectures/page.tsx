@@ -28,6 +28,7 @@ export default function StudentLecturesPage() {
   // Code Entry State
   const [showCodeModal, setShowCodeModal] = useState(false);
   const [selectedLectureForCode, setSelectedLectureForCode] = useState<Lecture | null>(null);
+  const [lockoutSeconds, setLockoutSeconds] = useState<number>(0);
 
   const handleCodeSubmit = async (code: string) => {
     if (!selectedLectureForCode) return;
@@ -48,6 +49,12 @@ export default function StudentLecturesPage() {
       setShowCodeModal(false);
     } catch (error: any) {
       console.error('Failed to record attendance:', error);
+      
+      // Handle lockout
+      if (error.data?.remaining_seconds) {
+        setLockoutSeconds(error.data.remaining_seconds);
+      }
+      
       toast.error(error.message || 'فشل تسجيل الحضور');
     }
   };
@@ -62,12 +69,16 @@ export default function StudentLecturesPage() {
       try {
         setLoading(true);
         const [lecturesRes, attendanceRes] = await Promise.all([
-          fetchApi<{ data: ExtendedLecture[] }>(`/student/lectures?teacher_id=${selectedTeacher.teacher_id}`),
+          fetchApi<{ data: ExtendedLecture[], lockout?: { is_locked: boolean, remaining_seconds: number } }>(`/student/lectures?teacher_id=${selectedTeacher.teacher_id}`),
           fetchApi<{ data: any[] }>(`/student/attendance?teacher_id=${selectedTeacher.teacher_id}`)
         ]);
         
         setLectures(lecturesRes.data || []);
         setAttendance(attendanceRes.data || []);
+        
+        if (lecturesRes.lockout?.is_locked) {
+          setLockoutSeconds(lecturesRes.lockout.remaining_seconds);
+        }
       } catch (error) {
         console.error('Failed to load data:', error);
       } finally {
@@ -77,6 +88,17 @@ export default function StudentLecturesPage() {
 
     loadData();
   }, [selectedTeacher]);
+
+  // Timer for lockout
+  useEffect(() => {
+    if (lockoutSeconds <= 0) return;
+    
+    const timer = setInterval(() => {
+      setLockoutSeconds(prev => Math.max(0, prev - 1));
+    }, 1000);
+    
+    return () => clearInterval(timer);
+  }, [lockoutSeconds]);
 
   const now = new Date();
   
@@ -91,7 +113,7 @@ export default function StudentLecturesPage() {
   // Calculate absent count based on finished lectures that are NOT attended
   const absentCount = lectures.filter(lecture => {
     const isFinished = lecture.iso_end_time ? new Date(lecture.iso_end_time) < now : false;
-    const isAttended = attendance.some(a => a.lecture_id === lecture.id && (a.status === 'present' || a.status === 'late'));
+    const isAttended = attendance.some(a => (a.lecture_id === lecture.id || a.lecture?.id === lecture.id) && (a.status === 'present' || a.status === 'late'));
     return isFinished && !isAttended;
   }).length;
 
@@ -170,7 +192,7 @@ export default function StudentLecturesPage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {activeLectures.map((lecture) => {
-              const isAttended = attendance.some(a => a.lecture_id === lecture.id && (a.status === 'present' || a.status === 'late'));
+              const isAttended = attendance.some(a => (a.lecture_id === lecture.id || a.lecture?.id === lecture.id) && (a.status === 'present' || a.status === 'late'));
               return (
                 <div key={lecture.id} className="relative group">
                   <div className="absolute inset-0 bg-gradient-to-r from-rose-500/20 to-primary/20 rounded-[2.5rem] blur-xl opacity-50 group-hover:opacity-100 transition-opacity duration-500" />
@@ -224,7 +246,7 @@ export default function StudentLecturesPage() {
           ) : (
             otherLectures.map((lecture) => {
               const isFinished = lecture.iso_end_time ? new Date(lecture.iso_end_time) < now : false;
-              const isAttended = attendance.some(a => a.lecture_id === lecture.id && (a.status === 'present' || a.status === 'late'));
+              const isAttended = attendance.some(a => (a.lecture_id === lecture.id || a.lecture?.id === lecture.id) && (a.status === 'present' || a.status === 'late'));
               
               let statusColor = 'text-primary';
               let statusBg = 'bg-primary/5';
@@ -290,6 +312,7 @@ export default function StudentLecturesPage() {
         onClose={() => setShowCodeModal(false)}
         onSubmit={handleCodeSubmit}
         lectureTitle={(selectedLectureForCode as ExtendedLecture | null)?.display_title || selectedLectureForCode?.title || ''}
+        lockoutSeconds={lockoutSeconds}
       />
     </DashboardLayout>
   );

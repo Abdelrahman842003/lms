@@ -160,11 +160,12 @@ abstract class BasePolicy
             if ($user->hasRole('admin') || $user->hasRole('super-admin')) {
                 return true;
             }
+        }
 
-            // Academy users get full access to their resources
-            if ($user->hasRole('academy') && $this->isAcademyResource()) {
-                return true;
-            }
+        // Academy users get full access to their resources
+        // (Academy model doesn't use HasRoles trait, so we check by class or method)
+        if ($this->isAcademy($user) && $this->isAcademyResource()) {
+            return true;
         }
 
         // Check if user is an Admin model (from App\Domains\Auth\Models\Admin)

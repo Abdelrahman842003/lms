@@ -58,6 +58,7 @@ class StudentService
                     'status' => $enrollmentStatus,
                     'days_left' => $enrollment->days_left,
                     'enrolled_at' => $enrollment->created_at,
+                    'is_active' => (bool) $enrollment->is_active,
                     'academy_id' => $enrollment->academy_id ? (string) $enrollment->academy_id : null,
                     'academy_name' => $enrollment->academy?->name,
                 ];
@@ -104,6 +105,7 @@ class StudentService
                 'status' => $enrollmentStatus,
                 'days_left' => $enrollment->days_left,
                 'enrolled_at' => $enrollment->created_at,
+                'is_active' => (bool) $enrollment->is_active,
             ];
 
             // Check if teacher belongs to any academy

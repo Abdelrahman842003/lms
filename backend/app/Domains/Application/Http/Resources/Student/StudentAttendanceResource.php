@@ -17,6 +17,7 @@ class StudentAttendanceResource extends JsonResource
             'id' => $this->id,
             'status' => $this->status, // present, absent
             'created_at' => $this->created_at?->format('Y-m-d H:i:s'),
+            'lecture_id' => $this->lecture_id,
             'lecture' => $this->whenLoaded('lecture', function () {
                 return [
                     'id' => $this->lecture->id,

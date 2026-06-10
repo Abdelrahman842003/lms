@@ -7,6 +7,10 @@ export function isTeacherAccessible(teacher: TeacherInfo | null | undefined): bo
     return false;
   }
 
+  if (teacher.is_active === false) {
+    return false;
+  }
+
   const status = teacher.status ?? "";
   if (!ACCESSIBLE_STATUSES.has(status)) {
     return false;

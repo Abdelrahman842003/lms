@@ -252,6 +252,14 @@ export default function TeacherLecturesPage() {
   }, [user?.id, currentPage, searchQuery, selectedGroupId, selectedStatus]);
 
   const handleCodeModalClose = async () => {
+    if (selectedLectureForCode) {
+      try {
+        await invalidateAttendanceCode(selectedLectureForCode.id);
+        toast.success('تم إلغاء كود الحضور بنجاح');
+      } catch (error) {
+        console.error('Failed to invalidate code:', error);
+      }
+    }
     setShowCodeModal(false);
     setAttendanceCode(null);
   };

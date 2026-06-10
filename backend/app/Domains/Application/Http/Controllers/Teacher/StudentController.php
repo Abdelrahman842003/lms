@@ -164,6 +164,10 @@ class StudentController extends Controller
             ->where('student_id', $id)
             ->firstOrFail();
 
+        if (!$enrollment->student) {
+            return $this->notFound('الطالب غير موجود أو تم حذفه');
+        }
+
         // Load student relations for stats
         $enrollment->student->load(['examResults.exam', 'attendances.lecture']);
 
@@ -204,6 +208,10 @@ class StudentController extends Controller
             ->where('teacher_profile_id', $teacher->id)
             ->where('student_id', $id)
             ->firstOrFail();
+            
+        if (!$enrollment->student) {
+            return $this->notFound('الطالب غير موجود أو تم حذفه');
+        }
             
         $validated = $request->validated();
 
@@ -279,6 +287,10 @@ class StudentController extends Controller
             ->where('student_id', $id)
             ->firstOrFail();
 
+        if (!$enrollment->student) {
+            return $this->notFound('الطالب غير موجود أو تم حذفه');
+        }
+
         $enrollment->student->syncPermissions($request->validated()['permissions'] ?? []);
 
         return $this->successResponse([
@@ -318,6 +330,10 @@ class StudentController extends Controller
             ->where('teacher_profile_id', $teacher->id)
             ->where('student_id', $id)
             ->firstOrFail();
+
+        if (!$enrollment->student) {
+            return $this->notFound('الطالب غير موجود أو تم حذفه');
+        }
 
         $details = $this->service->getActivationDetails($enrollment);
 

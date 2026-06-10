@@ -21,6 +21,11 @@ function createTrialEnrollmentWithBlockedTeacher(): array
         'trial_period_days' => 4,
     ]);
 
+    $profile = \App\Domains\Auth\Models\TeacherProfile::factory()->create([
+        'teacher_id' => $teacher->id,
+        'type' => 'independent',
+    ]);
+
     $grade = Grade::factory()->create([
         'teacher_id' => $teacher->id,
     ]);
@@ -32,7 +37,7 @@ function createTrialEnrollmentWithBlockedTeacher(): array
 
     $enrollment = Enrollment::query()->create([
         'student_id' => $student->id,
-        'teacher_id' => $teacher->id,
+        'teacher_profile_id' => $profile->id,
         'grade_id' => $grade->id,
         'group_id' => $group->id,
         'academy_id' => null,
@@ -52,7 +57,7 @@ it('keeps trial enrollment accessible in student me payload even when teacher su
         ->getJson('/api/v1/student/me')
         ->assertOk();
 
-    $response->assertJsonPath('data.teachers.0.teacher_id', $context['teacher']->id);
+    $response->assertJsonPath('data.teachers.0.teacher_profile_id', $context['enrollment']->teacher_profile_id);
     $response->assertJsonPath('data.teachers.0.status', 'trial');
     $response->assertJsonPath('data.teachers.0.is_subscription_blocked', true);
     $response->assertJsonPath('data.teachers.0.is_suspended', false);
@@ -62,6 +67,6 @@ it('allows student dashboard for trial enrollment even when teacher subscription
     $context = createTrialEnrollmentWithBlockedTeacher();
 
     $this->actingAs($context['student'], 'sanctum')
-        ->getJson('/api/v1/student/dashboard?teacher_id=' . $context['teacher']->id)
+        ->getJson('/api/v1/student/dashboard?teacher_profile_id=' . $context['enrollment']->teacher_profile_id)
         ->assertOk();
 });

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Application\Services\Student;
 
 use App\Domains\Application\Exceptions\DomainException;
+use App\Domains\Application\Exceptions\LockoutException;
 use App\Domains\Auth\Models\Student;
 use App\Domains\Lectures\Models\Attendance;
 use App\Domains\Lectures\Models\Lecture;
@@ -53,7 +54,10 @@ class StudentAttendanceService
             
             if ($remainingSeconds > 0) {
                 $minutes = ceil($remainingSeconds / 60);
-                throw new DomainException("تم إيقافك مؤقتاً بسبب كثرة المحاولات الخاطئة. يرجى المحاولة بعد {$minutes} دقيقة.");
+                throw new LockoutException(
+                    "تم إيقافك مؤقتاً بسبب كثرة المحاولات الخاطئة. يرجى المحاولة بعد {$minutes} دقيقة.",
+                    (int) $remainingSeconds
+                );
             } else {
                 \Illuminate\Support\Facades\Cache::forget($lockoutKey);
             }
@@ -66,12 +70,22 @@ class StudentAttendanceService
             \Illuminate\Support\Facades\Cache::put($failuresKey, $failures, now()->addHours(24));
 
             if ($failures >= 6) {
-                \Illuminate\Support\Facades\Cache::put($lockoutKey, now()->addMinutes(60)->timestamp, now()->addMinutes(60));
+                $lockoutTime = 3;
+                $lockoutEnd = now()->addMinutes($lockoutTime)->timestamp;
+                \Illuminate\Support\Facades\Cache::put($lockoutKey, $lockoutEnd, now()->addMinutes($lockoutTime));
                 \Illuminate\Support\Facades\Cache::forget($failuresKey);
-                throw new DomainException("تم إيقافك لمدة 60 دقيقة بسبب تجاوز الحد الأقصى للمحاولات الخاطئة.");
+                throw new LockoutException(
+                    "تم إيقافك لمدة {$lockoutTime} دقائق بسبب تجاوز الحد الأقصى للمحاولات الخاطئة.",
+                    $lockoutTime * 60
+                );
             } elseif ($failures === 3) {
-                \Illuminate\Support\Facades\Cache::put($lockoutKey, now()->addMinutes(3)->timestamp, now()->addMinutes(3));
-                throw new DomainException("تم إيقافك لمدة 3 دقائق بسبب تكرار المحاولات الخاطئة.");
+                $lockoutTime = 3;
+                $lockoutEnd = now()->addMinutes($lockoutTime)->timestamp;
+                \Illuminate\Support\Facades\Cache::put($lockoutKey, $lockoutEnd, now()->addMinutes($lockoutTime));
+                throw new LockoutException(
+                    "تم إيقافك لمدة {$lockoutTime} دقائق بسبب تكرار المحاولات الخاطئة.",
+                    $lockoutTime * 60
+                );
             }
 
             $remaining = ($failures < 3) ? 3 - $failures : 6 - $failures;
@@ -179,6 +193,12 @@ class StudentAttendanceService
             return null;
         }
 
-        return Lecture::find($lectureId);
+        $lecture = Lecture::find($lectureId);
+
+        if (!$lecture || !$lecture->is_active) {
+            return null;
+        }
+
+        return $lecture;
     }
 }

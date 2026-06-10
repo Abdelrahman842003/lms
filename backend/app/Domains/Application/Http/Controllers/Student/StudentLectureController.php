@@ -9,6 +9,7 @@ use App\Domains\Application\Http\Requests\Student\GetLecturesRequest;
 use App\Domains\Application\Http\Resources\Student\StudentLectureResource;
 use App\Domains\Application\Services\Student\StudentLectureService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Cache;
 
 class StudentLectureController extends Controller
 {
@@ -30,8 +31,16 @@ class StudentLectureController extends Controller
             $perPage
         );
 
-        return $this->successResponse(
-            StudentLectureResource::collection($lectures)->response()->getData(true)
-        );
+        $lockoutKey = "attendance_lockout:{$student->id}";
+        $lockoutEnd = Cache::get($lockoutKey);
+        $remainingSeconds = $lockoutEnd ? max(0, $lockoutEnd - now()->timestamp) : 0;
+
+        $data = StudentLectureResource::collection($lectures)->response()->getData(true);
+        $data['lockout'] = [
+            'is_locked' => $remainingSeconds > 0,
+            'remaining_seconds' => (int) $remainingSeconds,
+        ];
+
+        return $this->successResponse($data);
     }
 }

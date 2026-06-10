@@ -26,9 +26,14 @@ class DashboardService
         // Get active secretaries count
         $activeSecretariesCount = $academy->activeSecretaries()->count();
 
+        // Resolve actual TeacherProfile IDs for this academy
+        $teacherProfileIds = \App\Domains\Auth\Models\TeacherProfile::where('academy_id', $academy->id)
+            ->whereIn('teacher_id', $linkedTeacherIds)
+            ->pluck('id');
+
         // Get total enrollments (links) and unique students for linked academy teachers
         $enrollmentsQuery = Enrollment::query()
-            ->whereIn('teacher_profile_id', $linkedTeacherIds)
+            ->whereIn('teacher_profile_id', $teacherProfileIds)
             ->where('academy_id', $academy->id)
             ->where('is_active', true);
 
@@ -49,8 +54,7 @@ class DashboardService
         $monthlyAbsent = 0;
 
         // --- Revenue Statistics ---
-        // Use all currently linked teachers in this academy.
-        $teacherProfileIds = $linkedTeacherIds;
+        // Use all currently linked teacher profiles in this academy.
         
         // Current Month Revenue
         $currentMonthRevenue = \App\Domains\Subscriptions\Models\PaymentLog::whereIn('teacher_profile_id', $teacherProfileIds)
@@ -97,19 +101,23 @@ class DashboardService
             ->get();
 
         // Pre-load student counts for all teachers to avoid N+1 queries
-        $teacherProfileIds = $recentTeachers->pluck('id');
+        $recentTeacherIds = $recentTeachers->pluck('id');
+        $recentProfileIds = \App\Domains\Auth\Models\TeacherProfile::where('academy_id', $academy->id)
+            ->whereIn('teacher_id', $recentTeacherIds)
+            ->pluck('id', 'teacher_id');
+
         $studentCounts = Enrollment::query()
             ->select('teacher_profile_id', DB::raw('COUNT(*) as students_count'))
             ->where('academy_id', $academy->id)
             ->where('is_active', true)
-            ->whereIn('teacher_profile_id', $teacherProfileIds)
+            ->whereIn('teacher_profile_id', $recentProfileIds->values())
             ->groupBy('teacher_profile_id')
-            ->pluck('students_count', 'teacher_profile_id')
-            ->toArray();
+            ->get()
+            ->keyBy('teacher_profile_id');
 
         // Transform recent teachers
         $imageService = app(ImageService::class);
-        $transformedTeachers = $recentTeachers->map(function ($teacher) use ($academy, $imageService, $studentCounts) {
+        $transformedTeachers = $recentTeachers->map(function ($teacher) use ($academy, $imageService, $studentCounts, $recentProfileIds) {
             $rawStatus = $this->normalizeEnumValue($teacher->status);
             $status = 'نشط';
             if ($rawStatus === 'pending') {
@@ -118,11 +126,14 @@ class DashboardService
                 $status = 'معلق';
             }
 
+            $profileId = $recentProfileIds[$teacher->id] ?? null;
+            $studentsCount = $profileId ? ($studentCounts[$profileId]?->students_count ?? 0) : 0;
+
             return [
                 'id' => $teacher->id,
                 'name' => $teacher->name,
                 'avatar' => $teacher->avatar_key ? $imageService->getUrl($teacher->avatar_key) : null,
-                'students_count' => $studentCounts[$teacher->id] ?? 0,
+                'students_count' => $studentsCount,
                 'status' => $status,
                 'created_at' => $teacher->pivot->created_at,
             ];

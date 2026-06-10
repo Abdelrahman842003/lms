@@ -13,7 +13,7 @@ Route::post('/login/secretary', [SecretaryAuthController::class, 'login'])
 // NOTE: Secretary routes do not currently have EnsureSecretaryIsActive middleware.
 // The Secretary model has an is_active boolean field that should be checked.
 // TODO: Add EnsureSecretaryIsActive middleware to prevent inactive secretaries from accessing the API.
-Route::middleware('auth:sanctum')->prefix('secretary')->name('secretary.')->group(function () {
+Route::middleware(['auth:sanctum', 'user.type:secretary'])->prefix('secretary')->name('secretary.')->group(function () {
     Route::post('/logout', [SecretaryAuthController::class, 'logout']);
     Route::get('/me', [SecretaryAuthController::class, 'me']);
     Route::post('/change-password', [SecretaryAuthController::class, 'changePassword']);

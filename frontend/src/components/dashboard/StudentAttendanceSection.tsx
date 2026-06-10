@@ -181,9 +181,13 @@ export default function StudentAttendanceSection() {
           academyService.getGrades(1, 1000),
           academyService.getGroups(1, 1000)
         ]);
-        setTeachers(teachersResponse.data?.teachers || []);
-        setGrades(gradesResponse.data?.data || []);
-        setGroups(groupsResponse.data?.data || []);
+        setTeachers(teachersResponse?.teachers || teachersResponse?.data?.teachers || []);
+        
+        let gradesList = gradesResponse?.data?.data || gradesResponse?.data || gradesResponse || [];
+        setGrades(Array.isArray(gradesList) ? gradesList : []);
+        
+        let groupsList = groupsResponse?.data?.data || groupsResponse?.data || groupsResponse || [];
+        setGroups(Array.isArray(groupsList) ? groupsList : []);
       } catch (error) {
         console.error('Failed to fetch data:', error);
       }
@@ -208,10 +212,13 @@ export default function StudentAttendanceSection() {
         teacher_id: selectedTeacherId || undefined,
       });
       
-      setLectures(response.data?.data || []);
-      setTotalPages(response.data?.meta?.last_page || 1);
-      setTotalItems(response.data?.meta?.total || 0);
-      setCurrentPage(response.data?.meta?.current_page || 1);
+      const lecturesList = response?.data?.data || response?.data || response?.lectures || [];
+      const meta = response?.meta || response?.data?.meta || {};
+      
+      setLectures(Array.isArray(lecturesList) ? lecturesList : []);
+      setTotalPages(meta.last_page || 1);
+      setTotalItems(meta.total || 0);
+      setCurrentPage(meta.current_page || 1);
     } catch (error) {
       console.error('Failed to fetch lectures:', error);
       toast.error('فشل تحميل المحاضرات');

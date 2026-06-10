@@ -117,6 +117,7 @@ export interface TeacherInfo {
   status?: 'active' | 'grace_period' | 'trial' | 'expired' | 'inactive';
   days_left?: number;
   is_suspended?: boolean;
+  is_active?: boolean;
   is_teacher_suspended?: boolean;
   is_subscription_blocked?: boolean;
   has_videos_addon?: boolean;

@@ -83,6 +83,12 @@ const getNavItems = (role: string): SidebarItem[] => {
         ],
       },
       {
+        id: 'attendance',
+        label: 'سجل الحضور',
+        icon: 'check-circle',
+        href: '/academy/attendance',
+      },
+      {
         id: 'student_lectures',
         label: 'محاضرات الطلاب',
         icon: 'book-open',

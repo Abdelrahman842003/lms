@@ -106,6 +106,9 @@ class LectureService
 
     public function endLecture(Lecture $lecture): Lecture
     {
+        // Invalidate active attendance code
+        $this->invalidateAttendanceCode($lecture);
+
         // 1. Update lecture status
         $updateData = ['is_active' => false];
 
@@ -164,6 +167,9 @@ class LectureService
                 Log::error('Failed to send lecture activation notification: '.$e->getMessage());
             }
         } else {
+            // Invalidate active attendance code
+            $this->invalidateAttendanceCode($lecture);
+
             // بث إغلاق المحاضرة للطلاب عبر Reverb (Public Channel)
             event(new \App\Domains\Lectures\Events\LectureClosed($lecture));
         }

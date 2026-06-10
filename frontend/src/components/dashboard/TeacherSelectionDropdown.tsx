@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { ConfirmationModal, Icon } from '@/components/ui';
 import { NavbarOverlayDropdown } from './NavbarOverlayDropdown';
-import { normalizeStudentTeachers } from '@/utils/studentTeacherAccess';
+import { normalizeStudentTeachers, isTeacherAccessible } from '@/utils/studentTeacherAccess';
 
 export const TeacherSelectionDropdown: React.FC = () => {
   const CLOSE_ANIMATION_MS = 220;
@@ -83,24 +83,28 @@ export const TeacherSelectionDropdown: React.FC = () => {
   }, [isOpen, isClosing]);
 
   const handleTeacherSelect = (teacher: any) => {
-    // Check Status
-    if (teacher.is_suspended) {
-      setModalConfig({
-        title: 'حساب معلق',
-        message: 'عذراً، هذا المدرس معلق حالياً ولا يمكن الوصول لبياناته. يرجى التواصل مع الإدارة.',
-        confirmText: 'حسناً',
-        variant: 'danger',
-        showCancel: false,
-        onConfirm: () => setModalOpen(false),
-      });
-      setModalOpen(true);
-      return;
-    }
+    // Check accessibility using the central utility
+    if (!isTeacherAccessible(teacher)) {
+      let title = 'غير متاح';
+      let message = 'عذراً، لا يمكنك الدخول لبيانات هذا المدرس حالياً. يرجى التواصل مع الإدارة.';
 
-    if (teacher.status === 'expired') {
+      if (teacher.is_suspended || teacher.is_teacher_suspended) {
+        title = 'حساب معلق';
+        message = 'عذراً، هذا المدرس معلق حالياً ولا يمكن الوصول لبياناته. يرجى التواصل مع الإدارة.';
+      } else if (teacher.is_active === false || teacher.status === 'inactive') {
+        title = 'حساب معطل';
+        message = 'حسابك مع هذا المدرس غير مفعل أو تم تعطيله حالياً. يرجى التواصل مع المدرس للتفعيل.';
+      } else if (teacher.status === 'expired') {
+        title = 'اشتراك منتهي';
+        message = 'عذراً، لقد انتهى اشتراكك مع هذا المدرس. يرجى تجديد الاشتراك للمتابعة.';
+      } else if (teacher.is_subscription_blocked) {
+        title = 'الاشتراك موقوف';
+        message = 'عذراً، لقد تم إيقاف اشتراكك مع هذا المدرس. يرجى التواصل مع الإدارة للتفعيل.';
+      }
+
       setModalConfig({
-        title: 'اشتراك منتهي',
-        message: 'عذراً، لقد انتهى اشتراكك مع هذا المدرس. يرجى تجديد الاشتراك للمتابعة.',
+        title,
+        message,
         confirmText: 'حسناً',
         variant: 'danger',
         showCancel: false,
@@ -122,19 +126,6 @@ export const TeacherSelectionDropdown: React.FC = () => {
           closeDropdown();
           setModalOpen(false);
         },
-      });
-      setModalOpen(true);
-      return;
-    }
-
-    if (teacher.status === 'inactive') {
-      setModalConfig({
-        title: 'حساب غير مفعل',
-        message: 'حسابك مع هذا المدرس غير مفعل حالياً. يرجى التواصل مع المدرس للتفعيل.',
-        confirmText: 'حسناً',
-        variant: 'danger',
-        showCancel: false,
-        onConfirm: () => setModalOpen(false),
       });
       setModalOpen(true);
       return;
@@ -306,9 +297,11 @@ const TeacherItem = ({ teacher, selectedTeacher, onSelect, isNested = false }: {
            selectedTeacher.group_name === teacher.group_name))
     : false;
 
+  const isAccessible = isTeacherAccessible(teacher);
+
   return (
     <div 
-      className={`teacher-dropdown-item ${isSelected ? 'teacher-dropdown-item-selected' : ''} ${isNested ? 'teacher-dropdown-item-nested' : ''} ${(teacher.status === 'expired' || teacher.status === 'inactive') ? 'teacher-dropdown-item-disabled' : ''}`}
+      className={`teacher-dropdown-item ${isSelected ? 'teacher-dropdown-item-selected' : ''} ${isNested ? 'teacher-dropdown-item-nested' : ''} ${!isAccessible ? 'teacher-dropdown-item-disabled' : ''}`}
       onClick={() => onSelect(teacher)}
     >
       <div className="teacher-item-avatar">
@@ -333,6 +326,12 @@ const TeacherItem = ({ teacher, selectedTeacher, onSelect, isNested = false }: {
           )}
           {teacher.status === 'expired' && (
             <span className="teacher-item-state danger">منتهي</span>
+          )}
+          {(teacher.is_active === false || teacher.status === 'inactive') && (
+            <span className="teacher-item-state danger">معطل</span>
+          )}
+          {(teacher.is_suspended || teacher.is_teacher_suspended) && (
+            <span className="teacher-item-state danger">معلق</span>
           )}
         </div>
         <p className="teacher-item-meta">

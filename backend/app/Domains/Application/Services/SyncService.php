@@ -159,9 +159,10 @@ class SyncService
         $since = isset($sinceData['academyTeachers']) ? Carbon::parse($sinceData['academyTeachers']) : null;
         $query = DB::table('teachers')
             ->join('teacher_profiles', 'teachers.id', '=', 'teacher_profiles.teacher_id')
-            ->join('academy_teacher', 'teacher_profiles.id', '=', 'academy_teacher.teacher_profile_id')
+            ->join('academy_teacher', 'teachers.id', '=', 'academy_teacher.teacher_id')
             ->where('academy_teacher.academy_id', $academy->id)
-            ->select('teachers.*');
+            ->select('teachers.*')
+            ->distinct();
         if ($since) {
             $query->where('teachers.updated_at', '>', $since);
         }

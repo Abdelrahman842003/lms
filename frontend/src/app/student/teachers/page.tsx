@@ -7,12 +7,17 @@ import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { TeacherInfo } from '@/services/authService';
 import { LoadingSpinner, Icon } from '@/components/ui/index';
+import { isTeacherAccessible } from '@/utils/studentTeacherAccess';
 
 export default function StudentTeachersPage() {
   const router = useRouter();
   const { user, selectedTeacher, selectTeacher, isLoading: authLoading } = useAuth();
   const [teachers, setTeachers] = useState<TeacherInfo[]>([]);
-  const [suspendedTeacher, setSuspendedTeacher] = useState<TeacherInfo | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalConfig, setModalConfig] = useState({
+    title: '',
+    message: '',
+  });
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -36,8 +41,29 @@ export default function StudentTeachersPage() {
   }, [user, authLoading, router]);
 
   const handleSelectTeacher = (teacher: TeacherInfo) => {
-    if (teacher.is_suspended) {
-      setSuspendedTeacher(teacher);
+    if (!isTeacherAccessible(teacher)) {
+      let title = 'غير متاح';
+      let message = 'عذراً، لا يمكنك الدخول لبيانات هذا المدرس حالياً. يرجى التواصل مع الإدارة.';
+
+      if (teacher.is_suspended || teacher.is_teacher_suspended) {
+        title = 'حساب معلق';
+        message = 'عذراً، هذا المدرس معلق حالياً ولا يمكن الوصول لبياناته. يرجى التواصل مع الإدارة.';
+      } else if (teacher.is_active === false || teacher.status === 'inactive') {
+        title = 'حساب معطل';
+        message = 'حسابك مع هذا المدرس غير مفعل أو تم تعطيله حالياً. يرجى التواصل مع المدرس للتفعيل.';
+      } else if (teacher.status === 'expired') {
+        title = 'اشتراك منتهي';
+        message = 'عذراً، لقد انتهى اشتراكك مع هذا المدرس. يرجى تجديد الاشتراك للمتابعة.';
+      } else if (teacher.is_subscription_blocked) {
+        title = 'الاشتراك موقوف';
+        message = 'عذراً، لقد تم إيقاف اشتراكك مع هذا المدرس. يرجى التواصل مع الإدارة للتفعيل.';
+      }
+
+      setModalConfig({
+        title,
+        message,
+      });
+      setModalOpen(true);
       return;
     }
     selectTeacher(teacher);
@@ -101,15 +127,16 @@ export default function StudentTeachersPage() {
                        selectedTeacher.grade_name === teacher.grade_name &&
                        selectedTeacher.group_name === teacher.group_name))
                 : false;
+              const isAccessible = isTeacherAccessible(teacher);
               return (
                 <div
                   key={teacher.enrollment_id || `${teacher.teacher_id}_${teacher.grade_name || ''}_${teacher.group_name || ''}`}
-                  className={`group bg-white/3 border border-white/8 rounded-2xl p-6 transition-all duration-300 flex flex-col items-center text-center relative 
-                    ${teacher.is_suspended 
-                      ? 'opacity-60 cursor-not-allowed grayscale' 
-                      : 'cursor-pointer hover:-translate-y-1 hover:border-primary hover:shadow-[0_10px_40px_rgba(66,99,235,0.2)]'
+                  className={`group bg-white/3 border rounded-2xl p-6 transition-all duration-300 flex flex-col items-center text-center relative 
+                    ${!isAccessible 
+                      ? 'border-red-500/20 bg-red-500/5 cursor-not-allowed opacity-80' 
+                      : 'border-white/8 cursor-pointer hover:-translate-y-1 hover:border-primary hover:shadow-[0_10px_40px_rgba(66,99,235,0.2)]'
                     } 
-                    ${isSelected ? 'border-primary bg-primary/10' : ''}`}
+                    ${isSelected && isAccessible ? 'border-primary bg-primary/10' : ''}`}
                   onClick={() => handleSelectTeacher(teacher)}
                 >
                   <div className="w-20 h-20 rounded-full overflow-hidden mb-4 border-[3px] border-white/10">
@@ -121,8 +148,8 @@ export default function StudentTeachersPage() {
                       </div>
                     )}
                   </div>
-                  {teacher.is_suspended && (
-                    <div className="absolute top-4 right-4 text-red-500 bg-white/10 p-2 rounded-full">
+                  {!isAccessible && (
+                    <div className="absolute top-4 right-4 text-red-500 bg-red-500/10 p-2 rounded-full border border-red-500/20" title="غير متاح">
                       <Icon name="ban" />
                     </div>
                   )}
@@ -141,13 +168,22 @@ export default function StudentTeachersPage() {
                       </p>
                     )}
                   </div>
+                  {!isAccessible && (
+                    <span className="text-xs font-bold text-red-400 bg-red-500/15 px-3 py-1 rounded-full mb-3 border border-red-500/20">
+                      {teacher.is_suspended || teacher.is_teacher_suspended ? 'معلق' : 
+                       teacher.is_active === false || teacher.status === 'inactive' ? 'معطل' : 
+                       teacher.status === 'expired' ? 'منتهي الاشتراك' : 'الاشتراك موقوف'}
+                    </span>
+                  )}
                   <div className="bg-[rgba(0,214,143,0.1)] rounded-xl p-[12px_20px] flex flex-col items-center mb-3">
                     <span className="text-xs text-gray-light">الرصيد</span>
                     <span className="text-xl font-bold text-success">{teacher.balance} ج.م</span>
                   </div>
-                  <div className="absolute left-5 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-                    <Icon name="arrow-left" />
-                  </div>
+                  {isAccessible && (
+                    <div className="absolute left-5 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                      <Icon name="arrow-left" />
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -155,26 +191,26 @@ export default function StudentTeachersPage() {
         )}
       </div>
       <ConfirmationModal
-        isOpen={!!suspendedTeacher}
-        title="تنبيه"
+        isOpen={modalOpen}
+        title={modalConfig.title}
         message={
           <div className="text-center">
-            <div className="w-16 h-16 bg-warning/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Icon name="exclamation-triangle" size="lg" className="text-warning" />
+            <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-500/20">
+              <Icon name="exclamation-triangle" size="lg" className="text-red-500" />
             </div>
             <p className="text-lg font-medium text-white mb-2">
-              عفواً، هذا المدرس ({suspendedTeacher?.teacher_name}) معلق حالياً
+              {modalConfig.title}
             </p>
             <p className="text-gray-400 text-sm">
-              لا يمكن الدخول إلى لوحة التحكم الخاصة بهذا المدرس في الوقت الحالي. يرجى التواصل مع الإدارة للمزيد من التفاصيل.
+              {modalConfig.message}
             </p>
           </div>
         }
         confirmText="حسناً"
-        onConfirm={() => setSuspendedTeacher(null)}
-        onCancel={() => setSuspendedTeacher(null)}
+        onConfirm={() => setModalOpen(false)}
+        onCancel={() => setModalOpen(false)}
         showCancel={false}
-        variant="warning"
+        variant="danger"
       />
     </DashboardLayout>
   );

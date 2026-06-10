@@ -23,10 +23,30 @@ class LectureService
 
     public function getLectures(Academy $academy, array $filters = [], int $perPage = 10): LengthAwarePaginator
     {
-        $query = Lecture::with(['teacher', 'grade', 'group', 'currentSession'])
-            ->where(function ($q) use ($academy) {
-                // Lectures created by academy
+        // Resolve all profile IDs belonging to this academy
+        $profileIds = \App\Domains\Auth\Models\TeacherProfile::where('academy_id', $academy->id)
+            ->pluck('id')
+            ->toArray();
+
+        // Use withoutGlobalScopes to ensure TeacherProfileScope doesn't interfere in Academy context
+        $query = Lecture::withoutGlobalScopes()
+            ->with(['teacher', 'grade', 'group', 'currentSession'])
+            ->withCount('attendances')
+            ->where(function ($q) use ($academy, $profileIds) {
+                // 1. Lectures directly assigned to this academy
                 $q->where('academy_id', $academy->id);
+
+                // 2. OR lectures whose teacher profile belongs to this academy
+                if (!empty($profileIds)) {
+                    $q->orWhereIn('teacher_profile_id', $profileIds);
+                }
+                
+                // 3. OR lectures by teachers who are members of this academy
+                $q->orWhereHas('teacher', function ($q) use ($academy) {
+                    $q->whereHas('academies', function ($q) use ($academy) {
+                        $q->where('academies.id', $academy->id);
+                    });
+                });
             })
             ->orderBy('created_at', 'desc');
 

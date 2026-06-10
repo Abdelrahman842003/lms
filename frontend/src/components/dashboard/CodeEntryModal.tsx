@@ -7,11 +7,33 @@ interface CodeEntryModalProps {
   onClose: () => void;
   onSubmit: (code: string) => Promise<void>;
   lectureTitle: string;
+  lockoutSeconds?: number;
 }
 
-const CodeEntryModal: React.FC<CodeEntryModalProps> = ({ isOpen, onClose, onSubmit, lectureTitle }) => {
+const CodeEntryModal: React.FC<CodeEntryModalProps> = ({ isOpen, onClose, onSubmit, lectureTitle, lockoutSeconds = 0 }) => {
   const [code, setCode] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    
+    let result = '';
+    if (mins > 0) {
+      if (mins === 1) result = 'دقيقة واحدة';
+      else if (mins === 2) result = 'دقيقتين';
+      else if (mins >= 3 && mins <= 10) result = `${mins} دقائق`;
+      else result = `${mins} دقيقة`;
+    }
+    
+    if (secs > 0) {
+      const secStr = (secs >= 3 && secs <= 10) ? `${secs} ثوانٍ` : (secs === 1 ? 'ثانية واحدة' : (secs === 2 ? 'ثانيتين' : `${secs} ثانية`));
+      if (result) result += ` و ${secStr}`;
+      else result = secStr;
+    }
+    
+    return result || '0 ثانية';
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -108,18 +130,30 @@ const CodeEntryModal: React.FC<CodeEntryModalProps> = ({ isOpen, onClose, onSubm
               </div>
             </div>
 
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={code.length !== 6 || isSubmitting}
-              className="group relative w-full h-16 mb-4 rounded-2xl bg-gradient-to-r from-primary to-secondary overflow-hidden transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary/20 hover:shadow-primary/40"
-            >
-              <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
-              <span className="relative text-white font-black text-sm uppercase tracking-[0.2em] flex items-center justify-center gap-3">
-                {isSubmitting ? <Icon name="spinner" spin /> : <Icon name="check" />} 
-                {isSubmitting ? 'جاري التحقق...' : 'تأكيد الحضور'}
-              </span>
-            </button>
+            {/* Submit Button or Lockout Timer */}
+            {lockoutSeconds > 0 ? (
+              <div className="w-full h-16 mb-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex flex-col items-center justify-center gap-1">
+                <div className="flex items-center gap-2 text-rose-500 font-black text-sm">
+                  <Icon name="clock" spin />
+                  <span>يرجى المحاولة بعد:</span>
+                </div>
+                <span className="text-rose-500 font-bold text-xs" dir="rtl">
+                  {formatTime(lockoutSeconds)}
+                </span>
+              </div>
+            ) : (
+              <button
+                type="submit"
+                disabled={code.length !== 6 || isSubmitting}
+                className="group relative w-full h-16 mb-4 rounded-2xl bg-gradient-to-r from-primary to-secondary overflow-hidden transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary/20 hover:shadow-primary/40"
+              >
+                <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
+                <span className="relative text-white font-black text-sm uppercase tracking-[0.2em] flex items-center justify-center gap-3">
+                  {isSubmitting ? <Icon name="spinner" spin /> : <Icon name="check" />} 
+                  {isSubmitting ? 'جاري التحقق...' : 'تأكيد الحضور'}
+                </span>
+              </button>
+            )}
           </form>
 
           {/* Cancel Button */}

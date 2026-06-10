@@ -17,7 +17,7 @@ Route::post('/login/parent', [GuardianAuthController::class, 'login'])
 // 2. Add EnsureGuardianNotSuspended middleware
 // 3. Add status column to guardians table
 // 4. Update Guardian model with isSuspended() method
-Route::middleware('auth:sanctum')->prefix('parent')->name('parent.')->group(function () {
+Route::middleware(['auth:sanctum', 'user.type:guardian'])->prefix('parent')->name('parent.')->group(function () {
     Route::post('/logout', [GuardianAuthController::class, 'logout']);
     Route::get('/me', [GuardianAuthController::class, 'me']);
     Route::put('/profile', [GuardianAuthController::class, 'updateProfile']);

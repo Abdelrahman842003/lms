@@ -53,7 +53,7 @@ class LectureController extends Controller
             if ($academyId && $academyId !== 'independent') {
                 // Check if teacher belongs to this academy using pivot
                 $teacherBelongsToAcademy = \Illuminate\Support\Facades\DB::table('academy_teacher')
-                    ->where('teacher_profile_id', $teacher->id)
+                    ->where('teacher_id', $teacher->teacher_id)
                     ->where('academy_id', $academyId)
                     ->where('is_active', true)
                     ->exists();

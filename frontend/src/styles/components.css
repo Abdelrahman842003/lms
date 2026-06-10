@@ -1669,7 +1669,18 @@
 }
 
 .teacher-dropdown-item-disabled {
-  opacity: 0.7;
+  opacity: 0.85;
+  border-left: 3px solid var(--danger, #ff5b5b);
+  background: rgba(255, 91, 91, 0.03);
+  cursor: not-allowed;
+}
+
+.teacher-dropdown-item-disabled:hover {
+  background: rgba(255, 91, 91, 0.06);
+}
+
+.teacher-dropdown-item-disabled .teacher-item-name {
+  color: #ff5b5b;
 }
 
 .teacher-dropdown-nested-wrap {
