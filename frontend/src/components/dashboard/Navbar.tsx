@@ -447,9 +447,6 @@ export const Navbar: React.FC<NavbarProps> = ({ role, user: userProp, onMenuClic
     items = items
       .filter(item => item.id !== 'reports') // Remove Reports
         .map(item => {
-          if (item.id === 'question_bank') {
-            return { ...item, href: '/academy/questions' };
-          }
           if (item.children) {
             return {
               ...item,

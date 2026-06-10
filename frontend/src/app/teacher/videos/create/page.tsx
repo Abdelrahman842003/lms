@@ -44,7 +44,7 @@ export default function TeacherCreateVideoPage() {
   const { user, selectedAcademy, isLoading, refreshUser } = useAuth();
   const router = useRouter();
   const [grades, setGrades] = useState<OptionItem[]>([]);
-  const [groups, setGroups] = useState<Group[]>([]);
+  const [groups, setGroups] = useState<OptionItem[]>([]);
   const isIndependentSelected = !selectedAcademy || selectedAcademy?.id === 'independent';
   const hasIndependentFlag = typeof user?.is_independent_active === 'boolean';
   const isIndependentAccountActive = user?.is_independent_active === true;
@@ -59,7 +59,7 @@ export default function TeacherCreateVideoPage() {
 
   useEffect(() => {
     if (isLoading || user?.userType !== 'teacher') return;
-    if (!isIndependentSelected || !isIndependentAccountActive) return;
+    if (isIndependentSelected && !isIndependentAccountActive) return;
 
     const loadOptions = async () => {
       const [loadedGrades, loadedGroups] = await Promise.all([getGrades(), getGroups()]);
@@ -90,18 +90,7 @@ export default function TeacherCreateVideoPage() {
     );
   }
 
-  if (!isIndependentSelected) {
-    return (
-      <AppNotFound
-        description="هذه الصفحة متاحة فقط عند اختيار وضع المدرس المستقل."
-        hint="تلميح: اختر (مدرس مستقل) من مبدّل الأكاديمية في أعلى الصفحة."
-        actionHref="/teacher/dashboard"
-        actionLabel="الرجوع للوحة التحكم"
-      />
-    );
-  }
-
-  if (!hasIndependentFlag) {
+  if (isIndependentSelected && !hasIndependentFlag) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#0a0c1b]">
         <div className="text-center">
@@ -112,7 +101,7 @@ export default function TeacherCreateVideoPage() {
     );
   }
 
-  if (!isIndependentAccountActive) {
+  if (isIndependentSelected && !isIndependentAccountActive) {
     return (
       <AppNotFound
         description="الحساب المستقل غير مفعّل حاليًا، لذلك لا يمكنك رفع فيديوهات مستقلة."

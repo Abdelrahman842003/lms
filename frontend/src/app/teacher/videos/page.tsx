@@ -58,14 +58,14 @@ export default function TeacherVideosPage() {
   useEffect(() => {
     if (authLoading) return;
 
-    if (!isIndependentSelected || !hasVideosAddon) {
+    if (!hasVideosAddon) {
       setVideos([]);
       setLoading(false);
       return;
     }
 
     void fetchVideos();
-  }, [authLoading, isIndependentSelected, hasVideosAddon]);
+  }, [authLoading, hasVideosAddon]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -161,16 +161,7 @@ export default function TeacherVideosPage() {
     );
   }
 
-  if (!isIndependentSelected) {
-    return (
-      <AppNotFound
-        description="هذه الصفحة متاحة فقط عند اختيار وضع المدرس المستقل."
-        hint="تلميح: اختر (مدرس مستقل) من مبدّل الأكاديمية في أعلى الصفحة أو استخدم صفحة الأكاديمية للفيديوهات."
-        actionHref="/academy/videos"
-        actionLabel="الانتقال لفيديوهات الأكاديمية"
-      />
-    );
-  }
+
 
   if (!hasVideosAddon) {
     return (

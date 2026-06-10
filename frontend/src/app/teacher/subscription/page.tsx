@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Button, Icon } from '@/components/ui';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
@@ -26,18 +26,14 @@ const resolvePlanSelection = (planType?: string, subscriptionPeriod?: string | n
 };
 
 function SubscriptionPage() {
-  const router = useRouter();
+
   const { user, selectedAcademy, isLoading: authLoading } = useAuth();
   const [subscriptionData, setSubscriptionData] = useState<SubscriptionResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [renewalOpen, setRenewalOpen] = useState(false);
   const [renewalSubmitting, setRenewalSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (!authLoading && selectedAcademy?.id && selectedAcademy.id !== 'independent') {
-      router.replace('/academy/subscription');
-    }
-  }, [authLoading, selectedAcademy, router]);
+
 
   const loadSubscription = async () => {
     if (selectedAcademy?.id && selectedAcademy.id !== 'independent') {
@@ -99,6 +95,23 @@ function SubscriptionPage() {
   };
 
   const statusConfig = getStatusConfig();
+  const isAcademyMode = !!(selectedAcademy?.id && selectedAcademy.id !== 'independent');
+
+  if (!authLoading && isAcademyMode) {
+    return (
+      <DashboardLayout role="teacher" user={user || undefined}>
+        <div className="min-h-[60vh] flex flex-col items-center justify-center text-center p-6 animate-in fade-in duration-500">
+          <div className="w-24 h-24 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center text-primary text-4xl mb-8 shadow-2xl">
+            <Icon name="crown" />
+          </div>
+          <h2 className="text-2xl font-black text-white mb-4 tracking-tight">هذه الميزة متاحة فقط في النظام المستقل</h2>
+          <p className="text-gray-light/40 text-sm max-w-md font-medium leading-relaxed">
+            إدارة الاشتراكات غير متاحة أثناء العمل كعضو في أكاديمية.
+          </p>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   const handleRenewalSubmit = async (payload: SubscriptionRenewalRequest) => {
     setRenewalSubmitting(true);

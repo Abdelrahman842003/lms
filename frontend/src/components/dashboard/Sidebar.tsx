@@ -344,27 +344,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ role, user, isOpen, onClose, p
           item.id !== 'subscription' // Hide subscription for non-independent teachers
         )
         .map(item => {
-          if (item.id === 'gamification') {
-            return { ...item, href: '/academy/gamification' };
-          }
-          if (item.id === 'videos') {
-            return { ...item, href: '/academy/videos' };
-          }
-          if (item.id === 'attendance') {
-            return { ...item, href: '/academy/attendance' };
-          }
-          if (item.id === 'exams') {
-            return { ...item, href: '/academy/exams' };
-          }
-          if (item.id === 'question_bank') {
-            return { ...item, href: '/academy/questions' };
-          }
-          if (item.id === 'lectures') {
-            return { ...item, href: '/academy/lectures' };
-          }
-          if (item.id === 'notifications') {
-            return { ...item, href: '/academy/notifications' };
-          }
           if (item.children) {
             return {
               ...item,
@@ -373,15 +352,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ role, user, isOpen, onClose, p
                   child.id !== 'secretaries' && // Remove Secretary
                   child.id !== 'grades'         // Remove Grades (Classes)
                 )
-                .map(child => {
-                  if (child.id === 'students') {
-                    return { ...child, href: '/academy/students' };
-                  }
-                  if (child.id === 'groups') {
-                    return { ...child, href: '/academy/groups' };
-                  }
-                  return child;
-                })
             };
           }
           return item;
