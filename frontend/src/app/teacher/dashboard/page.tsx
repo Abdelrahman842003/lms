@@ -7,11 +7,14 @@ import { StatCard } from '@/components/dashboard/StatCard';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { TeacherStatsCharts } from '@/components/dashboard/TeacherStatsCharts';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
+import { useRouter } from 'next/navigation';
 import { initializeEcho } from '@/lib/echo';
 import { getAccessToken } from '@/lib/tokenManager';
+import { Icon } from '@/components/ui';
 
 export default function TeacherDashboard() {
-  const { user, selectedAcademy, isLoading: authLoading, isAuthenticated } = useAuth();
+  const { user, selectedAcademy, isLoading: authLoading, isAuthenticated, selectAcademy, logout } = useAuth();
+  const router = useRouter();
 
   const [stats, setStats] = React.useState({
     totalStudents: 0,
@@ -25,6 +28,21 @@ export default function TeacherDashboard() {
   });
   const [students, setStudents] = React.useState<any[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
+
+  const isAcademyMode = !!(selectedAcademy?.id && selectedAcademy.id !== 'independent');
+
+  const handleSwitchToIndependent = () => {
+    selectAcademy({ id: 'independent', name: 'شخصي (مستقل)', logo: null, is_active: true });
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      router.push('/login');
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
 
   const fetchDashboardData = React.useCallback(async () => {
     if (authLoading || !isAuthenticated || user?.userType !== 'teacher') {
@@ -144,6 +162,27 @@ export default function TeacherDashboard() {
     <DashboardLayout
       role={user?.userType as 'teacher' | 'secretary' || 'teacher'}
       user={user || undefined}
+      hideNav={isAcademyMode}
+      title={isAcademyMode ? `لوحة تحكم: ${selectedAcademy?.name}` : 'لوحة التحكم'}
+      headerActions={isAcademyMode ? (
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleSwitchToIndependent}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/10 text-primary font-bold text-sm border border-primary/20 hover:bg-primary/20 transition-all"
+          >
+            <Icon name="exchange-alt" />
+            <span className="hidden sm:inline">العودة للنظام المستقل</span>
+            <span className="sm:hidden">مستقل</span>
+          </button>
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-rose-500/10 text-rose-400 font-bold text-sm border border-rose-500/20 hover:bg-rose-500/20 transition-all"
+          >
+            <Icon name="sign-out-alt" />
+            <span className="hidden sm:inline">تسجيل الخروج</span>
+          </button>
+        </div>
+      ) : undefined}
     >
       {/* Stats Grid */}
       <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-6 mb-8">
