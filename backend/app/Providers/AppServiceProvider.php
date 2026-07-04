@@ -59,6 +59,8 @@ use App\Domains\Subscriptions\Models\AcademySubscription;
 use App\Domains\Subscriptions\Models\PaymentLog;
 use App\Domains\Subscriptions\Models\PlatformPayment;
 use App\Domains\Subscriptions\Models\Subscription;
+use App\Domains\Subscriptions\Models\PaymentTransaction;
+use App\Domains\Application\Policies\PaymentTransactionPolicy;
 use App\Domains\Subscriptions\Models\TeacherSubscription;
 use App\Domains\Application\Models\DailyVoiceLimit;
 use App\Domains\Application\Models\Setting;
@@ -247,6 +249,7 @@ class AppServiceProvider extends ServiceProvider
             'App\Models\PointTransaction'   => \App\Domains\Gamification\Models\PointTransaction::class,
             'App\Models\GamificationSetting' => \App\Domains\Gamification\Models\GamificationSetting::class,
             'App\Models\Subscription'       => \App\Domains\Subscriptions\Models\Subscription::class,
+            'App\Models\PaymentTransaction' => \App\Domains\Subscriptions\Models\PaymentTransaction::class,
             'App\Models\TeacherSubscription' => \App\Domains\Subscriptions\Models\TeacherSubscription::class,
             'App\Models\AcademySubscription' => \App\Domains\Subscriptions\Models\AcademySubscription::class,
             'App\Models\PlatformPayment'    => \App\Domains\Subscriptions\Models\PlatformPayment::class,
@@ -305,6 +308,7 @@ class AppServiceProvider extends ServiceProvider
 
         // Subscriptions Domain
         Gate::policy(Subscription::class, SubscriptionPolicy::class);
+        Gate::policy(PaymentTransaction::class, PaymentTransactionPolicy::class);
         Gate::policy(TeacherSubscription::class, TeacherSubscriptionPolicy::class);
         Gate::policy(AcademySubscription::class, AcademySubscriptionPolicy::class);
         Gate::policy(PaymentLog::class, PaymentLogPolicy::class);
@@ -348,6 +352,12 @@ class AppServiceProvider extends ServiceProvider
 
         // Domain Events — Subscriptions
         Event::listen(SubscriptionExpired::class, SuspendEnrollmentsOnExpiry::class);
+
+        // Domain Events — Payment Integration
+        Event::listen(\App\Domains\Subscriptions\Events\PaymentTransactionCreated::class, \App\Domains\Subscriptions\Listeners\SendPaymentNotifications::class);
+        Event::listen(\App\Domains\Subscriptions\Events\PaymentConfirmed::class, \App\Domains\Subscriptions\Listeners\SendPaymentNotifications::class);
+        Event::listen(\App\Domains\Subscriptions\Events\PaymentRejected::class, \App\Domains\Subscriptions\Listeners\SendPaymentNotifications::class);
+        Event::listen(\App\Domains\Subscriptions\Events\SubscriptionExpiringSoon::class, \App\Domains\Subscriptions\Listeners\SendPaymentNotifications::class);
 
         // Domain Events — Exams
         Event::listen(ExamCompleted::class, GrantExamXp::class);

@@ -8,6 +8,7 @@ use App\Filament\Auth\Login;
 use App\Filament\Pages\Dashboard;
 use App\Filament\Widgets\StatsOverviewWidget;
 use App\Filament\Widgets\RecentAcademiesWidget;
+use App\Filament\Widgets\PendingPaymentsWidget;
 use App\Filament\Widgets\AcademyDistributionChart;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -82,6 +83,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->resources([
                 \App\Filament\Resources\PricingPackageResource::class,
+                \App\Filament\Resources\PaymentTransactionResource::class,
             ])
             // Widget Discovery
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
@@ -90,9 +92,10 @@ class AdminPanelProvider extends PanelProvider
                 // Row 1: Stats Overview - Full width
                 StatsOverviewWidget::class,
                 // Row 2: Left column - Recent Academies (2/3 width)
-                //         Right column - Subscription Expiry (1/3 width)
                 RecentAcademiesWidget::class,
-                // Row 3: Academy Distribution Chart
+                // Row 3: Pending Payments Widget
+                PendingPaymentsWidget::class,
+                // Row 4: Academy Distribution Chart
                 AcademyDistributionChart::class,
                 // Default widgets
                 Widgets\AccountWidget::class,

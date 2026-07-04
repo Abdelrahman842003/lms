@@ -50,6 +50,11 @@ class StatsOverviewWidget extends BaseWidget
             ->count();
         $subscriptionTrend = $this->calculateTrend($subscriptionsThisMonth, $subscriptionsLastMonth);
 
+        $pendingPaymentsCount = \App\Domains\Subscriptions\Models\PaymentTransaction::pending()->count();
+        $thisMonthRevenue = \App\Domains\Subscriptions\Models\PaymentTransaction::confirmed()
+            ->where('confirmed_at', '>=', $thisMonthStart)
+            ->sum('amount');
+
         return [
             Stat::make(__('Total Academies'), $totalAcademies)
                 ->description($academyTrend['description'])
@@ -78,6 +83,16 @@ class StatsOverviewWidget extends BaseWidget
                 ->color($subscriptionTrend['color'])
                 ->icon('heroicon-o-credit-card')
                 ->chart($this->getTrendChart(Subscription::class, fn ($q) => $q->paid())),
+
+            Stat::make('المدفوعات المعلقة', $pendingPaymentsCount)
+                ->description('عمليات دفع ذاتي معلقة بانتظار التأكيد')
+                ->icon('heroicon-o-clock')
+                ->color($pendingPaymentsCount > 0 ? 'warning' : 'gray'),
+
+            Stat::make('إيرادات الدفع الذاتي (هذا الشهر)', number_format((float) $thisMonthRevenue, 2) . ' ج.م')
+                ->description('إجمالي الاشتراكات المؤكدة ذاتياً هذا الشهر')
+                ->icon('heroicon-o-banknotes')
+                ->color('success'),
         ];
     }
 

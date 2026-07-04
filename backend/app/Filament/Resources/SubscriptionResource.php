@@ -12,6 +12,7 @@ use App\Domains\Auth\Models\Teacher;
 use App\Domains\Application\Models\Setting;
 use App\Domains\Application\Services\HelperService;
 use App\Domains\Subscriptions\Services\SubscriptionRenewalService;
+use App\Filament\Resources\SubscriptionResource\RelationManagers\PaymentTransactionsRelationManager;
 use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\DatePicker;
@@ -562,7 +563,7 @@ class SubscriptionResource extends BaseResource
     public static function getRelations(): array
     {
         return [
-            // Relations can be added here if needed
+            PaymentTransactionsRelationManager::class,
         ];
     }
 

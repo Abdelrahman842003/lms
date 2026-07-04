@@ -15,6 +15,7 @@ use Illuminate\Contracts\Auth\Access\Authorizable as AuthorizableContract;
 use Illuminate\Auth\Authenticatable;
 use Illuminate\Foundation\Auth\Access\Authorizable;
 use App\Domains\Subscriptions\Models\Subscription;
+use App\Domains\Subscriptions\Models\PaymentTransaction;
 use App\Domains\Subscriptions\Models\AcademySubscription;
 use App\Domains\Subscriptions\Enums\SubscriptionStatus;
 use App\Domains\Subscriptions\Traits\HasSubscriptionStatus;
@@ -34,6 +35,11 @@ class Academy extends Model implements AuthenticatableContract, AuthorizableCont
             ->logOnly(['name', 'phone', 'is_active', 'status', 'plan_type', 'plan_expires_at'])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs();
+    }
+
+    protected static function newFactory()
+    {
+        return \Database\Factories\AcademyFactory::new();
     }
 
     protected $fillable = [
@@ -79,6 +85,37 @@ class Academy extends Model implements AuthenticatableContract, AuthorizableCont
             // Generate unique QR codes
             $academy->checkin_qr_code = Str::random(32);
             $academy->checkout_qr_code = Str::random(32);
+
+            $trialDays = (int) \App\Domains\Application\Models\Setting::getValue('trial_period_days', '14');
+            $trialMaxStudents = (int) \App\Domains\Application\Models\Setting::getValue('trial_max_students', '50');
+
+            if (empty($academy->plan_type)) {
+                $academy->plan_type = 'trial';
+                $academy->plan_expires_at = now()->addDays($trialDays);
+                $academy->plan_max_students = $trialMaxStudents;
+            }
+        });
+
+        static::created(function ($academy) {
+            $trialDays = (int) \App\Domains\Application\Models\Setting::getValue('trial_period_days', '14');
+            $trialMaxStudents = (int) \App\Domains\Application\Models\Setting::getValue('trial_max_students', '50');
+
+            if ($academy->plan_type === 'trial') {
+                \App\Domains\Subscriptions\Models\Subscription::create([
+                    'subscriber_id' => $academy->id,
+                    'subscriber_type' => get_class($academy),
+                    'type' => \App\Domains\Subscriptions\Enums\SubscriptionType::ACADEMY->value,
+                    'month' => now()->startOfMonth()->toDateString(),
+                    'seats_count' => 0,
+                    'quota_limit' => $trialMaxStudents,
+                    'cost_per_seat' => 0.00,
+                    'amount_due' => 0.00,
+                    'amount_paid' => 0.00,
+                    'status' => \App\Domains\Subscriptions\Enums\SubscriptionStatus::ACTIVE->value,
+                    'notes' => "فترة تجربة مجانية - {$trialDays} يوم",
+                    'request_type' => 'trial',
+                ]);
+            }
         });
     }
 
@@ -142,6 +179,14 @@ class Academy extends Model implements AuthenticatableContract, AuthorizableCont
     public function subscriptions()
     {
         return $this->morphMany(Subscription::class, 'subscriber');
+    }
+
+    /**
+     * Payment transactions (polymorphic)
+     */
+    public function paymentTransactions()
+    {
+        return $this->morphMany(PaymentTransaction::class, 'payer');
     }
 
     public function latestSubscription()

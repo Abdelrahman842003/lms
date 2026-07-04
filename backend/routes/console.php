@@ -6,6 +6,7 @@ use App\Domains\Lectures\Jobs\CloseExpiredLecture;
 use App\Domains\Lectures\Jobs\EndExpiredLecturesJob;
 use App\Domains\Subscriptions\Jobs\CheckExpiringSubscriptions;
 use App\Domains\Subscriptions\Jobs\ProcessExpiredSubscriptions;
+use App\Domains\Subscriptions\Jobs\ExpirePendingPaymentTransactions;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -46,6 +47,9 @@ Schedule::job(ProcessExpiredSubscriptions::class)->dailyAt('00:05');
 
 // إشعار الاشتراكات التي ستنتهي خلال 7 أيام — يومياً
 Schedule::job(CheckExpiringSubscriptions::class)->dailyAt('09:00');
+
+// انتهاء صلاحية طلبات الدفع المعلقة كل ساعة
+Schedule::job(ExpirePendingPaymentTransactions::class)->hourly();
 
 // إعادة حساب Leaderboard كل ساعة
 Schedule::job(RecalculateLeaderboard::class)->hourly();

@@ -11,6 +11,7 @@ use App\Domains\Application\Http\Controllers\Teacher\NotificationController;
 use App\Domains\Application\Http\Controllers\Teacher\PermissionController;
 use App\Domains\Application\Http\Controllers\Teacher\PaymentLogController;
 use App\Domains\Application\Http\Controllers\Teacher\PaymentController;
+use App\Domains\Application\Http\Controllers\Teacher\SubscriptionPaymentController;
 use App\Domains\Application\Http\Controllers\Teacher\SubscriptionController;
 use App\Domains\Application\Http\Controllers\Teacher\SyncErrorController;
 use App\Domains\Application\Http\Controllers\Teacher\ExamController;
@@ -32,6 +33,18 @@ use App\Domains\Auth\Http\Middleware\EnsureActiveSubscription;
 Route::middleware('throttle:register')->post('/register/teacher', [\App\Domains\Application\Http\Controllers\Teacher\TeacherController::class, 'register']);
 Route::post('/login/teacher', [TeacherAuthController::class, 'login'])
     ->middleware(['throttle:auth', 'auth.cookies']);
+
+// ============================================
+// Teacher Subscription Payment Routes (Accessible without active subscription)
+// ============================================
+Route::middleware(['auth:sanctum', 'user.type:teacher,secretary', EnsureUserNotSuspended::class . ':teacher', 'profile.context'])->prefix('teacher/payment')->group(function () {
+    Route::get('methods', [SubscriptionPaymentController::class, 'methods']);
+    Route::get('packages', [SubscriptionPaymentController::class, 'packages']);
+    Route::post('initiate', [SubscriptionPaymentController::class, 'initiate'])->middleware('throttle:payments');
+    Route::post('{paymentKey}/upload-proof', [SubscriptionPaymentController::class, 'uploadProof']);
+    Route::get('{paymentKey}/status', [SubscriptionPaymentController::class, 'status']);
+    Route::get('history', [SubscriptionPaymentController::class, 'history']);
+});
 
 Route::middleware(['auth:sanctum', 'user.type:teacher,secretary', EnsureUserNotSuspended::class . ':teacher', EnsureActiveSubscription::class, 'profile.context'])->prefix('teacher')->name('teacher.')->group(function () {
     Route::post('/logout', [TeacherAuthController::class, 'logout']);

@@ -15,6 +15,7 @@ use App\Domains\Application\Http\Controllers\Academy\GradeController;
 use App\Domains\Application\Http\Controllers\Academy\GroupController;
 use App\Domains\Application\Http\Controllers\Academy\StudentController;
 use App\Domains\Application\Http\Controllers\Academy\PaymentController;
+use App\Domains\Application\Http\Controllers\Academy\SubscriptionPaymentController;
 use App\Domains\Application\Http\Controllers\Academy\SubscriptionController;
 use App\Domains\Application\Http\Controllers\Academy\GamificationController;
 use App\Domains\Application\Http\Controllers\Academy\ExamController;
@@ -36,6 +37,18 @@ Route::prefix('academy')->name('academy.')->group(function () {
         Route::put('/profile', [AcademyAuthController::class, 'updateProfile']);
         Route::post('/change-password', [AcademyAuthController::class, 'changePassword']);
     });
+});
+
+// ============================================
+// Academy Subscription Payment Routes (Accessible without active subscription)
+// ============================================
+Route::middleware(['auth:sanctum'])->prefix('academy/payment')->group(function () {
+    Route::get('methods', [SubscriptionPaymentController::class, 'methods']);
+    Route::get('packages', [SubscriptionPaymentController::class, 'packages']);
+    Route::post('initiate', [SubscriptionPaymentController::class, 'initiate'])->middleware('throttle:payments');
+    Route::post('{paymentKey}/upload-proof', [SubscriptionPaymentController::class, 'uploadProof']);
+    Route::get('{paymentKey}/status', [SubscriptionPaymentController::class, 'status']);
+    Route::get('history', [SubscriptionPaymentController::class, 'history']);
 });
 
 // ============================================
